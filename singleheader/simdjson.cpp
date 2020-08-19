@@ -1,4 +1,4 @@
-/* auto-generated on Tue Aug  4 13:10:22 PDT 2020. Do not edit! */
+/* auto-generated on Tue Aug 18 17:35:47 PDT 2020. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -351,6 +351,8 @@ static const uint64_t thintable_epi8[256] = {
 
 #include <initializer_list>
 
+#define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }
+
 // Static array of known implementations. We're hoping these get baked into the executable
 // without requiring a static initializer.
 
@@ -642,7 +644,7 @@ namespace simdjson {
 // we are also interested in the four whitespace characters
 // space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
 
-const uint32_t structural_or_whitespace_negated[256] = {
+const bool structural_or_whitespace_negated[256] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
@@ -659,7 +661,7 @@ const uint32_t structural_or_whitespace_negated[256] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
-const uint32_t structural_or_whitespace[256] = {
+const bool structural_or_whitespace[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2452,22 +2454,18 @@ really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
-// expectation: sizeof(scope_descriptor) = 64/8.
-struct scope_descriptor {
+// expectation: sizeof(open_container) = 64/8.
+struct open_container {
   uint32_t tape_index; // where, on the tape, does the scope ([,{) begins
   uint32_t count; // how many elements in the scope
-}; // struct scope_descriptor
+}; // struct open_container
 
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-typedef void* ret_address_t;
-#else
-typedef char ret_address_t;
-#endif
+static_assert(sizeof(open_container) == 64/8, "Open container must be 64 bits");
 
 class dom_parser_implementation final : public internal::dom_parser_implementation {
 public:
   /** Tape location of each open { or [ */
-  std::unique_ptr<scope_descriptor[]> containing_scope{};
+  std::unique_ptr<open_container[]> open_containers{};
   /** Whether each open container is a [ or { */
   std::unique_ptr<bool[]> is_array{};
   /** Buffer passed to stage 1 */
@@ -2526,10 +2524,10 @@ namespace allocate {
 // Allocates stage 2 internal state and outputs in the parser
 //
 really_inline error_code set_max_depth(dom_parser_implementation &parser, size_t max_depth) {
-  parser.containing_scope.reset(new (std::nothrow) scope_descriptor[max_depth]);
+  parser.open_containers.reset(new (std::nothrow) open_container[max_depth]);
   parser.is_array.reset(new (std::nothrow) bool[max_depth]);
 
-  if (!parser.is_array || !parser.containing_scope) {
+  if (!parser.is_array || !parser.open_containers) {
     return MEMALLOC;
   }
   return SUCCESS;
@@ -3104,9 +3102,9 @@ struct json_string_block {
   // Real (non-backslashed) quotes
   really_inline uint64_t quote() const { return _quote; }
   // Start quotes of strings
-  really_inline uint64_t string_end() const { return _quote & _in_string; }
+  really_inline uint64_t string_start() const { return _quote & _in_string; }
   // End quotes of strings
-  really_inline uint64_t string_start() const { return _quote & ~_in_string; }
+  really_inline uint64_t string_end() const { return _quote & ~_in_string; }
   // Only characters inside the string (not including the quotes)
   really_inline uint64_t string_content() const { return _in_string & ~_quote; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
@@ -3243,10 +3241,27 @@ namespace stage1 {
 
 /**
  * A block of scanned json, with information on operators and scalars.
+ *
+ * We seek to identify pseudo-structural characters. Anything that is inside
+ * a string must be omitted (hence  & ~_string.string_tail()).
+ * Otherwise, pseudo-structural characters come in two forms.
+ * 1. We have the structural characters ([,],{,},:, comma). The 
+ *    term 'structural character' is from the JSON RFC.
+ * 2. We have the 'scalar pseudo-structural characters'.
+ *    Scalars are quotes, and any character except structural characters and white space.
+ *
+ * To identify the scalar pseudo-structural characters, we must look at what comes
+ * before them: it must be a space, a quote or a structural characters.
+ * Starting with simdjson v0.3, we identify them by
+ * negation: we identify everything that is followed by a non-quote scalar,
+ * and we negate that. Whatever remains must be a 'scalar pseudo-structural character'.
  */
 struct json_block {
 public:
-  /** The start of structurals */
+  /**
+   * The start of structurals.
+   * In simdjson prior to v0.3, these were called the pseudo-structural characters.
+   **/
   really_inline uint64_t structural_start() { return potential_structural_start() & ~_string.string_tail(); }
   /** All JSON whitespace (i.e. not in a string) */
   really_inline uint64_t whitespace() { return non_quote_outside_string(_characters.whitespace()); }
@@ -3260,27 +3275,49 @@ public:
 
   // string and escape characters
   json_string_block _string;
-  // whitespace, operators, scalars
+  // whitespace, structural characters ('operators'), scalars
   json_character_block _characters;
   // whether the previous character was a scalar
-  uint64_t _follows_potential_scalar;
+  uint64_t _follows_potential_nonquote_scalar;
 private:
   // Potential structurals (i.e. disregarding strings)
 
-  /** operators plus scalar starts like 123, true and "abc" */
+  /**
+   * structural elements ([,],{,},:, comma) plus scalar starts like 123, true and "abc".
+   * They may reside inside a string.
+   **/
   really_inline uint64_t potential_structural_start() { return _characters.op() | potential_scalar_start(); }
-  /** the start of non-operator runs, like 123, true and "abc" */
-  really_inline uint64_t potential_scalar_start() { return _characters.scalar() & ~follows_potential_scalar(); }
-  /** whether the given character is immediately after a non-operator like 123, true or " */
-  really_inline uint64_t follows_potential_scalar() { return _follows_potential_scalar; }
+  /**
+   * The start of non-operator runs, like 123, true and "abc".
+   * It main reside inside a string.
+   **/
+  really_inline uint64_t potential_scalar_start() {
+    // The term "scalar" refers to anything except structural characters and white space
+    // (so letters, numbers, quotes).
+    // Whenever it is preceded by something that is not a structural element ({,},[,],:, ") nor a white-space
+    // then we know that it is irrelevant structurally.
+    return _characters.scalar() & ~follows_potential_scalar();
+  }
+  /**
+   * Whether the given character is immediately after a non-operator like 123, true.
+   * The characters following a quote are not included.
+   */
+  really_inline uint64_t follows_potential_scalar() {
+    // _follows_potential_nonquote_scalar: is defined as marking any character that follows a character
+    // that is not a structural element ({,},[,],:, comma) nor a quote (") and that is not a
+    // white space.
+    // It is understood that within quoted region, anything at all could be marked (irrelevant).
+    return _follows_potential_nonquote_scalar;
+  }
 };
 
 /**
- * Scans JSON for important bits: operators, strings, and scalars.
+ * Scans JSON for important bits: structural characters or 'operators', strings, and scalars.
  *
  * The scanner starts by calculating two distinct things:
  * - string characters (taking \" into account)
- * - operators ([]{},:) and scalars (runs of non-operators like 123, true and "abc")
+ * - structural characters or 'operators' ([]{},:, comma)
+ *   and scalars (runs of non-operators like 123, true and "abc")
  *
  * To minimize data dependency (a key component of the scanner's speed), it finds these in parallel:
  * in particular, the operator/scalar bit will find plenty of things that are actually part of
@@ -3295,7 +3332,7 @@ public:
 
 private:
   // Whether the last character of the previous iteration is part of a scalar token
-  // (anything except whitespace or an operator).
+  // (anything except whitespace or a structural character/'operator').
   uint64_t prev_scalar = 0ULL;
   json_string_scanner string_scanner{};
 };
@@ -3316,12 +3353,24 @@ really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
 
 really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
   json_string_block strings = string_scanner.next(in);
+  // identifies the white-space and the structurat characters
   json_character_block characters = json_character_block::classify(in);
-  uint64_t follows_scalar = follows(characters.scalar(), prev_scalar);
+  // The term "scalar" refers to anything except structural characters and white space
+  // (so letters, numbers, quotes).
+  // We want  follows_scalar to mark anything that follows a non-quote scalar (so letters and numbers).
+  //
+  // A terminal quote should either be followed by a structural character (comma, brace, bracket, colon)
+  // or nothing. However, we still want ' "a string"true ' to mark the 't' of 'true' as a potential
+  // pseudo-structural character just like we would if we had  ' "a string" true '; otherwise we
+  // may need to add an extra check when parsing strings.
+  //
+  // Performance: there are many ways to skin this cat.
+  const uint64_t nonquote_scalar = characters.scalar() & ~strings.quote();
+  uint64_t follows_nonquote_scalar = follows(nonquote_scalar, prev_scalar);
   return {
     strings,
     characters,
-    follows_scalar
+    follows_nonquote_scalar
   };
 }
 
@@ -3917,6 +3966,15 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
   return nullptr;
 }
 
+UNUSED WARN_UNUSED really_inline error_code parse_string_to_buffer(const uint8_t *src, uint8_t *&current_string_buf_loc, std::string_view &s) {
+  if (src[0] != '"') { return STRING_ERROR; }
+  auto end = stringparsing::parse_string(src, current_string_buf_loc);
+  if (!end) { return STRING_ERROR; }
+  s = std::string_view((const char *)current_string_buf_loc, end-current_string_buf_loc);
+  current_string_buf_loc = end;
+  return SUCCESS;
+}
+
 } // namespace stringparsing
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
@@ -3957,15 +4015,15 @@ namespace stage2 {
 namespace numberparsing {
 
 #ifdef JSON_TEST_NUMBERS
-#define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), false)
-#define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), writer.append_s64((VALUE)))
-#define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), writer.append_u64((VALUE)))
-#define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), writer.append_double((VALUE)))
+#define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
+#define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
+#define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
+#define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
 #else
-#define INVALID_NUMBER(SRC) (false)
-#define WRITE_INTEGER(VALUE, SRC, WRITER) writer.append_s64((VALUE))
-#define WRITE_UNSIGNED(VALUE, SRC, WRITER) writer.append_u64((VALUE))
-#define WRITE_DOUBLE(VALUE, SRC, WRITER) writer.append_double((VALUE))
+#define INVALID_NUMBER(SRC) (NUMBER_ERROR)
+#define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
+#define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
+#define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
 #endif
 
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
@@ -3974,7 +4032,7 @@ namespace numberparsing {
 // set to false. This should work *most of the time* (like 99% of the time).
 // We assume that power is in the [FASTFLOAT_SMALLEST_POWER,
 // FASTFLOAT_LARGEST_POWER] interval: the caller is responsible for this check.
-really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, bool *success) {
+really_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, double &d) {
   // we start with a fast path
   // It was described in
   // Clinger WD. How to read floating point numbers accurately.
@@ -3990,7 +4048,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
 #endif
     // convert the integer into a double. This is lossless since
     // 0 <= i <= 2^53 - 1.
-    double d = double(i);
+    d = double(i);
     //
     // The general idea is as follows.
     // If 0 <= s < 2^53 and if 10^0 <= p <= 10^22 then
@@ -4009,8 +4067,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
     if (negative) {
       d = -d;
     }
-    *success = true;
-    return d;
+    return true;
   }
   // When 22 < power && power <  22 + 16, we could
   // hope for another, secondary fast path.  It wa
@@ -4035,7 +4092,8 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   // In the slow path, we need to adjust i so that it is > 1<<63 which is always
   // possible, except if i == 0, so we handle i == 0 separately.
   if(i == 0) {
-    return 0.0;
+    d = 0.0;
+    return true;
   }
 
   // We are going to need to do some 64-bit arithmetic to get a more precise product.
@@ -4085,8 +4143,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
     // This does happen, e.g. with 7.3177701707893310e+15.
     if (((product_middle + 1 == 0) && ((product_high & 0x1FF) == 0x1FF) &&
          (product_low + i < product_low))) { // let us be prudent and bail out.
-      *success = false;
-      return 0;
+      return false;
     }
     upper = product_high;
     lower = product_middle;
@@ -4107,25 +4164,24 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   // floating-point values.
   if (unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
                ((mantissa & 3) == 1))) {
-      // if mantissa & 1 == 1 we might need to round up.
-      //
-      // Scenarios:
-      // 1. We are not in the middle. Then we should round up.
-      //
-      // 2. We are right in the middle. Whether we round up depends
-      // on the last significant bit: if it is "one" then we round
-      // up (round to even) otherwise, we do not.
-      //
-      // So if the last significant bit is 1, we can safely round up.
-      // Hence we only need to bail out if (mantissa & 3) == 1.
-      // Otherwise we may need more accuracy or analysis to determine whether
-      // we are exactly between two floating-point numbers.
-      // It can be triggered with 1e23.
-      // Note: because the factor_mantissa and factor_mantissa_low are
-      // almost always rounded down (except for small positive powers),
-      // almost always should round up.
-      *success = false;
-      return 0;
+    // if mantissa & 1 == 1 we might need to round up.
+    //
+    // Scenarios:
+    // 1. We are not in the middle. Then we should round up.
+    //
+    // 2. We are right in the middle. Whether we round up depends
+    // on the last significant bit: if it is "one" then we round
+    // up (round to even) otherwise, we do not.
+    //
+    // So if the last significant bit is 1, we can safely round up.
+    // Hence we only need to bail out if (mantissa & 3) == 1.
+    // Otherwise we may need more accuracy or analysis to determine whether
+    // we are exactly between two floating-point numbers.
+    // It can be triggered with 1e23.
+    // Note: because the factor_mantissa and factor_mantissa_low are
+    // almost always rounded down (except for small positive powers),
+    // almost always should round up.
+    return false;
   }
 
   mantissa += mantissa & 1;
@@ -4143,15 +4199,12 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   uint64_t real_exponent = c.exp - lz;
   // we have to check that real_exponent is in range, otherwise we bail out
   if (unlikely((real_exponent < 1) || (real_exponent > 2046))) {
-    *success = false;
-    return 0;
+    return false;
   }
   mantissa |= real_exponent << 52;
   mantissa |= (((uint64_t)negative) << 63);
-  double d;
   memcpy(&d, &mantissa, sizeof(d));
-  *success = true;
-  return d;
+  return true;
 }
 
 static bool parse_float_strtod(const uint8_t *ptr, double *outDouble) {
@@ -4202,11 +4255,11 @@ really_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
 }
 
 template<typename W>
-bool slow_float_parsing(UNUSED const uint8_t * src, W writer) {
+error_code slow_float_parsing(UNUSED const uint8_t * src, W writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
-    WRITE_DOUBLE(d, src, writer);
-    return true;
+    writer.append_double(d);
+    return SUCCESS;
   }
   return INVALID_NUMBER(src);
 }
@@ -4223,7 +4276,7 @@ really_inline bool parse_digit(const uint8_t c, I &i) {
   return true;
 }
 
-really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+really_inline error_code parse_decimal(UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -4246,10 +4299,10 @@ really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t 
   if (exponent == 0) {
     return INVALID_NUMBER(src);
   }
-  return true;
+  return SUCCESS;
 }
 
-really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+really_inline error_code parse_exponent(UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -4297,38 +4350,42 @@ really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t
   // is bounded in magnitude by the size of the JSON input, we are fine in this universe.
   // To sum it up: the next line should never overflow.
   exponent += (neg_exp ? -exp_number : exp_number);
-  return true;
+  return SUCCESS;
+}
+
+really_inline int significant_digits(const uint8_t * start_digits, int digit_count) {
+  // It is possible that the integer had an overflow.
+  // We have to handle the case where we have 0.0000somenumber.
+  const uint8_t *start = start_digits;
+  while ((*start == '0') || (*start == '.')) {
+    start++;
+  }
+  // we over-decrement by one when there is a '.'
+  return digit_count - int(start - start_digits);
 }
 
 template<typename W>
-really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
+really_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
   // digit count is off by 1 because of the decimal (assuming there was one).
-  if (unlikely((digit_count-1 >= 19))) { // this is uncommon
-    // It is possible that the integer had an overflow.
-    // We have to handle the case where we have 0.0000somenumber.
-    const uint8_t *start = start_digits;
-    while ((*start == '0') || (*start == '.')) {
-      start++;
-    }
-    // we over-decrement by one when there is a '.'
-    digit_count -= int(start - start_digits);
-    if (digit_count >= 19) {
-      // Ok, chances are good that we had an overflow!
-      // this is almost never going to get called!!!
-      // we start anew, going slowly!!!
-      // This will happen in the following examples:
-      // 10000000000000000000000000000000000000000000e+308
-      // 3.1415926535897932384626433832795028841971693993751
-      //
-      bool success = slow_float_parsing(src, writer);
-      // The number was already written, but we made a copy of the writer
-      // when we passed it to the parse_large_integer() function, so
-      writer.skip_double();
-      return success;
-    }
+  if (unlikely(digit_count-1 >= 19 && significant_digits(start_digits, digit_count) >= 19)) {
+    // Ok, chances are good that we had an overflow!
+    // this is almost never going to get called!!!
+    // we start anew, going slowly!!!
+    // This will happen in the following examples:
+    // 10000000000000000000000000000000000000000000e+308
+    // 3.1415926535897932384626433832795028841971693993751
+    //
+    // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
+    // because slow_float_parsing is a non-inlined function. If we passed our writer reference to
+    // it, it would force it to be stored in memory, preventing the compiler from picking it apart
+    // and putting into registers. i.e. if we pass it as reference, it gets slow.
+    // This is what forces the skip_double, as well.
+    error_code error = slow_float_parsing(src, writer);
+    writer.skip_double();
+    return error;
   }
   // NOTE: it's weird that the unlikely() only wraps half the if, but it seems to get slower any other
   // way we've tried: https://github.com/simdjson/simdjson/pull/990#discussion_r448497331
@@ -4336,29 +4393,31 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
   if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) || (exponent > FASTFLOAT_LARGEST_POWER)) {
     // this is almost never going to get called!!!
     // we start anew, going slowly!!!
-    bool success = slow_float_parsing(src, writer);
-    // The number was already written, but we made a copy of the writer when we passed it to the
-    // slow_float_parsing() function, so we have to skip those tape spots now that we've returned
+    // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
+    // because slow_float_parsing is a non-inlined function. If we passed our writer reference to
+    // it, it would force it to be stored in memory, preventing the compiler from picking it apart
+    // and putting into registers. i.e. if we pass it as reference, it gets slow.
+    // This is what forces the skip_double, as well.
+    error_code error = slow_float_parsing(src, writer);
     writer.skip_double();
-    return success;
+    return error;
   }
-  bool success = true;
-  double d = compute_float_64(exponent, i, negative, &success);
-  if (!success) {
+  double d;
+  if (!compute_float_64(exponent, i, negative, d)) {
     // we are almost never going to get here.
     if (!parse_float_strtod(src, &d)) { return INVALID_NUMBER(src); }
   }
   WRITE_DOUBLE(d, src, writer);
-  return true;
+  return SUCCESS;
 }
 
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-really_inline bool parse_number(const uint8_t *const, W &writer) {
+really_inline error_code parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
-  return true;                 // always succeeds
+  return SUCCESS;              // always succeeds
 }
 
 #else
@@ -4373,7 +4432,7 @@ really_inline bool parse_number(const uint8_t *const, W &writer) {
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-really_inline bool parse_number(const uint8_t *const src, W &writer) {
+really_inline error_code parse_number(const uint8_t *const src, W &writer) {
 
   //
   // Check for minus sign
@@ -4401,16 +4460,19 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   if ('.' == *p) {
     is_float = true;
     ++p;
-    if (!parse_decimal(src, p, i, exponent)) { return false; }
+    SIMDJSON_TRY( parse_decimal(src, p, i, exponent) );
     digit_count = int(p - start_digits); // used later to guard against overflows
   }
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
     ++p;
-    if (!parse_exponent(src, p, exponent)) { return false; }
+    SIMDJSON_TRY( parse_exponent(src, p, exponent) );
   }
   if (is_float) {
-    return write_float(src, negative, i, start_digits, digit_count, exponent, writer);
+    const bool clean_end = is_structural_or_whitespace(*p);
+    SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
+    if (!clean_end) { return INVALID_NUMBER(src); }
+    return SUCCESS;
   }
 
   // The longest negative 64-bit number is 19 digits.
@@ -4419,13 +4481,12 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   int longest_digit_count = negative ? 19 : 20;
   if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
   if (digit_count == longest_digit_count) {
-    if(negative) {
+    if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) {
-        return INVALID_NUMBER(src); 
-      }
+      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
       WRITE_INTEGER(~i+1, src, writer);
-      return is_structural_or_whitespace(*p);
+      if (!is_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+      return SUCCESS;
     // Positive overflow check:
     // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
     //   biggest uint64_t.
@@ -4447,9 +4508,230 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
   }
-  return is_structural_or_whitespace(*p);
+  if (!is_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+  return SUCCESS;
 }
 
+// SAX functions
+namespace {
+// Parse any number from 0 to 18,446,744,073,709,551,615
+UNUSED really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
+  const uint8_t *p = src;
+
+  //
+  // Parse the integer part.
+  //
+  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  const uint8_t *const start_digits = p;
+  uint64_t i = 0;
+  while (parse_digit(*p, i)) { p++; }
+
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - start_digits);
+  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return NUMBER_ERROR; }
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  // The longest positive 64-bit number is 20 digits.
+  // We do it this way so we don't trigger this branch unless we must.
+  if (digit_count > 20) { return NUMBER_ERROR; }
+  if (digit_count == 20) {
+    // Positive overflow check:
+    // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+    //   biggest uint64_t.
+    // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+    //   If we got here, it's a 20 digit number starting with the digit "1".
+    // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+    //   than 1,553,255,926,290,448,384.
+    // - That is smaller than the smallest possible 20-digit number the user could write:
+    //   10,000,000,000,000,000,000.
+    // - Therefore, if the number is positive and lower than that, it's overflow.
+    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    //
+    if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+  }
+
+  return i;
+}
+
+// Parse any number from 0 to 18,446,744,073,709,551,615
+// Call this version of the method if you regularly expect 8- or 16-digit numbers.
+UNUSED really_inline simdjson_result<uint64_t> parse_large_unsigned(const uint8_t * const src) noexcept {
+  const uint8_t *p = src;
+
+  //
+  // Parse the integer part.
+  //
+  uint64_t i = 0;
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+    if (is_made_of_eight_digits_fast(p)) {
+      i = i * 100000000 + parse_eight_digits_unrolled(p);
+      p += 8;
+      if (parse_digit(*p, i)) { // digit 17
+        p++;
+        if (parse_digit(*p, i)) { // digit 18
+          p++;
+          if (parse_digit(*p, i)) { // digit 19
+            p++;
+            if (parse_digit(*p, i)) { // digit 20
+              p++;
+              if (parse_digit(*p, i)) { return NUMBER_ERROR; } // 21 digits is an error
+              // Positive overflow check:
+              // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+              //   biggest uint64_t.
+              // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+              //   If we got here, it's a 20 digit number starting with the digit "1".
+              // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+              //   than 1,553,255,926,290,448,384.
+              // - That is smaller than the smallest possible 20-digit number the user could write:
+              //   10,000,000,000,000,000,000.
+              // - Therefore, if the number is positive and lower than that, it's overflow.
+              // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+              //
+              if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+            }
+          }
+        }
+      }
+    } // 16 digits
+  } else { // 8 digits
+    // Less than 8 digits can't overflow, simpler logic here.
+    if (parse_digit(*p, i)) { p++; } else { return NUMBER_ERROR; }
+    while (parse_digit(*p, i)) { p++; }
+  }
+
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - src);
+  if (digit_count == 0 || ('0' == *src && digit_count > 1)) { return NUMBER_ERROR; }
+  return i;
+}
+
+// Parse any number from  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
+UNUSED really_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) noexcept {
+  //
+  // Check for minus sign
+  //
+  bool negative = (*src == '-');
+  const uint8_t *p = src + negative;
+
+  //
+  // Parse the integer part.
+  //
+  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  const uint8_t *const start_digits = p;
+  uint64_t i = 0;
+  while (parse_digit(*p, i)) { p++; }
+
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - start_digits);
+  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return NUMBER_ERROR; }
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  // The longest negative 64-bit number is 19 digits.
+  // The longest positive 64-bit number is 20 digits.
+  // We do it this way so we don't trigger this branch unless we must.
+  int longest_digit_count = negative ? 19 : 20;
+  if (digit_count > longest_digit_count) { return NUMBER_ERROR; }
+  if (digit_count == longest_digit_count) {
+    if(negative) {
+      // Anything negative above INT64_MAX+1 is invalid
+      if (i > uint64_t(INT64_MAX)+1) { return NUMBER_ERROR; }
+      return ~i+1;
+
+    // Positive overflow check:
+    // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+    //   biggest uint64_t.
+    // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+    //   If we got here, it's a 20 digit number starting with the digit "1".
+    // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+    //   than 1,553,255,926,290,448,384.
+    // - That is smaller than the smallest possible 20-digit number the user could write:
+    //   10,000,000,000,000,000,000.
+    // - Therefore, if the number is positive and lower than that, it's overflow.
+    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    //
+    } else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+  }
+
+  return negative ? (~i+1) : i;
+}
+
+UNUSED really_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept {
+  //
+  // Check for minus sign
+  //
+  bool negative = (*src == '-');
+  src += negative;
+
+  //
+  // Parse the integer part.
+  //
+  uint64_t i = 0;
+  const uint8_t *p = src;
+  p += parse_digit(*p, i);
+  bool leading_zero = (i == 0);
+  while (parse_digit(*p, i)) { p++; }
+  // no integer digits, or 0123 (zero must be solo)
+  if ( p == src || (leading_zero && p != src+1)) { return NUMBER_ERROR; }
+
+  //
+  // Parse the decimal part.
+  //
+  int64_t exponent = 0;
+  bool overflow;
+  if (likely(*p == '.')) {
+    p++;
+    const uint8_t *start_decimal_digits = p;
+    if (!parse_digit(*p, i)) { return NUMBER_ERROR; } // no decimal digits
+    p++;
+    while (parse_digit(*p, i)) { p++; }
+    exponent = -(p - start_decimal_digits);
+
+    // Overflow check. 19 digits (minus the decimal) may be overflow.
+    overflow = p-src-1 >= 19;
+    if (unlikely(overflow && leading_zero)) {
+      // Skip leading 0.00000 and see if it still overflows
+      const uint8_t *start_digits = src + 2;
+      while (*start_digits == '0') { start_digits++; }
+      overflow = start_digits-src >= 19;
+    }
+  } else {
+    overflow = p-src >= 19;
+  }
+
+  //
+  // Parse the exponent
+  //
+  if (*p == 'e' || *p == 'E') {
+    p++;
+    bool exp_neg = *p == '-';
+    p += exp_neg || *p == '+';
+
+    uint64_t exp = 0;
+    const uint8_t *start_exp_digits = p;
+    while (parse_digit(*p, exp)) { p++; }
+    // no exp digits, or 20+ exp digits
+    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+
+    exponent += exp_neg ? 0-exp : exp;
+    overflow = overflow || exponent < FASTFLOAT_SMALLEST_POWER || exponent > FASTFLOAT_LARGEST_POWER;
+  }
+
+  //
+  // Assemble (or slow-parse) the float
+  //
+  double d;
+  if (likely(!overflow)) {
+    if (compute_float_64(exponent, i, negative, d)) { return d; }
+  }
+  if (!parse_float_strtod(src-negative, &d)) {
+    return NUMBER_ERROR;
+  }
+  return d;
+}
+} //namespace {}
 #endif // SIMDJSON_SKIPNUMBERPARSING
 
 } // namespace numberparsing
@@ -4460,12 +4742,8 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
 
 #endif // SIMDJSON_ARM64_NUMBERPARSING_H
 /* end file src/generic/stage2/numberparsing.h */
-/* begin file src/generic/stage2/structural_parser.h */
-// This file contains the common code every implementation uses for stage2
-// It is intended to be included multiple times and compiled multiple times
-// We assume the file in which it is include already includes
-// "simdjson/stage2.h" (this simplifies amalgation)
-
+/* begin file src/generic/stage2/tape_builder.h */
+/* begin file src/generic/stage2/json_iterator.h */
 /* begin file src/generic/stage2/logger.h */
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
@@ -4477,7 +4755,7 @@ namespace logger {
 
   static constexpr const bool LOG_ENABLED = false;
   static constexpr const int LOG_EVENT_LEN = 20;
-  static constexpr const int LOG_BUFFER_LEN = 10;
+  static constexpr const int LOG_BUFFER_LEN = 30;
   static constexpr const int LOG_SMALL_BUFFER_LEN = 10;
   static constexpr const int LOG_INDEX_LEN = 5;
 
@@ -4499,12 +4777,6 @@ namespace logger {
       printf("\n");
       printf("| %-*s | %-*s | %-*s | %-*s | Detail |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", LOG_SMALL_BUFFER_LEN, "Next", 5, "Next#");
       printf("|%.*s|%.*s|%.*s|%.*s|--------|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, LOG_SMALL_BUFFER_LEN+2, DASHES, 5+2, DASHES);
-    }
-  }
-
-  static really_inline void log_string(const char *message) {
-    if (LOG_ENABLED) {
-      printf("%s\n", message);
     }
   }
 
@@ -4550,287 +4822,321 @@ namespace logger {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
 /* end file src/generic/stage2/logger.h */
-/* begin file src/generic/stage2/structural_iterator.h */
+
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
-class structural_iterator {
+class json_iterator {
 public:
   const uint8_t* const buf;
   uint32_t *next_structural;
   dom_parser_implementation &dom_parser;
-
-  // Start a structural 
-  really_inline structural_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
-    : buf{_dom_parser.buf},
-      next_structural{&_dom_parser.structural_indexes[start_structural_index]},
-      dom_parser{_dom_parser} {
-  }
-  // Get the buffer position of the current structural character
-  really_inline const uint8_t* current() {
-    return &buf[*(next_structural-1)];
-  }
-  // Get the current structural character
-  really_inline char current_char() {
-    return buf[*(next_structural-1)];
-  }
-  // Get the next structural character without advancing
-  really_inline char peek_next_char() {
-    return buf[*next_structural];
-  }
-  really_inline const uint8_t* peek() {
-    return &buf[*next_structural];
-  }
-  really_inline const uint8_t* advance() {
-    return &buf[*(next_structural++)];
-  }
-  really_inline char advance_char() {
-    return buf[*(next_structural++)];
-  }
-  really_inline size_t remaining_len() {
-    return dom_parser.len - *(next_structural-1);
-  }
-
-  really_inline bool at_end() {
-    return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
-  }
-  really_inline bool at_beginning() {
-    return next_structural == dom_parser.structural_indexes.get();
-  }
-};
-
-} // namespace stage2
-} // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace
-/* end file src/generic/stage2/structural_iterator.h */
-
-namespace { // Make everything here private
-namespace SIMDJSON_IMPLEMENTATION {
-namespace stage2 {
-
-#define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }
-
-struct structural_parser : structural_iterator {
-  /** Current depth (nested objects and arrays) */
   uint32_t depth{0};
 
-  template<bool STREAMING, typename T>
-  WARN_UNUSED really_inline error_code parse(T &builder) noexcept;
-  template<bool STREAMING, typename T>
-  WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser, T &builder) noexcept {
-    structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
-    return parser.parse<STREAMING>(builder);
-  }
+  /**
+   * Walk the JSON document.
+   *
+   * The visitor receives callbacks when values are encountered. All callbacks pass the iterator as
+   * the first parameter; some callbacks have other parameters as well:
+   *
+   * - visit_document_start() - at the beginning.
+   * - visit_document_end() - at the end (if things were successful).
+   *
+   * - visit_array_start() - at the start `[` of a non-empty array.
+   * - visit_array_end() - at the end `]` of a non-empty array.
+   * - visit_empty_array() - when an empty array is encountered.
+   *
+   * - visit_object_end() - at the start `]` of a non-empty object.
+   * - visit_object_start() - at the end `]` of a non-empty object.
+   * - visit_empty_object() - when an empty object is encountered.
+   * - visit_key(const uint8_t *key) - when a key in an object field is encountered. key is
+   *                                   guaranteed to point at the first quote of the string (`"key"`).
+   * - visit_primitive(const uint8_t *value) - when a value is a string, number, boolean or null.
+   * - visit_root_primitive(iter, uint8_t *value) - when the top-level value is a string, number, boolean or null.
+   *
+   * - increment_count(iter) - each time a value is found in an array or object.
+   */
+  template<bool STREAMING, typename V>
+  WARN_UNUSED really_inline error_code walk_document(V &visitor) noexcept;
 
-  // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
-  really_inline structural_parser(dom_parser_implementation &_dom_parser, uint32_t start_structural_index)
-    : structural_iterator(_dom_parser, start_structural_index) {
-  }
+  /**
+   * Create an iterator capable of walking a JSON document.
+   *
+   * The document must have already passed through stage 1.
+   */
+  really_inline json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index);
 
-  WARN_UNUSED really_inline error_code start_document() {
-    dom_parser.is_array[depth] = false;
-    return SUCCESS;
-  }
-  template<typename T>
-  WARN_UNUSED really_inline error_code start_array(T &builder) {
-    depth++;
-    if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-    builder.start_array(*this);
-    dom_parser.is_array[depth] = true;
-    return SUCCESS;
-  }
+  /**
+   * Look at the next token.
+   *
+   * Tokens can be strings, numbers, booleans, null, or operators (`[{]},:`)).
+   *
+   * They may include invalid JSON as well (such as `1.2.3` or `ture`).
+   */
+  really_inline const uint8_t *peek() const noexcept;
+  /**
+   * Advance to the next token.
+   *
+   * Tokens can be strings, numbers, booleans, null, or operators (`[{]},:`)).
+   *
+   * They may include invalid JSON as well (such as `1.2.3` or `ture`).
+   */
+  really_inline const uint8_t *advance() noexcept;
+  /**
+   * Get the remaining length of the document, from the start of the current token.
+   */
+  really_inline size_t remaining_len() const noexcept;
+  /**
+   * Check if we are at the end of the document.
+   *
+   * If this is true, there are no more tokens.
+   */
+  really_inline bool at_eof() const noexcept;
+  /**
+   * Check if we are at the beginning of the document.
+   */
+  really_inline bool at_beginning() const noexcept;
+  really_inline uint8_t last_structural() const noexcept;
 
-  template<typename T>
-  WARN_UNUSED really_inline bool empty_object(T &builder) {
-    if (peek_next_char() == '}') {
-      advance_char();
-      builder.empty_object(*this);
-      return true;
-    }
-    return false;
-  }
-  template<typename T>
-  WARN_UNUSED really_inline bool empty_array(T &builder) {
-    if (peek_next_char() == ']') {
-      advance_char();
-      builder.empty_array(*this);
-      return true;
-    }
-    return false;
-  }
+  /**
+   * Log that a value has been found.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_value(const char *type) const noexcept;
+  /**
+   * Log the start of a multipart value.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_start_value(const char *type) const noexcept;
+  /**
+   * Log the end of a multipart value.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_end_value(const char *type) const noexcept;
+  /**
+   * Log an error.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_error(const char *error) const noexcept;
 
-  template<bool STREAMING>
-  WARN_UNUSED really_inline error_code finish() {
-    dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
+  template<typename V>
+  WARN_UNUSED really_inline error_code visit_root_primitive(V &visitor, const uint8_t *value) noexcept;
+  template<typename V>
+  WARN_UNUSED really_inline error_code visit_primitive(V &visitor, const uint8_t *value) noexcept;
+};
 
-    if (depth != 0) {
-      log_error("Unclosed objects or arrays!");
-      return TAPE_ERROR;
-    }
-
-    // If we didn't make it to the end, it's an error
-    if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
-      logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
-      return TAPE_ERROR;
-    }
-
-    return SUCCESS;
-  }
-
-  really_inline void log_value(const char *type) {
-    logger::log_line(*this, "", type, "");
-  }
-
-  really_inline void log_start_value(const char *type) {
-    logger::log_line(*this, "+", type, "");
-    if (logger::LOG_ENABLED) { logger::log_depth++; }
-  }
-
-  really_inline void log_end_value(const char *type) {
-    if (logger::LOG_ENABLED) { logger::log_depth--; }
-    logger::log_line(*this, "-", type, "");
-  }
-
-  really_inline void log_error(const char *error) {
-    logger::log_line(*this, "", "ERROR", error);
-  }
-}; // struct structural_parser
-
-template<bool STREAMING, typename T>
-WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexcept {
+template<bool STREAMING, typename V>
+WARN_UNUSED really_inline error_code json_iterator::walk_document(V &visitor) noexcept {
   logger::log_start();
 
   //
   // Start the document
   //
-  if (at_end()) { return EMPTY; }
-  SIMDJSON_TRY( start_document() );
-  builder.start_document(*this);
+  if (at_eof()) { return EMPTY; }
+  log_start_value("document");
+  SIMDJSON_TRY( visitor.visit_document_start(*this) );
 
   //
   // Read first value
   //
   {
-    const uint8_t *value = advance();
-    switch (*value) {
-      case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-      case '[': {
-        // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
-        // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-        if (!STREAMING) {
-          if (buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
-            return TAPE_ERROR;
-          }
-        }
-        if (!empty_array(builder)) { goto array_begin; }; break;
+    auto value = advance();
+
+    // Make sure the outer hash or array is closed before continuing; otherwise, there are ways we
+    // could get into memory corruption. See https://github.com/simdjson/simdjson/issues/906
+    if (!STREAMING) {
+      switch (*value) {
+        case '{': if (last_structural() != '}') { return TAPE_ERROR; }; break;
+        case '[': if (last_structural() != ']') { return TAPE_ERROR; }; break;
       }
-      default: SIMDJSON_TRY( builder.parse_root_primitive(*this, value) );
     }
-    goto document_end;
+
+    switch (*value) {
+      case '{': if (*peek() == '}') { advance(); log_value("empty object"); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '[': if (*peek() == ']') { advance(); log_value("empty array"); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+      default: SIMDJSON_TRY( visitor.visit_root_primitive(*this, value) ); break;
+    }
   }
+  goto document_end;
 
 //
 // Object parser states
 //
-object_begin: {
+object_begin:
+  log_start_value("object");
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-  builder.start_object(*this);
   dom_parser.is_array[depth] = false;
+  SIMDJSON_TRY( visitor.visit_object_start(*this) );
 
-  const uint8_t *key = advance();
-  if (*key != '"') {
-    log_error("Object does not start with a key");
-    return TAPE_ERROR;
+  {
+    auto key = advance();
+    if (*key != '"') { log_error("Object does not start with a key"); return TAPE_ERROR; }
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    SIMDJSON_TRY( visitor.visit_key(*this, key) );
   }
-  builder.increment_count(*this);
-  SIMDJSON_TRY( builder.parse_key(*this, key) );
-  goto object_field;
-} // object_begin:
 
-object_field: {
-  if (unlikely( advance_char() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
-  const uint8_t *value = advance();
-  switch (*value) {
-    case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-    case '[': if (!empty_array(builder)) { goto array_begin; }; break;
-    default: SIMDJSON_TRY( builder.parse_primitive(*this, value) );
+object_field:
+  if (unlikely( *advance() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
+  {
+    auto value = advance();
+    switch (*value) {
+      case '{': if (*peek() == '}') { advance(); log_value("empty object"); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '[': if (*peek() == ']') { advance(); log_value("empty array"); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+      default: SIMDJSON_TRY( visitor.visit_primitive(*this, value) ); break;
+    }
   }
-} // object_field:
 
-object_continue: {
-  switch (advance_char()) {
-  case ',': {
-    builder.increment_count(*this);
-    const uint8_t *key = advance();
-    if (unlikely( *key != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
-    SIMDJSON_TRY( builder.parse_key(*this, key) );
-    goto object_field;
+object_continue:
+  switch (*advance()) {
+    case ',':
+      SIMDJSON_TRY( visitor.increment_count(*this) );
+      {
+        auto key = advance();
+        if (unlikely( *key != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
+        SIMDJSON_TRY( visitor.visit_key(*this, key) );
+      }
+      goto object_field;
+    case '}': log_end_value("object"); SIMDJSON_TRY( visitor.visit_object_end(*this) ); goto scope_end;
+    default: log_error("No comma between object fields"); return TAPE_ERROR;
   }
-  case '}':
-    builder.end_object(*this);
-    goto scope_end;
-  default:
-    log_error("No comma between object fields");
-    return TAPE_ERROR;
-  }
-} // object_continue:
 
-scope_end: {
+scope_end:
   depth--;
   if (depth == 0) { goto document_end; }
   if (dom_parser.is_array[depth]) { goto array_continue; }
   goto object_continue;
-} // scope_end:
 
 //
 // Array parser states
 //
-array_begin: {
+array_begin:
+  log_start_value("array");
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-  builder.start_array(*this);
   dom_parser.is_array[depth] = true;
+  SIMDJSON_TRY( visitor.visit_array_start(*this) );
+  SIMDJSON_TRY( visitor.increment_count(*this) );
 
-  builder.increment_count(*this);
-} // array_begin:
-
-array_value: {
-  const uint8_t *value = advance();
-  switch (*value) {
-    case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-    case '[': if (!empty_array(builder)) { goto array_begin; }; break;
-    default: SIMDJSON_TRY( builder.parse_primitive(*this, value) );
+array_value:
+  {
+    auto value = advance();
+    switch (*value) {
+      case '{': if (*peek() == '}') { advance(); log_value("empty object"); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '[': if (*peek() == ']') { advance(); log_value("empty array"); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+      default: SIMDJSON_TRY( visitor.visit_primitive(*this, value) ); break;
+    }
   }
-} // array_value:
 
-array_continue: {
-  switch (advance_char()) {
-  case ',':
-    builder.increment_count(*this);
-    goto array_value;
-  case ']':
-    builder.end_array(*this);
-    goto scope_end;
-  default:
-    log_error("Missing comma between array values");
+array_continue:
+  switch (*advance()) {
+    case ',': SIMDJSON_TRY( visitor.increment_count(*this) ); goto array_value;
+    case ']': log_end_value("array"); SIMDJSON_TRY( visitor.visit_array_end(*this) ); goto scope_end;
+    default: log_error("Missing comma between array values"); return TAPE_ERROR;
+  }
+
+document_end:
+  log_end_value("document");
+  SIMDJSON_TRY( visitor.visit_document_end(*this) );
+
+  dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
+
+  // If we didn't make it to the end, it's an error
+  if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
+    log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
     return TAPE_ERROR;
   }
-} // array_continue:
 
-document_end: {
-  builder.end_document(*this);
-  return finish<STREAMING>();
-} // document_end:
+  return SUCCESS;
 
-} // parse_structurals()
+} // walk_document()
+
+really_inline json_iterator::json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
+  : buf{_dom_parser.buf},
+    next_structural{&_dom_parser.structural_indexes[start_structural_index]},
+    dom_parser{_dom_parser} {
+}
+
+really_inline const uint8_t *json_iterator::peek() const noexcept {
+  return &buf[*(next_structural)];
+}
+really_inline const uint8_t *json_iterator::advance() noexcept {
+  return &buf[*(next_structural++)];
+}
+really_inline size_t json_iterator::remaining_len() const noexcept {
+  return dom_parser.len - *(next_structural-1);
+}
+
+really_inline bool json_iterator::at_eof() const noexcept {
+  return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
+}
+really_inline bool json_iterator::at_beginning() const noexcept {
+  return next_structural == dom_parser.structural_indexes.get();
+}
+really_inline uint8_t json_iterator::last_structural() const noexcept {
+  return buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]];
+}
+
+really_inline void json_iterator::log_value(const char *type) const noexcept {
+  logger::log_line(*this, "", type, "");
+}
+
+really_inline void json_iterator::log_start_value(const char *type) const noexcept {
+  logger::log_line(*this, "+", type, "");
+  if (logger::LOG_ENABLED) { logger::log_depth++; }
+}
+
+really_inline void json_iterator::log_end_value(const char *type) const noexcept {
+  if (logger::LOG_ENABLED) { logger::log_depth--; }
+  logger::log_line(*this, "-", type, "");
+}
+
+really_inline void json_iterator::log_error(const char *error) const noexcept {
+  logger::log_line(*this, "", "ERROR", error);
+}
+
+template<typename V>
+WARN_UNUSED really_inline error_code json_iterator::visit_root_primitive(V &visitor, const uint8_t *value) noexcept {
+  switch (*value) {
+    case '"': return visitor.visit_root_string(*this, value);
+    case 't': return visitor.visit_root_true_atom(*this, value);
+    case 'f': return visitor.visit_root_false_atom(*this, value);
+    case 'n': return visitor.visit_root_null_atom(*this, value);
+    case '-':
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      return visitor.visit_root_number(*this, value);
+    default:
+      log_error("Document starts with a non-value character");
+      return TAPE_ERROR;
+  }
+}
+template<typename V>
+WARN_UNUSED really_inline error_code json_iterator::visit_primitive(V &visitor, const uint8_t *value) noexcept {
+  switch (*value) {
+    case '"': return visitor.visit_string(*this, value);
+    case 't': return visitor.visit_true_atom(*this, value);
+    case 'f': return visitor.visit_false_atom(*this, value);
+    case 'n': return visitor.visit_null_atom(*this, value);
+    case '-':
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      return visitor.visit_number(*this, value);
+    default:
+      log_error("Non-value found when value was expected!");
+      return TAPE_ERROR;
+  }
+}
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
-/* end file src/generic/stage2/structural_iterator.h */
-/* begin file src/generic/stage2/tape_builder.h */
+/* end file src/generic/stage2/logger.h */
 /* begin file src/generic/stage2/tape_writer.h */
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -5008,224 +5314,276 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
 struct tape_builder {
+  template<bool STREAMING>
+  WARN_UNUSED static really_inline error_code parse_document(
+    dom_parser_implementation &dom_parser,
+    dom::document &doc) noexcept;
+
+  /** Called when a non-empty document starts. */
+  WARN_UNUSED really_inline error_code visit_document_start(json_iterator &iter) noexcept;
+  /** Called when a non-empty document ends without error. */
+  WARN_UNUSED really_inline error_code visit_document_end(json_iterator &iter) noexcept;
+
+  /** Called when a non-empty array starts. */
+  WARN_UNUSED really_inline error_code visit_array_start(json_iterator &iter) noexcept;
+  /** Called when a non-empty array ends. */
+  WARN_UNUSED really_inline error_code visit_array_end(json_iterator &iter) noexcept;
+  /** Called when an empty array is found. */
+  WARN_UNUSED really_inline error_code visit_empty_array(json_iterator &iter) noexcept;
+
+  /** Called when a non-empty object starts. */
+  WARN_UNUSED really_inline error_code visit_object_start(json_iterator &iter) noexcept;
+  /**
+   * Called when a key in a field is encountered.
+   *
+   * primitive, visit_object_start, visit_empty_object, visit_array_start, or visit_empty_array
+   * will be called after this with the field value.
+   */
+  WARN_UNUSED really_inline error_code visit_key(json_iterator &iter, const uint8_t *key) noexcept;
+  /** Called when a non-empty object ends. */
+  WARN_UNUSED really_inline error_code visit_object_end(json_iterator &iter) noexcept;
+  /** Called when an empty object is found. */
+  WARN_UNUSED really_inline error_code visit_empty_object(json_iterator &iter) noexcept;
+
+  /**
+   * Called when a string, number, boolean or null is found.
+   */
+  WARN_UNUSED really_inline error_code visit_primitive(json_iterator &iter, const uint8_t *value) noexcept;
+  /**
+   * Called when a string, number, boolean or null is found at the top level of a document (i.e.
+   * when there is no array or object and the entire document is a single string, number, boolean or
+   * null.
+   *
+   * This is separate from primitive() because simdjson's normal primitive parsing routines assume
+   * there is at least one more token after the value, which is only true in an array or object.
+   */
+  WARN_UNUSED really_inline error_code visit_root_primitive(json_iterator &iter, const uint8_t *value) noexcept;
+
+  WARN_UNUSED really_inline error_code visit_string(json_iterator &iter, const uint8_t *value, bool key = false) noexcept;
+  WARN_UNUSED really_inline error_code visit_number(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_true_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_false_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_null_atom(json_iterator &iter, const uint8_t *value) noexcept;
+
+  WARN_UNUSED really_inline error_code visit_root_string(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_number(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_true_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_false_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_null_atom(json_iterator &iter, const uint8_t *value) noexcept;
+
+  /** Called each time a new field or element in an array or object is found. */
+  WARN_UNUSED really_inline error_code increment_count(json_iterator &iter) noexcept;
+
   /** Next location to write to tape */
   tape_writer tape;
+private:
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc;
 
-  really_inline tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
+  really_inline tape_builder(dom::document &doc) noexcept;
 
-private:
-  friend struct structural_parser;
+  really_inline uint32_t next_tape_index(json_iterator &iter) const noexcept;
+  really_inline void start_container(json_iterator &iter) noexcept;
+  WARN_UNUSED really_inline error_code end_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept;
+  WARN_UNUSED really_inline error_code empty_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept;
+  really_inline uint8_t *on_start_string(json_iterator &iter) noexcept;
+  really_inline void on_end_string(uint8_t *dst) noexcept;
+}; // class tape_builder
 
-  really_inline error_code parse_root_primitive(structural_parser &parser, const uint8_t *value) {
-    switch (*value) {
-      case '"': return parse_string(parser, value);
-      case 't': return parse_root_true_atom(parser, value);
-      case 'f': return parse_root_false_atom(parser, value);
-      case 'n': return parse_root_null_atom(parser, value);
-      case '-':
-      case '0': case '1': case '2': case '3': case '4':
-      case '5': case '6': case '7': case '8': case '9':
-        return parse_root_number(parser, value);
-      default:
-        parser.log_error("Document starts with a non-value character");
-        return TAPE_ERROR;
-    }
-  }
-  really_inline error_code parse_primitive(structural_parser &parser, const uint8_t *value) {
-    switch (*value) {
-      case '"': return parse_string(parser, value);
-      case 't': return parse_true_atom(parser, value);
-      case 'f': return parse_false_atom(parser, value);
-      case 'n': return parse_null_atom(parser, value);
-      case '-':
-      case '0': case '1': case '2': case '3': case '4':
-      case '5': case '6': case '7': case '8': case '9':
-        return parse_number(parser, value);
-      default:
-        parser.log_error("Non-value found when value was expected!");
-        return TAPE_ERROR;
-    }
-  }
-  really_inline void empty_object(structural_parser &parser) {
-    parser.log_value("empty object");
-    empty_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
-  }
-  really_inline void empty_array(structural_parser &parser) {
-    parser.log_value("empty array");
-    empty_container(parser, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
-  }
+template<bool STREAMING>
+WARN_UNUSED really_inline error_code tape_builder::parse_document(
+    dom_parser_implementation &dom_parser,
+    dom::document &doc) noexcept {
+  dom_parser.doc = &doc;
+  json_iterator iter(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
+  tape_builder builder(doc);
+  return iter.walk_document<STREAMING>(builder);
+}
 
-  really_inline void start_document(structural_parser &parser) {
-    parser.log_start_value("document");
-    start_container(parser);
-  }
-  really_inline void start_object(structural_parser &parser) {
-    parser.log_start_value("object");
-    start_container(parser);
-  }
-  really_inline void start_array(structural_parser &parser) {
-    parser.log_start_value("array");
-    start_container(parser);
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_primitive(json_iterator &iter, const uint8_t *value) noexcept {
+  return iter.visit_root_primitive(*this, value);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_primitive(json_iterator &iter, const uint8_t *value) noexcept {
+  return iter.visit_primitive(*this, value);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_empty_object(json_iterator &iter) noexcept {
+  return empty_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_empty_array(json_iterator &iter) noexcept {
+  return empty_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
+}
 
-  really_inline void end_object(structural_parser &parser) {
-    parser.log_end_value("object");
-    end_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
-  }
-  really_inline void end_array(structural_parser &parser) {
-    parser.log_end_value("array");
-    end_container(parser, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
-  }
-  really_inline void end_document(structural_parser &parser) {
-    parser.log_end_value("document");
-    constexpr uint32_t start_tape_index = 0;
-    tape.append(start_tape_index, internal::tape_type::ROOT);
-    tape_writer::write(parser.dom_parser.doc->tape[start_tape_index], next_tape_index(parser), internal::tape_type::ROOT);
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_document_start(json_iterator &iter) noexcept {
+  start_container(iter);
+  return SUCCESS;
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_object_start(json_iterator &iter) noexcept {
+  start_container(iter);
+  return SUCCESS;
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_array_start(json_iterator &iter) noexcept {
+  start_container(iter);
+  return SUCCESS;
+}
 
-  WARN_UNUSED really_inline error_code parse_key(structural_parser &parser, const uint8_t *value) {
-    return parse_string(parser, value, true);
-  }
-  WARN_UNUSED really_inline error_code parse_string(structural_parser &parser, const uint8_t *value, bool key = false) {
-    parser.log_value(key ? "key" : "string");
-    uint8_t *dst = on_start_string(parser);
-    dst = stringparsing::parse_string(value, dst);
-    if (dst == nullptr) {
-      parser.log_error("Invalid escape in string");
-      return STRING_ERROR;
-    }
-    on_end_string(dst);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_object_end(json_iterator &iter) noexcept {
+  return end_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_array_end(json_iterator &iter) noexcept {
+  return end_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_document_end(json_iterator &iter) noexcept {
+  constexpr uint32_t start_tape_index = 0;
+  tape.append(start_tape_index, internal::tape_type::ROOT);
+  tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(iter), internal::tape_type::ROOT);
+  return SUCCESS;
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_key(json_iterator &iter, const uint8_t *key) noexcept {
+  return visit_string(iter, key, true);
+}
 
-  WARN_UNUSED really_inline error_code parse_number(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("number");
-    if (!numberparsing::parse_number(value, tape)) { parser.log_error("Invalid number"); return NUMBER_ERROR; }
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::increment_count(json_iterator &iter) noexcept {
+  iter.dom_parser.open_containers[iter.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
+  return SUCCESS;
+}
 
-  really_inline error_code parse_root_number(structural_parser &parser, const uint8_t *value) {
-    //
-    // We need to make a copy to make sure that the string is space terminated.
-    // This is not about padding the input, which should already padded up
-    // to len + SIMDJSON_PADDING. However, we have no control at this stage
-    // on how the padding was done. What if the input string was padded with nulls?
-    // It is quite common for an input string to have an extra null character (C string).
-    // We do not want to allow 9\0 (where \0 is the null character) inside a JSON
-    // document, but the string "9\0" by itself is fine. So we make a copy and
-    // pad the input with spaces when we know that there is just one input element.
-    // This copy is relatively expensive, but it will almost never be called in
-    // practice unless you are in the strange scenario where you have many JSON
-    // documents made of single atoms.
-    //
-    uint8_t *copy = static_cast<uint8_t *>(malloc(parser.remaining_len() + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      return MEMALLOC;
-    }
-    memcpy(copy, value, parser.remaining_len());
-    memset(copy + parser.remaining_len(), ' ', SIMDJSON_PADDING);
-    error_code error = parse_number(parser, copy);
-    free(copy);
-    return error;
-  }
+really_inline tape_builder::tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
 
-  WARN_UNUSED really_inline error_code parse_true_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("true");
-    if (!atomparsing::is_valid_true_atom(value)) { return T_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::TRUE_VALUE);
-    return SUCCESS;
+WARN_UNUSED really_inline error_code tape_builder::visit_string(json_iterator &iter, const uint8_t *value, bool key) noexcept {
+  iter.log_value(key ? "key" : "string");
+  uint8_t *dst = on_start_string(iter);
+  dst = stringparsing::parse_string(value, dst);
+  if (dst == nullptr) {
+    iter.log_error("Invalid escape in string");
+    return STRING_ERROR;
   }
+  on_end_string(dst);
+  return SUCCESS;
+}
 
-  WARN_UNUSED really_inline error_code parse_root_true_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("true");
-    if (!atomparsing::is_valid_true_atom(value, parser.remaining_len())) { return T_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::TRUE_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_string(json_iterator &iter, const uint8_t *value) noexcept {
+  return visit_string(iter, value);
+}
 
-  WARN_UNUSED really_inline error_code parse_false_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("false");
-    if (!atomparsing::is_valid_false_atom(value)) { return F_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::FALSE_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("number");
+  return numberparsing::parse_number(value, tape);
+}
 
-  WARN_UNUSED really_inline error_code parse_root_false_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("false");
-    if (!atomparsing::is_valid_false_atom(value, parser.remaining_len())) { return F_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::FALSE_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
+  //
+  // We need to make a copy to make sure that the string is space terminated.
+  // This is not about padding the input, which should already padded up
+  // to len + SIMDJSON_PADDING. However, we have no control at this stage
+  // on how the padding was done. What if the input string was padded with nulls?
+  // It is quite common for an input string to have an extra null character (C string).
+  // We do not want to allow 9\0 (where \0 is the null character) inside a JSON
+  // document, but the string "9\0" by itself is fine. So we make a copy and
+  // pad the input with spaces when we know that there is just one input element.
+  // This copy is relatively expensive, but it will almost never be called in
+  // practice unless you are in the strange scenario where you have many JSON
+  // documents made of single atoms.
+  //
+  uint8_t *copy = static_cast<uint8_t *>(malloc(iter.remaining_len() + SIMDJSON_PADDING));
+  if (copy == nullptr) { return MEMALLOC; }
+  memcpy(copy, value, iter.remaining_len());
+  memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  error_code error = visit_number(iter, copy);
+  free(copy);
+  return error;
+}
 
-  WARN_UNUSED really_inline error_code parse_null_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("null");
-    if (!atomparsing::is_valid_null_atom(value)) { return N_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::NULL_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_true_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("true");
+  if (!atomparsing::is_valid_true_atom(value)) { return T_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::TRUE_VALUE);
+  return SUCCESS;
+}
 
-  WARN_UNUSED really_inline error_code parse_root_null_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("null");
-    if (!atomparsing::is_valid_null_atom(value, parser.remaining_len())) { return N_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::NULL_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_true_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("true");
+  if (!atomparsing::is_valid_true_atom(value, iter.remaining_len())) { return T_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::TRUE_VALUE);
+  return SUCCESS;
+}
 
-  // increment_count increments the count of keys in an object or values in an array.
-  really_inline void increment_count(structural_parser &parser) {
-    parser.dom_parser.containing_scope[parser.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_false_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("false");
+  if (!atomparsing::is_valid_false_atom(value)) { return F_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::FALSE_VALUE);
+  return SUCCESS;
+}
+
+WARN_UNUSED really_inline error_code tape_builder::visit_root_false_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("false");
+  if (!atomparsing::is_valid_false_atom(value, iter.remaining_len())) { return F_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::FALSE_VALUE);
+  return SUCCESS;
+}
+
+WARN_UNUSED really_inline error_code tape_builder::visit_null_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("null");
+  if (!atomparsing::is_valid_null_atom(value)) { return N_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::NULL_VALUE);
+  return SUCCESS;
+}
+
+WARN_UNUSED really_inline error_code tape_builder::visit_root_null_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("null");
+  if (!atomparsing::is_valid_null_atom(value, iter.remaining_len())) { return N_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::NULL_VALUE);
+  return SUCCESS;
+}
 
 // private:
 
-  really_inline uint32_t next_tape_index(structural_parser &parser) {
-    return uint32_t(tape.next_tape_loc - parser.dom_parser.doc->tape.get());
-  }
+really_inline uint32_t tape_builder::next_tape_index(json_iterator &iter) const noexcept {
+  return uint32_t(tape.next_tape_loc - iter.dom_parser.doc->tape.get());
+}
 
-  really_inline void empty_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) {
-    auto start_index = next_tape_index(parser);
-    tape.append(start_index+2, start);
-    tape.append(start_index, end);
-  }
+WARN_UNUSED really_inline error_code tape_builder::empty_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept {
+  auto start_index = next_tape_index(iter);
+  tape.append(start_index+2, start);
+  tape.append(start_index, end);
+  return SUCCESS;
+}
 
-  really_inline void start_container(structural_parser &parser) {
-    parser.dom_parser.containing_scope[parser.depth].tape_index = next_tape_index(parser);
-    parser.dom_parser.containing_scope[parser.depth].count = 0;
-    tape.skip(); // We don't actually *write* the start element until the end.
-  }
+really_inline void tape_builder::start_container(json_iterator &iter) noexcept {
+  iter.dom_parser.open_containers[iter.depth].tape_index = next_tape_index(iter);
+  iter.dom_parser.open_containers[iter.depth].count = 0;
+  tape.skip(); // We don't actually *write* the start element until the end.
+}
 
-  really_inline void end_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) noexcept {
-    // Write the ending tape element, pointing at the start location
-    const uint32_t start_tape_index = parser.dom_parser.containing_scope[parser.depth].tape_index;
-    tape.append(start_tape_index, end);
-    // Write the start tape element, pointing at the end location (and including count)
-    // count can overflow if it exceeds 24 bits... so we saturate
-    // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
-    const uint32_t count = parser.dom_parser.containing_scope[parser.depth].count;
-    const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
-    tape_writer::write(parser.dom_parser.doc->tape[start_tape_index], next_tape_index(parser) | (uint64_t(cntsat) << 32), start);
-  }
+WARN_UNUSED really_inline error_code tape_builder::end_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept {
+  // Write the ending tape element, pointing at the start location
+  const uint32_t start_tape_index = iter.dom_parser.open_containers[iter.depth].tape_index;
+  tape.append(start_tape_index, end);
+  // Write the start tape element, pointing at the end location (and including count)
+  // count can overflow if it exceeds 24 bits... so we saturate
+  // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
+  const uint32_t count = iter.dom_parser.open_containers[iter.depth].count;
+  const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
+  tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(iter) | (uint64_t(cntsat) << 32), start);
+  return SUCCESS;
+}
 
-  really_inline uint8_t *on_start_string(structural_parser &parser) noexcept {
-    // we advance the point, accounting for the fact that we have a NULL termination
-    tape.append(current_string_buf_loc - parser.dom_parser.doc->string_buf.get(), internal::tape_type::STRING);
-    return current_string_buf_loc + sizeof(uint32_t);
-  }
+really_inline uint8_t *tape_builder::on_start_string(json_iterator &iter) noexcept {
+  // we advance the point, accounting for the fact that we have a NULL termination
+  tape.append(current_string_buf_loc - iter.dom_parser.doc->string_buf.get(), internal::tape_type::STRING);
+  return current_string_buf_loc + sizeof(uint32_t);
+}
 
-  really_inline void on_end_string(uint8_t *dst) noexcept {
-    uint32_t str_length = uint32_t(dst - (current_string_buf_loc + sizeof(uint32_t)));
-    // TODO check for overflow in case someone has a crazy string (>=4GB?)
-    // But only add the overflow check when the document itself exceeds 4GB
-    // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
-    memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
-    // NULL termination is still handy if you expect all your strings to
-    // be NULL terminated? It comes at a small cost
-    *dst = 0;
-    current_string_buf_loc = dst + 1;
-  }
-}; // class tape_builder
+really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
+  uint32_t str_length = uint32_t(dst - (current_string_buf_loc + sizeof(uint32_t)));
+  // TODO check for overflow in case someone has a crazy string (>=4GB?)
+  // But only add the overflow check when the document itself exceeds 4GB
+  // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
+  memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
+  // NULL termination is still handy if you expect all your strings to
+  // be NULL terminated? It comes at a small cost
+  *dst = 0;
+  current_string_buf_loc = dst + 1;
+}
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
@@ -5263,15 +5621,11 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
 }
 
 WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
-  doc = &_doc;
-  stage2::tape_builder builder(*doc);
-  return stage2::structural_parser::parse<false>(*this, builder);
+  return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
-  doc = &_doc;
-  stage2::tape_builder builder(_doc);
-  return stage2::structural_parser::parse<true>(*this, builder);
+  return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
@@ -5350,22 +5704,18 @@ really_inline int leading_zeroes(uint64_t input_num) {
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
-// expectation: sizeof(scope_descriptor) = 64/8.
-struct scope_descriptor {
+// expectation: sizeof(open_container) = 64/8.
+struct open_container {
   uint32_t tape_index; // where, on the tape, does the scope ([,{) begins
   uint32_t count; // how many elements in the scope
-}; // struct scope_descriptor
+}; // struct open_container
 
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-typedef void* ret_address_t;
-#else
-typedef char ret_address_t;
-#endif
+static_assert(sizeof(open_container) == 64/8, "Open container must be 64 bits");
 
 class dom_parser_implementation final : public internal::dom_parser_implementation {
 public:
   /** Tape location of each open { or [ */
-  std::unique_ptr<scope_descriptor[]> containing_scope{};
+  std::unique_ptr<open_container[]> open_containers{};
   /** Whether each open container is a [ or { */
   std::unique_ptr<bool[]> is_array{};
   /** Buffer passed to stage 1 */
@@ -5424,10 +5774,10 @@ namespace allocate {
 // Allocates stage 2 internal state and outputs in the parser
 //
 really_inline error_code set_max_depth(dom_parser_implementation &parser, size_t max_depth) {
-  parser.containing_scope.reset(new (std::nothrow) scope_descriptor[max_depth]);
+  parser.open_containers.reset(new (std::nothrow) open_container[max_depth]);
   parser.is_array.reset(new (std::nothrow) bool[max_depth]);
 
-  if (!parser.is_array || !parser.containing_scope) {
+  if (!parser.is_array || !parser.open_containers) {
     return MEMALLOC;
   }
   return SUCCESS;
@@ -6143,6 +6493,15 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
   return nullptr;
 }
 
+UNUSED WARN_UNUSED really_inline error_code parse_string_to_buffer(const uint8_t *src, uint8_t *&current_string_buf_loc, std::string_view &s) {
+  if (src[0] != '"') { return STRING_ERROR; }
+  auto end = stringparsing::parse_string(src, current_string_buf_loc);
+  if (!end) { return STRING_ERROR; }
+  s = std::string_view((const char *)current_string_buf_loc, end-current_string_buf_loc);
+  current_string_buf_loc = end;
+  return SUCCESS;
+}
+
 } // namespace stringparsing
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
@@ -6189,15 +6548,15 @@ namespace stage2 {
 namespace numberparsing {
 
 #ifdef JSON_TEST_NUMBERS
-#define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), false)
-#define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), writer.append_s64((VALUE)))
-#define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), writer.append_u64((VALUE)))
-#define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), writer.append_double((VALUE)))
+#define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
+#define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
+#define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
+#define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
 #else
-#define INVALID_NUMBER(SRC) (false)
-#define WRITE_INTEGER(VALUE, SRC, WRITER) writer.append_s64((VALUE))
-#define WRITE_UNSIGNED(VALUE, SRC, WRITER) writer.append_u64((VALUE))
-#define WRITE_DOUBLE(VALUE, SRC, WRITER) writer.append_double((VALUE))
+#define INVALID_NUMBER(SRC) (NUMBER_ERROR)
+#define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
+#define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
+#define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
 #endif
 
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
@@ -6206,7 +6565,7 @@ namespace numberparsing {
 // set to false. This should work *most of the time* (like 99% of the time).
 // We assume that power is in the [FASTFLOAT_SMALLEST_POWER,
 // FASTFLOAT_LARGEST_POWER] interval: the caller is responsible for this check.
-really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, bool *success) {
+really_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, double &d) {
   // we start with a fast path
   // It was described in
   // Clinger WD. How to read floating point numbers accurately.
@@ -6222,7 +6581,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
 #endif
     // convert the integer into a double. This is lossless since
     // 0 <= i <= 2^53 - 1.
-    double d = double(i);
+    d = double(i);
     //
     // The general idea is as follows.
     // If 0 <= s < 2^53 and if 10^0 <= p <= 10^22 then
@@ -6241,8 +6600,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
     if (negative) {
       d = -d;
     }
-    *success = true;
-    return d;
+    return true;
   }
   // When 22 < power && power <  22 + 16, we could
   // hope for another, secondary fast path.  It wa
@@ -6267,7 +6625,8 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   // In the slow path, we need to adjust i so that it is > 1<<63 which is always
   // possible, except if i == 0, so we handle i == 0 separately.
   if(i == 0) {
-    return 0.0;
+    d = 0.0;
+    return true;
   }
 
   // We are going to need to do some 64-bit arithmetic to get a more precise product.
@@ -6317,8 +6676,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
     // This does happen, e.g. with 7.3177701707893310e+15.
     if (((product_middle + 1 == 0) && ((product_high & 0x1FF) == 0x1FF) &&
          (product_low + i < product_low))) { // let us be prudent and bail out.
-      *success = false;
-      return 0;
+      return false;
     }
     upper = product_high;
     lower = product_middle;
@@ -6339,25 +6697,24 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   // floating-point values.
   if (unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
                ((mantissa & 3) == 1))) {
-      // if mantissa & 1 == 1 we might need to round up.
-      //
-      // Scenarios:
-      // 1. We are not in the middle. Then we should round up.
-      //
-      // 2. We are right in the middle. Whether we round up depends
-      // on the last significant bit: if it is "one" then we round
-      // up (round to even) otherwise, we do not.
-      //
-      // So if the last significant bit is 1, we can safely round up.
-      // Hence we only need to bail out if (mantissa & 3) == 1.
-      // Otherwise we may need more accuracy or analysis to determine whether
-      // we are exactly between two floating-point numbers.
-      // It can be triggered with 1e23.
-      // Note: because the factor_mantissa and factor_mantissa_low are
-      // almost always rounded down (except for small positive powers),
-      // almost always should round up.
-      *success = false;
-      return 0;
+    // if mantissa & 1 == 1 we might need to round up.
+    //
+    // Scenarios:
+    // 1. We are not in the middle. Then we should round up.
+    //
+    // 2. We are right in the middle. Whether we round up depends
+    // on the last significant bit: if it is "one" then we round
+    // up (round to even) otherwise, we do not.
+    //
+    // So if the last significant bit is 1, we can safely round up.
+    // Hence we only need to bail out if (mantissa & 3) == 1.
+    // Otherwise we may need more accuracy or analysis to determine whether
+    // we are exactly between two floating-point numbers.
+    // It can be triggered with 1e23.
+    // Note: because the factor_mantissa and factor_mantissa_low are
+    // almost always rounded down (except for small positive powers),
+    // almost always should round up.
+    return false;
   }
 
   mantissa += mantissa & 1;
@@ -6375,15 +6732,12 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   uint64_t real_exponent = c.exp - lz;
   // we have to check that real_exponent is in range, otherwise we bail out
   if (unlikely((real_exponent < 1) || (real_exponent > 2046))) {
-    *success = false;
-    return 0;
+    return false;
   }
   mantissa |= real_exponent << 52;
   mantissa |= (((uint64_t)negative) << 63);
-  double d;
   memcpy(&d, &mantissa, sizeof(d));
-  *success = true;
-  return d;
+  return true;
 }
 
 static bool parse_float_strtod(const uint8_t *ptr, double *outDouble) {
@@ -6434,11 +6788,11 @@ really_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
 }
 
 template<typename W>
-bool slow_float_parsing(UNUSED const uint8_t * src, W writer) {
+error_code slow_float_parsing(UNUSED const uint8_t * src, W writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
-    WRITE_DOUBLE(d, src, writer);
-    return true;
+    writer.append_double(d);
+    return SUCCESS;
   }
   return INVALID_NUMBER(src);
 }
@@ -6455,7 +6809,7 @@ really_inline bool parse_digit(const uint8_t c, I &i) {
   return true;
 }
 
-really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+really_inline error_code parse_decimal(UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -6478,10 +6832,10 @@ really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t 
   if (exponent == 0) {
     return INVALID_NUMBER(src);
   }
-  return true;
+  return SUCCESS;
 }
 
-really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+really_inline error_code parse_exponent(UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -6529,38 +6883,42 @@ really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t
   // is bounded in magnitude by the size of the JSON input, we are fine in this universe.
   // To sum it up: the next line should never overflow.
   exponent += (neg_exp ? -exp_number : exp_number);
-  return true;
+  return SUCCESS;
+}
+
+really_inline int significant_digits(const uint8_t * start_digits, int digit_count) {
+  // It is possible that the integer had an overflow.
+  // We have to handle the case where we have 0.0000somenumber.
+  const uint8_t *start = start_digits;
+  while ((*start == '0') || (*start == '.')) {
+    start++;
+  }
+  // we over-decrement by one when there is a '.'
+  return digit_count - int(start - start_digits);
 }
 
 template<typename W>
-really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
+really_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
   // digit count is off by 1 because of the decimal (assuming there was one).
-  if (unlikely((digit_count-1 >= 19))) { // this is uncommon
-    // It is possible that the integer had an overflow.
-    // We have to handle the case where we have 0.0000somenumber.
-    const uint8_t *start = start_digits;
-    while ((*start == '0') || (*start == '.')) {
-      start++;
-    }
-    // we over-decrement by one when there is a '.'
-    digit_count -= int(start - start_digits);
-    if (digit_count >= 19) {
-      // Ok, chances are good that we had an overflow!
-      // this is almost never going to get called!!!
-      // we start anew, going slowly!!!
-      // This will happen in the following examples:
-      // 10000000000000000000000000000000000000000000e+308
-      // 3.1415926535897932384626433832795028841971693993751
-      //
-      bool success = slow_float_parsing(src, writer);
-      // The number was already written, but we made a copy of the writer
-      // when we passed it to the parse_large_integer() function, so
-      writer.skip_double();
-      return success;
-    }
+  if (unlikely(digit_count-1 >= 19 && significant_digits(start_digits, digit_count) >= 19)) {
+    // Ok, chances are good that we had an overflow!
+    // this is almost never going to get called!!!
+    // we start anew, going slowly!!!
+    // This will happen in the following examples:
+    // 10000000000000000000000000000000000000000000e+308
+    // 3.1415926535897932384626433832795028841971693993751
+    //
+    // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
+    // because slow_float_parsing is a non-inlined function. If we passed our writer reference to
+    // it, it would force it to be stored in memory, preventing the compiler from picking it apart
+    // and putting into registers. i.e. if we pass it as reference, it gets slow.
+    // This is what forces the skip_double, as well.
+    error_code error = slow_float_parsing(src, writer);
+    writer.skip_double();
+    return error;
   }
   // NOTE: it's weird that the unlikely() only wraps half the if, but it seems to get slower any other
   // way we've tried: https://github.com/simdjson/simdjson/pull/990#discussion_r448497331
@@ -6568,29 +6926,31 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
   if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) || (exponent > FASTFLOAT_LARGEST_POWER)) {
     // this is almost never going to get called!!!
     // we start anew, going slowly!!!
-    bool success = slow_float_parsing(src, writer);
-    // The number was already written, but we made a copy of the writer when we passed it to the
-    // slow_float_parsing() function, so we have to skip those tape spots now that we've returned
+    // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
+    // because slow_float_parsing is a non-inlined function. If we passed our writer reference to
+    // it, it would force it to be stored in memory, preventing the compiler from picking it apart
+    // and putting into registers. i.e. if we pass it as reference, it gets slow.
+    // This is what forces the skip_double, as well.
+    error_code error = slow_float_parsing(src, writer);
     writer.skip_double();
-    return success;
+    return error;
   }
-  bool success = true;
-  double d = compute_float_64(exponent, i, negative, &success);
-  if (!success) {
+  double d;
+  if (!compute_float_64(exponent, i, negative, d)) {
     // we are almost never going to get here.
     if (!parse_float_strtod(src, &d)) { return INVALID_NUMBER(src); }
   }
   WRITE_DOUBLE(d, src, writer);
-  return true;
+  return SUCCESS;
 }
 
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-really_inline bool parse_number(const uint8_t *const, W &writer) {
+really_inline error_code parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
-  return true;                 // always succeeds
+  return SUCCESS;              // always succeeds
 }
 
 #else
@@ -6605,7 +6965,7 @@ really_inline bool parse_number(const uint8_t *const, W &writer) {
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-really_inline bool parse_number(const uint8_t *const src, W &writer) {
+really_inline error_code parse_number(const uint8_t *const src, W &writer) {
 
   //
   // Check for minus sign
@@ -6633,16 +6993,19 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   if ('.' == *p) {
     is_float = true;
     ++p;
-    if (!parse_decimal(src, p, i, exponent)) { return false; }
+    SIMDJSON_TRY( parse_decimal(src, p, i, exponent) );
     digit_count = int(p - start_digits); // used later to guard against overflows
   }
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
     ++p;
-    if (!parse_exponent(src, p, exponent)) { return false; }
+    SIMDJSON_TRY( parse_exponent(src, p, exponent) );
   }
   if (is_float) {
-    return write_float(src, negative, i, start_digits, digit_count, exponent, writer);
+    const bool clean_end = is_structural_or_whitespace(*p);
+    SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
+    if (!clean_end) { return INVALID_NUMBER(src); }
+    return SUCCESS;
   }
 
   // The longest negative 64-bit number is 19 digits.
@@ -6651,13 +7014,12 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   int longest_digit_count = negative ? 19 : 20;
   if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
   if (digit_count == longest_digit_count) {
-    if(negative) {
+    if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) {
-        return INVALID_NUMBER(src); 
-      }
+      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
       WRITE_INTEGER(~i+1, src, writer);
-      return is_structural_or_whitespace(*p);
+      if (!is_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+      return SUCCESS;
     // Positive overflow check:
     // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
     //   biggest uint64_t.
@@ -6679,9 +7041,230 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
   }
-  return is_structural_or_whitespace(*p);
+  if (!is_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+  return SUCCESS;
 }
 
+// SAX functions
+namespace {
+// Parse any number from 0 to 18,446,744,073,709,551,615
+UNUSED really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
+  const uint8_t *p = src;
+
+  //
+  // Parse the integer part.
+  //
+  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  const uint8_t *const start_digits = p;
+  uint64_t i = 0;
+  while (parse_digit(*p, i)) { p++; }
+
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - start_digits);
+  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return NUMBER_ERROR; }
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  // The longest positive 64-bit number is 20 digits.
+  // We do it this way so we don't trigger this branch unless we must.
+  if (digit_count > 20) { return NUMBER_ERROR; }
+  if (digit_count == 20) {
+    // Positive overflow check:
+    // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+    //   biggest uint64_t.
+    // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+    //   If we got here, it's a 20 digit number starting with the digit "1".
+    // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+    //   than 1,553,255,926,290,448,384.
+    // - That is smaller than the smallest possible 20-digit number the user could write:
+    //   10,000,000,000,000,000,000.
+    // - Therefore, if the number is positive and lower than that, it's overflow.
+    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    //
+    if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+  }
+
+  return i;
+}
+
+// Parse any number from 0 to 18,446,744,073,709,551,615
+// Call this version of the method if you regularly expect 8- or 16-digit numbers.
+UNUSED really_inline simdjson_result<uint64_t> parse_large_unsigned(const uint8_t * const src) noexcept {
+  const uint8_t *p = src;
+
+  //
+  // Parse the integer part.
+  //
+  uint64_t i = 0;
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+    if (is_made_of_eight_digits_fast(p)) {
+      i = i * 100000000 + parse_eight_digits_unrolled(p);
+      p += 8;
+      if (parse_digit(*p, i)) { // digit 17
+        p++;
+        if (parse_digit(*p, i)) { // digit 18
+          p++;
+          if (parse_digit(*p, i)) { // digit 19
+            p++;
+            if (parse_digit(*p, i)) { // digit 20
+              p++;
+              if (parse_digit(*p, i)) { return NUMBER_ERROR; } // 21 digits is an error
+              // Positive overflow check:
+              // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+              //   biggest uint64_t.
+              // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+              //   If we got here, it's a 20 digit number starting with the digit "1".
+              // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+              //   than 1,553,255,926,290,448,384.
+              // - That is smaller than the smallest possible 20-digit number the user could write:
+              //   10,000,000,000,000,000,000.
+              // - Therefore, if the number is positive and lower than that, it's overflow.
+              // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+              //
+              if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+            }
+          }
+        }
+      }
+    } // 16 digits
+  } else { // 8 digits
+    // Less than 8 digits can't overflow, simpler logic here.
+    if (parse_digit(*p, i)) { p++; } else { return NUMBER_ERROR; }
+    while (parse_digit(*p, i)) { p++; }
+  }
+
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - src);
+  if (digit_count == 0 || ('0' == *src && digit_count > 1)) { return NUMBER_ERROR; }
+  return i;
+}
+
+// Parse any number from  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
+UNUSED really_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) noexcept {
+  //
+  // Check for minus sign
+  //
+  bool negative = (*src == '-');
+  const uint8_t *p = src + negative;
+
+  //
+  // Parse the integer part.
+  //
+  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  const uint8_t *const start_digits = p;
+  uint64_t i = 0;
+  while (parse_digit(*p, i)) { p++; }
+
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - start_digits);
+  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return NUMBER_ERROR; }
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  // The longest negative 64-bit number is 19 digits.
+  // The longest positive 64-bit number is 20 digits.
+  // We do it this way so we don't trigger this branch unless we must.
+  int longest_digit_count = negative ? 19 : 20;
+  if (digit_count > longest_digit_count) { return NUMBER_ERROR; }
+  if (digit_count == longest_digit_count) {
+    if(negative) {
+      // Anything negative above INT64_MAX+1 is invalid
+      if (i > uint64_t(INT64_MAX)+1) { return NUMBER_ERROR; }
+      return ~i+1;
+
+    // Positive overflow check:
+    // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+    //   biggest uint64_t.
+    // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+    //   If we got here, it's a 20 digit number starting with the digit "1".
+    // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+    //   than 1,553,255,926,290,448,384.
+    // - That is smaller than the smallest possible 20-digit number the user could write:
+    //   10,000,000,000,000,000,000.
+    // - Therefore, if the number is positive and lower than that, it's overflow.
+    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    //
+    } else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+  }
+
+  return negative ? (~i+1) : i;
+}
+
+UNUSED really_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept {
+  //
+  // Check for minus sign
+  //
+  bool negative = (*src == '-');
+  src += negative;
+
+  //
+  // Parse the integer part.
+  //
+  uint64_t i = 0;
+  const uint8_t *p = src;
+  p += parse_digit(*p, i);
+  bool leading_zero = (i == 0);
+  while (parse_digit(*p, i)) { p++; }
+  // no integer digits, or 0123 (zero must be solo)
+  if ( p == src || (leading_zero && p != src+1)) { return NUMBER_ERROR; }
+
+  //
+  // Parse the decimal part.
+  //
+  int64_t exponent = 0;
+  bool overflow;
+  if (likely(*p == '.')) {
+    p++;
+    const uint8_t *start_decimal_digits = p;
+    if (!parse_digit(*p, i)) { return NUMBER_ERROR; } // no decimal digits
+    p++;
+    while (parse_digit(*p, i)) { p++; }
+    exponent = -(p - start_decimal_digits);
+
+    // Overflow check. 19 digits (minus the decimal) may be overflow.
+    overflow = p-src-1 >= 19;
+    if (unlikely(overflow && leading_zero)) {
+      // Skip leading 0.00000 and see if it still overflows
+      const uint8_t *start_digits = src + 2;
+      while (*start_digits == '0') { start_digits++; }
+      overflow = start_digits-src >= 19;
+    }
+  } else {
+    overflow = p-src >= 19;
+  }
+
+  //
+  // Parse the exponent
+  //
+  if (*p == 'e' || *p == 'E') {
+    p++;
+    bool exp_neg = *p == '-';
+    p += exp_neg || *p == '+';
+
+    uint64_t exp = 0;
+    const uint8_t *start_exp_digits = p;
+    while (parse_digit(*p, exp)) { p++; }
+    // no exp digits, or 20+ exp digits
+    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+
+    exponent += exp_neg ? 0-exp : exp;
+    overflow = overflow || exponent < FASTFLOAT_SMALLEST_POWER || exponent > FASTFLOAT_LARGEST_POWER;
+  }
+
+  //
+  // Assemble (or slow-parse) the float
+  //
+  double d;
+  if (likely(!overflow)) {
+    if (compute_float_64(exponent, i, negative, d)) { return d; }
+  }
+  if (!parse_float_strtod(src-negative, &d)) {
+    return NUMBER_ERROR;
+  }
+  return d;
+}
+} //namespace {}
 #endif // SIMDJSON_SKIPNUMBERPARSING
 
 } // namespace numberparsing
@@ -6692,12 +7275,8 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
 
 #endif // SIMDJSON_FALLBACK_NUMBERPARSING_H
 /* end file src/generic/stage2/numberparsing.h */
-/* begin file src/generic/stage2/structural_parser.h */
-// This file contains the common code every implementation uses for stage2
-// It is intended to be included multiple times and compiled multiple times
-// We assume the file in which it is include already includes
-// "simdjson/stage2.h" (this simplifies amalgation)
-
+/* begin file src/generic/stage2/tape_builder.h */
+/* begin file src/generic/stage2/json_iterator.h */
 /* begin file src/generic/stage2/logger.h */
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
@@ -6709,7 +7288,7 @@ namespace logger {
 
   static constexpr const bool LOG_ENABLED = false;
   static constexpr const int LOG_EVENT_LEN = 20;
-  static constexpr const int LOG_BUFFER_LEN = 10;
+  static constexpr const int LOG_BUFFER_LEN = 30;
   static constexpr const int LOG_SMALL_BUFFER_LEN = 10;
   static constexpr const int LOG_INDEX_LEN = 5;
 
@@ -6731,12 +7310,6 @@ namespace logger {
       printf("\n");
       printf("| %-*s | %-*s | %-*s | %-*s | Detail |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", LOG_SMALL_BUFFER_LEN, "Next", 5, "Next#");
       printf("|%.*s|%.*s|%.*s|%.*s|--------|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, LOG_SMALL_BUFFER_LEN+2, DASHES, 5+2, DASHES);
-    }
-  }
-
-  static really_inline void log_string(const char *message) {
-    if (LOG_ENABLED) {
-      printf("%s\n", message);
     }
   }
 
@@ -6782,287 +7355,321 @@ namespace logger {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
 /* end file src/generic/stage2/logger.h */
-/* begin file src/generic/stage2/structural_iterator.h */
+
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
-class structural_iterator {
+class json_iterator {
 public:
   const uint8_t* const buf;
   uint32_t *next_structural;
   dom_parser_implementation &dom_parser;
-
-  // Start a structural 
-  really_inline structural_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
-    : buf{_dom_parser.buf},
-      next_structural{&_dom_parser.structural_indexes[start_structural_index]},
-      dom_parser{_dom_parser} {
-  }
-  // Get the buffer position of the current structural character
-  really_inline const uint8_t* current() {
-    return &buf[*(next_structural-1)];
-  }
-  // Get the current structural character
-  really_inline char current_char() {
-    return buf[*(next_structural-1)];
-  }
-  // Get the next structural character without advancing
-  really_inline char peek_next_char() {
-    return buf[*next_structural];
-  }
-  really_inline const uint8_t* peek() {
-    return &buf[*next_structural];
-  }
-  really_inline const uint8_t* advance() {
-    return &buf[*(next_structural++)];
-  }
-  really_inline char advance_char() {
-    return buf[*(next_structural++)];
-  }
-  really_inline size_t remaining_len() {
-    return dom_parser.len - *(next_structural-1);
-  }
-
-  really_inline bool at_end() {
-    return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
-  }
-  really_inline bool at_beginning() {
-    return next_structural == dom_parser.structural_indexes.get();
-  }
-};
-
-} // namespace stage2
-} // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace
-/* end file src/generic/stage2/structural_iterator.h */
-
-namespace { // Make everything here private
-namespace SIMDJSON_IMPLEMENTATION {
-namespace stage2 {
-
-#define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }
-
-struct structural_parser : structural_iterator {
-  /** Current depth (nested objects and arrays) */
   uint32_t depth{0};
 
-  template<bool STREAMING, typename T>
-  WARN_UNUSED really_inline error_code parse(T &builder) noexcept;
-  template<bool STREAMING, typename T>
-  WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser, T &builder) noexcept {
-    structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
-    return parser.parse<STREAMING>(builder);
-  }
+  /**
+   * Walk the JSON document.
+   *
+   * The visitor receives callbacks when values are encountered. All callbacks pass the iterator as
+   * the first parameter; some callbacks have other parameters as well:
+   *
+   * - visit_document_start() - at the beginning.
+   * - visit_document_end() - at the end (if things were successful).
+   *
+   * - visit_array_start() - at the start `[` of a non-empty array.
+   * - visit_array_end() - at the end `]` of a non-empty array.
+   * - visit_empty_array() - when an empty array is encountered.
+   *
+   * - visit_object_end() - at the start `]` of a non-empty object.
+   * - visit_object_start() - at the end `]` of a non-empty object.
+   * - visit_empty_object() - when an empty object is encountered.
+   * - visit_key(const uint8_t *key) - when a key in an object field is encountered. key is
+   *                                   guaranteed to point at the first quote of the string (`"key"`).
+   * - visit_primitive(const uint8_t *value) - when a value is a string, number, boolean or null.
+   * - visit_root_primitive(iter, uint8_t *value) - when the top-level value is a string, number, boolean or null.
+   *
+   * - increment_count(iter) - each time a value is found in an array or object.
+   */
+  template<bool STREAMING, typename V>
+  WARN_UNUSED really_inline error_code walk_document(V &visitor) noexcept;
 
-  // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
-  really_inline structural_parser(dom_parser_implementation &_dom_parser, uint32_t start_structural_index)
-    : structural_iterator(_dom_parser, start_structural_index) {
-  }
+  /**
+   * Create an iterator capable of walking a JSON document.
+   *
+   * The document must have already passed through stage 1.
+   */
+  really_inline json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index);
 
-  WARN_UNUSED really_inline error_code start_document() {
-    dom_parser.is_array[depth] = false;
-    return SUCCESS;
-  }
-  template<typename T>
-  WARN_UNUSED really_inline error_code start_array(T &builder) {
-    depth++;
-    if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-    builder.start_array(*this);
-    dom_parser.is_array[depth] = true;
-    return SUCCESS;
-  }
+  /**
+   * Look at the next token.
+   *
+   * Tokens can be strings, numbers, booleans, null, or operators (`[{]},:`)).
+   *
+   * They may include invalid JSON as well (such as `1.2.3` or `ture`).
+   */
+  really_inline const uint8_t *peek() const noexcept;
+  /**
+   * Advance to the next token.
+   *
+   * Tokens can be strings, numbers, booleans, null, or operators (`[{]},:`)).
+   *
+   * They may include invalid JSON as well (such as `1.2.3` or `ture`).
+   */
+  really_inline const uint8_t *advance() noexcept;
+  /**
+   * Get the remaining length of the document, from the start of the current token.
+   */
+  really_inline size_t remaining_len() const noexcept;
+  /**
+   * Check if we are at the end of the document.
+   *
+   * If this is true, there are no more tokens.
+   */
+  really_inline bool at_eof() const noexcept;
+  /**
+   * Check if we are at the beginning of the document.
+   */
+  really_inline bool at_beginning() const noexcept;
+  really_inline uint8_t last_structural() const noexcept;
 
-  template<typename T>
-  WARN_UNUSED really_inline bool empty_object(T &builder) {
-    if (peek_next_char() == '}') {
-      advance_char();
-      builder.empty_object(*this);
-      return true;
-    }
-    return false;
-  }
-  template<typename T>
-  WARN_UNUSED really_inline bool empty_array(T &builder) {
-    if (peek_next_char() == ']') {
-      advance_char();
-      builder.empty_array(*this);
-      return true;
-    }
-    return false;
-  }
+  /**
+   * Log that a value has been found.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_value(const char *type) const noexcept;
+  /**
+   * Log the start of a multipart value.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_start_value(const char *type) const noexcept;
+  /**
+   * Log the end of a multipart value.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_end_value(const char *type) const noexcept;
+  /**
+   * Log an error.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_error(const char *error) const noexcept;
 
-  template<bool STREAMING>
-  WARN_UNUSED really_inline error_code finish() {
-    dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
+  template<typename V>
+  WARN_UNUSED really_inline error_code visit_root_primitive(V &visitor, const uint8_t *value) noexcept;
+  template<typename V>
+  WARN_UNUSED really_inline error_code visit_primitive(V &visitor, const uint8_t *value) noexcept;
+};
 
-    if (depth != 0) {
-      log_error("Unclosed objects or arrays!");
-      return TAPE_ERROR;
-    }
-
-    // If we didn't make it to the end, it's an error
-    if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
-      logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
-      return TAPE_ERROR;
-    }
-
-    return SUCCESS;
-  }
-
-  really_inline void log_value(const char *type) {
-    logger::log_line(*this, "", type, "");
-  }
-
-  really_inline void log_start_value(const char *type) {
-    logger::log_line(*this, "+", type, "");
-    if (logger::LOG_ENABLED) { logger::log_depth++; }
-  }
-
-  really_inline void log_end_value(const char *type) {
-    if (logger::LOG_ENABLED) { logger::log_depth--; }
-    logger::log_line(*this, "-", type, "");
-  }
-
-  really_inline void log_error(const char *error) {
-    logger::log_line(*this, "", "ERROR", error);
-  }
-}; // struct structural_parser
-
-template<bool STREAMING, typename T>
-WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexcept {
+template<bool STREAMING, typename V>
+WARN_UNUSED really_inline error_code json_iterator::walk_document(V &visitor) noexcept {
   logger::log_start();
 
   //
   // Start the document
   //
-  if (at_end()) { return EMPTY; }
-  SIMDJSON_TRY( start_document() );
-  builder.start_document(*this);
+  if (at_eof()) { return EMPTY; }
+  log_start_value("document");
+  SIMDJSON_TRY( visitor.visit_document_start(*this) );
 
   //
   // Read first value
   //
   {
-    const uint8_t *value = advance();
-    switch (*value) {
-      case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-      case '[': {
-        // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
-        // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-        if (!STREAMING) {
-          if (buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
-            return TAPE_ERROR;
-          }
-        }
-        if (!empty_array(builder)) { goto array_begin; }; break;
+    auto value = advance();
+
+    // Make sure the outer hash or array is closed before continuing; otherwise, there are ways we
+    // could get into memory corruption. See https://github.com/simdjson/simdjson/issues/906
+    if (!STREAMING) {
+      switch (*value) {
+        case '{': if (last_structural() != '}') { return TAPE_ERROR; }; break;
+        case '[': if (last_structural() != ']') { return TAPE_ERROR; }; break;
       }
-      default: SIMDJSON_TRY( builder.parse_root_primitive(*this, value) );
     }
-    goto document_end;
+
+    switch (*value) {
+      case '{': if (*peek() == '}') { advance(); log_value("empty object"); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '[': if (*peek() == ']') { advance(); log_value("empty array"); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+      default: SIMDJSON_TRY( visitor.visit_root_primitive(*this, value) ); break;
+    }
   }
+  goto document_end;
 
 //
 // Object parser states
 //
-object_begin: {
+object_begin:
+  log_start_value("object");
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-  builder.start_object(*this);
   dom_parser.is_array[depth] = false;
+  SIMDJSON_TRY( visitor.visit_object_start(*this) );
 
-  const uint8_t *key = advance();
-  if (*key != '"') {
-    log_error("Object does not start with a key");
-    return TAPE_ERROR;
+  {
+    auto key = advance();
+    if (*key != '"') { log_error("Object does not start with a key"); return TAPE_ERROR; }
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    SIMDJSON_TRY( visitor.visit_key(*this, key) );
   }
-  builder.increment_count(*this);
-  SIMDJSON_TRY( builder.parse_key(*this, key) );
-  goto object_field;
-} // object_begin:
 
-object_field: {
-  if (unlikely( advance_char() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
-  const uint8_t *value = advance();
-  switch (*value) {
-    case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-    case '[': if (!empty_array(builder)) { goto array_begin; }; break;
-    default: SIMDJSON_TRY( builder.parse_primitive(*this, value) );
+object_field:
+  if (unlikely( *advance() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
+  {
+    auto value = advance();
+    switch (*value) {
+      case '{': if (*peek() == '}') { advance(); log_value("empty object"); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '[': if (*peek() == ']') { advance(); log_value("empty array"); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+      default: SIMDJSON_TRY( visitor.visit_primitive(*this, value) ); break;
+    }
   }
-} // object_field:
 
-object_continue: {
-  switch (advance_char()) {
-  case ',': {
-    builder.increment_count(*this);
-    const uint8_t *key = advance();
-    if (unlikely( *key != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
-    SIMDJSON_TRY( builder.parse_key(*this, key) );
-    goto object_field;
+object_continue:
+  switch (*advance()) {
+    case ',':
+      SIMDJSON_TRY( visitor.increment_count(*this) );
+      {
+        auto key = advance();
+        if (unlikely( *key != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
+        SIMDJSON_TRY( visitor.visit_key(*this, key) );
+      }
+      goto object_field;
+    case '}': log_end_value("object"); SIMDJSON_TRY( visitor.visit_object_end(*this) ); goto scope_end;
+    default: log_error("No comma between object fields"); return TAPE_ERROR;
   }
-  case '}':
-    builder.end_object(*this);
-    goto scope_end;
-  default:
-    log_error("No comma between object fields");
-    return TAPE_ERROR;
-  }
-} // object_continue:
 
-scope_end: {
+scope_end:
   depth--;
   if (depth == 0) { goto document_end; }
   if (dom_parser.is_array[depth]) { goto array_continue; }
   goto object_continue;
-} // scope_end:
 
 //
 // Array parser states
 //
-array_begin: {
+array_begin:
+  log_start_value("array");
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-  builder.start_array(*this);
   dom_parser.is_array[depth] = true;
+  SIMDJSON_TRY( visitor.visit_array_start(*this) );
+  SIMDJSON_TRY( visitor.increment_count(*this) );
 
-  builder.increment_count(*this);
-} // array_begin:
-
-array_value: {
-  const uint8_t *value = advance();
-  switch (*value) {
-    case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-    case '[': if (!empty_array(builder)) { goto array_begin; }; break;
-    default: SIMDJSON_TRY( builder.parse_primitive(*this, value) );
+array_value:
+  {
+    auto value = advance();
+    switch (*value) {
+      case '{': if (*peek() == '}') { advance(); log_value("empty object"); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '[': if (*peek() == ']') { advance(); log_value("empty array"); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+      default: SIMDJSON_TRY( visitor.visit_primitive(*this, value) ); break;
+    }
   }
-} // array_value:
 
-array_continue: {
-  switch (advance_char()) {
-  case ',':
-    builder.increment_count(*this);
-    goto array_value;
-  case ']':
-    builder.end_array(*this);
-    goto scope_end;
-  default:
-    log_error("Missing comma between array values");
+array_continue:
+  switch (*advance()) {
+    case ',': SIMDJSON_TRY( visitor.increment_count(*this) ); goto array_value;
+    case ']': log_end_value("array"); SIMDJSON_TRY( visitor.visit_array_end(*this) ); goto scope_end;
+    default: log_error("Missing comma between array values"); return TAPE_ERROR;
+  }
+
+document_end:
+  log_end_value("document");
+  SIMDJSON_TRY( visitor.visit_document_end(*this) );
+
+  dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
+
+  // If we didn't make it to the end, it's an error
+  if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
+    log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
     return TAPE_ERROR;
   }
-} // array_continue:
 
-document_end: {
-  builder.end_document(*this);
-  return finish<STREAMING>();
-} // document_end:
+  return SUCCESS;
 
-} // parse_structurals()
+} // walk_document()
+
+really_inline json_iterator::json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
+  : buf{_dom_parser.buf},
+    next_structural{&_dom_parser.structural_indexes[start_structural_index]},
+    dom_parser{_dom_parser} {
+}
+
+really_inline const uint8_t *json_iterator::peek() const noexcept {
+  return &buf[*(next_structural)];
+}
+really_inline const uint8_t *json_iterator::advance() noexcept {
+  return &buf[*(next_structural++)];
+}
+really_inline size_t json_iterator::remaining_len() const noexcept {
+  return dom_parser.len - *(next_structural-1);
+}
+
+really_inline bool json_iterator::at_eof() const noexcept {
+  return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
+}
+really_inline bool json_iterator::at_beginning() const noexcept {
+  return next_structural == dom_parser.structural_indexes.get();
+}
+really_inline uint8_t json_iterator::last_structural() const noexcept {
+  return buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]];
+}
+
+really_inline void json_iterator::log_value(const char *type) const noexcept {
+  logger::log_line(*this, "", type, "");
+}
+
+really_inline void json_iterator::log_start_value(const char *type) const noexcept {
+  logger::log_line(*this, "+", type, "");
+  if (logger::LOG_ENABLED) { logger::log_depth++; }
+}
+
+really_inline void json_iterator::log_end_value(const char *type) const noexcept {
+  if (logger::LOG_ENABLED) { logger::log_depth--; }
+  logger::log_line(*this, "-", type, "");
+}
+
+really_inline void json_iterator::log_error(const char *error) const noexcept {
+  logger::log_line(*this, "", "ERROR", error);
+}
+
+template<typename V>
+WARN_UNUSED really_inline error_code json_iterator::visit_root_primitive(V &visitor, const uint8_t *value) noexcept {
+  switch (*value) {
+    case '"': return visitor.visit_root_string(*this, value);
+    case 't': return visitor.visit_root_true_atom(*this, value);
+    case 'f': return visitor.visit_root_false_atom(*this, value);
+    case 'n': return visitor.visit_root_null_atom(*this, value);
+    case '-':
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      return visitor.visit_root_number(*this, value);
+    default:
+      log_error("Document starts with a non-value character");
+      return TAPE_ERROR;
+  }
+}
+template<typename V>
+WARN_UNUSED really_inline error_code json_iterator::visit_primitive(V &visitor, const uint8_t *value) noexcept {
+  switch (*value) {
+    case '"': return visitor.visit_string(*this, value);
+    case 't': return visitor.visit_true_atom(*this, value);
+    case 'f': return visitor.visit_false_atom(*this, value);
+    case 'n': return visitor.visit_null_atom(*this, value);
+    case '-':
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      return visitor.visit_number(*this, value);
+    default:
+      log_error("Non-value found when value was expected!");
+      return TAPE_ERROR;
+  }
+}
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
-/* end file src/generic/stage2/structural_iterator.h */
-/* begin file src/generic/stage2/tape_builder.h */
+/* end file src/generic/stage2/logger.h */
 /* begin file src/generic/stage2/tape_writer.h */
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -7240,224 +7847,276 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
 struct tape_builder {
+  template<bool STREAMING>
+  WARN_UNUSED static really_inline error_code parse_document(
+    dom_parser_implementation &dom_parser,
+    dom::document &doc) noexcept;
+
+  /** Called when a non-empty document starts. */
+  WARN_UNUSED really_inline error_code visit_document_start(json_iterator &iter) noexcept;
+  /** Called when a non-empty document ends without error. */
+  WARN_UNUSED really_inline error_code visit_document_end(json_iterator &iter) noexcept;
+
+  /** Called when a non-empty array starts. */
+  WARN_UNUSED really_inline error_code visit_array_start(json_iterator &iter) noexcept;
+  /** Called when a non-empty array ends. */
+  WARN_UNUSED really_inline error_code visit_array_end(json_iterator &iter) noexcept;
+  /** Called when an empty array is found. */
+  WARN_UNUSED really_inline error_code visit_empty_array(json_iterator &iter) noexcept;
+
+  /** Called when a non-empty object starts. */
+  WARN_UNUSED really_inline error_code visit_object_start(json_iterator &iter) noexcept;
+  /**
+   * Called when a key in a field is encountered.
+   *
+   * primitive, visit_object_start, visit_empty_object, visit_array_start, or visit_empty_array
+   * will be called after this with the field value.
+   */
+  WARN_UNUSED really_inline error_code visit_key(json_iterator &iter, const uint8_t *key) noexcept;
+  /** Called when a non-empty object ends. */
+  WARN_UNUSED really_inline error_code visit_object_end(json_iterator &iter) noexcept;
+  /** Called when an empty object is found. */
+  WARN_UNUSED really_inline error_code visit_empty_object(json_iterator &iter) noexcept;
+
+  /**
+   * Called when a string, number, boolean or null is found.
+   */
+  WARN_UNUSED really_inline error_code visit_primitive(json_iterator &iter, const uint8_t *value) noexcept;
+  /**
+   * Called when a string, number, boolean or null is found at the top level of a document (i.e.
+   * when there is no array or object and the entire document is a single string, number, boolean or
+   * null.
+   *
+   * This is separate from primitive() because simdjson's normal primitive parsing routines assume
+   * there is at least one more token after the value, which is only true in an array or object.
+   */
+  WARN_UNUSED really_inline error_code visit_root_primitive(json_iterator &iter, const uint8_t *value) noexcept;
+
+  WARN_UNUSED really_inline error_code visit_string(json_iterator &iter, const uint8_t *value, bool key = false) noexcept;
+  WARN_UNUSED really_inline error_code visit_number(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_true_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_false_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_null_atom(json_iterator &iter, const uint8_t *value) noexcept;
+
+  WARN_UNUSED really_inline error_code visit_root_string(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_number(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_true_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_false_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_null_atom(json_iterator &iter, const uint8_t *value) noexcept;
+
+  /** Called each time a new field or element in an array or object is found. */
+  WARN_UNUSED really_inline error_code increment_count(json_iterator &iter) noexcept;
+
   /** Next location to write to tape */
   tape_writer tape;
+private:
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc;
 
-  really_inline tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
+  really_inline tape_builder(dom::document &doc) noexcept;
 
-private:
-  friend struct structural_parser;
+  really_inline uint32_t next_tape_index(json_iterator &iter) const noexcept;
+  really_inline void start_container(json_iterator &iter) noexcept;
+  WARN_UNUSED really_inline error_code end_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept;
+  WARN_UNUSED really_inline error_code empty_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept;
+  really_inline uint8_t *on_start_string(json_iterator &iter) noexcept;
+  really_inline void on_end_string(uint8_t *dst) noexcept;
+}; // class tape_builder
 
-  really_inline error_code parse_root_primitive(structural_parser &parser, const uint8_t *value) {
-    switch (*value) {
-      case '"': return parse_string(parser, value);
-      case 't': return parse_root_true_atom(parser, value);
-      case 'f': return parse_root_false_atom(parser, value);
-      case 'n': return parse_root_null_atom(parser, value);
-      case '-':
-      case '0': case '1': case '2': case '3': case '4':
-      case '5': case '6': case '7': case '8': case '9':
-        return parse_root_number(parser, value);
-      default:
-        parser.log_error("Document starts with a non-value character");
-        return TAPE_ERROR;
-    }
-  }
-  really_inline error_code parse_primitive(structural_parser &parser, const uint8_t *value) {
-    switch (*value) {
-      case '"': return parse_string(parser, value);
-      case 't': return parse_true_atom(parser, value);
-      case 'f': return parse_false_atom(parser, value);
-      case 'n': return parse_null_atom(parser, value);
-      case '-':
-      case '0': case '1': case '2': case '3': case '4':
-      case '5': case '6': case '7': case '8': case '9':
-        return parse_number(parser, value);
-      default:
-        parser.log_error("Non-value found when value was expected!");
-        return TAPE_ERROR;
-    }
-  }
-  really_inline void empty_object(structural_parser &parser) {
-    parser.log_value("empty object");
-    empty_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
-  }
-  really_inline void empty_array(structural_parser &parser) {
-    parser.log_value("empty array");
-    empty_container(parser, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
-  }
+template<bool STREAMING>
+WARN_UNUSED really_inline error_code tape_builder::parse_document(
+    dom_parser_implementation &dom_parser,
+    dom::document &doc) noexcept {
+  dom_parser.doc = &doc;
+  json_iterator iter(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
+  tape_builder builder(doc);
+  return iter.walk_document<STREAMING>(builder);
+}
 
-  really_inline void start_document(structural_parser &parser) {
-    parser.log_start_value("document");
-    start_container(parser);
-  }
-  really_inline void start_object(structural_parser &parser) {
-    parser.log_start_value("object");
-    start_container(parser);
-  }
-  really_inline void start_array(structural_parser &parser) {
-    parser.log_start_value("array");
-    start_container(parser);
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_primitive(json_iterator &iter, const uint8_t *value) noexcept {
+  return iter.visit_root_primitive(*this, value);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_primitive(json_iterator &iter, const uint8_t *value) noexcept {
+  return iter.visit_primitive(*this, value);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_empty_object(json_iterator &iter) noexcept {
+  return empty_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_empty_array(json_iterator &iter) noexcept {
+  return empty_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
+}
 
-  really_inline void end_object(structural_parser &parser) {
-    parser.log_end_value("object");
-    end_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
-  }
-  really_inline void end_array(structural_parser &parser) {
-    parser.log_end_value("array");
-    end_container(parser, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
-  }
-  really_inline void end_document(structural_parser &parser) {
-    parser.log_end_value("document");
-    constexpr uint32_t start_tape_index = 0;
-    tape.append(start_tape_index, internal::tape_type::ROOT);
-    tape_writer::write(parser.dom_parser.doc->tape[start_tape_index], next_tape_index(parser), internal::tape_type::ROOT);
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_document_start(json_iterator &iter) noexcept {
+  start_container(iter);
+  return SUCCESS;
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_object_start(json_iterator &iter) noexcept {
+  start_container(iter);
+  return SUCCESS;
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_array_start(json_iterator &iter) noexcept {
+  start_container(iter);
+  return SUCCESS;
+}
 
-  WARN_UNUSED really_inline error_code parse_key(structural_parser &parser, const uint8_t *value) {
-    return parse_string(parser, value, true);
-  }
-  WARN_UNUSED really_inline error_code parse_string(structural_parser &parser, const uint8_t *value, bool key = false) {
-    parser.log_value(key ? "key" : "string");
-    uint8_t *dst = on_start_string(parser);
-    dst = stringparsing::parse_string(value, dst);
-    if (dst == nullptr) {
-      parser.log_error("Invalid escape in string");
-      return STRING_ERROR;
-    }
-    on_end_string(dst);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_object_end(json_iterator &iter) noexcept {
+  return end_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_array_end(json_iterator &iter) noexcept {
+  return end_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_document_end(json_iterator &iter) noexcept {
+  constexpr uint32_t start_tape_index = 0;
+  tape.append(start_tape_index, internal::tape_type::ROOT);
+  tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(iter), internal::tape_type::ROOT);
+  return SUCCESS;
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_key(json_iterator &iter, const uint8_t *key) noexcept {
+  return visit_string(iter, key, true);
+}
 
-  WARN_UNUSED really_inline error_code parse_number(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("number");
-    if (!numberparsing::parse_number(value, tape)) { parser.log_error("Invalid number"); return NUMBER_ERROR; }
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::increment_count(json_iterator &iter) noexcept {
+  iter.dom_parser.open_containers[iter.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
+  return SUCCESS;
+}
 
-  really_inline error_code parse_root_number(structural_parser &parser, const uint8_t *value) {
-    //
-    // We need to make a copy to make sure that the string is space terminated.
-    // This is not about padding the input, which should already padded up
-    // to len + SIMDJSON_PADDING. However, we have no control at this stage
-    // on how the padding was done. What if the input string was padded with nulls?
-    // It is quite common for an input string to have an extra null character (C string).
-    // We do not want to allow 9\0 (where \0 is the null character) inside a JSON
-    // document, but the string "9\0" by itself is fine. So we make a copy and
-    // pad the input with spaces when we know that there is just one input element.
-    // This copy is relatively expensive, but it will almost never be called in
-    // practice unless you are in the strange scenario where you have many JSON
-    // documents made of single atoms.
-    //
-    uint8_t *copy = static_cast<uint8_t *>(malloc(parser.remaining_len() + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      return MEMALLOC;
-    }
-    memcpy(copy, value, parser.remaining_len());
-    memset(copy + parser.remaining_len(), ' ', SIMDJSON_PADDING);
-    error_code error = parse_number(parser, copy);
-    free(copy);
-    return error;
-  }
+really_inline tape_builder::tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
 
-  WARN_UNUSED really_inline error_code parse_true_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("true");
-    if (!atomparsing::is_valid_true_atom(value)) { return T_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::TRUE_VALUE);
-    return SUCCESS;
+WARN_UNUSED really_inline error_code tape_builder::visit_string(json_iterator &iter, const uint8_t *value, bool key) noexcept {
+  iter.log_value(key ? "key" : "string");
+  uint8_t *dst = on_start_string(iter);
+  dst = stringparsing::parse_string(value, dst);
+  if (dst == nullptr) {
+    iter.log_error("Invalid escape in string");
+    return STRING_ERROR;
   }
+  on_end_string(dst);
+  return SUCCESS;
+}
 
-  WARN_UNUSED really_inline error_code parse_root_true_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("true");
-    if (!atomparsing::is_valid_true_atom(value, parser.remaining_len())) { return T_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::TRUE_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_string(json_iterator &iter, const uint8_t *value) noexcept {
+  return visit_string(iter, value);
+}
 
-  WARN_UNUSED really_inline error_code parse_false_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("false");
-    if (!atomparsing::is_valid_false_atom(value)) { return F_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::FALSE_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("number");
+  return numberparsing::parse_number(value, tape);
+}
 
-  WARN_UNUSED really_inline error_code parse_root_false_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("false");
-    if (!atomparsing::is_valid_false_atom(value, parser.remaining_len())) { return F_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::FALSE_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
+  //
+  // We need to make a copy to make sure that the string is space terminated.
+  // This is not about padding the input, which should already padded up
+  // to len + SIMDJSON_PADDING. However, we have no control at this stage
+  // on how the padding was done. What if the input string was padded with nulls?
+  // It is quite common for an input string to have an extra null character (C string).
+  // We do not want to allow 9\0 (where \0 is the null character) inside a JSON
+  // document, but the string "9\0" by itself is fine. So we make a copy and
+  // pad the input with spaces when we know that there is just one input element.
+  // This copy is relatively expensive, but it will almost never be called in
+  // practice unless you are in the strange scenario where you have many JSON
+  // documents made of single atoms.
+  //
+  uint8_t *copy = static_cast<uint8_t *>(malloc(iter.remaining_len() + SIMDJSON_PADDING));
+  if (copy == nullptr) { return MEMALLOC; }
+  memcpy(copy, value, iter.remaining_len());
+  memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  error_code error = visit_number(iter, copy);
+  free(copy);
+  return error;
+}
 
-  WARN_UNUSED really_inline error_code parse_null_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("null");
-    if (!atomparsing::is_valid_null_atom(value)) { return N_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::NULL_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_true_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("true");
+  if (!atomparsing::is_valid_true_atom(value)) { return T_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::TRUE_VALUE);
+  return SUCCESS;
+}
 
-  WARN_UNUSED really_inline error_code parse_root_null_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("null");
-    if (!atomparsing::is_valid_null_atom(value, parser.remaining_len())) { return N_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::NULL_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_true_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("true");
+  if (!atomparsing::is_valid_true_atom(value, iter.remaining_len())) { return T_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::TRUE_VALUE);
+  return SUCCESS;
+}
 
-  // increment_count increments the count of keys in an object or values in an array.
-  really_inline void increment_count(structural_parser &parser) {
-    parser.dom_parser.containing_scope[parser.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_false_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("false");
+  if (!atomparsing::is_valid_false_atom(value)) { return F_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::FALSE_VALUE);
+  return SUCCESS;
+}
+
+WARN_UNUSED really_inline error_code tape_builder::visit_root_false_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("false");
+  if (!atomparsing::is_valid_false_atom(value, iter.remaining_len())) { return F_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::FALSE_VALUE);
+  return SUCCESS;
+}
+
+WARN_UNUSED really_inline error_code tape_builder::visit_null_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("null");
+  if (!atomparsing::is_valid_null_atom(value)) { return N_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::NULL_VALUE);
+  return SUCCESS;
+}
+
+WARN_UNUSED really_inline error_code tape_builder::visit_root_null_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("null");
+  if (!atomparsing::is_valid_null_atom(value, iter.remaining_len())) { return N_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::NULL_VALUE);
+  return SUCCESS;
+}
 
 // private:
 
-  really_inline uint32_t next_tape_index(structural_parser &parser) {
-    return uint32_t(tape.next_tape_loc - parser.dom_parser.doc->tape.get());
-  }
+really_inline uint32_t tape_builder::next_tape_index(json_iterator &iter) const noexcept {
+  return uint32_t(tape.next_tape_loc - iter.dom_parser.doc->tape.get());
+}
 
-  really_inline void empty_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) {
-    auto start_index = next_tape_index(parser);
-    tape.append(start_index+2, start);
-    tape.append(start_index, end);
-  }
+WARN_UNUSED really_inline error_code tape_builder::empty_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept {
+  auto start_index = next_tape_index(iter);
+  tape.append(start_index+2, start);
+  tape.append(start_index, end);
+  return SUCCESS;
+}
 
-  really_inline void start_container(structural_parser &parser) {
-    parser.dom_parser.containing_scope[parser.depth].tape_index = next_tape_index(parser);
-    parser.dom_parser.containing_scope[parser.depth].count = 0;
-    tape.skip(); // We don't actually *write* the start element until the end.
-  }
+really_inline void tape_builder::start_container(json_iterator &iter) noexcept {
+  iter.dom_parser.open_containers[iter.depth].tape_index = next_tape_index(iter);
+  iter.dom_parser.open_containers[iter.depth].count = 0;
+  tape.skip(); // We don't actually *write* the start element until the end.
+}
 
-  really_inline void end_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) noexcept {
-    // Write the ending tape element, pointing at the start location
-    const uint32_t start_tape_index = parser.dom_parser.containing_scope[parser.depth].tape_index;
-    tape.append(start_tape_index, end);
-    // Write the start tape element, pointing at the end location (and including count)
-    // count can overflow if it exceeds 24 bits... so we saturate
-    // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
-    const uint32_t count = parser.dom_parser.containing_scope[parser.depth].count;
-    const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
-    tape_writer::write(parser.dom_parser.doc->tape[start_tape_index], next_tape_index(parser) | (uint64_t(cntsat) << 32), start);
-  }
+WARN_UNUSED really_inline error_code tape_builder::end_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept {
+  // Write the ending tape element, pointing at the start location
+  const uint32_t start_tape_index = iter.dom_parser.open_containers[iter.depth].tape_index;
+  tape.append(start_tape_index, end);
+  // Write the start tape element, pointing at the end location (and including count)
+  // count can overflow if it exceeds 24 bits... so we saturate
+  // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
+  const uint32_t count = iter.dom_parser.open_containers[iter.depth].count;
+  const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
+  tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(iter) | (uint64_t(cntsat) << 32), start);
+  return SUCCESS;
+}
 
-  really_inline uint8_t *on_start_string(structural_parser &parser) noexcept {
-    // we advance the point, accounting for the fact that we have a NULL termination
-    tape.append(current_string_buf_loc - parser.dom_parser.doc->string_buf.get(), internal::tape_type::STRING);
-    return current_string_buf_loc + sizeof(uint32_t);
-  }
+really_inline uint8_t *tape_builder::on_start_string(json_iterator &iter) noexcept {
+  // we advance the point, accounting for the fact that we have a NULL termination
+  tape.append(current_string_buf_loc - iter.dom_parser.doc->string_buf.get(), internal::tape_type::STRING);
+  return current_string_buf_loc + sizeof(uint32_t);
+}
 
-  really_inline void on_end_string(uint8_t *dst) noexcept {
-    uint32_t str_length = uint32_t(dst - (current_string_buf_loc + sizeof(uint32_t)));
-    // TODO check for overflow in case someone has a crazy string (>=4GB?)
-    // But only add the overflow check when the document itself exceeds 4GB
-    // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
-    memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
-    // NULL termination is still handy if you expect all your strings to
-    // be NULL terminated? It comes at a small cost
-    *dst = 0;
-    current_string_buf_loc = dst + 1;
-  }
-}; // class tape_builder
+really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
+  uint32_t str_length = uint32_t(dst - (current_string_buf_loc + sizeof(uint32_t)));
+  // TODO check for overflow in case someone has a crazy string (>=4GB?)
+  // But only add the overflow check when the document itself exceeds 4GB
+  // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
+  memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
+  // NULL termination is still handy if you expect all your strings to
+  // be NULL terminated? It comes at a small cost
+  *dst = 0;
+  current_string_buf_loc = dst + 1;
+}
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
@@ -7468,15 +8127,11 @@ namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
 WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
-  doc = &_doc;
-  stage2::tape_builder builder(*doc);
-  return stage2::structural_parser::parse<false>(*this, builder);
+  return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
-  doc = &_doc;
-  stage2::tape_builder builder(_doc);
-  return stage2::structural_parser::parse<true>(*this, builder);
+  return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
@@ -8010,22 +8665,18 @@ namespace simd {
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
-// expectation: sizeof(scope_descriptor) = 64/8.
-struct scope_descriptor {
+// expectation: sizeof(open_container) = 64/8.
+struct open_container {
   uint32_t tape_index; // where, on the tape, does the scope ([,{) begins
   uint32_t count; // how many elements in the scope
-}; // struct scope_descriptor
+}; // struct open_container
 
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-typedef void* ret_address_t;
-#else
-typedef char ret_address_t;
-#endif
+static_assert(sizeof(open_container) == 64/8, "Open container must be 64 bits");
 
 class dom_parser_implementation final : public internal::dom_parser_implementation {
 public:
   /** Tape location of each open { or [ */
-  std::unique_ptr<scope_descriptor[]> containing_scope{};
+  std::unique_ptr<open_container[]> open_containers{};
   /** Whether each open container is a [ or { */
   std::unique_ptr<bool[]> is_array{};
   /** Buffer passed to stage 1 */
@@ -8084,10 +8735,10 @@ namespace allocate {
 // Allocates stage 2 internal state and outputs in the parser
 //
 really_inline error_code set_max_depth(dom_parser_implementation &parser, size_t max_depth) {
-  parser.containing_scope.reset(new (std::nothrow) scope_descriptor[max_depth]);
+  parser.open_containers.reset(new (std::nothrow) open_container[max_depth]);
   parser.is_array.reset(new (std::nothrow) bool[max_depth]);
 
-  if (!parser.is_array || !parser.containing_scope) {
+  if (!parser.is_array || !parser.open_containers) {
     return MEMALLOC;
   }
   return SUCCESS;
@@ -8289,15 +8940,19 @@ using namespace simd;
 
 struct json_character_block {
   static really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
-
+  //  ASCII white-space ('\r','\n','\t',' ')
   really_inline uint64_t whitespace() const { return _whitespace; }
+  // non-quote structural characters (comma, colon, braces, brackets)
   really_inline uint64_t op() const { return _op; }
+  // neither a structural character nor a white-space, so letters, numbers and quotes
   really_inline uint64_t scalar() { return ~(op() | whitespace()); }
 
-  uint64_t _whitespace;
-  uint64_t _op;
+  uint64_t _whitespace; // ASCII white-space ('\r','\n','\t',' ')
+  uint64_t _op; // structural characters (comma, colon, braces, brackets but not quotes)
 };
 
+// This identifies structural characters (comma, colon, braces, brackets),
+// and ASCII white-space ('\r','\n','\t',' ').
 really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
   // These lookups rely on the fact that anything < 127 will match the lower 4 bits, which is why
   // we can't use the generic lookup_16.
@@ -8636,9 +9291,9 @@ struct json_string_block {
   // Real (non-backslashed) quotes
   really_inline uint64_t quote() const { return _quote; }
   // Start quotes of strings
-  really_inline uint64_t string_end() const { return _quote & _in_string; }
+  really_inline uint64_t string_start() const { return _quote & _in_string; }
   // End quotes of strings
-  really_inline uint64_t string_start() const { return _quote & ~_in_string; }
+  really_inline uint64_t string_end() const { return _quote & ~_in_string; }
   // Only characters inside the string (not including the quotes)
   really_inline uint64_t string_content() const { return _in_string & ~_quote; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
@@ -8775,10 +9430,27 @@ namespace stage1 {
 
 /**
  * A block of scanned json, with information on operators and scalars.
+ *
+ * We seek to identify pseudo-structural characters. Anything that is inside
+ * a string must be omitted (hence  & ~_string.string_tail()).
+ * Otherwise, pseudo-structural characters come in two forms.
+ * 1. We have the structural characters ([,],{,},:, comma). The 
+ *    term 'structural character' is from the JSON RFC.
+ * 2. We have the 'scalar pseudo-structural characters'.
+ *    Scalars are quotes, and any character except structural characters and white space.
+ *
+ * To identify the scalar pseudo-structural characters, we must look at what comes
+ * before them: it must be a space, a quote or a structural characters.
+ * Starting with simdjson v0.3, we identify them by
+ * negation: we identify everything that is followed by a non-quote scalar,
+ * and we negate that. Whatever remains must be a 'scalar pseudo-structural character'.
  */
 struct json_block {
 public:
-  /** The start of structurals */
+  /**
+   * The start of structurals.
+   * In simdjson prior to v0.3, these were called the pseudo-structural characters.
+   **/
   really_inline uint64_t structural_start() { return potential_structural_start() & ~_string.string_tail(); }
   /** All JSON whitespace (i.e. not in a string) */
   really_inline uint64_t whitespace() { return non_quote_outside_string(_characters.whitespace()); }
@@ -8792,27 +9464,49 @@ public:
 
   // string and escape characters
   json_string_block _string;
-  // whitespace, operators, scalars
+  // whitespace, structural characters ('operators'), scalars
   json_character_block _characters;
   // whether the previous character was a scalar
-  uint64_t _follows_potential_scalar;
+  uint64_t _follows_potential_nonquote_scalar;
 private:
   // Potential structurals (i.e. disregarding strings)
 
-  /** operators plus scalar starts like 123, true and "abc" */
+  /**
+   * structural elements ([,],{,},:, comma) plus scalar starts like 123, true and "abc".
+   * They may reside inside a string.
+   **/
   really_inline uint64_t potential_structural_start() { return _characters.op() | potential_scalar_start(); }
-  /** the start of non-operator runs, like 123, true and "abc" */
-  really_inline uint64_t potential_scalar_start() { return _characters.scalar() & ~follows_potential_scalar(); }
-  /** whether the given character is immediately after a non-operator like 123, true or " */
-  really_inline uint64_t follows_potential_scalar() { return _follows_potential_scalar; }
+  /**
+   * The start of non-operator runs, like 123, true and "abc".
+   * It main reside inside a string.
+   **/
+  really_inline uint64_t potential_scalar_start() {
+    // The term "scalar" refers to anything except structural characters and white space
+    // (so letters, numbers, quotes).
+    // Whenever it is preceded by something that is not a structural element ({,},[,],:, ") nor a white-space
+    // then we know that it is irrelevant structurally.
+    return _characters.scalar() & ~follows_potential_scalar();
+  }
+  /**
+   * Whether the given character is immediately after a non-operator like 123, true.
+   * The characters following a quote are not included.
+   */
+  really_inline uint64_t follows_potential_scalar() {
+    // _follows_potential_nonquote_scalar: is defined as marking any character that follows a character
+    // that is not a structural element ({,},[,],:, comma) nor a quote (") and that is not a
+    // white space.
+    // It is understood that within quoted region, anything at all could be marked (irrelevant).
+    return _follows_potential_nonquote_scalar;
+  }
 };
 
 /**
- * Scans JSON for important bits: operators, strings, and scalars.
+ * Scans JSON for important bits: structural characters or 'operators', strings, and scalars.
  *
  * The scanner starts by calculating two distinct things:
  * - string characters (taking \" into account)
- * - operators ([]{},:) and scalars (runs of non-operators like 123, true and "abc")
+ * - structural characters or 'operators' ([]{},:, comma)
+ *   and scalars (runs of non-operators like 123, true and "abc")
  *
  * To minimize data dependency (a key component of the scanner's speed), it finds these in parallel:
  * in particular, the operator/scalar bit will find plenty of things that are actually part of
@@ -8827,7 +9521,7 @@ public:
 
 private:
   // Whether the last character of the previous iteration is part of a scalar token
-  // (anything except whitespace or an operator).
+  // (anything except whitespace or a structural character/'operator').
   uint64_t prev_scalar = 0ULL;
   json_string_scanner string_scanner{};
 };
@@ -8848,12 +9542,24 @@ really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
 
 really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
   json_string_block strings = string_scanner.next(in);
+  // identifies the white-space and the structurat characters
   json_character_block characters = json_character_block::classify(in);
-  uint64_t follows_scalar = follows(characters.scalar(), prev_scalar);
+  // The term "scalar" refers to anything except structural characters and white space
+  // (so letters, numbers, quotes).
+  // We want  follows_scalar to mark anything that follows a non-quote scalar (so letters and numbers).
+  //
+  // A terminal quote should either be followed by a structural character (comma, brace, bracket, colon)
+  // or nothing. However, we still want ' "a string"true ' to mark the 't' of 'true' as a potential
+  // pseudo-structural character just like we would if we had  ' "a string" true '; otherwise we
+  // may need to add an extra check when parsing strings.
+  //
+  // Performance: there are many ways to skin this cat.
+  const uint64_t nonquote_scalar = characters.scalar() & ~strings.quote();
+  uint64_t follows_nonquote_scalar = follows(nonquote_scalar, prev_scalar);
   return {
     strings,
     characters,
-    follows_scalar
+    follows_nonquote_scalar
   };
 }
 
@@ -9443,6 +10149,15 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
   return nullptr;
 }
 
+UNUSED WARN_UNUSED really_inline error_code parse_string_to_buffer(const uint8_t *src, uint8_t *&current_string_buf_loc, std::string_view &s) {
+  if (src[0] != '"') { return STRING_ERROR; }
+  auto end = stringparsing::parse_string(src, current_string_buf_loc);
+  if (!end) { return STRING_ERROR; }
+  s = std::string_view((const char *)current_string_buf_loc, end-current_string_buf_loc);
+  current_string_buf_loc = end;
+  return SUCCESS;
+}
+
 } // namespace stringparsing
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
@@ -9491,15 +10206,15 @@ namespace stage2 {
 namespace numberparsing {
 
 #ifdef JSON_TEST_NUMBERS
-#define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), false)
-#define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), writer.append_s64((VALUE)))
-#define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), writer.append_u64((VALUE)))
-#define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), writer.append_double((VALUE)))
+#define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
+#define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
+#define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
+#define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
 #else
-#define INVALID_NUMBER(SRC) (false)
-#define WRITE_INTEGER(VALUE, SRC, WRITER) writer.append_s64((VALUE))
-#define WRITE_UNSIGNED(VALUE, SRC, WRITER) writer.append_u64((VALUE))
-#define WRITE_DOUBLE(VALUE, SRC, WRITER) writer.append_double((VALUE))
+#define INVALID_NUMBER(SRC) (NUMBER_ERROR)
+#define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
+#define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
+#define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
 #endif
 
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
@@ -9508,7 +10223,7 @@ namespace numberparsing {
 // set to false. This should work *most of the time* (like 99% of the time).
 // We assume that power is in the [FASTFLOAT_SMALLEST_POWER,
 // FASTFLOAT_LARGEST_POWER] interval: the caller is responsible for this check.
-really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, bool *success) {
+really_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, double &d) {
   // we start with a fast path
   // It was described in
   // Clinger WD. How to read floating point numbers accurately.
@@ -9524,7 +10239,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
 #endif
     // convert the integer into a double. This is lossless since
     // 0 <= i <= 2^53 - 1.
-    double d = double(i);
+    d = double(i);
     //
     // The general idea is as follows.
     // If 0 <= s < 2^53 and if 10^0 <= p <= 10^22 then
@@ -9543,8 +10258,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
     if (negative) {
       d = -d;
     }
-    *success = true;
-    return d;
+    return true;
   }
   // When 22 < power && power <  22 + 16, we could
   // hope for another, secondary fast path.  It wa
@@ -9569,7 +10283,8 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   // In the slow path, we need to adjust i so that it is > 1<<63 which is always
   // possible, except if i == 0, so we handle i == 0 separately.
   if(i == 0) {
-    return 0.0;
+    d = 0.0;
+    return true;
   }
 
   // We are going to need to do some 64-bit arithmetic to get a more precise product.
@@ -9619,8 +10334,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
     // This does happen, e.g. with 7.3177701707893310e+15.
     if (((product_middle + 1 == 0) && ((product_high & 0x1FF) == 0x1FF) &&
          (product_low + i < product_low))) { // let us be prudent and bail out.
-      *success = false;
-      return 0;
+      return false;
     }
     upper = product_high;
     lower = product_middle;
@@ -9641,25 +10355,24 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   // floating-point values.
   if (unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
                ((mantissa & 3) == 1))) {
-      // if mantissa & 1 == 1 we might need to round up.
-      //
-      // Scenarios:
-      // 1. We are not in the middle. Then we should round up.
-      //
-      // 2. We are right in the middle. Whether we round up depends
-      // on the last significant bit: if it is "one" then we round
-      // up (round to even) otherwise, we do not.
-      //
-      // So if the last significant bit is 1, we can safely round up.
-      // Hence we only need to bail out if (mantissa & 3) == 1.
-      // Otherwise we may need more accuracy or analysis to determine whether
-      // we are exactly between two floating-point numbers.
-      // It can be triggered with 1e23.
-      // Note: because the factor_mantissa and factor_mantissa_low are
-      // almost always rounded down (except for small positive powers),
-      // almost always should round up.
-      *success = false;
-      return 0;
+    // if mantissa & 1 == 1 we might need to round up.
+    //
+    // Scenarios:
+    // 1. We are not in the middle. Then we should round up.
+    //
+    // 2. We are right in the middle. Whether we round up depends
+    // on the last significant bit: if it is "one" then we round
+    // up (round to even) otherwise, we do not.
+    //
+    // So if the last significant bit is 1, we can safely round up.
+    // Hence we only need to bail out if (mantissa & 3) == 1.
+    // Otherwise we may need more accuracy or analysis to determine whether
+    // we are exactly between two floating-point numbers.
+    // It can be triggered with 1e23.
+    // Note: because the factor_mantissa and factor_mantissa_low are
+    // almost always rounded down (except for small positive powers),
+    // almost always should round up.
+    return false;
   }
 
   mantissa += mantissa & 1;
@@ -9677,15 +10390,12 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   uint64_t real_exponent = c.exp - lz;
   // we have to check that real_exponent is in range, otherwise we bail out
   if (unlikely((real_exponent < 1) || (real_exponent > 2046))) {
-    *success = false;
-    return 0;
+    return false;
   }
   mantissa |= real_exponent << 52;
   mantissa |= (((uint64_t)negative) << 63);
-  double d;
   memcpy(&d, &mantissa, sizeof(d));
-  *success = true;
-  return d;
+  return true;
 }
 
 static bool parse_float_strtod(const uint8_t *ptr, double *outDouble) {
@@ -9736,11 +10446,11 @@ really_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
 }
 
 template<typename W>
-bool slow_float_parsing(UNUSED const uint8_t * src, W writer) {
+error_code slow_float_parsing(UNUSED const uint8_t * src, W writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
-    WRITE_DOUBLE(d, src, writer);
-    return true;
+    writer.append_double(d);
+    return SUCCESS;
   }
   return INVALID_NUMBER(src);
 }
@@ -9757,7 +10467,7 @@ really_inline bool parse_digit(const uint8_t c, I &i) {
   return true;
 }
 
-really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+really_inline error_code parse_decimal(UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -9780,10 +10490,10 @@ really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t 
   if (exponent == 0) {
     return INVALID_NUMBER(src);
   }
-  return true;
+  return SUCCESS;
 }
 
-really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+really_inline error_code parse_exponent(UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -9831,38 +10541,42 @@ really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t
   // is bounded in magnitude by the size of the JSON input, we are fine in this universe.
   // To sum it up: the next line should never overflow.
   exponent += (neg_exp ? -exp_number : exp_number);
-  return true;
+  return SUCCESS;
+}
+
+really_inline int significant_digits(const uint8_t * start_digits, int digit_count) {
+  // It is possible that the integer had an overflow.
+  // We have to handle the case where we have 0.0000somenumber.
+  const uint8_t *start = start_digits;
+  while ((*start == '0') || (*start == '.')) {
+    start++;
+  }
+  // we over-decrement by one when there is a '.'
+  return digit_count - int(start - start_digits);
 }
 
 template<typename W>
-really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
+really_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
   // digit count is off by 1 because of the decimal (assuming there was one).
-  if (unlikely((digit_count-1 >= 19))) { // this is uncommon
-    // It is possible that the integer had an overflow.
-    // We have to handle the case where we have 0.0000somenumber.
-    const uint8_t *start = start_digits;
-    while ((*start == '0') || (*start == '.')) {
-      start++;
-    }
-    // we over-decrement by one when there is a '.'
-    digit_count -= int(start - start_digits);
-    if (digit_count >= 19) {
-      // Ok, chances are good that we had an overflow!
-      // this is almost never going to get called!!!
-      // we start anew, going slowly!!!
-      // This will happen in the following examples:
-      // 10000000000000000000000000000000000000000000e+308
-      // 3.1415926535897932384626433832795028841971693993751
-      //
-      bool success = slow_float_parsing(src, writer);
-      // The number was already written, but we made a copy of the writer
-      // when we passed it to the parse_large_integer() function, so
-      writer.skip_double();
-      return success;
-    }
+  if (unlikely(digit_count-1 >= 19 && significant_digits(start_digits, digit_count) >= 19)) {
+    // Ok, chances are good that we had an overflow!
+    // this is almost never going to get called!!!
+    // we start anew, going slowly!!!
+    // This will happen in the following examples:
+    // 10000000000000000000000000000000000000000000e+308
+    // 3.1415926535897932384626433832795028841971693993751
+    //
+    // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
+    // because slow_float_parsing is a non-inlined function. If we passed our writer reference to
+    // it, it would force it to be stored in memory, preventing the compiler from picking it apart
+    // and putting into registers. i.e. if we pass it as reference, it gets slow.
+    // This is what forces the skip_double, as well.
+    error_code error = slow_float_parsing(src, writer);
+    writer.skip_double();
+    return error;
   }
   // NOTE: it's weird that the unlikely() only wraps half the if, but it seems to get slower any other
   // way we've tried: https://github.com/simdjson/simdjson/pull/990#discussion_r448497331
@@ -9870,29 +10584,31 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
   if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) || (exponent > FASTFLOAT_LARGEST_POWER)) {
     // this is almost never going to get called!!!
     // we start anew, going slowly!!!
-    bool success = slow_float_parsing(src, writer);
-    // The number was already written, but we made a copy of the writer when we passed it to the
-    // slow_float_parsing() function, so we have to skip those tape spots now that we've returned
+    // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
+    // because slow_float_parsing is a non-inlined function. If we passed our writer reference to
+    // it, it would force it to be stored in memory, preventing the compiler from picking it apart
+    // and putting into registers. i.e. if we pass it as reference, it gets slow.
+    // This is what forces the skip_double, as well.
+    error_code error = slow_float_parsing(src, writer);
     writer.skip_double();
-    return success;
+    return error;
   }
-  bool success = true;
-  double d = compute_float_64(exponent, i, negative, &success);
-  if (!success) {
+  double d;
+  if (!compute_float_64(exponent, i, negative, d)) {
     // we are almost never going to get here.
     if (!parse_float_strtod(src, &d)) { return INVALID_NUMBER(src); }
   }
   WRITE_DOUBLE(d, src, writer);
-  return true;
+  return SUCCESS;
 }
 
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-really_inline bool parse_number(const uint8_t *const, W &writer) {
+really_inline error_code parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
-  return true;                 // always succeeds
+  return SUCCESS;              // always succeeds
 }
 
 #else
@@ -9907,7 +10623,7 @@ really_inline bool parse_number(const uint8_t *const, W &writer) {
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-really_inline bool parse_number(const uint8_t *const src, W &writer) {
+really_inline error_code parse_number(const uint8_t *const src, W &writer) {
 
   //
   // Check for minus sign
@@ -9935,16 +10651,19 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   if ('.' == *p) {
     is_float = true;
     ++p;
-    if (!parse_decimal(src, p, i, exponent)) { return false; }
+    SIMDJSON_TRY( parse_decimal(src, p, i, exponent) );
     digit_count = int(p - start_digits); // used later to guard against overflows
   }
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
     ++p;
-    if (!parse_exponent(src, p, exponent)) { return false; }
+    SIMDJSON_TRY( parse_exponent(src, p, exponent) );
   }
   if (is_float) {
-    return write_float(src, negative, i, start_digits, digit_count, exponent, writer);
+    const bool clean_end = is_structural_or_whitespace(*p);
+    SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
+    if (!clean_end) { return INVALID_NUMBER(src); }
+    return SUCCESS;
   }
 
   // The longest negative 64-bit number is 19 digits.
@@ -9953,13 +10672,12 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   int longest_digit_count = negative ? 19 : 20;
   if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
   if (digit_count == longest_digit_count) {
-    if(negative) {
+    if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) {
-        return INVALID_NUMBER(src); 
-      }
+      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
       WRITE_INTEGER(~i+1, src, writer);
-      return is_structural_or_whitespace(*p);
+      if (!is_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+      return SUCCESS;
     // Positive overflow check:
     // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
     //   biggest uint64_t.
@@ -9981,9 +10699,230 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
   }
-  return is_structural_or_whitespace(*p);
+  if (!is_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+  return SUCCESS;
 }
 
+// SAX functions
+namespace {
+// Parse any number from 0 to 18,446,744,073,709,551,615
+UNUSED really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
+  const uint8_t *p = src;
+
+  //
+  // Parse the integer part.
+  //
+  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  const uint8_t *const start_digits = p;
+  uint64_t i = 0;
+  while (parse_digit(*p, i)) { p++; }
+
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - start_digits);
+  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return NUMBER_ERROR; }
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  // The longest positive 64-bit number is 20 digits.
+  // We do it this way so we don't trigger this branch unless we must.
+  if (digit_count > 20) { return NUMBER_ERROR; }
+  if (digit_count == 20) {
+    // Positive overflow check:
+    // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+    //   biggest uint64_t.
+    // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+    //   If we got here, it's a 20 digit number starting with the digit "1".
+    // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+    //   than 1,553,255,926,290,448,384.
+    // - That is smaller than the smallest possible 20-digit number the user could write:
+    //   10,000,000,000,000,000,000.
+    // - Therefore, if the number is positive and lower than that, it's overflow.
+    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    //
+    if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+  }
+
+  return i;
+}
+
+// Parse any number from 0 to 18,446,744,073,709,551,615
+// Call this version of the method if you regularly expect 8- or 16-digit numbers.
+UNUSED really_inline simdjson_result<uint64_t> parse_large_unsigned(const uint8_t * const src) noexcept {
+  const uint8_t *p = src;
+
+  //
+  // Parse the integer part.
+  //
+  uint64_t i = 0;
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+    if (is_made_of_eight_digits_fast(p)) {
+      i = i * 100000000 + parse_eight_digits_unrolled(p);
+      p += 8;
+      if (parse_digit(*p, i)) { // digit 17
+        p++;
+        if (parse_digit(*p, i)) { // digit 18
+          p++;
+          if (parse_digit(*p, i)) { // digit 19
+            p++;
+            if (parse_digit(*p, i)) { // digit 20
+              p++;
+              if (parse_digit(*p, i)) { return NUMBER_ERROR; } // 21 digits is an error
+              // Positive overflow check:
+              // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+              //   biggest uint64_t.
+              // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+              //   If we got here, it's a 20 digit number starting with the digit "1".
+              // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+              //   than 1,553,255,926,290,448,384.
+              // - That is smaller than the smallest possible 20-digit number the user could write:
+              //   10,000,000,000,000,000,000.
+              // - Therefore, if the number is positive and lower than that, it's overflow.
+              // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+              //
+              if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+            }
+          }
+        }
+      }
+    } // 16 digits
+  } else { // 8 digits
+    // Less than 8 digits can't overflow, simpler logic here.
+    if (parse_digit(*p, i)) { p++; } else { return NUMBER_ERROR; }
+    while (parse_digit(*p, i)) { p++; }
+  }
+
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - src);
+  if (digit_count == 0 || ('0' == *src && digit_count > 1)) { return NUMBER_ERROR; }
+  return i;
+}
+
+// Parse any number from  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
+UNUSED really_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) noexcept {
+  //
+  // Check for minus sign
+  //
+  bool negative = (*src == '-');
+  const uint8_t *p = src + negative;
+
+  //
+  // Parse the integer part.
+  //
+  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  const uint8_t *const start_digits = p;
+  uint64_t i = 0;
+  while (parse_digit(*p, i)) { p++; }
+
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - start_digits);
+  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return NUMBER_ERROR; }
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  // The longest negative 64-bit number is 19 digits.
+  // The longest positive 64-bit number is 20 digits.
+  // We do it this way so we don't trigger this branch unless we must.
+  int longest_digit_count = negative ? 19 : 20;
+  if (digit_count > longest_digit_count) { return NUMBER_ERROR; }
+  if (digit_count == longest_digit_count) {
+    if(negative) {
+      // Anything negative above INT64_MAX+1 is invalid
+      if (i > uint64_t(INT64_MAX)+1) { return NUMBER_ERROR; }
+      return ~i+1;
+
+    // Positive overflow check:
+    // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+    //   biggest uint64_t.
+    // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+    //   If we got here, it's a 20 digit number starting with the digit "1".
+    // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+    //   than 1,553,255,926,290,448,384.
+    // - That is smaller than the smallest possible 20-digit number the user could write:
+    //   10,000,000,000,000,000,000.
+    // - Therefore, if the number is positive and lower than that, it's overflow.
+    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    //
+    } else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+  }
+
+  return negative ? (~i+1) : i;
+}
+
+UNUSED really_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept {
+  //
+  // Check for minus sign
+  //
+  bool negative = (*src == '-');
+  src += negative;
+
+  //
+  // Parse the integer part.
+  //
+  uint64_t i = 0;
+  const uint8_t *p = src;
+  p += parse_digit(*p, i);
+  bool leading_zero = (i == 0);
+  while (parse_digit(*p, i)) { p++; }
+  // no integer digits, or 0123 (zero must be solo)
+  if ( p == src || (leading_zero && p != src+1)) { return NUMBER_ERROR; }
+
+  //
+  // Parse the decimal part.
+  //
+  int64_t exponent = 0;
+  bool overflow;
+  if (likely(*p == '.')) {
+    p++;
+    const uint8_t *start_decimal_digits = p;
+    if (!parse_digit(*p, i)) { return NUMBER_ERROR; } // no decimal digits
+    p++;
+    while (parse_digit(*p, i)) { p++; }
+    exponent = -(p - start_decimal_digits);
+
+    // Overflow check. 19 digits (minus the decimal) may be overflow.
+    overflow = p-src-1 >= 19;
+    if (unlikely(overflow && leading_zero)) {
+      // Skip leading 0.00000 and see if it still overflows
+      const uint8_t *start_digits = src + 2;
+      while (*start_digits == '0') { start_digits++; }
+      overflow = start_digits-src >= 19;
+    }
+  } else {
+    overflow = p-src >= 19;
+  }
+
+  //
+  // Parse the exponent
+  //
+  if (*p == 'e' || *p == 'E') {
+    p++;
+    bool exp_neg = *p == '-';
+    p += exp_neg || *p == '+';
+
+    uint64_t exp = 0;
+    const uint8_t *start_exp_digits = p;
+    while (parse_digit(*p, exp)) { p++; }
+    // no exp digits, or 20+ exp digits
+    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+
+    exponent += exp_neg ? 0-exp : exp;
+    overflow = overflow || exponent < FASTFLOAT_SMALLEST_POWER || exponent > FASTFLOAT_LARGEST_POWER;
+  }
+
+  //
+  // Assemble (or slow-parse) the float
+  //
+  double d;
+  if (likely(!overflow)) {
+    if (compute_float_64(exponent, i, negative, d)) { return d; }
+  }
+  if (!parse_float_strtod(src-negative, &d)) {
+    return NUMBER_ERROR;
+  }
+  return d;
+}
+} //namespace {}
 #endif // SIMDJSON_SKIPNUMBERPARSING
 
 } // namespace numberparsing
@@ -9994,12 +10933,8 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
 
 #endif // SIMDJSON_HASWELL_NUMBERPARSING_H
 /* end file src/generic/stage2/numberparsing.h */
-/* begin file src/generic/stage2/structural_parser.h */
-// This file contains the common code every implementation uses for stage2
-// It is intended to be included multiple times and compiled multiple times
-// We assume the file in which it is include already includes
-// "simdjson/stage2.h" (this simplifies amalgation)
-
+/* begin file src/generic/stage2/tape_builder.h */
+/* begin file src/generic/stage2/json_iterator.h */
 /* begin file src/generic/stage2/logger.h */
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
@@ -10011,7 +10946,7 @@ namespace logger {
 
   static constexpr const bool LOG_ENABLED = false;
   static constexpr const int LOG_EVENT_LEN = 20;
-  static constexpr const int LOG_BUFFER_LEN = 10;
+  static constexpr const int LOG_BUFFER_LEN = 30;
   static constexpr const int LOG_SMALL_BUFFER_LEN = 10;
   static constexpr const int LOG_INDEX_LEN = 5;
 
@@ -10033,12 +10968,6 @@ namespace logger {
       printf("\n");
       printf("| %-*s | %-*s | %-*s | %-*s | Detail |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", LOG_SMALL_BUFFER_LEN, "Next", 5, "Next#");
       printf("|%.*s|%.*s|%.*s|%.*s|--------|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, LOG_SMALL_BUFFER_LEN+2, DASHES, 5+2, DASHES);
-    }
-  }
-
-  static really_inline void log_string(const char *message) {
-    if (LOG_ENABLED) {
-      printf("%s\n", message);
     }
   }
 
@@ -10084,287 +11013,321 @@ namespace logger {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
 /* end file src/generic/stage2/logger.h */
-/* begin file src/generic/stage2/structural_iterator.h */
+
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
-class structural_iterator {
+class json_iterator {
 public:
   const uint8_t* const buf;
   uint32_t *next_structural;
   dom_parser_implementation &dom_parser;
-
-  // Start a structural 
-  really_inline structural_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
-    : buf{_dom_parser.buf},
-      next_structural{&_dom_parser.structural_indexes[start_structural_index]},
-      dom_parser{_dom_parser} {
-  }
-  // Get the buffer position of the current structural character
-  really_inline const uint8_t* current() {
-    return &buf[*(next_structural-1)];
-  }
-  // Get the current structural character
-  really_inline char current_char() {
-    return buf[*(next_structural-1)];
-  }
-  // Get the next structural character without advancing
-  really_inline char peek_next_char() {
-    return buf[*next_structural];
-  }
-  really_inline const uint8_t* peek() {
-    return &buf[*next_structural];
-  }
-  really_inline const uint8_t* advance() {
-    return &buf[*(next_structural++)];
-  }
-  really_inline char advance_char() {
-    return buf[*(next_structural++)];
-  }
-  really_inline size_t remaining_len() {
-    return dom_parser.len - *(next_structural-1);
-  }
-
-  really_inline bool at_end() {
-    return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
-  }
-  really_inline bool at_beginning() {
-    return next_structural == dom_parser.structural_indexes.get();
-  }
-};
-
-} // namespace stage2
-} // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace
-/* end file src/generic/stage2/structural_iterator.h */
-
-namespace { // Make everything here private
-namespace SIMDJSON_IMPLEMENTATION {
-namespace stage2 {
-
-#define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }
-
-struct structural_parser : structural_iterator {
-  /** Current depth (nested objects and arrays) */
   uint32_t depth{0};
 
-  template<bool STREAMING, typename T>
-  WARN_UNUSED really_inline error_code parse(T &builder) noexcept;
-  template<bool STREAMING, typename T>
-  WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser, T &builder) noexcept {
-    structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
-    return parser.parse<STREAMING>(builder);
-  }
+  /**
+   * Walk the JSON document.
+   *
+   * The visitor receives callbacks when values are encountered. All callbacks pass the iterator as
+   * the first parameter; some callbacks have other parameters as well:
+   *
+   * - visit_document_start() - at the beginning.
+   * - visit_document_end() - at the end (if things were successful).
+   *
+   * - visit_array_start() - at the start `[` of a non-empty array.
+   * - visit_array_end() - at the end `]` of a non-empty array.
+   * - visit_empty_array() - when an empty array is encountered.
+   *
+   * - visit_object_end() - at the start `]` of a non-empty object.
+   * - visit_object_start() - at the end `]` of a non-empty object.
+   * - visit_empty_object() - when an empty object is encountered.
+   * - visit_key(const uint8_t *key) - when a key in an object field is encountered. key is
+   *                                   guaranteed to point at the first quote of the string (`"key"`).
+   * - visit_primitive(const uint8_t *value) - when a value is a string, number, boolean or null.
+   * - visit_root_primitive(iter, uint8_t *value) - when the top-level value is a string, number, boolean or null.
+   *
+   * - increment_count(iter) - each time a value is found in an array or object.
+   */
+  template<bool STREAMING, typename V>
+  WARN_UNUSED really_inline error_code walk_document(V &visitor) noexcept;
 
-  // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
-  really_inline structural_parser(dom_parser_implementation &_dom_parser, uint32_t start_structural_index)
-    : structural_iterator(_dom_parser, start_structural_index) {
-  }
+  /**
+   * Create an iterator capable of walking a JSON document.
+   *
+   * The document must have already passed through stage 1.
+   */
+  really_inline json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index);
 
-  WARN_UNUSED really_inline error_code start_document() {
-    dom_parser.is_array[depth] = false;
-    return SUCCESS;
-  }
-  template<typename T>
-  WARN_UNUSED really_inline error_code start_array(T &builder) {
-    depth++;
-    if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-    builder.start_array(*this);
-    dom_parser.is_array[depth] = true;
-    return SUCCESS;
-  }
+  /**
+   * Look at the next token.
+   *
+   * Tokens can be strings, numbers, booleans, null, or operators (`[{]},:`)).
+   *
+   * They may include invalid JSON as well (such as `1.2.3` or `ture`).
+   */
+  really_inline const uint8_t *peek() const noexcept;
+  /**
+   * Advance to the next token.
+   *
+   * Tokens can be strings, numbers, booleans, null, or operators (`[{]},:`)).
+   *
+   * They may include invalid JSON as well (such as `1.2.3` or `ture`).
+   */
+  really_inline const uint8_t *advance() noexcept;
+  /**
+   * Get the remaining length of the document, from the start of the current token.
+   */
+  really_inline size_t remaining_len() const noexcept;
+  /**
+   * Check if we are at the end of the document.
+   *
+   * If this is true, there are no more tokens.
+   */
+  really_inline bool at_eof() const noexcept;
+  /**
+   * Check if we are at the beginning of the document.
+   */
+  really_inline bool at_beginning() const noexcept;
+  really_inline uint8_t last_structural() const noexcept;
 
-  template<typename T>
-  WARN_UNUSED really_inline bool empty_object(T &builder) {
-    if (peek_next_char() == '}') {
-      advance_char();
-      builder.empty_object(*this);
-      return true;
-    }
-    return false;
-  }
-  template<typename T>
-  WARN_UNUSED really_inline bool empty_array(T &builder) {
-    if (peek_next_char() == ']') {
-      advance_char();
-      builder.empty_array(*this);
-      return true;
-    }
-    return false;
-  }
+  /**
+   * Log that a value has been found.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_value(const char *type) const noexcept;
+  /**
+   * Log the start of a multipart value.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_start_value(const char *type) const noexcept;
+  /**
+   * Log the end of a multipart value.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_end_value(const char *type) const noexcept;
+  /**
+   * Log an error.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_error(const char *error) const noexcept;
 
-  template<bool STREAMING>
-  WARN_UNUSED really_inline error_code finish() {
-    dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
+  template<typename V>
+  WARN_UNUSED really_inline error_code visit_root_primitive(V &visitor, const uint8_t *value) noexcept;
+  template<typename V>
+  WARN_UNUSED really_inline error_code visit_primitive(V &visitor, const uint8_t *value) noexcept;
+};
 
-    if (depth != 0) {
-      log_error("Unclosed objects or arrays!");
-      return TAPE_ERROR;
-    }
-
-    // If we didn't make it to the end, it's an error
-    if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
-      logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
-      return TAPE_ERROR;
-    }
-
-    return SUCCESS;
-  }
-
-  really_inline void log_value(const char *type) {
-    logger::log_line(*this, "", type, "");
-  }
-
-  really_inline void log_start_value(const char *type) {
-    logger::log_line(*this, "+", type, "");
-    if (logger::LOG_ENABLED) { logger::log_depth++; }
-  }
-
-  really_inline void log_end_value(const char *type) {
-    if (logger::LOG_ENABLED) { logger::log_depth--; }
-    logger::log_line(*this, "-", type, "");
-  }
-
-  really_inline void log_error(const char *error) {
-    logger::log_line(*this, "", "ERROR", error);
-  }
-}; // struct structural_parser
-
-template<bool STREAMING, typename T>
-WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexcept {
+template<bool STREAMING, typename V>
+WARN_UNUSED really_inline error_code json_iterator::walk_document(V &visitor) noexcept {
   logger::log_start();
 
   //
   // Start the document
   //
-  if (at_end()) { return EMPTY; }
-  SIMDJSON_TRY( start_document() );
-  builder.start_document(*this);
+  if (at_eof()) { return EMPTY; }
+  log_start_value("document");
+  SIMDJSON_TRY( visitor.visit_document_start(*this) );
 
   //
   // Read first value
   //
   {
-    const uint8_t *value = advance();
-    switch (*value) {
-      case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-      case '[': {
-        // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
-        // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-        if (!STREAMING) {
-          if (buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
-            return TAPE_ERROR;
-          }
-        }
-        if (!empty_array(builder)) { goto array_begin; }; break;
+    auto value = advance();
+
+    // Make sure the outer hash or array is closed before continuing; otherwise, there are ways we
+    // could get into memory corruption. See https://github.com/simdjson/simdjson/issues/906
+    if (!STREAMING) {
+      switch (*value) {
+        case '{': if (last_structural() != '}') { return TAPE_ERROR; }; break;
+        case '[': if (last_structural() != ']') { return TAPE_ERROR; }; break;
       }
-      default: SIMDJSON_TRY( builder.parse_root_primitive(*this, value) );
     }
-    goto document_end;
+
+    switch (*value) {
+      case '{': if (*peek() == '}') { advance(); log_value("empty object"); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '[': if (*peek() == ']') { advance(); log_value("empty array"); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+      default: SIMDJSON_TRY( visitor.visit_root_primitive(*this, value) ); break;
+    }
   }
+  goto document_end;
 
 //
 // Object parser states
 //
-object_begin: {
+object_begin:
+  log_start_value("object");
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-  builder.start_object(*this);
   dom_parser.is_array[depth] = false;
+  SIMDJSON_TRY( visitor.visit_object_start(*this) );
 
-  const uint8_t *key = advance();
-  if (*key != '"') {
-    log_error("Object does not start with a key");
-    return TAPE_ERROR;
+  {
+    auto key = advance();
+    if (*key != '"') { log_error("Object does not start with a key"); return TAPE_ERROR; }
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    SIMDJSON_TRY( visitor.visit_key(*this, key) );
   }
-  builder.increment_count(*this);
-  SIMDJSON_TRY( builder.parse_key(*this, key) );
-  goto object_field;
-} // object_begin:
 
-object_field: {
-  if (unlikely( advance_char() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
-  const uint8_t *value = advance();
-  switch (*value) {
-    case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-    case '[': if (!empty_array(builder)) { goto array_begin; }; break;
-    default: SIMDJSON_TRY( builder.parse_primitive(*this, value) );
+object_field:
+  if (unlikely( *advance() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
+  {
+    auto value = advance();
+    switch (*value) {
+      case '{': if (*peek() == '}') { advance(); log_value("empty object"); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '[': if (*peek() == ']') { advance(); log_value("empty array"); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+      default: SIMDJSON_TRY( visitor.visit_primitive(*this, value) ); break;
+    }
   }
-} // object_field:
 
-object_continue: {
-  switch (advance_char()) {
-  case ',': {
-    builder.increment_count(*this);
-    const uint8_t *key = advance();
-    if (unlikely( *key != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
-    SIMDJSON_TRY( builder.parse_key(*this, key) );
-    goto object_field;
+object_continue:
+  switch (*advance()) {
+    case ',':
+      SIMDJSON_TRY( visitor.increment_count(*this) );
+      {
+        auto key = advance();
+        if (unlikely( *key != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
+        SIMDJSON_TRY( visitor.visit_key(*this, key) );
+      }
+      goto object_field;
+    case '}': log_end_value("object"); SIMDJSON_TRY( visitor.visit_object_end(*this) ); goto scope_end;
+    default: log_error("No comma between object fields"); return TAPE_ERROR;
   }
-  case '}':
-    builder.end_object(*this);
-    goto scope_end;
-  default:
-    log_error("No comma between object fields");
-    return TAPE_ERROR;
-  }
-} // object_continue:
 
-scope_end: {
+scope_end:
   depth--;
   if (depth == 0) { goto document_end; }
   if (dom_parser.is_array[depth]) { goto array_continue; }
   goto object_continue;
-} // scope_end:
 
 //
 // Array parser states
 //
-array_begin: {
+array_begin:
+  log_start_value("array");
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-  builder.start_array(*this);
   dom_parser.is_array[depth] = true;
+  SIMDJSON_TRY( visitor.visit_array_start(*this) );
+  SIMDJSON_TRY( visitor.increment_count(*this) );
 
-  builder.increment_count(*this);
-} // array_begin:
-
-array_value: {
-  const uint8_t *value = advance();
-  switch (*value) {
-    case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-    case '[': if (!empty_array(builder)) { goto array_begin; }; break;
-    default: SIMDJSON_TRY( builder.parse_primitive(*this, value) );
+array_value:
+  {
+    auto value = advance();
+    switch (*value) {
+      case '{': if (*peek() == '}') { advance(); log_value("empty object"); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '[': if (*peek() == ']') { advance(); log_value("empty array"); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+      default: SIMDJSON_TRY( visitor.visit_primitive(*this, value) ); break;
+    }
   }
-} // array_value:
 
-array_continue: {
-  switch (advance_char()) {
-  case ',':
-    builder.increment_count(*this);
-    goto array_value;
-  case ']':
-    builder.end_array(*this);
-    goto scope_end;
-  default:
-    log_error("Missing comma between array values");
+array_continue:
+  switch (*advance()) {
+    case ',': SIMDJSON_TRY( visitor.increment_count(*this) ); goto array_value;
+    case ']': log_end_value("array"); SIMDJSON_TRY( visitor.visit_array_end(*this) ); goto scope_end;
+    default: log_error("Missing comma between array values"); return TAPE_ERROR;
+  }
+
+document_end:
+  log_end_value("document");
+  SIMDJSON_TRY( visitor.visit_document_end(*this) );
+
+  dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
+
+  // If we didn't make it to the end, it's an error
+  if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
+    log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
     return TAPE_ERROR;
   }
-} // array_continue:
 
-document_end: {
-  builder.end_document(*this);
-  return finish<STREAMING>();
-} // document_end:
+  return SUCCESS;
 
-} // parse_structurals()
+} // walk_document()
+
+really_inline json_iterator::json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
+  : buf{_dom_parser.buf},
+    next_structural{&_dom_parser.structural_indexes[start_structural_index]},
+    dom_parser{_dom_parser} {
+}
+
+really_inline const uint8_t *json_iterator::peek() const noexcept {
+  return &buf[*(next_structural)];
+}
+really_inline const uint8_t *json_iterator::advance() noexcept {
+  return &buf[*(next_structural++)];
+}
+really_inline size_t json_iterator::remaining_len() const noexcept {
+  return dom_parser.len - *(next_structural-1);
+}
+
+really_inline bool json_iterator::at_eof() const noexcept {
+  return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
+}
+really_inline bool json_iterator::at_beginning() const noexcept {
+  return next_structural == dom_parser.structural_indexes.get();
+}
+really_inline uint8_t json_iterator::last_structural() const noexcept {
+  return buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]];
+}
+
+really_inline void json_iterator::log_value(const char *type) const noexcept {
+  logger::log_line(*this, "", type, "");
+}
+
+really_inline void json_iterator::log_start_value(const char *type) const noexcept {
+  logger::log_line(*this, "+", type, "");
+  if (logger::LOG_ENABLED) { logger::log_depth++; }
+}
+
+really_inline void json_iterator::log_end_value(const char *type) const noexcept {
+  if (logger::LOG_ENABLED) { logger::log_depth--; }
+  logger::log_line(*this, "-", type, "");
+}
+
+really_inline void json_iterator::log_error(const char *error) const noexcept {
+  logger::log_line(*this, "", "ERROR", error);
+}
+
+template<typename V>
+WARN_UNUSED really_inline error_code json_iterator::visit_root_primitive(V &visitor, const uint8_t *value) noexcept {
+  switch (*value) {
+    case '"': return visitor.visit_root_string(*this, value);
+    case 't': return visitor.visit_root_true_atom(*this, value);
+    case 'f': return visitor.visit_root_false_atom(*this, value);
+    case 'n': return visitor.visit_root_null_atom(*this, value);
+    case '-':
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      return visitor.visit_root_number(*this, value);
+    default:
+      log_error("Document starts with a non-value character");
+      return TAPE_ERROR;
+  }
+}
+template<typename V>
+WARN_UNUSED really_inline error_code json_iterator::visit_primitive(V &visitor, const uint8_t *value) noexcept {
+  switch (*value) {
+    case '"': return visitor.visit_string(*this, value);
+    case 't': return visitor.visit_true_atom(*this, value);
+    case 'f': return visitor.visit_false_atom(*this, value);
+    case 'n': return visitor.visit_null_atom(*this, value);
+    case '-':
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      return visitor.visit_number(*this, value);
+    default:
+      log_error("Non-value found when value was expected!");
+      return TAPE_ERROR;
+  }
+}
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
-/* end file src/generic/stage2/structural_iterator.h */
-/* begin file src/generic/stage2/tape_builder.h */
+/* end file src/generic/stage2/logger.h */
 /* begin file src/generic/stage2/tape_writer.h */
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -10542,224 +11505,276 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
 struct tape_builder {
+  template<bool STREAMING>
+  WARN_UNUSED static really_inline error_code parse_document(
+    dom_parser_implementation &dom_parser,
+    dom::document &doc) noexcept;
+
+  /** Called when a non-empty document starts. */
+  WARN_UNUSED really_inline error_code visit_document_start(json_iterator &iter) noexcept;
+  /** Called when a non-empty document ends without error. */
+  WARN_UNUSED really_inline error_code visit_document_end(json_iterator &iter) noexcept;
+
+  /** Called when a non-empty array starts. */
+  WARN_UNUSED really_inline error_code visit_array_start(json_iterator &iter) noexcept;
+  /** Called when a non-empty array ends. */
+  WARN_UNUSED really_inline error_code visit_array_end(json_iterator &iter) noexcept;
+  /** Called when an empty array is found. */
+  WARN_UNUSED really_inline error_code visit_empty_array(json_iterator &iter) noexcept;
+
+  /** Called when a non-empty object starts. */
+  WARN_UNUSED really_inline error_code visit_object_start(json_iterator &iter) noexcept;
+  /**
+   * Called when a key in a field is encountered.
+   *
+   * primitive, visit_object_start, visit_empty_object, visit_array_start, or visit_empty_array
+   * will be called after this with the field value.
+   */
+  WARN_UNUSED really_inline error_code visit_key(json_iterator &iter, const uint8_t *key) noexcept;
+  /** Called when a non-empty object ends. */
+  WARN_UNUSED really_inline error_code visit_object_end(json_iterator &iter) noexcept;
+  /** Called when an empty object is found. */
+  WARN_UNUSED really_inline error_code visit_empty_object(json_iterator &iter) noexcept;
+
+  /**
+   * Called when a string, number, boolean or null is found.
+   */
+  WARN_UNUSED really_inline error_code visit_primitive(json_iterator &iter, const uint8_t *value) noexcept;
+  /**
+   * Called when a string, number, boolean or null is found at the top level of a document (i.e.
+   * when there is no array or object and the entire document is a single string, number, boolean or
+   * null.
+   *
+   * This is separate from primitive() because simdjson's normal primitive parsing routines assume
+   * there is at least one more token after the value, which is only true in an array or object.
+   */
+  WARN_UNUSED really_inline error_code visit_root_primitive(json_iterator &iter, const uint8_t *value) noexcept;
+
+  WARN_UNUSED really_inline error_code visit_string(json_iterator &iter, const uint8_t *value, bool key = false) noexcept;
+  WARN_UNUSED really_inline error_code visit_number(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_true_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_false_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_null_atom(json_iterator &iter, const uint8_t *value) noexcept;
+
+  WARN_UNUSED really_inline error_code visit_root_string(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_number(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_true_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_false_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_null_atom(json_iterator &iter, const uint8_t *value) noexcept;
+
+  /** Called each time a new field or element in an array or object is found. */
+  WARN_UNUSED really_inline error_code increment_count(json_iterator &iter) noexcept;
+
   /** Next location to write to tape */
   tape_writer tape;
+private:
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc;
 
-  really_inline tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
+  really_inline tape_builder(dom::document &doc) noexcept;
 
-private:
-  friend struct structural_parser;
+  really_inline uint32_t next_tape_index(json_iterator &iter) const noexcept;
+  really_inline void start_container(json_iterator &iter) noexcept;
+  WARN_UNUSED really_inline error_code end_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept;
+  WARN_UNUSED really_inline error_code empty_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept;
+  really_inline uint8_t *on_start_string(json_iterator &iter) noexcept;
+  really_inline void on_end_string(uint8_t *dst) noexcept;
+}; // class tape_builder
 
-  really_inline error_code parse_root_primitive(structural_parser &parser, const uint8_t *value) {
-    switch (*value) {
-      case '"': return parse_string(parser, value);
-      case 't': return parse_root_true_atom(parser, value);
-      case 'f': return parse_root_false_atom(parser, value);
-      case 'n': return parse_root_null_atom(parser, value);
-      case '-':
-      case '0': case '1': case '2': case '3': case '4':
-      case '5': case '6': case '7': case '8': case '9':
-        return parse_root_number(parser, value);
-      default:
-        parser.log_error("Document starts with a non-value character");
-        return TAPE_ERROR;
-    }
-  }
-  really_inline error_code parse_primitive(structural_parser &parser, const uint8_t *value) {
-    switch (*value) {
-      case '"': return parse_string(parser, value);
-      case 't': return parse_true_atom(parser, value);
-      case 'f': return parse_false_atom(parser, value);
-      case 'n': return parse_null_atom(parser, value);
-      case '-':
-      case '0': case '1': case '2': case '3': case '4':
-      case '5': case '6': case '7': case '8': case '9':
-        return parse_number(parser, value);
-      default:
-        parser.log_error("Non-value found when value was expected!");
-        return TAPE_ERROR;
-    }
-  }
-  really_inline void empty_object(structural_parser &parser) {
-    parser.log_value("empty object");
-    empty_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
-  }
-  really_inline void empty_array(structural_parser &parser) {
-    parser.log_value("empty array");
-    empty_container(parser, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
-  }
+template<bool STREAMING>
+WARN_UNUSED really_inline error_code tape_builder::parse_document(
+    dom_parser_implementation &dom_parser,
+    dom::document &doc) noexcept {
+  dom_parser.doc = &doc;
+  json_iterator iter(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
+  tape_builder builder(doc);
+  return iter.walk_document<STREAMING>(builder);
+}
 
-  really_inline void start_document(structural_parser &parser) {
-    parser.log_start_value("document");
-    start_container(parser);
-  }
-  really_inline void start_object(structural_parser &parser) {
-    parser.log_start_value("object");
-    start_container(parser);
-  }
-  really_inline void start_array(structural_parser &parser) {
-    parser.log_start_value("array");
-    start_container(parser);
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_primitive(json_iterator &iter, const uint8_t *value) noexcept {
+  return iter.visit_root_primitive(*this, value);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_primitive(json_iterator &iter, const uint8_t *value) noexcept {
+  return iter.visit_primitive(*this, value);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_empty_object(json_iterator &iter) noexcept {
+  return empty_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_empty_array(json_iterator &iter) noexcept {
+  return empty_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
+}
 
-  really_inline void end_object(structural_parser &parser) {
-    parser.log_end_value("object");
-    end_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
-  }
-  really_inline void end_array(structural_parser &parser) {
-    parser.log_end_value("array");
-    end_container(parser, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
-  }
-  really_inline void end_document(structural_parser &parser) {
-    parser.log_end_value("document");
-    constexpr uint32_t start_tape_index = 0;
-    tape.append(start_tape_index, internal::tape_type::ROOT);
-    tape_writer::write(parser.dom_parser.doc->tape[start_tape_index], next_tape_index(parser), internal::tape_type::ROOT);
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_document_start(json_iterator &iter) noexcept {
+  start_container(iter);
+  return SUCCESS;
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_object_start(json_iterator &iter) noexcept {
+  start_container(iter);
+  return SUCCESS;
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_array_start(json_iterator &iter) noexcept {
+  start_container(iter);
+  return SUCCESS;
+}
 
-  WARN_UNUSED really_inline error_code parse_key(structural_parser &parser, const uint8_t *value) {
-    return parse_string(parser, value, true);
-  }
-  WARN_UNUSED really_inline error_code parse_string(structural_parser &parser, const uint8_t *value, bool key = false) {
-    parser.log_value(key ? "key" : "string");
-    uint8_t *dst = on_start_string(parser);
-    dst = stringparsing::parse_string(value, dst);
-    if (dst == nullptr) {
-      parser.log_error("Invalid escape in string");
-      return STRING_ERROR;
-    }
-    on_end_string(dst);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_object_end(json_iterator &iter) noexcept {
+  return end_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_array_end(json_iterator &iter) noexcept {
+  return end_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_document_end(json_iterator &iter) noexcept {
+  constexpr uint32_t start_tape_index = 0;
+  tape.append(start_tape_index, internal::tape_type::ROOT);
+  tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(iter), internal::tape_type::ROOT);
+  return SUCCESS;
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_key(json_iterator &iter, const uint8_t *key) noexcept {
+  return visit_string(iter, key, true);
+}
 
-  WARN_UNUSED really_inline error_code parse_number(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("number");
-    if (!numberparsing::parse_number(value, tape)) { parser.log_error("Invalid number"); return NUMBER_ERROR; }
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::increment_count(json_iterator &iter) noexcept {
+  iter.dom_parser.open_containers[iter.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
+  return SUCCESS;
+}
 
-  really_inline error_code parse_root_number(structural_parser &parser, const uint8_t *value) {
-    //
-    // We need to make a copy to make sure that the string is space terminated.
-    // This is not about padding the input, which should already padded up
-    // to len + SIMDJSON_PADDING. However, we have no control at this stage
-    // on how the padding was done. What if the input string was padded with nulls?
-    // It is quite common for an input string to have an extra null character (C string).
-    // We do not want to allow 9\0 (where \0 is the null character) inside a JSON
-    // document, but the string "9\0" by itself is fine. So we make a copy and
-    // pad the input with spaces when we know that there is just one input element.
-    // This copy is relatively expensive, but it will almost never be called in
-    // practice unless you are in the strange scenario where you have many JSON
-    // documents made of single atoms.
-    //
-    uint8_t *copy = static_cast<uint8_t *>(malloc(parser.remaining_len() + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      return MEMALLOC;
-    }
-    memcpy(copy, value, parser.remaining_len());
-    memset(copy + parser.remaining_len(), ' ', SIMDJSON_PADDING);
-    error_code error = parse_number(parser, copy);
-    free(copy);
-    return error;
-  }
+really_inline tape_builder::tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
 
-  WARN_UNUSED really_inline error_code parse_true_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("true");
-    if (!atomparsing::is_valid_true_atom(value)) { return T_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::TRUE_VALUE);
-    return SUCCESS;
+WARN_UNUSED really_inline error_code tape_builder::visit_string(json_iterator &iter, const uint8_t *value, bool key) noexcept {
+  iter.log_value(key ? "key" : "string");
+  uint8_t *dst = on_start_string(iter);
+  dst = stringparsing::parse_string(value, dst);
+  if (dst == nullptr) {
+    iter.log_error("Invalid escape in string");
+    return STRING_ERROR;
   }
+  on_end_string(dst);
+  return SUCCESS;
+}
 
-  WARN_UNUSED really_inline error_code parse_root_true_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("true");
-    if (!atomparsing::is_valid_true_atom(value, parser.remaining_len())) { return T_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::TRUE_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_string(json_iterator &iter, const uint8_t *value) noexcept {
+  return visit_string(iter, value);
+}
 
-  WARN_UNUSED really_inline error_code parse_false_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("false");
-    if (!atomparsing::is_valid_false_atom(value)) { return F_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::FALSE_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("number");
+  return numberparsing::parse_number(value, tape);
+}
 
-  WARN_UNUSED really_inline error_code parse_root_false_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("false");
-    if (!atomparsing::is_valid_false_atom(value, parser.remaining_len())) { return F_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::FALSE_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
+  //
+  // We need to make a copy to make sure that the string is space terminated.
+  // This is not about padding the input, which should already padded up
+  // to len + SIMDJSON_PADDING. However, we have no control at this stage
+  // on how the padding was done. What if the input string was padded with nulls?
+  // It is quite common for an input string to have an extra null character (C string).
+  // We do not want to allow 9\0 (where \0 is the null character) inside a JSON
+  // document, but the string "9\0" by itself is fine. So we make a copy and
+  // pad the input with spaces when we know that there is just one input element.
+  // This copy is relatively expensive, but it will almost never be called in
+  // practice unless you are in the strange scenario where you have many JSON
+  // documents made of single atoms.
+  //
+  uint8_t *copy = static_cast<uint8_t *>(malloc(iter.remaining_len() + SIMDJSON_PADDING));
+  if (copy == nullptr) { return MEMALLOC; }
+  memcpy(copy, value, iter.remaining_len());
+  memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  error_code error = visit_number(iter, copy);
+  free(copy);
+  return error;
+}
 
-  WARN_UNUSED really_inline error_code parse_null_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("null");
-    if (!atomparsing::is_valid_null_atom(value)) { return N_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::NULL_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_true_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("true");
+  if (!atomparsing::is_valid_true_atom(value)) { return T_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::TRUE_VALUE);
+  return SUCCESS;
+}
 
-  WARN_UNUSED really_inline error_code parse_root_null_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("null");
-    if (!atomparsing::is_valid_null_atom(value, parser.remaining_len())) { return N_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::NULL_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_true_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("true");
+  if (!atomparsing::is_valid_true_atom(value, iter.remaining_len())) { return T_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::TRUE_VALUE);
+  return SUCCESS;
+}
 
-  // increment_count increments the count of keys in an object or values in an array.
-  really_inline void increment_count(structural_parser &parser) {
-    parser.dom_parser.containing_scope[parser.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_false_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("false");
+  if (!atomparsing::is_valid_false_atom(value)) { return F_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::FALSE_VALUE);
+  return SUCCESS;
+}
+
+WARN_UNUSED really_inline error_code tape_builder::visit_root_false_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("false");
+  if (!atomparsing::is_valid_false_atom(value, iter.remaining_len())) { return F_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::FALSE_VALUE);
+  return SUCCESS;
+}
+
+WARN_UNUSED really_inline error_code tape_builder::visit_null_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("null");
+  if (!atomparsing::is_valid_null_atom(value)) { return N_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::NULL_VALUE);
+  return SUCCESS;
+}
+
+WARN_UNUSED really_inline error_code tape_builder::visit_root_null_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("null");
+  if (!atomparsing::is_valid_null_atom(value, iter.remaining_len())) { return N_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::NULL_VALUE);
+  return SUCCESS;
+}
 
 // private:
 
-  really_inline uint32_t next_tape_index(structural_parser &parser) {
-    return uint32_t(tape.next_tape_loc - parser.dom_parser.doc->tape.get());
-  }
+really_inline uint32_t tape_builder::next_tape_index(json_iterator &iter) const noexcept {
+  return uint32_t(tape.next_tape_loc - iter.dom_parser.doc->tape.get());
+}
 
-  really_inline void empty_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) {
-    auto start_index = next_tape_index(parser);
-    tape.append(start_index+2, start);
-    tape.append(start_index, end);
-  }
+WARN_UNUSED really_inline error_code tape_builder::empty_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept {
+  auto start_index = next_tape_index(iter);
+  tape.append(start_index+2, start);
+  tape.append(start_index, end);
+  return SUCCESS;
+}
 
-  really_inline void start_container(structural_parser &parser) {
-    parser.dom_parser.containing_scope[parser.depth].tape_index = next_tape_index(parser);
-    parser.dom_parser.containing_scope[parser.depth].count = 0;
-    tape.skip(); // We don't actually *write* the start element until the end.
-  }
+really_inline void tape_builder::start_container(json_iterator &iter) noexcept {
+  iter.dom_parser.open_containers[iter.depth].tape_index = next_tape_index(iter);
+  iter.dom_parser.open_containers[iter.depth].count = 0;
+  tape.skip(); // We don't actually *write* the start element until the end.
+}
 
-  really_inline void end_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) noexcept {
-    // Write the ending tape element, pointing at the start location
-    const uint32_t start_tape_index = parser.dom_parser.containing_scope[parser.depth].tape_index;
-    tape.append(start_tape_index, end);
-    // Write the start tape element, pointing at the end location (and including count)
-    // count can overflow if it exceeds 24 bits... so we saturate
-    // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
-    const uint32_t count = parser.dom_parser.containing_scope[parser.depth].count;
-    const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
-    tape_writer::write(parser.dom_parser.doc->tape[start_tape_index], next_tape_index(parser) | (uint64_t(cntsat) << 32), start);
-  }
+WARN_UNUSED really_inline error_code tape_builder::end_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept {
+  // Write the ending tape element, pointing at the start location
+  const uint32_t start_tape_index = iter.dom_parser.open_containers[iter.depth].tape_index;
+  tape.append(start_tape_index, end);
+  // Write the start tape element, pointing at the end location (and including count)
+  // count can overflow if it exceeds 24 bits... so we saturate
+  // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
+  const uint32_t count = iter.dom_parser.open_containers[iter.depth].count;
+  const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
+  tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(iter) | (uint64_t(cntsat) << 32), start);
+  return SUCCESS;
+}
 
-  really_inline uint8_t *on_start_string(structural_parser &parser) noexcept {
-    // we advance the point, accounting for the fact that we have a NULL termination
-    tape.append(current_string_buf_loc - parser.dom_parser.doc->string_buf.get(), internal::tape_type::STRING);
-    return current_string_buf_loc + sizeof(uint32_t);
-  }
+really_inline uint8_t *tape_builder::on_start_string(json_iterator &iter) noexcept {
+  // we advance the point, accounting for the fact that we have a NULL termination
+  tape.append(current_string_buf_loc - iter.dom_parser.doc->string_buf.get(), internal::tape_type::STRING);
+  return current_string_buf_loc + sizeof(uint32_t);
+}
 
-  really_inline void on_end_string(uint8_t *dst) noexcept {
-    uint32_t str_length = uint32_t(dst - (current_string_buf_loc + sizeof(uint32_t)));
-    // TODO check for overflow in case someone has a crazy string (>=4GB?)
-    // But only add the overflow check when the document itself exceeds 4GB
-    // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
-    memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
-    // NULL termination is still handy if you expect all your strings to
-    // be NULL terminated? It comes at a small cost
-    *dst = 0;
-    current_string_buf_loc = dst + 1;
-  }
-}; // class tape_builder
+really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
+  uint32_t str_length = uint32_t(dst - (current_string_buf_loc + sizeof(uint32_t)));
+  // TODO check for overflow in case someone has a crazy string (>=4GB?)
+  // But only add the overflow check when the document itself exceeds 4GB
+  // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
+  memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
+  // NULL termination is still handy if you expect all your strings to
+  // be NULL terminated? It comes at a small cost
+  *dst = 0;
+  current_string_buf_loc = dst + 1;
+}
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
@@ -10795,15 +11810,11 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
 }
 
 WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
-  doc = &_doc;
-  stage2::tape_builder builder(_doc);
-  return stage2::structural_parser::parse<false>(*this, builder);
+  return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
-  doc = &_doc;
-  stage2::tape_builder builder(_doc);
-  return stage2::structural_parser::parse<true>(*this, builder);
+  return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
@@ -11301,22 +12312,18 @@ namespace simd {
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
-// expectation: sizeof(scope_descriptor) = 64/8.
-struct scope_descriptor {
+// expectation: sizeof(open_container) = 64/8.
+struct open_container {
   uint32_t tape_index; // where, on the tape, does the scope ([,{) begins
   uint32_t count; // how many elements in the scope
-}; // struct scope_descriptor
+}; // struct open_container
 
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-typedef void* ret_address_t;
-#else
-typedef char ret_address_t;
-#endif
+static_assert(sizeof(open_container) == 64/8, "Open container must be 64 bits");
 
 class dom_parser_implementation final : public internal::dom_parser_implementation {
 public:
   /** Tape location of each open { or [ */
-  std::unique_ptr<scope_descriptor[]> containing_scope{};
+  std::unique_ptr<open_container[]> open_containers{};
   /** Whether each open container is a [ or { */
   std::unique_ptr<bool[]> is_array{};
   /** Buffer passed to stage 1 */
@@ -11375,10 +12382,10 @@ namespace allocate {
 // Allocates stage 2 internal state and outputs in the parser
 //
 really_inline error_code set_max_depth(dom_parser_implementation &parser, size_t max_depth) {
-  parser.containing_scope.reset(new (std::nothrow) scope_descriptor[max_depth]);
+  parser.open_containers.reset(new (std::nothrow) open_container[max_depth]);
   parser.is_array.reset(new (std::nothrow) bool[max_depth]);
 
-  if (!parser.is_array || !parser.containing_scope) {
+  if (!parser.is_array || !parser.open_containers) {
     return MEMALLOC;
   }
   return SUCCESS;
@@ -11930,9 +12937,9 @@ struct json_string_block {
   // Real (non-backslashed) quotes
   really_inline uint64_t quote() const { return _quote; }
   // Start quotes of strings
-  really_inline uint64_t string_end() const { return _quote & _in_string; }
+  really_inline uint64_t string_start() const { return _quote & _in_string; }
   // End quotes of strings
-  really_inline uint64_t string_start() const { return _quote & ~_in_string; }
+  really_inline uint64_t string_end() const { return _quote & ~_in_string; }
   // Only characters inside the string (not including the quotes)
   really_inline uint64_t string_content() const { return _in_string & ~_quote; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
@@ -12069,10 +13076,27 @@ namespace stage1 {
 
 /**
  * A block of scanned json, with information on operators and scalars.
+ *
+ * We seek to identify pseudo-structural characters. Anything that is inside
+ * a string must be omitted (hence  & ~_string.string_tail()).
+ * Otherwise, pseudo-structural characters come in two forms.
+ * 1. We have the structural characters ([,],{,},:, comma). The 
+ *    term 'structural character' is from the JSON RFC.
+ * 2. We have the 'scalar pseudo-structural characters'.
+ *    Scalars are quotes, and any character except structural characters and white space.
+ *
+ * To identify the scalar pseudo-structural characters, we must look at what comes
+ * before them: it must be a space, a quote or a structural characters.
+ * Starting with simdjson v0.3, we identify them by
+ * negation: we identify everything that is followed by a non-quote scalar,
+ * and we negate that. Whatever remains must be a 'scalar pseudo-structural character'.
  */
 struct json_block {
 public:
-  /** The start of structurals */
+  /**
+   * The start of structurals.
+   * In simdjson prior to v0.3, these were called the pseudo-structural characters.
+   **/
   really_inline uint64_t structural_start() { return potential_structural_start() & ~_string.string_tail(); }
   /** All JSON whitespace (i.e. not in a string) */
   really_inline uint64_t whitespace() { return non_quote_outside_string(_characters.whitespace()); }
@@ -12086,27 +13110,49 @@ public:
 
   // string and escape characters
   json_string_block _string;
-  // whitespace, operators, scalars
+  // whitespace, structural characters ('operators'), scalars
   json_character_block _characters;
   // whether the previous character was a scalar
-  uint64_t _follows_potential_scalar;
+  uint64_t _follows_potential_nonquote_scalar;
 private:
   // Potential structurals (i.e. disregarding strings)
 
-  /** operators plus scalar starts like 123, true and "abc" */
+  /**
+   * structural elements ([,],{,},:, comma) plus scalar starts like 123, true and "abc".
+   * They may reside inside a string.
+   **/
   really_inline uint64_t potential_structural_start() { return _characters.op() | potential_scalar_start(); }
-  /** the start of non-operator runs, like 123, true and "abc" */
-  really_inline uint64_t potential_scalar_start() { return _characters.scalar() & ~follows_potential_scalar(); }
-  /** whether the given character is immediately after a non-operator like 123, true or " */
-  really_inline uint64_t follows_potential_scalar() { return _follows_potential_scalar; }
+  /**
+   * The start of non-operator runs, like 123, true and "abc".
+   * It main reside inside a string.
+   **/
+  really_inline uint64_t potential_scalar_start() {
+    // The term "scalar" refers to anything except structural characters and white space
+    // (so letters, numbers, quotes).
+    // Whenever it is preceded by something that is not a structural element ({,},[,],:, ") nor a white-space
+    // then we know that it is irrelevant structurally.
+    return _characters.scalar() & ~follows_potential_scalar();
+  }
+  /**
+   * Whether the given character is immediately after a non-operator like 123, true.
+   * The characters following a quote are not included.
+   */
+  really_inline uint64_t follows_potential_scalar() {
+    // _follows_potential_nonquote_scalar: is defined as marking any character that follows a character
+    // that is not a structural element ({,},[,],:, comma) nor a quote (") and that is not a
+    // white space.
+    // It is understood that within quoted region, anything at all could be marked (irrelevant).
+    return _follows_potential_nonquote_scalar;
+  }
 };
 
 /**
- * Scans JSON for important bits: operators, strings, and scalars.
+ * Scans JSON for important bits: structural characters or 'operators', strings, and scalars.
  *
  * The scanner starts by calculating two distinct things:
  * - string characters (taking \" into account)
- * - operators ([]{},:) and scalars (runs of non-operators like 123, true and "abc")
+ * - structural characters or 'operators' ([]{},:, comma)
+ *   and scalars (runs of non-operators like 123, true and "abc")
  *
  * To minimize data dependency (a key component of the scanner's speed), it finds these in parallel:
  * in particular, the operator/scalar bit will find plenty of things that are actually part of
@@ -12121,7 +13167,7 @@ public:
 
 private:
   // Whether the last character of the previous iteration is part of a scalar token
-  // (anything except whitespace or an operator).
+  // (anything except whitespace or a structural character/'operator').
   uint64_t prev_scalar = 0ULL;
   json_string_scanner string_scanner{};
 };
@@ -12142,12 +13188,24 @@ really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
 
 really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
   json_string_block strings = string_scanner.next(in);
+  // identifies the white-space and the structurat characters
   json_character_block characters = json_character_block::classify(in);
-  uint64_t follows_scalar = follows(characters.scalar(), prev_scalar);
+  // The term "scalar" refers to anything except structural characters and white space
+  // (so letters, numbers, quotes).
+  // We want  follows_scalar to mark anything that follows a non-quote scalar (so letters and numbers).
+  //
+  // A terminal quote should either be followed by a structural character (comma, brace, bracket, colon)
+  // or nothing. However, we still want ' "a string"true ' to mark the 't' of 'true' as a potential
+  // pseudo-structural character just like we would if we had  ' "a string" true '; otherwise we
+  // may need to add an extra check when parsing strings.
+  //
+  // Performance: there are many ways to skin this cat.
+  const uint64_t nonquote_scalar = characters.scalar() & ~strings.quote();
+  uint64_t follows_nonquote_scalar = follows(nonquote_scalar, prev_scalar);
   return {
     strings,
     characters,
-    follows_scalar
+    follows_nonquote_scalar
   };
 }
 
@@ -12736,6 +13794,15 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
   return nullptr;
 }
 
+UNUSED WARN_UNUSED really_inline error_code parse_string_to_buffer(const uint8_t *src, uint8_t *&current_string_buf_loc, std::string_view &s) {
+  if (src[0] != '"') { return STRING_ERROR; }
+  auto end = stringparsing::parse_string(src, current_string_buf_loc);
+  if (!end) { return STRING_ERROR; }
+  s = std::string_view((const char *)current_string_buf_loc, end-current_string_buf_loc);
+  current_string_buf_loc = end;
+  return SUCCESS;
+}
+
 } // namespace stringparsing
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
@@ -12784,15 +13851,15 @@ namespace stage2 {
 namespace numberparsing {
 
 #ifdef JSON_TEST_NUMBERS
-#define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), false)
-#define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), writer.append_s64((VALUE)))
-#define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), writer.append_u64((VALUE)))
-#define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), writer.append_double((VALUE)))
+#define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
+#define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
+#define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
+#define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
 #else
-#define INVALID_NUMBER(SRC) (false)
-#define WRITE_INTEGER(VALUE, SRC, WRITER) writer.append_s64((VALUE))
-#define WRITE_UNSIGNED(VALUE, SRC, WRITER) writer.append_u64((VALUE))
-#define WRITE_DOUBLE(VALUE, SRC, WRITER) writer.append_double((VALUE))
+#define INVALID_NUMBER(SRC) (NUMBER_ERROR)
+#define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
+#define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
+#define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
 #endif
 
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
@@ -12801,7 +13868,7 @@ namespace numberparsing {
 // set to false. This should work *most of the time* (like 99% of the time).
 // We assume that power is in the [FASTFLOAT_SMALLEST_POWER,
 // FASTFLOAT_LARGEST_POWER] interval: the caller is responsible for this check.
-really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, bool *success) {
+really_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, double &d) {
   // we start with a fast path
   // It was described in
   // Clinger WD. How to read floating point numbers accurately.
@@ -12817,7 +13884,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
 #endif
     // convert the integer into a double. This is lossless since
     // 0 <= i <= 2^53 - 1.
-    double d = double(i);
+    d = double(i);
     //
     // The general idea is as follows.
     // If 0 <= s < 2^53 and if 10^0 <= p <= 10^22 then
@@ -12836,8 +13903,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
     if (negative) {
       d = -d;
     }
-    *success = true;
-    return d;
+    return true;
   }
   // When 22 < power && power <  22 + 16, we could
   // hope for another, secondary fast path.  It wa
@@ -12862,7 +13928,8 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   // In the slow path, we need to adjust i so that it is > 1<<63 which is always
   // possible, except if i == 0, so we handle i == 0 separately.
   if(i == 0) {
-    return 0.0;
+    d = 0.0;
+    return true;
   }
 
   // We are going to need to do some 64-bit arithmetic to get a more precise product.
@@ -12912,8 +13979,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
     // This does happen, e.g. with 7.3177701707893310e+15.
     if (((product_middle + 1 == 0) && ((product_high & 0x1FF) == 0x1FF) &&
          (product_low + i < product_low))) { // let us be prudent and bail out.
-      *success = false;
-      return 0;
+      return false;
     }
     upper = product_high;
     lower = product_middle;
@@ -12934,25 +14000,24 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   // floating-point values.
   if (unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
                ((mantissa & 3) == 1))) {
-      // if mantissa & 1 == 1 we might need to round up.
-      //
-      // Scenarios:
-      // 1. We are not in the middle. Then we should round up.
-      //
-      // 2. We are right in the middle. Whether we round up depends
-      // on the last significant bit: if it is "one" then we round
-      // up (round to even) otherwise, we do not.
-      //
-      // So if the last significant bit is 1, we can safely round up.
-      // Hence we only need to bail out if (mantissa & 3) == 1.
-      // Otherwise we may need more accuracy or analysis to determine whether
-      // we are exactly between two floating-point numbers.
-      // It can be triggered with 1e23.
-      // Note: because the factor_mantissa and factor_mantissa_low are
-      // almost always rounded down (except for small positive powers),
-      // almost always should round up.
-      *success = false;
-      return 0;
+    // if mantissa & 1 == 1 we might need to round up.
+    //
+    // Scenarios:
+    // 1. We are not in the middle. Then we should round up.
+    //
+    // 2. We are right in the middle. Whether we round up depends
+    // on the last significant bit: if it is "one" then we round
+    // up (round to even) otherwise, we do not.
+    //
+    // So if the last significant bit is 1, we can safely round up.
+    // Hence we only need to bail out if (mantissa & 3) == 1.
+    // Otherwise we may need more accuracy or analysis to determine whether
+    // we are exactly between two floating-point numbers.
+    // It can be triggered with 1e23.
+    // Note: because the factor_mantissa and factor_mantissa_low are
+    // almost always rounded down (except for small positive powers),
+    // almost always should round up.
+    return false;
   }
 
   mantissa += mantissa & 1;
@@ -12970,15 +14035,12 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   uint64_t real_exponent = c.exp - lz;
   // we have to check that real_exponent is in range, otherwise we bail out
   if (unlikely((real_exponent < 1) || (real_exponent > 2046))) {
-    *success = false;
-    return 0;
+    return false;
   }
   mantissa |= real_exponent << 52;
   mantissa |= (((uint64_t)negative) << 63);
-  double d;
   memcpy(&d, &mantissa, sizeof(d));
-  *success = true;
-  return d;
+  return true;
 }
 
 static bool parse_float_strtod(const uint8_t *ptr, double *outDouble) {
@@ -13029,11 +14091,11 @@ really_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
 }
 
 template<typename W>
-bool slow_float_parsing(UNUSED const uint8_t * src, W writer) {
+error_code slow_float_parsing(UNUSED const uint8_t * src, W writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
-    WRITE_DOUBLE(d, src, writer);
-    return true;
+    writer.append_double(d);
+    return SUCCESS;
   }
   return INVALID_NUMBER(src);
 }
@@ -13050,7 +14112,7 @@ really_inline bool parse_digit(const uint8_t c, I &i) {
   return true;
 }
 
-really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+really_inline error_code parse_decimal(UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -13073,10 +14135,10 @@ really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t 
   if (exponent == 0) {
     return INVALID_NUMBER(src);
   }
-  return true;
+  return SUCCESS;
 }
 
-really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+really_inline error_code parse_exponent(UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -13124,38 +14186,42 @@ really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t
   // is bounded in magnitude by the size of the JSON input, we are fine in this universe.
   // To sum it up: the next line should never overflow.
   exponent += (neg_exp ? -exp_number : exp_number);
-  return true;
+  return SUCCESS;
+}
+
+really_inline int significant_digits(const uint8_t * start_digits, int digit_count) {
+  // It is possible that the integer had an overflow.
+  // We have to handle the case where we have 0.0000somenumber.
+  const uint8_t *start = start_digits;
+  while ((*start == '0') || (*start == '.')) {
+    start++;
+  }
+  // we over-decrement by one when there is a '.'
+  return digit_count - int(start - start_digits);
 }
 
 template<typename W>
-really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
+really_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
   // digit count is off by 1 because of the decimal (assuming there was one).
-  if (unlikely((digit_count-1 >= 19))) { // this is uncommon
-    // It is possible that the integer had an overflow.
-    // We have to handle the case where we have 0.0000somenumber.
-    const uint8_t *start = start_digits;
-    while ((*start == '0') || (*start == '.')) {
-      start++;
-    }
-    // we over-decrement by one when there is a '.'
-    digit_count -= int(start - start_digits);
-    if (digit_count >= 19) {
-      // Ok, chances are good that we had an overflow!
-      // this is almost never going to get called!!!
-      // we start anew, going slowly!!!
-      // This will happen in the following examples:
-      // 10000000000000000000000000000000000000000000e+308
-      // 3.1415926535897932384626433832795028841971693993751
-      //
-      bool success = slow_float_parsing(src, writer);
-      // The number was already written, but we made a copy of the writer
-      // when we passed it to the parse_large_integer() function, so
-      writer.skip_double();
-      return success;
-    }
+  if (unlikely(digit_count-1 >= 19 && significant_digits(start_digits, digit_count) >= 19)) {
+    // Ok, chances are good that we had an overflow!
+    // this is almost never going to get called!!!
+    // we start anew, going slowly!!!
+    // This will happen in the following examples:
+    // 10000000000000000000000000000000000000000000e+308
+    // 3.1415926535897932384626433832795028841971693993751
+    //
+    // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
+    // because slow_float_parsing is a non-inlined function. If we passed our writer reference to
+    // it, it would force it to be stored in memory, preventing the compiler from picking it apart
+    // and putting into registers. i.e. if we pass it as reference, it gets slow.
+    // This is what forces the skip_double, as well.
+    error_code error = slow_float_parsing(src, writer);
+    writer.skip_double();
+    return error;
   }
   // NOTE: it's weird that the unlikely() only wraps half the if, but it seems to get slower any other
   // way we've tried: https://github.com/simdjson/simdjson/pull/990#discussion_r448497331
@@ -13163,29 +14229,31 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
   if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) || (exponent > FASTFLOAT_LARGEST_POWER)) {
     // this is almost never going to get called!!!
     // we start anew, going slowly!!!
-    bool success = slow_float_parsing(src, writer);
-    // The number was already written, but we made a copy of the writer when we passed it to the
-    // slow_float_parsing() function, so we have to skip those tape spots now that we've returned
+    // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
+    // because slow_float_parsing is a non-inlined function. If we passed our writer reference to
+    // it, it would force it to be stored in memory, preventing the compiler from picking it apart
+    // and putting into registers. i.e. if we pass it as reference, it gets slow.
+    // This is what forces the skip_double, as well.
+    error_code error = slow_float_parsing(src, writer);
     writer.skip_double();
-    return success;
+    return error;
   }
-  bool success = true;
-  double d = compute_float_64(exponent, i, negative, &success);
-  if (!success) {
+  double d;
+  if (!compute_float_64(exponent, i, negative, d)) {
     // we are almost never going to get here.
     if (!parse_float_strtod(src, &d)) { return INVALID_NUMBER(src); }
   }
   WRITE_DOUBLE(d, src, writer);
-  return true;
+  return SUCCESS;
 }
 
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-really_inline bool parse_number(const uint8_t *const, W &writer) {
+really_inline error_code parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
-  return true;                 // always succeeds
+  return SUCCESS;              // always succeeds
 }
 
 #else
@@ -13200,7 +14268,7 @@ really_inline bool parse_number(const uint8_t *const, W &writer) {
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-really_inline bool parse_number(const uint8_t *const src, W &writer) {
+really_inline error_code parse_number(const uint8_t *const src, W &writer) {
 
   //
   // Check for minus sign
@@ -13228,16 +14296,19 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   if ('.' == *p) {
     is_float = true;
     ++p;
-    if (!parse_decimal(src, p, i, exponent)) { return false; }
+    SIMDJSON_TRY( parse_decimal(src, p, i, exponent) );
     digit_count = int(p - start_digits); // used later to guard against overflows
   }
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
     ++p;
-    if (!parse_exponent(src, p, exponent)) { return false; }
+    SIMDJSON_TRY( parse_exponent(src, p, exponent) );
   }
   if (is_float) {
-    return write_float(src, negative, i, start_digits, digit_count, exponent, writer);
+    const bool clean_end = is_structural_or_whitespace(*p);
+    SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
+    if (!clean_end) { return INVALID_NUMBER(src); }
+    return SUCCESS;
   }
 
   // The longest negative 64-bit number is 19 digits.
@@ -13246,13 +14317,12 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   int longest_digit_count = negative ? 19 : 20;
   if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
   if (digit_count == longest_digit_count) {
-    if(negative) {
+    if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) {
-        return INVALID_NUMBER(src); 
-      }
+      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
       WRITE_INTEGER(~i+1, src, writer);
-      return is_structural_or_whitespace(*p);
+      if (!is_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+      return SUCCESS;
     // Positive overflow check:
     // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
     //   biggest uint64_t.
@@ -13274,9 +14344,230 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
   }
-  return is_structural_or_whitespace(*p);
+  if (!is_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+  return SUCCESS;
 }
 
+// SAX functions
+namespace {
+// Parse any number from 0 to 18,446,744,073,709,551,615
+UNUSED really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
+  const uint8_t *p = src;
+
+  //
+  // Parse the integer part.
+  //
+  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  const uint8_t *const start_digits = p;
+  uint64_t i = 0;
+  while (parse_digit(*p, i)) { p++; }
+
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - start_digits);
+  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return NUMBER_ERROR; }
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  // The longest positive 64-bit number is 20 digits.
+  // We do it this way so we don't trigger this branch unless we must.
+  if (digit_count > 20) { return NUMBER_ERROR; }
+  if (digit_count == 20) {
+    // Positive overflow check:
+    // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+    //   biggest uint64_t.
+    // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+    //   If we got here, it's a 20 digit number starting with the digit "1".
+    // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+    //   than 1,553,255,926,290,448,384.
+    // - That is smaller than the smallest possible 20-digit number the user could write:
+    //   10,000,000,000,000,000,000.
+    // - Therefore, if the number is positive and lower than that, it's overflow.
+    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    //
+    if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+  }
+
+  return i;
+}
+
+// Parse any number from 0 to 18,446,744,073,709,551,615
+// Call this version of the method if you regularly expect 8- or 16-digit numbers.
+UNUSED really_inline simdjson_result<uint64_t> parse_large_unsigned(const uint8_t * const src) noexcept {
+  const uint8_t *p = src;
+
+  //
+  // Parse the integer part.
+  //
+  uint64_t i = 0;
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+    if (is_made_of_eight_digits_fast(p)) {
+      i = i * 100000000 + parse_eight_digits_unrolled(p);
+      p += 8;
+      if (parse_digit(*p, i)) { // digit 17
+        p++;
+        if (parse_digit(*p, i)) { // digit 18
+          p++;
+          if (parse_digit(*p, i)) { // digit 19
+            p++;
+            if (parse_digit(*p, i)) { // digit 20
+              p++;
+              if (parse_digit(*p, i)) { return NUMBER_ERROR; } // 21 digits is an error
+              // Positive overflow check:
+              // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+              //   biggest uint64_t.
+              // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+              //   If we got here, it's a 20 digit number starting with the digit "1".
+              // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+              //   than 1,553,255,926,290,448,384.
+              // - That is smaller than the smallest possible 20-digit number the user could write:
+              //   10,000,000,000,000,000,000.
+              // - Therefore, if the number is positive and lower than that, it's overflow.
+              // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+              //
+              if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+            }
+          }
+        }
+      }
+    } // 16 digits
+  } else { // 8 digits
+    // Less than 8 digits can't overflow, simpler logic here.
+    if (parse_digit(*p, i)) { p++; } else { return NUMBER_ERROR; }
+    while (parse_digit(*p, i)) { p++; }
+  }
+
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - src);
+  if (digit_count == 0 || ('0' == *src && digit_count > 1)) { return NUMBER_ERROR; }
+  return i;
+}
+
+// Parse any number from  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
+UNUSED really_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) noexcept {
+  //
+  // Check for minus sign
+  //
+  bool negative = (*src == '-');
+  const uint8_t *p = src + negative;
+
+  //
+  // Parse the integer part.
+  //
+  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  const uint8_t *const start_digits = p;
+  uint64_t i = 0;
+  while (parse_digit(*p, i)) { p++; }
+
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - start_digits);
+  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return NUMBER_ERROR; }
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  // The longest negative 64-bit number is 19 digits.
+  // The longest positive 64-bit number is 20 digits.
+  // We do it this way so we don't trigger this branch unless we must.
+  int longest_digit_count = negative ? 19 : 20;
+  if (digit_count > longest_digit_count) { return NUMBER_ERROR; }
+  if (digit_count == longest_digit_count) {
+    if(negative) {
+      // Anything negative above INT64_MAX+1 is invalid
+      if (i > uint64_t(INT64_MAX)+1) { return NUMBER_ERROR; }
+      return ~i+1;
+
+    // Positive overflow check:
+    // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+    //   biggest uint64_t.
+    // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+    //   If we got here, it's a 20 digit number starting with the digit "1".
+    // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+    //   than 1,553,255,926,290,448,384.
+    // - That is smaller than the smallest possible 20-digit number the user could write:
+    //   10,000,000,000,000,000,000.
+    // - Therefore, if the number is positive and lower than that, it's overflow.
+    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    //
+    } else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+  }
+
+  return negative ? (~i+1) : i;
+}
+
+UNUSED really_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept {
+  //
+  // Check for minus sign
+  //
+  bool negative = (*src == '-');
+  src += negative;
+
+  //
+  // Parse the integer part.
+  //
+  uint64_t i = 0;
+  const uint8_t *p = src;
+  p += parse_digit(*p, i);
+  bool leading_zero = (i == 0);
+  while (parse_digit(*p, i)) { p++; }
+  // no integer digits, or 0123 (zero must be solo)
+  if ( p == src || (leading_zero && p != src+1)) { return NUMBER_ERROR; }
+
+  //
+  // Parse the decimal part.
+  //
+  int64_t exponent = 0;
+  bool overflow;
+  if (likely(*p == '.')) {
+    p++;
+    const uint8_t *start_decimal_digits = p;
+    if (!parse_digit(*p, i)) { return NUMBER_ERROR; } // no decimal digits
+    p++;
+    while (parse_digit(*p, i)) { p++; }
+    exponent = -(p - start_decimal_digits);
+
+    // Overflow check. 19 digits (minus the decimal) may be overflow.
+    overflow = p-src-1 >= 19;
+    if (unlikely(overflow && leading_zero)) {
+      // Skip leading 0.00000 and see if it still overflows
+      const uint8_t *start_digits = src + 2;
+      while (*start_digits == '0') { start_digits++; }
+      overflow = start_digits-src >= 19;
+    }
+  } else {
+    overflow = p-src >= 19;
+  }
+
+  //
+  // Parse the exponent
+  //
+  if (*p == 'e' || *p == 'E') {
+    p++;
+    bool exp_neg = *p == '-';
+    p += exp_neg || *p == '+';
+
+    uint64_t exp = 0;
+    const uint8_t *start_exp_digits = p;
+    while (parse_digit(*p, exp)) { p++; }
+    // no exp digits, or 20+ exp digits
+    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+
+    exponent += exp_neg ? 0-exp : exp;
+    overflow = overflow || exponent < FASTFLOAT_SMALLEST_POWER || exponent > FASTFLOAT_LARGEST_POWER;
+  }
+
+  //
+  // Assemble (or slow-parse) the float
+  //
+  double d;
+  if (likely(!overflow)) {
+    if (compute_float_64(exponent, i, negative, d)) { return d; }
+  }
+  if (!parse_float_strtod(src-negative, &d)) {
+    return NUMBER_ERROR;
+  }
+  return d;
+}
+} //namespace {}
 #endif // SIMDJSON_SKIPNUMBERPARSING
 
 } // namespace numberparsing
@@ -13287,12 +14578,8 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
 
 #endif //  SIMDJSON_WESTMERE_NUMBERPARSING_H
 /* end file src/generic/stage2/numberparsing.h */
-/* begin file src/generic/stage2/structural_parser.h */
-// This file contains the common code every implementation uses for stage2
-// It is intended to be included multiple times and compiled multiple times
-// We assume the file in which it is include already includes
-// "simdjson/stage2.h" (this simplifies amalgation)
-
+/* begin file src/generic/stage2/tape_builder.h */
+/* begin file src/generic/stage2/json_iterator.h */
 /* begin file src/generic/stage2/logger.h */
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
@@ -13304,7 +14591,7 @@ namespace logger {
 
   static constexpr const bool LOG_ENABLED = false;
   static constexpr const int LOG_EVENT_LEN = 20;
-  static constexpr const int LOG_BUFFER_LEN = 10;
+  static constexpr const int LOG_BUFFER_LEN = 30;
   static constexpr const int LOG_SMALL_BUFFER_LEN = 10;
   static constexpr const int LOG_INDEX_LEN = 5;
 
@@ -13326,12 +14613,6 @@ namespace logger {
       printf("\n");
       printf("| %-*s | %-*s | %-*s | %-*s | Detail |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", LOG_SMALL_BUFFER_LEN, "Next", 5, "Next#");
       printf("|%.*s|%.*s|%.*s|%.*s|--------|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, LOG_SMALL_BUFFER_LEN+2, DASHES, 5+2, DASHES);
-    }
-  }
-
-  static really_inline void log_string(const char *message) {
-    if (LOG_ENABLED) {
-      printf("%s\n", message);
     }
   }
 
@@ -13377,287 +14658,321 @@ namespace logger {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
 /* end file src/generic/stage2/logger.h */
-/* begin file src/generic/stage2/structural_iterator.h */
+
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
-class structural_iterator {
+class json_iterator {
 public:
   const uint8_t* const buf;
   uint32_t *next_structural;
   dom_parser_implementation &dom_parser;
-
-  // Start a structural 
-  really_inline structural_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
-    : buf{_dom_parser.buf},
-      next_structural{&_dom_parser.structural_indexes[start_structural_index]},
-      dom_parser{_dom_parser} {
-  }
-  // Get the buffer position of the current structural character
-  really_inline const uint8_t* current() {
-    return &buf[*(next_structural-1)];
-  }
-  // Get the current structural character
-  really_inline char current_char() {
-    return buf[*(next_structural-1)];
-  }
-  // Get the next structural character without advancing
-  really_inline char peek_next_char() {
-    return buf[*next_structural];
-  }
-  really_inline const uint8_t* peek() {
-    return &buf[*next_structural];
-  }
-  really_inline const uint8_t* advance() {
-    return &buf[*(next_structural++)];
-  }
-  really_inline char advance_char() {
-    return buf[*(next_structural++)];
-  }
-  really_inline size_t remaining_len() {
-    return dom_parser.len - *(next_structural-1);
-  }
-
-  really_inline bool at_end() {
-    return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
-  }
-  really_inline bool at_beginning() {
-    return next_structural == dom_parser.structural_indexes.get();
-  }
-};
-
-} // namespace stage2
-} // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace
-/* end file src/generic/stage2/structural_iterator.h */
-
-namespace { // Make everything here private
-namespace SIMDJSON_IMPLEMENTATION {
-namespace stage2 {
-
-#define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }
-
-struct structural_parser : structural_iterator {
-  /** Current depth (nested objects and arrays) */
   uint32_t depth{0};
 
-  template<bool STREAMING, typename T>
-  WARN_UNUSED really_inline error_code parse(T &builder) noexcept;
-  template<bool STREAMING, typename T>
-  WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser, T &builder) noexcept {
-    structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
-    return parser.parse<STREAMING>(builder);
-  }
+  /**
+   * Walk the JSON document.
+   *
+   * The visitor receives callbacks when values are encountered. All callbacks pass the iterator as
+   * the first parameter; some callbacks have other parameters as well:
+   *
+   * - visit_document_start() - at the beginning.
+   * - visit_document_end() - at the end (if things were successful).
+   *
+   * - visit_array_start() - at the start `[` of a non-empty array.
+   * - visit_array_end() - at the end `]` of a non-empty array.
+   * - visit_empty_array() - when an empty array is encountered.
+   *
+   * - visit_object_end() - at the start `]` of a non-empty object.
+   * - visit_object_start() - at the end `]` of a non-empty object.
+   * - visit_empty_object() - when an empty object is encountered.
+   * - visit_key(const uint8_t *key) - when a key in an object field is encountered. key is
+   *                                   guaranteed to point at the first quote of the string (`"key"`).
+   * - visit_primitive(const uint8_t *value) - when a value is a string, number, boolean or null.
+   * - visit_root_primitive(iter, uint8_t *value) - when the top-level value is a string, number, boolean or null.
+   *
+   * - increment_count(iter) - each time a value is found in an array or object.
+   */
+  template<bool STREAMING, typename V>
+  WARN_UNUSED really_inline error_code walk_document(V &visitor) noexcept;
 
-  // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
-  really_inline structural_parser(dom_parser_implementation &_dom_parser, uint32_t start_structural_index)
-    : structural_iterator(_dom_parser, start_structural_index) {
-  }
+  /**
+   * Create an iterator capable of walking a JSON document.
+   *
+   * The document must have already passed through stage 1.
+   */
+  really_inline json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index);
 
-  WARN_UNUSED really_inline error_code start_document() {
-    dom_parser.is_array[depth] = false;
-    return SUCCESS;
-  }
-  template<typename T>
-  WARN_UNUSED really_inline error_code start_array(T &builder) {
-    depth++;
-    if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-    builder.start_array(*this);
-    dom_parser.is_array[depth] = true;
-    return SUCCESS;
-  }
+  /**
+   * Look at the next token.
+   *
+   * Tokens can be strings, numbers, booleans, null, or operators (`[{]},:`)).
+   *
+   * They may include invalid JSON as well (such as `1.2.3` or `ture`).
+   */
+  really_inline const uint8_t *peek() const noexcept;
+  /**
+   * Advance to the next token.
+   *
+   * Tokens can be strings, numbers, booleans, null, or operators (`[{]},:`)).
+   *
+   * They may include invalid JSON as well (such as `1.2.3` or `ture`).
+   */
+  really_inline const uint8_t *advance() noexcept;
+  /**
+   * Get the remaining length of the document, from the start of the current token.
+   */
+  really_inline size_t remaining_len() const noexcept;
+  /**
+   * Check if we are at the end of the document.
+   *
+   * If this is true, there are no more tokens.
+   */
+  really_inline bool at_eof() const noexcept;
+  /**
+   * Check if we are at the beginning of the document.
+   */
+  really_inline bool at_beginning() const noexcept;
+  really_inline uint8_t last_structural() const noexcept;
 
-  template<typename T>
-  WARN_UNUSED really_inline bool empty_object(T &builder) {
-    if (peek_next_char() == '}') {
-      advance_char();
-      builder.empty_object(*this);
-      return true;
-    }
-    return false;
-  }
-  template<typename T>
-  WARN_UNUSED really_inline bool empty_array(T &builder) {
-    if (peek_next_char() == ']') {
-      advance_char();
-      builder.empty_array(*this);
-      return true;
-    }
-    return false;
-  }
+  /**
+   * Log that a value has been found.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_value(const char *type) const noexcept;
+  /**
+   * Log the start of a multipart value.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_start_value(const char *type) const noexcept;
+  /**
+   * Log the end of a multipart value.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_end_value(const char *type) const noexcept;
+  /**
+   * Log an error.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
+  really_inline void log_error(const char *error) const noexcept;
 
-  template<bool STREAMING>
-  WARN_UNUSED really_inline error_code finish() {
-    dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
+  template<typename V>
+  WARN_UNUSED really_inline error_code visit_root_primitive(V &visitor, const uint8_t *value) noexcept;
+  template<typename V>
+  WARN_UNUSED really_inline error_code visit_primitive(V &visitor, const uint8_t *value) noexcept;
+};
 
-    if (depth != 0) {
-      log_error("Unclosed objects or arrays!");
-      return TAPE_ERROR;
-    }
-
-    // If we didn't make it to the end, it's an error
-    if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
-      logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
-      return TAPE_ERROR;
-    }
-
-    return SUCCESS;
-  }
-
-  really_inline void log_value(const char *type) {
-    logger::log_line(*this, "", type, "");
-  }
-
-  really_inline void log_start_value(const char *type) {
-    logger::log_line(*this, "+", type, "");
-    if (logger::LOG_ENABLED) { logger::log_depth++; }
-  }
-
-  really_inline void log_end_value(const char *type) {
-    if (logger::LOG_ENABLED) { logger::log_depth--; }
-    logger::log_line(*this, "-", type, "");
-  }
-
-  really_inline void log_error(const char *error) {
-    logger::log_line(*this, "", "ERROR", error);
-  }
-}; // struct structural_parser
-
-template<bool STREAMING, typename T>
-WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexcept {
+template<bool STREAMING, typename V>
+WARN_UNUSED really_inline error_code json_iterator::walk_document(V &visitor) noexcept {
   logger::log_start();
 
   //
   // Start the document
   //
-  if (at_end()) { return EMPTY; }
-  SIMDJSON_TRY( start_document() );
-  builder.start_document(*this);
+  if (at_eof()) { return EMPTY; }
+  log_start_value("document");
+  SIMDJSON_TRY( visitor.visit_document_start(*this) );
 
   //
   // Read first value
   //
   {
-    const uint8_t *value = advance();
-    switch (*value) {
-      case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-      case '[': {
-        // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
-        // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-        if (!STREAMING) {
-          if (buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
-            return TAPE_ERROR;
-          }
-        }
-        if (!empty_array(builder)) { goto array_begin; }; break;
+    auto value = advance();
+
+    // Make sure the outer hash or array is closed before continuing; otherwise, there are ways we
+    // could get into memory corruption. See https://github.com/simdjson/simdjson/issues/906
+    if (!STREAMING) {
+      switch (*value) {
+        case '{': if (last_structural() != '}') { return TAPE_ERROR; }; break;
+        case '[': if (last_structural() != ']') { return TAPE_ERROR; }; break;
       }
-      default: SIMDJSON_TRY( builder.parse_root_primitive(*this, value) );
     }
-    goto document_end;
+
+    switch (*value) {
+      case '{': if (*peek() == '}') { advance(); log_value("empty object"); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '[': if (*peek() == ']') { advance(); log_value("empty array"); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+      default: SIMDJSON_TRY( visitor.visit_root_primitive(*this, value) ); break;
+    }
   }
+  goto document_end;
 
 //
 // Object parser states
 //
-object_begin: {
+object_begin:
+  log_start_value("object");
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-  builder.start_object(*this);
   dom_parser.is_array[depth] = false;
+  SIMDJSON_TRY( visitor.visit_object_start(*this) );
 
-  const uint8_t *key = advance();
-  if (*key != '"') {
-    log_error("Object does not start with a key");
-    return TAPE_ERROR;
+  {
+    auto key = advance();
+    if (*key != '"') { log_error("Object does not start with a key"); return TAPE_ERROR; }
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    SIMDJSON_TRY( visitor.visit_key(*this, key) );
   }
-  builder.increment_count(*this);
-  SIMDJSON_TRY( builder.parse_key(*this, key) );
-  goto object_field;
-} // object_begin:
 
-object_field: {
-  if (unlikely( advance_char() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
-  const uint8_t *value = advance();
-  switch (*value) {
-    case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-    case '[': if (!empty_array(builder)) { goto array_begin; }; break;
-    default: SIMDJSON_TRY( builder.parse_primitive(*this, value) );
+object_field:
+  if (unlikely( *advance() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
+  {
+    auto value = advance();
+    switch (*value) {
+      case '{': if (*peek() == '}') { advance(); log_value("empty object"); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '[': if (*peek() == ']') { advance(); log_value("empty array"); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+      default: SIMDJSON_TRY( visitor.visit_primitive(*this, value) ); break;
+    }
   }
-} // object_field:
 
-object_continue: {
-  switch (advance_char()) {
-  case ',': {
-    builder.increment_count(*this);
-    const uint8_t *key = advance();
-    if (unlikely( *key != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
-    SIMDJSON_TRY( builder.parse_key(*this, key) );
-    goto object_field;
+object_continue:
+  switch (*advance()) {
+    case ',':
+      SIMDJSON_TRY( visitor.increment_count(*this) );
+      {
+        auto key = advance();
+        if (unlikely( *key != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
+        SIMDJSON_TRY( visitor.visit_key(*this, key) );
+      }
+      goto object_field;
+    case '}': log_end_value("object"); SIMDJSON_TRY( visitor.visit_object_end(*this) ); goto scope_end;
+    default: log_error("No comma between object fields"); return TAPE_ERROR;
   }
-  case '}':
-    builder.end_object(*this);
-    goto scope_end;
-  default:
-    log_error("No comma between object fields");
-    return TAPE_ERROR;
-  }
-} // object_continue:
 
-scope_end: {
+scope_end:
   depth--;
   if (depth == 0) { goto document_end; }
   if (dom_parser.is_array[depth]) { goto array_continue; }
   goto object_continue;
-} // scope_end:
 
 //
 // Array parser states
 //
-array_begin: {
+array_begin:
+  log_start_value("array");
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-  builder.start_array(*this);
   dom_parser.is_array[depth] = true;
+  SIMDJSON_TRY( visitor.visit_array_start(*this) );
+  SIMDJSON_TRY( visitor.increment_count(*this) );
 
-  builder.increment_count(*this);
-} // array_begin:
-
-array_value: {
-  const uint8_t *value = advance();
-  switch (*value) {
-    case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-    case '[': if (!empty_array(builder)) { goto array_begin; }; break;
-    default: SIMDJSON_TRY( builder.parse_primitive(*this, value) );
+array_value:
+  {
+    auto value = advance();
+    switch (*value) {
+      case '{': if (*peek() == '}') { advance(); log_value("empty object"); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '[': if (*peek() == ']') { advance(); log_value("empty array"); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+      default: SIMDJSON_TRY( visitor.visit_primitive(*this, value) ); break;
+    }
   }
-} // array_value:
 
-array_continue: {
-  switch (advance_char()) {
-  case ',':
-    builder.increment_count(*this);
-    goto array_value;
-  case ']':
-    builder.end_array(*this);
-    goto scope_end;
-  default:
-    log_error("Missing comma between array values");
+array_continue:
+  switch (*advance()) {
+    case ',': SIMDJSON_TRY( visitor.increment_count(*this) ); goto array_value;
+    case ']': log_end_value("array"); SIMDJSON_TRY( visitor.visit_array_end(*this) ); goto scope_end;
+    default: log_error("Missing comma between array values"); return TAPE_ERROR;
+  }
+
+document_end:
+  log_end_value("document");
+  SIMDJSON_TRY( visitor.visit_document_end(*this) );
+
+  dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
+
+  // If we didn't make it to the end, it's an error
+  if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
+    log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
     return TAPE_ERROR;
   }
-} // array_continue:
 
-document_end: {
-  builder.end_document(*this);
-  return finish<STREAMING>();
-} // document_end:
+  return SUCCESS;
 
-} // parse_structurals()
+} // walk_document()
+
+really_inline json_iterator::json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
+  : buf{_dom_parser.buf},
+    next_structural{&_dom_parser.structural_indexes[start_structural_index]},
+    dom_parser{_dom_parser} {
+}
+
+really_inline const uint8_t *json_iterator::peek() const noexcept {
+  return &buf[*(next_structural)];
+}
+really_inline const uint8_t *json_iterator::advance() noexcept {
+  return &buf[*(next_structural++)];
+}
+really_inline size_t json_iterator::remaining_len() const noexcept {
+  return dom_parser.len - *(next_structural-1);
+}
+
+really_inline bool json_iterator::at_eof() const noexcept {
+  return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
+}
+really_inline bool json_iterator::at_beginning() const noexcept {
+  return next_structural == dom_parser.structural_indexes.get();
+}
+really_inline uint8_t json_iterator::last_structural() const noexcept {
+  return buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]];
+}
+
+really_inline void json_iterator::log_value(const char *type) const noexcept {
+  logger::log_line(*this, "", type, "");
+}
+
+really_inline void json_iterator::log_start_value(const char *type) const noexcept {
+  logger::log_line(*this, "+", type, "");
+  if (logger::LOG_ENABLED) { logger::log_depth++; }
+}
+
+really_inline void json_iterator::log_end_value(const char *type) const noexcept {
+  if (logger::LOG_ENABLED) { logger::log_depth--; }
+  logger::log_line(*this, "-", type, "");
+}
+
+really_inline void json_iterator::log_error(const char *error) const noexcept {
+  logger::log_line(*this, "", "ERROR", error);
+}
+
+template<typename V>
+WARN_UNUSED really_inline error_code json_iterator::visit_root_primitive(V &visitor, const uint8_t *value) noexcept {
+  switch (*value) {
+    case '"': return visitor.visit_root_string(*this, value);
+    case 't': return visitor.visit_root_true_atom(*this, value);
+    case 'f': return visitor.visit_root_false_atom(*this, value);
+    case 'n': return visitor.visit_root_null_atom(*this, value);
+    case '-':
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      return visitor.visit_root_number(*this, value);
+    default:
+      log_error("Document starts with a non-value character");
+      return TAPE_ERROR;
+  }
+}
+template<typename V>
+WARN_UNUSED really_inline error_code json_iterator::visit_primitive(V &visitor, const uint8_t *value) noexcept {
+  switch (*value) {
+    case '"': return visitor.visit_string(*this, value);
+    case 't': return visitor.visit_true_atom(*this, value);
+    case 'f': return visitor.visit_false_atom(*this, value);
+    case 'n': return visitor.visit_null_atom(*this, value);
+    case '-':
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      return visitor.visit_number(*this, value);
+    default:
+      log_error("Non-value found when value was expected!");
+      return TAPE_ERROR;
+  }
+}
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
-/* end file src/generic/stage2/structural_iterator.h */
-/* begin file src/generic/stage2/tape_builder.h */
+/* end file src/generic/stage2/logger.h */
 /* begin file src/generic/stage2/tape_writer.h */
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -13835,224 +15150,276 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
 struct tape_builder {
+  template<bool STREAMING>
+  WARN_UNUSED static really_inline error_code parse_document(
+    dom_parser_implementation &dom_parser,
+    dom::document &doc) noexcept;
+
+  /** Called when a non-empty document starts. */
+  WARN_UNUSED really_inline error_code visit_document_start(json_iterator &iter) noexcept;
+  /** Called when a non-empty document ends without error. */
+  WARN_UNUSED really_inline error_code visit_document_end(json_iterator &iter) noexcept;
+
+  /** Called when a non-empty array starts. */
+  WARN_UNUSED really_inline error_code visit_array_start(json_iterator &iter) noexcept;
+  /** Called when a non-empty array ends. */
+  WARN_UNUSED really_inline error_code visit_array_end(json_iterator &iter) noexcept;
+  /** Called when an empty array is found. */
+  WARN_UNUSED really_inline error_code visit_empty_array(json_iterator &iter) noexcept;
+
+  /** Called when a non-empty object starts. */
+  WARN_UNUSED really_inline error_code visit_object_start(json_iterator &iter) noexcept;
+  /**
+   * Called when a key in a field is encountered.
+   *
+   * primitive, visit_object_start, visit_empty_object, visit_array_start, or visit_empty_array
+   * will be called after this with the field value.
+   */
+  WARN_UNUSED really_inline error_code visit_key(json_iterator &iter, const uint8_t *key) noexcept;
+  /** Called when a non-empty object ends. */
+  WARN_UNUSED really_inline error_code visit_object_end(json_iterator &iter) noexcept;
+  /** Called when an empty object is found. */
+  WARN_UNUSED really_inline error_code visit_empty_object(json_iterator &iter) noexcept;
+
+  /**
+   * Called when a string, number, boolean or null is found.
+   */
+  WARN_UNUSED really_inline error_code visit_primitive(json_iterator &iter, const uint8_t *value) noexcept;
+  /**
+   * Called when a string, number, boolean or null is found at the top level of a document (i.e.
+   * when there is no array or object and the entire document is a single string, number, boolean or
+   * null.
+   *
+   * This is separate from primitive() because simdjson's normal primitive parsing routines assume
+   * there is at least one more token after the value, which is only true in an array or object.
+   */
+  WARN_UNUSED really_inline error_code visit_root_primitive(json_iterator &iter, const uint8_t *value) noexcept;
+
+  WARN_UNUSED really_inline error_code visit_string(json_iterator &iter, const uint8_t *value, bool key = false) noexcept;
+  WARN_UNUSED really_inline error_code visit_number(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_true_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_false_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_null_atom(json_iterator &iter, const uint8_t *value) noexcept;
+
+  WARN_UNUSED really_inline error_code visit_root_string(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_number(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_true_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_false_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_null_atom(json_iterator &iter, const uint8_t *value) noexcept;
+
+  /** Called each time a new field or element in an array or object is found. */
+  WARN_UNUSED really_inline error_code increment_count(json_iterator &iter) noexcept;
+
   /** Next location to write to tape */
   tape_writer tape;
+private:
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc;
 
-  really_inline tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
+  really_inline tape_builder(dom::document &doc) noexcept;
 
-private:
-  friend struct structural_parser;
+  really_inline uint32_t next_tape_index(json_iterator &iter) const noexcept;
+  really_inline void start_container(json_iterator &iter) noexcept;
+  WARN_UNUSED really_inline error_code end_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept;
+  WARN_UNUSED really_inline error_code empty_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept;
+  really_inline uint8_t *on_start_string(json_iterator &iter) noexcept;
+  really_inline void on_end_string(uint8_t *dst) noexcept;
+}; // class tape_builder
 
-  really_inline error_code parse_root_primitive(structural_parser &parser, const uint8_t *value) {
-    switch (*value) {
-      case '"': return parse_string(parser, value);
-      case 't': return parse_root_true_atom(parser, value);
-      case 'f': return parse_root_false_atom(parser, value);
-      case 'n': return parse_root_null_atom(parser, value);
-      case '-':
-      case '0': case '1': case '2': case '3': case '4':
-      case '5': case '6': case '7': case '8': case '9':
-        return parse_root_number(parser, value);
-      default:
-        parser.log_error("Document starts with a non-value character");
-        return TAPE_ERROR;
-    }
-  }
-  really_inline error_code parse_primitive(structural_parser &parser, const uint8_t *value) {
-    switch (*value) {
-      case '"': return parse_string(parser, value);
-      case 't': return parse_true_atom(parser, value);
-      case 'f': return parse_false_atom(parser, value);
-      case 'n': return parse_null_atom(parser, value);
-      case '-':
-      case '0': case '1': case '2': case '3': case '4':
-      case '5': case '6': case '7': case '8': case '9':
-        return parse_number(parser, value);
-      default:
-        parser.log_error("Non-value found when value was expected!");
-        return TAPE_ERROR;
-    }
-  }
-  really_inline void empty_object(structural_parser &parser) {
-    parser.log_value("empty object");
-    empty_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
-  }
-  really_inline void empty_array(structural_parser &parser) {
-    parser.log_value("empty array");
-    empty_container(parser, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
-  }
+template<bool STREAMING>
+WARN_UNUSED really_inline error_code tape_builder::parse_document(
+    dom_parser_implementation &dom_parser,
+    dom::document &doc) noexcept {
+  dom_parser.doc = &doc;
+  json_iterator iter(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
+  tape_builder builder(doc);
+  return iter.walk_document<STREAMING>(builder);
+}
 
-  really_inline void start_document(structural_parser &parser) {
-    parser.log_start_value("document");
-    start_container(parser);
-  }
-  really_inline void start_object(structural_parser &parser) {
-    parser.log_start_value("object");
-    start_container(parser);
-  }
-  really_inline void start_array(structural_parser &parser) {
-    parser.log_start_value("array");
-    start_container(parser);
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_primitive(json_iterator &iter, const uint8_t *value) noexcept {
+  return iter.visit_root_primitive(*this, value);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_primitive(json_iterator &iter, const uint8_t *value) noexcept {
+  return iter.visit_primitive(*this, value);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_empty_object(json_iterator &iter) noexcept {
+  return empty_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_empty_array(json_iterator &iter) noexcept {
+  return empty_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
+}
 
-  really_inline void end_object(structural_parser &parser) {
-    parser.log_end_value("object");
-    end_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
-  }
-  really_inline void end_array(structural_parser &parser) {
-    parser.log_end_value("array");
-    end_container(parser, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
-  }
-  really_inline void end_document(structural_parser &parser) {
-    parser.log_end_value("document");
-    constexpr uint32_t start_tape_index = 0;
-    tape.append(start_tape_index, internal::tape_type::ROOT);
-    tape_writer::write(parser.dom_parser.doc->tape[start_tape_index], next_tape_index(parser), internal::tape_type::ROOT);
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_document_start(json_iterator &iter) noexcept {
+  start_container(iter);
+  return SUCCESS;
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_object_start(json_iterator &iter) noexcept {
+  start_container(iter);
+  return SUCCESS;
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_array_start(json_iterator &iter) noexcept {
+  start_container(iter);
+  return SUCCESS;
+}
 
-  WARN_UNUSED really_inline error_code parse_key(structural_parser &parser, const uint8_t *value) {
-    return parse_string(parser, value, true);
-  }
-  WARN_UNUSED really_inline error_code parse_string(structural_parser &parser, const uint8_t *value, bool key = false) {
-    parser.log_value(key ? "key" : "string");
-    uint8_t *dst = on_start_string(parser);
-    dst = stringparsing::parse_string(value, dst);
-    if (dst == nullptr) {
-      parser.log_error("Invalid escape in string");
-      return STRING_ERROR;
-    }
-    on_end_string(dst);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_object_end(json_iterator &iter) noexcept {
+  return end_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_array_end(json_iterator &iter) noexcept {
+  return end_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_document_end(json_iterator &iter) noexcept {
+  constexpr uint32_t start_tape_index = 0;
+  tape.append(start_tape_index, internal::tape_type::ROOT);
+  tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(iter), internal::tape_type::ROOT);
+  return SUCCESS;
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_key(json_iterator &iter, const uint8_t *key) noexcept {
+  return visit_string(iter, key, true);
+}
 
-  WARN_UNUSED really_inline error_code parse_number(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("number");
-    if (!numberparsing::parse_number(value, tape)) { parser.log_error("Invalid number"); return NUMBER_ERROR; }
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::increment_count(json_iterator &iter) noexcept {
+  iter.dom_parser.open_containers[iter.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
+  return SUCCESS;
+}
 
-  really_inline error_code parse_root_number(structural_parser &parser, const uint8_t *value) {
-    //
-    // We need to make a copy to make sure that the string is space terminated.
-    // This is not about padding the input, which should already padded up
-    // to len + SIMDJSON_PADDING. However, we have no control at this stage
-    // on how the padding was done. What if the input string was padded with nulls?
-    // It is quite common for an input string to have an extra null character (C string).
-    // We do not want to allow 9\0 (where \0 is the null character) inside a JSON
-    // document, but the string "9\0" by itself is fine. So we make a copy and
-    // pad the input with spaces when we know that there is just one input element.
-    // This copy is relatively expensive, but it will almost never be called in
-    // practice unless you are in the strange scenario where you have many JSON
-    // documents made of single atoms.
-    //
-    uint8_t *copy = static_cast<uint8_t *>(malloc(parser.remaining_len() + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      return MEMALLOC;
-    }
-    memcpy(copy, value, parser.remaining_len());
-    memset(copy + parser.remaining_len(), ' ', SIMDJSON_PADDING);
-    error_code error = parse_number(parser, copy);
-    free(copy);
-    return error;
-  }
+really_inline tape_builder::tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
 
-  WARN_UNUSED really_inline error_code parse_true_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("true");
-    if (!atomparsing::is_valid_true_atom(value)) { return T_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::TRUE_VALUE);
-    return SUCCESS;
+WARN_UNUSED really_inline error_code tape_builder::visit_string(json_iterator &iter, const uint8_t *value, bool key) noexcept {
+  iter.log_value(key ? "key" : "string");
+  uint8_t *dst = on_start_string(iter);
+  dst = stringparsing::parse_string(value, dst);
+  if (dst == nullptr) {
+    iter.log_error("Invalid escape in string");
+    return STRING_ERROR;
   }
+  on_end_string(dst);
+  return SUCCESS;
+}
 
-  WARN_UNUSED really_inline error_code parse_root_true_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("true");
-    if (!atomparsing::is_valid_true_atom(value, parser.remaining_len())) { return T_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::TRUE_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_string(json_iterator &iter, const uint8_t *value) noexcept {
+  return visit_string(iter, value);
+}
 
-  WARN_UNUSED really_inline error_code parse_false_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("false");
-    if (!atomparsing::is_valid_false_atom(value)) { return F_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::FALSE_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("number");
+  return numberparsing::parse_number(value, tape);
+}
 
-  WARN_UNUSED really_inline error_code parse_root_false_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("false");
-    if (!atomparsing::is_valid_false_atom(value, parser.remaining_len())) { return F_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::FALSE_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
+  //
+  // We need to make a copy to make sure that the string is space terminated.
+  // This is not about padding the input, which should already padded up
+  // to len + SIMDJSON_PADDING. However, we have no control at this stage
+  // on how the padding was done. What if the input string was padded with nulls?
+  // It is quite common for an input string to have an extra null character (C string).
+  // We do not want to allow 9\0 (where \0 is the null character) inside a JSON
+  // document, but the string "9\0" by itself is fine. So we make a copy and
+  // pad the input with spaces when we know that there is just one input element.
+  // This copy is relatively expensive, but it will almost never be called in
+  // practice unless you are in the strange scenario where you have many JSON
+  // documents made of single atoms.
+  //
+  uint8_t *copy = static_cast<uint8_t *>(malloc(iter.remaining_len() + SIMDJSON_PADDING));
+  if (copy == nullptr) { return MEMALLOC; }
+  memcpy(copy, value, iter.remaining_len());
+  memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  error_code error = visit_number(iter, copy);
+  free(copy);
+  return error;
+}
 
-  WARN_UNUSED really_inline error_code parse_null_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("null");
-    if (!atomparsing::is_valid_null_atom(value)) { return N_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::NULL_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_true_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("true");
+  if (!atomparsing::is_valid_true_atom(value)) { return T_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::TRUE_VALUE);
+  return SUCCESS;
+}
 
-  WARN_UNUSED really_inline error_code parse_root_null_atom(structural_parser &parser, const uint8_t *value) {
-    parser.log_value("null");
-    if (!atomparsing::is_valid_null_atom(value, parser.remaining_len())) { return N_ATOM_ERROR; }
-    tape.append(0, internal::tape_type::NULL_VALUE);
-    return SUCCESS;
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_root_true_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("true");
+  if (!atomparsing::is_valid_true_atom(value, iter.remaining_len())) { return T_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::TRUE_VALUE);
+  return SUCCESS;
+}
 
-  // increment_count increments the count of keys in an object or values in an array.
-  really_inline void increment_count(structural_parser &parser) {
-    parser.dom_parser.containing_scope[parser.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
-  }
+WARN_UNUSED really_inline error_code tape_builder::visit_false_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("false");
+  if (!atomparsing::is_valid_false_atom(value)) { return F_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::FALSE_VALUE);
+  return SUCCESS;
+}
+
+WARN_UNUSED really_inline error_code tape_builder::visit_root_false_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("false");
+  if (!atomparsing::is_valid_false_atom(value, iter.remaining_len())) { return F_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::FALSE_VALUE);
+  return SUCCESS;
+}
+
+WARN_UNUSED really_inline error_code tape_builder::visit_null_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("null");
+  if (!atomparsing::is_valid_null_atom(value)) { return N_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::NULL_VALUE);
+  return SUCCESS;
+}
+
+WARN_UNUSED really_inline error_code tape_builder::visit_root_null_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("null");
+  if (!atomparsing::is_valid_null_atom(value, iter.remaining_len())) { return N_ATOM_ERROR; }
+  tape.append(0, internal::tape_type::NULL_VALUE);
+  return SUCCESS;
+}
 
 // private:
 
-  really_inline uint32_t next_tape_index(structural_parser &parser) {
-    return uint32_t(tape.next_tape_loc - parser.dom_parser.doc->tape.get());
-  }
+really_inline uint32_t tape_builder::next_tape_index(json_iterator &iter) const noexcept {
+  return uint32_t(tape.next_tape_loc - iter.dom_parser.doc->tape.get());
+}
 
-  really_inline void empty_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) {
-    auto start_index = next_tape_index(parser);
-    tape.append(start_index+2, start);
-    tape.append(start_index, end);
-  }
+WARN_UNUSED really_inline error_code tape_builder::empty_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept {
+  auto start_index = next_tape_index(iter);
+  tape.append(start_index+2, start);
+  tape.append(start_index, end);
+  return SUCCESS;
+}
 
-  really_inline void start_container(structural_parser &parser) {
-    parser.dom_parser.containing_scope[parser.depth].tape_index = next_tape_index(parser);
-    parser.dom_parser.containing_scope[parser.depth].count = 0;
-    tape.skip(); // We don't actually *write* the start element until the end.
-  }
+really_inline void tape_builder::start_container(json_iterator &iter) noexcept {
+  iter.dom_parser.open_containers[iter.depth].tape_index = next_tape_index(iter);
+  iter.dom_parser.open_containers[iter.depth].count = 0;
+  tape.skip(); // We don't actually *write* the start element until the end.
+}
 
-  really_inline void end_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) noexcept {
-    // Write the ending tape element, pointing at the start location
-    const uint32_t start_tape_index = parser.dom_parser.containing_scope[parser.depth].tape_index;
-    tape.append(start_tape_index, end);
-    // Write the start tape element, pointing at the end location (and including count)
-    // count can overflow if it exceeds 24 bits... so we saturate
-    // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
-    const uint32_t count = parser.dom_parser.containing_scope[parser.depth].count;
-    const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
-    tape_writer::write(parser.dom_parser.doc->tape[start_tape_index], next_tape_index(parser) | (uint64_t(cntsat) << 32), start);
-  }
+WARN_UNUSED really_inline error_code tape_builder::end_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept {
+  // Write the ending tape element, pointing at the start location
+  const uint32_t start_tape_index = iter.dom_parser.open_containers[iter.depth].tape_index;
+  tape.append(start_tape_index, end);
+  // Write the start tape element, pointing at the end location (and including count)
+  // count can overflow if it exceeds 24 bits... so we saturate
+  // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
+  const uint32_t count = iter.dom_parser.open_containers[iter.depth].count;
+  const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
+  tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(iter) | (uint64_t(cntsat) << 32), start);
+  return SUCCESS;
+}
 
-  really_inline uint8_t *on_start_string(structural_parser &parser) noexcept {
-    // we advance the point, accounting for the fact that we have a NULL termination
-    tape.append(current_string_buf_loc - parser.dom_parser.doc->string_buf.get(), internal::tape_type::STRING);
-    return current_string_buf_loc + sizeof(uint32_t);
-  }
+really_inline uint8_t *tape_builder::on_start_string(json_iterator &iter) noexcept {
+  // we advance the point, accounting for the fact that we have a NULL termination
+  tape.append(current_string_buf_loc - iter.dom_parser.doc->string_buf.get(), internal::tape_type::STRING);
+  return current_string_buf_loc + sizeof(uint32_t);
+}
 
-  really_inline void on_end_string(uint8_t *dst) noexcept {
-    uint32_t str_length = uint32_t(dst - (current_string_buf_loc + sizeof(uint32_t)));
-    // TODO check for overflow in case someone has a crazy string (>=4GB?)
-    // But only add the overflow check when the document itself exceeds 4GB
-    // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
-    memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
-    // NULL termination is still handy if you expect all your strings to
-    // be NULL terminated? It comes at a small cost
-    *dst = 0;
-    current_string_buf_loc = dst + 1;
-  }
-}; // class tape_builder
+really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
+  uint32_t str_length = uint32_t(dst - (current_string_buf_loc + sizeof(uint32_t)));
+  // TODO check for overflow in case someone has a crazy string (>=4GB?)
+  // But only add the overflow check when the document itself exceeds 4GB
+  // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
+  memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
+  // NULL termination is still handy if you expect all your strings to
+  // be NULL terminated? It comes at a small cost
+  *dst = 0;
+  current_string_buf_loc = dst + 1;
+}
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
@@ -14089,15 +15456,11 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
 }
 
 WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
-  doc = &_doc;
-  stage2::tape_builder builder(*doc);
-  return stage2::structural_parser::parse<false>(*this, builder);
+  return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
-  doc = &_doc;
-  stage2::tape_builder builder(_doc);
-  return stage2::structural_parser::parse<true>(*this, builder);
+  return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
