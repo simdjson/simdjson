@@ -46,28 +46,47 @@ c++ myproject.cpp simdjson.cpp
 ```
 
 Note:
-- Users on macOS and other platforms were default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ myproject.cpp simdjson.cpp`).
+- Users on macOS and other platforms were default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ -std=c++17 myproject.cpp simdjson.cpp`).
 - Visual Studio users should compile with the `_CRT_SECURE_NO_WARNINGS` flag to avoid warnings with respect to our use of standard C functions such as `fopen`.
+
+
+Using simdjson with package managers
+------------------
+
+You can install the simdjson library on your system or in your project using multiple package managers such as  MSYS2, the conan package manager, vcpkg, brew, the apt package manager (debian-based Linux systems), the FreeBSD package manager (FreeBSD), and so on. [Visit our wiki for more details](https://github.com/simdjson/simdjson/wiki/Installing-simdjson-with-a-package-manager).
 
 Using simdjson as a CMake dependency
 ------------------
 
-You can include the  simdjson repository as a folder in your CMake project. In the parent
-`CMakeLists.txt`, include the following lines:
+You can include the  simdjson as a CMake dependency by including the following lines in your `CMakeLists.txt`:
 
+```cmake
+include(FetchContent)
+
+FetchContent_Declare(
+  simdjson
+  GIT_REPOSITORY https://github.com/simdjson/simdjson.git
+  GIT_TAG  v0.4.7
+  GIT_SHALLOW TRUE)
+
+set(SIMDJSON_JUST_LIBRARY ON CACHE INTERNAL "")
+set(SIMDJSON_BUILD_STATIC ON CACHE INTERNAL "")
+
+FetchContent_MakeAvailable(simdjson)
 ```
-set(SIMDJSON_JUST_LIBRARY ON CACHE STRING "Build just the library, nothing else." FORCE)
-add_subdirectory(simdjson EXCLUDE_FROM_ALL)
-```
+
+You should replace `GIT_TAG  v0.4.7` by the version you need (e.g., `GIT_TAG  v0.5.0`). If you omit `GIT_TAG  v0.5.0`, you will work from the main branch of simdjson: we recommend that if you are working on production code, 
 
 Elsewhere in your project, you can  declare dependencies on simdjson with lines such as these:
 
-```
+```cmake
 add_executable(myprogram myprogram.cpp)
 target_link_libraries(myprogram simdjson)
 ```
 
-See [our CMake demonstration](https://github.com/simdjson/cmakedemo).
+See [our CMake demonstration](https://github.com/simdjson/cmake_demo_single_file). It works under Linux, FreeBSD, macOS and Windows (including Visual Studio).
+
+
 
 The CMake build in simdjson can be taylored with a few variables. You can see the available variables and their default values by entering the `cmake -LA` command.
 
