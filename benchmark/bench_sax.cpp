@@ -269,8 +269,8 @@ static void dom_parse_largerandom(State &state) {
       std::cerr << "failure: " << error << std::endl;
       throw "Parsing failed"; 
     };
-    for (auto p : doc) {
-      container.emplace_back(my_point{p["x"], p["y"], p["z"]});
+    for (auto point : doc) {
+      container.emplace_back(my_point{point["x"], point["y"], point["z"]});
     }
     bytes += json.size();
     benchmark::DoNotOptimize(container.data());
@@ -308,8 +308,8 @@ static void ondemand_parse_largerandom(State &state) {
   size_t bytes = 0;
   for (SIMDJSON_UNUSED auto _ : state) {
     std::vector<my_point> container;
-    for (ondemand::object p : parser.parse(json)) {
-      container.emplace_back(my_point{p["x"], p["y"], p["z"]});
+    for (ondemand::object point : parser.parse(json)) {
+      container.emplace_back(my_point{(*point).value(), (*++point).value(), (*++point).value()});
     }
     bytes += json.size();
     benchmark::DoNotOptimize(container.data());
