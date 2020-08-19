@@ -15,11 +15,11 @@ simdjson_really_inline SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> ra
   return result;
 }
 
-simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view b) noexcept {
+SIMDJSON_UNUSED simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view b) noexcept {
   return !strncmp(a.raw(), b.data(), b.size());
 }
 
-simdjson_really_inline bool operator==(std::string_view a, const raw_json_string &b) noexcept {
+SIMDJSON_UNUSED simdjson_really_inline bool operator==(std::string_view a, const raw_json_string &b) noexcept {
   return b == a;
 }
 
