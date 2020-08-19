@@ -41,7 +41,7 @@ Using simdjson as a CMake dependency
 
 You can include the  simdjson as a CMake dependency by including the following lines in your `CMakeLists.txt`:
 
-```cmake
+```
 include(FetchContent)
 
 FetchContent_Declare(
@@ -60,7 +60,7 @@ You should replace `GIT_TAG  v0.4.7` by the version you need (e.g., `GIT_TAG  v0
 
 Elsewhere in your project, you can  declare dependencies on simdjson with lines such as these:
 
-```cmake
+```
 add_executable(myprogram myprogram.cpp)
 target_link_libraries(myprogram simdjson)
 ```
