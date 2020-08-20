@@ -30,21 +30,40 @@ protected:
   /**
    * Begin array iteration.
    *
-   * @param doc The document containing the array. The iterator must be just after the opening `[`.
-   *            doc->iter.depth will be incremented automatically to reflect the nesting level.
-   * @param error If this is not SUCCESS, creates an error chained array.
+   * @param doc The document containing the array.
+   * @error INCORRECT_TYPE if the iterator is not at [.
    */
-  static simdjson_really_inline array begin(document *doc, error_code error=SUCCESS) noexcept;
+  static simdjson_really_inline array start(document *doc) noexcept;
+  /**
+   * Begin array iteration.
+   *
+   * @param doc The document containing the array. The iterator must be just after the opening `[`.
+   */
+  static simdjson_really_inline array started(document *doc) noexcept;
+  /**
+   * Created an error chained array iterator.
+   *
+   * @param doc The document containing the array.
+   */
+  static simdjson_really_inline array error_chain(document *doc, error_code error) noexcept;
+
+  simdjson_really_inline error_code report_error() noexcept;
 
   /**
-   * Internal array creation. Call array::begin(doc[, error]) instead of this.
+   * Internal array creation. Call array::start() or array::started() instead of this.
    *
    * @param doc The document containing the array. doc->iter.depth must already be incremented to
-   *            reflect the array's depth. If there is no error, the iterator must be just after
-   *            the opening `[`.
-   * @param error The error to report. If the error is not SUCCESS, this is an error chained object.
+   *            reflect the array's depth. The iterator must be just after the opening `[`.
+   * @param container The container returned from iter.start_array() / iter.started_array().
    */
-  simdjson_really_inline array(document *doc, error_code error) noexcept;
+  simdjson_really_inline array(document *_doc, json_iterator::container _container) noexcept;
+  /**
+   * Internal array creation. Call array::error_chain() instead of this.
+   *
+   * @param doc The document containing the array.
+   * @param error The error to report. If it is not SUCCESS, this is an error chained object.
+   */
+  simdjson_really_inline array(document *_doc, error_code error) noexcept;
 
   /** Check whether iteration is complete. */
   bool finished() const noexcept;
@@ -59,14 +78,11 @@ protected:
    */
   document *doc{};
   /**
-   * Depth of the array.
+   * Container value for this array, obtained from json_iterator::started_array().
    *
-   * If doc->iter.depth < json.depth, we have finished.
-   *
-   * PERF NOTE: expected to be elided entirely, as any individual array's depth is a constant
-   * knowable at compile time, incremented each time we nest an object or array.
+   * PERF NOTE: expected to be elided entirely, as this is a constant knowable at compile time.
    */
-  uint32_t depth{};
+  json_iterator::container container{};
   /**
    * Whether we're at the beginning of the array, or after.
    *

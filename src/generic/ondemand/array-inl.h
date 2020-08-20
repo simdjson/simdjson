@@ -41,21 +41,27 @@ namespace ondemand {
 //
 
 simdjson_really_inline array::array() noexcept = default;
-simdjson_really_inline array::array(document *_doc, error_code _error) noexcept
-  : doc{_doc}, depth{_doc->iter.depth}, at_start{!_error}, error{_error}
+simdjson_really_inline array::array(document *_doc, json_iterator::container _container) noexcept
+  : doc{_doc}, container{_container}, at_start{true}, error{SUCCESS}
 {
+}
+simdjson_really_inline array::array(document *_doc, error_code _error) noexcept
+  : doc{_doc}, container{_doc->iter.current_container()}, at_start{false}, error{_error}
+{
+  SIMDJSON_ASSUME(_error);
 }
 
 simdjson_really_inline bool array::finished() const noexcept {
-  return doc->iter.depth < depth;
-}
-simdjson_really_inline void array::finish(bool log_end) noexcept {
-  doc->iter.depth = depth - 1;
-  if (log_end) { logger::log_end_value(doc->iter, "array"); }
+  return !doc->iter.in_container(container);
 }
 
-simdjson_really_inline array array::begin(document *doc, error_code error) noexcept {
-  doc->iter.depth++;
+simdjson_really_inline array array::start(document *doc) noexcept {
+  return array(doc, doc->iter.start_array());
+}
+simdjson_really_inline array array::started(document *doc) noexcept {
+  return array(doc, doc->iter.started_array());
+}
+simdjson_really_inline array array::error_chain(document *doc, error_code error) noexcept {
   return array(doc, error);
 }
 simdjson_really_inline array array::begin() noexcept {
@@ -65,8 +71,15 @@ simdjson_really_inline array array::end() noexcept {
   return {};
 }
 
+simdjson_really_inline error_code array::report_error() noexcept {
+  container = doc->iter.current_container().child(); // Make it so we'll stop
+  auto result = error;
+  error = SUCCESS;
+  return result;
+}
+
 simdjson_really_inline simdjson_result<value> array::operator*() noexcept {
-  if (error) { finish(); return { doc, error }; }
+  if (error) { return { doc, report_error() }; }
   return value::start(doc);
 }
 simdjson_really_inline bool array::operator==(const array &other) noexcept {
@@ -75,33 +88,16 @@ simdjson_really_inline bool array::operator==(const array &other) noexcept {
 simdjson_really_inline bool array::operator!=(const array &) noexcept {
   // If we're at the start, check for empty array.
   if (at_start) {
-    if (*doc->iter.peek() == ']') {
-      doc->iter.advance();
-      logger::log_value(doc->iter, "empty array");
-      finish();
-    } else {
-      logger::log_start_value(doc->iter, "array");
-    }
+    at_start = false;
+    return !doc->iter.is_empty_array();
   }
   return !finished();
 }
 simdjson_really_inline array &array::operator++() noexcept {
-  if (!finished()) {
-    SIMDJSON_ASSUME(!error);
-    SIMDJSON_ASSUME(!at_start);
-    doc->iter.skip_unfinished_children(depth);
-    switch (*doc->iter.advance()) {
-      case ',':
-        break;
-      case ']':
-        finish(true);
-        break;
-      default:
-        logger::log_error(doc->iter, "Missing comma between array elements");
-        finish();
-        error = TAPE_ERROR;
-    }
-  }
+  SIMDJSON_ASSUME(!finished());
+  SIMDJSON_ASSUME(!at_start);
+
+  error = doc->iter.next_element(container).error();
   return *this;
 }
 

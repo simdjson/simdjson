@@ -34,15 +34,24 @@ protected:
    * @param doc The document containing the object. The iterator must be just after the opening `{`.
    * @param error If this is not SUCCESS, creates an error chained object.
    */
-  static simdjson_really_inline object begin(document *doc, error_code error=SUCCESS) noexcept;
+  static simdjson_really_inline object start(document *doc) noexcept;
+  static simdjson_really_inline object started(document *doc) noexcept;
+  static simdjson_really_inline object error_chain(document *doc, error_code error) noexcept;
 
   /**
-   * Internal object creation. Call object::begin(doc[, error]) instead of this.
+   * Internal object creation. Call object::begin(doc) instead of this.
    *
    * @param doc The document containing the object. doc->depth must already be incremented to
-   *            reflect the object's depth. If there is no error, the iterator must be just after
-   *            the opening `{`.
+   *            reflect the object's depth. The iterator must be just after the opening `{`.
+   * @param container The container token obtained from doc->iter.started_object().
    * @param error The error to report. If the error is not SUCCESS, this is an error chained object.
+   */
+  simdjson_really_inline object(document *_doc, json_iterator::container _container) noexcept;
+  /**
+   * Create an error-chained object. Call object::error_chain(doc, error) instead of this.
+   *
+   * @param doc The document containing the object.
+   * @param error The error to report. Must not be SUCCESS.
    */
   simdjson_really_inline object(document *doc, error_code error) noexcept;
 
@@ -50,7 +59,8 @@ protected:
   simdjson_really_inline bool finished() const noexcept;
   /** Decrements depth to mark iteration as complete. */
   simdjson_really_inline void finish(bool log_end=false) noexcept;
-  simdjson_really_inline void first_field() noexcept;
+  simdjson_really_inline bool check_empty_object() noexcept;
+  simdjson_really_inline error_code report_error() noexcept;
 
   /**
    * Document containing the primary iterator.
@@ -60,14 +70,11 @@ protected:
    */
   document *doc{};
   /**
-   * Depth of the object.
+   * Container value for this object, obtained from json_iterator::started_object().
    *
-   * If doc->iter.depth < json.depth, we have finished.
-   *
-   * PERF NOTE: expected to be elided entirely, as any individual object's depth is a constant
-   * knowable at compile time, incremented each time we nest an object() or array().
+   * PERF NOTE: expected to be elided entirely, as this is a constant knowable at compile time.
    */
-  uint32_t depth{};
+  json_iterator::container container{};
   /**
    * Whether we're at the beginning of the object, or after.
    *

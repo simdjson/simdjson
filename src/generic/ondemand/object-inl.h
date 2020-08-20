@@ -44,85 +44,72 @@ namespace ondemand {
 //
 
 simdjson_really_inline object::object() noexcept = default;
+simdjson_really_inline object::object(document *_doc, json_iterator::container _container) noexcept
+  : doc{_doc}, container{_container}, at_start{true}, error{SUCCESS}
+{
+}
 simdjson_really_inline object::object(document *_doc, error_code _error) noexcept
-  : doc{_doc}, depth{_doc->iter.depth}, at_start{!_error}, error{_error}
+  : doc{_doc}, container{_doc->iter.current_container()}, at_start{false}, error{_error}
 {
 }
 
 simdjson_really_inline bool object::finished() const noexcept {
-  return doc->iter.depth < depth;
-}
-simdjson_really_inline void object::finish(bool log_end) noexcept {
-  doc->iter.depth = depth - 1;
-  if (log_end) { logger::log_end_value(doc->iter, "object"); }
+  return !doc->iter.in_container(container);
 }
 
-simdjson_really_inline void object::first_field() noexcept {
+simdjson_really_inline bool object::check_empty_object() noexcept {
   at_start = false;
-  // If it's empty, shut down
-  if (*doc->iter.peek() == '}') {
-    logger::log_value(doc->iter, "empty object", "", -1, -1);
-    doc->iter.advance();
-    finish();
-  } else {
-    logger::log_start_value(doc->iter, "object", -1, -1);
-  }
+  return doc->iter.is_empty_object();
 }
+simdjson_really_inline error_code object::report_error() noexcept {
+  container = doc->iter.current_container().child(); // Make it so we'll stop
+  auto result = error;
+  error = SUCCESS;
+  return result;
+}
+
 simdjson_really_inline simdjson_result<value> object::operator[](const std::string_view key) noexcept {
-  if (finished()) { return { doc, NO_SUCH_FIELD }; }
-  if (error) { finish(); return { doc, error }; }
+  if (error) { return { doc, report_error() }; }
 
+  error_code _err;
+  bool has_next;
   if (at_start) {
-    first_field();
+    has_next = !check_empty_object();
   } else {
-    doc->iter.skip_unfinished_children(depth);
-    switch (*doc->iter.advance()) {
-      case ',':
-        break;
-      case '}':
-        finish(true);
-        return { doc, NO_SUCH_FIELD };
-      default:
-        logger::log_error(doc->iter, "Missing comma between object fields");
-        finish();
-        return { doc, TAPE_ERROR };
-    }
+    // If we already finished, don't keep cranking the iterator
+    if (finished()) { return { doc, NO_SUCH_FIELD }; }
+
+    // Go to the next field, skipping anything the user 
+    if ((_err = doc->iter.next_field(container).get(has_next) )) { return { doc, _err }; }
   }
 
-  while (true) {
-    const uint8_t *actual_key = doc->iter.advance();
-    switch (*(actual_key++)) {
-      case '"':
-        if (raw_json_string(actual_key) == key) {
-          logger::log_event(doc->iter, "match", key);
-          return field::start_value(doc);
-        }
-        logger::log_event(doc->iter, "no match", key);
-        doc->iter.advance(); // "key" :
-        doc->iter.skip_value(); // "key" : <value>
-        switch (*doc->iter.advance()) {
-          case ',':
-            break;
-          case '}':
-            logger::log_event(doc->iter, "no key found", key);
-            finish(true);
-            return { doc, NO_SUCH_FIELD };
-          default:
-            logger::log_error(doc->iter, "Missing comma between object fields");
-            finish();
-            return { doc, TAPE_ERROR };
-        }
-        break;
-      default:
-        logger::log_error(doc->iter, "Key is not a string");
-        finish();
-        return { doc, TAPE_ERROR };
+  while (has_next) {
+    // Get the key
+    raw_json_string actual_key;
+    if ((_err = doc->iter.field_key().get(actual_key) )) { return { doc, _err }; };
+    if ((_err = doc->iter.field_value() )) { return { doc, _err }; }
+
+    // Check if it matches
+    if (actual_key == key) {
+      logger::log_event(doc->iter, "match", key);
+      return value::start(doc);
     }
+    logger::log_event(doc->iter, "no match", key);
+    doc->iter.skip(); // Skip the value entirely
+    if ((_err = doc->iter.next_field(container).get(has_next)) ) { return { doc, _err }; }
   }
+
+  // If the loop ended, we're out of fields to look at.
+  return { doc, NO_SUCH_FIELD };
 }
 
-simdjson_really_inline object object::begin(document *doc, error_code error) noexcept {
-  doc->iter.depth++;
+simdjson_really_inline object object::start(document *doc) noexcept {
+  return object(doc, doc->iter.start_object());
+}
+simdjson_really_inline object object::started(document *doc) noexcept {
+  return object(doc, doc->iter.started_object());
+}
+simdjson_really_inline object object::error_chain(document *doc, error_code error) noexcept {
   return object(doc, error);
 }
 simdjson_really_inline object object::begin() noexcept {
@@ -134,12 +121,14 @@ simdjson_really_inline object object::end() noexcept {
 
 simdjson_really_inline simdjson_result<field> object::operator*() noexcept {
   // For people who use the iterator raw
-  if (at_start) { first_field(); }
+  if (at_start) { check_empty_object(); }
+  // Also for people who use the iterator raw
   if (finished()) {
     logger::log_error(doc->iter, "Attempt to get field from empty object");
     return { doc, NO_SUCH_FIELD };
   }
-  if (error) { finish(); return { doc, error }; }
+
+  if (error) { return { doc, report_error() }; }
   return field::start(doc);
 }
 simdjson_really_inline bool object::operator==(const object &other) noexcept {
@@ -147,26 +136,15 @@ simdjson_really_inline bool object::operator==(const object &other) noexcept {
 }
 simdjson_really_inline bool object::operator!=(const object &) noexcept {
   // If we're at the start, check for the first field.
-  if (at_start) { first_field(); }
+  if (at_start) { check_empty_object(); }
   return !finished();
 }
 simdjson_really_inline object &object::operator++() noexcept {
-  if (!finished()) {
-    SIMDJSON_ASSUME(!error);
-    SIMDJSON_ASSUME(!at_start);
-    doc->iter.skip_unfinished_children(depth);
-    switch (*doc->iter.advance()) {
-      case ',':
-        break;
-      case '}':
-        finish(true);
-        break;
-      default:
-        logger::log_error(doc->iter, "Missing comma between object fields");
-        finish();
-        error = TAPE_ERROR;
-    }
-  }
+  SIMDJSON_ASSUME(!error);
+  SIMDJSON_ASSUME(!at_start);
+  if (finished()) { return *this; } // Only possible when there was an error and we're about to stop.
+  
+  error = doc->iter.next_field(container).error();
   return *this;
 }
 
