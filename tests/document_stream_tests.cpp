@@ -69,7 +69,6 @@ namespace document_stream_tests {
     }
     return true;
   }
-#if SIMDJSON_EXCEPTIONS
   bool single_document() {
     std::cout << "Running " << __func__ << std::endl;
     simdjson::dom::parser parser;
@@ -78,22 +77,58 @@ namespace document_stream_tests {
     ASSERT_SUCCESS(parser.parse_many(json).get(stream));
     size_t count = 0;
     for (auto doc : stream) {
-        std::cout << doc << std::endl;
+        if(doc.error()) {
+          std::cerr << "Unexpected error: " << doc.error() << std::endl;
+          return false;
+        }
+        std::string expected = R"({"hello":"world"})";
+        std::string answer = simdjson::minify(doc.value());
+        if(answer != expected) {
+          std::cout << doc.value() << std::endl;
+          return false;
+        }
         count += 1;
     }
     return count == 1;
   }
+#if SIMDJSON_EXCEPTIONS
   bool single_document_exceptions() {
     std::cout << "Running " << __func__ << std::endl;
     simdjson::dom::parser parser;
     auto json = R"({"hello": "world"})"_padded;
     size_t count = 0;
-    for (auto doc : parser.parse_many(json)) {
-        std::cout << doc << std::endl;
+    for (simdjson::dom::element doc : parser.parse_many(json)) {
+        std::string expected = R"({"hello":"world"})";
+        std::string answer = simdjson::minify(doc);
+        if(answer != expected) {
+          std::cout << "got     : "  << answer << std::endl;
+          std::cout << "expected: "  << expected << std::endl;
+          return false;
+        }
         count += 1;
     }
     return count == 1;
   }
+
+  bool issue1133() {
+    std::cout << "Running " << __func__ << std::endl;
+    simdjson::dom::parser parser;
+    auto json = "{\"hello\": \"world\"}"_padded;
+    simdjson::dom::document_stream docs = parser.parse_many(json);
+    size_t count = 0;
+    for (simdjson::dom::element doc : docs) {
+        std::string expected = R"({"hello":"world"})";
+        std::string answer = simdjson::minify(doc);
+        if(answer != expected) {
+          std::cout << "got     : "  << answer << std::endl;
+          std::cout << "expected: "  << expected << std::endl;
+          return false;
+        }
+        count += 1;
+    }
+    return count == 1;
+  }
+
 #endif
 
   bool small_window() {
@@ -274,9 +309,10 @@ namespace document_stream_tests {
 
   bool run() {
     return test_current_index()  && 
-#if SIMDJSON_EXCEPTIONS
            single_document() &&
+#if SIMDJSON_EXCEPTIONS
            single_document_exceptions() &&
+           issue1133() && 
 #endif
 #ifdef SIMDJSON_THREADS_ENABLED
            threaded_disabled() &&
