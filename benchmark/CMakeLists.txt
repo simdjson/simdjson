@@ -5,7 +5,16 @@ link_libraries(simdjson-windows-headers test-data)
 if (TARGET benchmark::benchmark)
   add_executable(bench_sax bench_sax.cpp)
   target_link_libraries(bench_sax simdjson-internal-flags simdjson-include-source benchmark::benchmark)
-  target_compile_options(bench_sax PRIVATE -mavx2 -mbmi -mpclmul -mlzcnt)
+  # Don't pass all the compiler options on ARM
+  CHECK_CXX_COMPILER_FLAG(-mavx2 HAVE_MAVX2_FLAG)
+  if (HAVE_MAVX2_FLAG)
+    target_compile_options(bench_sax PRIVATE -mavx2 -mbmi -mpclmul -mlzcnt)
+    # Some ARM compilers "support" -mavx2 but don't use it. This makes them not complain.
+    CHECK_CXX_COMPILER_FLAG(-Qunused-arguments HAVE_QUNUSED_ARGUMENTS_FLAG)
+    if (HAVE_QUNUSED_ARGUMENTS_FLAG)
+      target_compile_options(bench_sax PRIVATE -Qunused-arguments)
+    endif()
+  endif()
 endif (TARGET benchmark::benchmark)
 
 link_libraries(simdjson simdjson-flags)
