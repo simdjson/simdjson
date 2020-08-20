@@ -7,34 +7,21 @@ simdjson_really_inline field::field() noexcept : std::pair<raw_json_string, onde
 simdjson_really_inline field::field(field &&other) noexcept = default;
 simdjson_really_inline field &field::operator=(field &&other) noexcept = default;
 
-simdjson_really_inline field::field(const uint8_t *key, ondemand::value &&value) noexcept
+simdjson_really_inline field::field(raw_json_string key, ondemand::value &&value) noexcept
   : std::pair<raw_json_string, ondemand::value>(key, std::forward<ondemand::value>(value))
 {
 }
 
 simdjson_really_inline simdjson_result<field> field::start(document *doc) noexcept {
-  const uint8_t *key = doc->iter.advance();
-  if ('"' != *key) {
-    logger::log_error(doc->iter, "Missing key in object field");
-    return { doc, TAPE_ERROR };
-  }
+  error_code error;
+  raw_json_string key;
+  if ((error = doc->iter.field_key().get(key) )) { return { doc, error }; }
+  if ((error = doc->iter.field_value() )) { return { doc, error }; }
   return field::start(doc, key);
 }
 
-simdjson_really_inline simdjson_result<field> field::start(document *doc, const uint8_t *key) noexcept {
-  if (':' != *doc->iter.advance()) {
-    logger::log_error(doc->iter, "Missing colon in object field");
-    return { doc, TAPE_ERROR };
-  }
-  return field(key, value::start(doc));
-}
-
-simdjson_really_inline simdjson_result<value> field::start_value(document *doc) noexcept {
-  if (':' != *doc->iter.advance()) {
-    logger::log_error(doc->iter, "Missing colon in object field");
-    return { doc, TAPE_ERROR };
-  }
-  return value::start(doc);
+simdjson_really_inline simdjson_result<field> field::start(document *doc, raw_json_string key) noexcept {
+    return field(key, value::start(doc));
 }
 
 simdjson_really_inline raw_json_string field::key() const noexcept {
