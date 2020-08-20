@@ -77,7 +77,7 @@ commands:
       - run: |
           cd build &&
           cmake $CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination .. &&
-          make $BUILD_FLAGS all
+          cmake $BUILD_FLAGS --build .
 
   cmake_test:
     steps:
