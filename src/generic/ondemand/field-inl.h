@@ -2,6 +2,8 @@ namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+// clang 6 doesn't think the default constructor can be noexcept, so we make it explicit
+simdjson_really_inline field::field() noexcept : std::pair<raw_json_string, ondemand::value>() {}
 simdjson_really_inline field::field(field &&other) noexcept = default;
 simdjson_really_inline field &field::operator=(field &&other) noexcept = default;
 
