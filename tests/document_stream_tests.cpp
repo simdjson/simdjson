@@ -82,9 +82,12 @@ namespace document_stream_tests {
           return false;
         }
         std::string expected = R"({"hello":"world"})";
-        std::string answer = simdjson::minify(doc.value());
+        simdjson::dom::element this_document;
+        ASSERT_SUCCESS(doc.get(this_document));
+
+        std::string answer = simdjson::minify(this_document);
         if(answer != expected) {
-          std::cout << doc.value() << std::endl;
+          std::cout << this_document << std::endl;
           return false;
         }
         count += 1;
