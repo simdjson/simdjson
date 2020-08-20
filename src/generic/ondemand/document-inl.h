@@ -3,14 +3,14 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
 simdjson_really_inline document::document(document &&other) noexcept :
-  iter{std::forward<token_iterator>(other.iter)},
+  iter{std::forward<json_iterator>(other.iter)},
   parser{other.parser}
 {
   if (!at_start()) { logger::log_error(iter, "Cannot move document after it has been used"); abort(); }
   other.parser = nullptr;
 }
 simdjson_really_inline document &document::operator=(document &&other) noexcept {
-  iter = std::forward<token_iterator>(other.iter);
+  iter = std::forward<json_iterator>(other.iter);
   parser = other.parser;
   if (!at_start()) { logger::log_error(iter, "Cannot move document after it has been used"); abort(); }
   other.parser = nullptr;
