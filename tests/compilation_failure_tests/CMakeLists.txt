@@ -5,7 +5,7 @@
 # the macro COMPILATION_TEST_USE_FAILING_CODE set to 0 or 1.
 #
 
-# adds a compilation test. two targets are created, one expected to
+# adds a compilation test. Two targets are created, one expected to
 # succeed compilation and one that is expected to fail.
 function(add_dual_compile_test TEST_NAME)
   add_cpp_test(${TEST_NAME}_should_compile SOURCES ${TEST_NAME}.cpp COMPILE_ONLY)
@@ -22,4 +22,5 @@ if (SIMDJSON_EXCEPTIONS)
   add_dual_compile_test(dangling_parser_parse_uchar)
   add_dual_compile_test(dangling_parser_parse_stdstring)
   add_dual_compile_test(dangling_parser_parse_padstring)
+  add_dual_compile_test(unsafe_parse_many)
 endif()
