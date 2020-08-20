@@ -138,12 +138,12 @@ jobs:
   sanitize-gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake sanitize build
     executor: gcc10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, BUILD_FLAGS: "", CTEST_FLAGS: # we constantly run out of memory so removing -j4 --output-on-failure -E checkperf }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, BUILD_FLAGS: "", CTEST_FLAGS: --output-on-failure -E checkperf } # we constantly run out of memory so removing -j4 
     steps: [ cmake_test ]
   sanitize-clang10:
     description: Build and run tests on clang 10 and AVX 2 with a cmake sanitize build
     executor: clang10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: # we constantly run out of memory so removing -j4 --output-on-failure -E checkperf }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -E checkperf }  # we constantly run out of memory so removing -j4
     steps: [ cmake_test ]
 
   # dynamic
