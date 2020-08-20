@@ -183,7 +183,7 @@ void basics_ndjson_parse_many() {
   dom::parser parser;
   auto json = R"({ "foo": 1 }
 { "foo": 2 }
-{ "foo": 3 })";
+{ "foo": 3 })"_padded;
   dom::document_stream docs = parser.parse_many(json);
   for (dom::element doc : docs) {
     cout << doc["foo"] << endl;

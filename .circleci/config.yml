@@ -1,5 +1,8 @@
 version: 2.1
 
+
+# We constantly run out of memory so please do not use parallelism (-j, -j4). 
+
 # Reusable image / compiler definitions
 executors:
   gcc8:
@@ -8,8 +11,8 @@ executors:
         environment:
           CXX: g++-8
           CC: gcc-8
-          BUILD_FLAGS: # we constantly run out of memory so removing -j
-          CTEST_FLAGS: --output-on-failure # we constantly run out of memory so removing -j4 
+          BUILD_FLAGS: 
+          CTEST_FLAGS: --output-on-failure
 
   gcc9:
     docker:
@@ -17,8 +20,8 @@ executors:
         environment:
           CXX: g++-9
           CC: gcc-9
-          BUILD_FLAGS: # we constantly run out of memory so removing -j
-          CTEST_FLAGS: --output-on-failure # we constantly run out of memory so removing -j4 
+          BUILD_FLAGS:
+          CTEST_FLAGS: --output-on-failure
 
   gcc10:
     docker:
@@ -26,8 +29,8 @@ executors:
         environment:
           CXX: g++-10
           CC: gcc-10
-          BUILD_FLAGS: # we constantly run out of memory so removing -j
-          CTEST_FLAGS: --output-on-failure # we constantly run out of memory so removing -j4 
+          BUILD_FLAGS:
+          CTEST_FLAGS: --output-on-failure
 
   clang10:
     docker:
@@ -35,8 +38,8 @@ executors:
         environment:
           CXX: clang++-10
           CC: clang-10
-          BUILD_FLAGS: # we constantly run out of memory so removing -j
-          CTEST_FLAGS: --output-on-failure # we constantly run out of memory so removing -j4 
+          BUILD_FLAGS:
+          CTEST_FLAGS: --output-on-failure
 
   clang9:
     docker:
@@ -44,8 +47,8 @@ executors:
         environment:
           CXX: clang++-9
           CC: clang-9
-          BUILD_FLAGS: # we constantly run out of memory so removing -j
-          CTEST_FLAGS: --output-on-failure # we constantly run out of memory so removing -j4 
+          BUILD_FLAGS:
+          CTEST_FLAGS: --output-on-failure 
 
   clang6:
     docker:
@@ -53,8 +56,8 @@ executors:
         environment:
           CXX: clang++-6.0
           CC: clang-6.0
-          BUILD_FLAGS: # we constantly run out of memory so removing -j
-          CTEST_FLAGS: --output-on-failure # we constantly run out of memory so removing -j4 
+          BUILD_FLAGS:
+          CTEST_FLAGS: --output-on-failure
 
 # Reusable test commands (and initializer for clang 6)
 commands:
@@ -138,12 +141,12 @@ jobs:
   sanitize-gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake sanitize build
     executor: gcc10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, BUILD_FLAGS: "", CTEST_FLAGS: --output-on-failure -E checkperf } # we constantly run out of memory so removing -j4 
+    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, BUILD_FLAGS: "", CTEST_FLAGS: --output-on-failure -E checkperf }
     steps: [ cmake_test ]
   sanitize-clang10:
     description: Build and run tests on clang 10 and AVX 2 with a cmake sanitize build
     executor: clang10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -E checkperf }  # we constantly run out of memory so removing -j4
+    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -E checkperf }
     steps: [ cmake_test ]
 
   # dynamic
