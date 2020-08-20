@@ -79,6 +79,7 @@ protected:
   friend class document;
   friend class array;
   friend class field;
+  friend class object;
   friend struct simdjson_result<value>;
   friend struct simdjson_result<document>;
   friend struct simdjson_result<field>;

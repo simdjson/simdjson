@@ -33,12 +33,18 @@ simdjson_really_inline document::~document() noexcept {
 }
 
 simdjson_really_inline value document::as_value() noexcept {
-  
   if (!at_start()) {
     logger::log_error(iter, "Document value can only be used once! ondemand::document is a forward-only input iterator.");
     abort(); // TODO is there anything softer we can do? I'd rather not make this a simdjson_result just for user error.
   }
   return value::start(this);
+}
+simdjson_really_inline json_iterator &document::iterate() & noexcept {
+  if (!at_start()) {
+    logger::log_error(iter, "Document value can only be used once! ondemand::document is a forward-only input iterator.");
+    abort(); // TODO is there anything softer we can do? I'd rather not make this a simdjson_result just for user error.
+  }
+  return iter;
 }
 simdjson_really_inline bool document::at_start() const noexcept { return iter.index == parser->dom_parser.structural_indexes.get(); }
 
@@ -104,6 +110,9 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator[](const char *key) & noexcept {
   return as_value()[key];
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_iterator&> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::iterate() noexcept {
+  return { first.iterate(), error() };
 }
 
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_array() & noexcept { return as_value().get_array(); }

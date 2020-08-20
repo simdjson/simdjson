@@ -60,7 +60,7 @@ simdjson_really_inline void read_tweets(ondemand::parser &parser, padded_string 
   }
 }
 
-static void bench_tweets(State &state) {
+static void ondemand_tweets(State &state) {
   // Load twitter.json to a buffer
   padded_string json;
   if (auto error = padded_string::load(TWITTER_JSON).get(json)) { cerr << error << endl; return; }
@@ -87,11 +87,96 @@ static void bench_tweets(State &state) {
   state.counters["tweets"] = Counter(double(tweet_count), benchmark::Counter::kIsRate);
 }
 
-BENCHMARK(bench_tweets)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(ondemand_tweets)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 
 } // namespace ondemand_bench
+
+
+SIMDJSON_UNTARGET_REGION
+
+SIMDJSON_TARGET_HASWELL
+
+namespace iter_bench {
+
+using namespace simdjson;
+using namespace haswell;
+
+simdjson_really_inline void read_tweets(ondemand::parser &parser, padded_string &json, std::vector<twitter::tweet> &tweets) {
+  // Walk the document, parsing the tweets as we go
+
+  // { "statuses": 
+  auto doc = parser.parse(json);
+  ondemand::json_iterator &iter = doc.iterate();
+  iter.start_object().value();
+  if (!iter.find_first_field_raw("statuses")) { throw "No statuses field"; }
+  // { "statuses": [
+  auto tweets_array = iter.start_array().value();
+  if (iter.is_empty_array()) { return; }
+
+  do {
+    auto tweet_object = iter.start_object().value();
+    twitter::tweet tweet;
+    if (!iter.find_first_field_raw("created_at")) { throw "Could not find created_at"; }
+    tweet.created_at = iter.get_raw_json_string().value().unescape(parser);
+    if (!iter.find_next_field_raw("id", tweet_object)) { throw "Could not find id"; }
+    tweet.id = iter.get_uint64();
+    if (!iter.find_next_field_raw("text", tweet_object)) { throw "Could not find text"; }
+    tweet.text = iter.get_raw_json_string().value().unescape(parser);
+    if (!iter.find_next_field_raw("in_reply_to_status_id", tweet_object)) { throw "Could not find in_reply_to_status_id"; }
+    if (!iter.is_null()) {
+      tweet.in_reply_to_status_id = iter.get_uint64();
+    }
+    if (!iter.find_next_field_raw("user", tweet_object)) { throw "Could not find user"; }
+    {
+      auto user_object = iter.start_object().value();
+      if (!iter.find_first_field_raw("id")) { throw "Could not find user.id"; }
+      tweet.user.id = iter.get_uint64();
+      if (!iter.find_next_field_raw("screen_name", user_object)) { throw "Could not find user.screen_name"; }
+      tweet.user.screen_name = iter.get_raw_json_string().value().unescape(parser);
+    }
+    if (!iter.find_next_field_raw("retweet_count", tweet_object)) { throw "Could not find retweet_count"; }
+    tweet.retweet_count = iter.get_uint64();
+    if (!iter.find_next_field_raw("favorite_count", tweet_object)) { throw "Could not find favorite_count"; }
+    tweet.favorite_count = iter.get_uint64();
+
+    tweets.push_back(tweet);
+  } while (iter.next_element(tweets_array));
+}
+
+static void iter_tweets(State &state) {
+  // Load twitter.json to a buffer
+  padded_string json;
+  if (auto error = padded_string::load(TWITTER_JSON).get(json)) { cerr << error << endl; return; }
+
+  // Allocate and warm the vector
+  std::vector<twitter::tweet> tweets;
+  ondemand::parser parser;
+  read_tweets(parser, json, tweets);
+
+  // Read tweets
+  size_t byte_count = 0;
+  size_t tweet_count = 0;
+  for (SIMDJSON_UNUSED auto _ : state) {
+    tweets.clear();
+    read_tweets(parser, json, tweets);
+    byte_count += json.size();
+    tweet_count += tweets.size();
+  }
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
+  state.counters["Gigabytes"] = benchmark::Counter(
+	        double(byte_count), benchmark::Counter::kIsRate,
+	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
+  state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+  state.counters["tweets"] = Counter(double(tweet_count), benchmark::Counter::kIsRate);
+}
+
+BENCHMARK(iter_tweets)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+} // namespace iter_bench
 
 
 SIMDJSON_UNTARGET_REGION
@@ -251,7 +336,7 @@ struct my_point {
 /*** 
  * We start with the naive DOM-based approach.
  **/
-static void dom_parse_largerandom(State &state) {
+static void dom_largerandom(State &state) {
   // Load twitter.json to a buffer
   const padded_string& json = get_my_json_str();
 
@@ -283,7 +368,7 @@ static void dom_parse_largerandom(State &state) {
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
 }
 
-BENCHMARK(dom_parse_largerandom)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(dom_largerandom)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 
@@ -294,7 +379,7 @@ SIMDJSON_TARGET_HASWELL
 /*** 
  * On Demand approach.
  **/
-static void ondemand_parse_largerandom(State &state) {
+static void ondemand_largerandom(State &state) {
   using namespace haswell;
   // Load twitter.json to a buffer
   const padded_string& json = get_my_json_str();
@@ -324,7 +409,61 @@ static void ondemand_parse_largerandom(State &state) {
 
 SIMDJSON_UNTARGET_REGION
 
-BENCHMARK(ondemand_parse_largerandom)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(ondemand_largerandom)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+SIMDJSON_TARGET_HASWELL
+
+static simdjson_really_inline double first_double(haswell::ondemand::json_iterator &iter) {
+  if (iter.start_object().error() || iter.field_key().error() || iter.field_value()) { throw "Invalid field"; }
+  return iter.get_double();
+}
+
+static simdjson_really_inline double next_double(haswell::ondemand::json_iterator &iter) {
+  if (!iter.has_next_field() || iter.field_key().error() || iter.field_value()) { throw "Invalid field"; }
+  return iter.get_double();
+}
+
+/*** 
+ * On Demand Iterator approach.
+ **/
+static void iter_largerandom(State &state) {
+  using namespace haswell;
+  // Load twitter.json to a buffer
+  const padded_string& json = get_my_json_str();
+
+  // Allocate
+  ondemand::parser parser;
+  error_code error;
+  if ((error = parser.allocate(json.size()))) { throw error; };
+
+  // Read
+  size_t bytes = 0;
+  for (SIMDJSON_UNUSED auto _ : state) {
+    std::vector<my_point> container;
+    auto doc = parser.parse(json);
+    ondemand::json_iterator &iter = doc.iterate();
+    iter.start_array().value();
+    if (!iter.is_empty_array()) {
+      do {
+        container.emplace_back(my_point{first_double(iter), next_double(iter), next_double(iter)});
+        if (iter.has_next_field()) { throw "Too many fields"; }
+      } while (iter.has_next_element());
+    }
+    bytes += json.size();
+    benchmark::DoNotOptimize(container.data());
+  }
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
+  state.counters["Gigabytes"] = benchmark::Counter(
+	        double(bytes), benchmark::Counter::kIsRate,
+	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
+  state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+}
+
+SIMDJSON_UNTARGET_REGION
+
+BENCHMARK(iter_largerandom)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 
@@ -430,7 +569,7 @@ SIMDJSON_UNTARGET_REGION
 
 
 // ./benchmark/bench_sax --benchmark_filter=largerandom
-static void sax_parse_largerandom(State &state) {
+static void sax_largerandom(State &state) {
   // Load twitter.json to a buffer
   const padded_string& json = get_my_json_str();
 
@@ -455,7 +594,7 @@ static void sax_parse_largerandom(State &state) {
 	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
 }
-BENCHMARK(sax_parse_largerandom)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(sax_largerandom)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 

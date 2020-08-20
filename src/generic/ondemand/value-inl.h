@@ -39,18 +39,18 @@ simdjson_really_inline value value::start(document *doc) noexcept {
 simdjson_really_inline simdjson_result<array> value::get_array() noexcept {
   if (*json != '[') {
     log_error("not an array");
-    return array::begin(doc, INCORRECT_TYPE);
+    return array::error_chain(doc, INCORRECT_TYPE);
   }
   json = nullptr; // Communicate that we have handled the value PERF TODO elided, right?
-  return array::begin(doc);
+  return array::started(doc);
 }
 simdjson_really_inline simdjson_result<object> value::get_object() noexcept {
   if (*json != '{') {
     log_error("not an object");
-    return object::begin(doc, INCORRECT_TYPE);
+    return object::error_chain(doc, INCORRECT_TYPE);
   }
   json = nullptr; // Communicate that we have handled the value PERF TODO elided, right?
-  return object::begin(doc);
+  return object::started(doc);
 }
 simdjson_really_inline simdjson_result<raw_json_string> value::get_raw_json_string() noexcept {
   log_value("string");
@@ -167,7 +167,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
 }
 
 simdjson_really_inline SIMDJSON_IMPLEMENTATION::ondemand::array simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::begin() noexcept {
-  if (error()) { SIMDJSON_IMPLEMENTATION::ondemand::array::begin(first.doc, error()); }
+  if (error()) { SIMDJSON_IMPLEMENTATION::ondemand::array::error_chain(first.doc, error()); }
   return first.begin();
 }
 simdjson_really_inline SIMDJSON_IMPLEMENTATION::ondemand::array simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::end() noexcept {
