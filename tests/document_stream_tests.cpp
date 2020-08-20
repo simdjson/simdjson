@@ -77,7 +77,7 @@ namespace document_stream_tests {
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS(parser.parse_many(json).get(stream));
     size_t count = 0;
-    for (simdjson::dom::element doc : stream) {
+    for (auto doc : stream) {
         std::cout << doc << std::endl;
         count += 1;
     }
