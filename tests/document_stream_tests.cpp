@@ -70,6 +70,33 @@ namespace document_stream_tests {
     return true;
   }
 
+  bool single_document() {
+    std::cout << "Running " << __func__ << std::endl;
+    simdjson::dom::parser parser;
+    auto json = R"({"hello": "world"})"_padded;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS(parser.parse_many(json).get(stream));
+    size_t count = 0;
+    for (simdjson::dom::element doc : stream) {
+        std::cout << doc << std::endl;
+        count += 1;
+    }
+    return count == 1;
+  }
+#if SIMDJSON_EXCEPTIONS
+  bool single_document_exceptions() {
+    std::cout << "Running " << __func__ << std::endl;
+    simdjson::dom::parser parser;
+    auto json = R"({"hello": "world"})"_padded;
+    size_t count = 0;
+    for (auto doc : parser.parse_many(json)) {
+        std::cout << doc << std::endl;
+        count += 1;
+    }
+    return count == 1;
+  }
+#endif
+
   bool small_window() {
     std::cout << "Running " << __func__ << std::endl;
     auto json = R"({"error":[],"result":{"token":"xxx"}}{"error":[],"result":{"token":"xxx"}})"_padded;
@@ -247,7 +274,11 @@ namespace document_stream_tests {
   }
 
   bool run() {
-    return test_current_index() &&
+    return test_current_index()  && 
+           single_document() &&
+#if SIMDJSON_EXCEPTIONS
+           single_document_exceptions() &&
+#endif
 #ifdef SIMDJSON_THREADS_ENABLED
            threaded_disabled() &&
 #endif
