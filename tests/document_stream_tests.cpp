@@ -69,7 +69,7 @@ namespace document_stream_tests {
     }
     return true;
   }
-
+#if SIMDJSON_EXCEPTIONS
   bool single_document() {
     std::cout << "Running " << __func__ << std::endl;
     simdjson::dom::parser parser;
@@ -83,7 +83,6 @@ namespace document_stream_tests {
     }
     return count == 1;
   }
-#if SIMDJSON_EXCEPTIONS
   bool single_document_exceptions() {
     std::cout << "Running " << __func__ << std::endl;
     simdjson::dom::parser parser;
@@ -275,8 +274,8 @@ namespace document_stream_tests {
 
   bool run() {
     return test_current_index()  && 
-           single_document() &&
 #if SIMDJSON_EXCEPTIONS
+           single_document() &&
            single_document_exceptions() &&
 #endif
 #ifdef SIMDJSON_THREADS_ENABLED
