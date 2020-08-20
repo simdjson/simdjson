@@ -9,7 +9,7 @@ namespace ondemand {
  */
 class field : public std::pair<raw_json_string, value> {
 public:
-  simdjson_really_inline field() noexcept = default;
+  simdjson_really_inline field() noexcept;
   simdjson_really_inline field(field &&other) noexcept;
   simdjson_really_inline field &operator=(field &&other) noexcept;
   simdjson_really_inline field(const field &other) noexcept = delete;
