@@ -128,7 +128,6 @@ namespace document_stream_tests {
     }
     return count == 1;
   }
-
 #endif
 
   bool small_window() {

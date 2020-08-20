@@ -70,7 +70,10 @@ public:
    *
    *   dom::parser parser;
    *   const element doc = parser.load("jsonexamples/twitter.json");
-   *
+   * 
+   * The function is eager: the file's content is loaded in memory inside the parser instance
+   * and immediately parsed. The file can be deleted after the  `parser.load` call.
+   * 
    * ### IMPORTANT: Document Lifetime
    *
    * The JSON document still lives in the parser: this is the most efficient way to parse JSON
@@ -96,6 +99,9 @@ public:
    *
    *   dom::parser parser;
    *   element doc = parser.parse(buf, len);
+   * 
+   * The function eagerly parses the input: the input can be modified and discarded after
+   * the `parser.parse(buf, len)` call has completed.
    *
    * ### IMPORTANT: Document Lifetime
    *
@@ -149,6 +155,13 @@ public:
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
+   * The file is loaded in memory and can be safely deleted after the `parser.load_many(path)`
+   * function has returned. The memory is held by the `parser` instance.
+   * 
+   * The function is lazy: it may be that no more than one JSON document at a time is parsed.
+   * And, possibly, no document many have been parsed when the `parser.load_many(path)` function
+   * returned.
+   * 
    * ### Format
    *
    * The file must contain a series of one or more JSON documents, concatenated into a single
@@ -156,7 +169,7 @@ public:
    * then starts parsing the next document at that point. (It does this with more parallelism and
    * lookahead than you might think, though.)
    *
-   * documents that consist of an object or array may omit the whitespace between them, concatenating
+   * Documents that consist of an object or array may omit the whitespace between them, concatenating
    * with no separator. documents that consist of a single primitive (i.e. documents that are not
    * arrays or objects) MUST be separated with whitespace.
    * 
@@ -213,6 +226,30 @@ public:
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
+   * No copy of the input buffer is made.
+   *
+   * The function is lazy: it may be that no more than one JSON document at a time is parsed.
+   * And, possibly, no document many have been parsed when the `parser.load_many(path)` function
+   * returned.
+   * 
+   * The caller is responsabile to ensure that the input string data remains unchanged and is
+   * not deleted during the loop. In particular, the following is unsafe:
+   * 
+   *   auto docs = parser.parse_many("[\"temporary data\"]"_padded);
+   *   // here the string "[\"temporary data\"]" may no longer exist in memory
+   *   // the parser instance may not have even accessed the input yet
+   *   for (element doc : docs) {
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   * 
+   * The following is safe: 
+   * 
+   *   auto json = "[\"temporary data\"]"_padded;
+   *   auto docs = parser.parse_many(json);
+   *   for (element doc : docs) {
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *     
    * ### Format
    *
    * The buffer must contain a series of one or more JSON documents, concatenated into a single

@@ -179,6 +179,16 @@ void basics_ndjson() {
   // Prints 1 2 3
 }
 
+void basics_ndjson_parse_many() {
+  dom::parser parser;
+  auto json = R"({ "foo": 1 }
+{ "foo": 2 }
+{ "foo": 3 })";
+  dom::document_stream docs = parser.parse_many(json);
+  for (dom::element doc : docs) {
+    cout << doc["foo"] << endl;
+  }
+}
 void implementation_selection_1() {
   cout << "simdjson v" << STRINGIFY(SIMDJSON_VERSION) << endl;
   cout << "Detected the best implementation for your machine: " << simdjson::active_implementation->name();

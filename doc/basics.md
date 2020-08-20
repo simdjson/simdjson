@@ -592,14 +592,37 @@ Here is a simple example, given "x.json" with this content:
 
 ```c++
 dom::parser parser;
-dom::document_stream docs = parser.load_many(filename);
+dom::document_stream docs = parser.load_many("x.json");
 for (dom::element doc : docs) {
   cout << doc["foo"] << endl;
 }
 // Prints 1 2 3
 ```
 
-In-memory ndjson strings can be parsed as well, with `parser.parse_many(string)`.
+In-memory ndjson strings can be parsed as well, with `parser.parse_many(string)`: 
+
+
+```c++
+dom::parser parser;
+  auto json = R"({ "foo": 1 }
+{ "foo": 2 }
+{ "foo": 3 })";
+dom::document_stream docs = parser.parse_many(json);
+for (dom::element doc : docs) {
+  cout << doc["foo"] << endl;
+}
+// Prints 1 2 3
+```
+
+
+Unlike `parser.parse`, both `parser.load_many(filename)` and `parser.parse_many(string)` may parse
+"on demand" (lazily). That is, no parsing may have been done before you enter the loop 
+`for (dom::element doc : docs) {` and you should expect the parser to only ever fully parse one JSON
+document at a time.
+
+1. When calling `parser.load_many(filename)`, the file's content is loaded up in a memory buffer owned by the `parser`'s instance. Thus the file can be safely deleted after calling `parser.load_many(filename)` as the parser instance owns all of the data.
+2. When calling  `parser.parse_many(string)`, no copy is made of the provided string input. The provided memory buffer may be accessed each time a JSON document is parsed.  Calling `parser.parse_many(string)` on a  temporary string buffer (e.g., `docs = parser.parse_many("[1,2,3]"_padded)`) is unsafe because the  `document_stream` instance needs access to the buffer to return the JSON documents. In constrast, calling `doc = parser.parse("[1,2,3]"_padded)` is safe because `parser.parse` eagerly parses the input.
+
 
 Both `load_many` and `parse_many` take an optional parameter `size_t batch_size` which defines the window processing size. It is set by default to a large value (`1000000` corresponding to 1 MB). None of your JSON documents should exceed this window size, or else you will get  the error `simdjson::CAPACITY`. You cannot set this window size larger than 4 GB: you will get  the error `simdjson::CAPACITY`. The smaller the window size is, the less memory the function will use. Setting the window size too small (e.g., less than 100 kB) may also impact performance negatively. Leaving it to 1 MB is expected to be a good choice, unless you have some larger documents.
 
