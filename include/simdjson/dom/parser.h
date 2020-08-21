@@ -233,7 +233,7 @@ public:
    * returned.
    * 
    * The caller is responsabile to ensure that the input string data remains unchanged and is
-   * not deleted during the loop. In particular, the following is unsafe:
+   * not deleted during the loop. In particular, the following is unsafe and will not compile:
    * 
    *   auto docs = parser.parse_many("[\"temporary data\"]"_padded);
    *   // here the string "[\"temporary data\"]" may no longer exist in memory
@@ -314,9 +314,11 @@ public:
   inline simdjson_result<document_stream> parse_many(const char *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> parse_many(const std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> parse_many(const std::string &&s, size_t batch_size) = delete;// unsafe
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> parse_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
-
+  inline simdjson_result<document_stream> parse_many(const padded_string &&s, size_t batch_size) = delete;// unsafe
+  
   /** @private We do not want to allow implicit conversion from C string to std::string. */
   simdjson_result<document_stream> parse_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
 
