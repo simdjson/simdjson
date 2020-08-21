@@ -104,7 +104,10 @@ simdjson_really_inline simdjson_result<value> object::operator[](const std::stri
 }
 
 simdjson_really_inline object object::start(document *doc) noexcept {
-  return object(doc, doc->iter.start_object());
+  error_code error;
+  json_iterator::container c;
+  if ((error = doc->iter.start_object().get(c))) { return error_chain(doc, error); }
+  return object(doc, c);
 }
 simdjson_really_inline object object::started(document *doc) noexcept {
   return object(doc, doc->iter.started_object());

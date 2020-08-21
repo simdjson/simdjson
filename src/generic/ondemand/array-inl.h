@@ -56,7 +56,10 @@ simdjson_really_inline bool array::finished() const noexcept {
 }
 
 simdjson_really_inline array array::start(document *doc) noexcept {
-  return array(doc, doc->iter.start_array());
+  error_code error;
+  json_iterator::container c;
+  if ((error = doc->iter.start_array().get(c))) { return error_chain(doc, error); }
+  return array(doc, c);
 }
 simdjson_really_inline array array::started(document *doc) noexcept {
   return array(doc, doc->iter.started_array());
