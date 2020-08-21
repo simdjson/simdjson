@@ -80,16 +80,16 @@ static void ondemand_tweets(State &state) {
     tweet_count += tweets.size();
   }
   // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
-  state.counters["Gigabytes"] = benchmark::Counter(
+  state.counters["bytes"] = benchmark::Counter(
 	        double(byte_count), benchmark::Counter::kIsRate,
 	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
   state.counters["tweets"] = Counter(double(tweet_count), benchmark::Counter::kIsRate);
 }
 
-BENCHMARK(ondemand_tweets)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(ondemand_tweets)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
-  })->DisplayAggregatesOnly(true);
+  });
 
 } // namespace ondemand_bench
 
@@ -165,16 +165,16 @@ static void iter_tweets(State &state) {
     tweet_count += tweets.size();
   }
   // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
-  state.counters["Gigabytes"] = benchmark::Counter(
+  state.counters["bytes"] = benchmark::Counter(
 	        double(byte_count), benchmark::Counter::kIsRate,
 	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
   state.counters["tweets"] = Counter(double(tweet_count), benchmark::Counter::kIsRate);
 }
 
-BENCHMARK(iter_tweets)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(iter_tweets)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
-  })->DisplayAggregatesOnly(true);
+  });
 
 } // namespace iter_bench
 
@@ -204,15 +204,15 @@ static void sax_tweets(State &state) {
     tweets += reader.tweets.size();
   }
   // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
-  state.counters["Gigabytes"] = benchmark::Counter(
+  state.counters["bytes"] = benchmark::Counter(
 	        double(bytes), benchmark::Counter::kIsRate,
 	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
   state.counters["tweets"] = Counter(double(tweets), benchmark::Counter::kIsRate);
 }
-BENCHMARK(sax_tweets)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(sax_tweets)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
-  })->DisplayAggregatesOnly(true);
+  });
 
 #endif // SIMDJSON_IMPLEMENTATION_HASWELL
 
@@ -260,17 +260,17 @@ static void dom_tweets(State &state) {
     num_tweets += tweets.size();
   }
   // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
-  state.counters["Gigabytes"] = benchmark::Counter(
+  state.counters["bytes"] = benchmark::Counter(
 	        double(bytes), benchmark::Counter::kIsRate,
 	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
   state.counters["tweets"] = Counter(double(num_tweets), benchmark::Counter::kIsRate);
 }
-BENCHMARK(dom_tweets)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(dom_tweets)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
-  })->DisplayAggregatesOnly(true);
+  });
 
-static void dom_parse(State &state) {
+static void parse_tweets(State &state) {
   // Load twitter.json to a buffer
   padded_string json;
   if (auto error = padded_string::load(TWITTER_JSON).get(json)) { cerr << error << endl; return; }
@@ -286,14 +286,14 @@ static void dom_parse(State &state) {
     bytes += json.size();
   }
   // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
-  state.counters["Gigabytes"] = benchmark::Counter(
+  state.counters["bytes"] = benchmark::Counter(
 	        double(bytes), benchmark::Counter::kIsRate,
 	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
 }
-BENCHMARK(dom_parse)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(parse_tweets)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
-  })->DisplayAggregatesOnly(true);
+  });
 
 
 /********************
@@ -346,6 +346,7 @@ static void dom_largerandom(State &state) {
 
   // Read
   size_t bytes = 0;
+  size_t points = 0;
   simdjson::error_code error;
   for (SIMDJSON_UNUSED auto _ : state) {
     std::vector<my_point> container;
@@ -358,19 +359,21 @@ static void dom_largerandom(State &state) {
       container.emplace_back(my_point{point["x"], point["y"], point["z"]});
     }
     bytes += json.size();
+    points += container.size();
     benchmark::DoNotOptimize(container.data());
-
   }
+
   // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
-  state.counters["Gigabytes"] = benchmark::Counter(
+  state.counters["bytes"] = benchmark::Counter(
 	        double(bytes), benchmark::Counter::kIsRate,
 	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+  state.counters["points"] = Counter(double(points), benchmark::Counter::kIsRate);
 }
 
-BENCHMARK(dom_largerandom)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(dom_largerandom)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
-  })->DisplayAggregatesOnly(true);
+  });
 
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 
@@ -391,27 +394,29 @@ static void ondemand_largerandom(State &state) {
 
   // Read
   size_t bytes = 0;
+  size_t points = 0;
   for (SIMDJSON_UNUSED auto _ : state) {
     std::vector<my_point> container;
     for (ondemand::object point : parser.parse(json)) {
       container.emplace_back(my_point{(*point).value(), (*++point).value(), (*++point).value()});
     }
     bytes += json.size();
+    points += container.size();
     benchmark::DoNotOptimize(container.data());
-
   }
   // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
-  state.counters["Gigabytes"] = benchmark::Counter(
+  state.counters["bytes"] = benchmark::Counter(
 	        double(bytes), benchmark::Counter::kIsRate,
 	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+  state.counters["points"] = Counter(double(points), benchmark::Counter::kIsRate);
 }
 
 SIMDJSON_UNTARGET_REGION
 
-BENCHMARK(ondemand_largerandom)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(ondemand_largerandom)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
-  })->DisplayAggregatesOnly(true);
+  });
 
 SIMDJSON_TARGET_HASWELL
 
@@ -440,6 +445,7 @@ static void iter_largerandom(State &state) {
 
   // Read
   size_t bytes = 0;
+  size_t points = 0;
   for (SIMDJSON_UNUSED auto _ : state) {
     std::vector<my_point> container;
     auto doc = parser.parse(json);
@@ -452,20 +458,22 @@ static void iter_largerandom(State &state) {
       } while (iter.has_next_element());
     }
     bytes += json.size();
+    points += container.size();
     benchmark::DoNotOptimize(container.data());
   }
   // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
-  state.counters["Gigabytes"] = benchmark::Counter(
+  state.counters["bytes"] = benchmark::Counter(
 	        double(bytes), benchmark::Counter::kIsRate,
 	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+  state.counters["points"] = Counter(double(points), benchmark::Counter::kIsRate);
 }
 
 SIMDJSON_UNTARGET_REGION
 
-BENCHMARK(iter_largerandom)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(iter_largerandom)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
-  })->DisplayAggregatesOnly(true);
+  });
 
 /*** 
  * Next we are going to code the SAX approach.
@@ -485,27 +493,22 @@ public:
   }
 
   simdjson_really_inline error_code visit_document_start(json_iterator &) { return SUCCESS; }
-  simdjson_really_inline error_code visit_object_start(json_iterator &) { return SUCCESS; }
-  simdjson_really_inline error_code visit_key(json_iterator &, const uint8_t *key) {
-    switch(key[0]) {
-      case 'x':
-        idx = 0;
-        break;
-      case 'y':
-        idx = 2;
-        break;
-      case 'z':
-        idx = 3;
-        break;  
-    }
+  simdjson_really_inline error_code visit_object_start(json_iterator &) {
+    idx = 0;
+    return SUCCESS;
+  }
+  simdjson_really_inline error_code visit_key(json_iterator &, const uint8_t *) {
     return SUCCESS; 
   }
   simdjson_really_inline error_code visit_primitive(json_iterator &, const uint8_t *value) {
-    return numberparsing::parse_double(value).get(buffer[idx]);
+    return numberparsing::parse_double(value).get(buffer[idx++]);
   }
   simdjson_really_inline error_code visit_array_start(json_iterator &)  { return SUCCESS; }
   simdjson_really_inline error_code visit_array_end(json_iterator &) { return SUCCESS; }
-  simdjson_really_inline error_code visit_object_end(json_iterator &)  { return SUCCESS; }
+  simdjson_really_inline error_code visit_object_end(json_iterator &)  {
+    points.emplace_back(my_point{buffer[0], buffer[1], buffer[2]});
+    return SUCCESS;
+  }
   simdjson_really_inline error_code visit_document_end(json_iterator &)  { return SUCCESS; }
   simdjson_really_inline error_code visit_empty_array(json_iterator &)  { return SUCCESS; }
   simdjson_really_inline error_code visit_empty_object(json_iterator &)  { return SUCCESS; }
@@ -583,20 +586,23 @@ static void sax_largerandom(State &state) {
 
   // Read
   size_t bytes = 0;
+  size_t points = 0;
   for (SIMDJSON_UNUSED auto _ : state) {
     if (auto error = reader.read_points(json)) { throw error; }
     bytes += json.size();
+    points += reader.points.size();
     benchmark::DoNotOptimize(reader.points.data());
   }
   // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
-  state.counters["Gigabytes"] = benchmark::Counter(
+  state.counters["bytes"] = benchmark::Counter(
 	        double(bytes), benchmark::Counter::kIsRate,
 	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+  state.counters["points"] = Counter(double(points), benchmark::Counter::kIsRate);
 }
-BENCHMARK(sax_largerandom)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(sax_largerandom)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
-  })->DisplayAggregatesOnly(true);
+  });
 
 #endif // SIMDJSON_IMPLEMENTATION_HASWELL
 
