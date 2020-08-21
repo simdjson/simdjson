@@ -8,6 +8,7 @@
 SIMDJSON_TARGET_HASWELL
 
 namespace twitter {
+namespace {
 
 using namespace simdjson;
 using namespace haswell;
@@ -15,7 +16,7 @@ using namespace haswell::stage2;
 
 struct sax_tweet_reader_visitor {
 public:
-  sax_tweet_reader_visitor(std::vector<tweet> &_tweets, uint8_t *string_buf);
+  simdjson_really_inline sax_tweet_reader_visitor(std::vector<tweet> &tweets, uint8_t *string_buf);
 
   simdjson_really_inline error_code visit_document_start(json_iterator &iter);
   simdjson_really_inline error_code visit_object_start(json_iterator &iter);
@@ -68,8 +69,8 @@ private:
     field_type type{field_type::any};
   };
 
-  containers container{containers::document};
   std::vector<tweet> &tweets;
+  containers container{containers::document};
   uint8_t *current_string_buf_loc;
   const uint8_t *current_key{};
 
@@ -94,9 +95,9 @@ private:
   static field_lookup fields;
 }; // sax_tweet_reader_visitor
 
-sax_tweet_reader_visitor::sax_tweet_reader_visitor(std::vector<tweet> &_tweets, uint8_t *string_buf)
+simdjson_really_inline sax_tweet_reader_visitor::sax_tweet_reader_visitor(std::vector<tweet> &_tweets, uint8_t *_string_buf)
   : tweets{_tweets},
-    current_string_buf_loc{string_buf} {
+    current_string_buf_loc{_string_buf} {
 }
 
 simdjson_really_inline error_code sax_tweet_reader_visitor::visit_document_start(json_iterator &iter) {
@@ -112,6 +113,7 @@ simdjson_really_inline error_code sax_tweet_reader_visitor::visit_array_start(js
     switch (fields.get(current_key, container).type) {
       case field_type::array: // { "statuses": [
         start_container(iter);
+        current_key = nullptr;
         return SUCCESS;
       case field_type::any:
         return SUCCESS;
@@ -190,6 +192,7 @@ simdjson_really_inline error_code sax_tweet_reader_visitor::visit_primitive(json
         iter.log_error("unexpected primitive");
         return INCORRECT_TYPE;
     }
+    current_key = nullptr;
   }
 
   // If it's not a field, it's a child of an array.
@@ -202,16 +205,17 @@ simdjson_really_inline error_code sax_tweet_reader_visitor::visit_array_end(json
   return SUCCESS;
 }
 simdjson_really_inline error_code sax_tweet_reader_visitor::visit_object_end(json_iterator &iter) {
+  current_key = nullptr;
   if (in_container(iter)) { end_container(iter); }
   return SUCCESS;
 }
 
-simdjson_really_inline error_code sax_tweet_reader_visitor::visit_document_end(json_iterator &iter) {
-  iter.log_end_value("document");
+simdjson_really_inline error_code sax_tweet_reader_visitor::visit_document_end(json_iterator &) {
   return SUCCESS;
 }
 
 simdjson_really_inline error_code sax_tweet_reader_visitor::visit_empty_array(json_iterator &) {
+  current_key = nullptr;
   return SUCCESS;
 }
 simdjson_really_inline error_code sax_tweet_reader_visitor::visit_empty_object(json_iterator &) {
@@ -233,16 +237,15 @@ simdjson_really_inline bool sax_tweet_reader_visitor::in_container_child(json_it
 simdjson_really_inline void sax_tweet_reader_visitor::start_container(json_iterator &iter) {
   SIMDJSON_ASSUME(iter.depth <= MAX_SUPPORTED_DEPTH); // Asserts in debug mode
   container = containers(iter.depth);
+  if (logger::LOG_ENABLED) { iter.log_value(STATE_NAMES[iter.depth]); }
   if (container == containers::tweet) { tweets.push_back({}); }
-  if (logger::LOG_ENABLED) { iter.log_start_value(STATE_NAMES[iter.depth]); }
 }
-simdjson_really_inline void sax_tweet_reader_visitor::end_container(json_iterator &iter) {
-  if (logger::LOG_ENABLED) { iter.log_end_value(STATE_NAMES[int(container)]); }
+simdjson_really_inline void sax_tweet_reader_visitor::end_container(json_iterator &) {
   container = containers(int(container) - 1);
 }
 simdjson_really_inline error_code sax_tweet_reader_visitor::parse_nullable_unsigned(json_iterator &iter, const uint8_t *value, const field &f) {
   iter.log_value(f.key);
-  auto i = reinterpret_cast<uint64_t *>(reinterpret_cast<char *>(&tweets.back() + f.offset));
+  auto i = reinterpret_cast<uint64_t *>(reinterpret_cast<char *>(&tweets.back()) + f.offset);
   if (auto error = numberparsing::parse_unsigned(value).get(*i)) {
     // If number parsing failed, check if it's null before returning the error
     if (!atomparsing::is_valid_null_atom(value)) { iter.log_error("expected number or null"); return error; }
@@ -252,12 +255,12 @@ simdjson_really_inline error_code sax_tweet_reader_visitor::parse_nullable_unsig
 }
 simdjson_really_inline error_code sax_tweet_reader_visitor::parse_unsigned(json_iterator &iter, const uint8_t *value, const field &f) {
   iter.log_value(f.key);
-  auto i = reinterpret_cast<uint64_t *>(reinterpret_cast<char *>(&tweets.back() + f.offset));
+  auto i = reinterpret_cast<uint64_t *>(reinterpret_cast<char *>(&tweets.back()) + f.offset);
   return numberparsing::parse_unsigned(value).get(*i);
 }
 simdjson_really_inline error_code sax_tweet_reader_visitor::parse_string(json_iterator &iter, const uint8_t *value, const field &f) {
   iter.log_value(f.key);
-  auto s = reinterpret_cast<std::string_view *>(reinterpret_cast<char *>(&tweets.back() + f.offset));
+  auto s = reinterpret_cast<std::string_view *>(reinterpret_cast<char *>(&tweets.back()) + f.offset);
   return stringparsing::parse_string_to_buffer(value, current_string_buf_loc, *s);
 }
 
@@ -513,6 +516,7 @@ sax_tweet_reader_visitor::field_lookup::field_lookup() {
 //   }
 // }
 
+} // unnamed namespace
 } // namespace twitter
 
 SIMDJSON_UNTARGET_REGION
