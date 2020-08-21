@@ -2,8 +2,8 @@
 #define TWITTER_SAX_TWEET_READER_H
 
 #include "simdjson.h"
-#include "sax_tweet_reader_visitor.h"
 #include "tweet.h"
+#include "sax_tweet_reader_visitor.h"
 #include <vector>
 
 SIMDJSON_TARGET_HASWELL
@@ -16,20 +16,16 @@ using namespace haswell;
 using namespace haswell::stage2;
 
 struct sax_tweet_reader {
-  std::vector<tweet> tweets;
-  std::unique_ptr<uint8_t[]> string_buf;
-  size_t capacity;
-  dom_parser_implementation dom_parser;
+  std::vector<tweet> tweets{};
+  std::unique_ptr<uint8_t[]> string_buf{};
+  size_t capacity{};
+  dom_parser_implementation dom_parser{};
 
-  sax_tweet_reader();
-  error_code set_capacity(size_t new_capacity);
+  error_code allocate(size_t new_capacity);
   error_code read_tweets(padded_string &json);
 }; // struct tweet_reader
 
-sax_tweet_reader::sax_tweet_reader() : tweets{}, string_buf{}, capacity{0}, dom_parser() {
-}
-
-error_code sax_tweet_reader::set_capacity(size_t new_capacity) {
+error_code sax_tweet_reader::allocate(size_t new_capacity) {
   // string_capacity copied from document::allocate
   size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * new_capacity / 3 + 32, 64);
   string_buf.reset(new (std::nothrow) uint8_t[string_capacity]);
@@ -46,11 +42,11 @@ error_code sax_tweet_reader::read_tweets(padded_string &json) {
   // Allocate capacity if needed
   tweets.clear();
   if (capacity < json.size()) {
-    if (auto error = set_capacity(capacity)) { return error; }
+    if (auto error = allocate(json.size())) { return error; }
   }
 
   // Run stage 1 first.
-  if (auto error = dom_parser.stage1((uint8_t *)json.data(), json.size(), false)) { return error; }
+  if (auto error = dom_parser.stage1((uint8_t *)json.data(), json.size(), false)) { std::cout << error << std::endl; return error; }
 
   // Then walk the document, parsing the tweets as we go
   json_iterator iter(dom_parser, 0);

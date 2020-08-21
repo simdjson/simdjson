@@ -22,7 +22,6 @@ using std::cerr;
 using std::endl;
 
 const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
-const int REPETITIONS = 10;
 
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 
@@ -188,20 +187,21 @@ static void sax_tweets(State &state) {
   padded_string json;
   if (auto error = padded_string::load(TWITTER_JSON).get(json)) { cerr << error << endl; return; }
 
-  // Allocate
-  twitter::sax_tweet_reader reader;
-  if (auto error = reader.set_capacity(json.size())) { cerr << error << endl; return; }
-
-  // Warm the vector
-  if (auto error = reader.read_tweets(json)) { throw error; }
-
-  // Read tweets
   size_t bytes = 0;
   size_t tweets = 0;
-  for (SIMDJSON_UNUSED auto _ : state) {
+  {
+    // Yes, we leak this. Destructor issues. TODO fix that
+    twitter::sax_tweet_reader reader;
+
+    // Warm the vector and allocate capacity
     if (auto error = reader.read_tweets(json)) { throw error; }
-    bytes += json.size();
-    tweets += reader.tweets.size();
+
+    // Read tweets
+    for (SIMDJSON_UNUSED auto _ : state) {
+      if (auto error = reader.read_tweets(json)) { throw error; }
+      bytes += json.size();
+      tweets += reader.tweets.size();
+    }
   }
   // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
   state.counters["bytes"] = benchmark::Counter(
