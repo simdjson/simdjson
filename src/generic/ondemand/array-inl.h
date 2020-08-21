@@ -97,7 +97,6 @@ simdjson_really_inline bool array::operator!=(const array &) noexcept {
   return !finished();
 }
 simdjson_really_inline array &array::operator++() noexcept {
-  SIMDJSON_ASSUME(!finished());
   SIMDJSON_ASSUME(!at_start);
 
   error = doc->iter.next_element(container).error();
