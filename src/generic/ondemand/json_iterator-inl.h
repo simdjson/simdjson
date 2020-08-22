@@ -175,6 +175,54 @@ simdjson_really_inline bool json_iterator::is_null() noexcept {
   return false;
 }
 
+template<int N>
+SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::advance_to_buffer(uint8_t (&tmpbuf)[N]) noexcept {
+  // Truncate whitespace to fit the buffer.
+  auto len = peek_length();
+  auto json = advance();
+  if (len > N-1) {
+    if (stage2::is_not_structural_or_whitespace(json[N])) { return false; }
+    len = N-1;
+  }
+
+  // Copy to the buffer.
+  memcpy(tmpbuf, json, len);
+  tmpbuf[len] = ' ';
+  return true;
+}
+
+constexpr const uint32_t MAX_INT_LENGTH = 1024;
+
+SIMDJSON_WARN_UNUSED simdjson_result<uint64_t> json_iterator::get_root_uint64() noexcept {
+  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  if (!advance_to_buffer(tmpbuf)) { return NUMBER_ERROR; }
+  logger::log_value(*this, "uint64", "", 0);
+  return stage2::numberparsing::parse_unsigned(buf);
+}
+SIMDJSON_WARN_UNUSED simdjson_result<int64_t> json_iterator::get_root_int64() noexcept {
+  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer 
+  if (!advance_to_buffer(tmpbuf)) { return NUMBER_ERROR; }
+  logger::log_value(*this, "int64", "", 0);
+  return stage2::numberparsing::parse_integer(buf);
+}
+SIMDJSON_WARN_UNUSED simdjson_result<double> json_iterator::get_root_double() noexcept {
+  // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/, 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest number: -0.<fraction>e-308.
+  uint8_t tmpbuf[1074+8+1];
+  if (!advance_to_buffer(tmpbuf)) { return NUMBER_ERROR; }
+  logger::log_value(*this, "double", "", 0);
+  return stage2::numberparsing::parse_double(buf);
+}
+SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::get_root_bool() noexcept {
+  uint8_t tmpbuf[5+1];
+  if (!advance_to_buffer(tmpbuf)) { return INCORRECT_TYPE; } // Too big! Can't be true or false
+  return get_bool();
+}
+simdjson_really_inline bool json_iterator::root_is_null() noexcept {
+  uint8_t tmpbuf[4+1];
+  if (!advance_to_buffer(tmpbuf)) { return false; } // Too big! Can't be null
+  return is_null();
+}
+
 simdjson_really_inline void json_iterator::skip_unfinished_children(container c) noexcept {
   SIMDJSON_ASSUME(depth >= c.depth);
   while (depth > c.depth) {

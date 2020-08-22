@@ -19,6 +19,9 @@ simdjson_really_inline const uint8_t *token_iterator::advance() noexcept {
 simdjson_really_inline uint32_t token_iterator::peek_index(int32_t delta) const noexcept {
   return *(index+delta);
 }
+simdjson_really_inline uint32_t token_iterator::peek_length(int32_t delta) const noexcept {
+  return *(index+delta+1) - *(index+delta);
+}
 
 simdjson_really_inline bool token_iterator::operator==(const token_iterator &other) const noexcept {
   return index == other.index;
