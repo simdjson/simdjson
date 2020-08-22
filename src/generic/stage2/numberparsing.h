@@ -745,6 +745,8 @@ SIMDJSON_UNUSED simdjson_really_inline simdjson_result<double> parse_double(cons
     overflow = overflow || exponent < FASTFLOAT_SMALLEST_POWER || exponent > FASTFLOAT_LARGEST_POWER;
   }
 
+  if (is_not_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
   //
   // Assemble (or slow-parse) the float
   //

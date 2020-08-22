@@ -29,6 +29,15 @@ public:
    */
   simdjson_really_inline const uint8_t *peek(int32_t delta=0) const noexcept;
   /**
+   * Get the maximum length of the JSON text for a given token.
+   *
+   * The length will include any whitespace at the end of the token.
+   *
+   * @param delta The relative position of the token to retrieve. e.g. 0 = current token,
+   *              1 = next token, -1 = prev token.
+   */
+  simdjson_really_inline uint32_t peek_length(int32_t delta=0) const noexcept;
+  /**
    * Advance to the next token (returning the current one).
    *
    * Does not check or update depth/expect_value. Caller is responsible for that.
@@ -49,7 +58,7 @@ protected:
   simdjson_really_inline token_iterator(const uint8_t *buf, uint32_t *index) noexcept;
 
   /**
-   * Get the JSON text for a given token (relative).
+   * Get the index of the JSON text for a given token (relative).
    *
    * This is not null-terminated; it is a view into the JSON.
    *

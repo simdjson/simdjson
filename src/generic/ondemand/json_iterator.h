@@ -205,6 +205,12 @@ public:
   SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_really_inline bool is_null() noexcept;
 
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<uint64_t> get_root_uint64() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<int64_t> get_root_int64() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<double> get_root_double() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> get_root_bool() noexcept;
+  simdjson_really_inline bool root_is_null() noexcept;
+
   simdjson_really_inline bool in_container(container c) const noexcept;
   simdjson_really_inline container current_container() const noexcept;
 
@@ -233,6 +239,8 @@ public:
 
 protected:
   simdjson_really_inline json_iterator(const uint8_t *buf, uint32_t *index, uint32_t depth) noexcept;
+  template<int N>
+  SIMDJSON_WARN_UNUSED simdjson_really_inline bool advance_to_buffer(uint8_t (&buf)[N]) noexcept;
 
   uint32_t depth{};
 
