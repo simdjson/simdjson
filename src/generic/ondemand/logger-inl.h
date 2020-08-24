@@ -6,6 +6,7 @@ namespace logger {
 static constexpr const int LOG_EVENT_LEN = 20;
 static constexpr const int LOG_BUFFER_LEN = 30;
 static constexpr const int LOG_SMALL_BUFFER_LEN = 10;
+static int log_depth = 0;
 using SIMDJSON_IMPLEMENTATION::logger::DASHES;
 using SIMDJSON_IMPLEMENTATION::logger::printable_char;
 
@@ -17,8 +18,10 @@ simdjson_really_inline void log_value(const json_iterator &iter, const char *typ
 }
 simdjson_really_inline void log_start_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
   log_line(iter, "+", type, "", delta, depth_delta);
+  log_depth++;
 }
 simdjson_really_inline void log_end_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
+  log_depth--;
   log_line(iter, "-", type, "", delta, depth_delta);
 }
 simdjson_really_inline void log_error(const json_iterator &iter, const char *error, int delta, int depth_delta) noexcept {
@@ -26,16 +29,18 @@ simdjson_really_inline void log_error(const json_iterator &iter, const char *err
 }
 
 simdjson_really_inline void log_headers() noexcept {
+  log_depth = 0;
   if (LOG_ENABLED) {
     printf("\n");
     printf("| %-*s | %-*s | %-*s | %-*s | Detail |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", LOG_SMALL_BUFFER_LEN, "Next", 5, "Next#");
     printf("|%.*s|%.*s|%.*s|%.*s|--------|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, LOG_SMALL_BUFFER_LEN+2, DASHES, 5+2, DASHES);
+    fflush(stdout);
   }
 }
 
 simdjson_really_inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept {
   if (LOG_ENABLED) {
-    const int indent = (iter.depth+depth_delta)*2;
+    const int indent = (log_depth+depth_delta)*2;
     printf("| %*s%s%-*s ",
       indent, "",
       title_prefix,
@@ -60,6 +65,7 @@ simdjson_really_inline void log_line(const json_iterator &iter, const char *titl
     printf("| %5u ", iter.peek_index(delta+1));
     printf("| %.*s ", int(detail.size()), detail.data());
     printf("|\n");
+    fflush(stdout);
   }
 }
 

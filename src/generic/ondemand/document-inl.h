@@ -18,7 +18,7 @@ simdjson_really_inline document &document::operator=(document &&other) noexcept 
 }
 
 simdjson_really_inline document::document(ondemand::parser *_parser) noexcept
-  : iter(_parser->dom_parser.buf, _parser->dom_parser.structural_indexes.get(), 0), parser{_parser}
+  : iter(_parser->dom_parser.buf, _parser->dom_parser.structural_indexes.get()), parser{_parser}
 {
   logger::log_headers();
   parser->current_string_buf_loc = parser->string_buf.get();
@@ -69,8 +69,8 @@ simdjson_really_inline document::operator raw_json_string() & noexcept(false) { 
 simdjson_really_inline document::operator bool() noexcept(false) { return as_value(); }
 #endif
 
-simdjson_really_inline array document::begin() & noexcept { return as_value().begin(); }
-simdjson_really_inline array document::end() & noexcept { return {}; }
+simdjson_really_inline simdjson_result<array::iterator> document::begin() & noexcept { return as_value().begin(); }
+simdjson_really_inline simdjson_result<array::iterator> document::end() & noexcept { return {}; }
 simdjson_really_inline simdjson_result<value> document::operator[](std::string_view key) & noexcept { return as_value()[key]; }
 
 } // namespace ondemand
@@ -100,11 +100,11 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::docume
 
 // TODO make sure the passing of a pointer here isn't about to cause us trouble
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::as_value() noexcept {
-  if (error()) { return { &first, error() }; }
+  if (error()) { return error(); }
   return first.as_value();
 }
-simdjson_really_inline SIMDJSON_IMPLEMENTATION::ondemand::array simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::begin() & noexcept { return as_value().begin(); }
-simdjson_really_inline SIMDJSON_IMPLEMENTATION::ondemand::array simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::end() & noexcept { return {}; }
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::begin() & noexcept { return as_value().begin(); }
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::end() & noexcept { return {}; }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator[](std::string_view key) & noexcept {
   return as_value()[key];
 }
