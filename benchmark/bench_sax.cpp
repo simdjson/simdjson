@@ -40,13 +40,18 @@ simdjson_really_inline uint64_t nullable_int(ondemand::value && value) {
   return std::move(value);
 }
 
-simdjson_really_inline twitter::twitter_user read_user(ondemand::object && u) {
+simdjson_really_inline twitter::twitter_user read_user(ondemand::object && user) {
+  // TODO figure out why we can't use u directly ... the destructor doesn't seem to get invoked when
+  // read_user() finishes, for some reason.
+  ondemand::object u = std::move(user);
   return { u["id"], u["screen_name"] };
 }
 simdjson_really_inline void read_tweets(ondemand::parser &parser, padded_string &json, std::vector<twitter::tweet> &tweets) {
   // Walk the document, parsing the tweets as we go
   auto doc = parser.parse(json);
-  for (ondemand::object tweet : doc["statuses"]) {
+  auto root = doc.get_object();
+  ondemand::array statuses = root["statuses"];
+  for (ondemand::object tweet : statuses) {
     tweets.emplace_back(twitter::tweet{
       tweet["created_at"],
       tweet["id"],
@@ -108,40 +113,49 @@ simdjson_really_inline void read_tweets(ondemand::parser &parser, padded_string 
   // { "statuses": 
   auto doc = parser.parse(json);
   ondemand::json_iterator &iter = doc.iterate();
-  iter.start_object().value();
-  if (!iter.find_first_field_raw("statuses")) { throw "No statuses field"; }
+  if (!iter.start_object()   || !iter.find_field_raw("statuses")) { throw; }
   // { "statuses": [
-  auto tweets_array = iter.start_array().value();
-  if (iter.is_empty_array()) { return; }
+  if (!iter.start_array()) { throw; }
 
   do {
-    auto tweet_object = iter.start_object().value();
     twitter::tweet tweet;
-    if (!iter.find_first_field_raw("created_at")) { throw "Could not find created_at"; }
+
+    if (!iter.start_object()   || !iter.find_field_raw("created_at")) { throw; }
     tweet.created_at = iter.get_raw_json_string().value().unescape(parser);
-    if (!iter.find_next_field_raw("id", tweet_object)) { throw "Could not find id"; }
+
+    if (!iter.has_next_field() || !iter.find_field_raw("id")) { throw; }
     tweet.id = iter.get_uint64();
-    if (!iter.find_next_field_raw("text", tweet_object)) { throw "Could not find text"; }
+
+    if (!iter.has_next_field() || !iter.find_field_raw("text")) { throw; }
     tweet.text = iter.get_raw_json_string().value().unescape(parser);
-    if (!iter.find_next_field_raw("in_reply_to_status_id", tweet_object)) { throw "Could not find in_reply_to_status_id"; }
+
+    if (!iter.has_next_field() || !iter.find_field_raw("in_reply_to_status_id")) { throw; }
     if (!iter.is_null()) {
       tweet.in_reply_to_status_id = iter.get_uint64();
     }
-    if (!iter.find_next_field_raw("user", tweet_object)) { throw "Could not find user"; }
+
+    if (!iter.has_next_field() || !iter.find_field_raw("user")) { throw; }
     {
-      auto user_object = iter.start_object().value();
-      if (!iter.find_first_field_raw("id")) { throw "Could not find user.id"; }
+      if (!iter.start_object()   || !iter.find_field_raw("id")) { throw; }
       tweet.user.id = iter.get_uint64();
-      if (!iter.find_next_field_raw("screen_name", user_object)) { throw "Could not find user.screen_name"; }
+
+      if (!iter.has_next_field() || !iter.find_field_raw("screen_name")) { throw; }
       tweet.user.screen_name = iter.get_raw_json_string().value().unescape(parser);
+
+      iter.skip_container(); // Skip the rest of the user object
     }
-    if (!iter.find_next_field_raw("retweet_count", tweet_object)) { throw "Could not find retweet_count"; }
+
+    if (!iter.has_next_field() || !iter.find_field_raw("retweet_count")) { throw; }
     tweet.retweet_count = iter.get_uint64();
-    if (!iter.find_next_field_raw("favorite_count", tweet_object)) { throw "Could not find favorite_count"; }
+
+    if (!iter.has_next_field() || !iter.find_field_raw("favorite_count")) { throw; }
     tweet.favorite_count = iter.get_uint64();
 
     tweets.push_back(tweet);
-  } while (iter.next_element(tweets_array));
+
+    iter.skip_container(); // Skip the rest of the tweet object
+
+  } while (iter.has_next_element());
 }
 
 static void iter_tweets(State &state) {
@@ -397,7 +411,10 @@ static void ondemand_largerandom(State &state) {
   size_t points = 0;
   for (SIMDJSON_UNUSED auto _ : state) {
     std::vector<my_point> container;
-    for (ondemand::object point : parser.parse(json)) {
+    auto doc = parser.parse(json);
+    ondemand::array array = doc.get_array();
+    for (ondemand::object point_object : array) {
+      auto point = point_object.begin();
       container.emplace_back(my_point{(*point).value(), (*++point).value(), (*++point).value()});
     }
     bytes += json.size();
@@ -450,8 +467,7 @@ static void iter_largerandom(State &state) {
     std::vector<my_point> container;
     auto doc = parser.parse(json);
     ondemand::json_iterator &iter = doc.iterate();
-    iter.start_array().value();
-    if (!iter.is_empty_array()) {
+    if (iter.start_array()) {
       do {
         container.emplace_back(my_point{first_double(iter), next_double(iter), next_double(iter)});
         if (iter.has_next_field()) { throw "Too many fields"; }

@@ -35,7 +35,7 @@ template<>
 struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field> : public internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::field> {
 public:
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::field &&value) noexcept; ///< @private
-  simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::document *doc, error_code error) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
 
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> key() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> value() noexcept;
