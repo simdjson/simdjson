@@ -13,10 +13,9 @@ simdjson_really_inline field::field(raw_json_string key, ondemand::value &&value
 }
 
 simdjson_really_inline simdjson_result<field> field::start(document *doc) noexcept {
-  error_code error;
   raw_json_string key;
-  if ((error = doc->iter.field_key().get(key) )) { return { doc, error }; }
-  if ((error = doc->iter.field_value() )) { return { doc, error }; }
+  SIMDJSON_TRY( doc->iter.field_key().get(key) );
+  SIMDJSON_TRY( doc->iter.field_value() );
   return field::start(doc, key);
 }
 
@@ -47,13 +46,9 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>
 {
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::simdjson_result(
-  SIMDJSON_IMPLEMENTATION::ondemand::document *doc,
   error_code error
 ) noexcept :
-    internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::field>(
-      { nullptr, { doc, nullptr } },
-      error
-    )
+    internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::field>(error)
 {
 }
 

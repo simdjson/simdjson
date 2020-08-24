@@ -5,37 +5,30 @@ namespace ondemand {
 simdjson_really_inline json_iterator::json_iterator() noexcept = default;
 simdjson_really_inline json_iterator::json_iterator(json_iterator &&other) noexcept = default;
 simdjson_really_inline json_iterator &json_iterator::operator=(json_iterator &&other) noexcept = default;
-simdjson_really_inline json_iterator::json_iterator(const uint8_t *_buf, uint32_t *_index, uint32_t _depth) noexcept
-  : token_iterator(_buf, _index), depth{_depth}
+simdjson_really_inline json_iterator::json_iterator(const uint8_t *_buf, uint32_t *_index) noexcept
+  : token_iterator(_buf, _index)
 {
 }
 
 
-SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<json_iterator::container> json_iterator::start_object() noexcept {
+SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_object() noexcept {
   if (*advance() != '{') { logger::log_error(*this, "Not an object"); return INCORRECT_TYPE; }
   return started_object();
 }
 
-SIMDJSON_WARN_UNUSED simdjson_really_inline json_iterator::container json_iterator::started_object() noexcept {
-  depth++;
-  return depth;
-}
-
-SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::is_empty_object() noexcept {
+SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::started_object() noexcept {
   if (*peek() == '}') {
+    logger::log_value(*this, "empty object");
     advance();
-    depth--;
-    logger::log_value(*this, "empty object", "", -2);
-    return true;
+    return false;
   }
-  logger::log_start_value(*this, "object", -1, -1); 
-  return false;
+  logger::log_start_value(*this, "object");
+  return true;
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::has_next_field() noexcept {
   switch (*advance()) {
     case '}':
-      depth--;
       logger::log_end_value(*this, "object");
       return false;
     case ',':
@@ -44,11 +37,6 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator:
       logger::log_error(*this, "Missing comma between object fields");
       return TAPE_ERROR;
   }
-}
-
-SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::next_field(container c) noexcept {
-  skip_unfinished_children(c);
-  return has_next_field();
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::find_field_raw(const char *key) noexcept {
@@ -70,25 +58,6 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator:
   return false;
 }
 
-SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::find_single_field_raw(const char *key) noexcept {
-  auto error = start_object().error();
-  if (error) { return error; }
-  return find_first_field_raw(key);
-}
-
-SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::find_first_field_raw(const char *key) noexcept {
-  if (is_empty_object()) { return false; }
-  return find_field_raw(key);
-}
-
-SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::find_next_field_raw(const char *key, container c) noexcept {
-  bool has_next;
-  SIMDJSON_TRY( next_field(c).get(has_next) );
-  if (!has_next) { return false; }
-
-  return find_field_raw(key);
-}
-
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<raw_json_string> json_iterator::field_key() noexcept {
   const uint8_t *key = advance();
   if (*(key++) != '"') { logger::log_error(*this, "Object key is not a string"); return TAPE_ERROR; }
@@ -100,31 +69,24 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::field_valu
   return SUCCESS;
 }
 
-SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<json_iterator::container> json_iterator::start_array() noexcept {
+SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_array() noexcept {
   if (*advance() != '[') { logger::log_error(*this, "Not an array"); return INCORRECT_TYPE; }
   return started_array();
 }
 
-SIMDJSON_WARN_UNUSED simdjson_really_inline json_iterator::container json_iterator::started_array() noexcept {
-  depth++;
-  return depth;
-}
-
-SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::is_empty_array() noexcept {
+SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::started_array() noexcept {
   if (*peek() == ']') {
+    logger::log_value(*this, "empty array");
     advance();
-    depth--;
-    logger::log_value(*this, "empty array", "", -2);
-    return true;
+    return false;
   }
-  logger::log_start_value(*this, "array", -1, -1); 
-  return false;
+  logger::log_start_value(*this, "array"); 
+  return true;
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::has_next_element() noexcept {
   switch (*advance()) {
     case ']':
-      depth--;
       logger::log_end_value(*this, "array");
       return false;
     case ',':
@@ -133,11 +95,6 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator:
       logger::log_error(*this, "Missing comma between array elements");
       return TAPE_ERROR;
   }
-}
-
-SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::next_element(container c) noexcept {
-  skip_unfinished_children(c);
-  return has_next_element();
 }
 
 SIMDJSON_WARN_UNUSED simdjson_result<raw_json_string> json_iterator::get_raw_json_string() noexcept {
@@ -223,61 +180,56 @@ simdjson_really_inline bool json_iterator::root_is_null() noexcept {
   return is_null();
 }
 
-simdjson_really_inline void json_iterator::skip_unfinished_children(container c) noexcept {
-  SIMDJSON_ASSUME(depth >= c.depth);
-  while (depth > c.depth) {
-    switch (*advance()) {
-      // TODO consider whether matching braces is a requirement: if non-matching braces indicates
-      // *missing* braces, then future lookups are not in the object/arrays they think they are,
-      // violating the rule "validate enough structure that the user can be confident they are
-      // looking at the right values."
-      case ']': case '}': depth--; logger::log_end_value(*this, "skip"); break;
-      // PERF TODO does it skip the depth check when we don't decrement depth?
-      case '[': case '{': logger::log_start_value(*this, "skip"); depth++; break;
-      default: logger::log_value(*this, "skip", ""); break;
-    }
-  }
-}
-
-simdjson_really_inline void json_iterator::finish(container c) noexcept {
-  while (depth >= c.depth) {
-    switch (*advance()) {
-      // TODO consider whether matching braces is a requirement: if non-matching braces indicates
-      // *missing* braces, then future lookups are not in the object/arrays they think they are,
-      // violating the rule "validate enough structure that the user can be confident they are
-      // looking at the right values."
-      case ']': case '}': depth--; logger::log_end_value(*this, "skip"); break;
-      // PERF TODO does it skip the depth check when we don't decrement depth?
-      case '[': case '{': logger::log_start_value(*this, "skip"); depth++; break;
-      default: logger::log_value(*this, "skip", ""); break;
-    }
-  }
-  SIMDJSON_ASSUME(depth == c.depth-1);
-}
-
 
 simdjson_really_inline void json_iterator::skip() noexcept {
-  uint32_t child_depth = 0;
+  uint32_t depth = 0;
   do {
     switch (*advance()) {
       // TODO consider whether matching braces is a requirement: if non-matching braces indicates
       // *missing* braces, then future lookups are not in the object/arrays they think they are,
       // violating the rule "validate enough structure that the user can be confident they are
       // looking at the right values."
-      case ']': case '}': child_depth--; logger::log_end_value(*this, "skip", -1, child_depth); break;
+      case ']': case '}':
+        logger::log_end_value(*this, "skip");
+        depth--;
+        break;
       // PERF TODO does it skip the depth check when we don't decrement depth?
-      case '[': case '{': logger::log_start_value(*this, "skip", -1, child_depth); child_depth++; break;
-      default: logger::log_value(*this, "skip", "", -1, child_depth); break;
+      case '[': case '{':
+        logger::log_start_value(*this, "skip");
+        depth++;
+        break;
+      default:
+        logger::log_value(*this, "skip", "");
+        break;
     }
-  } while (child_depth > 0);
+  } while (depth > 0);
 }
 
-simdjson_really_inline bool json_iterator::in_container(container c) const noexcept {
-  return depth >= c.depth;
-}
-
-simdjson_really_inline json_iterator::container json_iterator::current_container() const noexcept {
-  return depth;
+simdjson_really_inline bool json_iterator::skip_container() noexcept {
+  uint32_t depth = 1;
+  // The loop breaks only when depth-- happens.
+  while (true) {
+    uint8_t ch = *advance();
+    switch (ch) {
+      // TODO consider whether matching braces is a requirement: if non-matching braces indicates
+      // *missing* braces, then future lookups are not in the object/arrays they think they are,
+      // violating the rule "validate enough structure that the user can be confident they are
+      // looking at the right values."
+      case ']': case '}':
+        logger::log_end_value(*this, "skip");
+        depth--;
+        if (depth == 0) { logger::log_event(*this, "end skip", ""); return ch == ']'; }
+        break;
+      // PERF TODO does it skip the depth check when we don't decrement depth?
+      case '[': case '{':
+        logger::log_start_value(*this, "skip");
+        depth++;
+        break;
+      default:
+        logger::log_value(*this, "skip", "");
+        break;
+    }
+  };
 }
 
 } // namespace ondemand
