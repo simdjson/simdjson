@@ -4,27 +4,47 @@ namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+class value;
+class document;
+
 /**
  * A forward-only JSON array.
  */
 class array {
 public:
   simdjson_really_inline array() noexcept;
+  simdjson_really_inline ~array() noexcept;
+  simdjson_really_inline array(array &&other) noexcept;
+  simdjson_really_inline array &operator=(array &&other) noexcept;
+  array(const array &) = delete;
+  array &operator=(const array &) = delete;
 
-  simdjson_really_inline array begin() noexcept;
-  simdjson_really_inline array end() noexcept;
+  class iterator {
+  public:
+    simdjson_really_inline iterator(array &a) noexcept;
+    simdjson_really_inline iterator(const array::iterator &a) noexcept;
+    simdjson_really_inline iterator &operator=(const array::iterator &a) noexcept;
 
-  //
-  // Iterator interface
-  //
-  // Reads key and value, yielding them to the user.
-  simdjson_really_inline simdjson_result<value> operator*() noexcept; // MUST ONLY BE CALLED ONCE PER ITERATION.
-  // Assumes it's being compared with the end. true if depth < doc->iter.depth.
-  simdjson_really_inline bool operator==(const array &) noexcept;
-  // Assumes it's being compared with the end. true if depth >= doc->iter.depth.
-  simdjson_really_inline bool operator!=(const array &) noexcept;
-  // Checks for ']' and ','
-  simdjson_really_inline array &operator++() noexcept;
+    //
+    // Iterator interface
+    //
+
+    // Reads key and value, yielding them to the user.
+    simdjson_really_inline simdjson_result<value> operator*() noexcept; // MUST ONLY BE CALLED ONCE PER ITERATION.
+    // Assumes it's being compared with the end. true if depth < doc->iter.depth.
+    simdjson_really_inline bool operator==(const array::iterator &) noexcept;
+    // Assumes it's being compared with the end. true if depth >= doc->iter.depth.
+    simdjson_really_inline bool operator!=(const array::iterator &) noexcept;
+    // Checks for ']' and ','
+    simdjson_really_inline array::iterator &operator++() noexcept;
+  private:
+    array *a{};
+    simdjson_really_inline iterator() noexcept;
+    friend struct simdjson_result<array::iterator>;
+  };
+
+  simdjson_really_inline array::iterator begin() noexcept;
+  simdjson_really_inline array::iterator end() noexcept;
 
 protected:
   /**
@@ -33,20 +53,17 @@ protected:
    * @param doc The document containing the array.
    * @error INCORRECT_TYPE if the iterator is not at [.
    */
-  static simdjson_really_inline array start(document *doc) noexcept;
+  static simdjson_really_inline simdjson_result<array> start(document *doc) noexcept;
   /**
    * Begin array iteration.
    *
    * @param doc The document containing the array. The iterator must be just after the opening `[`.
    */
   static simdjson_really_inline array started(document *doc) noexcept;
-  /**
-   * Created an error chained array iterator.
-   *
-   * @param doc The document containing the array.
-   */
-  static simdjson_really_inline array error_chain(document *doc, error_code error) noexcept;
 
+  /**
+   * Report the current error and set finished so it won't be reported again.
+   */
   simdjson_really_inline error_code report_error() noexcept;
 
   /**
@@ -54,21 +71,9 @@ protected:
    *
    * @param doc The document containing the array. doc->iter.depth must already be incremented to
    *            reflect the array's depth. The iterator must be just after the opening `[`.
-   * @param container The container returned from iter.start_array() / iter.started_array().
+   * @param has_value Whether the array has a value (false means empty array).
    */
-  simdjson_really_inline array(document *_doc, json_iterator::container _container) noexcept;
-  /**
-   * Internal array creation. Call array::error_chain() instead of this.
-   *
-   * @param doc The document containing the array.
-   * @param error The error to report. If it is not SUCCESS, this is an error chained object.
-   */
-  simdjson_really_inline array(document *_doc, error_code error) noexcept;
-
-  /** Check whether iteration is complete. */
-  bool finished() const noexcept;
-  /** Decrements depth to mark iteration as complete. */
-  void finish(bool log_end=false) noexcept;
+  simdjson_really_inline array(document *_doc, bool has_value) noexcept;
 
   /**
    * Document containing this array.
@@ -78,19 +83,13 @@ protected:
    */
   document *doc{};
   /**
-   * Container value for this array, obtained from json_iterator::started_array().
+   * Whether we have anything to yield.
    *
-   * PERF NOTE: expected to be elided entirely, as this is a constant knowable at compile time.
+   * PERF NOTE: we hope this will be elided into inline control flow, as it is true for all
+   * iterations except the last, and compilers with SSA optimization can sometimes do last-iteration
+   * optimization.
    */
-  json_iterator::container container{};
-  /**
-   * Whether we're at the beginning of the array, or after.
-   *
-   * PERF NOTE: expected to be elided into inline control flow, as it is true for the first
-   * iteration and false thereafter, and compilers with SSA optimization tend to analyze the first
-   * iteration of any loop separately.
-   */
-  bool at_start{};
+  bool has_next{};
   /**
    * Error, if there is one. Errors are only yielded once.
    *
@@ -116,12 +115,33 @@ template<>
 struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> : public internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array> {
 public:
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::array &&value) noexcept; ///< @private
-  simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::document *doc, error_code error) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
 
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> begin() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> end() noexcept;
+};
 
-  simdjson_really_inline SIMDJSON_IMPLEMENTATION::ondemand::array begin() noexcept;
-  simdjson_really_inline SIMDJSON_IMPLEMENTATION::ondemand::array end() noexcept;
+template<>
+struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> : public internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> {
+public:
+  simdjson_really_inline simdjson_result() noexcept;
+  simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::array::iterator &&value) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &a) noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &operator=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &a) noexcept;
+
+  //
+  // Iterator interface
+  //
+
+  // Reads key and value, yielding them to the user.
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator*() noexcept; // MUST ONLY BE CALLED ONCE PER ITERATION.
+  // Assumes it's being compared with the end. true if depth < doc->iter.depth.
+  simdjson_really_inline bool operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &) noexcept;
+  // Assumes it's being compared with the end. true if depth >= doc->iter.depth.
+  simdjson_really_inline bool operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &) noexcept;
+  // Checks for ']' and ','
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &operator++() noexcept;
 };
 
 } // namespace simdjson

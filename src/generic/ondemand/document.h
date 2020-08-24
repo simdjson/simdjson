@@ -47,8 +47,8 @@ public:
   simdjson_really_inline operator bool() noexcept(false);
 #endif
 
-  simdjson_really_inline array begin() & noexcept;
-  simdjson_really_inline array end() & noexcept;
+  simdjson_really_inline simdjson_result<array::iterator> begin() & noexcept;
+  simdjson_really_inline simdjson_result<array::iterator> end() & noexcept;
   simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept;
   simdjson_really_inline simdjson_result<value> operator[](const char *key) & noexcept;
 
@@ -106,8 +106,8 @@ public:
   simdjson_really_inline operator bool() noexcept(false);
 #endif
 
-  simdjson_really_inline SIMDJSON_IMPLEMENTATION::ondemand::array begin() & noexcept;
-  simdjson_really_inline SIMDJSON_IMPLEMENTATION::ondemand::array end() & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> begin() & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> end() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) & noexcept;
 
