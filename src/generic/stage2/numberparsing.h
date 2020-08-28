@@ -97,14 +97,29 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // rounded down.
   uint64_t factor_mantissa = mantissa_64[power - FASTFLOAT_SMALLEST_POWER];
   
-  // For q in (-400,350), we have that
-  // f = (((152170 + 65536) * q ) >> 16);
-  // is equal to
-  //  floor(p) + q
-  // where
-  //   p = log(5**q)/log(2) = q * log(5)/log(2)
+  // The exponent is 1024 + 63 + power 
+  //     + floor(log(5**power)/log(2)).
+  // The 1024 comes from the ieee64 standard.
+  // The 63 comes from the fact that we use a 64-bit word.
   //
-  // Note that this is not magic: 152170/(1<<16) is approximatively equal to log(5)/log(2).
+  // Computing floor(log(5**power)/log(2)) could be
+  // slow. Instead we use a fast function.
+  //
+  // For power in (-400,350), we have that
+  // (((152170 + 65536) * power ) >> 16);
+  // is equal to
+  //  floor(log(5**power)/log(2)) + power
+  //
+  // The 65536 is (1<<16) and corresponds to 
+  // (65536 * power) >> 16 ---> power
+  //
+  // ((152170 * power ) >> 16) is equal to 
+  // floor(log(5**power)/log(2)) 
+  //
+  // Note that this is not magic: 152170/(1<<16) is 
+  // approximatively equal to log(5)/log(2).
+  // The 1<<16 value is a power of two; we could use a 
+  // larger power of 2 if we wanted to.
   //
   int64_t exponent = (((152170 + 65536) * power) >> 16) + 1024 + 63;
   
