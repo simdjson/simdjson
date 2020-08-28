@@ -90,14 +90,24 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 
   // We are going to need to do some 64-bit arithmetic to get a more precise product.
   // We use a table lookup approach.
-  components c =
-      power_of_ten_components[power - FASTFLOAT_SMALLEST_POWER];
-      // safe because
-      // power >= FASTFLOAT_SMALLEST_POWER
-      // and power <= FASTFLOAT_LARGEST_POWER
-  // we recover the mantissa of the power, it has a leading 1. It is always
+  // It is safe because
+  // power >= FASTFLOAT_SMALLEST_POWER
+  // and power <= FASTFLOAT_LARGEST_POWER
+  // We recover the mantissa of the power, it has a leading 1. It is always
   // rounded down.
-  uint64_t factor_mantissa = c.mantissa;
+  uint64_t factor_mantissa = mantissa_64[power - FASTFLOAT_SMALLEST_POWER];
+  
+  // For q in (-400,350), we have that
+  // f = (((152170 + 65536) * q ) >> 16);
+  // is equal to
+  //  floor(p) + q
+  // where
+  //   p = log(5**q)/log(2) = q * log(5)/log(2)
+  //
+  // Note that this is not magic: 152170/(1<<16) is approximatively equal to log(5)/log(2).
+  //
+  int64_t exponent = (((152170 + 65536) * power) >> 16) + 1024 + 63;
+  
 
   // We want the most significant bit of i to be 1. Shift if needed.
   int lz = leading_zeroes(i);
@@ -188,7 +198,7 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
     lz--; // undo previous addition
   }
   mantissa &= ~(1ULL << 52);
-  uint64_t real_exponent = c.exp - lz;
+  uint64_t real_exponent = exponent - lz;
   // we have to check that real_exponent is in range, otherwise we bail out
   if (simdjson_unlikely((real_exponent < 1) || (real_exponent > 2046))) {
     return false;
