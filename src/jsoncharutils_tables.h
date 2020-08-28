@@ -217,9 +217,8 @@ static const double power_of_ten[] = {
 
 // the mantissas of powers of ten from -308 to 308, extended out to sixty four
 // bits
-
-// The array power_of_ten_components contain the powers of ten approximated
-// as a 64-bit mantissa, with an exponent part. It goes from 10^
+// The array contains the powers of ten approximated
+// as a 64-bit mantissa. It goes from 10^
 // FASTFLOAT_SMALLEST_POWER to
 // 10^FASTFLOAT_LARGEST_POWER (inclusively). The mantissa is truncated, and
 // never rounded up.
