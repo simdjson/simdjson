@@ -215,14 +215,12 @@ static const double power_of_ten[] = {
     1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,  1e10, 1e11,
     1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22};
 
-// the mantissas of powers of ten from -308 to 308, extended out to sixty four
-// bits
-// The array contains the powers of ten approximated
-// as a 64-bit mantissa. It goes from 10^
-// FASTFLOAT_SMALLEST_POWER to
-// 10^FASTFLOAT_LARGEST_POWER (inclusively). The mantissa is truncated, and
-// never rounded up.
-// Uses about 5KB.
+// The mantissas of powers of ten from -308 to 308, extended out to sixty four
+// bits. The array contains the powers of ten approximated
+// as a 64-bit mantissa. It goes from 10^FASTFLOAT_SMALLEST_POWER to 
+// 10^FASTFLOAT_LARGEST_POWER (inclusively). 
+// The mantissa is truncated, and
+// never rounded up. Uses about 5KB.
 static const uint64_t mantissa_64[] = {
     0xa5ced43b7e3e9188, 0xcf42894a5dce35ea,
     0x818995ce7aa0e1b2, 0xa1ebfb4219491a1f,
