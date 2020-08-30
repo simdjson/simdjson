@@ -260,6 +260,41 @@ simdjson_really_inline bool json_iterator::is_alive() const noexcept {
   return parser;
 }
 
+simdjson_really_inline json_iterator_ref json_iterator::borrow() noexcept {
+  return json_iterator_ref(this);
+}
+
+//
+// json_iterator_ref
+//
+simdjson_really_inline json_iterator_ref::json_iterator_ref() noexcept = default;
+simdjson_really_inline json_iterator_ref::json_iterator_ref(json_iterator_ref &&other) noexcept = default;
+simdjson_really_inline json_iterator_ref &json_iterator_ref::operator=(json_iterator_ref &&other) noexcept = default;
+simdjson_really_inline json_iterator_ref::json_iterator_ref(json_iterator *_iter) noexcept
+  : iter{_iter}
+{
+}
+simdjson_really_inline json_iterator_ref::~json_iterator_ref() noexcept = default;
+
+simdjson_really_inline json_iterator_ref json_iterator_ref::borrow() noexcept {
+  return json_iterator_ref(iter);
+}
+
+simdjson_really_inline json_iterator *json_iterator_ref::operator->() noexcept {
+  return iter;
+}
+simdjson_really_inline json_iterator &json_iterator_ref::operator*() noexcept {
+  return *iter;
+}
+simdjson_really_inline const json_iterator &json_iterator_ref::operator*() const noexcept {
+  return *iter;
+}
+
+simdjson_really_inline bool json_iterator_ref::is_alive() const noexcept {
+  return iter != nullptr;
+}
+
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace {

@@ -41,18 +41,18 @@ namespace ondemand {
 //
 
 simdjson_really_inline array::array() noexcept = default;
-simdjson_really_inline array::array(json_iterator *_iter, bool has_value) noexcept
-  : iter{_iter}, has_next{has_value}, error{SUCCESS}
+simdjson_really_inline array::array(json_iterator_ref &&_iter, bool has_value) noexcept
+  : iter{std::forward<json_iterator_ref>(_iter)}, has_next{has_value}, error{SUCCESS}
 {
 }
 simdjson_really_inline array::array(array &&other) noexcept
-  : iter{other.iter}, has_next{other.has_next}, error{other.error}
+  : iter{std::forward<array>(other).iter}, has_next{other.has_next}, error{other.error}
 {
   // Terminate the other iterator
   other.has_next = false;
 }
 simdjson_really_inline array &array::operator=(array &&other) noexcept {
-  iter = other.iter;
+  iter = std::forward<array>(other).iter;
   has_next = other.has_next;
   error = other.error;
   // Terminate the other iterator
@@ -67,13 +67,13 @@ simdjson_really_inline array::~array() noexcept {
   }
 }
 
-simdjson_really_inline simdjson_result<array> array::start(json_iterator *iter) noexcept {
+simdjson_really_inline simdjson_result<array> array::start(json_iterator_ref &&iter) noexcept {
   bool has_value;
   SIMDJSON_TRY( iter->start_array().get(has_value) );
-  return array(iter, has_value);
+  return array(std::forward<json_iterator_ref>(iter), has_value);
 }
-simdjson_really_inline array array::started(json_iterator *iter) noexcept {
-  return array(iter, iter->started_array());
+simdjson_really_inline array array::started(json_iterator_ref &&iter) noexcept {
+  return array(std::forward<json_iterator_ref>(iter), iter->started_array());
 }
 simdjson_really_inline array::iterator array::begin() noexcept {
   return *this;
@@ -96,7 +96,7 @@ simdjson_really_inline array::iterator &array::iterator::operator=(const array::
 
 simdjson_really_inline simdjson_result<value> array::iterator::operator*() noexcept {
   if (a->error) { return a->report_error(); }
-  return value::start(a->iter);
+  return value::start(a->iter.borrow());
 }
 simdjson_really_inline bool array::iterator::operator==(const array::iterator &) noexcept {
   return !a->has_next;

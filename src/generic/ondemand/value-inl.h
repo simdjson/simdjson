@@ -3,17 +3,23 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
 simdjson_really_inline value::value() noexcept = default;
-simdjson_really_inline value::value(value &&other) noexcept {
-  *this = std::forward<value>(other);
+simdjson_really_inline value::value(value &&other) noexcept
+  : iter{std::forward<value>(other).iter},
+    json{other.json}
+{
+  other.json = nullptr;
 };
 simdjson_really_inline value &value::operator=(value &&other) noexcept {
-  iter = other.iter;
+  iter = std::forward<value>(other).iter;
   json = other.json;
   other.json = nullptr;
   return *this;
 }
-simdjson_really_inline value::value(json_iterator *_iter, const uint8_t *_json) noexcept : iter{_iter}, json{_json} {
-  SIMDJSON_ASSUME(iter != nullptr);
+simdjson_really_inline value::value(json_iterator_ref && _iter, const uint8_t *_json) noexcept
+  : iter{std::forward<json_iterator_ref>(_iter)},
+    json{_json}
+{
+  SIMDJSON_ASSUME(iter.is_alive());
   SIMDJSON_ASSUME(json != nullptr);
 }
 
@@ -32,8 +38,8 @@ simdjson_really_inline value::~value() noexcept {
   }
 }
 
-simdjson_really_inline value value::start(json_iterator *iter) noexcept {
-  return { iter, iter->advance() };
+simdjson_really_inline value value::start(json_iterator_ref &&iter) noexcept {
+  return { std::forward<json_iterator_ref>(iter), iter->advance() };
 }
 
 simdjson_really_inline simdjson_result<array> value::get_array() noexcept {
@@ -42,7 +48,7 @@ simdjson_really_inline simdjson_result<array> value::get_array() noexcept {
     return INCORRECT_TYPE;
   }
   json = nullptr; // Communicate that we have handled the value PERF TODO elided, right?
-  return array::started(iter);
+  return array::started(std::move(iter));
 }
 simdjson_really_inline simdjson_result<object> value::get_object() noexcept {
   if (*json != '{') {
@@ -50,7 +56,7 @@ simdjson_really_inline simdjson_result<object> value::get_object() noexcept {
     return INCORRECT_TYPE;
   }
   json = nullptr; // Communicate that we have handled the value PERF TODO elided, right?
-  return object::started(iter);
+  return object::started(std::move(iter));
 }
 simdjson_really_inline simdjson_result<raw_json_string> value::get_raw_json_string() noexcept {
   log_value("string");
