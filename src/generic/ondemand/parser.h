@@ -31,8 +31,8 @@ private:
   uint8_t *current_string_buf_loc{};
 
   friend class raw_json_string;
-  friend class document;
   friend class value;
+  friend class json_iterator;
 };
 
 } // namespace ondemand

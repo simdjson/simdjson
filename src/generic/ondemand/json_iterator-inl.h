@@ -3,13 +3,31 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
 simdjson_really_inline json_iterator::json_iterator() noexcept = default;
-simdjson_really_inline json_iterator::json_iterator(json_iterator &&other) noexcept = default;
-simdjson_really_inline json_iterator &json_iterator::operator=(json_iterator &&other) noexcept = default;
-simdjson_really_inline json_iterator::json_iterator(const uint8_t *_buf, uint32_t *_index) noexcept
-  : token_iterator(_buf, _index)
+simdjson_really_inline json_iterator::json_iterator(json_iterator &&other) noexcept
+  : token_iterator(std::forward<token_iterator>(other)),
+    parser{other.parser}
 {
+  other.parser = nullptr;
 }
-
+simdjson_really_inline json_iterator &json_iterator::operator=(json_iterator &&other) noexcept {
+  buf = other.buf;
+  index = other.index;
+  parser = other.parser;
+  other.parser = nullptr;
+  return *this;
+}
+simdjson_really_inline json_iterator::json_iterator(ondemand::parser *_parser) noexcept
+  : token_iterator(_parser->dom_parser.buf, _parser->dom_parser.structural_indexes.get()), parser{_parser}
+{
+  // Release the string buf so it can be reused by the next document
+  logger::log_headers();
+  parser->current_string_buf_loc = parser->string_buf.get();
+}
+simdjson_really_inline json_iterator::~json_iterator() noexcept {
+  if (parser) {
+    parser->current_string_buf_loc = nullptr;
+  }
+}
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_object() noexcept {
   if (*advance() != '{') { logger::log_error(*this, "Not an object"); return INCORRECT_TYPE; }
@@ -230,6 +248,18 @@ simdjson_really_inline bool json_iterator::skip_container() noexcept {
         break;
     }
   };
+}
+
+simdjson_really_inline bool json_iterator::at_start() const noexcept {
+  return index == parser->dom_parser.structural_indexes.get();
+}
+
+simdjson_really_inline bool json_iterator::at_eof() const noexcept {
+  return index == &parser->dom_parser.structural_indexes[parser->dom_parser.n_structural_indexes];
+}
+
+simdjson_really_inline bool json_iterator::is_alive() const noexcept {
+  return parser;
 }
 
 } // namespace ondemand
