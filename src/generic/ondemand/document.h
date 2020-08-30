@@ -52,10 +52,8 @@ public:
   simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept;
   simdjson_really_inline simdjson_result<value> operator[](const char *key) & noexcept;
 
-  simdjson_really_inline json_iterator &iterate() & noexcept;
-
 protected:
-  simdjson_really_inline document(ondemand::parser *parser) noexcept;
+  simdjson_really_inline document(ondemand::json_iterator &&iter) noexcept;
   simdjson_really_inline const uint8_t *text(uint32_t idx) const noexcept;
 
   json_iterator iter{}; ///< Current position in the document
@@ -81,7 +79,7 @@ template<>
 struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> : public internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::document> {
 public:
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::document &&value) noexcept; ///< @private
-  simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::document &&value, error_code error) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
 
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> get_array() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> get_object() & noexcept;
@@ -108,8 +106,6 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> end() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) & noexcept;
-
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_iterator&> iterate() noexcept;
 
 protected:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> as_value() noexcept;
