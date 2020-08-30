@@ -7,13 +7,13 @@ simdjson_really_inline value::value(value &&other) noexcept {
   *this = std::forward<value>(other);
 };
 simdjson_really_inline value &value::operator=(value &&other) noexcept {
-  doc = other.doc;
+  iter = other.iter;
   json = other.json;
   other.json = nullptr;
   return *this;
 }
-simdjson_really_inline value::value(document *_doc, const uint8_t *_json) noexcept : doc{_doc}, json{_json} {
-  SIMDJSON_ASSUME(doc != nullptr);
+simdjson_really_inline value::value(json_iterator *_iter, const uint8_t *_json) noexcept : iter{_iter}, json{_json} {
+  SIMDJSON_ASSUME(iter != nullptr);
   SIMDJSON_ASSUME(json != nullptr);
 }
 
@@ -24,16 +24,16 @@ simdjson_really_inline value::~value() noexcept {
   // gets bumped on the error path unless that's costing us something important.
   if (json) {
     if (*json == '[' || *json == '{') {
-      logger::log_start_value(doc->iter, "unused");
-      doc->iter.skip_container();
+      logger::log_start_value(*iter, "unused");
+      iter->skip_container();
     } else {
-      logger::log_value(doc->iter, "unused");
+      logger::log_value(*iter, "unused");
     }
   }
 }
 
-simdjson_really_inline value value::start(document *doc) noexcept {
-  return { doc, doc->iter.advance() };
+simdjson_really_inline value value::start(json_iterator *iter) noexcept {
+  return { iter, iter->advance() };
 }
 
 simdjson_really_inline simdjson_result<array> value::get_array() noexcept {
@@ -42,7 +42,7 @@ simdjson_really_inline simdjson_result<array> value::get_array() noexcept {
     return INCORRECT_TYPE;
   }
   json = nullptr; // Communicate that we have handled the value PERF TODO elided, right?
-  return array::started(doc);
+  return array::started(iter);
 }
 simdjson_really_inline simdjson_result<object> value::get_object() noexcept {
   if (*json != '{') {
@@ -50,7 +50,7 @@ simdjson_really_inline simdjson_result<object> value::get_object() noexcept {
     return INCORRECT_TYPE;
   }
   json = nullptr; // Communicate that we have handled the value PERF TODO elided, right?
-  return object::started(doc);
+  return object::started(iter);
 }
 simdjson_really_inline simdjson_result<raw_json_string> value::get_raw_json_string() noexcept {
   log_value("string");
@@ -63,7 +63,7 @@ simdjson_really_inline simdjson_result<std::string_view> value::get_string() noe
   error_code error;
   raw_json_string str;
   if ((error = get_raw_json_string().get(str))) { return error; }
-  return str.unescape(doc->parser->current_string_buf_loc);
+  return str.unescape(iter->parser->current_string_buf_loc);
 }
 simdjson_really_inline simdjson_result<double> value::get_double() noexcept {
   log_value("double");
@@ -128,10 +128,10 @@ simdjson_really_inline simdjson_result<value> value::operator[](const char *key)
 }
 
 simdjson_really_inline void value::log_value(const char *type) const noexcept {
-  logger::log_value(doc->iter, type);
+  logger::log_value(*iter, type);
 }
 simdjson_really_inline void value::log_error(const char *message) const noexcept {
-  logger::log_error(doc->iter, message);
+  logger::log_error(*iter, message);
 }
 
 } // namespace ondemand

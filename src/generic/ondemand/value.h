@@ -59,7 +59,7 @@ protected:
    *
    * Use value::read() instead of this.
    */
-  simdjson_really_inline value(document *doc, const uint8_t *json) noexcept;
+  simdjson_really_inline value(json_iterator *iter, const uint8_t *json) noexcept;
 
   /**
    * Read a value.
@@ -68,12 +68,12 @@ protected:
    *
    * @param doc The document containing the value. Iterator must be at the value start position.
    */
-  static simdjson_really_inline value start(document *doc) noexcept;
+  static simdjson_really_inline value start(json_iterator *iter) noexcept;
 
   simdjson_really_inline void log_value(const char *type) const noexcept;
   simdjson_really_inline void log_error(const char *message) const noexcept;
 
-  document *doc{}; // For the string buffer (if we need it)
+  json_iterator *iter{}; // For the string buffer (if we need it)
   const uint8_t *json{}; // The JSON text of the value
 
   friend class document;

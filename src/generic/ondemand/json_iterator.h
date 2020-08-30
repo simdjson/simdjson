@@ -14,6 +14,7 @@ public:
   simdjson_really_inline json_iterator &operator=(json_iterator &&other) noexcept;
   simdjson_really_inline json_iterator(const json_iterator &other) noexcept = delete;
   simdjson_really_inline json_iterator &operator=(const json_iterator &other) noexcept = delete;
+  simdjson_really_inline ~json_iterator() noexcept;
 
   /**
    * Check for an opening { and start an object iteration.
@@ -117,8 +118,24 @@ public:
    */
   simdjson_really_inline bool skip_container() noexcept;
 
+  /**
+   * Tell whether the iterator is still at the start
+   */
+  simdjson_really_inline bool at_start() const noexcept;
+
+  /**
+   * Tell whether the iterator has reached EOF
+   */
+  simdjson_really_inline bool at_eof() const noexcept;
+
+  /**
+   * Tell whether the iterator is live (has not been moved).
+   */
+  simdjson_really_inline bool is_alive() const noexcept;
 protected:
-  simdjson_really_inline json_iterator(const uint8_t *buf, uint32_t *index) noexcept;
+  ondemand::parser *parser{};
+
+  simdjson_really_inline json_iterator(ondemand::parser *parser) noexcept;
   template<int N>
   SIMDJSON_WARN_UNUSED simdjson_really_inline bool advance_to_buffer(uint8_t (&buf)[N]) noexcept;
 
