@@ -2,51 +2,33 @@ namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
-simdjson_really_inline document::document(document &&other) noexcept :
-  iter{std::forward<json_iterator>(other.iter)},
-  parser{other.parser}
-{
-  if (!at_start()) { logger::log_error(iter, "Cannot move document after it has been used"); abort(); }
-  other.parser = nullptr;
-}
-simdjson_really_inline document &document::operator=(document &&other) noexcept {
-  iter = std::forward<json_iterator>(other.iter);
-  parser = other.parser;
-  if (!at_start()) { logger::log_error(iter, "Cannot move document after it has been used"); abort(); }
-  other.parser = nullptr;
-  return *this;
-}
-
+simdjson_really_inline document::document(document &&other) noexcept = default;
+simdjson_really_inline document &document::operator=(document &&other) noexcept = default;
 simdjson_really_inline document::document(ondemand::parser *_parser) noexcept
-  : iter(_parser->dom_parser.buf, _parser->dom_parser.structural_indexes.get()), parser{_parser}
+  : iter(_parser)
 {
-  logger::log_headers();
-  parser->current_string_buf_loc = parser->string_buf.get();
   logger::log_start_value(iter, "document");
 }
 simdjson_really_inline document::~document() noexcept {
-  // Release the string buf so it can be reused by the next document
-  if (parser) {
+  if (iter.is_alive()) {
     logger::log_end_value(iter, "document");
-    parser->current_string_buf_loc = nullptr;
   }
 }
 
 simdjson_really_inline value document::as_value() noexcept {
-  if (!at_start()) {
+  if (!iter.at_start()) {
     logger::log_error(iter, "Document value can only be used once! ondemand::document is a forward-only input iterator.");
     abort(); // TODO is there anything softer we can do? I'd rather not make this a simdjson_result just for user error.
   }
-  return value::start(this);
+  return value::start(&iter);
 }
 simdjson_really_inline json_iterator &document::iterate() & noexcept {
-  if (!at_start()) {
+  if (!iter.at_start()) {
     logger::log_error(iter, "Document value can only be used once! ondemand::document is a forward-only input iterator.");
     abort(); // TODO is there anything softer we can do? I'd rather not make this a simdjson_result just for user error.
   }
   return iter;
 }
-simdjson_really_inline bool document::at_start() const noexcept { return iter.index == parser->dom_parser.structural_indexes.get(); }
 
 simdjson_really_inline simdjson_result<array> document::get_array() & noexcept { return as_value().get_array(); }
 simdjson_really_inline simdjson_result<object> document::get_object() & noexcept { return as_value().get_object(); }

@@ -58,11 +58,9 @@ protected:
   simdjson_really_inline document(ondemand::parser *parser) noexcept;
   simdjson_really_inline const uint8_t *text(uint32_t idx) const noexcept;
 
-  json_iterator iter; ///< Current position in the document
-  ondemand::parser *parser;
+  json_iterator iter{}; ///< Current position in the document
 
   simdjson_really_inline value as_value() noexcept;
-  simdjson_really_inline bool at_start() const noexcept;
 
   friend struct simdjson_result<document>;
   friend class value;
