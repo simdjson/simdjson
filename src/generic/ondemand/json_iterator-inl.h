@@ -5,7 +5,8 @@ namespace ondemand {
 simdjson_really_inline json_iterator::json_iterator() noexcept = default;
 simdjson_really_inline json_iterator::json_iterator(json_iterator &&other) noexcept
   : token_iterator(std::forward<token_iterator>(other)),
-    parser{other.parser}
+    parser{other.parser},
+    current_string_buf_loc{other.current_string_buf_loc}
 {
   other.parser = nullptr;
 }
@@ -13,6 +14,7 @@ simdjson_really_inline json_iterator &json_iterator::operator=(json_iterator &&o
   buf = other.buf;
   index = other.index;
   parser = other.parser;
+  current_string_buf_loc = other.current_string_buf_loc;
   other.parser = nullptr;
   return *this;
 }
@@ -21,13 +23,9 @@ simdjson_really_inline json_iterator::json_iterator(ondemand::parser *_parser) n
 {
   // Release the string buf so it can be reused by the next document
   logger::log_headers();
-  parser->current_string_buf_loc = parser->string_buf.get();
+  current_string_buf_loc = parser->string_buf.get();
 }
-simdjson_really_inline json_iterator::~json_iterator() noexcept {
-  if (parser) {
-    parser->current_string_buf_loc = nullptr;
-  }
-}
+simdjson_really_inline json_iterator::~json_iterator() noexcept = default;
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_object() noexcept {
   if (*advance() != '{') { logger::log_error(*this, "Not an object"); return INCORRECT_TYPE; }

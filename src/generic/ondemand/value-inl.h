@@ -63,7 +63,7 @@ simdjson_really_inline simdjson_result<std::string_view> value::get_string() noe
   error_code error;
   raw_json_string str;
   if ((error = get_raw_json_string().get(str))) { return error; }
-  return str.unescape(iter->parser->current_string_buf_loc);
+  return str.unescape(iter->current_string_buf_loc);
 }
 simdjson_really_inline simdjson_result<double> value::get_double() noexcept {
   log_value("double");
