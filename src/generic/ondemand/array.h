@@ -31,9 +31,9 @@ public:
 
     // Reads key and value, yielding them to the user.
     simdjson_really_inline simdjson_result<value> operator*() noexcept; // MUST ONLY BE CALLED ONCE PER ITERATION.
-    // Assumes it's being compared with the end. true if depth < doc->iter.depth.
+    // Assumes it's being compared with the end. true if depth < iter->depth.
     simdjson_really_inline bool operator==(const array::iterator &) noexcept;
-    // Assumes it's being compared with the end. true if depth >= doc->iter.depth.
+    // Assumes it's being compared with the end. true if depth >= iter->depth.
     simdjson_really_inline bool operator!=(const array::iterator &) noexcept;
     // Checks for ']' and ','
     simdjson_really_inline array::iterator &operator++() noexcept;
@@ -53,13 +53,13 @@ protected:
    * @param doc The document containing the array.
    * @error INCORRECT_TYPE if the iterator is not at [.
    */
-  static simdjson_really_inline simdjson_result<array> start(document *doc) noexcept;
+  static simdjson_really_inline simdjson_result<array> start(json_iterator *iter) noexcept;
   /**
    * Begin array iteration.
    *
    * @param doc The document containing the array. The iterator must be just after the opening `[`.
    */
-  static simdjson_really_inline array started(document *doc) noexcept;
+  static simdjson_really_inline array started(json_iterator *iter) noexcept;
 
   /**
    * Report the current error and set finished so it won't be reported again.
@@ -69,11 +69,11 @@ protected:
   /**
    * Internal array creation. Call array::start() or array::started() instead of this.
    *
-   * @param doc The document containing the array. doc->iter.depth must already be incremented to
+   * @param doc The document containing the array. iter->depth must already be incremented to
    *            reflect the array's depth. The iterator must be just after the opening `[`.
    * @param has_value Whether the array has a value (false means empty array).
    */
-  simdjson_really_inline array(document *_doc, bool has_value) noexcept;
+  simdjson_really_inline array(json_iterator *iter, bool has_value) noexcept;
 
   /**
    * Document containing this array.
@@ -81,7 +81,7 @@ protected:
    * PERF NOTE: expected to be elided in favor of the parent document: this is set when the array
    * is first used, and never changes afterwards.
    */
-  document *doc{};
+  json_iterator *iter{};
   /**
    * Whether we have anything to yield.
    *
@@ -136,9 +136,9 @@ public:
 
   // Reads key and value, yielding them to the user.
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator*() noexcept; // MUST ONLY BE CALLED ONCE PER ITERATION.
-  // Assumes it's being compared with the end. true if depth < doc->iter.depth.
+  // Assumes it's being compared with the end. true if depth < iter->depth.
   simdjson_really_inline bool operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &) noexcept;
-  // Assumes it's being compared with the end. true if depth >= doc->iter.depth.
+  // Assumes it's being compared with the end. true if depth >= iter->depth.
   simdjson_really_inline bool operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &) noexcept;
   // Checks for ']' and ','
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &operator++() noexcept;

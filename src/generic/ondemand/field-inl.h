@@ -12,15 +12,15 @@ simdjson_really_inline field::field(raw_json_string key, ondemand::value &&value
 {
 }
 
-simdjson_really_inline simdjson_result<field> field::start(document *doc) noexcept {
+simdjson_really_inline simdjson_result<field> field::start(json_iterator *iter) noexcept {
   raw_json_string key;
-  SIMDJSON_TRY( doc->iter.field_key().get(key) );
-  SIMDJSON_TRY( doc->iter.field_value() );
-  return field::start(doc, key);
+  SIMDJSON_TRY( iter->field_key().get(key) );
+  SIMDJSON_TRY( iter->field_value() );
+  return field::start(iter, key);
 }
 
-simdjson_really_inline simdjson_result<field> field::start(document *doc, raw_json_string key) noexcept {
-    return field(key, value::start(doc));
+simdjson_really_inline simdjson_result<field> field::start(json_iterator *iter, raw_json_string key) noexcept {
+    return field(key, value::start(iter));
 }
 
 simdjson_really_inline raw_json_string field::key() const noexcept {

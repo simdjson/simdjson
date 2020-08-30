@@ -295,7 +295,6 @@ simdjson_really_inline void sax_tweet_reader_visitor::field_lookup::neg(const ch
   auto index = hash(key, depth);
   if (entries[index].key) {
     fprintf(stderr, "%s (depth %d) conflicts with %s (depth %d) !\n", key, depth, entries[index].key, int(entries[index].container));
-    assert(false);
   }
 }
 
