@@ -51,8 +51,8 @@ protected:
    * @param doc The document containing the object. The iterator must be just after the opening `{`.
    * @param error If this is not SUCCESS, creates an error chained object.
    */
-  static simdjson_really_inline simdjson_result<object> start(json_iterator *iter) noexcept;
-  static simdjson_really_inline object started(json_iterator *iter) noexcept;
+  static simdjson_really_inline simdjson_result<object> start(json_iterator_ref &&iter) noexcept;
+  static simdjson_really_inline object started(json_iterator_ref &&iter) noexcept;
 
   /**
    * Internal object creation. Call object::begin(doc) instead of this.
@@ -62,7 +62,7 @@ protected:
    * @param is_empty Whether this container is empty or not.
    * @param error The error to report. If the error is not SUCCESS, this is an error chained object.
    */
-  simdjson_really_inline object(json_iterator *_iter, bool is_empty) noexcept;
+  simdjson_really_inline object(json_iterator_ref &&_iter, bool is_empty) noexcept;
 
   simdjson_really_inline error_code report_error() noexcept;
 
@@ -72,7 +72,7 @@ protected:
    * PERF NOTE: expected to be elided in favor of the parent document: this is set when the object
    * is first used, and never changes afterwards.
    */
-  json_iterator *iter{};
+  json_iterator_ref iter{};
   /**
    * Whether we have anything to yield.
    *

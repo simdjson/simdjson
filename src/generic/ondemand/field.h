@@ -19,8 +19,8 @@ public:
   simdjson_really_inline ondemand::value &value() noexcept;
 protected:
   simdjson_really_inline field(raw_json_string key, ondemand::value &&value) noexcept;
-  static simdjson_really_inline simdjson_result<field> start(json_iterator *iter) noexcept;
-  static simdjson_really_inline simdjson_result<field> start(json_iterator *iter, raw_json_string key) noexcept;
+  static simdjson_really_inline simdjson_result<field> start(json_iterator_ref &&iter) noexcept;
+  static simdjson_really_inline simdjson_result<field> start(json_iterator_ref &&iter, raw_json_string key) noexcept;
   friend struct simdjson_result<field>;
   friend class object;
 };
