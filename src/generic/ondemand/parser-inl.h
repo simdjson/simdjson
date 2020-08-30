@@ -18,19 +18,19 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parser::allocate(size_t n
   return SUCCESS;
 }
 
-SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<document> parser::parse(const padded_string &buf) noexcept {
+SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<document> parser::iterate(const padded_string &buf) noexcept {
+  return document(iterate_raw(buf));
+}
+
+SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<json_iterator> parser::iterate_raw(const padded_string &buf) noexcept {
   // Allocate if needed
-  error_code error;
   if (_capacity < buf.size()) {
-    error = allocate(buf.size(), _max_depth);
-    if (error) {
-      return { this, error };
-    }
+    SIMDJSON_TRY( allocate(buf.size(), _max_depth) );
   }
 
   // Run stage 1.
-  error = dom_parser.stage1((const uint8_t *)buf.data(), buf.size(), false);  
-  return { this, error };
+  SIMDJSON_TRY( dom_parser.stage1((const uint8_t *)buf.data(), buf.size(), false) );  
+  return json_iterator(this);
 }
 
 } // namespace ondemand
