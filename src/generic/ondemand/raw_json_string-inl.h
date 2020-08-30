@@ -15,12 +15,8 @@ simdjson_really_inline SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> ra
   return result;
 }
 
-simdjson_really_inline SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> raw_json_string::unescape(parser &parser) const noexcept {
-  uint8_t *end = stage2::stringparsing::parse_string(buf, parser.current_string_buf_loc);
-  if (!end) { return STRING_ERROR; }
-  std::string_view result((const char *)parser.current_string_buf_loc, end-parser.current_string_buf_loc);
-  parser.current_string_buf_loc = end;
-  return result;
+simdjson_really_inline SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> raw_json_string::unescape(json_iterator &iter) const noexcept {
+  return unescape(iter.current_string_buf_loc);
 }
 
 SIMDJSON_UNUSED simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view b) noexcept {
