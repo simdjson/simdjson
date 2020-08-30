@@ -134,6 +134,7 @@ public:
   simdjson_really_inline bool is_alive() const noexcept;
 protected:
   ondemand::parser *parser{};
+  uint8_t *current_string_buf_loc{};
 
   simdjson_really_inline json_iterator(ondemand::parser *parser) noexcept;
   template<int N>
@@ -143,6 +144,7 @@ protected:
   friend class object;
   friend class array;
   friend class value;
+  friend class raw_json_string;
   friend simdjson_really_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
 };
 
