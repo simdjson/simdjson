@@ -44,18 +44,18 @@ namespace ondemand {
 //
 
 simdjson_really_inline object::object() noexcept = default;
-simdjson_really_inline object::object(json_iterator *_iter, bool _has_value) noexcept
-  : iter{_iter}, has_next{_has_value}, at_start{true}, error{SUCCESS}
+simdjson_really_inline object::object(json_iterator_ref &&_iter, bool _has_value) noexcept
+  : iter{std::forward<json_iterator_ref>(_iter)}, has_next{_has_value}, at_start{true}, error{SUCCESS}
 {
 }
 simdjson_really_inline object::object(object &&other) noexcept
-  : iter{other.iter}, has_next{other.has_next}, at_start{other.at_start}, error{other.error}
+  : iter{std::forward<object>(other).iter}, has_next{other.has_next}, at_start{other.at_start}, error{other.error}
 {
   // Terminate the other iterator
   other.has_next = false;
 }
 simdjson_really_inline object &object::operator=(object &&other) noexcept {
-  iter = other.iter;
+  iter = std::forward<object>(other).iter;
   has_next = other.has_next;
   at_start = other.at_start;
   error = other.error;
@@ -91,7 +91,7 @@ simdjson_really_inline simdjson_result<value> object::operator[](const std::stri
     // Check if it matches
     if (actual_key == key) {
       logger::log_event(*iter, "match", key, -2);
-      return value::start(iter);
+      return value::start(iter.borrow());
     }
     logger::log_event(*iter, "no match", key, -2);
     iter->skip(); // Skip the value entirely
@@ -102,13 +102,13 @@ simdjson_really_inline simdjson_result<value> object::operator[](const std::stri
   return NO_SUCH_FIELD;
 }
 
-simdjson_really_inline simdjson_result<object> object::start(json_iterator *iter) noexcept {
+simdjson_really_inline simdjson_result<object> object::start(json_iterator_ref &&iter) noexcept {
   bool has_value;
   SIMDJSON_TRY( iter->start_object().get(has_value) );
-  return object(iter, has_value);
+  return object(std::forward<json_iterator_ref>(iter), has_value);
 }
-simdjson_really_inline object object::started(json_iterator *iter) noexcept {
-  return object(iter, iter->started_object());
+simdjson_really_inline object object::started(json_iterator_ref &&iter) noexcept {
+  return object(std::forward<json_iterator_ref>(iter), iter->started_object());
 }
 simdjson_really_inline object::iterator object::begin() noexcept {
   return *this;
@@ -135,7 +135,7 @@ simdjson_really_inline object::iterator &object::iterator::operator=(const objec
 simdjson_really_inline simdjson_result<field> object::iterator::operator*() noexcept {
   if (o->error) { return o->report_error(); }
   if (o->at_start) { o->at_start = false; }
-  return field::start(o->iter);
+  return field::start(o->iter.borrow());
 }
 simdjson_really_inline bool object::iterator::operator==(const object::iterator &) noexcept {
   return !o->has_next;

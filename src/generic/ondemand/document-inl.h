@@ -4,7 +4,7 @@ namespace ondemand {
 
 simdjson_really_inline document::document(document &&other) noexcept = default;
 simdjson_really_inline document &document::operator=(document &&other) noexcept = default;
-simdjson_really_inline document::document(ondemand::json_iterator && _iter) noexcept
+simdjson_really_inline document::document(ondemand::json_iterator &&_iter) noexcept
   : iter(std::forward<json_iterator>(_iter))
 {
   logger::log_start_value(iter, "document");
@@ -20,7 +20,7 @@ simdjson_really_inline value document::as_value() noexcept {
     logger::log_error(iter, "Document value can only be used once! ondemand::document is a forward-only input iterator.");
     abort(); // TODO is there anything softer we can do? I'd rather not make this a simdjson_result just for user error.
   }
-  return value::start(&iter);
+  return value::start(iter.borrow());
 }
 
 simdjson_really_inline simdjson_result<array> document::get_array() & noexcept { return as_value().get_array(); }

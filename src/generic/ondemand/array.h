@@ -53,13 +53,13 @@ protected:
    * @param doc The document containing the array.
    * @error INCORRECT_TYPE if the iterator is not at [.
    */
-  static simdjson_really_inline simdjson_result<array> start(json_iterator *iter) noexcept;
+  static simdjson_really_inline simdjson_result<array> start(json_iterator_ref &&iter) noexcept;
   /**
    * Begin array iteration.
    *
    * @param doc The document containing the array. The iterator must be just after the opening `[`.
    */
-  static simdjson_really_inline array started(json_iterator *iter) noexcept;
+  static simdjson_really_inline array started(json_iterator_ref &&iter) noexcept;
 
   /**
    * Report the current error and set finished so it won't be reported again.
@@ -73,7 +73,7 @@ protected:
    *            reflect the array's depth. The iterator must be just after the opening `[`.
    * @param has_value Whether the array has a value (false means empty array).
    */
-  simdjson_really_inline array(json_iterator *iter, bool has_value) noexcept;
+  simdjson_really_inline array(json_iterator_ref &&iter, bool has_value) noexcept;
 
   /**
    * Document containing this array.
@@ -81,7 +81,7 @@ protected:
    * PERF NOTE: expected to be elided in favor of the parent document: this is set when the array
    * is first used, and never changes afterwards.
    */
-  json_iterator *iter{};
+  json_iterator_ref iter{};
   /**
    * Whether we have anything to yield.
    *
