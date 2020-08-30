@@ -28,10 +28,7 @@ private:
   size_t _capacity{0};
   size_t _max_depth{0};
   std::unique_ptr<uint8_t[]> string_buf{};
-  uint8_t *current_string_buf_loc{};
 
-  friend class raw_json_string;
-  friend class value;
   friend class json_iterator;
 };
 
