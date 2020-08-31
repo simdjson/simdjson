@@ -282,7 +282,10 @@ simdjson_really_inline json_iterator_ref::json_iterator_ref(json_iterator *_iter
   : iter{_iter}
 {
 }
-simdjson_really_inline json_iterator_ref::~json_iterator_ref() noexcept = default;
+simdjson_really_inline json_iterator_ref::~json_iterator_ref() noexcept {
+  // The caller MUST consume their value and release the iterator before they die
+  SIMDJSON_ASSUME(!iter);
+}
 
 simdjson_really_inline json_iterator_ref json_iterator_ref::borrow() noexcept {
   return json_iterator_ref(iter);
