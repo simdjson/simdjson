@@ -287,14 +287,21 @@ simdjson_really_inline json_iterator_ref::~json_iterator_ref() noexcept = defaul
 simdjson_really_inline json_iterator_ref json_iterator_ref::borrow() noexcept {
   return json_iterator_ref(iter);
 }
+simdjson_really_inline void json_iterator_ref::release() noexcept {
+  SIMDJSON_ASSUME(is_alive());
+  iter = nullptr;
+}
 
 simdjson_really_inline json_iterator *json_iterator_ref::operator->() noexcept {
+  SIMDJSON_ASSUME(is_alive());
   return iter;
 }
 simdjson_really_inline json_iterator &json_iterator_ref::operator*() noexcept {
+  SIMDJSON_ASSUME(is_alive());
   return *iter;
 }
 simdjson_really_inline const json_iterator &json_iterator_ref::operator*() const noexcept {
+  SIMDJSON_ASSUME(is_alive());
   return *iter;
 }
 

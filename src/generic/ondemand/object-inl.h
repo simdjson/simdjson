@@ -65,9 +65,10 @@ simdjson_really_inline object &object::operator=(object &&other) noexcept {
 }
 
 simdjson_really_inline object::~object() noexcept {
-  if (!error && has_next) {
+  if (!error && has_next && iter.is_alive()) {
     logger::log_event(*iter, "unfinished", "object");
     iter->skip_container();
+    iter.release();
   }
 }
 

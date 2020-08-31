@@ -61,9 +61,10 @@ simdjson_really_inline array &array::operator=(array &&other) noexcept {
 }
 
 simdjson_really_inline array::~array() noexcept {
-  if (!error && has_next) {
+  if (!error && has_next && iter.is_alive()) {
     logger::log_event(*iter, "unfinished", "array");
     iter->skip_container();
+    iter.release();
   }
 }
 
