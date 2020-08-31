@@ -44,7 +44,9 @@ simdjson_really_inline document::operator raw_json_string() & noexcept(false) { 
 simdjson_really_inline document::operator bool() noexcept(false) { return as_value(); }
 #endif
 
-simdjson_really_inline simdjson_result<array::iterator> document::begin() & noexcept { return as_value().begin(); }
+simdjson_really_inline simdjson_result<array::iterator> document::begin() & noexcept {
+  return as_value().get_array().begin();
+}
 simdjson_really_inline simdjson_result<array::iterator> document::end() & noexcept { return {}; }
 simdjson_really_inline simdjson_result<value> document::operator[](std::string_view key) & noexcept { return as_value()[key]; }
 
