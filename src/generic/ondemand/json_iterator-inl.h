@@ -277,14 +277,16 @@ simdjson_really_inline json_iterator_ref json_iterator::borrow() noexcept {
 //
 simdjson_really_inline json_iterator_ref::json_iterator_ref() noexcept = default;
 simdjson_really_inline json_iterator_ref::json_iterator_ref(json_iterator_ref &&other) noexcept
-  : iter{std::exchange(other.iter, nullptr)},
+  : iter{other.iter},
     lease_depth{other.lease_depth}
 {
+  other.iter = nullptr;
 }
 simdjson_really_inline json_iterator_ref &json_iterator_ref::operator=(json_iterator_ref &&other) noexcept {
   SIMDJSON_ASSUME(!is_active());
-  iter = std::exchange(other.iter, nullptr);
+  iter = other.iter;
   lease_depth = other.lease_depth;
+  other.iter = nullptr;
   return *this;
 }
 simdjson_really_inline json_iterator_ref::json_iterator_ref(json_iterator *_iter, uint32_t _lease_depth) noexcept
