@@ -3,18 +3,8 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
 simdjson_really_inline value::value() noexcept = default;
-simdjson_really_inline value::value(value &&other) noexcept
-  : iter{std::forward<value>(other).iter},
-    json{other.json}
-{
-  other.json = nullptr;
-};
-simdjson_really_inline value &value::operator=(value &&other) noexcept {
-  iter = std::forward<value>(other).iter;
-  json = other.json;
-  other.json = nullptr;
-  return *this;
-}
+simdjson_really_inline value::value(value &&other) noexcept = default;
+simdjson_really_inline value &value::operator=(value &&other) noexcept = default;
 simdjson_really_inline value::value(json_iterator_ref && _iter, const uint8_t *_json) noexcept
   : iter{std::forward<json_iterator_ref>(_iter)},
     json{_json}
@@ -28,13 +18,14 @@ simdjson_really_inline value::~value() noexcept {
   // depth so that the array/object iteration routines will work correctly.
   // PERF TODO this better be elided entirely when people actually use the value. Don't care if it
   // gets bumped on the error path unless that's costing us something important.
-  if (json) {
+  if (iter.is_alive()) {
     if (*json == '[' || *json == '{') {
       logger::log_start_value(*iter, "unused");
       iter->skip_container();
     } else {
       logger::log_value(*iter, "unused");
     }
+    iter.release();
   }
 }
 
@@ -47,7 +38,6 @@ simdjson_really_inline simdjson_result<array> value::get_array() noexcept {
     log_error("not an array");
     return INCORRECT_TYPE;
   }
-  json = nullptr; // Communicate that we have handled the value PERF TODO elided, right?
   return array::started(std::move(iter));
 }
 simdjson_really_inline simdjson_result<object> value::get_object() noexcept {
@@ -55,28 +45,28 @@ simdjson_really_inline simdjson_result<object> value::get_object() noexcept {
     log_error("not an object");
     return INCORRECT_TYPE;
   }
-  json = nullptr; // Communicate that we have handled the value PERF TODO elided, right?
   return object::started(std::move(iter));
 }
 simdjson_really_inline simdjson_result<raw_json_string> value::get_raw_json_string() noexcept {
   log_value("string");
   if (*json != '"') { log_error("not a string"); return INCORRECT_TYPE; }
   auto result = raw_json_string{&json[1]};
-  json = nullptr; // Communicate that we have handled the value PERF TODO elided, right?
+  iter.release(); // Communicate that we have handled the value PERF TODO elided, right?
   return result;
 }
 simdjson_really_inline simdjson_result<std::string_view> value::get_string() noexcept {
-  error_code error;
-  raw_json_string str;
-  if ((error = get_raw_json_string().get(str))) { return error; }
-  return str.unescape(iter->current_string_buf_loc);
+  log_value("string");
+  if (*json != '"') { log_error("not a string"); return INCORRECT_TYPE; }
+  auto result = raw_json_string{&json[1]}.unescape(iter->current_string_buf_loc);
+  iter.release(); // Communicate that we have handled the value PERF TODO elided, right?
+  return result;
 }
 simdjson_really_inline simdjson_result<double> value::get_double() noexcept {
   log_value("double");
   double result;
   error_code error;
   if ((error = stage2::numberparsing::parse_double(json).get(result))) { log_error("not a double"); return error; }
-  json = nullptr; // Communicate that we have handled the value PERF TODO elided, right?
+  iter.release(); // Communicate that we have handled the value PERF TODO elided, right?
   return result;
 }
 simdjson_really_inline simdjson_result<uint64_t> value::get_uint64() noexcept {
@@ -84,7 +74,7 @@ simdjson_really_inline simdjson_result<uint64_t> value::get_uint64() noexcept {
   uint64_t result;
   error_code error;
   if ((error = stage2::numberparsing::parse_unsigned(json).get(result))) { log_error("not a unsigned integer"); return error; }
-  json = nullptr; // Communicate that we have handled the value PERF TODO elided, right?
+  iter.release(); // Communicate that we have handled the value PERF TODO elided, right?
   return result;
 }
 simdjson_really_inline simdjson_result<int64_t> value::get_int64() noexcept {
@@ -92,7 +82,7 @@ simdjson_really_inline simdjson_result<int64_t> value::get_int64() noexcept {
   int64_t result;
   error_code error;
   if ((error = stage2::numberparsing::parse_integer(json).get(result))) { log_error("not an integer"); return error; }
-  json = nullptr; // Communicate that we have handled the value PERF TODO elided, right?
+  iter.release(); // Communicate that we have handled the value PERF TODO elided, right?
   return result;
 }
 simdjson_really_inline simdjson_result<bool> value::get_bool() noexcept {
@@ -101,13 +91,13 @@ simdjson_really_inline simdjson_result<bool> value::get_bool() noexcept {
   auto not_false = stage2::atomparsing::str4ncmp(json, "fals") | (json[4] ^ 'e');
   bool error = (not_true && not_false) || stage2::is_not_structural_or_whitespace(json[not_true ? 5 : 4]);
   if (error) { log_error("not a boolean"); return INCORRECT_TYPE; }
-  json = nullptr; // Communicate that we have handled the value PERF TODO elided, right?
+  iter.release(); // Communicate that we have handled the value PERF TODO elided, right?
   return simdjson_result<bool>(!not_true, error ? INCORRECT_TYPE : SUCCESS);
 }
 simdjson_really_inline bool value::is_null() noexcept {
   log_value("null");
   if (stage2::atomparsing::str4ncmp(json, "null")) { return false; }
-  json = nullptr; // Communicate that we have handled the value PERF TODO elided, right?
+  iter.release(); // Communicate that we have handled the value PERF TODO elided, right?
   return true;
 }
 
