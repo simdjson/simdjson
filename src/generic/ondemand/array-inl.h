@@ -108,6 +108,7 @@ simdjson_really_inline bool array::iterator::operator!=(const array::iterator &)
 simdjson_really_inline array::iterator &array::iterator::operator++() noexcept {
   if (a->error) { return *this; }
   a->error = a->iter->has_next_element().get(a->has_next); // If there's an error, has_next stays true.
+  if (!a->has_next) { a->iter.release(); }
   return *this;
 }
 
@@ -177,7 +178,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array:
 }
 
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>::operator*() noexcept {
-  if (error()) { return error(); }
+  if (error()) { second = SUCCESS; return error(); }
   return *first;
 }
 // Assumes it's being compared with the end. true if depth < iter->depth.
