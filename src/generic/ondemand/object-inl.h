@@ -97,6 +97,7 @@ simdjson_really_inline simdjson_result<value> object::operator[](const std::stri
     logger::log_event(*iter, "no match", key, -2);
     iter->skip(); // Skip the value entirely
     if ((error = iter->has_next_field().get(has_next) )) { return report_error(); }
+    if (!has_next) { iter.release(); }
   }
 
   // If the loop ended, we're out of fields to look at.
@@ -119,7 +120,9 @@ simdjson_really_inline object::iterator object::end() noexcept {
 }
 
 simdjson_really_inline error_code object::report_error() noexcept {
+  SIMDJSON_ASSUME(error);
   has_next = false;
+  iter.release();
   return error;
 }
 
@@ -146,7 +149,8 @@ simdjson_really_inline bool object::iterator::operator!=(const object::iterator 
 }
 simdjson_really_inline object::iterator &object::iterator::operator++() noexcept {
   if (o->error) { return *this; }
-  o->error = o->iter->has_next_element().get(o->has_next); // If there's an error, has_next stays true.
+  o->error = o->iter->has_next_field().get(o->has_next); // If there's an error, has_next stays true.
+  if (!o->has_next) { o->iter.release(); }
   return *this;
 }
 
@@ -210,7 +214,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object
 }
 
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object::iterator>::operator*() noexcept {
-  if (error()) { return error(); }
+  if (error()) { second = SUCCESS; return error(); }
   return *first;
 }
 // Assumes it's being compared with the end. true if depth < iter->depth.
