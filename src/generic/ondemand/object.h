@@ -59,10 +59,8 @@ protected:
    *
    * @param doc The document containing the object. doc->depth must already be incremented to
    *            reflect the object's depth. The iterator must be just after the opening `{`.
-   * @param is_empty Whether this container is empty or not.
-   * @param error The error to report. If the error is not SUCCESS, this is an error chained object.
    */
-  simdjson_really_inline object(json_iterator_ref &&_iter, bool is_empty) noexcept;
+  simdjson_really_inline object(json_iterator_ref &&_iter) noexcept;
 
   simdjson_really_inline error_code report_error() noexcept;
 
@@ -73,14 +71,6 @@ protected:
    * is first used, and never changes afterwards.
    */
   json_iterator_ref iter{};
-  /**
-   * Whether we have anything to yield.
-   *
-   * PERF NOTE: we hope this will be elided into inline control flow, as it is true for all
-   * iterations except the last, and compilers with SSA optimization can sometimes do last-iteration
-   * optimization.
-   */
-  bool has_next{};
   /**
    * Whether we are at the start.
    * 
