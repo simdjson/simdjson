@@ -163,6 +163,7 @@ public:
   simdjson_really_inline ~json_iterator_ref() noexcept;
 
   simdjson_really_inline json_iterator_ref borrow() noexcept;
+  simdjson_really_inline void release() noexcept;
 
   simdjson_really_inline json_iterator *operator->() noexcept;
   simdjson_really_inline json_iterator &operator*() noexcept;
