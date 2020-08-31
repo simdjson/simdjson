@@ -62,18 +62,12 @@ protected:
   static simdjson_really_inline array started(json_iterator_ref &&iter) noexcept;
 
   /**
-   * Report the current error and set finished so it won't be reported again.
-   */
-  simdjson_really_inline error_code report_error() noexcept;
-
-  /**
    * Internal array creation. Call array::start() or array::started() instead of this.
    *
    * @param doc The document containing the array. iter->depth must already be incremented to
    *            reflect the array's depth. The iterator must be just after the opening `[`.
-   * @param has_value Whether the array has a value (false means empty array).
    */
-  simdjson_really_inline array(json_iterator_ref &&iter, bool has_value) noexcept;
+  simdjson_really_inline array(json_iterator_ref &&iter) noexcept;
 
   /**
    * Document containing this array.
@@ -82,14 +76,6 @@ protected:
    * is first used, and never changes afterwards.
    */
   json_iterator_ref iter{};
-  /**
-   * Whether we have anything to yield.
-   *
-   * PERF NOTE: we hope this will be elided into inline control flow, as it is true for all
-   * iterations except the last, and compilers with SSA optimization can sometimes do last-iteration
-   * optimization.
-   */
-  bool has_next{};
   /**
    * Error, if there is one. Errors are only yielded once.
    *
