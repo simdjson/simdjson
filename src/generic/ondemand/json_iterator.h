@@ -137,6 +137,7 @@ public:
 protected:
   ondemand::parser *parser{};
   uint8_t *current_string_buf_loc{};
+  uint32_t active_lease_depth{};
 
   simdjson_really_inline json_iterator(ondemand::parser *parser) noexcept;
   template<int N>
@@ -150,6 +151,7 @@ protected:
   friend class value;
   friend class raw_json_string;
   friend class parser;
+  friend class json_iterator_ref;
   friend simdjson_really_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
 }; // json_iterator
 
@@ -170,10 +172,12 @@ public:
   simdjson_really_inline const json_iterator &operator*() const noexcept;
 
   simdjson_really_inline bool is_alive() const noexcept;
+  simdjson_really_inline bool is_active() const noexcept;
 
 private:
-  simdjson_really_inline json_iterator_ref(json_iterator *iter) noexcept;
-  json_iterator *iter;
+  simdjson_really_inline json_iterator_ref(json_iterator *iter, uint32_t lease_depth) noexcept;
+  json_iterator *iter{};
+  uint32_t lease_depth{};
 
   friend class json_iterator;
 }; // class json_iterator_ref
