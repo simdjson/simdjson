@@ -48,15 +48,11 @@ simdjson_really_inline array::array(json_iterator_ref &&_iter, bool has_value) n
 simdjson_really_inline array::array(array &&other) noexcept
   : iter{std::forward<array>(other).iter}, has_next{other.has_next}, error{other.error}
 {
-  // Terminate the other iterator
-  other.has_next = false;
 }
 simdjson_really_inline array &array::operator=(array &&other) noexcept {
   iter = std::forward<array>(other).iter;
   has_next = other.has_next;
   error = other.error;
-  // Terminate the other iterator
-  other.has_next = false;
   return *this;
 }
 
@@ -99,16 +95,15 @@ simdjson_really_inline simdjson_result<value> array::iterator::operator*() noexc
   if (a->error) { return a->report_error(); }
   return value::start(a->iter.borrow());
 }
-simdjson_really_inline bool array::iterator::operator==(const array::iterator &) noexcept {
-  return !a->has_next;
+simdjson_really_inline bool array::iterator::operator==(const array::iterator &other) noexcept {
+  return !(*this != other);
 }
 simdjson_really_inline bool array::iterator::operator!=(const array::iterator &) noexcept {
   return a->has_next;
 }
 simdjson_really_inline array::iterator &array::iterator::operator++() noexcept {
-  if (a->error) { return *this; }
   a->error = a->iter->has_next_element().get(a->has_next); // If there's an error, has_next stays true.
-  if (!a->has_next) { a->iter.release(); }
+  if (!a->error && !a->has_next) { a->iter.release(); }
   return *this;
 }
 
