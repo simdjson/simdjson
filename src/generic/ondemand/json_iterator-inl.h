@@ -27,7 +27,10 @@ simdjson_really_inline json_iterator::json_iterator(ondemand::parser *_parser) n
   // Release the string buf so it can be reused by the next document
   logger::log_headers();
 }
-simdjson_really_inline json_iterator::~json_iterator() noexcept = default;
+simdjson_really_inline json_iterator::~json_iterator() noexcept {
+  // If we have any leases out when we die, it's an error
+  SIMDJSON_ASSUME(active_lease_depth == 0);
+}
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_object() noexcept {
   if (*advance() != '{') { logger::log_error(*this, "Not an object"); return INCORRECT_TYPE; }
