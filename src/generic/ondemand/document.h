@@ -59,6 +59,7 @@ protected:
   json_iterator iter{}; ///< Current position in the document
 
   simdjson_really_inline value as_value() noexcept;
+  simdjson_really_inline void assert_at_start() const noexcept;
 
   friend struct simdjson_result<document>;
   friend class value;
