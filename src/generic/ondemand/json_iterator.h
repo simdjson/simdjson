@@ -111,14 +111,14 @@ public:
   /**
    * Skips a JSON value, whether it is a scalar, array or object.
    */
-  simdjson_really_inline void skip() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code skip() noexcept;
 
   /**
    * Skips to the end of a JSON object or array.
    * 
    * @return true if this was the end of an array, false if it was the end of an object.
    */
-  simdjson_really_inline bool skip_container() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code skip_container() noexcept;
 
   /**
    * Tell whether the iterator is still at the start
@@ -126,7 +126,7 @@ public:
   simdjson_really_inline bool at_start() const noexcept;
 
   /**
-   * Tell whether the iterator has reached EOF
+   * Tell whether the iterator is at the EOF mark
    */
   simdjson_really_inline bool at_eof() const noexcept;
 
