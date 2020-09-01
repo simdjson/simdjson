@@ -141,7 +141,7 @@ simdjson_really_inline void read_tweets(ondemand::parser &parser, padded_string 
       if (!iter.has_next_field() || !iter.find_field_raw("screen_name")) { throw; }
       tweet.user.screen_name = iter.get_raw_json_string().value().unescape(iter);
 
-      iter.skip_container(); // Skip the rest of the user object
+      if (iter.skip_container()) { throw; } // Skip the rest of the user object
     }
 
     if (!iter.has_next_field() || !iter.find_field_raw("retweet_count")) { throw; }
@@ -152,7 +152,7 @@ simdjson_really_inline void read_tweets(ondemand::parser &parser, padded_string 
 
     tweets.push_back(tweet);
 
-    iter.skip_container(); // Skip the rest of the tweet object
+    if (iter.skip_container()) { throw; } // Skip the rest of the tweet object
 
   } while (iter.has_next_element());
 }

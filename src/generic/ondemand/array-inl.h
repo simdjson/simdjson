@@ -51,7 +51,7 @@ simdjson_really_inline array &array::operator=(array &&other) noexcept = default
 simdjson_really_inline array::~array() noexcept {
   if (iter.is_alive()) {
     logger::log_event(*iter, "unfinished", "array");
-    iter->skip_container();
+    SIMDJSON_UNUSED auto _err = iter->skip_container();
     iter.release();
   }
 }

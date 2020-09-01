@@ -21,7 +21,7 @@ simdjson_really_inline value::~value() noexcept {
   if (iter.is_alive()) {
     if (*json == '[' || *json == '{') {
       logger::log_start_value(*iter, "unused");
-      iter->skip_container();
+      SIMDJSON_UNUSED auto _err = iter->skip_container();
     } else {
       logger::log_value(*iter, "unused");
     }
