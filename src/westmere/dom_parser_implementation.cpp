@@ -58,21 +58,21 @@ simdjson_really_inline json_character_block json_character_block::classify(const
   // hope that useless computations will be omitted. This is namely case when
   // minifying (we only need whitespace).
 
-  uint64_t whitespace = simd8x64<bool>(
-        in.chunks[0] == simd8<uint8_t>(_mm_shuffle_epi8(whitespace_table, in.chunks[0])),
-        in.chunks[1] == simd8<uint8_t>(_mm_shuffle_epi8(whitespace_table, in.chunks[1])),
-        in.chunks[2] == simd8<uint8_t>(_mm_shuffle_epi8(whitespace_table, in.chunks[2])),
-        in.chunks[3] == simd8<uint8_t>(_mm_shuffle_epi8(whitespace_table, in.chunks[3]))
-  ).to_bitmask();
 
-  // | 32 handles the fact that { } and [ ] are exactly 32 bytes apart
-  uint64_t op = simd8x64<bool>(
-        (in.chunks[0] | 32) == simd8<uint8_t>(_mm_shuffle_epi8(op_table, in.chunks[0])),
-        (in.chunks[1] | 32) == simd8<uint8_t>(_mm_shuffle_epi8(op_table, in.chunks[1])),
-        (in.chunks[2] | 32) == simd8<uint8_t>(_mm_shuffle_epi8(op_table, in.chunks[2])),
-        (in.chunks[3] | 32) == simd8<uint8_t>(_mm_shuffle_epi8(op_table, in.chunks[3]))
-  ).to_bitmask();
-  return { whitespace, op };
+  const uint64_t whitespace = in.eq({
+    _mm_shuffle_epi8(whitespace_table, in.chunks[0]),
+    _mm_shuffle_epi8(whitespace_table, in.chunks[1]),
+    _mm_shuffle_epi8(whitespace_table, in.chunks[2]),
+    _mm_shuffle_epi8(whitespace_table, in.chunks[3])
+  });
+  const simd8x64<uint8_t> curlified = in.bit_or(0x20); // Turn [ and ] into { and }
+  const uint64_t op = curlified.eq({
+    _mm_shuffle_epi8(op_table, in.chunks[0]),
+    _mm_shuffle_epi8(op_table, in.chunks[1]),
+    _mm_shuffle_epi8(op_table, in.chunks[2]),
+    _mm_shuffle_epi8(op_table, in.chunks[3])
+  });
+    return { whitespace, op };
 }
 
 simdjson_really_inline bool is_ascii(const simd8x64<uint8_t>& input) {

@@ -33,7 +33,7 @@ simdjson_really_inline uint64_t json_character_block::scalar() const { return ~(
 simdjson_really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
   // These lookups rely on the fact that anything < 127 will match the lower 4 bits, which is why
   // we can't use the generic lookup_16.
-  auto whitespace_table = simd8<uint8_t>::repeat_16(' ', 100, 100, 100, 17, 100, 113, 2, 100, '\t', '\n', 112, 100, '\r', 100, 100);
+  const auto whitespace_table = simd8<uint8_t>::repeat_16(' ', 100, 100, 100, 17, 100, 113, 2, 100, '\t', '\n', 112, 100, '\r', 100, 100);
 
   // The 6 operators (:,[]{}) have these values:
   //
@@ -54,7 +54,7 @@ simdjson_really_inline json_character_block json_character_block::classify(const
   // NOTE: Due to the | 0x20, this ALSO treats <FF> and <SUB> (control characters 0C and 1A) like ,
   // and :. This gets caught in stage 2, which checks the actual character to ensure the right
   // operators are in the right places.
-  auto op_table = simd8<uint8_t>::repeat_16(
+  const auto op_table = simd8<uint8_t>::repeat_16(
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, ':', '{', // : = 3A, [ = 5B, { = 7B
@@ -66,15 +66,16 @@ simdjson_really_inline json_character_block json_character_block::classify(const
   // hope that useless computations will be omitted. This is namely case when
   // minifying (we only need whitespace).
 
-  uint64_t whitespace = simd8x64<bool>(
-        in.chunks[0] == simd8<uint8_t>(_mm256_shuffle_epi8(whitespace_table, in.chunks[0])),
-        in.chunks[1] == simd8<uint8_t>(_mm256_shuffle_epi8(whitespace_table, in.chunks[1]))
-  ).to_bitmask();
+  const uint64_t whitespace = in.eq({
+    _mm256_shuffle_epi8(whitespace_table, in.chunks[0]),
+    _mm256_shuffle_epi8(whitespace_table, in.chunks[1])
+  });
+  const simd8x64<uint8_t> curlified = in.bit_or(0x20); // Turn [ and ] into { and }
+  const uint64_t op = curlified.eq({
+    _mm256_shuffle_epi8(op_table, in.chunks[0]),
+    _mm256_shuffle_epi8(op_table, in.chunks[1])
+  });
   
-  uint64_t op = simd8x64<bool>(
-        (in.chunks[0] | 0x20) == simd8<uint8_t>(_mm256_shuffle_epi8(op_table, in.chunks[0])),
-        (in.chunks[1] | 0x20) == simd8<uint8_t>(_mm256_shuffle_epi8(op_table, in.chunks[1]))
-  ).to_bitmask();
   return { whitespace, op };
 }
 

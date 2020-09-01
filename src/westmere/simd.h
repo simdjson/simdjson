@@ -315,6 +315,15 @@ namespace simd {
       ).to_bitmask();
     }
 
+    simdjson_really_inline uint64_t eq(const simd8x64<uint8_t> other) const {
+      return  simd8x64<bool>(
+        this->chunks[0] == other.chunks[0],
+        this->chunks[1] == other.chunks[1],
+        this->chunks[2] == other.chunks[2],
+        this->chunks[3] == other.chunks[3]
+      ).to_bitmask();
+    }
+
     simdjson_really_inline uint64_t lteq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
       return  simd8x64<bool>(
