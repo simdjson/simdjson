@@ -2,6 +2,8 @@ namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+class json_iterator_ref;
+
 /**
  * Iterates through JSON, with structure-sensitive algorithms.
  * 
@@ -14,6 +16,7 @@ public:
   simdjson_really_inline json_iterator &operator=(json_iterator &&other) noexcept;
   simdjson_really_inline json_iterator(const json_iterator &other) noexcept = delete;
   simdjson_really_inline json_iterator &operator=(const json_iterator &other) noexcept = delete;
+  simdjson_really_inline ~json_iterator() noexcept;
 
   /**
    * Check for an opening { and start an object iteration.
@@ -117,17 +120,67 @@ public:
    */
   simdjson_really_inline bool skip_container() noexcept;
 
+  /**
+   * Tell whether the iterator is still at the start
+   */
+  simdjson_really_inline bool at_start() const noexcept;
+
+  /**
+   * Tell whether the iterator has reached EOF
+   */
+  simdjson_really_inline bool at_eof() const noexcept;
+
+  /**
+   * Tell whether the iterator is live (has not been moved).
+   */
+  simdjson_really_inline bool is_alive() const noexcept;
 protected:
-  simdjson_really_inline json_iterator(const uint8_t *buf, uint32_t *index) noexcept;
+  ondemand::parser *parser{};
+  uint8_t *current_string_buf_loc{};
+  uint32_t active_lease_depth{};
+
+  simdjson_really_inline json_iterator(ondemand::parser *parser) noexcept;
   template<int N>
   SIMDJSON_WARN_UNUSED simdjson_really_inline bool advance_to_buffer(uint8_t (&buf)[N]) noexcept;
+
+  simdjson_really_inline json_iterator_ref borrow() noexcept;
 
   friend class document;
   friend class object;
   friend class array;
   friend class value;
+  friend class raw_json_string;
+  friend class parser;
+  friend class json_iterator_ref;
   friend simdjson_really_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-};
+}; // json_iterator
+
+class json_iterator_ref {
+public:
+  simdjson_really_inline json_iterator_ref() noexcept;
+  simdjson_really_inline json_iterator_ref(json_iterator_ref &&other) noexcept;
+  simdjson_really_inline json_iterator_ref &operator=(json_iterator_ref &&other) noexcept;
+  simdjson_really_inline json_iterator_ref(const json_iterator_ref &other) noexcept = delete;
+  simdjson_really_inline json_iterator_ref &operator=(const json_iterator_ref &other) noexcept = delete;
+  simdjson_really_inline ~json_iterator_ref() noexcept;
+
+  simdjson_really_inline json_iterator_ref borrow() noexcept;
+  simdjson_really_inline void release() noexcept;
+
+  simdjson_really_inline json_iterator *operator->() noexcept;
+  simdjson_really_inline json_iterator &operator*() noexcept;
+  simdjson_really_inline const json_iterator &operator*() const noexcept;
+
+  simdjson_really_inline bool is_alive() const noexcept;
+  simdjson_really_inline bool is_active() const noexcept;
+
+private:
+  simdjson_really_inline json_iterator_ref(json_iterator *iter, uint32_t lease_depth) noexcept;
+  json_iterator *iter{};
+  uint32_t lease_depth{};
+
+  friend class json_iterator;
+}; // class json_iterator_ref
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

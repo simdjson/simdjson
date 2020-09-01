@@ -28,9 +28,9 @@ public:
 
     // Reads key and value, yielding them to the user.
     simdjson_really_inline simdjson_result<field> operator*() noexcept; // MUST ONLY BE CALLED ONCE PER ITERATION.
-    // Assumes it's being compared with the end. true if depth < doc->iter.depth.
+    // Assumes it's being compared with the end. true if depth < iter->depth.
     simdjson_really_inline bool operator==(const object::iterator &) noexcept;
-    // Assumes it's being compared with the end. true if depth >= doc->iter.depth.
+    // Assumes it's being compared with the end. true if depth >= iter->depth.
     simdjson_really_inline bool operator!=(const object::iterator &) noexcept;
     // Checks for ']' and ','
     simdjson_really_inline object::iterator &operator++() noexcept;
@@ -51,18 +51,16 @@ protected:
    * @param doc The document containing the object. The iterator must be just after the opening `{`.
    * @param error If this is not SUCCESS, creates an error chained object.
    */
-  static simdjson_really_inline simdjson_result<object> start(document *doc) noexcept;
-  static simdjson_really_inline object started(document *doc) noexcept;
+  static simdjson_really_inline simdjson_result<object> start(json_iterator_ref &&iter) noexcept;
+  static simdjson_really_inline object started(json_iterator_ref &&iter) noexcept;
 
   /**
    * Internal object creation. Call object::begin(doc) instead of this.
    *
    * @param doc The document containing the object. doc->depth must already be incremented to
    *            reflect the object's depth. The iterator must be just after the opening `{`.
-   * @param is_empty Whether this container is empty or not.
-   * @param error The error to report. If the error is not SUCCESS, this is an error chained object.
    */
-  simdjson_really_inline object(document *_doc, bool is_empty) noexcept;
+  simdjson_really_inline object(json_iterator_ref &&_iter) noexcept;
 
   simdjson_really_inline error_code report_error() noexcept;
 
@@ -72,15 +70,7 @@ protected:
    * PERF NOTE: expected to be elided in favor of the parent document: this is set when the object
    * is first used, and never changes afterwards.
    */
-  document *doc{};
-  /**
-   * Whether we have anything to yield.
-   *
-   * PERF NOTE: we hope this will be elided into inline control flow, as it is true for all
-   * iterations except the last, and compilers with SSA optimization can sometimes do last-iteration
-   * optimization.
-   */
-  bool has_next{};
+  json_iterator_ref iter{};
   /**
    * Whether we are at the start.
    * 
@@ -135,9 +125,9 @@ public:
 
   // Reads key and value, yielding them to the user.
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field> operator*() noexcept; // MUST ONLY BE CALLED ONCE PER ITERATION.
-  // Assumes it's being compared with the end. true if depth < doc->iter.depth.
+  // Assumes it's being compared with the end. true if depth < iter->depth.
   simdjson_really_inline bool operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object::iterator> &) noexcept;
-  // Assumes it's being compared with the end. true if depth >= doc->iter.depth.
+  // Assumes it's being compared with the end. true if depth >= iter->depth.
   simdjson_really_inline bool operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object::iterator> &) noexcept;
   // Checks for ']' and ','
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object::iterator> &operator++() noexcept;
