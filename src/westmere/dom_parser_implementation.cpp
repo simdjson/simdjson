@@ -65,7 +65,13 @@ simdjson_really_inline json_character_block json_character_block::classify(const
     _mm_shuffle_epi8(whitespace_table, in.chunks[2]),
     _mm_shuffle_epi8(whitespace_table, in.chunks[3])
   });
-  const simd8x64<uint8_t> curlified = in.bit_or(0x20); // Turn [ and ] into { and }
+  // Turn [ and ] into { and }
+  const simd8x64<uint8_t> curlified{
+    in.chunks[0] | 0x20,
+    in.chunks[1] | 0x20,
+    in.chunks[2] | 0x20,
+    in.chunks[3] | 0x20
+  };
   const uint64_t op = curlified.eq({
     _mm_shuffle_epi8(op_table, in.chunks[0]),
     _mm_shuffle_epi8(op_table, in.chunks[1]),

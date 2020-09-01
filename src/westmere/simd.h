@@ -288,23 +288,13 @@ namespace simd {
     }
 
     simdjson_really_inline uint64_t to_bitmask() const {
-      uint64_t r0 = uint32_t(this->chunks[0].to_bitmask());
-      uint64_t r1 =                       this->chunks[1].to_bitmask();
-      uint64_t r2 =                       this->chunks[2].to_bitmask();
-      uint64_t r3 =                       this->chunks[3].to_bitmask();
+      uint64_t r0 = uint32_t(this->chunks[0].to_bitmask() );
+      uint64_t r1 =          this->chunks[1].to_bitmask() ;
+      uint64_t r2 =          this->chunks[2].to_bitmask() ;
+      uint64_t r3 =          this->chunks[3].to_bitmask() ;
       return r0 | (r1 << 16) | (r2 << 32) | (r3 << 48);
     }
-
-    simdjson_really_inline simd8x64<T> bit_or(const T m) const {
-      const simd8<T> mask = simd8<T>::splat(m);
-      return simd8x64<T>(
-        this->chunks[0] | mask,
-        this->chunks[1] | mask,
-        this->chunks[2] | mask,
-        this->chunks[3] | mask
-      );
-    }
-
+    
     simdjson_really_inline uint64_t eq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
       return  simd8x64<bool>(
@@ -315,7 +305,7 @@ namespace simd {
       ).to_bitmask();
     }
 
-    simdjson_really_inline uint64_t eq(const simd8x64<uint8_t> other) const {
+    simdjson_really_inline uint64_t eq(const simd8x64<uint8_t> &other) const {
       return  simd8x64<bool>(
         this->chunks[0] == other.chunks[0],
         this->chunks[1] == other.chunks[1],

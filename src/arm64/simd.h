@@ -462,16 +462,6 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
       return vgetq_lane_u64(vreinterpretq_u64_u8(sum0), 0);
     }
 
-    simdjson_really_inline simd8x64<T> bit_or(const T m) const {
-      const simd8<T> mask = simd8<T>::splat(m);
-      return simd8x64<T>(
-        this->chunks[0] | mask,
-        this->chunks[1] | mask,
-        this->chunks[2] | mask,
-        this->chunks[3] | mask
-      );
-    }
-
     simdjson_really_inline uint64_t eq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
       return  simd8x64<bool>(
