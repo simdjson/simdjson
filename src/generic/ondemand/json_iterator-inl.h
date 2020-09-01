@@ -71,7 +71,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator:
       return true;
     }
     logger::log_event(*this, "non-match", key);
-    skip(); // Skip the value so we can look at the next key
+    SIMDJSON_TRY( skip() ); // Skip the value so we can look at the next key
 
     SIMDJSON_TRY( has_next_field().get(has_next) );
   } while (has_next);
@@ -201,35 +201,23 @@ simdjson_really_inline bool json_iterator::root_is_null() noexcept {
   return is_null();
 }
 
-
-simdjson_really_inline void json_iterator::skip() noexcept {
-  uint32_t depth = 0;
-  do {
-    switch (*advance()) {
-      // TODO consider whether matching braces is a requirement: if non-matching braces indicates
-      // *missing* braces, then future lookups are not in the object/arrays they think they are,
-      // violating the rule "validate enough structure that the user can be confident they are
-      // looking at the right values."
-      case ']': case '}':
-        logger::log_end_value(*this, "skip");
-        depth--;
-        break;
-      // PERF TODO does it skip the depth check when we don't decrement depth?
-      case '[': case '{':
-        logger::log_start_value(*this, "skip");
-        depth++;
-        break;
-      default:
-        logger::log_value(*this, "skip", "");
-        break;
-    }
-  } while (depth > 0);
+SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::skip() noexcept {
+  switch (*advance()) {
+    // PERF TODO does it skip the depth check when we don't decrement depth?
+    case '[': case '{':
+      logger::log_start_value(*this, "skip");
+      return skip_container();
+    default:
+      logger::log_value(*this, "skip", "");
+      return SUCCESS;
+  }
 }
 
-simdjson_really_inline bool json_iterator::skip_container() noexcept {
+SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::skip_container() noexcept {
   uint32_t depth = 1;
   // The loop breaks only when depth-- happens.
-  while (true) {
+  auto end = &parser->dom_parser.structural_indexes[parser->dom_parser.n_structural_indexes];
+  while (index <= end) {
     uint8_t ch = *advance();
     switch (ch) {
       // TODO consider whether matching braces is a requirement: if non-matching braces indicates
@@ -239,7 +227,7 @@ simdjson_really_inline bool json_iterator::skip_container() noexcept {
       case ']': case '}':
         logger::log_end_value(*this, "skip");
         depth--;
-        if (depth == 0) { logger::log_event(*this, "end skip", ""); return ch == ']'; }
+        if (depth == 0) { logger::log_event(*this, "end skip", ""); return SUCCESS; }
         break;
       // PERF TODO does it skip the depth check when we don't decrement depth?
       case '[': case '{':
@@ -250,7 +238,10 @@ simdjson_really_inline bool json_iterator::skip_container() noexcept {
         logger::log_value(*this, "skip", "");
         break;
     }
-  };
+  }
+
+  logger::log_error(*this, "not enough close braces");
+  return TAPE_ERROR;
 }
 
 simdjson_really_inline bool json_iterator::at_start() const noexcept {

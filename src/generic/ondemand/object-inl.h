@@ -56,7 +56,7 @@ simdjson_really_inline object &object::operator=(object &&other) noexcept = defa
 simdjson_really_inline object::~object() noexcept {
   if (iter.is_alive()) {
     logger::log_event(*iter, "unfinished", "object");
-    iter->skip_container();
+    SIMDJSON_UNUSED auto _err = iter->skip_container();
     iter.release();
   }
 }
@@ -85,7 +85,7 @@ simdjson_really_inline simdjson_result<value> object::operator[](const std::stri
       return value::start(iter.borrow());
     }
     logger::log_event(*iter, "no match", key, -2);
-    iter->skip(); // Skip the value entirely
+    SIMDJSON_TRY( iter->skip() ); // Skip the value entirely
     if ((error = iter->has_next_field().get(has_value) )) { return report_error(); }
   }
 
