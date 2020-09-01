@@ -19,14 +19,22 @@ struct json_character_block {
   simdjson_really_inline uint64_t op() const;
   // neither a structural character nor a white-space, so letters, numbers and quotes
   simdjson_really_inline uint64_t scalar() const;
+  // open braces ([ and {)
+  simdjson_really_inline uint64_t open_brace() const;
+  // close braces (] and })
+  simdjson_really_inline uint64_t close_brace() const;
 
-  uint64_t _whitespace; // ASCII white-space ('\r','\n','\t',' ')
-  uint64_t _op; // structural characters (comma, colon, braces, brackets but not quotes)
+  uint64_t _whitespace;  // ASCII white-space ('\r','\n','\t',' ')
+  uint64_t _op;          // structural characters (comma, colon, braces, brackets but not quotes)
+  uint64_t _open_brace;  // [ and {
+  uint64_t _close_brace; // } and ]
 };
 
 simdjson_really_inline uint64_t json_character_block::whitespace() const { return _whitespace; }
 simdjson_really_inline uint64_t json_character_block::op() const { return _op; }
 simdjson_really_inline uint64_t json_character_block::scalar() const { return ~(op() | whitespace()); }
+simdjson_really_inline uint64_t json_character_block::open_brace() const { return _open_brace; }
+simdjson_really_inline uint64_t json_character_block::close_brace() const { return _close_brace; }
 
 // This identifies structural characters (comma, colon, braces, brackets),
 // and ASCII white-space ('\r','\n','\t',' ').
@@ -80,7 +88,7 @@ simdjson_really_inline json_character_block json_character_block::classify(const
     _mm256_shuffle_epi8(op_table, in.chunks[1])
   });
   
-  return { whitespace, op };
+  return { whitespace, op, curlified.eq('{'), curlified.eq('}') };
 }
 
 simdjson_really_inline bool is_ascii(const simd8x64<uint8_t>& input) {

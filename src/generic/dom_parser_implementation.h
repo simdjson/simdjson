@@ -24,6 +24,8 @@ public:
   size_t len{0};
   /** Document passed to stage 2 */
   dom::document *doc{};
+  /** Final depth (total of open / close braces) from stage 1 */
+  int64_t stage1_depth{0};
 
   simdjson_really_inline dom_parser_implementation();
   dom_parser_implementation(const dom_parser_implementation &) = delete;

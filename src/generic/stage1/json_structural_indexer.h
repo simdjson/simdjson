@@ -87,6 +87,7 @@ private:
   bit_indexer indexer;
   uint64_t prev_structurals = 0;
   uint64_t unescaped_chars_error = 0;
+  int64_t depth = 0;
 };
 
 simdjson_really_inline json_structural_indexer::json_structural_indexer(uint32_t *structural_indexes) : indexer{structural_indexes} {}
@@ -174,6 +175,7 @@ simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<u
   checker.check_next_input(in);
   indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
   prev_structurals = block.structural_start();
+  depth += block.depth();
   unescaped_chars_error |= block.non_quote_inside_string(unescaped);
 }
 
@@ -207,6 +209,7 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
   parser.next_structural_index = 0;
+  parser.stage1_depth = depth;
   // a valid JSON file cannot have zero structural indexes - we should have found something
   if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
     return EMPTY;

@@ -28,6 +28,10 @@ public:
   simdjson_really_inline uint64_t structural_start() { return potential_structural_start() & ~_string.string_tail(); }
   /** All JSON whitespace (i.e. not in a string) */
   simdjson_really_inline uint64_t whitespace() { return non_quote_outside_string(_characters.whitespace()); }
+  simdjson_really_inline long long int depth() const {
+    return count_ones(_characters.open_brace()  & ~_string.string_head()) -
+           count_ones(_characters.close_brace() & ~_string.string_head());
+  }
 
   // Helpers
 

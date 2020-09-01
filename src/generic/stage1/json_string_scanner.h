@@ -19,6 +19,8 @@ struct json_string_block {
   simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
   simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
+  // Head of string (everything except the end quote)
+  simdjson_really_inline uint64_t string_head() const { return _in_string; }
   // Tail of string (everything except the start quote)
   simdjson_really_inline uint64_t string_tail() const { return _in_string ^ _quote; }
 
