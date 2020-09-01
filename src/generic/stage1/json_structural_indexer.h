@@ -222,6 +222,7 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
     if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
       return CAPACITY; // If the buffer is partial but the document is incomplete, it's too big to parse.
     }
+    parser.stage1_depth = 0;
     parser.n_structural_indexes = new_structural_indexes;
   }
   return checker.errors();

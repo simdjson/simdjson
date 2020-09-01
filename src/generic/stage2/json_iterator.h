@@ -115,6 +115,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::walk_docum
   // Start the document
   //
   if (at_eof()) { return EMPTY; }
+  if (dom_parser.stage1_depth != 0) { return TAPE_ERROR; }
   log_start_value("document");
   SIMDJSON_TRY( visitor.visit_document_start(*this) );
 
@@ -123,16 +124,6 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::walk_docum
   //
   {
     auto value = advance();
-
-    // Make sure the outer hash or array is closed before continuing; otherwise, there are ways we
-    // could get into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-    if (!STREAMING) {
-      switch (*value) {
-        case '{': if (last_structural() != '}') { return TAPE_ERROR; }; break;
-        case '[': if (last_structural() != ']') { return TAPE_ERROR; }; break;
-      }
-    }
-
     switch (*value) {
       case '{': if (*peek() == '}') { advance(); log_value("empty object"); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
       case '[': if (*peek() == ']') { advance(); log_value("empty array"); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
