@@ -6,6 +6,7 @@
 #include "largerandom.h"
 
 namespace largerandom {
+namespace {
 
 using namespace simdjson;
 using namespace SIMDJSON_IMPLEMENTATION;
@@ -19,8 +20,8 @@ public:
   simdjson_really_inline const std::vector<my_point> &Records() { return container; }
 
 private:
-  ondemand::parser parser;
-  std::vector<my_point> container;
+  ondemand::parser parser{};
+  std::vector<my_point> container{};
 };
 
 simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
@@ -39,6 +40,7 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
 
 BENCHMARK_TEMPLATE(LargeRandom, OnDemand);
 
+}
 } // namespace largerandom
 
 #endif // SIMDJSON_EXCEPTIONS
