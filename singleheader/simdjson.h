@@ -1,4 +1,4 @@
-/* auto-generated on Wed 19 Aug 2020 17:23:29 EDT. Do not edit! */
+/* auto-generated on Wed  2 Sep 2020 18:06:06 EDT. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -3360,7 +3360,10 @@ public:
    *
    *   dom::parser parser;
    *   const element doc = parser.load("jsonexamples/twitter.json");
-   *
+   * 
+   * The function is eager: the file's content is loaded in memory inside the parser instance
+   * and immediately parsed. The file can be deleted after the  `parser.load` call.
+   * 
    * ### IMPORTANT: Document Lifetime
    *
    * The JSON document still lives in the parser: this is the most efficient way to parse JSON
@@ -3386,6 +3389,9 @@ public:
    *
    *   dom::parser parser;
    *   element doc = parser.parse(buf, len);
+   * 
+   * The function eagerly parses the input: the input can be modified and discarded after
+   * the `parser.parse(buf, len)` call has completed.
    *
    * ### IMPORTANT: Document Lifetime
    *
@@ -3439,6 +3445,13 @@ public:
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
+   * The file is loaded in memory and can be safely deleted after the `parser.load_many(path)`
+   * function has returned. The memory is held by the `parser` instance.
+   * 
+   * The function is lazy: it may be that no more than one JSON document at a time is parsed.
+   * And, possibly, no document many have been parsed when the `parser.load_many(path)` function
+   * returned.
+   * 
    * ### Format
    *
    * The file must contain a series of one or more JSON documents, concatenated into a single
@@ -3446,7 +3459,7 @@ public:
    * then starts parsing the next document at that point. (It does this with more parallelism and
    * lookahead than you might think, though.)
    *
-   * documents that consist of an object or array may omit the whitespace between them, concatenating
+   * Documents that consist of an object or array may omit the whitespace between them, concatenating
    * with no separator. documents that consist of a single primitive (i.e. documents that are not
    * arrays or objects) MUST be separated with whitespace.
    * 
@@ -3503,6 +3516,30 @@ public:
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
+   * No copy of the input buffer is made.
+   *
+   * The function is lazy: it may be that no more than one JSON document at a time is parsed.
+   * And, possibly, no document many have been parsed when the `parser.load_many(path)` function
+   * returned.
+   * 
+   * The caller is responsabile to ensure that the input string data remains unchanged and is
+   * not deleted during the loop. In particular, the following is unsafe and will not compile:
+   * 
+   *   auto docs = parser.parse_many("[\"temporary data\"]"_padded);
+   *   // here the string "[\"temporary data\"]" may no longer exist in memory
+   *   // the parser instance may not have even accessed the input yet
+   *   for (element doc : docs) {
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   * 
+   * The following is safe: 
+   * 
+   *   auto json = "[\"temporary data\"]"_padded;
+   *   auto docs = parser.parse_many(json);
+   *   for (element doc : docs) {
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *     
    * ### Format
    *
    * The buffer must contain a series of one or more JSON documents, concatenated into a single
@@ -3567,9 +3604,11 @@ public:
   inline simdjson_result<document_stream> parse_many(const char *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> parse_many(const std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> parse_many(const std::string &&s, size_t batch_size) = delete;// unsafe
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> parse_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
-
+  inline simdjson_result<document_stream> parse_many(const padded_string &&s, size_t batch_size) = delete;// unsafe
+  
   /** @private We do not want to allow implicit conversion from C string to std::string. */
   simdjson_result<document_stream> parse_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
 
@@ -5452,12 +5491,10 @@ inline size_t array::size() const noexcept {
   return tape.scope_count();
 }
 inline simdjson_result<element> array::at_pointer(std::string_view json_pointer) const noexcept {
-  if(json_pointer[0] != '/') {
-    if(json_pointer.size() == 0) { // an empty string means that we return the current node
+  if(json_pointer.empty()) { // an empty string means that we return the current node
       return element(this->tape); // copy the current node
-    } else { // otherwise there is an error
+  } else if(json_pointer[0] != '/') { // otherwise there is an error
       return INVALID_JSON_POINTER;
-    }
   }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
@@ -5492,6 +5529,7 @@ inline simdjson_result<element> array::at_pointer(std::string_view json_pointer)
   }
   return child;
 }
+
 inline simdjson_result<element> array::at(size_t index) const noexcept {
   size_t i=0;
   for (auto element : *this) {
@@ -5927,9 +5965,10 @@ inline simdjson_result<element> element::at_pointer(std::string_view json_pointe
     case internal::tape_type::START_ARRAY:
       return array(tape).at_pointer(json_pointer);
     default: {
-      if(json_pointer.empty()) { // an empty string means that we return the current node
+      if(!json_pointer.empty()) { // a non-empty string is invalid on an atom
         return INVALID_JSON_POINTER;
       }
+      // an empty string means that we return the current node
       dom::element copy(*this);
       return simdjson_result<element>(std::move(copy));
     }
@@ -6790,12 +6829,10 @@ inline simdjson_result<element> object::operator[](const char *key) const noexce
   return at_key(key);
 }
 inline simdjson_result<element> object::at_pointer(std::string_view json_pointer) const noexcept {
-  if(json_pointer[0] != '/') {
-    if(json_pointer.size() == 0) { // an empty string means that we return the current node
+  if(json_pointer.empty()) { // an empty string means that we return the current node
       return element(this->tape); // copy the current node
-    } else { // otherwise there is an error
+  } else if(json_pointer[0] != '/') { // otherwise there is an error
       return INVALID_JSON_POINTER;
-    }
   }
   json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');

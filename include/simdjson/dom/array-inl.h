@@ -62,12 +62,10 @@ inline size_t array::size() const noexcept {
   return tape.scope_count();
 }
 inline simdjson_result<element> array::at_pointer(std::string_view json_pointer) const noexcept {
-  if(json_pointer[0] != '/') {
-    if(json_pointer.empty()) { // an empty string means that we return the current node
+  if(json_pointer.empty()) { // an empty string means that we return the current node
       return element(this->tape); // copy the current node
-    } else { // otherwise there is an error
+  } else if(json_pointer[0] != '/') { // otherwise there is an error
       return INVALID_JSON_POINTER;
-    }
   }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
@@ -102,6 +100,7 @@ inline simdjson_result<element> array::at_pointer(std::string_view json_pointer)
   }
   return child;
 }
+
 inline simdjson_result<element> array::at(size_t index) const noexcept {
   size_t i=0;
   for (auto element : *this) {
