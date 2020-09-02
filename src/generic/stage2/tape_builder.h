@@ -145,7 +145,7 @@ simdjson_really_inline tape_builder::tape_builder(dom::document &doc) noexcept :
 SIMDJSON_WARN_UNUSED simdjson_really_inline error_code tape_builder::visit_string(json_iterator &iter, const uint8_t *value, bool key) noexcept {
   iter.log_value(key ? "key" : "string");
   uint8_t *dst = on_start_string(iter);
-  dst = stringparsing::parse_string(value, dst);
+  dst = stringparsing::parse_string(value+1, dst);
   if (dst == nullptr) {
     iter.log_error("Invalid escape in string");
     return STRING_ERROR;

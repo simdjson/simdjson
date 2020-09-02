@@ -73,7 +73,6 @@ simdjson_really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst) {
-  src++;
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
     auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
@@ -120,7 +119,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline uint8_t *parse_string(const uint8_t 
 }
 
 SIMDJSON_UNUSED SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_string_to_buffer(const uint8_t *src, uint8_t *&current_string_buf_loc, std::string_view &s) {
-  if (src[0] != '"') { return STRING_ERROR; }
+  if (*(src++) != '"') { return STRING_ERROR; }
   auto end = stringparsing::parse_string(src, current_string_buf_loc);
   if (!end) { return STRING_ERROR; }
   s = std::string_view((const char *)current_string_buf_loc, end-current_string_buf_loc);
