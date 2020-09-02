@@ -82,7 +82,7 @@ inline simdjson_result<element> object::operator[](const char *key) const noexce
 }
 inline simdjson_result<element> object::at_pointer(std::string_view json_pointer) const noexcept {
   if(json_pointer[0] != '/') {
-    if(json_pointer.size() == 0) { // an empty string means that we return the current node
+    if(json_pointer.empty()) { // an empty string means that we return the current node
       return element(this->tape); // copy the current node
     } else { // otherwise there is an error
       return INVALID_JSON_POINTER;

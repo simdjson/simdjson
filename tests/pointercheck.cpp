@@ -159,8 +159,23 @@ bool issue1142() {
   auto example_json = R"([1,2,{"1":"bla"}])"_padded;
   dom::parser parser;
   dom::element example = parser.parse(example_json);
+  auto e0 = dom::array(example).at(0).at_pointer("");
+  ASSERT_EQUAL(std::string("1"), simdjson::minify(e0))
   auto o = dom::array(example).at(2).at_pointer("");
   ASSERT_EQUAL(std::string(R"({"1":"bla"})"), simdjson::minify(o))
+  std::string_view s0 = dom::array(example).at(2).at_pointer("/1").at_pointer(""); 
+  if(s0 != "bla") {
+    std::cerr << s0 << std::endl;
+    return false;
+  }
+  auto example_json2 = R"("just a string")"_padded;
+  dom::element example2 = parser.parse(example_json2).at_pointer("");
+  if(std::string_view(example2) != "just a string") {
+    std::cerr << std::string_view(example2) << std::endl;
+    return false;
+  }
+  
+  
 #endif
   return true;
 }
