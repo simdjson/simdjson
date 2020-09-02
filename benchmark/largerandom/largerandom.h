@@ -39,7 +39,15 @@ struct my_point {
   double x;
   double y;
   double z;
+  bool operator==(const my_point &other) const {
+    return x == other.x && y == other.y && z == other.z;
+  }
+  bool operator!=(const my_point &other) const { return !(*this == other); }
 };
+
+static std::ostream &operator<<(std::ostream &o, const my_point &p) {
+  return o << p.x << "," << p.y << "," << p.z << std::endl;
+}
 
 } // namespace largerandom
 

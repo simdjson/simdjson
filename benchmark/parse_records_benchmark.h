@@ -9,7 +9,18 @@ template<typename B, typename R> static void ParseRecordsBenchmark(benchmark::St
     R reference;
     reference.SetUp();
     if (!reference.Run(json)) { state.SkipWithError("reference tweet reading failed"); return; }
-    // assert(bench.Records() == reference.Records());
+    assert(bench.Records().size() == reference.Records().size());
+    for (size_t i=0; i<bench.Records().size(); i++) {
+      if (bench.Records()[i] != reference.Records()[i]) {
+        std::cerr << "Bench Record " << i << std::endl;
+        std::cerr << "----------------------" << std::endl;
+        std::cerr << bench.Records()[i] << std::endl;
+        std::cerr << "Reference Record " << i << std::endl;
+        std::cerr << "----------------------" << std::endl;
+        std::cerr << reference.Records()[i] << std::endl;
+        throw "Parse produced the wrong values!";
+      }
+    }
     reference.TearDown();
   }
 
