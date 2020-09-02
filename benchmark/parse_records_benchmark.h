@@ -19,14 +19,16 @@ template<typename B, typename R> static void ParseRecordsBenchmark(benchmark::St
   for (SIMDJSON_UNUSED auto _ : state) {
     if (!bench.Run(json)) { state.SkipWithError("tweet reading failed"); return; }
   }
-  state.SetBytesProcessed(json.size() * state.iterations());
+  auto bytes = json.size() * state.iterations();
+  state.SetBytesProcessed(bytes);
   state.SetItemsProcessed(bench.Records().size() * state.iterations());
   auto counts = events.end();
   if (events.has_events()) {
-    state.counters["Instructions"] = counts.instructions();
-    state.counters["Cycles"] = counts.cycles();
-    state.counters["Branch Misses"] = counts.branch_misses();
-    state.counters["Cache References"] = counts.cache_references();
-    state.counters["Cache Misses"] = counts.cache_misses();
+    state.counters["Ins./Byte"] = double(counts.instructions()) / double(bytes);
+    state.counters["Ins./Cycle"] = double(counts.instructions()) / double(counts.cycles());
+    state.counters["Cycles/Byte"] = double(counts.cycles()) / double(bytes);
+    state.counters["BranchMiss"] = benchmark::Counter(counts.branch_misses(), benchmark::Counter::kAvgIterations);
+    state.counters["CacheMiss"] = benchmark::Counter(counts.cache_misses(), benchmark::Counter::kAvgIterations);
+    state.counters["CacheRef"] = benchmark::Counter(counts.cache_references(), benchmark::Counter::kAvgIterations);
   }
 }
