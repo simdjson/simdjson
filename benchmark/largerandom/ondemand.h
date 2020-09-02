@@ -27,7 +27,9 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
   container.clear();
 
   auto doc = parser.iterate(json);
-  for (ondemand::object point_object : doc) {
+  // TODO this sucks, you should be able to just say for ( ... : doc)
+  auto array = doc.get_array();
+  for (ondemand::object point_object : array) {
     auto point = point_object.begin();
     container.emplace_back(my_point{(*point).value(), (*++point).value(), (*++point).value()});
   }
