@@ -6,6 +6,7 @@
 #include "partial_tweets.h"
 
 namespace partial_tweets {
+namespace {
 
 using namespace simdjson;
 using namespace SIMDJSON_IMPLEMENTATION;
@@ -19,8 +20,8 @@ public:
   simdjson_really_inline const std::vector<tweet> &Records() { return tweets; }
 
 private:
-  ondemand::parser parser;
-  std::vector<tweet> tweets;
+  ondemand::parser parser{};
+  std::vector<tweet> tweets{};
 
   simdjson_really_inline uint64_t nullable_int(ondemand::value && value) {
     if (value.is_null()) { return 0; }
@@ -57,6 +58,7 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
 
 BENCHMARK_TEMPLATE(PartialTweets, OnDemand);
 
+}
 } // namespace partial_tweets
 
 #endif // SIMDJSON_EXCEPTIONS
