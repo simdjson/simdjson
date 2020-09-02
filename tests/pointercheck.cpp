@@ -153,10 +153,23 @@ bool modern_support() {
 #endif
   return true;
 }
+bool issue1142() {
+#if SIMDJSON_EXCEPTIONS
+  std::cout << "issue 1142" << std::endl;
+  auto example_json = R"([1,2,{"1":"bla"}])"_padded;
+  dom::parser parser;
+  dom::element example = parser.parse(example_json);
+  auto o = dom::array(example).at(2).at_pointer("");
+  ASSERT_EQUAL(std::string(R"({"1":"bla"})"), simdjson::minify(o))
+#endif
+  return true;
+}
+
 
 int main() {
   if (true
     && demo()
+    && issue1142()
     && legacy_support()
     && modern_support()
     && json_pointer_success_test(TEST_RFC_JSON, "", R"({"foo":["bar","baz"],"":0,"a/b":1,"c%d":2,"e^f":3,"g|h":4,"i\\j":5,"k\"l":6," ":7,"m~n":8})")
