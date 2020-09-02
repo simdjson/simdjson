@@ -9,6 +9,7 @@ if (TARGET benchmark::benchmark)
   CHECK_CXX_COMPILER_FLAG(-mavx2 HAVE_MAVX2_FLAG)
   if (HAVE_MAVX2_FLAG)
     target_compile_options(bench_sax PRIVATE -mavx2 -mbmi -mpclmul -mlzcnt)
+    target_compile_definitions(bench_sax PRIVATE SIMDJSON_IMPLEMENTATION=haswell)
     # Some ARM compilers "support" -mavx2 but don't use it. This makes them not complain.
     CHECK_CXX_COMPILER_FLAG(-Qunused-arguments HAVE_QUNUSED_ARGUMENTS_FLAG)
     if (HAVE_QUNUSED_ARGUMENTS_FLAG)

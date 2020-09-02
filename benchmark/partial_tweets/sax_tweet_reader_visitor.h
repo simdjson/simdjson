@@ -1,18 +1,10 @@
-#ifndef TWITTER_SAX_TWEET_READER_VISITOR_H
-#define TWITTER_SAX_TWEET_READER_VISITOR_H
+#pragma once
 
 #include "simdjson.h"
 #include "tweet.h"
 #include <vector>
 
-SIMDJSON_TARGET_HASWELL
-
-namespace twitter {
-namespace {
-
-using namespace simdjson;
-using namespace haswell;
-using namespace haswell::stage2;
+namespace partial_tweets {
 
 struct sax_tweet_reader_visitor {
 public:
@@ -506,7 +498,7 @@ sax_tweet_reader_visitor::field_lookup::field_lookup() {
 //   for (int a=0;a<4;a++) {
 //     for (int b=0;b<4;b++) {
 //       for (int c=0;c<4;c++) {
-//         twitter::sax_tweet_reader_visitor::field_lookup fields(a,b,c);
+//         sax_tweet_reader_visitor::field_lookup fields(a,b,c);
 //         if (fields.collision_count) { continue; }
 //         if (fields.zero_emission) { continue; }
 //         if (fields.conflict_count < min_count) { printf("min=%d,%d,%d (%d)", a, b, c, fields.conflict_count); }
@@ -515,9 +507,4 @@ sax_tweet_reader_visitor::field_lookup::field_lookup() {
 //   }
 // }
 
-} // unnamed namespace
-} // namespace twitter
-
-SIMDJSON_UNTARGET_REGION
-
-#endif // TWITTER_SAX_TWEET_READER_VISITOR_H
+} // namespace partial_tweets
