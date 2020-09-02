@@ -41,5 +41,6 @@ template<typename B, typename R> static void ParseRecordsBenchmark(benchmark::St
     state.counters["BranchMiss"]  = round(counts.branch_misses()    / double(state.iterations()));
     state.counters["CacheMiss"]   = round(counts.cache_misses()     / double(state.iterations()));
     state.counters["CacheRef"]    = round(counts.cache_references() / double(state.iterations()));
+    state.counters["Frequency"]    =  (counts.cycles() / counts.elapsed_sec()) / 1000000000.0;
   }
 }
