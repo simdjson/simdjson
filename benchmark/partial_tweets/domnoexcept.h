@@ -18,8 +18,8 @@ public:
   simdjson_really_inline const std::vector<tweet> &Records() { return tweets; }
 
 private:
-  dom::parser parser;
-  std::vector<tweet> tweets;
+  dom::parser parser{};
+  std::vector<tweet> tweets{};
 
   simdjson_really_inline simdjson_result<uint64_t> nullable_int(dom::element element) noexcept {
     if (element.is_null()) { return 0; }

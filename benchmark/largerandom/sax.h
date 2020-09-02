@@ -6,6 +6,7 @@
 #include "largerandom.h"
 
 namespace largerandom {
+namespace {
 
 using namespace simdjson;
 using namespace SIMDJSON_IMPLEMENTATION;
@@ -99,6 +100,7 @@ error_code Sax::Allocate(size_t new_capacity) {
 
 BENCHMARK_TEMPLATE(LargeRandom, Sax);
 
+}
 } // namespace largerandom
 
 #endif // SIMDJSON_EXCEPTIONS
