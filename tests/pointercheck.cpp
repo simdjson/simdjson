@@ -174,12 +174,18 @@ bool issue1142() {
     std::cerr << std::string_view(example2) << std::endl;
     return false;
   }
-  
-  
+  auto example_json3 = R"([])"_padded;
+  dom::element example3 = parser.parse(example_json3).at_pointer("");
+  ASSERT_EQUAL(std::string(R"([])"), simdjson::minify(example3));
+
+  const char * input_array = "[]";
+  size_t input_length = strlen(input_array);
+  auto element4 = parser.parse(input_array, input_length).at_pointer("");;
+  ASSERT_EQUAL(std::string(R"([])"), simdjson::minify(element4));
+
 #endif
   return true;
 }
-
 
 int main() {
   if (true
