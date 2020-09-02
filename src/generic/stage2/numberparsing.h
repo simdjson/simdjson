@@ -90,14 +90,39 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 
   // We are going to need to do some 64-bit arithmetic to get a more precise product.
   // We use a table lookup approach.
-  components c =
-      power_of_ten_components[power - FASTFLOAT_SMALLEST_POWER];
-      // safe because
-      // power >= FASTFLOAT_SMALLEST_POWER
-      // and power <= FASTFLOAT_LARGEST_POWER
-  // we recover the mantissa of the power, it has a leading 1. It is always
+  // It is safe because
+  // power >= FASTFLOAT_SMALLEST_POWER
+  // and power <= FASTFLOAT_LARGEST_POWER
+  // We recover the mantissa of the power, it has a leading 1. It is always
   // rounded down.
-  uint64_t factor_mantissa = c.mantissa;
+  uint64_t factor_mantissa = mantissa_64[power - FASTFLOAT_SMALLEST_POWER];
+  
+  // The exponent is 1024 + 63 + power 
+  //     + floor(log(5**power)/log(2)).
+  // The 1024 comes from the ieee64 standard.
+  // The 63 comes from the fact that we use a 64-bit word.
+  //
+  // Computing floor(log(5**power)/log(2)) could be
+  // slow. Instead we use a fast function.
+  //
+  // For power in (-400,350), we have that
+  // (((152170 + 65536) * power ) >> 16);
+  // is equal to
+  //  floor(log(5**power)/log(2)) + power
+  //
+  // The 65536 is (1<<16) and corresponds to 
+  // (65536 * power) >> 16 ---> power
+  //
+  // ((152170 * power ) >> 16) is equal to 
+  // floor(log(5**power)/log(2)) 
+  //
+  // Note that this is not magic: 152170/(1<<16) is 
+  // approximatively equal to log(5)/log(2).
+  // The 1<<16 value is a power of two; we could use a 
+  // larger power of 2 if we wanted to.
+  //
+  int64_t exponent = (((152170 + 65536) * power) >> 16) + 1024 + 63;
+  
 
   // We want the most significant bit of i to be 1. Shift if needed.
   int lz = leading_zeroes(i);
@@ -188,7 +213,7 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
     lz--; // undo previous addition
   }
   mantissa &= ~(1ULL << 52);
-  uint64_t real_exponent = c.exp - lz;
+  uint64_t real_exponent = exponent - lz;
   // we have to check that real_exponent is in range, otherwise we bail out
   if (simdjson_unlikely((real_exponent < 1) || (real_exponent > 2046))) {
     return false;
