@@ -14,7 +14,7 @@
 #include <iostream>
 #include <vector>
 
-template <int TYPE = PERF_TYPE_HARDWARE> class LinuxEvents {
+template <int TYPE = PERF_TYPE_HARDWARE, bool QUIET = false> class LinuxEvents {
   int fd;
   bool working;
   perf_event_attr attribs{};
@@ -93,8 +93,11 @@ public:
 
 private:
   void report_error(const std::string &context) {
-    if (working)
-      std::cerr << (context + ": " + std::string(strerror(errno))) << std::endl;
+    if (!QUIET) {
+      if (working) {
+        std::cerr << (context + ": " + std::string(strerror(errno))) << std::endl;
+      }
+    }
     working = false;
   }
 };

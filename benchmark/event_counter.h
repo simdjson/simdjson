@@ -110,12 +110,13 @@ struct event_aggregate {
   double cache_misses() const { return total.cache_misses() / iterations; }
 };
 
+template<bool QUIET = false>
 struct event_collector {
   event_count count{};
   time_point<steady_clock> start_clock{};
 
 #if defined(__linux__)
-  LinuxEvents<PERF_TYPE_HARDWARE> linux_events;
+  LinuxEvents<PERF_TYPE_HARDWARE, QUIET> linux_events;
   event_collector() : linux_events(vector<int>{
     PERF_COUNT_HW_CPU_CYCLES,
     PERF_COUNT_HW_INSTRUCTIONS,
