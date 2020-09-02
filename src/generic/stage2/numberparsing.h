@@ -88,14 +88,6 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
     return true;
   }
 
-  // We are going to need to do some 64-bit arithmetic to get a more precise product.
-  // We use a table lookup approach.
-  // It is safe because
-  // power >= FASTFLOAT_SMALLEST_POWER
-  // and power <= FASTFLOAT_LARGEST_POWER
-  // We recover the mantissa of the power, it has a leading 1. It is always
-  // rounded down.
-  uint64_t factor_mantissa = mantissa_64[power - FASTFLOAT_SMALLEST_POWER];
   
   // The exponent is 1024 + 63 + power 
   //     + floor(log(5**power)/log(2)).
@@ -127,43 +119,33 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // We want the most significant bit of i to be 1. Shift if needed.
   int lz = leading_zeroes(i);
   i <<= lz;
+
+
+  // We are going to need to do some 64-bit arithmetic to get a  precise product.
+  // We use a table lookup approach.
+  // It is safe because
+  // power >= FASTFLOAT_SMALLEST_POWER
+  // and power <= FASTFLOAT_LARGEST_POWER
+  // We recover the mantissa of the power, it has a leading 1. It is always
+  // rounded down.
+  //
   // We want the most significant 64 bits of the product. We know
   // this will be non-zero because the most significant bit of i is
   // 1.
-  value128 product = full_multiplication(i, factor_mantissa);
-  uint64_t lower = product.low;
-  uint64_t upper = product.high;
 
-  // We know that upper has at most one leading zero because
-  // both i and  factor_mantissa have a leading one. This means
-  // that the result is at least as large as ((1<<63)*(1<<63))/(1<<64).
-
-  // As long as the first 9 bits of "upper" are not "1", then we
-  // know that we have an exact computed value for the leading
-  // 55 bits because any imprecision would play out as a +1, in
-  // the worst case.
-  if (simdjson_unlikely((upper & 0x1FF) == 0x1FF) && (lower + i < lower)) {
-    uint64_t factor_mantissa_low =
-        mantissa_128[power - FASTFLOAT_SMALLEST_POWER];
-    // next, we compute the 64-bit x 128-bit multiplication, getting a 192-bit
-    // result (three 64-bit values)
-    product = full_multiplication(i, factor_mantissa_low);
-    uint64_t product_low = product.low;
-    uint64_t product_middle2 = product.high;
-    uint64_t product_middle1 = lower;
-    uint64_t product_high = upper;
-    uint64_t product_middle = product_middle1 + product_middle2;
-    if (product_middle < product_middle1) {
-      product_high++; // overflow carry
-    }
-    // We want to check whether mantissa *i + i would affect our result.
-    // This does happen, e.g. with 7.3177701707893310e+15.
-    if (((product_middle + 1 == 0) && ((product_high & 0x1FF) == 0x1FF) &&
-         (product_low + i < product_low))) { // let us be prudent and bail out.
-      return false;
-    }
-    upper = product_high;
-    lower = product_middle;
+  value128 firstproduct = full_multiplication(i, power_of_five_128[2 * (power - FASTFLOAT_SMALLEST_POWER)]);
+  value128 secondproduct = full_multiplication(i, power_of_five_128[2 * (power - FASTFLOAT_SMALLEST_POWER) + 1]);
+  firstproduct.low += secondproduct.high;
+  if(secondproduct.high > firstproduct.low) {
+    firstproduct.high++;
+  }
+  uint64_t lower = firstproduct.low;
+  uint64_t upper = firstproduct.high;
+  // At this point, we might need to add at most one to firstproduct, but this
+  // can only change the value of firstproduct.high if firstproduct.low is maximal.
+  if(firstproduct.low  == 0xFFFFFFFFFFFFFFFF) {
+    // This is very unlikely, but if so, we need to do much more work!
+    return false;
   }
   // The final mantissa should be 53 bits with a leading 1.
   // We shift it so that it occupies 54 bits with a leading 1.
