@@ -35,11 +35,11 @@ template<typename B, typename R> static void ParseRecordsBenchmark(benchmark::St
   state.SetItemsProcessed(bench.Records().size() * state.iterations());
   auto counts = events.end();
   if (events.has_events()) {
-    state.counters["Ins./Byte"] = double(counts.instructions()) / double(bytes);
-    state.counters["Ins./Cycle"] = double(counts.instructions()) / double(counts.cycles());
-    state.counters["Cycles/Byte"] = double(counts.cycles()) / double(bytes);
-    state.counters["BranchMiss"] = benchmark::Counter(counts.branch_misses(), benchmark::Counter::kAvgIterations);
-    state.counters["CacheMiss"] = benchmark::Counter(counts.cache_misses(), benchmark::Counter::kAvgIterations);
-    state.counters["CacheRef"] = benchmark::Counter(counts.cache_references(), benchmark::Counter::kAvgIterations);
+    state.counters["Ins./Byte"]   = counts.instructions() / double(bytes);
+    state.counters["Ins./Cycle"]  = counts.instructions() / double(counts.cycles());
+    state.counters["Cycles/Byte"] = counts.cycles()       / double(bytes);
+    state.counters["BranchMiss"]  = round(counts.branch_misses()    / double(state.iterations()));
+    state.counters["CacheMiss"]   = round(counts.cache_misses()     / double(state.iterations()));
+    state.counters["CacheRef"]    = round(counts.cache_references() / double(state.iterations()));
   }
 }
