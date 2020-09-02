@@ -110,25 +110,24 @@ struct event_aggregate {
   double cache_misses() const { return total.cache_misses() / iterations; }
 };
 
-template<bool QUIET = false>
 struct event_collector {
   event_count count{};
   time_point<steady_clock> start_clock{};
 
 #if defined(__linux__)
-  LinuxEvents<PERF_TYPE_HARDWARE, QUIET> linux_events;
-  event_collector() : linux_events(vector<int>{
+  LinuxEvents<PERF_TYPE_HARDWARE> linux_events;
+  event_collector(bool quiet = false) : linux_events(vector<int>{
     PERF_COUNT_HW_CPU_CYCLES,
     PERF_COUNT_HW_INSTRUCTIONS,
     PERF_COUNT_HW_BRANCH_MISSES,
     PERF_COUNT_HW_CACHE_REFERENCES,
     PERF_COUNT_HW_CACHE_MISSES
-  }) {}
+  }, quiet) {}
   bool has_events() {
     return linux_events.is_working();
   }
 #else
-  event_collector() {}
+  event_collector(SIMDJSON_UNUSED bool _quiet = false) {}
   bool has_events() {
     return false;
   }

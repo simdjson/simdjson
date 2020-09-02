@@ -25,7 +25,7 @@ template<typename B, typename R> static void ParseRecordsBenchmark(benchmark::St
   }
 
   // Run the benchmark
-  event_collector<true> events;
+  event_collector events(true);
   events.start();
   for (SIMDJSON_UNUSED auto _ : state) {
     if (!bench.Run(json)) { state.SkipWithError("tweet reading failed"); return; }

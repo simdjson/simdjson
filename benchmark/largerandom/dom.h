@@ -16,8 +16,8 @@ public:
   simdjson_really_inline const std::vector<my_point> &Records() { return container; }
 
 private:
-  dom::parser parser;
-  std::vector<my_point> container;
+  dom::parser parser{};
+  std::vector<my_point> container{};
 };
 
 simdjson_really_inline bool Dom::Run(const padded_string &json) {

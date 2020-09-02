@@ -6,6 +6,7 @@
 #include "largerandom.h"
 
 namespace largerandom {
+namespace {
 
 using namespace simdjson;
 using namespace SIMDJSON_IMPLEMENTATION;
@@ -19,8 +20,8 @@ public:
   simdjson_really_inline const std::vector<my_point> &Records() { return container; }
 
 private:
-  ondemand::parser parser;
-  std::vector<my_point> container;
+  ondemand::parser parser{};
+  std::vector<my_point> container{};
 
   simdjson_really_inline double first_double(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) {
     if (iter.start_object().error() || iter.field_key().error() || iter.field_value()) { throw "Invalid field"; }
@@ -50,6 +51,7 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
 
 BENCHMARK_TEMPLATE(LargeRandom, Iter);
 
+}
 } // namespace largerandom
 
 #endif // SIMDJSON_EXCEPTIONS
