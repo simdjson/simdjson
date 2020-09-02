@@ -39,6 +39,19 @@ struct tweet {
            retweet_count == other.retweet_count &&
            favorite_count == other.favorite_count;
   }
+  bool operator!=(const tweet &other) const { return !(*this == other); }
 };
+
+static std::ostream &operator<<(std::ostream &o, const tweet &t) {
+  o << "created_at: " << t.created_at << std::endl;
+  o << "id: " << t.id << std::endl;
+  o << "text: " << t.text << std::endl;
+  o << "in_reply_to_status_id: " << t.in_reply_to_status_id << std::endl;
+  o << "user.id: " << t.user.id << std::endl;
+  o << "user.screen_name: " << t.user.screen_name << std::endl;
+  o << "retweet_count: " << t.retweet_count << std::endl;
+  o << "favorite_count: " << t.favorite_count << std::endl;
+  return o;
+}
 
 } // namespace partial_tweets
