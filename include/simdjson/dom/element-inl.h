@@ -356,9 +356,10 @@ inline simdjson_result<element> element::at_pointer(std::string_view json_pointe
     case internal::tape_type::START_ARRAY:
       return array(tape).at_pointer(json_pointer);
     default: {
-      if(json_pointer.empty()) { // an empty string means that we return the current node
+      if(!json_pointer.empty()) { // a non-empty string is invalid on an atom
         return INVALID_JSON_POINTER;
       }
+      // an empty string means that we return the current node
       dom::element copy(*this);
       return simdjson_result<element>(std::move(copy));
     }

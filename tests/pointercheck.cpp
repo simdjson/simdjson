@@ -153,10 +153,38 @@ bool modern_support() {
 #endif
   return true;
 }
+bool issue1142() {
+#if SIMDJSON_EXCEPTIONS
+  std::cout << "issue 1142" << std::endl;
+  auto example_json = R"([1,2,{"1":"bla"}])"_padded;
+  dom::parser parser;
+  dom::element example = parser.parse(example_json);
+  auto e0 = dom::array(example).at(0).at_pointer("");
+  ASSERT_EQUAL(std::string("1"), simdjson::minify(e0))
+  auto o = dom::array(example).at(2).at_pointer("");
+  ASSERT_EQUAL(std::string(R"({"1":"bla"})"), simdjson::minify(o))
+  std::string_view s0 = dom::array(example).at(2).at_pointer("/1").at_pointer(""); 
+  if(s0 != "bla") {
+    std::cerr << s0 << std::endl;
+    return false;
+  }
+  auto example_json2 = R"("just a string")"_padded;
+  dom::element example2 = parser.parse(example_json2).at_pointer("");
+  if(std::string_view(example2) != "just a string") {
+    std::cerr << std::string_view(example2) << std::endl;
+    return false;
+  }
+  
+  
+#endif
+  return true;
+}
+
 
 int main() {
   if (true
     && demo()
+    && issue1142()
     && legacy_support()
     && modern_support()
     && json_pointer_success_test(TEST_RFC_JSON, "", R"({"foo":["bar","baz"],"":0,"a/b":1,"c%d":2,"e^f":3,"g|h":4,"i\\j":5,"k\"l":6," ":7,"m~n":8})")
