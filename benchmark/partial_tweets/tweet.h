@@ -1,10 +1,9 @@
-#ifndef TWEET_H
-#define TWEET_H
+#pragma once
 
 #include "simdjson.h"
 #include "twitter_user.h"
 
-namespace twitter {
+namespace partial_tweets {
 
 // {
 //   "statuses": [
@@ -31,8 +30,15 @@ struct tweet {
   twitter_user user{};
   uint64_t retweet_count{};
   uint64_t favorite_count{};
+  bool operator==(const tweet &other) const {
+    return created_at == other.created_at &&
+           id == other.id &&
+           text == other.text &&
+           in_reply_to_status_id == other.in_reply_to_status_id &&
+           user == other.user &&
+           retweet_count == other.retweet_count &&
+           favorite_count == other.favorite_count;
+  }
 };
 
-} // namespace twitter
-
-#endif // TWEET_H
+} // namespace partial_tweets
