@@ -39,13 +39,13 @@ struct my_point {
   double x;
   double y;
   double z;
-  bool operator==(const my_point &other) const {
+  simdjson_really_inline bool operator==(const my_point &other) const {
     return x == other.x && y == other.y && z == other.z;
   }
-  bool operator!=(const my_point &other) const { return !(*this == other); }
+  simdjson_really_inline bool operator!=(const my_point &other) const { return !(*this == other); }
 };
 
-static std::ostream &operator<<(std::ostream &o, const my_point &p) {
+SIMDJSON_UNUSED static std::ostream &operator<<(std::ostream &o, const my_point &p) {
   return o << p.x << "," << p.y << "," << p.z << std::endl;
 }
 
@@ -57,12 +57,12 @@ static std::ostream &operator<<(std::ostream &o, const my_point &p) {
 #include <vector>
 #include "event_counter.h"
 #include "dom.h"
-#include "parse_records_benchmark.h"
+#include "json_benchmark.h"
 
 namespace largerandom {
 
 template<typename T> static void LargeRandom(benchmark::State &state) {
-  ParseRecordsBenchmark<T, Dom>(state, get_built_json_array());
+  JsonBenchmark<T, Dom>(state, get_built_json_array());
 }
 
 } // namespace largerandom

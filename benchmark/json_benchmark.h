@@ -1,31 +1,16 @@
 #pragma once
 
-template<typename B, typename R> static void ParseRecordsBenchmark(benchmark::State &state, const simdjson::padded_string &json) {
+template<typename B, typename R> static void JsonBenchmark(benchmark::State &state, const simdjson::padded_string &json) {
   event_collector collector(true);
   event_aggregate events;
 
-
   // Warmup and equality check (make sure the data is right!)
   B bench;
-  bench.SetUp();
   if (!bench.Run(json)) { state.SkipWithError("warmup tweet reading failed"); return; }
   {
     R reference;
-    reference.SetUp();
     if (!reference.Run(json)) { state.SkipWithError("reference tweet reading failed"); return; }
-    assert(bench.Records().size() == reference.Records().size());
-    for (size_t i=0; i<bench.Records().size(); i++) {
-      if (bench.Records()[i] != reference.Records()[i]) {
-        std::cerr << "Bench Record " << i << std::endl;
-        std::cerr << "----------------------" << std::endl;
-        std::cerr << bench.Records()[i] << std::endl;
-        std::cerr << "Reference Record " << i << std::endl;
-        std::cerr << "----------------------" << std::endl;
-        std::cerr << reference.Records()[i] << std::endl;
-        throw "Parse produced the wrong values!";
-      }
-    }
-    reference.TearDown();
+    assert(bench.Result() == reference.Result());
   }
 
   // Run the benchmark
@@ -38,9 +23,9 @@ template<typename B, typename R> static void ParseRecordsBenchmark(benchmark::St
   }
 
   state.SetBytesProcessed(json.size() * state.iterations());
-  state.SetItemsProcessed(bench.Records().size() * state.iterations());
+  state.SetItemsProcessed(bench.ItemCount() * state.iterations());
   state.counters["best_bytes_per_sec"] = benchmark::Counter(double(json.size()) / events.best.elapsed_sec());
-  state.counters["best_items_per_sec"] = benchmark::Counter(double(bench.Records().size()) / events.best.elapsed_sec());
+  state.counters["best_items_per_sec"] = benchmark::Counter(double(bench.ItemCount()) / events.best.elapsed_sec());
 
   state.counters["docs_per_sec"] = benchmark::Counter(1.0, benchmark::Counter::kIsIterationInvariantRate);
   state.counters["best_docs_per_sec"] = benchmark::Counter(1.0 / events.best.elapsed_sec());
@@ -69,7 +54,7 @@ template<typename B, typename R> static void ParseRecordsBenchmark(benchmark::St
     state.counters["best_frequency"]              = events.best.cycles()       / events.best.elapsed_sec();
   }
   state.counters["bytes"] = benchmark::Counter(double(json.size()));
-  state.counters["items"] = benchmark::Counter(double(bench.Records().size()));
+  state.counters["items"] = benchmark::Counter(double(bench.ItemCount()));
 
   // Build the label
   using namespace std;
@@ -87,7 +72,7 @@ template<typename B, typename R> static void ParseRecordsBenchmark(benchmark::St
     label << " cache_ref="    << setw(10) << uint64_t(events.best.cache_references()) << setw(0);
   }
 
-  label << " items=" << setw(10) << bench.Records().size() << setw(0);
+  label << " items=" << setw(10) << bench.ItemCount() << setw(0);
   label << " avg_time=" << setw(10) << uint64_t(events.elapsed_ns()) << setw(0) << " ns";
   label << "]";
 

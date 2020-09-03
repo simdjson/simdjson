@@ -16,7 +16,7 @@ template<typename T> static void PartialTweets(benchmark::State &state);
 #include <vector>
 #include "event_counter.h"
 #include "domnoexcept.h"
-#include "parse_records_benchmark.h"
+#include "json_benchmark.h"
 
 namespace partial_tweets {
 
@@ -35,7 +35,7 @@ template<typename T> static void PartialTweets(benchmark::State &state) {
     return;
   }
 
-  ParseRecordsBenchmark<T, DomNoExcept>(state, json);
+  JsonBenchmark<T, DomNoExcept>(state, json);
 }
 
 } // namespace partial_tweets
