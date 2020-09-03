@@ -61,7 +61,6 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
     }
     return true;
   }
-  printf("OOO\n");
   // When 22 < power && power <  22 + 16, we could
   // hope for another, secondary fast path.  It was
   // described by David M. Gay in  "Correctly rounded
