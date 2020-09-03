@@ -33,7 +33,7 @@ using namespace SIMDJSON_IMPLEMENTATION::stage2;
 struct sax_point_reader_visitor {
 public:
   std::vector<my_point> &points;
-  size_t idx{0};
+  size_t idx{4};
   double buffer[3];
 
   sax_point_reader_visitor(std::vector<my_point> &_points) : points(_points) {}
@@ -43,7 +43,8 @@ public:
     return SUCCESS;
   }
   simdjson_really_inline error_code visit_primitive(json_iterator &, const uint8_t *value) {
-    return numberparsing::parse_double(value).get(buffer[idx++]);
+    if(idx == 4) { return simdjson::SUCCESS; }
+    return numberparsing::parse_double(value).get(buffer[idx]);
   }
   simdjson_really_inline error_code visit_object_end(json_iterator &)  {
     points.emplace_back(my_point{buffer[0], buffer[1], buffer[2]});
@@ -51,7 +52,22 @@ public:
   }
 
   simdjson_really_inline error_code visit_document_start(json_iterator &) { return SUCCESS; }
-  simdjson_really_inline error_code visit_key(json_iterator &, const uint8_t *) { return SUCCESS; }
+  simdjson_really_inline error_code visit_key(json_iterator &, const uint8_t * key) {
+    switch(key[1]) {
+      case 'x':
+        idx = 0;
+        break;
+      case 'y':
+        idx = 1;
+        break;
+      case 'z':
+        idx = 2;
+        break; 
+      default:
+        idx = 4; 
+    }
+    return SUCCESS; 
+  }
   simdjson_really_inline error_code visit_array_start(json_iterator &)  { return SUCCESS; }
   simdjson_really_inline error_code visit_array_end(json_iterator &) { return SUCCESS; }
   simdjson_really_inline error_code visit_document_end(json_iterator &)  { return SUCCESS; }
