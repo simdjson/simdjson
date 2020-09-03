@@ -8,6 +8,9 @@
 
 namespace largerandom {
 template<typename T> static void LargeRandom(benchmark::State &state);
+namespace sum {
+template<typename T> static void LargeRandomSum(benchmark::State &state);
+}
 
 using namespace simdjson;
 
@@ -65,6 +68,13 @@ template<typename T> static void LargeRandom(benchmark::State &state) {
   JsonBenchmark<T, Dom>(state, get_built_json_array());
 }
 
+namespace sum {
+
+template<typename T> static void LargeRandomSum(benchmark::State &state) {
+  JsonBenchmark<T, Dom>(state, get_built_json_array());
+}
+
+}
 } // namespace largerandom
 
 #endif // SIMDJSON_EXCEPTIONS
