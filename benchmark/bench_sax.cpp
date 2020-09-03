@@ -28,4 +28,8 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "largerandom/sax.h"
 #include "largerandom/dom.h"
 
+#include "kostya/ondemand.h"
+#include "kostya/iter.h"
+#include "kostya/dom.h"
+
 BENCHMARK_MAIN();

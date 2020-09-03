@@ -3,9 +3,9 @@
 #ifdef SIMDJSON_IMPLEMENTATION
 #if SIMDJSON_EXCEPTIONS
 
-#include "largerandom.h"
+#include "kostya.h"
 
-namespace largerandom {
+namespace kostya {
 namespace {
 
 using namespace simdjson;
@@ -27,15 +27,18 @@ private:
 simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
   container.clear();
 
+  using std::cout;
+  using std::endl;
+
   auto doc = parser.iterate(json);
-  for (ondemand::object coord : doc.get_array()) {
+  for (ondemand::object coord : doc["coordinates"]) {
     container.emplace_back(my_point{coord["x"], coord["y"], coord["z"]});
   }
 
   return true;
 }
 
-BENCHMARK_TEMPLATE(LargeRandom, OnDemand);
+BENCHMARK_TEMPLATE(Kostya, OnDemand);
 
 } // unnamed namespace
 
@@ -60,7 +63,7 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
   count = 0;
 
   auto doc = parser.iterate(json);
-  for (ondemand::object coord : doc.get_array()) {
+  for (ondemand::object coord : doc["coordinates"]) {
     sum.x += double(coord["x"]);
     sum.y += double(coord["y"]);
     sum.z += double(coord["z"]);
@@ -70,11 +73,11 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
   return true;
 }
 
-BENCHMARK_TEMPLATE(LargeRandomSum, OnDemand);
+BENCHMARK_TEMPLATE(KostyaSum, OnDemand);
 
 } // unnamed namespace
 } // namespace sum
-} // namespace largerandom
+} // namespace kostya
 
 #endif // SIMDJSON_EXCEPTIONS
 #endif // SIMDJSON_IMPLEMENTATION
