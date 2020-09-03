@@ -51,7 +51,48 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
 
 BENCHMARK_TEMPLATE(LargeRandom, Iter);
 
+} // unnamed namespace
+
+namespace sum {
+namespace {
+
+class Iter {
+public:
+  simdjson_really_inline bool Run(const padded_string &json);
+
+  simdjson_really_inline my_point &Result() { return sum; }
+  simdjson_really_inline size_t ItemCount() { return count; }
+
+private:
+  ondemand::parser parser{};
+  my_point sum{};
+  size_t count{};
+};
+
+simdjson_really_inline bool Iter::Run(const padded_string &json) {
+  sum = {0,0,0};
+  count = 0;
+
+  auto iter = parser.iterate_raw(json).value();
+  if (!iter.start_array()) { return false; }
+  do {
+    if (!iter.start_object()   || !iter.find_field_raw("x")) { return false; }
+    sum.x += iter.get_double();
+    if (!iter.has_next_field() || !iter.find_field_raw("y")) { return false; }
+    sum.y +=  iter.get_double();
+    if (!iter.has_next_field() || !iter.find_field_raw("z")) { return false; }
+    sum.z +=  iter.get_double();
+    if (iter.skip_container()) { return false; } // Skip the rest of the tweet object
+    count++;
+  } while (iter.has_next_element());
+
+  return true;
 }
+
+BENCHMARK_TEMPLATE(LargeRandomSum, Iter);
+
+} // unnamed namespace
+} // namespace sum
 } // namespace largerandom
 
 #endif // SIMDJSON_EXCEPTIONS
