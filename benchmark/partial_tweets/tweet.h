@@ -30,7 +30,7 @@ struct tweet {
   twitter_user user{};
   uint64_t retweet_count{};
   uint64_t favorite_count{};
-  bool operator==(const tweet &other) const {
+  simdjson_really_inline bool operator==(const tweet &other) const {
     return created_at == other.created_at &&
            id == other.id &&
            text == other.text &&
@@ -39,10 +39,10 @@ struct tweet {
            retweet_count == other.retweet_count &&
            favorite_count == other.favorite_count;
   }
-  bool operator!=(const tweet &other) const { return !(*this == other); }
+  simdjson_really_inline bool operator!=(const tweet &other) const { return !(*this == other); }
 };
 
-static std::ostream &operator<<(std::ostream &o, const tweet &t) {
+SIMDJSON_UNUSED static std::ostream &operator<<(std::ostream &o, const tweet &t) {
   o << "created_at: " << t.created_at << std::endl;
   o << "id: " << t.id << std::endl;
   o << "text: " << t.text << std::endl;
