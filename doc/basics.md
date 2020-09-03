@@ -150,7 +150,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   with the `size()` method.
 * **Checking an Element Type:** You can check an element's type with `element.type()`. It
   returns an `element_type`.
-* **Streaming and string conversion:** Given a document or an element (or node) out of a JSON document, you can output a minified string version using the C++ stream idiom (`out << element`). You can also request the construction of a minified string version (`simdjson::minify(element)`).
+* **Output to streams and strings:** Given a document or an element (or node) out of a JSON document, you can output a minified string version using the C++ stream idiom (`out << element`). You can also request the construction of a minified string version (`simdjson::minify(element)`).
 
 
 Here are some examples of all of the above:

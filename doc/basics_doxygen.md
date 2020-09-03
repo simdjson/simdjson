@@ -131,6 +131,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   with the `size()` method.
 * **Checking an Element Type:** You can check an element's type with `element.type()`. It
   returns an `element_type`.
+* **Output to Streams and Strings:** Given a document or an element (or node) out of a JSON document, you can output a minified string version using the C++ stream idiom (`out << element`). You can also request the construction of a minified string version (`simdjson::minify(element)`).
 
 
 Here are some examples of all of the above:
@@ -252,7 +253,8 @@ for (dom::key_value_pair field : object) {
 Minifying JSON strings without parsing
 ----------------------
 
-In some cases, you may have valid JSON strings that you do not wish to parse but that you wish to minify. That is, you wish to remove all unnecessary spaces. We have a fast function for this purpose (`minify`). This function does not validate your content, and it does not parse it. Instead, it assumes that your string is valid UTF-8. It is much faster than parsing the string and re-serializing it in minified form. Usage is relatively simple. You must pass an input pointer with a length parameter, as well as an output pointer and an output length parameter (by reference). The output length parameter is not read, but written to. The output pointer should point to a valid memory region that is slightly overallocated (by `simdjson::SIMDJSON_PADDING`) compared to the original string length. The input pointer and input length are read, but not written to.
+In some cases, you may have valid JSON strings that you do not wish to parse but that you wish to minify. That is, you wish to remove all unnecessary spaces. We have a fast function for this purpose (`simdjson::minify(const char * input, size_t length, const char * output, size_t& new_length)`). This function does not validate your content, and it does not parse it.  It is much faster than parsing the string and re-serializing it in minified form (`simdjson::minify(parser.parse())`). Usage is relatively simple. You must pass an input pointer with a length parameter, as well as an output pointer and an output length parameter (by reference). The output length parameter is not read, but written to. The output pointer should point to a valid memory region that is slightly overallocated (by `simdjson::SIMDJSON_PADDING`) compared to the original string length. The input pointer and input length are read, but not written to.
+
 
 ```
   // Starts with a valid JSON document as a string.
