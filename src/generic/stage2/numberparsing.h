@@ -22,8 +22,8 @@ namespace numberparsing {
 // true, negate the result.
 // This function will only work in some cases, when it does not work, success is
 // set to false. This should work *most of the time* (like 99% of the time).
-// We assume that power is in the [FASTFLOAT_SMALLEST_POWER,
-// FASTFLOAT_LARGEST_POWER] interval: the caller is responsible for this check.
+// We assume that power is in the [simdjson_smallest_power,
+// simdjson_largest_power] interval: the caller is responsible for this check.
 simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, double &d) {
   // we start with a fast path
   // It was described in
@@ -61,6 +61,7 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
     }
     return true;
   }
+  printf("OOO\n");
   // When 22 < power && power <  22 + 16, we could
   // hope for another, secondary fast path.  It was
   // described by David M. Gay in  "Correctly rounded
@@ -124,26 +125,24 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // We are going to need to do some 64-bit arithmetic to get a  precise product.
   // We use a table lookup approach.
   // It is safe because
-  // power >= FASTFLOAT_SMALLEST_POWER
-  // and power <= FASTFLOAT_LARGEST_POWER
+  // power >= simdjson_smallest_power
+  // and power <= simdjson_largest_power
   // We recover the mantissa of the power, it has a leading 1. It is always
   // rounded down.
   //
   // We want the most significant 64 bits of the product. We know
   // this will be non-zero because the most significant bit of i is
   // 1.
-
-  value128 firstproduct = full_multiplication(i, power_of_five_128[2 * (power - FASTFLOAT_SMALLEST_POWER)]);
-  value128 secondproduct = full_multiplication(i, power_of_five_128[2 * (power - FASTFLOAT_SMALLEST_POWER) + 1]);
+  const uint32_t index = 2 * uint32_t(power - simdjson_smallest_power);
+  value128 firstproduct = full_multiplication(i, power_of_five_128[index]);
+  value128 secondproduct = full_multiplication(i, power_of_five_128[index + 1]);
   firstproduct.low += secondproduct.high;
-  if(secondproduct.high > firstproduct.low) {
-    firstproduct.high++;
-  }
+  if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
   uint64_t lower = firstproduct.low;
   uint64_t upper = firstproduct.high;
   // At this point, we might need to add at most one to firstproduct, but this
   // can only change the value of firstproduct.high if firstproduct.low is maximal.
-  if(firstproduct.low  == 0xFFFFFFFFFFFFFFFF) {
+  if(simdjson_unlikely(firstproduct.low  == 0xFFFFFFFFFFFFFFFF)) {
     // This is very unlikely, but if so, we need to do much more work!
     return false;
   }
@@ -161,26 +160,9 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // which we guard against.
   // If we have lots of trailing zeros, we may fall right between two
   // floating-point values.
-  if (simdjson_unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
+  if (simdjson_unlikely((lower == 0) && (power >= 0) && (power <= 23) && ((upper & 0x1FF) == 0) &&
                ((mantissa & 3) == 1))) {
-    // if mantissa & 1 == 1 we might need to round up.
-    //
-    // Scenarios:
-    // 1. We are not in the middle. Then we should round up.
-    //
-    // 2. We are right in the middle. Whether we round up depends
-    // on the last significant bit: if it is "one" then we round
-    // up (round to even) otherwise, we do not.
-    //
-    // So if the last significant bit is 1, we can safely round up.
-    // Hence we only need to bail out if (mantissa & 3) == 1.
-    // Otherwise we may need more accuracy or analysis to determine whether
-    // we are exactly between two floating-point numbers.
-    // It can be triggered with 1e23.
-    // Note: because the factor_mantissa and factor_mantissa_low are
-    // almost always rounded down (except for small positive powers),
-    // almost always should round up.
-    return false;
+      mantissa ^= 1;             // flip it so that we do not round up
   }
 
   mantissa += mantissa & 1;
@@ -379,7 +361,7 @@ simdjson_really_inline error_code write_float(const uint8_t *const src, bool neg
   // NOTE: it's weird that the simdjson_unlikely() only wraps half the if, but it seems to get slower any other
   // way we've tried: https://github.com/simdjson/simdjson/pull/990#discussion_r448497331
   // To future reader: we'd love if someone found a better way, or at least could explain this result!
-  if (simdjson_unlikely(exponent < FASTFLOAT_SMALLEST_POWER) || (exponent > FASTFLOAT_LARGEST_POWER)) {
+  if (simdjson_unlikely(exponent < simdjson_smallest_power) || (exponent > simdjson_largest_power)) {
     // this is almost never going to get called!!!
     // we start anew, going slowly!!!
     // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
@@ -705,7 +687,7 @@ SIMDJSON_UNUSED simdjson_really_inline simdjson_result<double> parse_double(cons
     if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
 
     exponent += exp_neg ? 0-exp : exp;
-    overflow = overflow || exponent < FASTFLOAT_SMALLEST_POWER || exponent > FASTFLOAT_LARGEST_POWER;
+    overflow = overflow || exponent < simdjson_smallest_power || exponent > simdjson_largest_power;
   }
 
   //
