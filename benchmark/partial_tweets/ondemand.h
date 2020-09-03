@@ -15,9 +15,9 @@ using namespace SIMDJSON_IMPLEMENTATION::stage2;
 class OnDemand {
 public:
   simdjson_really_inline bool Run(const padded_string &json);
-  simdjson_really_inline bool SetUp() { return true; }
-  simdjson_really_inline bool TearDown() { return true; }
-  simdjson_really_inline const std::vector<tweet> &Records() { return tweets; }
+
+  simdjson_really_inline const std::vector<tweet> &Result() { return tweets; }
+  simdjson_really_inline size_t ItemCount() { return tweets.size(); }
 
 private:
   ondemand::parser parser{};

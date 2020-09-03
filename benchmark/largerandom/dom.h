@@ -11,9 +11,9 @@ using namespace simdjson;
 class Dom {
 public:
   simdjson_really_inline bool Run(const padded_string &json);
-  simdjson_really_inline bool SetUp() { return true; }
-  simdjson_really_inline bool TearDown() { return true; }
-  simdjson_really_inline const std::vector<my_point> &Records() { return container; }
+
+  simdjson_really_inline const std::vector<my_point> &Result() { return container; }
+  simdjson_really_inline size_t ItemCount() { return container.size(); }
 
 private:
   dom::parser parser{};

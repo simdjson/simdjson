@@ -15,9 +15,10 @@ using namespace SIMDJSON_IMPLEMENTATION::stage2;
 class Sax {
 public:
   simdjson_really_inline bool Run(const padded_string &json) noexcept;
-  simdjson_really_inline bool SetUp() noexcept { return true; }
-  simdjson_really_inline bool TearDown() noexcept { return true; }
-  simdjson_really_inline const std::vector<my_point> &Records() { return container; }
+
+  simdjson_really_inline const std::vector<my_point> &Result() { return container; }
+  simdjson_really_inline size_t ItemCount() { return container.size(); }
+
 private:
   simdjson_really_inline error_code RunNoExcept(const padded_string &json) noexcept;
   error_code Allocate(size_t new_capacity);
