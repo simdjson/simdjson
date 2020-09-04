@@ -33,7 +33,8 @@ using namespace SIMDJSON_IMPLEMENTATION::stage2;
 struct sax_point_reader_visitor {
 public:
   std::vector<my_point> &points;
-  size_t idx{4};
+  enum {GOT_X=0, GOT_Y=1, GOT_Z=2, GOT_SOMETHING_ELSE=4};
+  size_t idx{GOT_SOMETHING_ELSE};
   double buffer[3];
 
   sax_point_reader_visitor(std::vector<my_point> &_points) : points(_points) {}
@@ -43,7 +44,7 @@ public:
     return SUCCESS;
   }
   simdjson_really_inline error_code visit_primitive(json_iterator &, const uint8_t *value) {
-    if(idx == 4) { return simdjson::SUCCESS; }
+    if(idx == GOT_SOMETHING_ELSE) { return simdjson::SUCCESS; }
     return numberparsing::parse_double(value).get(buffer[idx]);
   }
   simdjson_really_inline error_code visit_object_end(json_iterator &)  {
@@ -54,17 +55,20 @@ public:
   simdjson_really_inline error_code visit_document_start(json_iterator &) { return SUCCESS; }
   simdjson_really_inline error_code visit_key(json_iterator &, const uint8_t * key) {
     switch(key[1]) {
+      // Technically, we should check the other characters
+      // in the key, but we are cheating to go as fast 
+      // as possible.
       case 'x':
-        idx = 0;
+        idx = GOT_X;
         break;
       case 'y':
-        idx = 1;
+        idx = GOT_Y;
         break;
       case 'z':
-        idx = 2;
+        idx = GOT_Z;
         break; 
       default:
-        idx = 4; 
+        idx = GOT_SOMETHING_ELSE; 
     }
     return SUCCESS; 
   }
