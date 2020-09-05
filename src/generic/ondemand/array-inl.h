@@ -42,7 +42,7 @@ namespace ondemand {
 
 simdjson_really_inline array::array() noexcept = default;
 simdjson_really_inline array::array(json_iterator_ref &&_iter) noexcept
-  : iter{std::forward<json_iterator_ref>(_iter)}, error{SUCCESS}
+  : iter{std::forward<json_iterator_ref>(_iter)}
 {
 }
 simdjson_really_inline array::array(array &&other) noexcept = default;
@@ -66,34 +66,12 @@ simdjson_really_inline array array::started(json_iterator_ref &&iter) noexcept {
   if (!iter->started_array()) { iter.release(); }
   return array(std::forward<json_iterator_ref>(iter));
 }
-simdjson_really_inline array::iterator array::begin() & noexcept {
-  return *this;
+
+simdjson_really_inline array_iterator array::begin() & noexcept {
+  return iter;
 }
-simdjson_really_inline array::iterator array::end() & noexcept {
+simdjson_really_inline array_iterator array::end() & noexcept {
   return {};
-}
-
-simdjson_really_inline array::iterator::iterator(array &_a) noexcept : a{&_a} {}
-
-simdjson_really_inline array::iterator::iterator() noexcept = default;
-simdjson_really_inline array::iterator::iterator(const array::iterator &_a) noexcept = default;
-simdjson_really_inline array::iterator &array::iterator::operator=(const array::iterator &_a) noexcept = default;
-
-simdjson_really_inline simdjson_result<value> array::iterator::operator*() noexcept {
-  if (a->error) { a->iter.release(); return a->error; }
-  return value::start(a->iter.borrow());
-}
-simdjson_really_inline bool array::iterator::operator==(const array::iterator &other) noexcept {
-  return !(*this != other);
-}
-simdjson_really_inline bool array::iterator::operator!=(const array::iterator &) noexcept {
-  return a->iter.is_alive();
-}
-simdjson_really_inline array::iterator &array::iterator::operator++() noexcept {
-  bool has_value;
-  a->error = a->iter->has_next_element().get(has_value); // If there's an error, has_next stays true.
-  if (!(a->error || has_value)) { a->iter.release(); }
-  return *this;
 }
 
 } // namespace ondemand
@@ -117,69 +95,13 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>
 {
 }
 
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::begin() & noexcept {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
 }
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::end() & noexcept {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::end() & noexcept {
   if (error()) { return error(); }
   return first.end();
-}
-
-//
-// array::iterator
-//
-
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>::simdjson_result() noexcept
-  : internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>({}, SUCCESS)
-{
-}
-
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>::simdjson_result(
-  SIMDJSON_IMPLEMENTATION::ondemand::array::iterator &&value
-) noexcept
-  : internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>(std::forward<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>(value))
-{
-}
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>::simdjson_result(error_code error) noexcept
-  : internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>({}, error)
-{
-}
-
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>::simdjson_result(
-  const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &a
-) noexcept
-  : internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>(a)
-{
-}
-
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>::operator=(
-  const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &a
-) noexcept {
-  first = a.first;
-  second = a.second;
-  return *this;
-}
-
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>::operator*() noexcept {
-  if (error()) { second = SUCCESS; return error(); }
-  return *first;
-}
-// Assumes it's being compared with the end. true if depth < iter->depth.
-simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>::operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &other) noexcept {
-  if (error()) { return true; }
-  return first == other.first;
-}
-// Assumes it's being compared with the end. true if depth >= iter->depth.
-simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>::operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &other) noexcept {
-  if (error()) { return false; }
-  return first != other.first;
-}
-// Checks for ']' and ','
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> &simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator>::operator++() noexcept {
-  if (error()) { return *this; }
-  ++first;
-  return *this;
 }
 
 } // namespace simdjson
