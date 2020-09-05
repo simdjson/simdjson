@@ -40,11 +40,12 @@ public:
   private:
     array *a{};
     simdjson_really_inline iterator() noexcept;
+    friend class array;
     friend struct simdjson_result<array::iterator>;
   };
 
-  simdjson_really_inline array::iterator begin() noexcept;
-  simdjson_really_inline array::iterator end() noexcept;
+  simdjson_really_inline array::iterator begin() & noexcept;
+  simdjson_really_inline array::iterator end() & noexcept;
 
 protected:
   /**
@@ -103,8 +104,8 @@ public:
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::array &&value) noexcept; ///< @private
   simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
 
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> begin() noexcept;
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> end() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> begin() & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> end() & noexcept;
 };
 
 template<>

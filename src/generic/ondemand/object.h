@@ -42,7 +42,8 @@ public:
 
   simdjson_really_inline object::iterator begin() noexcept;
   simdjson_really_inline object::iterator end() noexcept;
-  simdjson_really_inline simdjson_result<value> operator[](const std::string_view key) noexcept;
+  simdjson_really_inline simdjson_result<value> operator[](const std::string_view key) & noexcept;
+  simdjson_really_inline simdjson_result<value> operator[](const std::string_view key) && noexcept;
 
 protected:
   /**
@@ -63,6 +64,8 @@ protected:
   simdjson_really_inline object(json_iterator_ref &&_iter) noexcept;
 
   simdjson_really_inline error_code report_error() noexcept;
+
+  simdjson_really_inline error_code find_field(const std::string_view key) noexcept;
 
   /**
    * Document containing the primary iterator.
@@ -107,7 +110,8 @@ public:
 
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object::iterator> begin() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object::iterator> end() noexcept;
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) && noexcept;
 };
 
 template<>

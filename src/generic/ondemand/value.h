@@ -49,6 +49,8 @@ public:
   simdjson_really_inline operator bool() && noexcept(false);
 #endif
 
+  // simdjson_really_inline simdjson_result<array_iterator<value>> begin() & noexcept;
+  // simdjson_really_inline simdjson_result<array_iterator<value>> end() & noexcept;
   simdjson_really_inline simdjson_result<value> operator[](std::string_view key) && noexcept;
   simdjson_really_inline simdjson_result<value> operator[](const char *key) && noexcept;
 
@@ -72,7 +74,7 @@ protected:
   simdjson_really_inline void log_value(const char *type) const noexcept;
   simdjson_really_inline void log_error(const char *message) const noexcept;
 
-  json_iterator_ref iter{}; // For the string buffer (if we need it)
+  json_iterator_ref iter{};
   const uint8_t *json{}; // The JSON text of the value
 
   friend class document;
@@ -119,8 +121,8 @@ public:
   simdjson_really_inline operator bool() && noexcept(false);
 #endif
 
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> begin() noexcept;
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> end() noexcept;
+  // simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> begin() & noexcept;
+  // simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> end() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) noexcept;
 };

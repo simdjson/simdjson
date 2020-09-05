@@ -26,7 +26,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<document> parser::it
 
   // Run stage 1.
   SIMDJSON_TRY( dom_parser.stage1((const uint8_t *)buf.data(), buf.size(), false) );  
-  return document(this);
+  return document::start(this);
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<json_iterator> parser::iterate_raw(const padded_string &buf) noexcept {
