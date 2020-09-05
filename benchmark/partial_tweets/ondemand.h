@@ -40,9 +40,7 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
 
   // Walk the document, parsing the tweets as we go
   auto doc = parser.iterate(json);
-  auto root = doc.get_object();
-  ondemand::array statuses = root["statuses"];
-  for (ondemand::object tweet : statuses) {
+  for (ondemand::object tweet : doc["statuses"].get_array()) {
     tweets.emplace_back(partial_tweets::tweet{
       tweet["created_at"],
       tweet["id"],
