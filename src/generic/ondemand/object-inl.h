@@ -53,6 +53,7 @@ simdjson_really_inline object::object(json_iterator_ref &&_iter) noexcept
 simdjson_really_inline object::object(object &&other) noexcept = default;
 simdjson_really_inline object &object::operator=(object &&other) noexcept = default;
 
+
 simdjson_really_inline object::~object() noexcept {
   if (iter.is_alive()) {
     logger::log_event(*iter, "unfinished", "object");
@@ -61,7 +62,7 @@ simdjson_really_inline object::~object() noexcept {
   }
 }
 
-simdjson_really_inline simdjson_result<value> object::operator[](const std::string_view key) noexcept {
+simdjson_really_inline error_code object::find_field(const std::string_view key) noexcept {
   if (error) { return report_error(); }
   if (!iter.is_alive()) { return NO_SUCH_FIELD; }
 
@@ -82,7 +83,7 @@ simdjson_really_inline simdjson_result<value> object::operator[](const std::stri
     // Check if it matches
     if (actual_key == key) {
       logger::log_event(*iter, "match", key, -2);
-      return value::start(iter.borrow());
+      return SUCCESS;
     }
     logger::log_event(*iter, "no match", key, -2);
     SIMDJSON_TRY( iter->skip() ); // Skip the value entirely
@@ -92,6 +93,16 @@ simdjson_really_inline simdjson_result<value> object::operator[](const std::stri
   // If the loop ended, we're out of fields to look at.
   iter.release();
   return NO_SUCH_FIELD;
+}
+
+simdjson_really_inline simdjson_result<value> object::operator[](const std::string_view key) & noexcept {
+  SIMDJSON_TRY( find_field(key) );
+  return value::start(iter.borrow());
+}
+
+simdjson_really_inline simdjson_result<value> object::operator[](const std::string_view key) && noexcept {
+  SIMDJSON_TRY( find_field(key) );
+  return value::start(std::forward<json_iterator_ref>(iter));
 }
 
 simdjson_really_inline simdjson_result<object> object::start(json_iterator_ref &&iter) noexcept {
@@ -165,9 +176,13 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object
   if (error()) { return error(); }
   return {};
 }
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::operator[](std::string_view key) noexcept {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::operator[](std::string_view key) & noexcept {
   if (error()) { return error(); }
   return first[key];
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::operator[](std::string_view key) && noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object>(first)[key];
 }
 
 //

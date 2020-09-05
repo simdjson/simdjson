@@ -28,11 +28,11 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
   container.clear();
 
   auto doc = parser.iterate(json);
-  // TODO you should be able to just say for ( ... : doc)
-  auto array = doc.get_array();
-  for (ondemand::object point_object : array) {
-    container.emplace_back(my_point{point_object["x"], point_object["y"], point_object["z"]});
+  for (ondemand::object coord : doc.get_array()) {
+    container.emplace_back(my_point{coord["x"], coord["y"], coord["z"]});
   }
+
+  printf("count: %d\n", int(container.size())); fflush(stdout);
 
   return true;
 }
@@ -62,9 +62,7 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
   count = 0;
 
   auto doc = parser.iterate(json);
-  // TODO this sucks, you should be able to just say for ( ... : doc)
-  auto array = doc.get_array();
-  for (ondemand::object coord : array) {
+  for (ondemand::object coord : doc.get_array()) {
     sum.x += double(coord["x"]);
     sum.y += double(coord["y"]);
     sum.z += double(coord["z"]);
