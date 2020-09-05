@@ -76,13 +76,13 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
   auto iter = parser.iterate_raw(json).value();
   if (!iter.start_array()) { return false; }
   do {
-    if (!iter.start_object()   || !iter.find_field_raw("x")) { return false; }
+    if (!iter.start_object()   || iter.field_key().value() != "x" || iter.field_value()) { return false; }
     sum.x += iter.get_double();
-    if (!iter.has_next_field() || !iter.find_field_raw("y")) { return false; }
+    if (!iter.has_next_field() || iter.field_key().value() != "y" || iter.field_value()) { return false; }
     sum.y +=  iter.get_double();
-    if (!iter.has_next_field() || !iter.find_field_raw("z")) { return false; }
+    if (!iter.has_next_field() || iter.field_key().value() != "z" || iter.field_value()) { return false; }
     sum.z +=  iter.get_double();
-    if (iter.skip_container()) { return false; } // Skip the rest of the tweet object
+    if (*iter.advance() != '}') { return false; }
     count++;
   } while (iter.has_next_element());
 
