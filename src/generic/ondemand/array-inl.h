@@ -40,13 +40,10 @@ namespace ondemand {
 //   error == SUCCESS.
 //
 
-simdjson_really_inline array::array() noexcept = default;
 simdjson_really_inline array::array(json_iterator_ref &&_iter) noexcept
   : iter{std::forward<json_iterator_ref>(_iter)}
 {
 }
-simdjson_really_inline array::array(array &&other) noexcept = default;
-simdjson_really_inline array &array::operator=(array &&other) noexcept = default;
 
 simdjson_really_inline array::~array() noexcept {
   if (iter.is_alive()) {

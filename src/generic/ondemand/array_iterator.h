@@ -12,9 +12,9 @@ class document;
  */
 class array_iterator {
 public:
-  simdjson_really_inline array_iterator(json_iterator_ref &iter) noexcept;
-  simdjson_really_inline array_iterator(const array_iterator &a) noexcept;
-  simdjson_really_inline array_iterator &operator=(const array_iterator &a) noexcept;
+  simdjson_really_inline array_iterator() noexcept = default;
+  simdjson_really_inline array_iterator(const array_iterator &a) noexcept = default;
+  simdjson_really_inline array_iterator &operator=(const array_iterator &a) noexcept = default;
 
   //
   // Iterator interface
@@ -40,9 +40,10 @@ private:
    */
   error_code error{};
 
-  simdjson_really_inline array_iterator() noexcept;
+  simdjson_really_inline array_iterator(json_iterator_ref &iter) noexcept;
 
   friend class array;
+  friend class value;
   friend struct simdjson_result<array_iterator>;
 };
 

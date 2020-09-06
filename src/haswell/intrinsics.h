@@ -41,11 +41,11 @@
 // has it as a macro.
 #ifndef _blsr_u64
 // we roll our own
-SIMDJSON_TARGET_HASWELL
+SIMDJSON_TARGET_IMPLEMENTATION
 static simdjson_really_inline uint64_t _blsr_u64(uint64_t n) {
   return (n - 1) & n;
 }
-SIMDJSON_UNTARGET_REGION
+SIMDJSON_UNTARGET_IMPLEMENTATION
 #endif //  _blsr_u64
 #endif // SIMDJSON_CLANG_VISUAL_STUDIO
 

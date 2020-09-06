@@ -11,7 +11,7 @@ class json_iterator_ref;
  */
 class json_iterator : public token_iterator {
 public:
-  simdjson_really_inline json_iterator() noexcept;
+  simdjson_really_inline json_iterator() noexcept = default;
   simdjson_really_inline json_iterator(json_iterator &&other) noexcept;
   simdjson_really_inline json_iterator &operator=(json_iterator &&other) noexcept;
   simdjson_really_inline json_iterator(const json_iterator &other) noexcept = delete;
@@ -157,7 +157,7 @@ protected:
 
 class json_iterator_ref {
 public:
-  simdjson_really_inline json_iterator_ref() noexcept;
+  simdjson_really_inline json_iterator_ref() noexcept = default;
   simdjson_really_inline json_iterator_ref(json_iterator_ref &&other) noexcept;
   simdjson_really_inline json_iterator_ref &operator=(json_iterator_ref &&other) noexcept;
   simdjson_really_inline json_iterator_ref(const json_iterator_ref &other) noexcept = delete;

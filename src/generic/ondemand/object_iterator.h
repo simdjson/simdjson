@@ -8,9 +8,9 @@ class field;
 
 class object_iterator {
 public:
-  simdjson_really_inline object_iterator(json_iterator_ref &iter) noexcept;
-  simdjson_really_inline object_iterator(const object_iterator &o) noexcept;
-  simdjson_really_inline object_iterator &operator=(const object_iterator &o) noexcept;
+  simdjson_really_inline object_iterator() noexcept = default;
+  simdjson_really_inline object_iterator(const object_iterator &o) noexcept = default;
+  simdjson_really_inline object_iterator &operator=(const object_iterator &o) noexcept = default;
 
   //
   // Iterator interface
@@ -36,7 +36,7 @@ private:
    * we should store it in document so there's only one of them.
    */
   error_code error{};
-  simdjson_really_inline object_iterator() noexcept;
+  simdjson_really_inline object_iterator(json_iterator_ref &iter) noexcept;
   friend struct simdjson_result<object_iterator>;
   friend class object;
 };

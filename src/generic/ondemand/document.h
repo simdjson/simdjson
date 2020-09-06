@@ -19,9 +19,10 @@ class raw_json_string;
  */
 class document {
 public:
+  simdjson_really_inline document(document &&other) noexcept = default;
+  simdjson_really_inline document &operator=(document &&other) noexcept = default;
+
   simdjson_really_inline document() noexcept = default;
-  simdjson_really_inline document(document &&other) noexcept;
-  simdjson_really_inline document &operator=(document &&other) noexcept;
   simdjson_really_inline document(const document &other) = delete;
   simdjson_really_inline document &operator=(const document &other) = delete;
   simdjson_really_inline ~document() noexcept;

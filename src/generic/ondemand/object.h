@@ -9,12 +9,13 @@ namespace ondemand {
  */
 class object {
 public:
-  simdjson_really_inline object() noexcept;
-  simdjson_really_inline ~object() noexcept;
-  simdjson_really_inline object(object &&other) noexcept;
-  simdjson_really_inline object &operator=(object &&other) noexcept;
+  simdjson_really_inline object() noexcept = default;
+  simdjson_really_inline object(object &&other) noexcept = default;
+  simdjson_really_inline object &operator=(object &&other) noexcept = default;
   object(const object &) = delete;
   object &operator=(const object &) = delete;
+
+  simdjson_really_inline ~object() noexcept;
 
   simdjson_really_inline object_iterator begin() noexcept;
   simdjson_really_inline object_iterator end() noexcept;

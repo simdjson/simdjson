@@ -43,14 +43,11 @@ namespace ondemand {
 //   In this state, iter->depth < depth, at_start == false, and error == SUCCESS.
 //
 
-simdjson_really_inline object::object() noexcept = default;
 simdjson_really_inline object::object(json_iterator_ref &&_iter) noexcept
   : iter{std::forward<json_iterator_ref>(_iter)},
     at_start{true}
 {
 }
-simdjson_really_inline object::object(object &&other) noexcept = default;
-simdjson_really_inline object &object::operator=(object &&other) noexcept = default;
 
 
 simdjson_really_inline object::~object() noexcept {

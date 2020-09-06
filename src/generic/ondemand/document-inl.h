@@ -2,8 +2,6 @@ namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
-simdjson_really_inline document::document(document &&other) noexcept = default;
-simdjson_really_inline document &document::operator=(document &&other) noexcept = default;
 simdjson_really_inline document::document(ondemand::json_iterator &&_iter, const uint8_t *_json) noexcept
   : iter{std::forward<json_iterator>(_iter)},
     json{_json}
