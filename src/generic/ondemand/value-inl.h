@@ -141,6 +141,17 @@ simdjson_really_inline value::operator bool() && noexcept(false) {
 }
 #endif
 
+simdjson_really_inline simdjson_result<array_iterator> value::begin() & noexcept {
+  if (*json != '[') {
+    log_error("not an array");
+    return INCORRECT_TYPE;
+  }
+  if (!iter->started_array()) { iter.release(); }
+  return array_iterator(iter);
+}
+simdjson_really_inline simdjson_result<array_iterator> value::end() & noexcept {
+  return {};
+}
 simdjson_really_inline simdjson_result<value> value::operator[](std::string_view key) && noexcept {
   return std::forward<value>(*this).get_object()[key];
 }
@@ -149,10 +160,12 @@ simdjson_really_inline simdjson_result<value> value::operator[](const char *key)
 }
 
 simdjson_really_inline void value::log_value(const char *type) const noexcept {
-  logger::log_value(*iter, type);
+  char json_char[]{char(json[0]), '\0'};
+  logger::log_value(*iter, type, json_char);
 }
 simdjson_really_inline void value::log_error(const char *message) const noexcept {
-  logger::log_error(*iter, message);
+  char json_char[]{char(json[0]), '\0'};
+  logger::log_error(*iter, message, json_char);
 }
 
 } // namespace ondemand
@@ -186,11 +199,11 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
 {
 }
 
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::begin() noexcept {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::begin() & noexcept {
   if (error()) { return error(); }
-  return std::move(first).get_array().begin();
+  return first.begin();
 }
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::end() noexcept {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::end() & noexcept {
   if (error()) { return error(); }
   return {};
 }

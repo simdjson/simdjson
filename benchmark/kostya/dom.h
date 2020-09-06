@@ -2,9 +2,9 @@
 
 #if SIMDJSON_EXCEPTIONS
 
-#include "largerandom.h"
+#include "kostya.h"
 
-namespace largerandom {
+namespace kostya {
 
 using namespace simdjson;
 
@@ -23,14 +23,14 @@ private:
 simdjson_really_inline bool Dom::Run(const padded_string &json) {
   container.clear();
 
-  for (auto point : parser.parse(json)) {
+  for (auto point : parser.parse(json)["coordinates"]) {
     container.emplace_back(my_point{point["x"], point["y"], point["z"]});
   }
 
   return true;
 }
 
-BENCHMARK_TEMPLATE(LargeRandom, Dom);
+BENCHMARK_TEMPLATE(Kostya, Dom);
 
 namespace sum {
 
@@ -51,7 +51,7 @@ simdjson_really_inline bool Dom::Run(const padded_string &json) {
   sum = { 0, 0, 0 };
   count = 0;
 
-  for (auto coord : parser.parse(json)) {
+  for (auto coord : parser.parse(json)["coordinates"]) {
     sum.x += double(coord["x"]);
     sum.y += double(coord["y"]);
     sum.z += double(coord["z"]);
@@ -61,9 +61,9 @@ simdjson_really_inline bool Dom::Run(const padded_string &json) {
   return true;
 }
 
-BENCHMARK_TEMPLATE(LargeRandomSum, Dom);
+BENCHMARK_TEMPLATE(KostyaSum, Dom);
 
 } // namespace sum
-} // namespace largerandom
+} // namespace kostya
 
 #endif // SIMDJSON_EXCEPTIONS

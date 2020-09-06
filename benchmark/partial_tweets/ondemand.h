@@ -15,9 +15,9 @@ using namespace SIMDJSON_IMPLEMENTATION::stage2;
 class OnDemand {
 public:
   simdjson_really_inline bool Run(const padded_string &json);
-  simdjson_really_inline bool SetUp() { return true; }
-  simdjson_really_inline bool TearDown() { return true; }
-  simdjson_really_inline const std::vector<tweet> &Records() { return tweets; }
+
+  simdjson_really_inline const std::vector<tweet> &Result() { return tweets; }
+  simdjson_really_inline size_t ItemCount() { return tweets.size(); }
 
 private:
   ondemand::parser parser{};
@@ -40,9 +40,7 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
 
   // Walk the document, parsing the tweets as we go
   auto doc = parser.iterate(json);
-  auto root = doc.get_object();
-  ondemand::array statuses = root["statuses"];
-  for (ondemand::object tweet : statuses) {
+  for (ondemand::object tweet : doc["statuses"]) {
     tweets.emplace_back(partial_tweets::tweet{
       tweet["created_at"],
       tweet["id"],

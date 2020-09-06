@@ -3,9 +3,9 @@
 #ifdef SIMDJSON_IMPLEMENTATION
 #if SIMDJSON_EXCEPTIONS
 
-#include "largerandom.h"
+#include "kostya.h"
 
-namespace largerandom {
+namespace kostya {
 namespace {
 
 using namespace simdjson;
@@ -23,13 +23,13 @@ private:
   ondemand::parser parser{};
   std::vector<my_point> container{};
 
-  simdjson_really_inline double first_double(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) {
-    if (iter.start_object().error() || iter.field_key().error() || iter.field_value()) { throw "Invalid field"; }
+  simdjson_really_inline simdjson_result<double> first_double(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter, const char *key) {
+    if (!iter.start_object() || ondemand::raw_json_string(iter.field_key()) != key || iter.field_value()) { throw "Invalid field"; }
     return iter.get_double();
   }
 
-  simdjson_really_inline double next_double(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) {
-    if (!iter.has_next_field() || iter.field_key().error() || iter.field_value()) { throw "Invalid field"; }
+  simdjson_really_inline simdjson_result<double> next_double(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter, const char *key) {
+    if (!iter.has_next_field() || ondemand::raw_json_string(iter.field_key()) != key || iter.field_value()) { throw "Invalid field"; }
     return iter.get_double();
   }
 
@@ -38,18 +38,21 @@ private:
 simdjson_really_inline bool Iter::Run(const padded_string &json) {
   container.clear();
 
+  using std::cerr;
+  using std::endl;
   auto iter = parser.iterate_raw(json).value();
+  if (!iter.start_object() || !iter.find_field_raw("coordinates")) { cerr << "find coordinates field failed" << endl; return false; }
   if (iter.start_array()) {
     do {
-      container.emplace_back(my_point{first_double(iter), next_double(iter), next_double(iter)});
-      if (iter.has_next_field()) { throw "Too many fields"; }
+      container.emplace_back(my_point{first_double(iter, "x"), next_double(iter, "y"), next_double(iter, "z")});
+      if (iter.skip_container()) { return false; } // Skip the rest of the coordinates object
     } while (iter.has_next_element());
   }
 
   return true;
 }
 
-BENCHMARK_TEMPLATE(LargeRandom, Iter);
+BENCHMARK_TEMPLATE(Kostya, Iter);
 
 } // unnamed namespace
 
@@ -74,26 +77,27 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
   count = 0;
 
   auto iter = parser.iterate_raw(json).value();
+  if (!iter.start_object() || !iter.find_field_raw("coordinates")) { return false; }
   if (!iter.start_array()) { return false; }
   do {
-    if (!iter.start_object()   || iter.field_key().value() != "x" || iter.field_value()) { return false; }
+    if (!iter.start_object()   || !iter.find_field_raw("x")) { return false; }
     sum.x += iter.get_double();
-    if (!iter.has_next_field() || iter.field_key().value() != "y" || iter.field_value()) { return false; }
+    if (!iter.has_next_field() || !iter.find_field_raw("y")) { return false; }
     sum.y +=  iter.get_double();
-    if (!iter.has_next_field() || iter.field_key().value() != "z" || iter.field_value()) { return false; }
+    if (!iter.has_next_field() || !iter.find_field_raw("z")) { return false; }
     sum.z +=  iter.get_double();
-    if (*iter.advance() != '}') { return false; }
+    if (iter.skip_container()) { return false; } // Skip the rest of the coordinates object
     count++;
   } while (iter.has_next_element());
 
   return true;
 }
 
-BENCHMARK_TEMPLATE(LargeRandomSum, Iter);
+BENCHMARK_TEMPLATE(KostyaSum, Iter);
 
 } // unnamed namespace
 } // namespace sum
-} // namespace largerandom
+} // namespace kostya
 
 #endif // SIMDJSON_EXCEPTIONS
 #endif // SIMDJSON_IMPLEMENTATION

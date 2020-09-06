@@ -24,8 +24,8 @@ simdjson_really_inline void log_end_value(const json_iterator &iter, const char 
   log_depth--;
   log_line(iter, "-", type, "", delta, depth_delta);
 }
-simdjson_really_inline void log_error(const json_iterator &iter, const char *error, int delta, int depth_delta) noexcept {
-  log_line(iter, "", "ERROR", error, delta, depth_delta);
+simdjson_really_inline void log_error(const json_iterator &iter, const char *error, const char *detail, int delta, int depth_delta) noexcept {
+  log_line(iter, "ERROR: ", error, detail, delta, depth_delta);
 }
 
 simdjson_really_inline void log_headers() noexcept {
