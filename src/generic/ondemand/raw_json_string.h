@@ -34,3 +34,15 @@ SIMDJSON_UNUSED simdjson_really_inline bool operator!=(std::string_view a, const
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace {
+
+namespace simdjson {
+
+template<>
+struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> : public SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> {
+public:
+  simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string &&value) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
+  simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
+};
+
+} // namespace simdjson

@@ -1,22 +1,18 @@
-#define SIMDJSON_IMPLEMENTATION_FALLBACK 0
-#define SIMDJSON_IMPLEMENTATION_WESTMERE 0
-#define SIMDJSON_IMPLEMENTATION_ARM64 0
+#include "simdjson.h"
+#include "simdjson.cpp"
+
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+#include <benchmark/benchmark.h>
+SIMDJSON_POP_DISABLE_WARNINGS
+
+#if SIMDJSON_IMPLEMENTATION_HASWELL
+#include "haswell/begin_implementation.h"
+#endif // SIMDJSON_IMPLEMENTATION_HASWELL
 
 #include <iostream>
 #include <sstream>
 #include <random>
 #include <vector>
-
-#include "simdjson.h"
-#include "simdjson.cpp"
-
-#if SIMDJSON_IMPLEMENTATION_HASWELL
-#define SIMDJSON_IMPLEMENTATION haswell
-#endif // SIMDJSON_IMPLEMENTATION_HASWELL
-
-SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
-#include <benchmark/benchmark.h>
-SIMDJSON_POP_DISABLE_WARNINGS
 
 #include "partial_tweets/ondemand.h"
 #include "partial_tweets/iter.h"
@@ -33,3 +29,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "kostya/dom.h"
 
 BENCHMARK_MAIN();
+
+#if SIMDJSON_IMPLEMENTATION_HASWELL
+#include "haswell/end_implementation.h"
+#endif // SIMDJSON_IMPLEMENTATION_HASWELL

@@ -16,10 +16,11 @@ class raw_json_string;
  */
 class parser {
 public:
-  simdjson_really_inline parser() noexcept = default;
-  simdjson_really_inline parser(parser &&other) noexcept = default;
+  inline parser() noexcept = default;
+  inline parser(parser &&other) noexcept = default;
   simdjson_really_inline parser(const parser &other) = delete;
   simdjson_really_inline parser &operator=(const parser &other) = delete;
+  inline ~parser() noexcept = default;
 
   SIMDJSON_WARN_UNUSED error_code allocate(size_t capacity, size_t max_depth=DEFAULT_MAX_DEPTH) noexcept;
   SIMDJSON_WARN_UNUSED simdjson_result<document> iterate(const padded_string &json) noexcept;
@@ -36,3 +37,15 @@ private:
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace {
+
+namespace simdjson {
+
+template<>
+struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser> : public SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::parser> {
+public:
+  simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::parser &&value) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
+  simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
+};
+
+} // namespace simdjson

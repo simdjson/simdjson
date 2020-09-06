@@ -54,13 +54,14 @@ private:
 namespace simdjson {
 
 template<>
-struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> : public internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> {
+struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> : public SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> {
 public:
   simdjson_really_inline simdjson_result() noexcept;
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::array_iterator &&value) noexcept; ///< @private
   simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_really_inline simdjson_result(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &a) noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &operator=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &a) noexcept;
+  simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 
   //
   // Iterator interface

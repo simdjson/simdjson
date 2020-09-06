@@ -30,7 +30,7 @@ simdjson_really_inline value document::as_value() noexcept {
 template<typename T>
 simdjson_result<T> document::consume_if_success(simdjson_result<T> &&result) noexcept {
   if (result.error()) { json = nullptr; }
-  return std::move(result);
+  return result.second;
 }
 
 simdjson_really_inline simdjson_result<array> document::get_array() & noexcept {
@@ -101,7 +101,7 @@ namespace simdjson {
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::simdjson_result(
   SIMDJSON_IMPLEMENTATION::ondemand::document &&value
 ) noexcept :
-    internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::document>(
+    implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::document>(
       std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document>(value)
     )
 {
@@ -109,7 +109,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::docume
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::simdjson_result(
   error_code error
 ) noexcept :
-    internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::document>(
+    implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::document>(
       error
     )
 {
