@@ -2,9 +2,6 @@ namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
-simdjson_really_inline value::value() noexcept = default;
-simdjson_really_inline value::value(value &&other) noexcept = default;
-simdjson_really_inline value &value::operator=(value &&other) noexcept = default;
 simdjson_really_inline value::value(json_iterator_ref && _iter, const uint8_t *_json) noexcept
   : iter{std::forward<json_iterator_ref>(_iter)},
     json{_json}

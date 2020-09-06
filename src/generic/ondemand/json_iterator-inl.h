@@ -2,7 +2,6 @@ namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
-simdjson_really_inline json_iterator::json_iterator() noexcept = default;
 simdjson_really_inline json_iterator::json_iterator(json_iterator &&other) noexcept
   : token_iterator(std::forward<token_iterator>(other)),
     parser{other.parser},
@@ -266,7 +265,6 @@ simdjson_really_inline json_iterator_ref json_iterator::borrow() noexcept {
 //
 // json_iterator_ref
 //
-simdjson_really_inline json_iterator_ref::json_iterator_ref() noexcept = default;
 simdjson_really_inline json_iterator_ref::json_iterator_ref(json_iterator_ref &&other) noexcept
   : iter{other.iter},
     lease_depth{other.lease_depth}

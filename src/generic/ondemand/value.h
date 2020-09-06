@@ -18,9 +18,9 @@ class array_iterator;
  */
 class value {
 public:
-  simdjson_really_inline value() noexcept;
-  simdjson_really_inline value(value &&other) noexcept;
-  simdjson_really_inline value &operator=(value && other) noexcept;
+  simdjson_really_inline value() noexcept = default;
+  simdjson_really_inline value(value &&other) noexcept = default;
+  simdjson_really_inline value &operator=(value && other) noexcept = default;
   simdjson_really_inline value(const value &) noexcept = delete;
   simdjson_really_inline value &operator=(const value &) noexcept = delete;
 
