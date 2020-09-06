@@ -12,12 +12,14 @@ class document;
  */
 class array {
 public:
-  simdjson_really_inline array() noexcept;
-  simdjson_really_inline ~array() noexcept;
-  simdjson_really_inline array(array &&other) noexcept;
-  simdjson_really_inline array &operator=(array &&other) noexcept;
+  simdjson_really_inline array() noexcept = default;
+  simdjson_really_inline array(array &&other) noexcept = default;
+  simdjson_really_inline array &operator=(array &&other) noexcept = default;
+
   array(const array &) = delete;
   array &operator=(const array &) = delete;
+
+  simdjson_really_inline ~array() noexcept;
 
   simdjson_really_inline array_iterator begin() & noexcept;
   simdjson_really_inline array_iterator end() & noexcept;

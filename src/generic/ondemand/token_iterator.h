@@ -10,9 +10,9 @@ namespace ondemand {
  */
 class token_iterator {
 public:
-  simdjson_really_inline token_iterator() noexcept;
-  simdjson_really_inline token_iterator(token_iterator &&other) noexcept;
-  simdjson_really_inline token_iterator &operator=(token_iterator &&other) noexcept;
+  simdjson_really_inline token_iterator() noexcept = default;
+  simdjson_really_inline token_iterator(token_iterator &&other) noexcept = default;
+  simdjson_really_inline token_iterator &operator=(token_iterator &&other) noexcept = default;
   simdjson_really_inline token_iterator(const token_iterator &other) noexcept = delete;
   simdjson_really_inline token_iterator &operator=(const token_iterator &other) noexcept = delete;
 

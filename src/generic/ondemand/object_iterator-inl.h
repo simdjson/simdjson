@@ -8,10 +8,6 @@ namespace ondemand {
 
 simdjson_really_inline object_iterator::object_iterator(json_iterator_ref &_iter) noexcept : iter{&_iter} {}
 
-simdjson_really_inline object_iterator::object_iterator() noexcept = default;
-simdjson_really_inline object_iterator::object_iterator(const object_iterator &_o) noexcept = default;
-simdjson_really_inline object_iterator &object_iterator::operator=(const object_iterator &_o) noexcept = default;
-
 simdjson_really_inline simdjson_result<field> object_iterator::operator*() noexcept {
   if (error) { iter->release(); return error; }
   return field::start(iter->borrow());

@@ -14,15 +14,15 @@ class parser;
  */
 class raw_json_string {
 public:
-  simdjson_really_inline raw_json_string() noexcept;
+  simdjson_really_inline raw_json_string() noexcept = default;
+  simdjson_really_inline raw_json_string(const raw_json_string &other) noexcept = default;
+  simdjson_really_inline raw_json_string &operator=(const raw_json_string &other) noexcept = default;
   simdjson_really_inline raw_json_string(const uint8_t * _buf) noexcept;
-  simdjson_really_inline raw_json_string(const raw_json_string &other) noexcept;
-  simdjson_really_inline raw_json_string &operator=(const raw_json_string &other) noexcept;
   simdjson_really_inline const char * raw() const noexcept;
   simdjson_really_inline SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> unescape(uint8_t *&dst) const noexcept;
   simdjson_really_inline SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> unescape(json_iterator &iter) const noexcept;
 private:
-  const uint8_t * buf;
+  const uint8_t * buf{};
   friend class object;
 };
 
