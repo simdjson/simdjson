@@ -80,7 +80,7 @@ namespace simdjson {
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::simdjson_result(
   SIMDJSON_IMPLEMENTATION::ondemand::array &&value
 ) noexcept
-  : internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array>(
+  : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array>(
       std::forward<SIMDJSON_IMPLEMENTATION::ondemand::array>(value)
     )
 {
@@ -88,7 +88,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::simdjson_result(
   error_code error
 ) noexcept
-  : internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array>(error)
+  : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array>(error)
 {
 }
 
