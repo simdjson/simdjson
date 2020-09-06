@@ -43,3 +43,12 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<json_iterator> parse
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace {
+
+namespace simdjson {
+
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser>::simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::parser &&value) noexcept
+    : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::parser>(std::forward<SIMDJSON_IMPLEMENTATION::ondemand::parser>(value)) {}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser>::simdjson_result(error_code error) noexcept
+    : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::parser>(error) {}
+
+} // namespace simdjson

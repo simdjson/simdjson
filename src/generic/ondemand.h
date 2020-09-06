@@ -1,7 +1,7 @@
 // When *declaring* classes, we use host compiler options so it will all link.
 // When *defining* class methods, we use target compiler options.
 
-SIMDJSON_UNTARGET_IMPLEMENTATION
+#include "generic/implementation_simdjson_result_base.h"
 #include "generic/ondemand/logger.h"
 #include "generic/ondemand/raw_json_string.h"
 #include "generic/ondemand/token_iterator.h"
@@ -15,7 +15,7 @@ SIMDJSON_UNTARGET_IMPLEMENTATION
 #include "generic/ondemand/object.h"
 #include "generic/ondemand/parser.h"
 
-SIMDJSON_TARGET_IMPLEMENTATION
+#include "generic/implementation_simdjson_result_base-inl.h"
 #include "generic/ondemand/logger-inl.h"
 #include "generic/ondemand/raw_json_string-inl.h"
 #include "generic/ondemand/token_iterator-inl.h"

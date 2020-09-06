@@ -28,25 +28,25 @@ simdjson_really_inline array_iterator &array_iterator::operator++() noexcept {
 namespace simdjson {
 
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::simdjson_result() noexcept
-  : internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>({}, SUCCESS)
+  : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>({}, SUCCESS)
 {
 }
 
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::simdjson_result(
   SIMDJSON_IMPLEMENTATION::ondemand::array_iterator &&value
 ) noexcept
-  : internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>(std::forward<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>(value))
+  : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>(std::forward<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>(value))
 {
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::simdjson_result(error_code error) noexcept
-  : internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>({}, error)
+  : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>({}, error)
 {
 }
 
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::simdjson_result(
   const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &a
 ) noexcept
-  : internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>(a)
+  : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>(a)
 {
 }
 

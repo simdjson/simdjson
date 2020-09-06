@@ -38,7 +38,7 @@ namespace simdjson {
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::simdjson_result(
   SIMDJSON_IMPLEMENTATION::ondemand::field &&value
 ) noexcept :
-    internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::field>(
+    implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::field>(
       std::forward<SIMDJSON_IMPLEMENTATION::ondemand::field>(value)
     )
 {
@@ -46,7 +46,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::simdjson_result(
   error_code error
 ) noexcept :
-    internal::simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::field>(error)
+    implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::field>(error)
 {
 }
 
