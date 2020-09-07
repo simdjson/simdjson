@@ -55,7 +55,8 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_js
   return first.key();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::value() noexcept {
-  return { std::move(first.value()), error() };
+  if (error()) { return error(); }
+  return std::move(first.value());
 }
 
 } // namespace simdjson

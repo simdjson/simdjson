@@ -48,6 +48,16 @@ struct implementation_simdjson_result_base {
   simdjson_really_inline implementation_simdjson_result_base(T &&value, error_code error) noexcept;
 
   /**
+   * Move a result.
+   */
+  simdjson_really_inline implementation_simdjson_result_base(implementation_simdjson_result_base<T> &&value) noexcept = default;
+
+  /**
+   * Copy a result.
+   */
+  simdjson_really_inline implementation_simdjson_result_base(const implementation_simdjson_result_base<T> &value) = default;
+
+  /**
    * Create a new empty result with error = UNINITIALIZED.
    */
   simdjson_really_inline ~implementation_simdjson_result_base() noexcept;
