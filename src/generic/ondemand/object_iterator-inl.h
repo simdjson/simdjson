@@ -32,11 +32,6 @@ simdjson_really_inline object_iterator &object_iterator::operator++() noexcept {
 
 namespace simdjson {
 
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::simdjson_result() noexcept
-  : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>({}, SUCCESS)
-{
-}
-
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::simdjson_result(
   SIMDJSON_IMPLEMENTATION::ondemand::object_iterator &&value
 ) noexcept
@@ -46,21 +41,6 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::simdjson_result(error_code error) noexcept
   : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>({}, error)
 {
-}
-
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::simdjson_result(
-  const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &o
-) noexcept
-  : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>(o)
-{
-}
-
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator=(
-  const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &o
-) noexcept {
-  first = o.first;
-  second = o.second;
-  return *this;
 }
 
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator*() noexcept {

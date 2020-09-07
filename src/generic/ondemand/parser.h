@@ -45,6 +45,9 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser> : public SIMDJ
 public:
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::parser &&value) noexcept; ///< @private
   simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
+
+  simdjson_really_inline simdjson_result() noexcept = default;
+  simdjson_really_inline simdjson_result(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser> &&a) noexcept = default;
   simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 };
 
