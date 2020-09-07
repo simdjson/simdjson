@@ -1,6 +1,5 @@
 #include "simdjson/error.h"
 
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
@@ -83,7 +82,6 @@ protected:
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
 
 namespace simdjson {
 

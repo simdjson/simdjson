@@ -3,8 +3,8 @@
 
 #include "simdprune_tables.h"
 
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 namespace simd {
 
   // Forward-declared so they can be used by splat and friends.
@@ -355,7 +355,7 @@ namespace simd {
 
 } // namespace simd
 
-} // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
+} // namespace SIMDJSON_IMPLEMENTATION
 
 #endif // SIMDJSON_HASWELL_SIMD_H

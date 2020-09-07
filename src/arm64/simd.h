@@ -7,8 +7,8 @@
 #include <type_traits>
 
 
+namespace SIMDJSON_IMPLEMENTATION {
 namespace {
-namespace arm64 {
 namespace simd {
 
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
@@ -484,7 +484,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
   }; // struct simd8x64<T>
 
 } // namespace simd
-} // namespace arm64
 } // unnamed namespace
+} // namespace SIMDJSON_IMPLEMENTATION
 
 #endif // SIMDJSON_ARM64_SIMD_H

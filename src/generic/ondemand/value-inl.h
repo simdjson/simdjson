@@ -1,4 +1,3 @@
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
@@ -167,7 +166,6 @@ simdjson_really_inline void value::log_error(const char *message) const noexcept
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
 
 namespace simdjson {
 

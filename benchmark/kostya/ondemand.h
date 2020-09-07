@@ -6,7 +6,6 @@
 #include "kostya.h"
 
 namespace kostya {
-namespace {
 
 using namespace simdjson;
 using namespace SIMDJSON_IMPLEMENTATION;
@@ -40,10 +39,8 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
 
 BENCHMARK_TEMPLATE(Kostya, OnDemand);
 
-} // unnamed namespace
 
 namespace sum {
-namespace {
 
 class OnDemand {
 public:
@@ -75,7 +72,6 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
 
 BENCHMARK_TEMPLATE(KostyaSum, OnDemand);
 
-} // unnamed namespace
 } // namespace sum
 } // namespace kostya
 

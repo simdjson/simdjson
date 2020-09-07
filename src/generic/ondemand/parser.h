@@ -1,6 +1,5 @@
 #include "simdjson/error.h"
 
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
@@ -36,7 +35,6 @@ private:
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
 
 namespace simdjson {
 

@@ -1,7 +1,6 @@
 #include "simdjson.h"
 #include "isadetection.h"
 
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
 // expectation: sizeof(open_container) = 64/8.
@@ -41,12 +40,10 @@ public:
 };
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace
 
 #include "generic/stage1/allocate.h"
 #include "generic/stage2/allocate.h"
 
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
 inline dom_parser_implementation::dom_parser_implementation() noexcept = default;
@@ -69,4 +66,3 @@ SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::set_max_depth(size_t 
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace
