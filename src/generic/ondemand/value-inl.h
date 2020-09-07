@@ -180,16 +180,6 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
 {
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::simdjson_result(
-  SIMDJSON_IMPLEMENTATION::ondemand::value &&value,
-  error_code error
-) noexcept :
-    implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::value>(
-      std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(value),
-      error
-    )
-{
-}
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::simdjson_result(
   error_code error
 ) noexcept :
     implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::value>(error)

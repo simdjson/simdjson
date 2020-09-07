@@ -193,6 +193,9 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_iterator> : publi
 public:
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &&value) noexcept; ///< @private
   simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
+
+  simdjson_really_inline simdjson_result() noexcept = default;
+  simdjson_really_inline simdjson_result(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_iterator> &&a) noexcept = default;
   simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 };
 
@@ -201,6 +204,9 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_iterator_ref> : p
 public:
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator_ref &&value) noexcept; ///< @private
   simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
+
+  simdjson_really_inline simdjson_result() noexcept = default;
+  simdjson_really_inline simdjson_result(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_iterator_ref> &&a) noexcept = default;
   simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 };
 
