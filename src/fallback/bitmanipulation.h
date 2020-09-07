@@ -4,8 +4,8 @@
 #include "simdjson.h"
 #include <limits>
 
+namespace SIMDJSON_IMPLEMENTATION {
 namespace {
-namespace fallback {
 
 #if defined(_MSC_VER) && !defined(_M_ARM64) && !defined(_M_X64)
 static inline unsigned char _BitScanForward64(unsigned long* ret, uint64_t x) {
@@ -39,7 +39,7 @@ simdjson_really_inline int leading_zeroes(uint64_t input_num) {
 #endif// _MSC_VER
 }
 
-} // namespace fallback
 } // unnamed namespace
+} // namespace SIMDJSON_IMPLEMENTATION
 
 #endif // SIMDJSON_FALLBACK_BITMANIPULATION_H

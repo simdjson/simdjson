@@ -6,8 +6,8 @@
 // Stage 1
 //
 
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 
 using namespace simd;
 
@@ -100,8 +100,8 @@ simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>
   return simd8<int8_t>(is_third_byte | is_fourth_byte) > int8_t(0);
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
+} // namespace SIMDJSON_IMPLEMENTATION
 
 #include "generic/stage1/utf8_lookup4_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
@@ -118,8 +118,8 @@ simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>
 // Implementation-specific overrides
 //
 
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 namespace stage1 {
 
 simdjson_really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
@@ -128,6 +128,7 @@ simdjson_really_inline uint64_t json_string_scanner::find_escaped(uint64_t backs
 }
 
 } // namespace stage1
+} // unnamed namespace
 
 SIMDJSON_WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
   return westmere::stage1::json_minifier::minify<64>(buf, len, dst, dst_len);
@@ -158,6 +159,5 @@ SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace
 
 #include "westmere/end_implementation.h"

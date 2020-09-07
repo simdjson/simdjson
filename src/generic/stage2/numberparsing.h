@@ -1,8 +1,8 @@
 #include <cmath>
 #include <limits>
 
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 namespace stage2 {
 namespace numberparsing {
 
@@ -764,5 +764,5 @@ SIMDJSON_UNUSED simdjson_really_inline simdjson_result<double> parse_double(cons
 
 } // namespace numberparsing
 } // namespace stage2
-} // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
+} // namespace SIMDJSON_IMPLEMENTATION

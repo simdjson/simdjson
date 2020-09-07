@@ -1,8 +1,8 @@
 // This file contains the common code every implementation uses
 // It is intended to be included multiple times and compiled multiple times
 
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 namespace stage2 {
 namespace stringparsing {
 
@@ -129,5 +129,5 @@ SIMDJSON_UNUSED SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_str
 
 } // namespace stringparsing
 } // namespace stage2
-} // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
+} // namespace SIMDJSON_IMPLEMENTATION

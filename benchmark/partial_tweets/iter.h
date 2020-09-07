@@ -6,7 +6,6 @@
 #include "partial_tweets.h"
 
 namespace partial_tweets {
-namespace {
 
 using namespace simdjson;
 using namespace SIMDJSON_IMPLEMENTATION;
@@ -91,7 +90,6 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
 
 BENCHMARK_TEMPLATE(PartialTweets, Iter);
 
-}
 } // namespace partial_tweets
 
 #endif // SIMDJSON_EXCEPTIONS

@@ -6,7 +6,6 @@
 #include "largerandom.h"
 
 namespace largerandom {
-namespace {
 
 using namespace simdjson;
 using namespace SIMDJSON_IMPLEMENTATION;
@@ -51,10 +50,8 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
 
 BENCHMARK_TEMPLATE(LargeRandom, Iter);
 
-} // unnamed namespace
 
 namespace sum {
-namespace {
 
 class Iter {
 public:
@@ -91,7 +88,6 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
 
 BENCHMARK_TEMPLATE(LargeRandomSum, Iter);
 
-} // unnamed namespace
 } // namespace sum
 } // namespace largerandom
 
