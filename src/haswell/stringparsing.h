@@ -5,8 +5,8 @@
 #include "haswell/simd.h"
 #include "haswell/bitmanipulation.h"
 
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 
 using namespace simd;
 
@@ -38,8 +38,8 @@ simdjson_really_inline backslash_and_quote backslash_and_quote::copy_and_find(co
   };
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
+} // namespace SIMDJSON_IMPLEMENTATION
 
 #include "generic/stage2/stringparsing.h"
 

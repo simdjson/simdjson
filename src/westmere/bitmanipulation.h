@@ -1,8 +1,8 @@
 #ifndef SIMDJSON_WESTMERE_BITMANIPULATION_H
 #define SIMDJSON_WESTMERE_BITMANIPULATION_H
 
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
@@ -62,7 +62,7 @@ simdjson_really_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #endif
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
+} // namespace SIMDJSON_IMPLEMENTATION
 
 #endif // SIMDJSON_WESTMERE_BITMANIPULATION_H

@@ -1,7 +1,6 @@
 #include "arm64/begin_implementation.h"
 #include "arm64/dom_parser_implementation.h"
 
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
 SIMDJSON_WARN_UNUSED error_code implementation::create_dom_parser_implementation(
@@ -17,6 +16,5 @@ SIMDJSON_WARN_UNUSED error_code implementation::create_dom_parser_implementation
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace
 
 #include "arm64/end_implementation.h"

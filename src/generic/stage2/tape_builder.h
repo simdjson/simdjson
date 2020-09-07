@@ -2,8 +2,8 @@
 #include "generic/stage2/tape_writer.h"
 #include "generic/stage2/atomparsing.h"
 
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 namespace stage2 {
 
 struct tape_builder {
@@ -279,5 +279,5 @@ simdjson_really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 }
 
 } // namespace stage2
-} // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
+} // namespace SIMDJSON_IMPLEMENTATION

@@ -6,8 +6,8 @@
 #include "isadetection.h"
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_REGION
-namespace {
 namespace westmere {
+namespace {
 
 using namespace simdjson;
 using namespace simdjson::dom;
@@ -24,7 +24,7 @@ public:
   SIMDJSON_WARN_UNUSED bool validate_utf8(const char *buf, size_t len) const noexcept final;
 };
 
-} // namespace westmere
 } // unnamed namespace
+} // namespace westmere
 
 #endif // SIMDJSON_WESTMERE_IMPLEMENTATION_H

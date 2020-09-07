@@ -1,8 +1,8 @@
 #ifndef SIMDJSON_ARM64_NUMBERPARSING_H
 #define SIMDJSON_ARM64_NUMBERPARSING_H
 
+namespace SIMDJSON_IMPLEMENTATION {
 namespace {
-namespace arm64 {
 
 // we don't have SSE, so let us use a scalar function
 // credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
@@ -14,8 +14,8 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
   return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
 }
 
-} // namespace arm64
 } // unnamed namespace
+} // namespace SIMDJSON_IMPLEMENTATION
 
 #define SWAR_NUMBER_PARSING
 

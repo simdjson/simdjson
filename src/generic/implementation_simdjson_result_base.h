@@ -1,4 +1,3 @@
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
 // This is a near copy of include/error.h's implementation_simdjson_result_base, except it doesn't use std::pair
@@ -119,4 +118,3 @@ struct implementation_simdjson_result_base {
 }; // struct implementation_simdjson_result_base
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace
