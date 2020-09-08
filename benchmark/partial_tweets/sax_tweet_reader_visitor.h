@@ -6,6 +6,10 @@
 
 namespace partial_tweets {
 
+using namespace simdjson;
+using namespace SIMDJSON_IMPLEMENTATION;
+using namespace SIMDJSON_IMPLEMENTATION::stage2;
+
 struct sax_tweet_reader_visitor {
 public:
   simdjson_really_inline sax_tweet_reader_visitor(std::vector<tweet> &tweets, uint8_t *string_buf);
