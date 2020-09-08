@@ -223,6 +223,7 @@ namespace std {
 #include <features.h>
 #if !((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ > 25)))
 #include <xlocale.h> // Old glibc needs xlocale, otherwise xlocale is unavailable.
+#endif // !((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ > 25)))
 #else // __GLIBC__
 // Ok. So we do not have __GLIBC__
 // Assume that everything that is not GLIBC and not Visual Studio needs xlocale.h
