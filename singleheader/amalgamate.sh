@@ -46,18 +46,21 @@ function doinclude()
     file=$1
     line="${@:2}"
     if [ -f $AMALGAMATE_INCLUDE_PATH/$file ]; then
-        if [[ ! " ${found_includes[@]} " =~ " ${file} " ]]; then
+        # generic includes are included multiple times
+        if [[ "${file}" == *'generic/'*'.h' ]]; then
+            dofile $AMALGAMATE_INCLUDE_PATH $file
+        # begin/end_implementation are also included multiple times
+        elif [[ "${file}" == *'/begin.h' ]]; then
+            dofile $AMALGAMATE_INCLUDE_PATH $file
+        elif [[ "${file}" == *'/end.h' ]]; then
+            dofile $AMALGAMATE_INCLUDE_PATH $file
+        elif [[ ! " ${found_includes[@]} " =~ " ${file} " ]]; then
             found_includes+=("$file")
             dofile $AMALGAMATE_INCLUDE_PATH $file
         fi
     elif [ -f $AMALGAMATE_SOURCE_PATH/$file ]; then
         # generic includes are included multiple times
         if [[ "${file}" == *'generic/'*'.h' ]]; then
-            dofile $AMALGAMATE_SOURCE_PATH $file
-        # begin/end_implementation are also included multiple times
-        elif [[ "${file}" == *'begin_implementation.h' ]]; then
-            dofile $AMALGAMATE_SOURCE_PATH $file
-        elif [[ "${file}" == *'end_implementation.h' ]]; then
             dofile $AMALGAMATE_SOURCE_PATH $file
         elif [[ ! " ${found_includes[@]} " =~ " ${file} " ]]; then
             found_includes+=("$file")
