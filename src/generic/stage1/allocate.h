@@ -1,3 +1,4 @@
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 namespace stage1 {
@@ -19,3 +20,4 @@ simdjson_really_inline error_code set_capacity(internal::dom_parser_implementati
 } // namespace stage1
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
