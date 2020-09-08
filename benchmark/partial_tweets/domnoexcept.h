@@ -5,10 +5,6 @@
 namespace partial_tweets {
 
 using namespace simdjson;
-#ifdef SIMDJSON_IMPLEMENTATION
-using namespace SIMDJSON_IMPLEMENTATION;
-using namespace SIMDJSON_IMPLEMENTATION::stage2;
-#endif
 
 class DomNoExcept {
 public:
