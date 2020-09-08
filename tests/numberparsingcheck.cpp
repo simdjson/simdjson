@@ -70,7 +70,7 @@ bool is_in_bad_list(const char *buf) {
 void found_invalid_number(const uint8_t *buf) {
   invalid_count++;
   char *endptr;
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#ifdef _WIN32
   static _locale_t c_locale = _create_locale(LC_ALL, "C");
   double expected = _strtod_l((const char *)buf, &endptr, c_locale);
 #else
