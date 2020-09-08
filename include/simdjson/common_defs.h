@@ -226,11 +226,12 @@ namespace std {
 #endif // !((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ > 25)))
 #else // __GLIBC__
 // Ok. So we do not have __GLIBC__
-// Assume that everything that is not GLIBC and not Visual Studio needs xlocale.h
-// It is likely that FreeBSD and Apple platforms load xlocale.h next:
-#ifndef SIMDJSON_REGULAR_VISUAL_STUDIO 
+// Assume that everything that is not GLIBC and not on old freebsd or windows
+// needs xlocale.
+// It is likely that recent FreeBSD and Apple platforms load xlocale.h next:
+#if !(defined(_WIN32) || (__FreeBSD_version < 1000010))
 #include <xlocale.h>
-#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
+#endif // 
 #endif //  __GLIBC__
 #endif // (defined(_MSC_VER) && (_MSC_VER>=1910)) || defined(SIMDJSON_CPLUSPLUS17)
 
