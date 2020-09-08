@@ -454,6 +454,10 @@ simdjson_really_inline error_code parse_number(const uint8_t *const, W &writer) 
   return SUCCESS;              // always succeeds
 }
 
+SIMDJSON_UNUSED simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept { return 0; }
+SIMDJSON_UNUSED simdjson_really_inline simdjson_result<int64_t> parse_integer(const uint8_t * const src) noexcept { return 0; }
+SIMDJSON_UNUSED simdjson_really_inline simdjson_result<double> parse_double(const uint8_t * const src) noexcept { return 0; }
+
 #else
 
 // parse the number at src
