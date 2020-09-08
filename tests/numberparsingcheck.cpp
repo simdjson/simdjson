@@ -121,7 +121,7 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf) {
 void found_float(double result, const uint8_t *buf) {
   char *endptr;
   float_count++;
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#ifdef _WIN32
   static _locale_t c_locale = _create_locale(LC_ALL, "C");
   double expected = _strtod_l((const char *)buf, &endptr, c_locale);
 #else
