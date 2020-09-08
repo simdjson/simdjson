@@ -196,4 +196,41 @@ namespace std {
 #endif // SIMDJSON_HAS_STRING_VIEW
 #undef SIMDJSON_HAS_STRING_VIEW // We are not going to need this macro anymore.
 
+
+
+
+
+/**
+ * We may fall back on the system's number parsing, and we want
+ * to be able to call on a locale-insensitive parser. It unfortunately
+ * means that we need to load up locale headers.
+ */
+#include <locale.h>
+/**
+ * Determining whether we should import xlocale.h or not is 
+ * a bit of a nightmare. Visual Studio does not have it, and neither does
+ * recent GLIBC (GCC). However, FreeBSD and Apple platforms will need it.
+ * And we would want to cover as many platforms as possible.
+ */
+#if (defined(_MSC_VER) && (_MSC_VER>=1910)) || defined(SIMDJSON_CPLUSPLUS17)
+// This is the easy case: we have __has_include and can check whether
+// xlocale is available. If so, we load it up.
+#if __has_include(<xlocale.h>)
+#include <xlocale.h>
+#endif // __has_include
+#else // We do not have __has_include
+#ifdef __GLIBC__ // If we have __GLIBC__ then we should have features.h which should help
+#include <features.h>
+#if !((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ > 25)))
+#include <xlocale.h> // Old glibc needs xlocale, otherwise xlocale is unavailable.
+#else // __GLIBC__
+// Ok. So we do not have __GLIBC__
+// Assume that everything that is not GLIBC and not Visual Studio needs xlocale.h
+// It is likely that FreeBSD and Apple platforms load xlocale.h next:
+#ifndef SIMDJSON_REGULAR_VISUAL_STUDIO 
+#include <xlocale.h>
+#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
+#endif //  __GLIBC__
+#endif // (defined(_MSC_VER) && (_MSC_VER>=1910)) || defined(SIMDJSON_CPLUSPLUS17)
+
 #endif // SIMDJSON_COMMON_DEFS_H
