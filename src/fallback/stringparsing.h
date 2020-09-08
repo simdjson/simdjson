@@ -3,8 +3,8 @@
 
 #include "simdjson.h"
 
+namespace SIMDJSON_IMPLEMENTATION {
 namespace {
-namespace fallback {
 
 // Holds backslashes and quotes locations.
 struct backslash_and_quote {
@@ -26,8 +26,8 @@ simdjson_really_inline backslash_and_quote backslash_and_quote::copy_and_find(co
   return { src[0] };
 }
 
-} // namespace fallback
 } // unnamed namespace
+} // namespace SIMDJSON_IMPLEMENTATION
 
 #include "generic/stage2/stringparsing.h"
 

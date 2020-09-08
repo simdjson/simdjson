@@ -1,5 +1,5 @@
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 namespace utf8_validation {
 
 //

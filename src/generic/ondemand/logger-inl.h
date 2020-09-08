@@ -1,4 +1,3 @@
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 namespace logger {
@@ -72,4 +71,3 @@ simdjson_really_inline void log_line(const json_iterator &iter, const char *titl
 } // namespace logger
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace

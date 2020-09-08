@@ -1,8 +1,8 @@
 #ifndef SIMDJSON_ARM64_BITMASK_H
 #define SIMDJSON_ARM64_BITMASK_H
 
+namespace SIMDJSON_IMPLEMENTATION {
 namespace {
-namespace arm64 {
 
 //
 // Perform a "cumulative bitwise xor," flipping bits each time a 1 is encountered.

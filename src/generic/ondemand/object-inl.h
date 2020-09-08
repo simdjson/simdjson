@@ -1,4 +1,3 @@
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
@@ -122,7 +121,6 @@ simdjson_really_inline object_iterator object::end() noexcept {
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
 
 namespace simdjson {
 

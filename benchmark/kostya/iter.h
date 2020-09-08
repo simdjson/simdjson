@@ -6,7 +6,6 @@
 #include "kostya.h"
 
 namespace kostya {
-namespace {
 
 using namespace simdjson;
 using namespace SIMDJSON_IMPLEMENTATION;
@@ -54,10 +53,8 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
 
 BENCHMARK_TEMPLATE(Kostya, Iter);
 
-} // unnamed namespace
 
 namespace sum {
-namespace {
 
 class Iter {
 public:
@@ -95,7 +92,6 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
 
 BENCHMARK_TEMPLATE(KostyaSum, Iter);
 
-} // unnamed namespace
 } // namespace sum
 } // namespace kostya
 

@@ -6,7 +6,6 @@
 #include "sax_tweet_reader_visitor.h"
 
 namespace partial_tweets {
-namespace {
 
 using namespace simdjson;
 using namespace SIMDJSON_IMPLEMENTATION;
@@ -67,7 +66,6 @@ error_code Sax::Allocate(size_t new_capacity) {
 
 BENCHMARK_TEMPLATE(PartialTweets, Sax);
 
-}
 } // namespace partial_tweets
 
 #endif // SIMDJSON_IMPLEMENTATION

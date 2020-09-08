@@ -1,4 +1,3 @@
-namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
@@ -324,7 +323,6 @@ simdjson_really_inline bool json_iterator_ref::is_active() const noexcept {
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
 
 namespace simdjson {
 
