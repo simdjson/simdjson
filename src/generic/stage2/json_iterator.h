@@ -1,5 +1,6 @@
 #include "generic/stage2/logger.h"
 
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 namespace stage2 {
@@ -313,3 +314,4 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::visit_prim
 } // namespace stage2
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

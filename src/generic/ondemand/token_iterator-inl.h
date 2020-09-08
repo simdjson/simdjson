@@ -1,3 +1,4 @@
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
@@ -40,6 +41,7 @@ simdjson_really_inline bool token_iterator::operator<=(const token_iterator &oth
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
 namespace simdjson {
 

@@ -1,3 +1,4 @@
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 namespace stage2 {
@@ -62,3 +63,4 @@ simdjson_really_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 } // namespace stage2
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

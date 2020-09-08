@@ -7,6 +7,7 @@
 #include <type_traits>
 
 
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 namespace simd {
@@ -486,5 +487,6 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
 } // namespace simd
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_SIMD_H

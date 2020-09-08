@@ -6,6 +6,7 @@
 // Stage 1
 //
 
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 
@@ -104,6 +105,7 @@ simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>
 
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
 #include "generic/stage1/utf8_lookup4_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
@@ -119,6 +121,7 @@ simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>
 //
 // Implementation-specific overrides
 //
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 namespace stage1 {
@@ -160,6 +163,7 @@ SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
 #include "generic/ondemand.h"
 

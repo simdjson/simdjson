@@ -1,6 +1,7 @@
 #ifndef SIMDJSON_ARM64_BITMANIPULATION_H
 #define SIMDJSON_ARM64_BITMANIPULATION_H
 
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 
@@ -57,5 +58,6 @@ simdjson_really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint6
 
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_BITMANIPULATION_H
