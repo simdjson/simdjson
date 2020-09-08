@@ -1,0 +1,1 @@
+#define SIMDJSON_IMPLEMENTATION fallback
