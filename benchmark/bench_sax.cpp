@@ -6,7 +6,7 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 SIMDJSON_POP_DISABLE_WARNINGS
 
 #if SIMDJSON_IMPLEMENTATION_HASWELL
-#include "haswell/begin_implementation.h"
+#include "simdjson/haswell/begin.h"
 #endif // SIMDJSON_IMPLEMENTATION_HASWELL
 
 #include <iostream>
@@ -31,5 +31,5 @@ SIMDJSON_POP_DISABLE_WARNINGS
 BENCHMARK_MAIN();
 
 #if SIMDJSON_IMPLEMENTATION_HASWELL
-#include "haswell/end_implementation.h"
+#include "simdjson/haswell/end.h"
 #endif // SIMDJSON_IMPLEMENTATION_HASWELL

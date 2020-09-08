@@ -72,6 +72,12 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "simdjson/internal/tape_ref-inl.h"
 #include "simdjson/dom/serialization-inl.h"
 
+// Implementations
+#include "simdjson/arm64.h"
+#include "simdjson/fallback.h"
+#include "simdjson/haswell.h"
+#include "simdjson/westmere.h"
+
 SIMDJSON_POP_DISABLE_WARNINGS
 
 #endif // SIMDJSON_H
