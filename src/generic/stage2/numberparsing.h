@@ -231,10 +231,10 @@ static bool parse_float_strtod(const uint8_t *ptr, double *outDouble) {
   // Unfortunately, Visual Studio has a different syntax.
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   static _locale_t c_locale = _create_locale(LC_ALL, "C");
-  *outDouble = _strtod_l(ptr, &endptr, c_locale);
+  *outDouble = _strtod_l((const char *)ptr, &endptr, c_locale);
 #else
   static locale_t c_locale = newlocale(LC_ALL_MASK, "C", NULL);
-  *outDouble = strtod_l(ptr, &endptr, c_locale);
+  *outDouble = strtod_l((const char *)ptr, &endptr, c_locale);
 #endif
   // Some libraries will set errno = ERANGE when the value is subnormal,
   // yet we may want to be able to parse subnormal values.
