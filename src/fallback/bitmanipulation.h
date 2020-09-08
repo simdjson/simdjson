@@ -4,6 +4,7 @@
 #include "simdjson.h"
 #include <limits>
 
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 
@@ -41,5 +42,6 @@ simdjson_really_inline int leading_zeroes(uint64_t input_num) {
 
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_BITMANIPULATION_H

@@ -1,3 +1,4 @@
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
@@ -73,6 +74,7 @@ protected:
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
 namespace simdjson {
 

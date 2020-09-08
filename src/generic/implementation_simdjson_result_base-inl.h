@@ -1,3 +1,4 @@
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 
 //
@@ -74,3 +75,4 @@ simdjson_really_inline implementation_simdjson_result_base<T>::implementation_si
     : implementation_simdjson_result_base(T{}, UNINITIALIZED) {}
 
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

@@ -1,6 +1,7 @@
 #ifndef SIMDJSON_WESTMERE_BITMANIPULATION_H
 #define SIMDJSON_WESTMERE_BITMANIPULATION_H
 
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 
@@ -64,5 +65,6 @@ simdjson_really_inline bool add_overflow(uint64_t value1, uint64_t value2,
 
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
 #endif // SIMDJSON_WESTMERE_BITMANIPULATION_H

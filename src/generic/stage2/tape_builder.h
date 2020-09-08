@@ -2,6 +2,7 @@
 #include "generic/stage2/tape_writer.h"
 #include "generic/stage2/atomparsing.h"
 
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 namespace stage2 {
@@ -281,3 +282,4 @@ simdjson_really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 } // namespace stage2
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

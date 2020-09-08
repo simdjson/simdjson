@@ -1,3 +1,4 @@
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
@@ -18,3 +19,4 @@ static simdjson_really_inline void log_error(const json_iterator &iter, const ch
 } // namespace logger
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

@@ -5,6 +5,7 @@
 #include "arm64/simd.h"
 #include "arm64/bitmanipulation.h"
 
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 
@@ -45,6 +46,7 @@ simdjson_really_inline backslash_and_quote backslash_and_quote::copy_and_find(co
 
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
 #include "generic/stage2/stringparsing.h"
 

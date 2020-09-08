@@ -4,6 +4,7 @@
 #include "simdjson.h"
 #include "isadetection.h"
 
+namespace simdjson {
 namespace arm64 {
 
 using namespace simdjson;
@@ -22,5 +23,6 @@ public:
 };
 
 } // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_IMPLEMENTATION_H

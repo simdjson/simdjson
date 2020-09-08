@@ -1,3 +1,4 @@
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 namespace stage2 {
@@ -107,3 +108,4 @@ simdjson_really_inline value128 full_multiplication(uint64_t value1, uint64_t va
 } // namespace stage2
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

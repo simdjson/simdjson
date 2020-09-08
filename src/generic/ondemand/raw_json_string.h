@@ -1,5 +1,6 @@
 #include "simdjson/error.h"
 
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
@@ -32,6 +33,7 @@ SIMDJSON_UNUSED simdjson_really_inline bool operator!=(std::string_view a, const
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
 namespace simdjson {
 

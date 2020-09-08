@@ -1,3 +1,4 @@
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
@@ -93,6 +94,7 @@ simdjson_really_inline simdjson_result<value> document::operator[](const char *k
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
 namespace simdjson {
 
