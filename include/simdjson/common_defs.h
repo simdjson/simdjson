@@ -196,8 +196,8 @@ namespace std {
 #endif // SIMDJSON_HAS_STRING_VIEW
 #undef SIMDJSON_HAS_STRING_VIEW // We are not going to need this macro anymore.
 
-
-
+/// If EXPR is an error, returns it.
+#define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }
 
 
 /**
@@ -243,6 +243,5 @@ namespace std {
 /**
  * End of the crazy locale headers.
  */
-
 
 #endif // SIMDJSON_COMMON_DEFS_H

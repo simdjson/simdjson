@@ -1,6 +1,5 @@
 #include "generic/stage2/json_iterator.h"
 #include "generic/stage2/tape_writer.h"
-#include "generic/stage2/atomparsing.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
