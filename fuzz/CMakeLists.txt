@@ -59,5 +59,6 @@ if(ENABLE_FUZZING)
   implement_fuzzer(fuzz_dump)
   implement_fuzzer(fuzz_print_json)
   implement_fuzzer(fuzz_dump_raw_tape)
+  implement_fuzzer(fuzz_implementations)
 
 endif()
