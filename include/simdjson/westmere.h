@@ -17,6 +17,8 @@
 // The rest need to be inside the region
 //
 #include "simdjson/westmere/begin.h"
+
+// Declarations
 #include "simdjson/generic/dom_parser_implementation.h"
 #include "simdjson/westmere/bitmanipulation.h"
 #include "simdjson/westmere/bitmask.h"
@@ -25,6 +27,13 @@
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/westmere/stringparsing.h"
 #include "simdjson/westmere/numberparsing.h"
+#include "simdjson/generic/implementation_simdjson_result_base.h"
+#include "simdjson/generic/ondemand.h"
+
+// Inline definitions
+#include "simdjson/generic/implementation_simdjson_result_base-inl.h"
+#include "simdjson/generic/ondemand-inl.h"
+
 #include "simdjson/westmere/end.h"
 
 #endif // SIMDJSON_IMPLEMENTATION_WESTMERE

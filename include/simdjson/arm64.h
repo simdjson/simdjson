@@ -8,6 +8,8 @@
 #include "simdjson/arm64/implementation.h"
 
 #include "simdjson/arm64/begin.h"
+
+// Declarations
 #include "simdjson/generic/dom_parser_implementation.h"
 #include "simdjson/arm64/intrinsics.h"
 #include "simdjson/arm64/bitmanipulation.h"
@@ -17,6 +19,12 @@
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/arm64/stringparsing.h"
 #include "simdjson/arm64/numberparsing.h"
+#include "simdjson/generic/implementation_simdjson_result_base.h"
+#include "simdjson/generic/ondemand.h"
+
+// Inline definitions
+#include "simdjson/generic/implementation_simdjson_result_base-inl.h"
+#include "simdjson/generic/ondemand-inl.h"
 #include "simdjson/arm64/end.h"
 
 #endif // SIMDJSON_IMPLEMENTATION_ARM64
