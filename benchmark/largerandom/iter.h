@@ -1,6 +1,5 @@
 #pragma once
 
-#ifdef SIMDJSON_IMPLEMENTATION
 #if SIMDJSON_EXCEPTIONS
 
 #include "largerandom.h"
@@ -8,7 +7,7 @@
 namespace largerandom {
 
 using namespace simdjson;
-using namespace simdjson::SIMDJSON_IMPLEMENTATION;
+using namespace simdjson::builtin;
 
 class Iter {
 public:
@@ -21,12 +20,12 @@ private:
   ondemand::parser parser{};
   std::vector<my_point> container{};
 
-  simdjson_really_inline double first_double(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) {
+  simdjson_really_inline double first_double(ondemand::json_iterator &iter) {
     if (iter.start_object().error() || iter.field_key().error() || iter.field_value()) { throw "Invalid field"; }
     return iter.get_double();
   }
 
-  simdjson_really_inline double next_double(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) {
+  simdjson_really_inline double next_double(ondemand::json_iterator &iter) {
     if (!iter.has_next_field() || iter.field_key().error() || iter.field_value()) { throw "Invalid field"; }
     return iter.get_double();
   }
@@ -91,4 +90,3 @@ BENCHMARK_TEMPLATE(LargeRandomSum, Iter);
 } // namespace largerandom
 
 #endif // SIMDJSON_EXCEPTIONS
-#endif // SIMDJSON_IMPLEMENTATION

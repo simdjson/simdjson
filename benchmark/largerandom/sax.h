@@ -1,6 +1,5 @@
 #pragma once
 
-#ifdef SIMDJSON_IMPLEMENTATION
 #if SIMDJSON_EXCEPTIONS
 
 #include "largerandom.h"
@@ -8,8 +7,8 @@
 namespace largerandom {
 
 using namespace simdjson;
-using namespace SIMDJSON_IMPLEMENTATION;
-using namespace SIMDJSON_IMPLEMENTATION::stage2;
+using namespace simdjson::builtin;
+using namespace simdjson::builtin::stage2;
 
 class Sax {
 public:
@@ -28,8 +27,8 @@ private:
 };
 
 using namespace simdjson;
-using namespace SIMDJSON_IMPLEMENTATION;
-using namespace SIMDJSON_IMPLEMENTATION::stage2;
+using namespace simdjson::builtin;
+using namespace simdjson::builtin::stage2;
 struct sax_point_reader_visitor {
 public:
   std::vector<my_point> &points;
@@ -123,4 +122,3 @@ BENCHMARK_TEMPLATE(LargeRandom, Sax);
 } // namespace largerandom
 
 #endif // SIMDJSON_EXCEPTIONS
-#endif // SIMDJSON_IMPLEMENTATION

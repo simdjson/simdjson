@@ -1,6 +1,5 @@
 #pragma once
 
-#ifdef SIMDJSON_IMPLEMENTATION
 #if SIMDJSON_EXCEPTIONS
 
 #include "kostya.h"
@@ -8,7 +7,7 @@
 namespace kostya {
 
 using namespace simdjson;
-using namespace simdjson::SIMDJSON_IMPLEMENTATION;
+using namespace simdjson::builtin;
 
 class Iter {
 public:
@@ -21,12 +20,12 @@ private:
   ondemand::parser parser{};
   std::vector<my_point> container{};
 
-  simdjson_really_inline simdjson_result<double> first_double(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter, const char *key) {
+  simdjson_really_inline simdjson_result<double> first_double(ondemand::json_iterator &iter, const char *key) {
     if (!iter.start_object() || ondemand::raw_json_string(iter.field_key()) != key || iter.field_value()) { throw "Invalid field"; }
     return iter.get_double();
   }
 
-  simdjson_really_inline simdjson_result<double> next_double(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter, const char *key) {
+  simdjson_really_inline simdjson_result<double> next_double(ondemand::json_iterator &iter, const char *key) {
     if (!iter.has_next_field() || ondemand::raw_json_string(iter.field_key()) != key || iter.field_value()) { throw "Invalid field"; }
     return iter.get_double();
   }
@@ -95,4 +94,3 @@ BENCHMARK_TEMPLATE(KostyaSum, Iter);
 } // namespace kostya
 
 #endif // SIMDJSON_EXCEPTIONS
-#endif // SIMDJSON_IMPLEMENTATION
