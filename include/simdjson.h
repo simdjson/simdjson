@@ -87,6 +87,10 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "simdjson/haswell.h"
 #include "simdjson/westmere.h"
 
+namespace simdjson {
+  namespace builtin = SIMDJSON_BUILTIN_IMPLEMENTATION;
+}
+
 SIMDJSON_POP_DISABLE_WARNINGS
 
 #endif // SIMDJSON_H
