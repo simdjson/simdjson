@@ -30,7 +30,7 @@ simdjson_really_inline value document::as_value() noexcept {
 template<typename T>
 simdjson_result<T> document::consume_if_success(simdjson_result<T> &&result) noexcept {
   if (result.error()) { json = nullptr; }
-  return result.second;
+  return std::forward<simdjson_result<T>>(result);
 }
 
 simdjson_really_inline simdjson_result<array> document::get_array() & noexcept {
