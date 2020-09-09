@@ -256,6 +256,9 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     // sensible, but the AVX ISA makes this kind of approach difficult.
     template<typename L>
     simdjson_really_inline void compress(uint16_t mask, L * output) const {
+      using internal::thintable_epi8;
+      using internal::BitsSetTable256mul2;
+      using internal::pshufb_combine_table;
       // this particular implementation was inspired by work done by @animetosho
       // we do it in two steps, first 8 bytes and then second 8 bytes
       uint8_t mask1 = uint8_t(mask); // least significant 8 bits
