@@ -1,6 +1,5 @@
 #pragma once
 
-#ifdef SIMDJSON_IMPLEMENTATION
 #if SIMDJSON_EXCEPTIONS
 
 #include "partial_tweets.h"
@@ -8,7 +7,7 @@
 namespace partial_tweets {
 
 using namespace simdjson;
-using namespace simdjson::SIMDJSON_IMPLEMENTATION;
+using namespace simdjson::builtin;
 
 class Iter {
 public:
@@ -92,4 +91,3 @@ BENCHMARK_TEMPLATE(PartialTweets, Iter);
 } // namespace partial_tweets
 
 #endif // SIMDJSON_EXCEPTIONS
-#endif // SIMDJSON_IMPLEMENTATION

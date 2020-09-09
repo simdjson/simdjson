@@ -1,6 +1,5 @@
 #pragma once
 
-#ifdef SIMDJSON_IMPLEMENTATION
 
 #include "partial_tweets.h"
 #include "sax_tweet_reader_visitor.h"
@@ -8,8 +7,8 @@
 namespace partial_tweets {
 
 using namespace simdjson;
-using namespace SIMDJSON_IMPLEMENTATION;
-using namespace SIMDJSON_IMPLEMENTATION::stage2;
+using namespace simdjson::builtin;
+using namespace simdjson::builtin::stage2;
 
 class Sax {
 public:
@@ -68,4 +67,3 @@ BENCHMARK_TEMPLATE(PartialTweets, Sax);
 
 } // namespace partial_tweets
 
-#endif // SIMDJSON_IMPLEMENTATION
