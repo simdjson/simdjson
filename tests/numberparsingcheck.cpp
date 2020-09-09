@@ -14,7 +14,6 @@
 #else
 #include <dirent_portable.h>
 #endif
-#include "simdjson.h"
 
 // ulp distance
 // Marc B. Reynolds, 2016-2019
