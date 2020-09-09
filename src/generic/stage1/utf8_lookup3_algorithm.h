@@ -160,7 +160,7 @@ using namespace simd;
     simd8<uint8_t> prev2 = input.prev<2>(prev_input);
     simd8<uint8_t> prev3 = input.prev<3>(prev_input);
     // is_2_3_continuation uses one more instruction than lookup2
-    simd8<bool> is_2_3_continuation = (simd8<int8_t>(input).max(simd8<int8_t>(prev1))) < int8_t(-64);
+    simd8<bool> is_2_3_continuation = (simd8<int8_t>(input).max_val(simd8<int8_t>(prev1))) < int8_t(-64);
     // must_be_2_3_continuation has two fewer instructions than lookup 2
     return simd8<uint8_t>(must_be_2_3_continuation(prev2, prev3) ^ is_2_3_continuation);
   }

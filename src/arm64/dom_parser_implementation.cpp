@@ -76,7 +76,7 @@ simdjson_really_inline json_character_block json_character_block::classify(const
 
 simdjson_really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
     simd8<uint8_t> bits = input.reduce_or();
-    return bits.max() < 0b10000000u;
+    return bits.max_val() < 0b10000000u;
 }
 
 SIMDJSON_UNUSED simdjson_really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
