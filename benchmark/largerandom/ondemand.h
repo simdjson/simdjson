@@ -1,6 +1,5 @@
 #pragma once
 
-#ifdef SIMDJSON_IMPLEMENTATION
 #if SIMDJSON_EXCEPTIONS
 
 #include "largerandom.h"
@@ -8,7 +7,7 @@
 namespace largerandom {
 
 using namespace simdjson;
-using namespace simdjson::SIMDJSON_IMPLEMENTATION;
+using namespace simdjson::builtin;
 
 class OnDemand {
 public:
@@ -72,4 +71,3 @@ BENCHMARK_TEMPLATE(LargeRandomSum, OnDemand);
 } // namespace largerandom
 
 #endif // SIMDJSON_EXCEPTIONS
-#endif // SIMDJSON_IMPLEMENTATION

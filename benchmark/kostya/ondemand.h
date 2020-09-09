@@ -1,6 +1,5 @@
 #pragma once
 
-#ifdef SIMDJSON_IMPLEMENTATION
 #if SIMDJSON_EXCEPTIONS
 
 #include "kostya.h"
@@ -8,7 +7,7 @@
 namespace kostya {
 
 using namespace simdjson;
-using namespace simdjson::SIMDJSON_IMPLEMENTATION;
+using namespace simdjson::builtin;
 
 class OnDemand {
 public:
@@ -75,4 +74,3 @@ BENCHMARK_TEMPLATE(KostyaSum, OnDemand);
 } // namespace kostya
 
 #endif // SIMDJSON_EXCEPTIONS
-#endif // SIMDJSON_IMPLEMENTATION
