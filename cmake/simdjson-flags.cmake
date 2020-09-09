@@ -94,23 +94,42 @@ else()
   target_compile_options(simdjson-internal-flags INTERFACE -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion)
 endif()
 
+#
 # Optional flags
+#
+
+# Implementation selection
 option(SIMDJSON_IMPLEMENTATION_HASWELL "Include the haswell implementation" ON)
 if(NOT SIMDJSON_IMPLEMENTATION_HASWELL)
+  message(DEPRECATION "SIMDJSON_IMPLEMENTATION_HASWELL is deprecated. Use SIMDJSON_IMPLEMENTATION=haswell or SIMDJSON_IMPLEMENTATION=-haswell instead.")
   target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_IMPLEMENTATION_HASWELL=0)
 endif()
 option(SIMDJSON_IMPLEMENTATION_WESTMERE "Include the westmere implementation" ON)
 if(NOT SIMDJSON_IMPLEMENTATION_WESTMERE)
+  message(DEPRECATION "SIMDJSON_IMPLEMENTATION_WESTMERE is deprecated. SIMDJSON_IMPLEMENTATION=-westmere instead.")
   target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_IMPLEMENTATION_WESTMERE=0)
 endif()
 option(SIMDJSON_IMPLEMENTATION_ARM64 "Include the arm64 implementation" ON)
 if(NOT SIMDJSON_IMPLEMENTATION_ARM64)
+  message(DEPRECATION "SIMDJSON_IMPLEMENTATION_ARM64 is deprecated. Use SIMDJSON_IMPLEMENTATION=-arm64 instead.")
   target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_IMPLEMENTATION_ARM64=0)
 endif()
 option(SIMDJSON_IMPLEMENTATION_FALLBACK "Include the fallback implementation" ON)
 if(NOT SIMDJSON_IMPLEMENTATION_FALLBACK)
+  message(DEPRECATION "SIMDJSON_IMPLEMENTATION_FALLBACK is deprecated. Use SIMDJSON_IMPLEMENTATION=-fallback instead.")
   target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_IMPLEMENTATION_FALLBACK=0)
 endif()
+# e.g. SIMDJSON_IMPLEMENTATION="haswell westmere -fallback"
+set(SIMDJSON_IMPLEMENTATION "" CACHE STRING "Implementations to include/exclude: space separated list of architectures (haswell/westmere/arm64/fallback). Prepend with - to force an implementation off (e.g. -haswell). Defaults to compile-time detection.")
+foreach(implementation ${SIMDJSON_IMPLEMENTATION})
+  string(TOUPPER ${implementation} implementation_upper)
+  if(string(REGEX MATCH "^-(.*)" actual_implementation ${implementation_upper}))
+    target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_IMPLEMENTATION_${actual_implementation} 0)
+  else()
+    target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_IMPLEMENTATION_${implementation_upper} 1)
+  endif()
+endforeach(implementation)
+
 
 option(SIMDJSON_BASH "Allow usage of bash within CMake" ON)
 
