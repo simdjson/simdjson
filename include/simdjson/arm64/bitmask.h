@@ -33,9 +33,8 @@ simdjson_really_inline uint64_t prefix_xor(uint64_t bitmask) {
   return bitmask;
 }
 
+} // unnamed namespace
 } // namespace arm64
 } // namespace simdjson
-} // namespace simdjson
-SIMDJSON_UNTARGET_IMPLEMENTATION
 
 #endif
