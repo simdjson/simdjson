@@ -8,12 +8,21 @@
 #include "simdjson/fallback/implementation.h"
 
 #include "simdjson/fallback/begin.h"
+
+// Declarations
 #include "simdjson/generic/dom_parser_implementation.h"
 #include "simdjson/fallback/bitmanipulation.h"
 #include "simdjson/generic/jsoncharutils.h"
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/fallback/stringparsing.h"
 #include "simdjson/fallback/numberparsing.h"
+#include "simdjson/generic/implementation_simdjson_result_base.h"
+#include "simdjson/generic/ondemand.h"
+
+// Inline definitions
+#include "simdjson/generic/implementation_simdjson_result_base-inl.h"
+#include "simdjson/generic/ondemand-inl.h"
+
 #include "simdjson/fallback/end.h"
 
 #endif // SIMDJSON_IMPLEMENTATION_FALLBACK
