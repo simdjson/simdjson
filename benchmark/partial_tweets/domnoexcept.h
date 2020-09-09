@@ -17,7 +17,9 @@ private:
   dom::parser parser{};
   std::vector<tweet> tweets{};
 
-  simdjson_really_inline simdjson_result<uint64_t> nullable_int(dom::element element) noexcept {
+  simdjson_really_inline simdjson_result<uint64_t> nullable_int(simdjson_result<dom::element> result) noexcept {
+    dom::element element;
+    SIMDJSON_TRY( result.get(element) );
     if (element.is_null()) { return 0; }
     return element.get_uint64();
   }
