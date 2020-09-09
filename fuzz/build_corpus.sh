@@ -14,5 +14,5 @@ find $root -type f -name "*.json" | while read -r json; do
  cp "$json" "$tmp"/$(sha1sum < "$json" |cut -f1 -d' ').json
 done
 
-zip --junk-paths -r corpus.zip "$tmp"
+zip --quiet --junk-paths -r corpus.zip "$tmp"
 rm -rf "$tmp"
