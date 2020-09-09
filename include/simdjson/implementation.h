@@ -3,6 +3,7 @@
 
 #include "simdjson/common_defs.h"
 #include "simdjson/internal/dom_parser_implementation.h"
+#include "simdjson/internal/isadetection.h"
 #include <string>
 #include <atomic>
 #include <vector>
@@ -77,7 +78,7 @@ public:
    *
    * The instruction sets this implementation is compiled against.
    *
-   * @return a mask of all required `instruction_set` values
+   * @return a mask of all required `internal::instruction_set::` values
    */
   virtual uint32_t required_instruction_sets() const { return _required_instruction_sets; };
 

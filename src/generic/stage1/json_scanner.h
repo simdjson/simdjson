@@ -1,3 +1,4 @@
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 namespace stage1 {
@@ -144,3 +145,4 @@ simdjson_really_inline error_code json_scanner::finish(bool streaming) {
 } // namespace stage1
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

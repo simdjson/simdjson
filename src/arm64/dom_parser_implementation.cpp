@@ -1,10 +1,9 @@
-#include "arm64/begin_implementation.h"
-#include "arm64/dom_parser_implementation.h"
-#include "generic/stage2/jsoncharutils.h"
+#include "simdjson/arm64/begin.h"
 
 //
 // Stage 1
 //
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 
@@ -100,6 +99,7 @@ simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>
 
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
 #include "generic/stage1/utf8_lookup4_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
@@ -109,13 +109,12 @@ simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>
 // Stage 2
 //
 
-#include "arm64/stringparsing.h"
-#include "arm64/numberparsing.h"
 #include "generic/stage2/tape_builder.h"
 
 //
 // Implementation-specific overrides
 //
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 namespace stage1 {
@@ -159,5 +158,6 @@ SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
-#include "arm64/end_implementation.h"
+#include "simdjson/arm64/end.h"

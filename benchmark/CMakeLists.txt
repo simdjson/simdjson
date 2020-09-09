@@ -40,6 +40,7 @@ if (TARGET benchmark::benchmark)
   link_libraries(benchmark::benchmark)
   add_executable(bench_parse_call bench_parse_call.cpp)
   add_executable(bench_dom_api bench_dom_api.cpp)
+  add_executable(bench_ondemand bench_ondemand.cpp)
 endif()
 
 include(checkperf.cmake)

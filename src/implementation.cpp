@@ -1,36 +1,24 @@
 #include "simdjson.h"
-#include "isadetection.h"
-#include "simdprune_tables.h"
-
 #include <initializer_list>
 
-#define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }
+namespace simdjson {
+namespace internal {
 
 // Static array of known implementations. We're hoping these get baked into the executable
 // without requiring a static initializer.
 
 #if SIMDJSON_IMPLEMENTATION_HASWELL
-#include "haswell/implementation.h"
-namespace simdjson { namespace internal { const haswell::implementation haswell_singleton{}; } }
-#endif // SIMDJSON_IMPLEMENTATION_HASWELL
-
+const haswell::implementation haswell_singleton{};
+#endif
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
-#include "westmere/implementation.h"
-namespace simdjson { namespace internal { const westmere::implementation westmere_singleton{}; } }
+const westmere::implementation westmere_singleton{};
 #endif // SIMDJSON_IMPLEMENTATION_WESTMERE
-
 #if SIMDJSON_IMPLEMENTATION_ARM64
-#include "arm64/implementation.h"
-namespace simdjson { namespace internal { const arm64::implementation arm64_singleton{}; } }
+const arm64::implementation arm64_singleton{};
 #endif // SIMDJSON_IMPLEMENTATION_ARM64
-
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
-#include "fallback/implementation.h"
-namespace simdjson { namespace internal { const fallback::implementation fallback_singleton{}; } }
+const fallback::implementation fallback_singleton{};
 #endif // SIMDJSON_IMPLEMENTATION_FALLBACK
-
-namespace simdjson {
-namespace internal {
 
 /**
  * @private Detects best supported implementation on first use, and sets it
@@ -114,7 +102,7 @@ const implementation * const *available_implementation_list::end() const noexcep
 }
 const implementation *available_implementation_list::detect_best_supported() const noexcept {
   // They are prelisted in priority order, so we just go down the list
-  uint32_t supported_instruction_sets = detect_supported_architectures();
+  uint32_t supported_instruction_sets = internal::detect_supported_architectures();
   for (const implementation *impl : internal::available_implementation_pointers) {
     uint32_t required_instruction_sets = impl->required_instruction_sets();
     if ((supported_instruction_sets & required_instruction_sets) == required_instruction_sets) { return impl; }
