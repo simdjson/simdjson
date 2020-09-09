@@ -73,7 +73,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define SIMDJSON_DISABLE_VS_WARNING(WARNING_NUMBER) __pragma(warning( disable : WARNING_NUMBER ))
   // Get rid of Intellisense-only warnings (Code Analysis)
   // Though __has_include is C++17, it is supported in Visual Studio 2017 or better (_MSC_VER>=1910).
-  #if defined(_MSC_VER) && (_MSC_VER>=1910) 
+  #ifdef __has_include
   #if __has_include(<CppCoreCheck\Warnings.h>)
   #include <CppCoreCheck\Warnings.h>
   #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS SIMDJSON_DISABLE_VS_WARNING(ALL_CPPCORECHECK_WARNINGS)
@@ -213,14 +213,14 @@ namespace std {
  * However, FreeBSD and Apple platforms will need it.
  * And we would want to cover as many platforms as possible.
  */
-#if (defined(_MSC_VER) && (_MSC_VER>=1910)) || defined(SIMDJSON_CPLUSPLUS17)
+#ifdef __has_include
 // This is the easy case: we have __has_include and can check whether
 // xlocale is available. If so, we load it up.
 #if __has_include(<xlocale.h>)
 #include <xlocale.h>
 #endif // __has_include
 #else // We do not have __has_include
-// Here we do not have C++17 or the equivalent.
+// Here we do not have __has_include
 // We first check for __GLIBC__
 #ifdef __GLIBC__ // If we have __GLIBC__ then we should have features.h which should help.
 // Note that having __GLIBC__ does not imply that we are compiling against glibc. But
@@ -239,7 +239,7 @@ namespace std {
 #include <xlocale.h> // Will always happen under apple.
 #endif // 
 #endif //  __GLIBC__
-#endif // (defined(_MSC_VER) && (_MSC_VER>=1910)) || defined(SIMDJSON_CPLUSPLUS17)
+#endif // __has_include
 /**
  * End of the crazy locale headers.
  */
