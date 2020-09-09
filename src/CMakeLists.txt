@@ -60,17 +60,17 @@ if(NOT SIMDJSON_SANITIZE)
       NAME "avoid_abort"
       # Under FreeBSD, the __cxa_guard_abort symbol may appear but it is fine.
       # So we want to look for <space><possibly _>abort as a test.
-      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} " _*abort" || exit 0  && exit 1"
+      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} ' _*abort' || exit 0  && exit 1"
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
     add_test(
       NAME "avoid_cout"
-      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} " _*cout" || exit 0  && exit 1"
+      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} ' _*cout' || exit 0  && exit 1"
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
     add_test(
       NAME "avoid_printf"
-      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} " _*printf" || exit 0  && exit 1"
+      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} ' _*printf' || exit 0  && exit 1"
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
     add_test(
