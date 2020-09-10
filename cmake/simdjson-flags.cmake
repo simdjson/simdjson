@@ -120,7 +120,7 @@ if(NOT SIMDJSON_IMPLEMENTATION_FALLBACK)
   target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_IMPLEMENTATION_FALLBACK=0)
 endif()
 # e.g. SIMDJSON_IMPLEMENTATION="haswell;westmere;-fallback"
-set(SIMDJSON_IMPLEMENTATION "" CACHE STRING "Implementations to include/exclude: semicolon separated list of architectures (haswell/westmere/arm64/fallback). Prepend with - to force an implementation off. (e.g. -DSIMDJSON_IMPLEMENTATION=\"haswell;-fallback\") Defaults to compile-time detection.")
+set(SIMDJSON_IMPLEMENTATION "" CACHE STRING "Implementations to include/exclude: semicolon separated list of architectures (haswell/westmere/arm64/fallback). Prepend with - to force an implementation off. (e.g. -DSIMDJSON_IMPLEMENTATION=\"haswell;-fallback\" .) Defaults to compile-time detection.")
 foreach(implementation ${SIMDJSON_IMPLEMENTATION})
   string(TOUPPER ${implementation} implementation_upper)
   string(SUBSTRING ${implementation_upper} 0 1 first_char)

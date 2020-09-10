@@ -110,7 +110,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
   #
   # SIMDJSON_FORCE_IMPLEMENTATION tests: run json2json with SIMDJSON
   #
-  if (SIMDJSON_IMPLEMENTATION_FALLBACK)
+  if (SIMDJSON_IMPLEMENTATION MATCHES "fallback")
     add_test(
       NAME simdjson_force_implementation
       COMMAND
