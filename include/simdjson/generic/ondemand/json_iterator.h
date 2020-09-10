@@ -2,6 +2,12 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+class document;
+class object;
+class array;
+class value;
+class raw_json_string;
+class parser;
 class json_iterator_ref;
 
 /**
