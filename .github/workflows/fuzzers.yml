@@ -84,7 +84,7 @@ jobs:
     - name: Run the minimized corpus through valgrind (replay build, default implementation)
       run: |
         for fuzzer in $allfuzzers; do      
-          find out/$fuzzer -type f |sort|xargs valgrind -n40 build-replay/fuzz/fuzz_$fuzzer 2>&1|tee valgrind-$fuzzer.txt
+          find out/$fuzzer -type f |sort|xargs -n40 valgrind build-replay/fuzz/fuzz_$fuzzer 2>&1|tee valgrind-$fuzzer.txt
         done 
     - name: Compress the valgrind output
       run: tar cf valgrind.tar valgrind-*.txt
