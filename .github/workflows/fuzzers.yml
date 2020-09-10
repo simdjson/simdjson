@@ -17,6 +17,7 @@ jobs:
       allfuzzers: parser dump dump_raw_tape print_json implementations
       implementations: haswell westmere fallback
       UBSAN_OPTIONS: halt_on_error=1
+      MAXLEN: -max_len=4000
     steps:
     - name: Install packages necessary for building
       run: |
@@ -48,7 +49,7 @@ jobs:
         set -eux
         for fuzzer in $allfuzzers; do
           mkdir -p out/$fuzzer # in case this is a new fuzzer, or corpus.tar is broken
-          build-fast/fuzz/fuzz_$fuzzer out/$fuzzer seedcorpus -max_total_time=30
+          build-fast/fuzz/fuzz_$fuzzer out/$fuzzer seedcorpus -max_total_time=30 $MAXLEN
         done
     - name: Run the slow fuzzer (sanitizer+asserts, good at detecting errors)
       run: |
@@ -56,7 +57,7 @@ jobs:
         for fuzzer in $allfuzzers; do
           for implementation in $implementations; do
             export SIMDJSON_FORCE_IMPLEMENTATION=$implementation
-            build-sanitizers/fuzz/fuzz_$fuzzer out/$fuzzer seedcorpus -max_total_time=20
+            build-sanitizers/fuzz/fuzz_$fuzzer out/$fuzzer seedcorpus -max_total_time=20 $MAXLEN
           done
           echo now have $(ls out/$fuzzer |wc -l) files in corpus        
         done
@@ -64,7 +65,7 @@ jobs:
       run: |
         for fuzzer in $allfuzzers; do      
           mkdir -p out/cmin/$fuzzer
-          build-fast/fuzz/fuzz_$fuzzer -merge=1  out/cmin/$fuzzer out/$fuzzer seedcorpus
+          build-fast/fuzz/fuzz_$fuzzer -merge=1 $MAXLEN out/cmin/$fuzzer out/$fuzzer seedcorpus
           rm -rf out/$fuzzer
           mv out/cmin/$fuzzer out/$fuzzer
         done
@@ -81,7 +82,7 @@ jobs:
     - name: Run the minimized corpus through valgrind (replay build, default implementation)
       run: |
         for fuzzer in $allfuzzers; do      
-          find out/$fuzzer -type f |sort|xargs valgrind build-replay/fuzz/fuzz_$fuzzer 2>&1|tee valgrind-$fuzzer.txt
+          find out/$fuzzer -type f |sort|xargs valgrind -n40 build-replay/fuzz/fuzz_$fuzzer 2>&1|tee valgrind-$fuzzer.txt
         done 
     - name: Compress the valgrind output
       run: tar cf valgrind.tar valgrind-*.txt
