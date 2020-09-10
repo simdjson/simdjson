@@ -48,6 +48,7 @@ public:
   simdjson_really_inline operator bool() noexcept(false);
 #endif
 
+  // We don't have an array_iterator that can point at an owned json_iterator
   // simdjson_really_inline simdjson_result<array::iterator> begin() & noexcept;
   // simdjson_really_inline simdjson_result<array::iterator> end() & noexcept;
   simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept;

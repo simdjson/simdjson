@@ -112,7 +112,11 @@ simdjson_really_inline object object::started(json_iterator_ref &&iter) noexcept
   return object(std::forward<json_iterator_ref>(iter));
 }
 simdjson_really_inline object_iterator object::begin() noexcept {
-  SIMDJSON_ASSUME(!iter.is_alive() || at_start);
+  if (at_start) {
+    iter.assert_is_active();
+  } else {
+    iter.assert_is_not_active();
+  }
   at_start = false;
   return iter;
 }
