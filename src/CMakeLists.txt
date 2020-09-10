@@ -69,6 +69,11 @@ if(NOT SIMDJSON_SANITIZE)
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
     add_test(
+      NAME "avoid_cerr"
+      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} ' _*cerr' || exit 0  && exit 1"
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+    add_test(
       NAME "avoid_printf"
       COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} ' _*printf' || exit 0  && exit 1"
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
