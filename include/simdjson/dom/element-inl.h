@@ -417,7 +417,7 @@ inline std::ostream& operator<<(std::ostream& out, element_type type) {
 } // namespace dom
 
 template<>
-inline std::ostream& minifier<dom::element>::print(std::ostream& out) {
+inline string_stream& minifier<dom::element>::print(string_stream& out) {
   using tape_type=internal::tape_type;
   size_t depth = 0;
   constexpr size_t MAX_DEPTH = 16;
@@ -543,12 +543,12 @@ inline std::ostream& minifier<dom::element>::print(std::ostream& out) {
 #if SIMDJSON_EXCEPTIONS
 
 template<>
-simdjson_really_inline std::ostream& minifier<simdjson_result<dom::element>>::print(std::ostream& out) {
+simdjson_really_inline string_stream& minifier<simdjson_result<dom::element>>::print(string_stream& out) {
   if (value.error()) { throw simdjson_error(value.error()); }
   return out << minify<dom::element>(value.first);
 }
 
-simdjson_really_inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false) {
+simdjson_really_inline string_stream& operator<<(string_stream& out, const simdjson_result<dom::element> &value) noexcept(false) {
   return out << minify<simdjson_result<dom::element>>(value);
 }
 #endif

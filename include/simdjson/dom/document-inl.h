@@ -7,7 +7,6 @@
 #include "simdjson/dom/element.h"
 #include "simdjson/internal/tape_ref.h"
 #include "simdjson/internal/jsonformatutils.h"
-#include <ostream>
 #include <cstring>
 
 namespace simdjson {

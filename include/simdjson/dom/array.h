@@ -5,7 +5,6 @@
 #include "simdjson/error.h"
 #include "simdjson/internal/tape_ref.h"
 #include "simdjson/minify.h"
-#include <ostream>
 
 namespace simdjson {
 namespace dom {

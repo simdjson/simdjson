@@ -4,7 +4,6 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/minify.h"
 #include <memory>
-#include <ostream>
 
 namespace simdjson {
 namespace dom {

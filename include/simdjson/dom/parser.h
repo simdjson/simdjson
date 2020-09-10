@@ -10,7 +10,6 @@
 #include "simdjson/padded_string.h"
 #include "simdjson/portability.h"
 #include <memory>
-#include <ostream>
 #include <string>
 
 namespace simdjson {

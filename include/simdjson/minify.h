@@ -3,9 +3,8 @@
 
 #include "simdjson/common_defs.h"
 #include "simdjson/padded_string.h"
+#include "simdjson/fast_stream.h"
 #include <string>
-#include <ostream>
-#include <sstream>
 
 namespace simdjson {
 
@@ -47,12 +46,12 @@ public:
   /**
    * Minify JSON to a string.
    */
-  inline operator std::string() const noexcept { std::stringstream s; s << *this; return s.str(); }
+  inline operator std::string() const noexcept { string_stream s; s << *this; return s.str(); }
 
   /**
    * Minify JSON to an output stream.
    */
-  inline std::ostream& print(std::ostream& out);
+  inline string_stream& print(string_stream& out);
 private:
   const T &value;
 };

@@ -246,7 +246,7 @@ inline std::ostream& operator<<(std::ostream& out, const key_value_pair &value) 
 } // namespace dom
 
 template<>
-inline std::ostream& minifier<dom::object>::print(std::ostream& out) {
+inline string_stream& minifier<dom::object>::print(string_stream& out) {
   out << '{';
   auto pair = value.begin();
   auto end = value.end();
@@ -260,19 +260,19 @@ inline std::ostream& minifier<dom::object>::print(std::ostream& out) {
 }
 
 template<>
-inline std::ostream& minifier<dom::key_value_pair>::print(std::ostream& out) {
+inline string_stream& minifier<dom::key_value_pair>::print(string_stream& out) {
   return out << '"' << internal::escape_json_string(value.key) << "\":" << value.value;
 }
 
 #if SIMDJSON_EXCEPTIONS
 
 template<>
-inline std::ostream& minifier<simdjson_result<dom::object>>::print(std::ostream& out) {
+inline string_stream& minifier<simdjson_result<dom::object>>::print(string_stream& out) {
   if (value.error()) { throw simdjson_error(value.error()); }
   return out << minify<dom::object>(value.first);
 }
 
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::object> &value) noexcept(false) {
+inline string_stream& operator<<(string_stream& out, const simdjson_result<dom::object> &value) noexcept(false) {
   return out << minify<simdjson_result<dom::object>>(value);
 }
 #endif // SIMDJSON_EXCEPTIONS
