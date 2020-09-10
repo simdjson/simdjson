@@ -50,7 +50,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - apt-get update -qq
@@ -76,7 +76,7 @@ steps:
     CC: clang-6.0
     CXX: clang++-6.0
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - mkdir build
@@ -140,7 +140,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - apt-get update -qq
@@ -165,7 +165,7 @@ steps:
   environment:
     CC: clang-9
     CXX: clang++-9
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
@@ -189,7 +189,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=arm64;fallback
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - apt-get update -qq
@@ -274,7 +274,7 @@ steps:
   image: gcc:8
   environment:
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=arm64;fallback
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
     CC: gcc
     CXX: g++
@@ -299,7 +299,7 @@ steps:
   environment:
     CC: clang-6.0
     CXX: clang++-6.0
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_IMPLEMENTATION=arm64;fallback
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
