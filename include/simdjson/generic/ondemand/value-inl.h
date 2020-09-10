@@ -6,7 +6,7 @@ simdjson_really_inline value::value(json_iterator_ref && _iter, const uint8_t *_
   : iter{std::forward<json_iterator_ref>(_iter)},
     json{_json}
 {
-  SIMDJSON_ASSUME(iter.is_alive());
+  iter.assert_is_active();
   SIMDJSON_ASSUME(json != nullptr);
 }
 
