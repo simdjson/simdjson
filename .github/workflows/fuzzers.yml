@@ -32,6 +32,8 @@ jobs:
       run: |
         fuzz/build_corpus.sh
         mv corpus.zip seed_corpus.zip
+        mkdir seedcorpus
+        unzip -q -d seedcorpus seed_corpus.zip
     - name: Download the corpus from the last run
       run: |
         wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
