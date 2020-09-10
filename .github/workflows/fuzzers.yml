@@ -101,3 +101,14 @@ jobs:
         else
           echo "not on master, won't upload to bintray"
         fi
+    - name: Archive any crashes as an artifact
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: crashes
+        path: |
+          crash-*
+          leak-*
+          timeout-*
+        if-no-files-found: ignore
+
