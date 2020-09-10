@@ -1,3 +1,15 @@
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
+/**
+ * A fast, simple, DOM-like interface that parses JSON as you use it.
+ * 
+ * Designed for maximum speed and a lower memory profile.
+ */
+namespace ondemand {
+} // namespace ondemand
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
+
 #include "simdjson/generic/ondemand/logger.h"
 #include "simdjson/generic/ondemand/raw_json_string.h"
 #include "simdjson/generic/ondemand/token_iterator.h"

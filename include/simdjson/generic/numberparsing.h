@@ -5,6 +5,7 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
+/// @private
 namespace numberparsing {
 
 using internal::FASTFLOAT_LARGEST_POWER;

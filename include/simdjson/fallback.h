@@ -5,6 +5,14 @@
 
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
 
+namespace simdjson {
+/**
+ * Fallback implementation (runs on any machine).
+ */
+namespace fallback {
+} // namespace fallback
+} // namespace simdjson
+
 #include "simdjson/fallback/implementation.h"
 
 #include "simdjson/fallback/begin.h"

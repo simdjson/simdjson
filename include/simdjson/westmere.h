@@ -7,6 +7,14 @@
 
 #define SIMDJSON_TARGET_WESTMERE SIMDJSON_TARGET_REGION("sse4.2,pclmul")
 
+namespace simdjson {
+/**
+ * Implementation for Westmere (Intel SSE4.2).
+ */
+namespace westmere {
+} // namespace westmere
+} // namespace simdjson
+
 //
 // These two need to be included outside SIMDJSON_TARGET_REGION
 //
