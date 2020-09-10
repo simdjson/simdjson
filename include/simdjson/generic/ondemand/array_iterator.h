@@ -4,6 +4,7 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+class array;
 class value;
 class document;
 
