@@ -17,5 +17,5 @@ jobs:
           cd build &&
           cmake  -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
           cmake --build . --target checkperf  &&
-          cctest --output-on-failure -R checkperf  ubuntu18-checkperf.yml
+          ctest --output-on-failure -R checkperf  ubuntu18-checkperf.yml
 

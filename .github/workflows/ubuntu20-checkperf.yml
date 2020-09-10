@@ -1,4 +1,4 @@
-name: Checkperf on Ubuntu 20.04 CI (GCC 9)
+name: Performance check on Ubuntu 20.04 CI (GCC 9)
 
 on: [push, pull_request]
 
