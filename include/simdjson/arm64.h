@@ -5,6 +5,14 @@
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 
+namespace simdjson {
+/**
+ * Implementation for NEON (ARMv8).
+ */
+namespace arm64 {
+} // namespace arm64
+} // namespace simdjson
+
 #include "simdjson/arm64/implementation.h"
 
 #include "simdjson/arm64/begin.h"

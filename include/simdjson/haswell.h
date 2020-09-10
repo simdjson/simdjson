@@ -7,6 +7,14 @@
 
 #define SIMDJSON_TARGET_HASWELL SIMDJSON_TARGET_REGION("avx2,bmi,pclmul,lzcnt")
 
+namespace simdjson {
+/**
+ * Implementation for Haswell (Intel AVX2).
+ */
+namespace haswell {
+} // namespace haswell
+} // namespace simdjson
+
 //
 // These two need to be included outside SIMDJSON_TARGET_REGION
 //

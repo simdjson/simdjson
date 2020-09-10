@@ -1,6 +1,7 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
+/// @private
 namespace atomparsing {
 
 // The string_to_uint32 is exclusively used to map literal strings to 32-bit values.

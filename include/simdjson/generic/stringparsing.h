@@ -4,6 +4,7 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
+/// @private
 namespace stringparsing {
 
 // begin copypasta
