@@ -43,17 +43,6 @@ jobs:
         clang++ --version
     - name: Build all the variants
       run: fuzz/build_fuzzer_variants.sh
-    - name: Verify that the oss-fuzz seed corpus passes without problems
-      run: |
-        set -eux
-        mkdir seedcorpus
-        unzip -q -d seedcorpus seed_corpus.zip
-        for fuzzer in $allfuzzers; do
-          for implementation in $implementations; do
-            export SIMDJSON_FORCE_IMPLEMENTATION=$implementation
-            build-sanitizers/fuzz/fuzz_$fuzzer seedcorpus -max_total_time=1
-          done
-        done
     - name: Run the fast fuzzer (release build, default implementation, to explore fast)
       run: |
         set -eux
