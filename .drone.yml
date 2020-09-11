@@ -326,7 +326,7 @@ steps:
     CXX: clang++-9
     BUILD_FLAGS: -- -j 4
     CMAKE_FLAGS: -GNinja -DSIMDJSON_BUILD_STATIC=ON
-    CTEST_FLAGS: -j4 --output-on-failure
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
     CXXFLAGS: -stdlib=libc++
   commands:
     - apt-get update -qq

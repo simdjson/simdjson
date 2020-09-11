@@ -85,7 +85,8 @@ commands:
     steps:
       - cmake_build
       - run: |
-          cd build && tools/json2json -h &&
+          cd build &&
+          tools/json2json -h &&
           ctest $CTEST_FLAGS -L acceptance &&
           ctest $CTEST_FLAGS -LE acceptance -E checkperf
 
@@ -93,10 +94,12 @@ commands:
     steps:
       - cmake_build
       - run: |
-          cd build &&  tools/json2json -h &&
+          cd build &&
+          tools/json2json -h &&
           ctest $CTEST_FLAGS -L acceptance -LE per_implementation &&
-          SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation &&
-          SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation &&SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation &&
+          SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation -E checkperf &&
+          SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation -E checkperf &&
+          SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation -E checkperf &&
           ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
 
 
@@ -106,7 +109,7 @@ commands:
       - run: |
           cmake --build  build --target checkperf &&
           cd build && 
-          ctest --output-on-failure -R checkperf 
+          ctest --output-on-failure -R checkperf
 
   # we not only want cmake to build and run tests, but we want also a successful installation from which we can build, link and run programs
   cmake_install_test: # this version builds, install, test and then verify from the installation
