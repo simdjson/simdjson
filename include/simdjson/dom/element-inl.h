@@ -508,7 +508,8 @@ inline std::ostream& minifier<dom::element>::print(std::ostream& out) {
       /**
        * Using out << iter.next_tape_value<double>(); looks good, but it is wrong.
        * For one thing, 1.1111111111111112 becomes 1.11111 so it is lossy. For 
-       * another, it is locale sensitive.
+       * another, it is locale sensitive so the result could come up differently on
+       * a given system (and violate the JSON spec). Furthermore, it is likely to be very slow.
        */
       {
         char buffer[24]; // 24 chars is enough
