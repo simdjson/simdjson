@@ -13,7 +13,10 @@ struct FuzzData {
 };
 
 FuzzData split(const uint8_t *Data, size_t Size) {
-    const std::string_view sep("\n~~~\n");
+
+    using namespace std::literals;
+    constexpr auto sep="\n~~~\n"sv;
+
     std::string_view all((const char*)Data,Size);
     auto pos=all.find(sep);
     if(pos==std::string_view::npos) {
@@ -46,6 +49,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     std::string_view sv;
     if(leaf.get_string().get(sv))
         return 0;
+
     //std::puts(std::string{sv.begin(),sv.end()}.c_str());
 
 
