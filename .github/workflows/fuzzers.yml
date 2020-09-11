@@ -14,8 +14,10 @@ jobs:
   build:    
     runs-on: ubuntu-latest
     env:
-      allfuzzers: parser dump dump_raw_tape print_json
-      artifactsprefix: -artifact_prefix=fuzzfailure/
+      allfuzzers: parser dump dump_raw_tape print_json implementations
+      implementations: haswell westmere fallback
+      UBSAN_OPTIONS: halt_on_error=1
+      MAXLEN: -max_len=4000
     steps:
     - name: Install packages necessary for building
       run: |
@@ -30,6 +32,8 @@ jobs:
       run: |
         fuzz/build_corpus.sh
         mv corpus.zip seed_corpus.zip
+        mkdir seedcorpus
+        unzip -q -d seedcorpus seed_corpus.zip
     - name: Download the corpus from the last run
       run: |
         wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
@@ -42,48 +46,28 @@ jobs:
         clang++ --version
     - name: Build all the variants
       run: fuzz/build_fuzzer_variants.sh
-    - name: Verify that the oss-fuzz seed corpus passes without problems
+    - name: Run the fast fuzzer (release build, default implementation, to explore fast)
       run: |
-        mkdir seedcorpus
-        unzip -q -d seedcorpus seed_corpus.zip
-        for buildvariant in noavx withavx; do
-          for fuzzer in $allfuzzers; do
-            build-ossfuzz-$buildvariant/fuzz/fuzz_$fuzzer seedcorpus -max_total_time=1
-          done
-        done
-    - name: Run the fastest fuzzer to explore fast
-      run: |
+        set -eux
         for fuzzer in $allfuzzers; do
           mkdir -p out/$fuzzer # in case this is a new fuzzer, or corpus.tar is broken
-          build-ossfuzz-fast9/fuzz/fuzz_$fuzzer         out/$fuzzer -max_total_time=30 $artifactsprefix || touch failed
-          # make sure the failing output is visible in the log
-          if [ -e failed ] ; then
-            ls fuzzfailure/* |xargs -n1 base64
-            exit 1
-          fi
+          build-fast/fuzz/fuzz_$fuzzer out/$fuzzer seedcorpus -max_total_time=30 $MAXLEN
         done
-    - name: Run the other fuzzer variants for $fuzzer, with sanitizers etc
+    - name: Run the slow fuzzer (sanitizer+asserts, good at detecting errors)
       run: |
-        set -x
+        set -eux
         for fuzzer in $allfuzzers; do
-          build-ossfuzz-withavx/fuzz/fuzz_$fuzzer       out/$fuzzer -max_total_time=20 $artifactsprefix || touch failed
-          build-ossfuzz-noavx/fuzz/fuzz_$fuzzer         out/$fuzzer -max_total_time=10 $artifactsprefix || touch failed
-          build-ossfuzz-noavx9/fuzz/fuzz_$fuzzer        out/$fuzzer -max_total_time=10 $artifactsprefix || touch failed
-          if [ -e failed ] ; then
-            # make sure the failing output is visible in the log
-            ls fuzzfailure/* |xargs -n1 base64
-            exit 1
-          fi
-          echo disable msan runs, it fails inside the fuzzing engine and not the fuzzed code!
-          echo build-ossfuzz-msan-noavx9/fuzz/fuzz_$fuzzer   out/$fuzzer -max_total_time=10 -reload=0 $artifactsprefix
-          echo build-ossfuzz-msan-withavx9/fuzz/fuzz_$fuzzer out/$fuzzer -max_total_time=10 -reload=0 $artifactsprefix
+          for implementation in $implementations; do
+            export SIMDJSON_FORCE_IMPLEMENTATION=$implementation
+            build-sanitizers/fuzz/fuzz_$fuzzer out/$fuzzer seedcorpus -max_total_time=20 $MAXLEN
+          done
           echo now have $(ls out/$fuzzer |wc -l) files in corpus        
         done
-    - name: Minimize the corpus with the fast fuzzer
+    - name: Minimize the corpus with the fast fuzzer on the default implementation
       run: |
         for fuzzer in $allfuzzers; do      
           mkdir -p out/cmin/$fuzzer
-          build-ossfuzz-fast9/fuzz/fuzz_$fuzzer -merge=1  out/cmin/$fuzzer out/$fuzzer
+          build-fast/fuzz/fuzz_$fuzzer -merge=1 $MAXLEN out/cmin/$fuzzer out/$fuzzer seedcorpus
           rm -rf out/$fuzzer
           mv out/cmin/$fuzzer out/$fuzzer
         done
@@ -97,16 +81,11 @@ jobs:
       with:
         name: corpus
         path: corpus.tar
-    - name: Run the corpus through valgrind (normal build)
+    - name: Run the minimized corpus through valgrind (replay build, default implementation)
       run: |
         for fuzzer in $allfuzzers; do      
-          find out/$fuzzer -type f |sort|xargs valgrind build-plain-noavx/fuzz/fuzz_$fuzzer  2>&1|tee valgrind-$fuzzer-noavx.txt
-        done
-    - name: Run the corpus through valgrind (noavx build)
-      run: |
-        for fuzzer in $allfuzzers; do      
-          find out/$fuzzer -type f |sort|xargs valgrind build-plain-normal/fuzz/fuzz_$fuzzer 2>&1|tee valgrind-$fuzzer-normal.txt      
-        done  
+          find out/$fuzzer -type f |sort|xargs -n40 valgrind build-replay/fuzz/fuzz_$fuzzer 2>&1|tee valgrind-$fuzzer.txt
+        done 
     - name: Compress the valgrind output
       run: tar cf valgrind.tar valgrind-*.txt
     - name: Save valgrind output as a github artifact
@@ -125,3 +104,14 @@ jobs:
         else
           echo "not on master, won't upload to bintray"
         fi
+    - name: Archive any crashes as an artifact
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: crashes
+        path: |
+          crash-*
+          leak-*
+          timeout-*
+        if-no-files-found: ignore
+
