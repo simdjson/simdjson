@@ -10,9 +10,15 @@ class document;
 
 /**
  * A forward-only JSON array.
+ * 
+ * This is an input_iterator, meaning:
+ * - It is forward-only
+ * - * must be called exactly once per element.
+ * - ++ must be called exactly once in between each * (*, ++, *, ++, * ...)
  */
 class array_iterator {
 public:
+  /** Create a new, invalid array iterator. */
   simdjson_really_inline array_iterator() noexcept = default;
   simdjson_really_inline array_iterator(const array_iterator &a) noexcept = default;
   simdjson_really_inline array_iterator &operator=(const array_iterator &a) noexcept = default;
@@ -21,14 +27,35 @@ public:
   // Iterator interface
   //
 
-  // Reads key and value, yielding them to the user.
+  /**
+   * Get the current element.
+   * 
+   * Part of the std::iterator interface.
+   */
   simdjson_really_inline simdjson_result<value> operator*() noexcept; // MUST ONLY BE CALLED ONCE PER ITERATION.
-  // Assumes it's being compared with the end. true if depth < iter->depth.
+  /**
+   * Check if we are at the end of the JSON.
+   *
+   * Part of the std::iterator interface.
+   * 
+   * @return true if there are no more elements in the JSON array.
+   */
   simdjson_really_inline bool operator==(const array_iterator &) noexcept;
-  // Assumes it's being compared with the end. true if depth >= iter->depth.
+  /**
+   * Check if there are more elements in the JSON array.
+   *
+   * Part of the std::iterator interface.
+   * 
+   * @return true if there are more elements in the JSON array.
+   */
   simdjson_really_inline bool operator!=(const array_iterator &) noexcept;
-  // Checks for ']' and ','
+  /**
+   * Move to the next element.
+   * 
+   * Part of the std::iterator interface.
+   */
   simdjson_really_inline array_iterator &operator++() noexcept;
+
 private:
   json_iterator_ref *iter{};
   /**
@@ -68,13 +95,9 @@ public:
   // Iterator interface
   //
 
-  // Reads key and value, yielding them to the user.
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator*() noexcept; // MUST ONLY BE CALLED ONCE PER ITERATION.
-  // Assumes it's being compared with the end. true if depth < iter->depth.
   simdjson_really_inline bool operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &) noexcept;
-  // Assumes it's being compared with the end. true if depth >= iter->depth.
   simdjson_really_inline bool operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &) noexcept;
-  // Checks for ']' and ','
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &operator++() noexcept;
 };
 

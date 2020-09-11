@@ -23,28 +23,28 @@ class element;
 static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
 
 /**
-  * A persistent document parser.
-  *
-  * The parser is designed to be reused, holding the internal buffers necessary to do parsing,
-  * as well as memory for a single document. The parsed document is overwritten on each parse.
-  *
-  * This class cannot be copied, only moved, to avoid unintended allocations.
-  *
-  * @note This is not thread safe: one parser cannot produce two documents at the same time!
-  */
+ * A persistent document parser.
+ *
+ * The parser is designed to be reused, holding the internal buffers necessary to do parsing,
+ * as well as memory for a single document. The parsed document is overwritten on each parse.
+ *
+ * This class cannot be copied, only moved, to avoid unintended allocations.
+ *
+ * @note This is not thread safe: one parser cannot produce two documents at the same time!
+ */
 class parser {
 public:
   /**
-  * Create a JSON parser.
-  *
-  * The new parser will have zero capacity.
-  *
-  * @param max_capacity The maximum document length the parser can automatically handle. The parser
-  *    will allocate more capacity on an as needed basis (when it sees documents too big to handle)
-  *    up to this amount. The parser still starts with zero capacity no matter what this number is:
-  *    to allocate an initial capacity, call allocate() after constructing the parser.
-  *    Defaults to SIMDJSON_MAXSIZE_BYTES (the largest single document simdjson can process).
-  */
+   * Create a JSON parser.
+   *
+   * The new parser will have zero capacity.
+   *
+   * @param max_capacity The maximum document length the parser can automatically handle. The parser
+   *    will allocate more capacity on an as needed basis (when it sees documents too big to handle)
+   *    up to this amount. The parser still starts with zero capacity no matter what this number is:
+   *    to allocate an initial capacity, call allocate() after constructing the parser.
+   *    Defaults to SIMDJSON_MAXSIZE_BYTES (the largest single document simdjson can process).
+   */
   simdjson_really_inline explicit parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
   /**
    * Take another parser's buffers and state.

@@ -25,8 +25,12 @@ simdjson_really_inline raw_json_string field::key() const noexcept {
   return first;
 }
 
-simdjson_really_inline value &field::value() noexcept {
+simdjson_really_inline value &field::value() & noexcept {
   return second;
+}
+
+simdjson_really_inline value field::value() && noexcept {
+  return std::forward<field>(*this).second;
 }
 
 } // namespace ondemand
