@@ -5,18 +5,39 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
 /**
- * A JSON field in an field.
+ * A JSON field (key/value pair) in an object.
+ * 
+ * Returned from object iteration.
+ * 
+ * Extends from std::pair<raw_json_string, value> so you can use C++ algorithms that rely on pairs.
  */
 class field : public std::pair<raw_json_string, value> {
 public:
+  /**
+   * Create a new invalid field.
+   * 
+   * Exists so you can declare a variable and later assign to it before use.
+   */
   simdjson_really_inline field() noexcept;
+
   simdjson_really_inline field(field &&other) noexcept = default;
   simdjson_really_inline field &operator=(field &&other) noexcept = default;
   simdjson_really_inline field(const field &other) noexcept = delete;
   simdjson_really_inline field &operator=(const field &other) noexcept = delete;
 
+  /**
+   * Get the key.
+   */
   simdjson_really_inline raw_json_string key() const noexcept;
-  simdjson_really_inline ondemand::value &value() noexcept;
+  /**
+   * Get the field value.
+   */
+  simdjson_really_inline ondemand::value &value() & noexcept;
+  /**
+   * @overload ondemand::value &ondemand::value() & noexcept
+   */
+  simdjson_really_inline ondemand::value value() && noexcept;
+
 protected:
   simdjson_really_inline field(raw_json_string key, ondemand::value &&value) noexcept;
   static simdjson_really_inline simdjson_result<field> start(json_iterator_ref &&iter) noexcept;

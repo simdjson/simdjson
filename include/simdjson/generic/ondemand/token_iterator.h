@@ -10,7 +10,13 @@ namespace ondemand {
  */
 class token_iterator {
 public:
+  /**
+   * Create a new invalid token_iterator.
+   * 
+   * Exists so you can declare a variable and later assign to it before use.
+   */
   simdjson_really_inline token_iterator() noexcept = default;
+
   simdjson_really_inline token_iterator(token_iterator &&other) noexcept = default;
   simdjson_really_inline token_iterator &operator=(token_iterator &&other) noexcept = default;
   simdjson_really_inline token_iterator(const token_iterator &other) noexcept = delete;

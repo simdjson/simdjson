@@ -16,20 +16,104 @@ class raw_json_string;
  */
 class parser {
 public:
+  /**
+   * Create a JSON parser.
+   *
+   * The new parser will have zero capacity.
+   */
   inline parser() noexcept = default;
+
   inline parser(parser &&other) noexcept = default;
   simdjson_really_inline parser(const parser &other) = delete;
   simdjson_really_inline parser &operator=(const parser &other) = delete;
+
+  /** Deallocate the JSON parser. */
   inline ~parser() noexcept = default;
 
-  SIMDJSON_WARN_UNUSED error_code allocate(size_t capacity, size_t max_depth=DEFAULT_MAX_DEPTH) noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_result<document> iterate(const padded_string &json) noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_result<json_iterator> iterate_raw(const padded_string &json) noexcept;
+  /**
+   * Start iterating an on-demand JSON document.
+   * 
+   *   ondemand::parser parser;
+   *   document doc = parser.iterate(json);
+   * 
+   * ### IMPORTANT: Buffer Lifetime
+   * 
+   * Because parsing is done while you iterate, you *must* keep the JSON buffer around at least as
+   * long as the document iteration.
+   * 
+   * ### IMPORTANT: Document Lifetime
+   * 
+   * Only one iteration at a time can happen per parser, and the parser *must* be kept alive during
+   * iteration to ensure intermediate buffers can be accessed. Any document must be destroyed before
+   * you call parse() again or destroy the parser.
+   *
+   * ### REQUIRED: Buffer Padding
+   *
+   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
+   * those bytes are initialized to, as long as they are allocated.
+   *
+   * @param json The JSON to parse.
+   * 
+   * @return The document, or an error:
+   *         - MEMALLOC if realloc_if_needed the parser does not have enough capacity, and memory
+   *           allocation fails.
+   *         - EMPTY if the document is all whitespace.
+   *         - UTF8_ERROR if the document is not valid UTF-8.
+   *         - UNESCAPED_CHARS if a string contains control characters that must be escaped
+   *         - UNCLOSED_STRING if there is an unclosed string in the document.
+   */
+  SIMDJSON_WARN_UNUSED simdjson_result<document> iterate(const padded_string &json) & noexcept;
+  /**
+   * @private
+   * 
+   * Start iterating an on-demand JSON document.
+   * 
+   *   ondemand::parser parser;
+   *   json_iterator doc = parser.iterate(json);
+   * 
+   * ### IMPORTANT: Buffer Lifetime
+   * 
+   * Because parsing is done while you iterate, you *must* keep the JSON buffer around at least as
+   * long as the document iteration.
+   * 
+   * ### IMPORTANT: Document Lifetime
+   * 
+   * Only one iteration at a time can happen per parser, and the parser *must* be kept alive during
+   * iteration to ensure intermediate buffers can be accessed. Any document must be destroyed before
+   * you call parse() again or destroy the parser.
+   *
+   * ### REQUIRED: Buffer Padding
+   *
+   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
+   * those bytes are initialized to, as long as they are allocated.
+   *
+   * @param json The JSON to parse.
+   * 
+   * @return The iterator, or an error:
+   *         - MEMALLOC if realloc_if_needed the parser does not have enough capacity, and memory
+   *           allocation fails.
+   *         - EMPTY if the document is all whitespace.
+   *         - UTF8_ERROR if the document is not valid UTF-8.
+   *         - UNESCAPED_CHARS if a string contains control characters that must be escaped
+   *         - UNCLOSED_STRING if there is an unclosed string in the document.
+   */
+  SIMDJSON_WARN_UNUSED simdjson_result<json_iterator> iterate_raw(const padded_string &json) & noexcept;
+
 private:
   dom_parser_implementation dom_parser{};
   size_t _capacity{0};
   size_t _max_depth{0};
   std::unique_ptr<uint8_t[]> string_buf{};
+
+  /**
+   * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
+   * and `max_depth` depth.
+   *
+   * @param capacity The new capacity.
+   * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
+   * @return The error, if there is one.
+   */
+  SIMDJSON_WARN_UNUSED error_code allocate(size_t capacity, size_t max_depth=DEFAULT_MAX_DEPTH) noexcept;
 
   friend class json_iterator;
 };

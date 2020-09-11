@@ -22,36 +22,177 @@ public:
   simdjson_really_inline document(document &&other) noexcept = default;
   simdjson_really_inline document &operator=(document &&other) noexcept = default;
 
+  /**
+   * Create a new invalid document.
+   * 
+   * Exists so you can declare a variable and later assign to it before use.
+   */
   simdjson_really_inline document() noexcept = default;
   simdjson_really_inline document(const document &other) = delete;
   simdjson_really_inline document &operator=(const document &other) = delete;
+  /**
+   * Finishes logging (if logging is enabled).
+   */
   simdjson_really_inline ~document() noexcept;
 
+  /**
+   * Cast this JSON value to an array.
+   *
+   * @returns An object that can be used to iterate the array.
+   * @returns INCORRECT_TYPE If the JSON value is not an array.
+   */
   simdjson_really_inline simdjson_result<array> get_array() & noexcept;
+  /**
+   * Cast this JSON value to an object.
+   *
+   * @returns An object that can be used to look up or iterate fields.
+   * @returns INCORRECT_TYPE If the JSON value is not an object.
+   */
   simdjson_really_inline simdjson_result<object> get_object() & noexcept;
+  /**
+   * Cast this JSON value to an unsigned integer.
+   *
+   * @returns A signed 64-bit integer.
+   * @returns INCORRECT_TYPE If the JSON value is not a 64-bit unsigned integer.
+   */
   simdjson_really_inline simdjson_result<uint64_t> get_uint64() noexcept;
+  /**
+   * Cast this JSON value to a signed integer.
+   *
+   * @returns A signed 64-bit integer.
+   * @returns INCORRECT_TYPE If the JSON value is not a 64-bit integer.
+   */
   simdjson_really_inline simdjson_result<int64_t> get_int64() noexcept;
+  /**
+   * Cast this JSON value to a double.
+   *
+   * @returns A double.
+   * @returns INCORRECT_TYPE If the JSON value is not a valid floating-point number.
+   */
   simdjson_really_inline simdjson_result<double> get_double() noexcept;
+  /**
+   * Cast this JSON value to a string.
+   * 
+   * The string is guaranteed to be valid UTF-8.
+   *
+   * Equivalent to get<std::string_view>().
+   *
+   * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
+   *          time it parses a document or when it is destroyed.
+   * @returns INCORRECT_TYPE if the JSON value is not a string.
+   */
   simdjson_really_inline simdjson_result<std::string_view> get_string() & noexcept;
+  /**
+   * Cast this JSON value to a raw_json_string.
+   * 
+   * The string is guaranteed to be valid UTF-8, and may have escapes in it (e.g. \\ or \n).
+   *
+   * @returns A pointer to the raw JSON for the given string.
+   * @returns INCORRECT_TYPE if the JSON value is not a string.
+   */
   simdjson_really_inline simdjson_result<raw_json_string> get_raw_json_string() & noexcept;
+  /**
+   * Cast this JSON value to a bool.
+   *
+   * @returns A bool value.
+   * @returns INCORRECT_TYPE if the JSON value is not true or false.
+   */
   simdjson_really_inline simdjson_result<bool> get_bool() noexcept;
+  /**
+   * Checks if this JSON value is null.
+   * 
+   * @returns Whether the value is null.
+   */
   simdjson_really_inline bool is_null() noexcept;
 
 #if SIMDJSON_EXCEPTIONS
+  /**
+   * Cast this JSON value to an array.
+   *
+   * @returns An object that can be used to iterate the array.
+   * @exception simdjson_error(INCORRECT_TYPE) If the JSON value is not an array.
+   */
   simdjson_really_inline operator array() & noexcept(false);
+  /**
+   * Cast this JSON value to an object.
+   *
+   * @returns An object that can be used to look up or iterate fields.
+   * @exception simdjson_error(INCORRECT_TYPE) If the JSON value is not an object.
+   */
   simdjson_really_inline operator object() & noexcept(false);
+  /**
+   * Cast this JSON value to an unsigned integer.
+   *
+   * @returns A signed 64-bit integer.
+   * @exception simdjson_error(INCORRECT_TYPE) If the JSON value is not a 64-bit unsigned integer.
+   */
   simdjson_really_inline operator uint64_t() noexcept(false);
+  /**
+   * Cast this JSON value to a signed integer.
+   *
+   * @returns A signed 64-bit integer.
+   * @exception simdjson_error(INCORRECT_TYPE) If the JSON value is not a 64-bit integer.
+   */
   simdjson_really_inline operator int64_t() noexcept(false);
+  /**
+   * Cast this JSON value to a double.
+   *
+   * @returns A double.
+   * @exception simdjson_error(INCORRECT_TYPE) If the JSON value is not a valid floating-point number.
+   */
   simdjson_really_inline operator double() noexcept(false);
+  /**
+   * Cast this JSON value to a string.
+   * 
+   * The string is guaranteed to be valid UTF-8.
+   *
+   * Equivalent to get<std::string_view>().
+   *
+   * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
+   *          time it parses a document or when it is destroyed.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON value is not a string.
+   */
   simdjson_really_inline operator std::string_view() & noexcept(false);
+  /**
+   * Cast this JSON value to a raw_json_string.
+   * 
+   * The string is guaranteed to be valid UTF-8, and may have escapes in it (e.g. \\ or \n).
+   *
+   * @returns A pointer to the raw JSON for the given string.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON value is not a string.
+   */
   simdjson_really_inline operator raw_json_string() & noexcept(false);
+  /**
+   * Cast this JSON value to a bool.
+   *
+   * @returns A bool value.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON value is not true or false.
+   */
   simdjson_really_inline operator bool() noexcept(false);
 #endif
 
   // We don't have an array_iterator that can point at an owned json_iterator
   // simdjson_really_inline simdjson_result<array::iterator> begin() & noexcept;
   // simdjson_really_inline simdjson_result<array::iterator> end() & noexcept;
+  /**
+   * Look up a field by name on an object.
+   *
+   * This method may only be called once on a given value. If you want to look up multiple fields,
+   * you must first get the object using value.get_object() or object(value).
+   * 
+   * @param key The key to look up.
+   * @returns INCORRECT_TYPE If the JSON value is not an array.
+   */
   simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept;
+  /**
+   * Look up a field by name on an object.
+   *
+   * This method may only be called once on a given value. If you want to look up multiple fields,
+   * you must first get the object using value.get_object() or object(value).
+   * 
+   * @param key The key to look up.
+   * @returns INCORRECT_TYPE If the JSON value is not an array.
+   */
   simdjson_really_inline simdjson_result<value> operator[](const char *key) & noexcept;
 
 protected:

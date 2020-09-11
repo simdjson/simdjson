@@ -9,7 +9,13 @@ namespace ondemand {
  */
 class object {
 public:
+  /**
+   * Create a new invalid object.
+   * 
+   * Exists so you can declare a variable and later assign to it before use.
+   */
   simdjson_really_inline object() noexcept = default;
+
   simdjson_really_inline object(object &&other) noexcept = default;
   simdjson_really_inline object &operator=(object &&other) noexcept = default;
   object(const object &) = delete;

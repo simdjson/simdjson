@@ -12,45 +12,67 @@ class document;
  */
 class array {
 public:
+  /**
+   * Create a new invalid array.
+   * 
+   * Exists so you can declare a variable and later assign to it before use.
+   */
   simdjson_really_inline array() noexcept = default;
   simdjson_really_inline array(array &&other) noexcept = default;
   simdjson_really_inline array &operator=(array &&other) noexcept = default;
   array(const array &) = delete;
   array &operator=(const array &) = delete;
 
+  /**
+   * Finishes iterating the array if it is not already fully iterated.
+   */
   simdjson_really_inline ~array() noexcept;
 
+  /**
+   * Begin array iteration.
+   *
+   * Part of the std::iterable interface.
+   */
   simdjson_really_inline array_iterator begin() & noexcept;
+  /**
+   * Sentinel representing the end of the array.
+   *
+   * Part of the std::iterable interface.
+   */
   simdjson_really_inline array_iterator end() & noexcept;
 
 protected:
   /**
    * Begin array iteration.
    *
-   * @param doc The document containing the array.
+   * @param iter The iterator. Must be where the initial [ is expected. Will be *moved* into the
+   *        resulting array.
    * @error INCORRECT_TYPE if the iterator is not at [.
    */
   static simdjson_really_inline simdjson_result<array> start(json_iterator_ref &&iter) noexcept;
   /**
    * Begin array iteration.
+   * 
+   * This version of the method should be called after the initial [ has been verified, and is
+   * intended for use by switch statements that check the type of a value.
    *
-   * @param doc The document containing the array. The iterator must be just after the opening `[`.
+   * @param iter The iterator. Must be after the initial [. Will be *moved* into the resulting array.
    */
   static simdjson_really_inline array started(json_iterator_ref &&iter) noexcept;
 
   /**
-   * Internal array creation. Call array::start() or array::started() instead of this.
+   * Create an array at the given Internal array creation. Call array::start() or array::started() instead of this.
    *
-   * @param doc The document containing the array. iter->depth must already be incremented to
-   *            reflect the array's depth. The iterator must be just after the opening `[`.
+   * @param iter The iterator. Must either be at the start of the first element with iter.is_alive()
+   *        == true, or past the [] with is_alive() == false if the array is empty. Will be *moved*
+   *        into the resulting array.
    */
   simdjson_really_inline array(json_iterator_ref &&iter) noexcept;
 
   /**
-   * Document containing this array.
-   *
-   * PERF NOTE: expected to be elided in favor of the parent document: this is set when the array
-   * is first used, and never changes afterwards.
+   * Iterator marking current position.
+   * 
+   * iter.is_alive() == false indicates iteration is complete.
    */
   json_iterator_ref iter{};
 

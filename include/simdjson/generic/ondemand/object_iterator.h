@@ -8,7 +8,13 @@ class field;
 
 class object_iterator {
 public:
+  /**
+   * Create a new invalid object_iterator.
+   * 
+   * Exists so you can declare a variable and later assign to it before use.
+   */
   simdjson_really_inline object_iterator() noexcept = default;
+
   simdjson_really_inline object_iterator(const object_iterator &o) noexcept = default;
   simdjson_really_inline object_iterator &operator=(const object_iterator &o) noexcept = default;
 
