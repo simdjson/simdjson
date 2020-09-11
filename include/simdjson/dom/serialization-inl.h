@@ -2,84 +2,90 @@
 #ifndef SIMDJSON_SERIALIZATION_INL_H
 #define SIMDJSON_SERIALIZATION_INL_H
 
-#include "simdjson/portability.h"
-#include "simdjson/common_defs.h" 
+#include "simdjson/dom/serialization.h"
+
 #include <cinttypes>
 #include <type_traits>
 
 namespace simdjson {
 namespace dom {
 
+/***
+ * Number utility functions
+ **/
+
+
 namespace {
-// defined in src/to_chars
-char* to_chars(char* first, const char* last, double value);
-
-template <typename T>
-char *fast_itoa(char *output, T value) {
-    // This is a standard implementation of itoa.
-    // We first write in reverse order and then reverse.
-    int64_t original_value;
-    char * write_pointer = output;
-    do {
-        original_value = value;
-        value /= 10;
-        *write_pointer++ = '0' + (original_value - value * 10);
-    } while (value > 0);
-    if(std::is_signed<T>::value) {
-      if (original_value < 0) { *write_pointer++ = '-'; }
+template <typename T> char *fast_itoa(char *output, T value) {
+  // This is a standard implementation of itoa.
+  // We first write in reverse order and then reverse.
+  char *write_pointer = output;
+  T modified_value{value};
+  do {
+    *write_pointer++ = char('0' + (modified_value % 10));
+    modified_value /= 10;
+  } while (modified_value > 0);
+  if (std::is_signed<T>::value) {
+    if (value < 0) {
+      *write_pointer++ = '-';
     }
-    // then we reverse the result
-    char * const answer = write_pointer;
-    char * second_write_pointer = output;
-    while (second_write_pointer < write_pointer) {
-        char c1 = *write_pointer;
-        char c2 = *second_write_pointer;
-        *second_write_pointer = c1;
-        *write_pointer = c2;
-        write_pointer--;
-        second_write_pointer++;
-    }
-    return answer;
+  }
+  // then we reverse the result
+  char *const answer = write_pointer;
+  char *second_write_pointer = output;
+  while (second_write_pointer < write_pointer) {
+    char c1 = *write_pointer;
+    char c2 = *second_write_pointer;
+    *second_write_pointer = c1;
+    *write_pointer = c2;
+    write_pointer--;
+    second_write_pointer++;
+  }
+  return answer;
 }
-}// anonymous namespace
+} // anonymous namespace
 
+
+/***
+ * Minifier/formatter code.
+ **/
 
 inline void mini_formatter::number(uint64_t x) {
-    size_t current_size = buffer.size();
-    char * p = buffer.data() + current_size;
-    size_t buffer_size = 64;
-    buffer.resize(current_size + buffer_size); // not good
-    char * newp = fast_itoa(p, x);
-    buffer.resize(newp - p);
+  size_t current_size = buffer.size();
+  char *p = buffer.data() + current_size;
+  size_t buffer_size = 64;
+  buffer.resize(current_size + buffer_size); // not good
+  char *newp = fast_itoa(p, x);
+  buffer.resize(newp - p);
 }
 
 inline void mini_formatter::number(int64_t x) {
-    size_t current_size = buffer.size();
-    char * p = buffer.data() + current_size;
-    size_t buffer_size = 64;
-    buffer.resize(current_size + buffer_size); // not good
-    char * newp = fast_itoa(p, x);
-    buffer.resize(newp - p);
+  size_t current_size = buffer.size();
+  char *p = buffer.data() + current_size;
+  size_t buffer_size = 64;
+  buffer.resize(current_size + buffer_size); // not good
+  char *newp = fast_itoa(p, x);
+  buffer.resize(newp - p);
 }
 
 inline void mini_formatter::number(double x) {
-    size_t current_size = buffer.size();
-    char * p = buffer.data() + current_size;
-    size_t buffer_size = 64;
-    buffer.resize(current_size + buffer_size); // not good
-    char * newp = to_chars(p, nullptr, x);
-    buffer.resize(newp - p);
+  size_t current_size = buffer.size();
+  char *p = buffer.data() + current_size;
+  size_t buffer_size = 64;
+  buffer.resize(current_size + buffer_size); // not good
+  char *newp = to_chars(p, nullptr, x);
+  buffer.resize(newp - p);
 }
-
 
 inline void mini_formatter::start_array() { one_char('['); }
 inline void mini_formatter::end_array() { one_char(']'); }
 inline void mini_formatter::start_object() { one_char('{'); }
 inline void mini_formatter::end_object() { one_char('}'); }
 inline void mini_formatter::comma() { one_char(','); }
-inline void mini_formatter::key(std::string_view v) { one_char(','); }
 inline void mini_formatter::c_str(const char *c) {
-    for (; *c != '\0'; c++) { one_char(*c); }
+  for (; *c != '\0'; c++) {
+    one_char(*c);
+  }
 }
 
 inline void mini_formatter::true_atom() { c_str("true"); }
@@ -87,46 +93,58 @@ inline void mini_formatter::false_atom() { c_str("false"); }
 inline void mini_formatter::null_atom() { c_str("null"); }
 inline void mini_formatter::one_char(char c) { buffer.push_back(c); }
 inline void mini_formatter::key(std::string_view unescaped) {
-      string(unescaped);
-      one_char(':');
+  string(unescaped);
+  one_char(':');
 }
 inline void mini_formatter::string(std::string_view unescaped) {
-    one_char('\"');
-    size_t i = 0;
-    // fast path for the case where we have no control character
-    for (; (i < unescaped.length()) && (uint8_t(unescaped[i]) > 0x1F); i++) {
-      buffer.push_back(unescaped[i]);
-    }
-    // We caught a control character if we enter this loop (slow)
-    for (; i < unescaped.length(); i++) {
-      switch (unescaped[i]) {
-      case '\"':
-        c_str("\\\"");
-        break;
-      case '\\':
-        c_str("\\\\");
-        break;
-      default:
-        if (uint8_t(unescaped[i]) <= 0x1F) {
-          const static char *escaped[] = {
-              "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005",
-              "\\u0006", "\\u0007", "\\b",     "\\t",     "\\n",     "\\u000b",
-              "\\f",     "\\r",     "\\u000e", "\\u000f", "\\u0010", "\\u0011",
-              "\\u0012", "\\u0013", "\\u0014", "\\u0015", "\\u0016", "\\u0017",
-              "\\u0018", "\\u0019", "\\u001a", "\\u001b", "\\u001c", "\\u001d",
-              "\\u001e", "\\u001f"};
-          c_str(escaped[uint8_t(unescaped[i])]);
-        } else {
-          one_char(unescaped[i]);
-        }
-      } // switch
-    } //for
-    one_char('\"');
+  one_char('\"');
+  size_t i = 0;
+  // fast path for the case where we have no control character
+  for (; (i < unescaped.length()) && (uint8_t(unescaped[i]) > 0x1F); i++) {
+    buffer.push_back(unescaped[i]);
+  }
+  // We caught a control character if we enter this loop (slow)
+  for (; i < unescaped.length(); i++) {
+    switch (unescaped[i]) {
+    case '\"':
+      c_str("\\\"");
+      break;
+    case '\\':
+      c_str("\\\\");
+      break;
+    default:
+      if (uint8_t(unescaped[i]) <= 0x1F) {
+        const static char *escaped[] = {
+            "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005",
+            "\\u0006", "\\u0007", "\\b",     "\\t",     "\\n",     "\\u000b",
+            "\\f",     "\\r",     "\\u000e", "\\u000f", "\\u0010", "\\u0011",
+            "\\u0012", "\\u0013", "\\u0014", "\\u0015", "\\u0016", "\\u0017",
+            "\\u0018", "\\u0019", "\\u001a", "\\u001b", "\\u001c", "\\u001d",
+            "\\u001e", "\\u001f"};
+        c_str(escaped[uint8_t(unescaped[i])]);
+      } else {
+        one_char(unescaped[i]);
+      }
+    } // switch
+  }   // for
+  one_char('\"');
+}
+
+inline void mini_formatter::clear() {
+  buffer.clear();
+}
+
+inline std::string_view mini_formatter::str() const {
+  return std::string_view(buffer.data(), buffer.size());
 }
 
 
+/***
+ * String building code.
+ **/
+
 template <class serializer>
-inline void string_buffer<serializer>::append(dom::element value) {
+inline void string_builder<serializer>::append(dom::element value) {
   using tape_type = internal::tape_type;
   size_t depth = 0;
   constexpr size_t MAX_DEPTH = 16;
@@ -235,7 +253,7 @@ inline void string_buffer<serializer>::append(dom::element value) {
     case tape_type::END_ARRAY:
     case tape_type::END_OBJECT:
     case tape_type::ROOT:
-
+      SIMDJSON_UNREACHABLE();
     }
     iter.json_index++;
     after_value = true;
@@ -256,27 +274,23 @@ inline void string_buffer<serializer>::append(dom::element value) {
   } while (depth != 0);
 }
 
-
-
-
 template <class serializer>
-inline string_buffer<serializer>::append(dom::object value) {
+inline void string_builder<serializer>::append(dom::object value) {
   format.start_object();
   auto pair = value.begin();
   auto end = value.end();
   if (pair != end) {
+    append(*pair);
+    for (++pair; pair != end; ++pair) {
+      format.comma();
       append(*pair);
-      for (++pair; pair != end; ++pair) {
-        format.comma();
-        append(*pair);
     }
   }
   format.end_object();
 }
 
-
 template <class serializer>
-inline string_buffer<serializer>::append(dom::array value) {
+inline void string_builder<serializer>::append(dom::array value) {
   format.start_array();
   auto iter = value.begin();
   auto end = value.end();
@@ -290,14 +304,24 @@ inline string_buffer<serializer>::append(dom::array value) {
   format.end_array();
 }
 
-
 template <class serializer>
-inline string_buffer<serializer>::append(dom::key_value_pair kv) {
+inline void string_builder<serializer>::append(dom::key_value_pair kv) {
   format.key(kv.key);
   format.append(kv.value);
 }
 
-} // dom
-} // namespace simdjson 
+template <class serializer>
+inline void string_builder<serializer>::clear() {
+  format.clear();
+}
+
+template <class serializer>
+inline std::string_view string_builder<serializer>::str() const {
+  return format.str();
+}
+
+
+} // namespace dom
+} // namespace simdjson
 
 #endif

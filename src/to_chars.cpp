@@ -1,3 +1,6 @@
+#include <cmath>
+#include <cstdint>
+
 namespace simdjson {
 /*!
 implements the Grisu2 algorithm for binary to decimal floating-point
@@ -931,8 +934,7 @@ char *to_chars(char *first, const char *last, double value) {
   dtoa_impl::grisu2(first, len, decimal_exponent, value);
   // Format the buffer like printf("%.*g", prec, value)
   constexpr int kMinExp = -4;
-  // Use digits10 here to increase compatibility with version 2.
-  constexpr int kMaxExp = std::numeric_limits<FloatType>::digits10;
+  constexpr int kMaxExp = std::numeric_limits<double>::digits10;
 
   return dtoa_impl::format_buffer(first, len, decimal_exponent, kMinExp,
                                   kMaxExp);

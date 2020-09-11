@@ -505,7 +505,17 @@ inline std::ostream& minifier<dom::element>::print(std::ostream& out) {
       iter.json_index++; // numbers take up 2 spots, so we need to increment extra
       break;
     case tape_type::DOUBLE:
-      out << iter.next_tape_value<double>();
+      /**
+       * Using out << iter.next_tape_value<double>(); looks good, but it is wrong.
+       * For one thing, 1.1111111111111112 becomes 1.11111 so it is lossy. For 
+       * another, it is locale sensitive.
+       */
+      {
+        char buffer[24]; // 24 chars is enough
+        char * pend = to_chars(buffer, buffer + 24, iter.next_tape_value<double>());
+        std::string_view v(buffer, pend - buffer);
+        out << v;
+      }
       iter.json_index++; // numbers take up 2 spots, so we need to increment extra
       break;
     case tape_type::TRUE_VALUE:

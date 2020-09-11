@@ -14,23 +14,40 @@
 namespace simdjson {
 namespace dom {
 
+class mini_formatter;
 
-template <class formatter> struct string_buffer {
-  string_buffer() : format(buffer) {}
+/**
+ * The string_builder template allows us to construct
+ * a string from a document element. It is parametrized
+ * by a "formatter" which handles the details. Thus
+ * the string_builder template could support both minification
+ * and prettification, and various other tradeoffs.
+ */
+template <class formatter = mini_formatter> 
+class string_builder {
+public:
+  string_builder() = default;
 
   inline void append(dom::element value);
   inline void append(dom::array value);
   inline void append(dom::object value);
   inline void append(dom::key_value_pair value);
 
-  formatter format;
-  std::vector<char> buffer;
+  inline void clear();
+  inline std::string_view str() const;
+private:
+  formatter format{};
 };
 
 
+/**
+ * This is the class that we expect to use with the string_builder
+ * template. It tries to produce a compact version of the JSON element
+ * as quickly as possible.
+ */
 class mini_formatter {
 public:
-  mini_formatter(std::vector<char> &b) : buffer(b) {}
+  mini_formatter() = default;
   inline void comma();
   inline void start_array();
   inline void end_array();
@@ -40,20 +57,22 @@ public:
   inline void false_atom();
   inline void null_atom();
   inline void number(int64_t x);
-  inline void number(uint64_t x);  
+  inline void number(uint64_t x);
   inline void number(double x);
   inline void key(std::string_view unescaped);
   inline void string(std::string_view unescaped);
+
+  inline void clear();
+  inline std::string_view str() const;
+
 private:
   // implementation details (subject to change)
   inline void c_str(const char *c);
-  inline void one_char(char c);  
-  std::vector<char>& buffer; // not ideal!
+  inline void one_char(char c);
+  std::vector<char> buffer{}; // not ideal!
 };
 
-
-
-} // dom
-} // namespace simdjson 
+} // namespace dom
+} // namespace simdjson
 
 #endif

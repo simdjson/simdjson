@@ -6,6 +6,9 @@
 
 namespace simdjson {
 
+// defined in src/to_chars
+char *to_chars(char *first, const char *last, double value);
+
 #ifndef SIMDJSON_EXCEPTIONS
 #if __cpp_exceptions
 #define SIMDJSON_EXCEPTIONS 1
