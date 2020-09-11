@@ -100,6 +100,14 @@ commands:
           ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
 
 
+  cmake_perftest:
+    steps:
+      - cmake_build_cache
+      - run: |
+          cmake --build  build --target checkperf &&
+          cd build && 
+          ctest --output-on-failure -R checkperf 
+
   # we not only want cmake to build and run tests, but we want also a successful installation from which we can build, link and run programs
   cmake_install_test: # this version builds, install, test and then verify from the installation
     steps:
@@ -118,11 +126,16 @@ jobs:
     executor: gcc10
     environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
     steps: [ cmake_build, cmake_install_test, cmake_installed_test_cxx20 ]
+  gcc10-perftest:
+    description: Build and run performance tests on GCC 10 and AVX 2 with a cmake static build, this test performance regression
+    executor: gcc10
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_BUILD_STATIC=ON }
+    steps: [ cmake_perftest ]
   gcc10:
-    description: Build and run tests on GCC 10 and AVX 2 with a cmake static build, this test performance regression
+    description: Build and run tests on GCC 10 and AVX 2 with a cmake static build
     executor: gcc10
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON }
-    steps: [ cmake_test_all, cmake_install_test, cmake_installed_test_cxx20 ]
+    steps: [ cmake_test, cmake_install_test, cmake_installed_test_cxx20 ]
   clang6:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build
     executor: clang6

@@ -1,0 +1,21 @@
+name: Performance check on Ubuntu 18.04 CI (GCC 7)
+
+on: [push, pull_request]
+
+jobs:
+  ubuntu-build:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.0
+        with:
+          cmake-version: '3.9.x'
+      - name: Use cmake
+        run: |
+          mkdir build &&
+          cd build &&
+          cmake  -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
+          cmake --build . --target checkperf  &&
+          ctest --output-on-failure -R checkperf  ubuntu18-checkperf.yml
+
