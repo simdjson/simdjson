@@ -25,25 +25,29 @@ FuzzData split(const uint8_t *Data, size_t Size) {
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
-   // if(Size<1)
-    //    return 0;
 
     const auto fd=split(Data,Size);
 
     simdjson::dom::parser parser;
+    auto res=parser.parse(fd.json_doc.data(),fd.json_doc.size());
+    if(res.error())
+        return 0;
+    simdjson::dom::element root;
+    if(res.get(root))
+        return 0;
 
-    try {
-        simdjson::dom::element doc =  parser.parse(fd.json_doc.data(),fd.json_doc.size());
-        auto x=doc.at_pointer(fd.json_pointer);
-        if(fd.json_pointer==std::string_view{"/hello"} && x.is_string()) {
-            if(std::string_view{x.get_c_str()}=="world") {
-             std::abort();
-            }
-            //std::puts(x.get_c_str());
-        }
-    } catch (...) {
-       // std::puts("darnit");
-    }
+    auto maybe_leaf=root.at_pointer(fd.json_pointer);
+    if(maybe_leaf.error())
+        return 0;
+    simdjson::dom::element leaf;
+    if(maybe_leaf.get(leaf))
+        return 0;
+
+    std::string_view sv;
+    if(leaf.get_string().get(sv))
+        return 0;
+    //std::puts(std::string{sv.begin(),sv.end()}.c_str());
+
 
     return 0;
 }
