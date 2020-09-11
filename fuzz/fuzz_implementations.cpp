@@ -31,7 +31,8 @@ struct Impl {
     std::string output;
 };
 
-void showErrorAndAbort(Impl* first, Impl* last) {
+template<class Iterator>
+void showErrorAndAbort(Iterator* first, Iterator* last) {
     auto it=first;
     while(it!=last) {
         std::cerr<<"Implementation: "<<it->impl->name()<<"\tError:"<<it->error<<'\n';
@@ -41,7 +42,8 @@ void showErrorAndAbort(Impl* first, Impl* last) {
     std::abort();
 }
 
-void showOutputAndAbort(Impl* first, Impl* last) {
+template<class Iterator>
+void showOutputAndAbort(Iterator* first, Iterator* last) {
 
     for(auto it=first;it!=last;++it) {
         std::cerr<<"Implementation: "<<it->impl->name()<<"\tOutput: "<<it->output<<'\n';
