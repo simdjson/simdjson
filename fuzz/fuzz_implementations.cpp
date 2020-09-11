@@ -31,6 +31,35 @@ struct Impl {
     std::string output;
 };
 
+void showErrorAndAbort(Impl* first, Impl* last) {
+    auto it=first;
+    while(it!=last) {
+        std::cerr<<"Implementation: "<<it->impl->name()<<"\tError:"<<it->error<<'\n';
+        it++;
+    }
+    std::cerr.flush();
+    std::abort();
+}
+
+void showOutputAndAbort(Impl* first, Impl* last) {
+
+    for(auto it=first;it!=last;++it) {
+        std::cerr<<"Implementation: "<<it->impl->name()<<"\tOutput: "<<it->output<<'\n';
+    }
+
+    // show the pairwise results
+    for(auto it1=first; it1!=last; ++it1) {
+        for(auto it2=it1; it2!=last; ++it2) {
+            if(it1!=it2) {
+                const bool matches=(it1->output==it2->output);
+                std::cerr<<"Implementation "<<it1->impl->name()<<" and "<<it2->impl->name()<<(matches?" match.":" do NOT match.")<<'\n';
+            }
+        }
+    }
+    std::cerr.flush();
+    std::abort();
+}
+
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
     // make this dynamic, so it works regardless of how it was compiled
@@ -68,7 +97,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     //we should either have no errors, or all should error
     if(nerrors!=0) {
         if(nerrors!=Nimplementations) {
-            std::abort();
+            showErrorAndAbort(implementations.begin(),
+                              implementations.begin()+Nimplementations);
         }
         return 0;
     }
@@ -77,8 +107,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     const std::string& reference=implementations[0].output;
     for(std::size_t i=1; i<Nimplementations; ++i) {
         if(implementations[i].output!=reference) {
-            //mismatch on the output
-            std::abort();
+            showOutputAndAbort(implementations.begin(),
+                              implementations.begin()+Nimplementations);
         }
     }
 
