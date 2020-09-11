@@ -32,7 +32,7 @@ struct Impl {
 };
 
 template<class Iterator>
-void showErrorAndAbort(Iterator* first, Iterator* last) {
+void showErrorAndAbort(Iterator first, Iterator last) {
     auto it=first;
     while(it!=last) {
         std::cerr<<"Implementation: "<<it->impl->name()<<"\tError:"<<it->error<<'\n';
@@ -43,7 +43,7 @@ void showErrorAndAbort(Iterator* first, Iterator* last) {
 }
 
 template<class Iterator>
-void showOutputAndAbort(Iterator* first, Iterator* last) {
+void showOutputAndAbort(Iterator first, Iterator last) {
 
     for(auto it=first;it!=last;++it) {
         std::cerr<<"Implementation: "<<it->impl->name()<<"\tOutput: "<<it->output<<'\n';
