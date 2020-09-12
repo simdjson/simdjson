@@ -16,7 +16,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
     using Buffer=std::vector<uint8_t>;
     auto minify=[Data,Size](const simdjson::implementation* impl) -> Buffer {
-        Buffer ret(Size+simdjson::SIMDJSON_PADDING);
+        Buffer ret(Size);
         std::size_t retsize=0;
         auto err=impl->minify(Data,Size,ret.data(),retsize);
         if(err) {
