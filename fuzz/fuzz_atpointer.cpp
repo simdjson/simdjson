@@ -1,23 +1,27 @@
 #include "simdjson.h"
+#include "FuzzUtils.h"
 #include <cstddef>
 #include <cstdint>
 #include <string>
-
 #include <string_view>
-
-// split the input in a pointer and a document
 
 struct FuzzData {
     std::string_view json_pointer;
     std::string_view json_doc;
 };
 
-FuzzData split(const uint8_t *Data, size_t Size) {
+/**
+ * @brief split split fuzz data into a pointer and a document
+ * @param Data
+ * @param Size
+ * @return
+ */
+FuzzData split(const char *Data, size_t Size) {
 
     using namespace std::literals;
     constexpr auto sep="\n~~~\n"sv;
 
-    std::string_view all((const char*)Data,Size);
+    std::string_view all(Data,Size);
     auto pos=all.find(sep);
     if(pos==std::string_view::npos) {
         //not found.
@@ -29,7 +33,7 @@ FuzzData split(const uint8_t *Data, size_t Size) {
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
-    const auto fd=split(Data,Size);
+    const auto fd=split(as_chars(Data),Size);
 
     simdjson::dom::parser parser;
     auto res=parser.parse(fd.json_doc.data(),fd.json_doc.size());

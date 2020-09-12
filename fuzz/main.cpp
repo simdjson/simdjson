@@ -2,11 +2,8 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include "FuzzUtils.h"
 
-// view data as a byte pointer
-template <typename T> inline const std::uint8_t* as_bytes(const T* data) {
-  return static_cast<const std::uint8_t*>(static_cast<const void*>(data));
-}
 
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, std::size_t Size);
