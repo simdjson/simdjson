@@ -9,27 +9,32 @@
 
 namespace simdjson {
 namespace dom {
-
+inline bool parser::print_json(std::ostream &os) const noexcept {
+  if (!valid) { return false; }
+  simdjson::dom::string_builder<> sb;
+  sb.append(doc.root());
+  std::string_view answer = sb.str();
+  os << answer;
+  return true;
+}
 /***
  * Number utility functions
  **/
 
 
 namespace {
-template <typename T> char *fast_itoa(char *output, T value) {
+template <typename T> char *fast_itoa(char *output, T value) noexcept {
   // This is a standard implementation of itoa.
   // We first write in reverse order and then reverse.
-  char *write_pointer = output;
-  T modified_value{value};
-  do {
-    *write_pointer++ = char('0' + (modified_value % 10));
-    modified_value /= 10;
-  } while (modified_value > 0);
-  if (std::is_signed<T>::value) {
-    if (value < 0) {
-      *write_pointer++ = '-';
-    }
+  if((std::is_signed<T>::value) && (value < 0)) {
+    *output++ = '-';
+    value = -value;
   }
+  char *write_pointer = output;
+  do {
+    *write_pointer++ = char('0' + (value % 10));
+    value /= 10;
+  } while (value != 0);
   // then we reverse the result
   char *const answer = write_pointer;
   char *second_write_pointer = output;
@@ -51,57 +56,58 @@ template <typename T> char *fast_itoa(char *output, T value) {
  * Minifier/formatter code.
  **/
 
-inline void mini_formatter::number(uint64_t x) {
+simdjson_really_inline void mini_formatter::number(uint64_t x) {
   char number_buffer[24];
   char *newp = fast_itoa(number_buffer, x);
   buffer.insert(buffer.end(), number_buffer, newp);
 }
 
-inline void mini_formatter::number(int64_t x) {
+simdjson_really_inline void mini_formatter::number(int64_t x) {
   char number_buffer[24];
   char *newp = fast_itoa(number_buffer, x);
   buffer.insert(buffer.end(), number_buffer, newp);
 }
 
-inline void mini_formatter::number(double x) {
+simdjson_really_inline void mini_formatter::number(double x) {
   char number_buffer[24];
   char *newp = to_chars(number_buffer, nullptr, x);
   buffer.insert(buffer.end(), number_buffer, newp);
 }
 
-inline void mini_formatter::start_array() { one_char('['); }
-inline void mini_formatter::end_array() { one_char(']'); }
-inline void mini_formatter::start_object() { one_char('{'); }
-inline void mini_formatter::end_object() { one_char('}'); }
-inline void mini_formatter::comma() { one_char(','); }
-inline void mini_formatter::c_str(const char *c) {
+simdjson_really_inline void mini_formatter::start_array() { one_char('['); }
+simdjson_really_inline void mini_formatter::end_array() { one_char(']'); }
+simdjson_really_inline void mini_formatter::start_object() { one_char('{'); }
+simdjson_really_inline void mini_formatter::end_object() { one_char('}'); }
+simdjson_really_inline void mini_formatter::comma() { one_char(','); }
+simdjson_really_inline void mini_formatter::c_str(const char *c) {
   for (; *c != '\0'; c++) {
     one_char(*c);
   }
 }
 
-inline void mini_formatter::true_atom() { 
+simdjson_really_inline void mini_formatter::true_atom() { 
   const char * s = "true";
   buffer.insert(buffer.end(), s, s + 4);
 }
-inline void mini_formatter::false_atom() {
+simdjson_really_inline void mini_formatter::false_atom() {
   const char * s = "false";
   buffer.insert(buffer.end(), s, s + 5);
 }
-inline void mini_formatter::null_atom() {
+simdjson_really_inline void mini_formatter::null_atom() {
   const char * s = "null";
-  buffer.insert(buffer.end(), s, s + 5);
+  buffer.insert(buffer.end(), s, s + 4);
 }
-inline void mini_formatter::one_char(char c) { buffer.push_back(c); }
-inline void mini_formatter::key(std::string_view unescaped) {
+simdjson_really_inline void mini_formatter::one_char(char c) { buffer.push_back(c); }
+simdjson_really_inline void mini_formatter::key(std::string_view unescaped) {
   string(unescaped);
   one_char(':');
 }
-inline void mini_formatter::string(std::string_view unescaped) {
+simdjson_really_inline void mini_formatter::string(std::string_view unescaped) {
   one_char('\"');
   size_t i = 0;
-  // fast path for the case where we have no control character
-  for (; (i < unescaped.length()) && (uint8_t(unescaped[i]) > 0x1F); i++) {}
+  // fast path for the case where we have no control character, no ", and no backslash (fast path)
+  for (; (i < unescaped.length()) && (uint8_t(unescaped[i]) > 0x1F) 
+        && (unescaped[i] != '\"') && (unescaped[i] != '\\'); i++) {}
   buffer.insert(buffer.end(), unescaped.data(), unescaped.data() + i);
   // We caught a control character if we enter this loop (slow)
   for (; i < unescaped.length(); i++) {
@@ -140,7 +146,7 @@ inline void mini_formatter::clear() {
   buffer.clear();
 }
 
-inline std::string_view mini_formatter::str() const {
+simdjson_really_inline std::string_view mini_formatter::str() const {
   return std::string_view(buffer.data(), buffer.size());
 }
 
@@ -311,18 +317,18 @@ inline void string_builder<serializer>::append(dom::array value) {
 }
 
 template <class serializer>
-inline void string_builder<serializer>::append(dom::key_value_pair kv) {
+simdjson_really_inline void string_builder<serializer>::append(dom::key_value_pair kv) {
   format.key(kv.key);
   append(kv.value);
 }
 
 template <class serializer>
-inline void string_builder<serializer>::clear() {
+simdjson_really_inline void string_builder<serializer>::clear() {
   format.clear();
 }
 
 template <class serializer>
-inline std::string_view string_builder<serializer>::str() const {
+simdjson_really_inline std::string_view string_builder<serializer>::str() const {
   return format.str();
 }
 

@@ -4,8 +4,6 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/error.h"
 #include "simdjson/internal/tape_ref.h"
-#include "simdjson/minify.h"
-#include <ostream>
 
 namespace simdjson {
 namespace dom {
@@ -126,21 +124,9 @@ private:
   friend class element;
   friend struct simdjson_result<element>;
   template<typename T>
-  friend class simdjson::minifier;
-  template<typename T>
   friend class simdjson::dom::string_builder;
 };
 
-/**
- * Print JSON to an output stream.
- *
- * By default, the value will be printed minified.
- *
- * @param out The output stream.
- * @param value The value to print.
- * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
- */
-inline std::ostream& operator<<(std::ostream& out, const array &value);
 
 } // namespace dom
 
@@ -162,20 +148,7 @@ public:
 #endif // SIMDJSON_EXCEPTIONS
 };
 
-#if SIMDJSON_EXCEPTIONS
-/**
- * Print JSON to an output stream.
- *
- * By default, the value will be printed minified.
- *
- * @param out The output stream.
- * @param value The value to print.
- * @throw simdjson_error if the result being printed has an error. If there is an error with the
- *        underlying output stream, that error will be propagated (simdjson_error will not be
- *        thrown).
- */
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::array> &value) noexcept(false);
-#endif
+
 
 } // namespace simdjson
 

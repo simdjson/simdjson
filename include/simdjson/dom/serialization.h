@@ -6,7 +6,6 @@
 #include "simdjson/error.h"
 #include "simdjson/internal/dom_parser_implementation.h"
 #include "simdjson/internal/tape_ref.h"
-#include "simdjson/minify.h"
 #include "simdjson/padded_string.h"
 #include "simdjson/portability.h"
 #include <vector>
@@ -26,55 +25,96 @@ class mini_formatter;
 template <class formatter = mini_formatter> 
 class string_builder {
 public:
+  /** Construct an initially empty builder, would print the empty string **/
   string_builder() = default;
-
+  /** Append an element to the builder (to be printed) **/
   inline void append(dom::element value);
+  /** Append an array to the builder (to be printed) **/
   inline void append(dom::array value);
+  /** Append an objet to the builder (to be printed) **/
   inline void append(dom::object value);
-  inline void append(dom::key_value_pair value);
-
-  inline void clear();
-  inline std::string_view str() const;
+  /** Reset the builder (so that it would print the empty string) **/
+  simdjson_really_inline void clear();
+  /** 
+   * Get access to the string. The string_view is owned by the builder
+   * and it is invalid to use it after the string_builder has been 
+   * destroyed.
+   * However you can make a copy of the string_view on memory that you
+   * own. 
+   */
+  simdjson_really_inline std::string_view str() const;
+  /** Append a key_value_pair to the builder (to be printed) **/
+  simdjson_really_inline void append(dom::key_value_pair value);
 private:
   formatter format{};
 };
 
 /**
- * This is the class that we expect to use with the string_builder
+ * @private This is the class that we expect to use with the string_builder
  * template. It tries to produce a compact version of the JSON element
  * as quickly as possible.
  */
 class mini_formatter {
 public:
   mini_formatter() = default;
-  inline void comma();
-  inline void start_array();
-  inline void end_array();
-  inline void start_object();
-  inline void end_object();
-  inline void true_atom();
-  inline void false_atom();
-  inline void null_atom();
-  inline void number(int64_t x);
-  inline void number(uint64_t x);
-  inline void number(double x);
-  inline void key(std::string_view unescaped);
-  inline void string(std::string_view unescaped);
-
-  inline void clear();
-  inline std::string_view str() const;
+  /** Add a comma **/
+  simdjson_really_inline void comma();
+  /** Start an array, prints [ **/
+  simdjson_really_inline void start_array();
+  /** End an array, prints ] **/
+  simdjson_really_inline void end_array();
+  /** Start an array, prints { **/
+  simdjson_really_inline void start_object();
+  /** Start an array, prints } **/
+  simdjson_really_inline void end_object();
+  /** Prints a true **/
+  simdjson_really_inline void true_atom();
+  /** Prints a false **/
+  simdjson_really_inline void false_atom();
+  /** Prints a null **/
+  simdjson_really_inline void null_atom();
+  /** Prints a number **/
+  simdjson_really_inline void number(int64_t x);
+  /** Prints a number **/
+  simdjson_really_inline void number(uint64_t x);
+  /** Prints a number **/
+  simdjson_really_inline void number(double x);
+  /** Prints a key (string + colon) **/
+  simdjson_really_inline void key(std::string_view unescaped);
+  /** Prints a string. The string is escaped as needed. **/
+  simdjson_really_inline void string(std::string_view unescaped);
+  /** Clears out the content. **/
+  simdjson_really_inline void clear();
+  /** 
+   * Get access to the buffer, it is own by the instance, but
+   * the user can make a copy. 
+   **/
+  simdjson_really_inline std::string_view str() const;
 
 private:
   // implementation details (subject to change)
-  inline void c_str(const char *c);
-  inline void one_char(char c);
+  /** Prints a C string **/
+  simdjson_really_inline void c_str(const char *c);
+  /** Prints one character **/
+  simdjson_really_inline void one_char(char c);
+  /** Backing buffer **/
   std::vector<char> buffer{}; // not ideal!
 };
+} // namespace dom
 
-
-
+/**
+ * Converts JSON to a string.
+ *
+ *   dom::parser parser;
+ *   element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
+ *   cout << to_string(doc) << endl; // prints [1,2,3]
+ *
+ */
 template <class T> 
-std::string to_string(T x) {
+std::string to_string(T x)   {
+    // in C++, to_string is standard: http://www.cplusplus.com/reference/string/to_string/
+    // Currently minify and to_string are identical but in the future, they may 
+    // differ.
     simdjson::dom::string_builder<> sb;
     sb.append(x);
     std::string_view answer = sb.str();
@@ -88,7 +128,83 @@ std::string to_string(simdjson_result<T> x) {
 }
 #endif 
 
-} // namespace dom
+/**
+ * Minifies a JSON element or document, printing the smallest possible valid JSON.
+ *
+ *   dom::parser parser;
+ *   element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
+ *   cout << minify(doc) << endl; // prints [1,2,3]
+ *
+ */
+template <class T> 
+std::string minify(T x)  {
+  return to_string(x);
+}
+
+#if SIMDJSON_EXCEPTIONS
+template <class T> 
+std::string minify(simdjson_result<T> x) {
+    if (x.error()) { throw simdjson_error(x.error()); }
+    return to_string(x.value());
+}
+#endif 
+
+
 } // namespace simdjson
 
+
+/**
+ * Print JSON to an output stream.
+ *
+ * @param out The output stream.
+ * @param value The element.
+ * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
+ */
+inline std::ostream& operator<<(std::ostream& out, simdjson::dom::element value) { 
+    simdjson::dom::string_builder<> sb;
+    sb.append(value);
+    return (out << sb.str());
+}
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::dom::element> x) { 
+    if (x.error()) { throw simdjson::simdjson_error(x.error()); }
+    return (out << x.value());
+}
+#endif
+/**
+ * Print JSON to an output stream.
+ *
+ * @param out The output stream.
+ * @param value The array.
+ * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
+ */
+inline std::ostream& operator<<(std::ostream& out, simdjson::dom::array value)  { 
+    simdjson::dom::string_builder<> sb;
+    sb.append(value);
+    return (out << sb.str());
+}
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::dom::array> x) { 
+    if (x.error()) { throw simdjson::simdjson_error(x.error()); }
+    return (out << x.value());
+}
+#endif
+/**
+ * Print JSON to an output stream.
+ *
+ * @param out The output stream.
+ * @param value The objet.
+ * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
+ */
+inline std::ostream& operator<<(std::ostream& out, simdjson::dom::object value)   { 
+    simdjson::dom::string_builder<> sb;
+    sb.append(value);
+    return (out << sb.str());
+}
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out,  simdjson::simdjson_result<simdjson::dom::object> x) { 
+    if (x.error()) { throw  simdjson::simdjson_error(x.error()); }
+    return (out << x.value());
+}
+#endif 
 #endif

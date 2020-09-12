@@ -236,46 +236,7 @@ inline bool object::iterator::key_equals_case_insensitive(std::string_view o) co
 inline key_value_pair::key_value_pair(std::string_view _key, element _value) noexcept :
   key(_key), value(_value) {}
 
-inline std::ostream& operator<<(std::ostream& out, const object &value) {
-  return out << minify<object>(value);
-}
-inline std::ostream& operator<<(std::ostream& out, const key_value_pair &value) {
-  return out << minify<key_value_pair>(value);
-}
-
 } // namespace dom
-
-template<>
-inline std::ostream& minifier<dom::object>::print(std::ostream& out) {
-  out << '{';
-  auto pair = value.begin();
-  auto end = value.end();
-  if (pair != end) {
-    out << minify<dom::key_value_pair>(*pair);
-    for (++pair; pair != end; ++pair) {
-      out << "," << minify<dom::key_value_pair>(*pair);
-    }
-  }
-  return out << '}';
-}
-
-template<>
-inline std::ostream& minifier<dom::key_value_pair>::print(std::ostream& out) {
-  return out << '"' << internal::escape_json_string(value.key) << "\":" << value.value;
-}
-
-#if SIMDJSON_EXCEPTIONS
-
-template<>
-inline std::ostream& minifier<simdjson_result<dom::object>>::print(std::ostream& out) {
-  if (value.error()) { throw simdjson_error(value.error()); }
-  return out << minify<dom::object>(value.first);
-}
-
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::object> &value) noexcept(false) {
-  return out << minify<simdjson_result<dom::object>>(value);
-}
-#endif // SIMDJSON_EXCEPTIONS
 
 } // namespace simdjson
 

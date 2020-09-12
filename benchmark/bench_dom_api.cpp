@@ -94,7 +94,7 @@ static void serialize_twitter_to_string(State& state) {
   }
   size_t bytes = 0;
   for (SIMDJSON_UNUSED auto _ : state) {
-    auto serial = simdjson::dom::to_string(doc);
+    auto serial = simdjson::to_string(doc);
     bytes += serial.size();
     benchmark::DoNotOptimize(serial);
   }
