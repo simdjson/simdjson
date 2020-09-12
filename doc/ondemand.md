@@ -1,6 +1,208 @@
-I'll write a few of the design features / innovations here:
+How simdjson's On Demand Parsing works
+======================================
 
-## Classes
+Current JSON parsers generally have either ease of use or performance. Very few have both at
+once. simdjson's On Demand API bridges that gap with a familiar, friendly DOM API and the
+performance of just-in-time parsing on top of the simdjson core's legendary performance.
+
+To achieve ease of use, we mimicked the *form* of a traditional DOM API: you can iterate over
+arrays, look up fields in objects, and extract native values like double, uint64_t, string and bool.
+To achieve performance, we introduced some key limitations that make the DOM API *streaming*:
+array/object iteration cannot be restarted, and fields must be looked up in order, and string/number
+values can only be parsed once.
+
+```c++
+ondemand::parser parser;
+auto doc = parser.iterate(json);
+for (auto tweet : doc["statuses"]) {
+  std::string_view text        = tweet["text"];
+  std::string_view screen_name = tweet["user"]["screen_name"];
+  uint64_t         retweets    = tweet["retweet_count"];
+  uint64_t         favorites   = tweet["favorite_count"];
+  cout << screen_name << " (" << retweets << " retweets / " << favorites << " favorites): " << text << endl;
+}
+```
+
+This streaming approach means that fields or values you don't use don't have to get parsed or
+converted, saving space and time.
+
+Further, the On Demand API doesn't parse a value *at all* until you try to convert it to double,
+int, string, or bool. Because you have told it the type at that point, it can avoid the the key
+"what type is this" branch present in almost all other parsers, avoiding branch misprediction that
+cause massive (sometimes 2-4x) slowdowns.
+
+Parsers Today
+-------------
+
+To understand exactly what's happening here and why it's different, it's helpful to review the major
+approaches to parsing and parser APIs in use today.
+
+### Generic DOM
+
+Many of the most usable, popular JSON APIs deserialize into a **DOM**: an intermediate tree of
+objects, arrays and values. The resulting API lets you refer to each array or object separately,
+using familiar techniques like iteration (`for (auto value : array)`) or indexing (`object["key"]`).
+In some cases the values are even deserialized straight into familiar C++ constructs like vector and
+map.
+
+This model is dead simple to use, since it talks in terms of *data types* instead of JSON. It's
+often easy enough that many users use the deserialized JSON as-is instead of deserializing into
+their own custom structs, saving a ton of development work.
+
+simdjson's DOM parser is one such example. It looks very similar to the ondemand example, except
+it calls `parse` instead of `iterate`:
+
+```c++
+dom::parser parser;
+auto doc = parser.parse(json);
+for (auto tweet : doc["statuses"]) {
+  std::string_view text        = tweet["text"];
+  std::string_view screen_name = tweet["user"]["screen_name"];
+  uint64_t         retweets    = tweet["retweet_count"];
+  uint64_t         favorites   = tweet["favorite_count"];
+  cout << screen_name << " (" << retweets << " retweets / " << favorites << " favorites): " << text << endl;
+}
+```
+
+Pros and cons of generic DOM:
+* Straightforward, user-friendly interface (arrays and objects)
+* No lifetime concerns (arrays and objects are often independent of JSON text and parser internal state)
+* Parses and stores everything, using memory/CPU even on values you don't end up using (cost can be brought down some with lazy numbers/strings and top-level iterators)
+* Values stay in memory even if you only use them once
+* Heavy performance drain from [type blindness](#type-blindness).
+
+### SAX (SAJ?)
+
+The SAX model ("Streaming API for XML") uses streaming to eliminate the high cost of
+parsing and storing the entire JSON. In the SAX model, a core JSON parser parses the JSON document
+piece by piece, but instead of stuffing values in a DOM tree, it passes each value to a callback,
+letting the user use the value and decide for themselves whether to discard it and where to store
+it. or discard it.
+
+This allows users to work with much larger files without running out of memory. Some SAX APIs even
+allow the user to skip values entirely, lightening the parsing burden as well.
+
+The big drawback is complexity: SAX APIs generally have you define a single callback for each type
+(e.g. `string_field(std::string_view key, std::string_view value)`). Because of this, you suffer
+from context blindness: when you find a string you have to check where it is before you know what to
+do with it. Is this string the text of the tweet, the screen name, or something else I don't even
+care about? Are we even in a tweet right now, or is this from some other place in the document
+entirely?
+
+The following is SAX example of the Twitter problem we've seen in the Generic DOM and On Demand
+examples. To make it short enough to use as an example at all, it's heavily redacted: it only solves
+a part of the problem (doesn't get user.screen_name), it has bugs (it doesn't handle sub-objects
+in a tweet at all), and it uses a theoretical, simple SAX API that minimizes ceremony and skips over
+the issue of lazy parsing and number types entirely.
+
+```c++
+struct twitter_callbacks {
+  bool in_statuses;
+  bool in_tweet;
+  std::string_view text;
+  uint64_t         retweets;
+  uint64_t         favorites;
+  void start_object_field(std::string_view key) {
+    if (key == "statuses") { in_statuses = true; }
+  }
+  void start_object() {
+    if (in_statuses) { in_tweet = true; }
+  }
+  void string_field(std::string_view key, std::string_view value) {
+    if (in_tweet && key == "text") { text = value; }
+  }
+  void number_field(std::string_view key, uint64_t value) {
+    if (in_tweet) {
+      if (key == "retweet_count") { retweets = value; }
+      if (key == "favorite_count") { favorites = value; }
+    }
+  }
+  void end_object() {
+    if (in_tweet) {
+      cout << "[redacted] (" << retweets << " retweets / " << favorites << " favorites): " << text << endl;
+      in_tweet = false;
+    } else if (in_statuses) {
+      in_statuses = false;
+    }
+  }
+};
+sax::parser parser;
+parser.parse(twitter_callbacks());
+```
+
+This is a startling amount of code, requiring mental gymnastics even to read, and in order to get it
+this small and illustrate basic usage, *it has bugs* and skips over parsing user.screen_name
+entirely. The real implementation is much, much harder to write (and to read).
+
+Pros and cons of SAX (SAJ):
+* Speed and space benefits from low, predictable memory usage
+* Some SAX APIs can lazily parse numbers/strings, another performance win (pay for what you use)
+* Performance drain from context blindness (switch statement for "where am I in the document")
+* Startlingly difficult to use
+
+### Schema-Based Parser Generators
+
+There is another breed of parser, commonly used to generate REST API clients, which is in principle
+capable of fixing most of the issues with DOM and SAX. These parsers take a schema--a description of
+your JSON, with field names, types, everything--and generate classes/structs in your language of
+choice, as well as a parser to deserialize the JSON into those structs. (In another variant, you
+define your own struct and a preprocessor inspects it and generates a JSON parser for it.)
+
+Not all of these schema-based parser generators actually generate a parser or even optimize for
+streaming, but they are *able* to.
+
+Some of the features help entirely eliminate the DOM and SAX issues:
+
+Pros and cons:
+* Ease of Use is on par with DOM
+* Parsers that generate iterators and lazy values in structs can keep memory pressure down to SAX levels.
+* Type Blindness can be entirely solved with specific parsers for each type, saving many branches.
+* Context Blindness can be solved, especially if object fields are required and in order, saving
+  even more branches.
+* Scenarios are limited by declarative language (often limited to deserialization-to-objects)
+
+Rust's serde does a lot of the necessary legwork here, for example. (Editor's Note: I don't know
+*how much* it does, but I know it does a decent amount, and is very fast.)
+
+Type Blindness and Branch Misprediction
+---------------------------------------
+
+The DOM parsing model, and even the SAX model to a great extent, suffers from **type
+blindness:** you, the user, almost always know exactly what fields and what types are in your JSON,
+but the parser doesn't. When you say `json_parser.parse(json)`, the parser doesn't get told *any*
+of this. It has no way to know. This means it has to look at each value blind with a big "switch"
+statement, asking "is this a number? A string? A boolean? An array? An object?"
+
+In modern processors, this kind of switch statement can make your program run *3-4 times slower*
+than it needs to. This is because of the high cost of branch misprediction.
+
+Modern processors have more than one core, even on a single thread. To go fast, each of these cores
+"reads ahead" in your program, each picking different instructions to run (as soon as data is
+available). If all the cores are working almost all the time, your single-threaded program will run
+around 4 instructions per cycle--*4 times faster* than it theoretically could.
+
+Most modern programs don't manage to get much past 1 instruction per cycle, however. This is
+because of branch misprediction. Programs have a lot of if statements, so to read ahead, processors
+guess which branch will be taken and read ahead from that branch. If it guesses wrong, all that
+wonderful work it did is discarded, and it starts over from the if statement. It *was* running at
+4x speed, but it was all wasted work!
+
+And this brings us back to that switch statement. Type blindness means the processor essentially has
+to guess, for every JSON value, whether it will be an array, an object, number, string or boolean.
+Unless your file is something ridiculously predictable, like a giant array of numbers, it's going to
+trip up a lot. (Processors get better about this all the time, but for something complex like this
+there is only so much it can do in the tiny amount of time it has to guess.)
+
+On Demand parsing is tailor-made to solve this problem at the source, parsing values only after the
+user declares their type by asking for a double, an int, a string, etc.
+
+
+
+NOTE: EVERYTHING BELOW THIS NEEDS REWRITING AND MAY NOT BE ACCURATE AT PRESENT
+==============================================================================
+
+Classes
+-------
 
 In general, simdjson's parser classes are divided into two categories:
 
@@ -141,7 +343,7 @@ the work to parse and validate the array:
 The `ondemand::array` object lets you iterate the values of an array in a forward-only manner:
 
 ```c++
-for (object tweet : doc["tweets"].get_array()) {
+for (object tweet : doc["statuses"].get_array()) {
   ...
 }
 ```
@@ -149,7 +351,7 @@ for (object tweet : doc["tweets"].get_array()) {
 This is equivalent to:
 
 ```c++
-array tweets = doc["tweets"].get_array();
+array tweets = doc["statuses"].get_array();
 array::iterator iter = tweets.begin();
 array::iterator end = tweets.end();
 while (iter != end) {
@@ -164,13 +366,13 @@ the work to parse and validate the array:
 
 1. `get_array()`:
    - Validates that this is an array (starts with `[`). Returns INCORRECT_TYPE if not.
-   - If the array is empty (followed by `]`), advances the iterator past the `]` and returns an
-     array with finished == true.
-   - If the array is not empty, returns an array with finished == false. Iterator remains pointed
-     at the first value (the token just after `[`).
-2. `tweets.begin()`, `tweets.end()`: Returns an `array::iterator`, which just points back at the
+   - If the array is empty (followed by `]`), advances the iterator past the `]` and then releases the
+     iterator (indicating the array is finished iterating).
+   - If the array is not empty, the iterator remains pointed at the first value (the token just
+     after `[`).
+2. `tweets.begin()`, `tweets.end()`: Returns an `array_iterator`, which just points back at the
    array object.
-3. `while (iter != end)`: Stops if finished == true.
+3. `while (iter != end)`: Stops if the iterator has been released.
 4. `*iter`: Yields the value (or error).
    - If there is an error, returns it and sets finished == true.
    - Returns a value object, advancing the iterator just past the value token (if it is `[`, `{`,
@@ -182,83 +384,14 @@ the work to parse and validate the array:
    - If anything else is there (`true`, `:`, `}`, etc.), sets error = TAPE_ERROR.
    - #3 gets run next.
 
+Design Features
+---------------
+
 #### Error Chaining
 
 When you iterate over an array or object with an error, the error is yielded in the loop
 
-#### Error Chaining
-
-
-* `document`: Represents the root value of the document, as well as iteration state.
-  - Inline Algorithm Context. MUST be kept around for the duration of the algorithm.
-  - `iter`: The `json_iterator`, which handles low-level iteration.
-  - `parser`: A pointer to the parser to get at persistent state.
-  - Can be converted to `value` (and by proxy, to array/object/string/number/bool/null).
-  - Can be iterated (like `value`, assumes it is an array).
-  - Safety: can only be converted to `value` once. This prevents double iteration of arrays/objects
-    (which will cause inconsistent iterator state) or double-unescaping strings (which could cause
-    memory overruns if done too much). NOTE: this is actually not ideal; it means you can't do
-    `if (document.parse_double().error() == INCORRECT_TYPE) { document.parse_string(); }`
-
-The `value` class is expected to be temporary (NOT kept around), used to check the type of a value
-and parse it to another type. It can convert to array or object, and has helpers to parse string,
-double, int64, uint64, boolean and is_null().
-
-`value` does not check the type of the value ahead of time. Instead, when you ask for a value of a
-given type, it tries to parse as that type, treating a parser error as INCORRECT_TYPE. For example,
-if you call get_int64() on the JSON string `"123"`, it will fail because it is looking for either a
-`-` or digit at the front. The philosophy here is "proceed AS IF the JSON has the desired type, and
-have an unlikely error branch if not." Since most files have well-known types, this avoids
-unnecessary branchiness and extra checks for the value type.
-
-It does preemptively advance the iterator and store the pointer to the JSON, allowing you to attempt
-to parse more than one type. This is how you do nullable ints, for example: check is_null() and
-then get_int64(). If we didn't store the JSON, and instead did `iter.advance()` during is_null(),
-you would get garbage if you then did get_int64().
-
-## 
-
-until it's asked to convert, in which case it proceeds
-    *expecting* the value is of the given type, treating an error in parsing as "it must be some
-    other type." This saves the extra explicit type check in the common case where you already know
-    saving the if/switch statement
-    and . We find out it's not a double
-    when the double parser says "I couldn't find any digits and I don't understand what this `t`
-    character is for."
-  - The iterator has already been advanced past the value token. If it's { or [, the iterator is just
-    after the open brace.
-  - Can be parsed as a string, double, int, unsigned, boolean, or `is_null()`, in which case a parser is run
-    and the value is returned.
-  - Can be converted to array or object iterator.
-* `object`: Represents an object iteration.
-  - `doc`: A pointer to the document (and the iterator).
-  - `at_start`: boolean saying whether we're at the start of the object, used for `[]`.
-  - Can do order-sensitive field lookups.
-  - Can iterate over key/value pairs.
-* `array`: Represents an array iteration.
-  - `doc`: A pointer to the document (and the iterator).
-  
-
-    
-  - Can be returned as a `raw_json_string`, so that people who want to check JSON strings without
-    unescaping can do so.
-  - Can be converted to array or object
-     and keep member variables in the same registers.
-    In fact, , and . Usually based on whether they are persistent--i.e. we intend them
-to be stored in memory--or algorithmic--
-(which generally means we intend to persist them), or algorithm-lifetime, possibly
-
-- persistent classes
-- non-persistent 
-`ondemand::parser` is the equivalent of `dom::parser`, and . 
-`json_iterator` handles all iteration state.
-
-### json_iterator / document
-
-`document` owns the json_iterator and the . I'm considering moving this into the json_iterator so there's one
-less class that requires persistent ownership, however.
-
-### String unescaping
+### String Parsing
 
 When the user requests strings, we unescape them to a single string_buf (much like the DOM parser)
 so that users enjoy the same string performance as the core simdjson. The current_string_buf_loc is
@@ -278,13 +411,11 @@ If it's stored in a `simdjson_result<document>` (as it would be in `auto doc = p
 the document pointed to by children is the one inside the simdjson_result, and the simdjson_result,
 therefore, can't be moved either.
 
-### Object Iteration
+### Object/Array Iteration
 
 Because the C++ iterator contract requires iterators to be const-assignable and const-constructable,
 object and array iterators are separate classes from the object/array itself, and have an interior
 mutable reference to it.
-
-### Array Iteration
 
 ### Iteration Safety
 
