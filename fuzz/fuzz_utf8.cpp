@@ -26,14 +26,23 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
     const bool reference=utf8verify(*first);
 
+    bool failed=false;
     for(auto it=first+1;it!=last; ++it) {
         const bool current=utf8verify(*it);
         if(current!=reference) {
-            std::cerr<<std::boolalpha<<"mismatch: reference ("<< (*first)->name()<<") says "<<reference
-                    <<", current ("<< (*it)->name()<<") says "<<current<<std::endl;
-            std::abort();
+            failed=true;
         }
     }
+
+    if(failed) {
+        std::cerr<<std::boolalpha<<"Mismatch between implementations of validate_utf8() found:\n";
+        for(auto it=first;it!=last; ++it) {
+            const bool current=utf8verify(*it);
+            std::cerr<<(*it)->name()<<" returns "<<current<<std::endl;
+        }
+        std::abort();
+    }
+
 
     //all is well
     return 0;
