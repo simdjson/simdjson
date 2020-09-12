@@ -1,6 +1,6 @@
 #include <cmath>
 #include <cstdint>
-
+#include <array>
 namespace simdjson {
 /*!
 implements the Grisu2 algorithm for binary to decimal floating-point
