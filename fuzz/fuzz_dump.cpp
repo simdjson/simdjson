@@ -52,7 +52,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
   simdjson::dom::element elem;
   auto error = parser.parse(Data, Size).get(elem);
 
-  if (error) { return 1; }
+  if (error) { return 0; }
   NulOStream os;
   //std::ostream& os(std::cout);
   print_json(os,elem);

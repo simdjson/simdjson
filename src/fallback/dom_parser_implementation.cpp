@@ -240,7 +240,7 @@ SIMDJSON_WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_
   }
   dst_len = pos; // we intentionally do not work with a reference
   // for fear of aliasing
-  return SUCCESS;
+  return quote ? UNCLOSED_STRING : SUCCESS;
 }
 
 // credit: based on code from Google Fuchsia (Apache Licensed)
