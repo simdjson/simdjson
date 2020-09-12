@@ -60,5 +60,6 @@ if(ENABLE_FUZZING)
   implement_fuzzer(fuzz_minify)
   implement_fuzzer(fuzz_parser)
   implement_fuzzer(fuzz_print_json)
+  implement_fuzzer(fuzz_utf8)
 
 endif()
