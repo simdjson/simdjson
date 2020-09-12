@@ -212,6 +212,8 @@ private:
   friend struct simdjson_result<element>;
   template<typename T>
   friend class simdjson::minifier;
+  template<typename T>
+  friend class simdjson::dom::string_builder;
 };
 
 /**

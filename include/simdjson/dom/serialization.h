@@ -39,7 +39,6 @@ private:
   formatter format{};
 };
 
-
 /**
  * This is the class that we expect to use with the string_builder
  * template. It tries to produce a compact version of the JSON element
@@ -71,6 +70,23 @@ private:
   inline void one_char(char c);
   std::vector<char> buffer{}; // not ideal!
 };
+
+
+
+template <class T> 
+std::string to_string(T x) {
+    simdjson::dom::string_builder<> sb;
+    sb.append(x);
+    std::string_view answer = sb.str();
+    return std::string(answer.data(), answer.size());
+}
+#if SIMDJSON_EXCEPTIONS
+template <class T> 
+std::string to_string(simdjson_result<T> x) {
+    if (x.error()) { throw simdjson_error(x.error()); }
+    return to_string(x.value());
+}
+#endif 
 
 } // namespace dom
 } // namespace simdjson

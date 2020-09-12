@@ -33,6 +33,7 @@ template <typename T> char *fast_itoa(char *output, T value) {
   // then we reverse the result
   char *const answer = write_pointer;
   char *second_write_pointer = output;
+  write_pointer -= 1;
   while (second_write_pointer < write_pointer) {
     char c1 = *write_pointer;
     char c2 = *second_write_pointer;
@@ -51,30 +52,21 @@ template <typename T> char *fast_itoa(char *output, T value) {
  **/
 
 inline void mini_formatter::number(uint64_t x) {
-  size_t current_size = buffer.size();
-  char *p = buffer.data() + current_size;
-  size_t buffer_size = 64;
-  buffer.resize(current_size + buffer_size); // not good
-  char *newp = fast_itoa(p, x);
-  buffer.resize(newp - p);
+  char number_buffer[24];
+  char *newp = fast_itoa(number_buffer, x);
+  buffer.insert(buffer.end(), number_buffer, newp);
 }
 
 inline void mini_formatter::number(int64_t x) {
-  size_t current_size = buffer.size();
-  char *p = buffer.data() + current_size;
-  size_t buffer_size = 64;
-  buffer.resize(current_size + buffer_size); // not good
-  char *newp = fast_itoa(p, x);
-  buffer.resize(newp - p);
+  char number_buffer[24];
+  char *newp = fast_itoa(number_buffer, x);
+  buffer.insert(buffer.end(), number_buffer, newp);
 }
 
 inline void mini_formatter::number(double x) {
-  size_t current_size = buffer.size();
-  char *p = buffer.data() + current_size;
-  size_t buffer_size = 64;
-  buffer.resize(current_size + buffer_size); // not good
-  char *newp = to_chars(p, nullptr, x);
-  buffer.resize(newp - p);
+  char number_buffer[24];
+  char *newp = to_chars(number_buffer, nullptr, x);
+  buffer.insert(buffer.end(), number_buffer, newp);
 }
 
 inline void mini_formatter::start_array() { one_char('['); }
@@ -88,9 +80,18 @@ inline void mini_formatter::c_str(const char *c) {
   }
 }
 
-inline void mini_formatter::true_atom() { c_str("true"); }
-inline void mini_formatter::false_atom() { c_str("false"); }
-inline void mini_formatter::null_atom() { c_str("null"); }
+inline void mini_formatter::true_atom() { 
+  const char * s = "true";
+  buffer.insert(buffer.end(), s, s + 4);
+}
+inline void mini_formatter::false_atom() {
+  const char * s = "false";
+  buffer.insert(buffer.end(), s, s + 5);
+}
+inline void mini_formatter::null_atom() {
+  const char * s = "null";
+  buffer.insert(buffer.end(), s, s + 5);
+}
 inline void mini_formatter::one_char(char c) { buffer.push_back(c); }
 inline void mini_formatter::key(std::string_view unescaped) {
   string(unescaped);
@@ -100,17 +101,22 @@ inline void mini_formatter::string(std::string_view unescaped) {
   one_char('\"');
   size_t i = 0;
   // fast path for the case where we have no control character
-  for (; (i < unescaped.length()) && (uint8_t(unescaped[i]) > 0x1F); i++) {
-    buffer.push_back(unescaped[i]);
-  }
+  for (; (i < unescaped.length()) && (uint8_t(unescaped[i]) > 0x1F); i++) {}
+  buffer.insert(buffer.end(), unescaped.data(), unescaped.data() + i);
   // We caught a control character if we enter this loop (slow)
   for (; i < unescaped.length(); i++) {
     switch (unescaped[i]) {
     case '\"':
-      c_str("\\\"");
+      {
+        const char * s = "\\\"";
+        buffer.insert(buffer.end(), s, s + 2);
+      }
       break;
     case '\\':
-      c_str("\\\\");
+      {
+        const char * s = "\\\\";
+        buffer.insert(buffer.end(), s, s + 2);
+      }
       break;
     default:
       if (uint8_t(unescaped[i]) <= 0x1F) {
@@ -295,10 +301,10 @@ inline void string_builder<serializer>::append(dom::array value) {
   auto iter = value.begin();
   auto end = value.end();
   if (iter != end) {
-    format.append(*iter);
+    append(*iter);
     for (++iter; iter != end; ++iter) {
       format.comma();
-      format.append(*iter);
+      append(*iter);
     }
   }
   format.end_array();
@@ -307,7 +313,7 @@ inline void string_builder<serializer>::append(dom::array value) {
 template <class serializer>
 inline void string_builder<serializer>::append(dom::key_value_pair kv) {
   format.key(kv.key);
-  format.append(kv.value);
+  append(kv.value);
 }
 
 template <class serializer>

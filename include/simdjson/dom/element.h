@@ -9,7 +9,8 @@
 
 namespace simdjson {
 namespace dom {
-
+template<typename T>
+class string_builder;
 class array;
 class document;
 class object;
@@ -474,6 +475,9 @@ private:
   friend struct simdjson_result<element>;
   template<typename T>
   friend class simdjson::minifier;
+  template<typename T>
+  friend class simdjson::dom::string_builder;
+
 };
 
 /**
