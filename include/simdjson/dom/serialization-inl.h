@@ -23,13 +23,35 @@ inline bool parser::print_json(std::ostream &os) const noexcept {
 
 
 namespace {
-template <typename T> char *fast_itoa(char *output, T value) noexcept {
+char *fast_itoa(char *output, int64_t value) noexcept {
   // This is a standard implementation of itoa.
   // We first write in reverse order and then reverse.
-  if((std::is_signed<T>::value) && (value < 0)) {
+  if(value < 0) {
     *output++ = '-';
     value = -value;
   }
+  char *write_pointer = output;
+  do {
+    *write_pointer++ = char('0' + (value % 10));
+    value /= 10;
+  } while (value != 0);
+  // then we reverse the result
+  char *const answer = write_pointer;
+  char *second_write_pointer = output;
+  write_pointer -= 1;
+  while (second_write_pointer < write_pointer) {
+    char c1 = *write_pointer;
+    char c2 = *second_write_pointer;
+    *second_write_pointer = c1;
+    *write_pointer = c2;
+    write_pointer--;
+    second_write_pointer++;
+  }
+  return answer;
+}
+char *fast_itoa(char *output, uint64_t value) noexcept {
+  // This is a standard implementation of itoa.
+  // We first write in reverse order and then reverse.
   char *write_pointer = output;
   do {
     *write_pointer++ = char('0' + (value % 10));
