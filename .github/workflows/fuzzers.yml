@@ -1,11 +1,9 @@
-name: Run fuzzers on stored corpus and test it with valgrind
+name: Fuzz and run valgrind
 
-# In the case of a pull request happening at the same time as a cron
-# job, there is a risk two jobs run at the same time. Therefore,
-# the corpus is only uploaded for the master branch. Pull requests will
-# fuzz for a short while, but the results are not uploaded.
 on:
   push:
+    branches:
+      - master
   pull_request:
   schedule:
     - cron: 23 */8 * * *
@@ -18,6 +16,7 @@ jobs:
       implementations: haswell westmere fallback
       UBSAN_OPTIONS: halt_on_error=1
       MAXLEN: -max_len=4000
+
     steps:
     - name: Install packages necessary for building
       run: |
@@ -28,24 +27,29 @@ jobs:
         sudo ./llvm.sh 9
 
     - uses: actions/checkout@v1
+
     - name: Create and prepare the initial seed corpus
       run: |
         fuzz/build_corpus.sh
         mv corpus.zip seed_corpus.zip
         mkdir seedcorpus
         unzip -q -d seedcorpus seed_corpus.zip
+
     - name: Download the corpus from the last run
       run: |
         wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
         tar xf corpus.tar
         rm corpus.tar
+
     - name: List clang versions
       run: |
         ls /usr/bin/clang*
         which clang++
         clang++ --version
+
     - name: Build all the variants
       run: fuzz/build_fuzzer_variants.sh
+
     - name: Run the fast fuzzer (release build, default implementation, to explore fast)
       run: |
         set -eux
@@ -55,6 +59,7 @@ jobs:
           others=$(find out -type d -not -name $fuzzer -not -name out -not -name cmin)
           build-fast/fuzz/fuzz_$fuzzer out/$fuzzer $others seedcorpus -max_total_time=30 $MAXLEN
         done
+
     - name: Run the slow fuzzer (sanitizer+asserts, good at detecting errors)
       run: |
         set -eux
@@ -67,6 +72,7 @@ jobs:
           done
           echo now have $(ls out/$fuzzer |wc -l) files in corpus        
         done
+
     - name: Minimize the corpus with the fast fuzzer on the default implementation
       run: |
         set -eux
@@ -78,16 +84,19 @@ jobs:
           rm -rf out/$fuzzer
           mv out/cmin/$fuzzer out/$fuzzer
         done
+
     - name: Package the corpus into an artifact
       run: |
         for fuzzer in $allfuzzers; do      
           tar rf corpus.tar out/$fuzzer
         done
+
     - name: Save the corpus as a github artifact
       uses: actions/upload-artifact@v1
       with:
         name: corpus
         path: corpus.tar
+
     # This takes a subset of the minimized corpus and run it through valgrind. It is slow,
     # therefore take a "random" subset. The random selection is accomplished by sorting on filenames,
     # which are hashes of the content.
@@ -96,24 +105,27 @@ jobs:
         for fuzzer in $allfuzzers; do      
           find out/$fuzzer -type f |sort|head -n200|xargs -n40 valgrind build-replay/fuzz/fuzz_$fuzzer 2>&1|tee valgrind-$fuzzer.txt
         done 
+
     - name: Compress the valgrind output
       run: tar cf valgrind.tar valgrind-*.txt
+
     - name: Save valgrind output as a github artifact
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v2
+      if: always()
       with:
         name: valgrindresults
         path: valgrind.tar
+        if-no-files-found: ignore
+
     - name: Upload the corpus and results to bintray if we are on master
+      if: ${{ github.event_name == 'schedule' }} 
       run: |
-        if [ $(git rev-parse --verify HEAD) = $(git rev-parse --verify origin/master) ] ; then
-          echo uploading each artifact twice, otherwise it will not be published
-          curl -T corpus.tar -upauldreik:${{ secrets.bintrayApiKey }} https://api.bintray.com/content/pauldreik/simdjson-fuzz-corpus/corpus/0/corpus/corpus.tar";publish=1;override=1"
-          curl -T corpus.tar -upauldreik:${{ secrets.bintrayApiKey }} https://api.bintray.com/content/pauldreik/simdjson-fuzz-corpus/corpus/0/corpus/corpus.tar";publish=1;override=1"
-          curl -T valgrind.tar -upauldreik:${{ secrets.bintrayApiKey }} https://api.bintray.com/content/pauldreik/simdjson-fuzz-corpus/corpus/0/corpus/valgrind.tar";publish=1;override=1"
-          curl -T valgrind.tar -upauldreik:${{ secrets.bintrayApiKey }} https://api.bintray.com/content/pauldreik/simdjson-fuzz-corpus/corpus/0/corpus/valgrind.tar";publish=1;override=1"
-        else
-          echo "not on master, won't upload to bintray"
-        fi
+        echo uploading each artifact twice, otherwise it will not be published
+        curl -T corpus.tar -upauldreik:${{ secrets.bintrayApiKey }} https://api.bintray.com/content/pauldreik/simdjson-fuzz-corpus/corpus/0/corpus/corpus.tar";publish=1;override=1"
+        curl -T corpus.tar -upauldreik:${{ secrets.bintrayApiKey }} https://api.bintray.com/content/pauldreik/simdjson-fuzz-corpus/corpus/0/corpus/corpus.tar";publish=1;override=1"
+        curl -T valgrind.tar -upauldreik:${{ secrets.bintrayApiKey }} https://api.bintray.com/content/pauldreik/simdjson-fuzz-corpus/corpus/0/corpus/valgrind.tar";publish=1;override=1"
+        curl -T valgrind.tar -upauldreik:${{ secrets.bintrayApiKey }} https://api.bintray.com/content/pauldreik/simdjson-fuzz-corpus/corpus/0/corpus/valgrind.tar";publish=1;override=1"
+
     - name: Archive any crashes as an artifact
       uses: actions/upload-artifact@v2
       if: always()
