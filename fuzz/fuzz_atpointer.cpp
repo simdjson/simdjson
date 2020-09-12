@@ -33,12 +33,22 @@ FuzzData split(const char *Data, size_t Size) {
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
+    // Split data into two strings, json pointer and the document string.
+    // Might end up with none, either or both being empty, important for
+    // covering edge cases such as https://github.com/simdjson/simdjson/issues/1142
+    // Inputs missing the separator line will get an empty json pointer
+    // but the all the input put in the document string. This means
+    // test data from other fuzzers that take json input works for this fuzzer
+    // as well.
     const auto fd=split(as_chars(Data),Size);
 
     simdjson::dom::parser parser;
+
+    // parse without exceptions, for speed
     auto res=parser.parse(fd.json_doc.data(),fd.json_doc.size());
     if(res.error())
         return 0;
+
     simdjson::dom::element root;
     if(res.get(root))
         return 0;
@@ -46,6 +56,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     auto maybe_leaf=root.at_pointer(fd.json_pointer);
     if(maybe_leaf.error())
         return 0;
+
     simdjson::dom::element leaf;
     if(maybe_leaf.get(leaf))
         return 0;
@@ -53,9 +64,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     std::string_view sv;
     if(leaf.get_string().get(sv))
         return 0;
-
-    //std::puts(std::string{sv.begin(),sv.end()}.c_str());
-
-
     return 0;
 }
