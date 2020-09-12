@@ -67,7 +67,9 @@ jobs:
       run: |
         for fuzzer in $allfuzzers; do      
           mkdir -p out/cmin/$fuzzer
-          build-fast/fuzz/fuzz_$fuzzer -merge=1 $MAXLEN out/cmin/$fuzzer out/$fuzzer seedcorpus
+          # get input from everyone else (corpus cross pollination)
+          others=$(find out -type d -not -name $fuzzer -not -name out -not -name cmin)
+          build-fast/fuzz/fuzz_$fuzzer -merge=1 $MAXLEN out/cmin/$fuzzer $others seedcorpus
           rm -rf out/$fuzzer
           mv out/cmin/$fuzzer out/$fuzzer
         done
