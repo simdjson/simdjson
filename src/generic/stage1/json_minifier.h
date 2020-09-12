@@ -31,7 +31,7 @@ simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& i
 }
 
 simdjson_really_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
-  *dst = '\0';
+  //*dst = '\0';
   error_code error = scanner.finish(false);
   if (error) { dst_len = 0; return error; }
   dst_len = dst - dst_start;
@@ -69,10 +69,22 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
   // Index the last (remainder) block, padded with spaces
   uint8_t block[STEP_SIZE];
-  if (simdjson_likely(reader.get_remainder(block)) > 0) {
+  size_t remaining_bytes = reader.get_remainder(block); 
+  if (remaining_bytes > 0) {
+    // We do not want to write directly to the output stream. Rather, we write
+    // to a local buffer (for safety).
+    uint8_t out_block[STEP_SIZE];
+    uint8_t * const guarded_dst{minifier.dst};
+    minifier.dst = out_block;
     minifier.step<STEP_SIZE>(block, reader);
+    size_t to_write = minifier.dst - out_block;
+    // In some cases, we could be enticed to consider the padded spaces
+    // as part of the string. This is fine as long as we do not write more
+    // than we consumed.
+    if(to_write > remaining_bytes) { to_write = remaining_bytes; }
+    memcpy(guarded_dst, out_block, to_write);
+    minifier.dst = guarded_dst + to_write;
   }
-
   return minifier.finish(dst, dst_len);
 }
 
