@@ -65,6 +65,7 @@ jobs:
         done
     - name: Minimize the corpus with the fast fuzzer on the default implementation
       run: |
+        set -eux
         for fuzzer in $allfuzzers; do      
           mkdir -p out/cmin/$fuzzer
           # get input from everyone else (corpus cross pollination)
