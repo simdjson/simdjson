@@ -81,10 +81,13 @@ jobs:
       with:
         name: corpus
         path: corpus.tar
-    - name: Run the minimized corpus through valgrind (replay build, default implementation)
+    # This takes a subset of the minimized corpus and run it through valgrind. It is slow,
+    # therefore take a "random" subset. The random selection is accomplished by sorting on filenames,
+    # which are hashes of the content.
+    - name: Run some of the minimized corpus through valgrind (replay build, default implementation)
       run: |
         for fuzzer in $allfuzzers; do      
-          find out/$fuzzer -type f |sort|xargs -n40 valgrind build-replay/fuzz/fuzz_$fuzzer 2>&1|tee valgrind-$fuzzer.txt
+          find out/$fuzzer -type f |sort|head -n200|xargs -n40 valgrind build-replay/fuzz/fuzz_$fuzzer 2>&1|tee valgrind-$fuzzer.txt
         done 
     - name: Compress the valgrind output
       run: tar cf valgrind.tar valgrind-*.txt
