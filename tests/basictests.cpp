@@ -1290,7 +1290,7 @@ namespace validate_tests {
 namespace minify_tests {
 
   bool check_minification(const char * input, size_t length, const char * expected, size_t expected_length) {
-    std::unique_ptr<char[]> buffer{new(std::nothrow) char[length + simdjson::SIMDJSON_PADDING]};
+    std::unique_ptr<char[]> buffer{new(std::nothrow) char[length]};
     if(buffer.get() == nullptr) {
       std::cerr << "cannot alloc "  << std::endl;
       return false;
@@ -1303,11 +1303,24 @@ namespace minify_tests {
     }
     return true;
   }
+  bool test_single_quote() {
+    std::cout << "Running " << __func__ << std::endl;
+    const std::string test = "\"";
+    char output[1];
+    size_t newlength;
+    auto e = simdjson::minify(test.data(), 1, output, newlength);
+    if(e) {
+      std::cout << "got an error (expected) : " << e << std::endl;
+      return true; // we have an error as expected
+    }
+    std::cerr << "This should be an error : " << e << std::endl;
+    return false;
+  }
 
   bool test_minify() {
     std::cout << "Running " << __func__ << std::endl;
     const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })";
-     const std::string minified(R"({"foo":1,"bar":[1,2,3],"baz":{"a":1,"b":2,"c":3}})");
+    const std::string minified(R"({"foo":1,"bar":[1,2,3],"baz":{"a":1,"b":2,"c":3}})");
     return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
   }
   bool test_minify_array() {
@@ -1323,7 +1336,8 @@ namespace minify_tests {
     return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
   }
   bool run() {
-    return test_minify() &&
+    return test_single_quote() &&
+           test_minify() &&
            test_minify_array() &&
            test_minify_object();
   }

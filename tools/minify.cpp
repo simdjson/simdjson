@@ -65,11 +65,12 @@ int main(int argc, char *argv[]) {
     std::cerr << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }
-  simdjson::padded_string copy(p.length());
+  simdjson::padded_string copy(p.length()); // does not need to be padded after all!
   size_t copy_len;
   error = simdjson::active_implementation->minify((const uint8_t*)p.data(), p.length(), (uint8_t*)copy.data(), copy_len);
-  if (error) { std::cerr << error << std::endl; return 1; }
+  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   printf("%s", copy.data());
+  return EXIT_SUCCESS;
 #ifdef __cpp_exceptions
   } catch (const cxxopts::OptionException& e) {
     std::cout << "error parsing options: " << e.what() << std::endl;
