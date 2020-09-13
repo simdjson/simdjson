@@ -139,7 +139,8 @@ using namespace simd;
       this->error |= check_multibyte_lengths(input, prev_input, sc);
     }
 
-    // The only problem that can happen at EOF is that a multibyte character is too short.
+    // The only problem that can happen at EOF is that a multibyte character is too short
+    // or a byte value too large.
     simdjson_really_inline void check_eof() {
       // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
       // possibly finish them.
@@ -167,7 +168,7 @@ using namespace simd;
 
       }
     }
-
+    // do not forget to call check_eof!
     simdjson_really_inline error_code errors() {
       return this->error.any_bits_set_anywhere() ? error_code::UTF8_ERROR : error_code::SUCCESS;
     }

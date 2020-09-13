@@ -19,6 +19,7 @@ bool generic_validate_utf8(const uint8_t * input, size_t length) {
     simd::simd8x64<uint8_t> in(block);
     c.check_next_input(in);
     reader.advance();
+    c.check_eof();
     return c.errors() == error_code::SUCCESS;
 }
 
