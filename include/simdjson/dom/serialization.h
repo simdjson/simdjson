@@ -98,57 +98,7 @@ private:
   /** Backing buffer **/
   std::vector<char> buffer{}; // not ideal!
 };
-} // namespace dom
 
-/**
- * Converts JSON to a string.
- *
- *   dom::parser parser;
- *   element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
- *   cout << to_string(doc) << endl; // prints [1,2,3]
- *
- */
-template <class T> 
-std::string to_string(T x)   {
-    // in C++, to_string is standard: http://www.cplusplus.com/reference/string/to_string/
-    // Currently minify and to_string are identical but in the future, they may 
-    // differ.
-    simdjson::dom::string_builder<> sb;
-    sb.append(x);
-    std::string_view answer = sb.str();
-    return std::string(answer.data(), answer.size());
-}
-#if SIMDJSON_EXCEPTIONS
-template <class T> 
-std::string to_string(simdjson_result<T> x) {
-    if (x.error()) { throw simdjson_error(x.error()); }
-    return to_string(x.value());
-}
-#endif 
-
-/**
- * Minifies a JSON element or document, printing the smallest possible valid JSON.
- *
- *   dom::parser parser;
- *   element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
- *   cout << minify(doc) << endl; // prints [1,2,3]
- *
- */
-template <class T> 
-std::string minify(T x)  {
-  return to_string(x);
-}
-
-#if SIMDJSON_EXCEPTIONS
-template <class T> 
-std::string minify(simdjson_result<T> x) {
-    if (x.error()) { throw simdjson_error(x.error()); }
-    return to_string(x.value());
-}
-#endif 
-
-
-} // namespace simdjson
 
 
 /**
@@ -205,4 +155,57 @@ inline std::ostream& operator<<(std::ostream& out,  simdjson::simdjson_result<si
     return (out << x.value());
 }
 #endif 
+} // namespace dom
+
+/**
+ * Converts JSON to a string.
+ *
+ *   dom::parser parser;
+ *   element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
+ *   cout << to_string(doc) << endl; // prints [1,2,3]
+ *
+ */
+template <class T> 
+std::string to_string(T x)   {
+    // in C++, to_string is standard: http://www.cplusplus.com/reference/string/to_string/
+    // Currently minify and to_string are identical but in the future, they may 
+    // differ.
+    simdjson::dom::string_builder<> sb;
+    sb.append(x);
+    std::string_view answer = sb.str();
+    return std::string(answer.data(), answer.size());
+}
+#if SIMDJSON_EXCEPTIONS
+template <class T> 
+std::string to_string(simdjson_result<T> x) {
+    if (x.error()) { throw simdjson_error(x.error()); }
+    return to_string(x.value());
+}
+#endif 
+
+/**
+ * Minifies a JSON element or document, printing the smallest possible valid JSON.
+ *
+ *   dom::parser parser;
+ *   element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
+ *   cout << minify(doc) << endl; // prints [1,2,3]
+ *
+ */
+template <class T> 
+std::string minify(T x)  {
+  return to_string(x);
+}
+
+#if SIMDJSON_EXCEPTIONS
+template <class T> 
+std::string minify(simdjson_result<T> x) {
+    if (x.error()) { throw simdjson_error(x.error()); }
+    return to_string(x.value());
+}
+#endif 
+
+
+} // namespace simdjson
+
+
 #endif
