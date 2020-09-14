@@ -24,6 +24,14 @@ inline bool parser::print_json(std::ostream &os) const noexcept {
 
 namespace {
 /**@private
+ * Escape sequence like \b or \u0001
+ * We expect that most compilers will use 8 bytes for this data structure.
+ **/
+struct escape_sequence {
+    uint8_t length;
+    const char string[7]; // technically, we only ever need 6 characters, we pad to 8
+};
+/**@private
  * This converts a signed integer into a character sequence.
  * The caller is responsible for providing enough memory (at least
  * 20 characters.)
@@ -58,6 +66,15 @@ char *fast_itoa(char *output, int64_t value) noexcept {
   }
   return answer;
 }
+/**@private
+ * This converts an unsigned integer into a character sequence.
+ * The caller is responsible for providing enough memory (at least
+ * 19 characters.)
+ * Though various runtime libraries provide itoa functions,
+ * it is not part of the C++ standard. The C++17 standard
+ * adds the to_chars functions which would do as well, but
+ * we want to support C++11.
+ */
 char *fast_itoa(char *output, uint64_t value) noexcept {
   // This is a standard implementation of itoa.
   // We first write in reverse order and then reverse.
@@ -113,11 +130,7 @@ simdjson_really_inline void mini_formatter::end_array() { one_char(']'); }
 simdjson_really_inline void mini_formatter::start_object() { one_char('{'); }
 simdjson_really_inline void mini_formatter::end_object() { one_char('}'); }
 simdjson_really_inline void mini_formatter::comma() { one_char(','); }
-simdjson_really_inline void mini_formatter::c_str(const char *c) {
-  for (; *c != '\0'; c++) {
-    one_char(*c);
-  }
-}
+
 
 simdjson_really_inline void mini_formatter::true_atom() { 
   const char * s = "true";
@@ -139,11 +152,14 @@ simdjson_really_inline void mini_formatter::key(std::string_view unescaped) {
 simdjson_really_inline void mini_formatter::string(std::string_view unescaped) {
   one_char('\"');
   size_t i = 0;
-  // fast path for the case where we have no control character, no ", and no backslash (fast path)
+  // Fast path for the case where we have no control character, no ", and no backslash.
+  // This should include most keys.
   for (; (i < unescaped.length()) && (uint8_t(unescaped[i]) > 0x1F) 
         && (unescaped[i] != '\"') && (unescaped[i] != '\\'); i++) {}
   buffer.insert(buffer.end(), unescaped.data(), unescaped.data() + i);
-  // We caught a control character if we enter this loop (slow)
+  // We caught a control character if we enter this loop (slow).
+  // Note that we are do not restart from the beginning, but rather we continue
+  // from the point where we encountered something that requires escaping.
   for (; i < unescaped.length(); i++) {
     switch (unescaped[i]) {
     case '\"':
@@ -160,14 +176,20 @@ simdjson_really_inline void mini_formatter::string(std::string_view unescaped) {
       break;
     default:
       if (uint8_t(unescaped[i]) <= 0x1F) {
-        const static char *escaped[] = {
-            "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005",
-            "\\u0006", "\\u0007", "\\b",     "\\t",     "\\n",     "\\u000b",
-            "\\f",     "\\r",     "\\u000e", "\\u000f", "\\u0010", "\\u0011",
-            "\\u0012", "\\u0013", "\\u0014", "\\u0015", "\\u0016", "\\u0017",
-            "\\u0018", "\\u0019", "\\u001a", "\\u001b", "\\u001c", "\\u001d",
-            "\\u001e", "\\u001f"};
-        c_str(escaped[uint8_t(unescaped[i])]);
+        // If packed, this uses 8 * 32 bytes.
+        // Note that we expect most compilers to embed this code in the data
+        // section.
+        constexpr static escape_sequence escaped[32] = {
+          {6, "\\u0000"}, {6, "\\u0001"}, {6, "\\u0002"}, {6, "\\u0003"},
+          {6, "\\u0004"}, {6, "\\u0005"}, {6, "\\u0006"}, {6, "\\u0007"},
+          {2, "\\b"},     {2, "\\t"},     {2, "\\n"},     {6, "\\u000b"},
+          {2, "\\f"},     {2, "\\r"},     {6, "\\u000e"}, {6, "\\u000f"},
+          {6, "\\u0010"}, {6, "\\u0011"}, {6, "\\u0012"}, {6, "\\u0013"},
+          {6, "\\u0014"}, {6, "\\u0015"}, {6, "\\u0016"}, {6, "\\u0017"},
+          {6, "\\u0018"}, {6, "\\u0019"}, {6, "\\u001a"}, {6, "\\u001b"},
+          {6, "\\u001c"}, {6, "\\u001d"}, {6, "\\u001e"}, {6, "\\u001f"}};
+        auto u = escaped[uint8_t(unescaped[i])];
+        buffer.insert(buffer.end(), u.string, u.string + u.length);
       } else {
         one_char(unescaped[i]);
       }

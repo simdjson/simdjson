@@ -93,8 +93,6 @@ public:
 
 private:
   // implementation details (subject to change)
-  /** Prints a C string **/
-  simdjson_really_inline void c_str(const char *c);
   /** Prints one character **/
   simdjson_really_inline void one_char(char c);
   /** Backing buffer **/
