@@ -1,6 +1,33 @@
 How simdjson's On Demand Parsing works
 ======================================
 
+The simdjson On Demand API is a natural C++ DOM-like API backed by a forward-only iterator over JSON
+source text with a natural C++ interface on top, including object and array iterators, object lookup, and conversion to native C++
+types (string_view, double, bool, etc.).
+
+```c++
+ondemand::parser parser;
+auto doc = parser.iterate(json);
+for (auto tweet : doc["statuses"]) {
+  std::string_view text        = tweet["text"];
+  std::string_view screen_name = tweet["user"]["screen_name"];
+  uint64_t         retweets    = tweet["retweet_count"];
+  uint64_t         favorites   = tweet["favorite_count"];
+  cout << screen_name << " (" << retweets << " retweets / " << favorites << " favorites): " << text << endl;
+}
+```
+
+It is designed around several principles:
+
+* **Streaming (\*):** Does not preparse values, keeping memory usage and latency down. NOTE: Right now, simdjson has a preprocessing step that identifies the location of each value in the whole input. This means you have to pass the whole input, and the parser does have an internal buffer that consumes 4 bytes per JSON value (plus each operator like , : ] and }). This limitation will be reduced/eliminated in later versions.
+* **Forward-Only:** To prevent reiteration of the same values and to keep the number of variables down (literally), only a single index is maintained and everything uses it (even if you have nested for loops). This means when you're going through an array of arrays, for example, that the inner array loop will advance the index to the next comma, and the array can just pick it up and look at it.
+* **Natural Iteration:** A JSON array or object can be iterated with a normal C++ for loop. Nested arrays and objects are supported by nested for loops.
+* **Use-Specific Parsing:** Parsing is always specific to the type the you ask for. For example, if you ask for an unsigned integer, we just start parsing digits. If there were no digits, we toss an error. There are even different parsers for double, uint64_t and int64_t. This avoids the branchiness of a generic "type switch," and makes the code more inlineable and compact.
+* **Validate What You Use:** On Demand deliberately validates the values you use and the structure leading to it, but nothing else. The goal is a guarantee that the value you asked for is the correct one and is not malformed: there must be no confusion over whether you got the right value. But it leaves the possibility that the JSON *as a whole* is invalid. A full-validation mode is possible and planned, but I think this mode should be the default, personally, or at least pretty heavily advertised. Full-validation mode should really only be for debug.
+
+Rationale
+---------
+
 Current JSON parsers generally have either ease of use or performance. Very few have both at
 once. simdjson's On Demand API bridges that gap with a familiar, friendly DOM API and the
 performance of just-in-time parsing on top of the simdjson core's legendary performance.
@@ -31,13 +58,10 @@ int, string, or bool. Because you have told it the type at that point, it can av
 "what type is this" branch present in almost all other parsers, avoiding branch misprediction that
 cause massive (sometimes 2-4x) slowdowns.
 
-Parsers Today
--------------
-
 To understand exactly what's happening here and why it's different, it's helpful to review the major
 approaches to parsing and parser APIs in use today.
 
-### Generic DOM
+### Generic DOM Parsers
 
 Many of the most usable, popular JSON APIs deserialize into a **DOM**: an intermediate tree of
 objects, arrays and values. The resulting API lets you refer to each array or object separately,
@@ -71,7 +95,7 @@ Pros and cons of generic DOM:
 * Values stay in memory even if you only use them once
 * Heavy performance drain from [type blindness](#type-blindness).
 
-### SAX (SAJ?)
+### SAX (SAJ?) Parsers
 
 The SAX model ("Streaming API for XML") uses streaming to eliminate the high cost of
 parsing and storing the entire JSON. In the SAX model, a core JSON parser parses the JSON document
@@ -164,8 +188,7 @@ Pros and cons:
 Rust's serde does a lot of the necessary legwork here, for example. (Editor's Note: I don't know
 *how much* it does, but I know it does a decent amount, and is very fast.)
 
-Type Blindness and Branch Misprediction
----------------------------------------
+### Type Blindness and Branch Misprediction
 
 The DOM parsing model, and even the SAX model to a great extent, suffers from **type
 blindness:** you, the user, almost always know exactly what fields and what types are in your JSON,
@@ -196,200 +219,190 @@ there is only so much it can do in the tiny amount of time it has to guess.)
 On Demand parsing is tailor-made to solve this problem at the source, parsing values only after the
 user declares their type by asking for a double, an int, a string, etc.
 
+Algorithm
+---------
 
+To help visualize the algorithm, we'll walk through the example C++ given at the top, for this JSON:
 
-NOTE: EVERYTHING BELOW THIS NEEDS REWRITING AND MAY NOT BE ACCURATE AT PRESENT
-==============================================================================
-
-Classes
--------
-
-In general, simdjson's parser classes are divided into two categories:
-
-* Persistent State:
-  - Generally persisted through multiple algorithm runs.
-  - Intended to be stored in memory.
-  - We try not to access members of these structs repeatedly if we can avoid it.
-  - We limit mallocs to these classes so they can be reused.
-  - Examples: dom::parser, ondemand::parser, dom_parser_implementation
-* Inline Algorithm Context:
-  - Context and counters for a single hot-loop algorithm (stage 1, stage 2, etc.).
-  - Member variables intended to be broken up and stored in registers where possible.
-  - We try to store as few things as we can manage to avoid register pressure.
-  - We never copy these (except perhaps during construction).
-  - We *only* pass references / pointers to really_inline functions, expecting the
-    compiler to eliminate the indirection.
-  - Examples: stage2::structural_parser, stage1::json_structural_indexer
-
-In ondemand, `ondemand::parser` and `dom_parser_implementation` are used to store persistent state,
-and all other classes are inline algorithm context.
-
-### ondemand::parser / dom_parser_implementation
-
-On-demand parsing has several primary classes that keep the main state:
-
-* `ondemand::parser`: Holds resources for parsing.
-  - Persistent State.
-  - `parser.parse()` calls stage 1 and then returns `ondemand::document` for you to iterate.
-  - `structural_indexes`: Buffer for structural indexes for stage 1.
-  - `string_buf`: Allocates string buffer for fast string parsing.
-  - `buf`, `len`: cached pointer to JSON buffer (and length) being parsed.
-  - `current_string_buf_loc`: The current append position in string_buf (see string parsing, later).
-    Like buf and len, this is reset on every parse.
-* `json_iterator`: Low-level iteration over JSON structurals from stage 1.
-  - Not user-facing (though you can call doc.iterate() to get it right now, I don't think we want to
-    expose that API unless we absolutely must).
-  - Inline Algorithm Context. Stored internally in `document`.
-  - `buf`: Pointer to JSON buffer, intended to be stored in a register since it's used so much.
-    (This is also in dom_parser_implementation, but that's stored in memory and we're avoiding
-    indirection here.)
-  - `index`: Pointer to next structural index.
-  - NOTE: probably *should* have a cached (or primary) copy of current_string_buf_loc for registerness.
-
-### Value
-
-value represents an value whose type is not yet known. The On Demand philosophy is to let the *user*
-tell us what type the value is by asking us to convert it, and *then* check the type. A value can
-be converted to an array or object, parsed to string, double, uint64_t, int64_t, or bool, or checked
-for is_null().
-
-* **Arrays** can be used with get_array(). More on that in the array section.
-* **Objects** can be used with get_object(). More on that in the object section.
-* **Strings** are parsed with get_string(), which parses the string, appending the unescaped value
-  into a buffer allocated by the parser, and returning a `std::string_view` pointing at the buffer
-  and telling you the location. We append a terminating `\0` in case you end up using these values
-  with routines designed for C strings (the string_view's length of course does not include that
-  `\0').
-  
-  These string_views *will be invalidated on the next parse,* so if you want to persist a copy,
-  you'll need to allocate your own actual strings. This case is designed to be fast in the
-  server-like scenario, where you parse a document, use the values, and only then move on to parse
-  another one.
-
-  Optionally, get_raw_json_string() gives you a pointer to the raw, unescaped JSON, allowing you to
-  work with strings efficiently in cases where your format disallows escaping--for example,
-  enumeration values and GUIDs.
-* **Numbers** can be parsed with get_double(), get_uint64() and get_int64(), each of which is a separate,
-battle-tested parser specifically targeted to the type. The algorithms give exact answers, even for
-floating-point numbers, and check for overflow or invalid characters.
-* **true, false and null** are parsed through get_bool() and is_null(). simdjson checks these quickly by
-read the next 4 characters as a 32-bit integer and comparing that to true, fals, or null. Then it
-checks the extra "e" in false, and ensures that the next character is either whitespace, or a JSON
-operator (, : ] or }).
-
-### Document
-
-document represents the top level value in the document, behaving much like a value but also does
-double duty, storing iteration state. It can be converted to an array or object, parsed to
-string, double, uint64_t, int64_t, bool, or checked for is_null().
-
-The document *must* be kept around during iteration, as all other iterator classes rely on it to
-provide iterator state. 
-
-If the document itself is a single number, boolean, or null, the parsing algorithm is very slightly
-different from the value parsers, which rely on there being more JSON after the value. To
-accomodate, simdjson copies the number or atom into a small buffer, places a space after it, and
-then runs the normal algorithm. Strings, arrays and objects at the root all use exactly the same
-stuff. (NOTE: I haven't implemented this difference yet.)
-
-### Array
-
-The `ondemand::array` object lets you iterate the values of an array in a forward-only manner:
-
-```c++
-for (object tweet : doc["tweets"].get_array()) {
-  ...
+```json
+{
+  "statuses": [
+    { "id": 1, "text": "first!", "user": { "screen_name": "lemire", "name": "Daniel" }, "favorite_count": 100, "retweet_count": 40 },
+    { "id": 2, "text": "second!", "user": { "screen_name": "jkeiser2", "name": "John" }, "favorite_count": 2, "retweet_count": 3 }
+  ]
 }
 ```
 
-This is equivalent to:
+### Starting the iteration
 
-```c++
-array tweets = doc["tweets"].get_array();
-array::iterator iter = tweets.begin();
-array::iterator end = tweets.end();
-while (iter != end) {
-  object tweet = *iter;
-  ...
-  iter++;
-}
-```
+1. First, we declare a parser object that keeps internal buffers necessary for parsing. This can be
+   reused to parse multiple JSON files, so you don't pay the high cost of allocating memory every
+   time (and so it can stay in cache!).
 
-The way you *parse* an array is somewhat split into pieces by the iterator. Here is how we section
-the work to parse and validate the array:
+   This declaration doesn't actually allocate any memory; that will happen in the next step.
 
-1. `get_array()`:
-   - Validates that this is an array (starts with `[`). Returns INCORRECT_TYPE if not.
-   - If the array is empty (followed by `]`), advances the iterator past the `]` and returns an
-     array with finished == true.
-   - If the array is not empty, returns an array with finished == false. Iterator remains pointed
-     at the first value (the token just after `[`).
-2. `tweets.begin()`, `tweets.end()`: Returns an `array::iterator`, which just points back at the
-   array object.
-3. `while (iter != end)`: Stops if finished == true.
-4. `*iter`: Yields the value (or error).
-   - If there is an error, returns it and sets finished == true.
-   - Returns a value object, advancing the iterator just past the value token (if it is `[`, `{`,
-     etc. then that will be handled when the value is converted to an array/object).
-5. `iter++`: Expects the iterator to have finished with the previous array value, and looks for `,` or `]`.
-   - Advances the iterator and gets the JSON `]` or `,`.
-   - If the array just ended (there is a `]`), sets finished == true.
-   - If the array continues (`,`), does nothing.
-   - If anything else is there (`true`, `:`, `}`, etc.), sets error = TAPE_ERROR.
-   - #3 gets run next.
+   ```c++
+   ondemand::parser parser;
+   ```
 
-### Array
+2. We then start iterating the JSON document by allocating internal parser buffers, preprocessing
+   the JSON, and initializing the iterator.
 
-The `ondemand::array` object lets you iterate the values of an array in a forward-only manner:
+   ```c++
+   auto doc = parser.iterate(json);
+   ```
+   
+   Since this is the first time this parser has been used, iterate() first allocates internal
+   parser buffers if this is the first time through. When reusing an existing parser, allocation
+   only happens if the new document is bigger than internal buffers can handle. This is the only
+   place On Demand does allocation.
+   
+   simdjson then preprocesses the JSON text at high speed, finding all tokens (i.e. the starting
+   position of any JSON value, as well as any important operators like `,`, `:`, `]` or `}`).
 
-```c++
-for (object tweet : doc["statuses"].get_array()) {
-  ...
-}
-```
+   Finally, a `document` iterator is created, initialized at the position of the first value in the
+   `json` text input. The document iterator is bumped forward by array / object iterators and
+   object[] lookup, and must be kept around until iteration is complete.
 
-This is equivalent to:
+   This operation can fail! The result type here is actually `simdjson_result<document>`.
+   simdjson uses simdjson_result whenever a value needs to be returned, but the function could fail.
+   It has an error_code and a document in it, and was designed to allow you to use either error code
+   checking or C++ exceptions via a direct cast `document(parser.iterate(json)); you can use get()
+   to check the error and cast to a value, or cast directly to a value.
 
-```c++
-array tweets = doc["statuses"].get_array();
-array::iterator iter = tweets.begin();
-array::iterator end = tweets.end();
-while (iter != end) {
-  object tweet = *iter;
-  ...
-  iter++;
-}
-```
+   But as you can see, we don't check for the failure just yet.
 
-The way you *parse* an array is somewhat split into pieces by the iterator. Here is how we section
-the work to parse and validate the array:
+3. We iterate over the "statuses" field using a typical C++ iterator, reading past the initial
+   `{ "statuses": [ {`.
 
-1. `get_array()`:
-   - Validates that this is an array (starts with `[`). Returns INCORRECT_TYPE if not.
-   - If the array is empty (followed by `]`), advances the iterator past the `]` and then releases the
-     iterator (indicating the array is finished iterating).
-   - If the array is not empty, the iterator remains pointed at the first value (the token just
-     after `[`).
-2. `tweets.begin()`, `tweets.end()`: Returns an `array_iterator`, which just points back at the
-   array object.
-3. `while (iter != end)`: Stops if the iterator has been released.
-4. `*iter`: Yields the value (or error).
-   - If there is an error, returns it and sets finished == true.
-   - Returns a value object, advancing the iterator just past the value token (if it is `[`, `{`,
-     etc. then that will be handled when the value is converted to an array/object).
-5. `iter++`: Expects the iterator to have finished with the previous array value, and looks for `,` or `]`.
-   - Advances the iterator and gets the JSON `]` or `,`.
-   - If the array just ended (there is a `]`), sets finished == true.
-   - If the array continues (`,`), does nothing.
-   - If anything else is there (`true`, `:`, `}`, etc.), sets error = TAPE_ERROR.
-   - #3 gets run next.
+   ```c++
+   for (ondemand::object tweet : doc["statuses"]) {
+   ```
 
+  This shorthand does a lot of stuff, and it's helpful to see what the initial bits expand to.
+  Comments in front of each one explain what's going on:
+
+  ```c++
+  // Validate that the top-level value is an object: check for {
+  ondemand::object top = doc.get_object();
+
+  // Find the field statuses by:
+  // 1. Check whether the object is empty (check for }). (TODO we don't really need to do this unless the key lookup fails!)
+  // 2. Check if we're at the field by looking for the string "statuses".
+  // 3. Validate that there is a `:` after it.
+  auto tweets_field = top["statuses"];
+
+  // Validate that the field value is an array: check for [
+  // Also mark the array as finished if there is a ] next, which would cause the while () statement to exit immediately.
+  ondemand::array tweets = tweets_field.get_array();
+  // These three method calls do nothing substantial (the real checking happens in get_array() and ++)
+  // != checks whether the array is marked as finished (if we have found a ]).
+  ondemand::array_iterator tweets_iter = tweets.begin();
+  while (tweets_iter != tweets.end()) {
+    auto tweet_value = *tweets_iter;
+
+    // Validate that the array element is an object: check for {
+    ondemand::object tweet = tweet_value.get_object();
+    ...
+  }
+  ```
+
+   The one bit of shorthand that's not explained there is *error chaining*.
+   Generally, you can use `document` methods on a simdjson_result<document> (this applies to all
+   simdjson types); any errors will just be passed down the chain. Many method calls
+   can be chained like this. So `for (object tweet : doc["statuses"])`, which is the equivalent of
+   `object tweet = *(doc.get_object()["statuses"].get_array().begin()).get_object()` (what
+   a mouthful!), could fail in any of 6 method calls, and the error will only be checked at the end,
+   when you attempt to cast the final `simdjson_result<object>` to object (an exception will be
+   thrown if there was an error).
+
+4. We get the `"text"` field as a string.
+
+   ```c++
+   std::string_view text        = tweet["text"];
+   ```
+
+   First, `["text"]` skips the `"id"` field because it doesn't match: skips the key, `:` and
+   value (`1`). We then check whether there are more fields by looking for either `,`
+   or `}`.
+
+   The second field is matched (`"text"`), so we validate the `:` and move to the actual value.
+
+   NOTE: `["text"]` does a *raw match*, comparing the key directly against the raw JSON. This means
+   that keys with escapes in them may not be matched.
+
+   To convert to a string, we check for `"` and use simdjson's fast unescaping algorithm to copy
+   `first!` (plus a terminating `\0`) into a buffer managed by the `document`. This buffer stores
+   all strings from a single iteration. The next string will be written after the `\0`.
+
+   A `string_view` is returned which points to that buffer, and contains the length.
+
+4. We get the `"screen_name"` from the `"user"` object.
+
+   ```c++
+   std::string_view screen_name = tweet["user"]["screen_name"];
+   ```
+
+   First, `["user"]` checks whether there are any more object fields by looking for either `,` or
+  `}`. Then it matches `"user"` and validates the `:`.
+
+   `["screen_name"]` then converts to object, checking for `{`, and finds `"screen_name"`.
+
+   To convert to string, `lemire` is written to the document's string buffer, which now has *two*
+   string_views pointing into it, and looks like `first!\0lemire\0`.
+
+   Finally, the temporary user object is destroyed, causing it to skip the remainder of the object
+   (`}`).
+
+5. We get `"retweet_count"` and `"favorite_count"` as unsigned integers.
+
+   ```c++
+   uint64_t         retweets    = tweet["retweet_count"];
+   uint64_t         favorites   = tweet["favorite_count"];
+   ```
+
+   When it comes time to parse a number, we immediately.
+
+6. We loop to the next tweet.
+
+   ```c++
+   for (ondemand::object tweet : doc["statuses"]) {
+     ...
+   }
+   ```
+
+   The relevant parts of the loop here are:
+
+   ```c++
+   while (iter != statuses.end()) {
+     ondemand::object tweet = *iter;
+     ...
+     iter++;
+   }
+   ```
+
+   First, the `tweet` destructor runs, skipping the remainder of the object (which in this case is
+   just `}`).
+
+   Next, `iter++` checks whether there are more values and finds `,`. The loop continues.
+
+   Finally, `ondemand::object tweet = *iter` checks for `{` and returns the object.
+
+   This tweet is processed just like the previous one.
+
+7. We finish the last tweet.
+
+   At the end of the loop, the `tweet` is first destroyed, skipping the remainder of the tweet
+   object (`}`).
+   
+   `iter++` (from `for (ondemand::object tweet : doc["statuses"])`) then checks whether there are
+   more values and finds there are not (`]`). It marks the array iteration as finished and the for
+   loop terminates.
+
+   Then the outer object is destroyed, skipping everything up to the `}`. TODO: I'm less than certain
+   this actually happens: when does the temporary object actually go away, again?
 Design Features
 ---------------
-
-#### Error Chaining
-
-When you iterate over an array or object with an error, the error is yielded in the loop
 
 ### String Parsing
 
@@ -399,17 +412,6 @@ presently stored in the
 
 We do not write the length to the string buffer, however; that is stored in the string_view we
 return to the user, and immediately forgotten.
-
-Presently, we use the `char string_buf[]` to write
-
- The top-level document stores a json_iterator inside, which 
-
-It is illegal to move the document after it has been iterated (otherwise, pointers would be
-invalidated). Note: I need to check that the current code actually checks this.
-
-If it's stored in a `simdjson_result<document>` (as it would be in `auto doc = parser.parse(json)`),
-the document pointed to by children is the one inside the simdjson_result, and the simdjson_result,
-therefore, can't be moved either.
 
 ### Object/Array Iteration
 
@@ -426,14 +428,16 @@ mutable reference to it.
     will cause inconsistent iterator state) or double-unescaping a string (which could cause memory
     overruns if done too much).
   - Guaranteed Iteration: If you discard a value without using it--perhaps you just wanted to know
-    if it was null but didn't care what the actual value was--it will iterate. See 
-
-This is an area I'm chomping at the bit for Rust, actually ... a whole lot of this would be safer if
-we had compiler-enforced borrowing.
+    if it was null but didn't care what the actual value was--it will iterate. The destructor will
+    take care of this.
 
 ### Raw Key Lookup
 
+TODO
+
 ### Skip Algorithm
+
+TODO
 
 ### Root Scalar Parsing Without Malloc
 
