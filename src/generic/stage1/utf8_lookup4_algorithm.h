@@ -140,7 +140,8 @@ using namespace simd;
     }
 
     // The only problem that can happen at EOF is that a multibyte character is too short
-    // or a byte value too large.
+    // or a byte value too large in the last bytes: check_special_cases only checks for bytes 
+    // too large in the first of two bytes.
     simdjson_really_inline void check_eof() {
       // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
       // possibly finish them.
