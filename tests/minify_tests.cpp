@@ -30,18 +30,13 @@ const char *test_files[] = {
 bool load_to_string(const char *filename) {
   std::cout << "Loading " << filename << std::endl;
   simdjson::dom::parser parser;
-  auto doc_err = parser.load(filename);
-  if (doc_err.error()) {
-    std::cerr << doc_err.error() << std::endl;
-    return false;
-  }
-  auto serial1 = simdjson::to_string(doc_err.value());
-  doc_err = parser.parse(serial1);
-  if (doc_err.error()) {
-    std::cerr << doc_err.error() << std::endl;
-    return false;
-  }
-  auto serial2 = simdjson::to_string(doc_err.value());
+  simdjson::dom::element doc;
+  auto error = parser.load(filename).get(doc);
+  if (error) { std::cerr << error << std::endl; return false; }
+  auto serial1 = simdjson::to_string(doc);
+  error = parser.parse(serial1).get(doc);
+  if (error) { std::cerr << error << std::endl; return false; }
+  auto serial2 = simdjson::to_string(doc);
   bool match = (serial1 == serial2);
   if (match) {
     std::cout << "Parsing to_string and calling to_string again results in the "
@@ -54,18 +49,13 @@ bool load_to_string(const char *filename) {
 bool load_minify(const char *filename) {
   std::cout << "Loading " << filename << std::endl;
   simdjson::dom::parser parser;
-  auto doc_err = parser.load(filename);
-  if (doc_err.error()) {
-    std::cerr << doc_err.error() << std::endl;
-    return false;
-  }
-  auto serial1 = simdjson::minify(doc_err.value());
-  doc_err = parser.parse(serial1);
-  if (doc_err.error()) {
-    std::cerr << doc_err.error() << std::endl;
-    return false;
-  }
-  auto serial2 = simdjson::minify(doc_err.value());
+  simdjson::dom::element doc;
+  auto error = parser.load(filename).get(doc);
+  if (error) { std::cerr << error << std::endl; return false; }
+  auto serial1 = simdjson::minify(doc);
+  error = parser.parse(serial1).get(doc);
+  if (error) { std::cerr << error << std::endl; return false; }
+  auto serial2 = simdjson::minify(doc);
   bool match = (serial1 == serial2);
   if (match) {
     std::cout << "Parsing minify and calling minify again results in the same "
