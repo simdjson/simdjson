@@ -143,7 +143,7 @@ static void serialize_twitter_string_builder(State& state) {
     return;
   }
   size_t bytes = 0;
-  simdjson::dom::string_builder<> sb;
+  simdjson::internal::string_builder<> sb;// not part of our public API, for internal use
   for (SIMDJSON_UNUSED auto _ : state) {
     sb.clear();
     sb.append(doc);

@@ -6,9 +6,13 @@
 #include "simdjson/internal/tape_ref.h"
 
 namespace simdjson {
-namespace dom {
+
+namespace internal {
 template<typename T>
 class string_builder;
+}
+namespace dom {
+
 class document;
 class element;
 
@@ -124,7 +128,7 @@ private:
   friend class element;
   friend struct simdjson_result<element>;
   template<typename T>
-  friend class simdjson::dom::string_builder;
+  friend class simdjson::internal::string_builder;
 };
 
 

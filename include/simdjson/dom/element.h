@@ -7,9 +7,11 @@
 #include <ostream>
 
 namespace simdjson {
-namespace dom {
+namespace internal {
 template<typename T>
 class string_builder;
+}
+namespace dom {
 class array;
 class document;
 class object;
@@ -473,7 +475,7 @@ private:
   friend class array;
   friend struct simdjson_result<element>;
   template<typename T>
-  friend class simdjson::dom::string_builder;
+  friend class simdjson::internal::string_builder;
 
 };
 

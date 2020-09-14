@@ -11,11 +11,12 @@ namespace simdjson {
 namespace dom {
 inline bool parser::print_json(std::ostream &os) const noexcept {
   if (!valid) { return false; }
-  simdjson::dom::string_builder<> sb;
+  simdjson::internal::string_builder<> sb;
   sb.append(doc.root());
   std::string_view answer = sb.str();
   os << answer;
   return true;
+}
 }
 /***
  * Number utility functions
@@ -98,7 +99,7 @@ char *fast_itoa(char *output, uint64_t value) noexcept {
   return answer;
 }
 } // anonymous namespace
-
+namespace internal {
 
 /***
  * Minifier/formatter code.
@@ -212,8 +213,8 @@ simdjson_really_inline std::string_view mini_formatter::str() const {
  **/
 
 template <class serializer>
-inline void string_builder<serializer>::append(dom::element value) {
-  using tape_type = internal::tape_type;
+inline void string_builder<serializer>::append(simdjson::dom::element value) {
+  // using tape_type = simdjson::internal::tape_type;
   size_t depth = 0;
   constexpr size_t MAX_DEPTH = 16;
   bool is_object[MAX_DEPTH];
@@ -239,7 +240,7 @@ inline void string_builder<serializer>::append(dom::element value) {
       // If we're too deep, we need to recurse to go deeper.
       depth++;
       if (simdjson_unlikely(depth >= MAX_DEPTH)) {
-        append(dom::array(iter));
+        append(simdjson::dom::array(iter));
         iter.json_index = iter.matching_brace_index() - 1; // Jump to the ]
         depth--;
         break;
@@ -266,7 +267,7 @@ inline void string_builder<serializer>::append(dom::element value) {
       // If we're too deep, we need to recurse to go deeper.
       depth++;
       if (simdjson_unlikely(depth >= MAX_DEPTH)) {
-        append(dom::object(iter));
+        append(simdjson::dom::object(iter));
         iter.json_index = iter.matching_brace_index() - 1; // Jump to the }
         depth--;
         break;
@@ -343,7 +344,7 @@ inline void string_builder<serializer>::append(dom::element value) {
 }
 
 template <class serializer>
-inline void string_builder<serializer>::append(dom::object value) {
+inline void string_builder<serializer>::append(simdjson::dom::object value) {
   format.start_object();
   auto pair = value.begin();
   auto end = value.end();
@@ -358,7 +359,7 @@ inline void string_builder<serializer>::append(dom::object value) {
 }
 
 template <class serializer>
-inline void string_builder<serializer>::append(dom::array value) {
+inline void string_builder<serializer>::append(simdjson::dom::array value) {
   format.start_array();
   auto iter = value.begin();
   auto end = value.end();
@@ -373,7 +374,7 @@ inline void string_builder<serializer>::append(dom::array value) {
 }
 
 template <class serializer>
-simdjson_really_inline void string_builder<serializer>::append(dom::key_value_pair kv) {
+simdjson_really_inline void string_builder<serializer>::append(simdjson::dom::key_value_pair kv) {
   format.key(kv.key);
   append(kv.value);
 }
@@ -389,7 +390,7 @@ simdjson_really_inline std::string_view string_builder<serializer>::str() const 
 }
 
 
-} // namespace dom
+} // namespace internal
 } // namespace simdjson
 
 #endif

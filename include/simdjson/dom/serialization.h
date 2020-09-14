@@ -11,12 +11,18 @@
 #include <vector>
 
 namespace simdjson {
-namespace dom {
+
+/**
+ * The string_builder template and mini_formatter class
+ * are not part of  our public API and are subject to change 
+ * at any time!
+ */
+namespace internal {
 
 class mini_formatter;
 
 /**
- * The string_builder template allows us to construct
+ * @private The string_builder template allows us to construct
  * a string from a document element. It is parametrized
  * by a "formatter" which handles the details. Thus
  * the string_builder template could support both minification
@@ -28,11 +34,11 @@ public:
   /** Construct an initially empty builder, would print the empty string **/
   string_builder() = default;
   /** Append an element to the builder (to be printed) **/
-  inline void append(dom::element value);
+  inline void append(simdjson::dom::element value);
   /** Append an array to the builder (to be printed) **/
-  inline void append(dom::array value);
+  inline void append(simdjson::dom::array value);
   /** Append an objet to the builder (to be printed) **/
-  inline void append(dom::object value);
+  inline void append(simdjson::dom::object value);
   /** Reset the builder (so that it would print the empty string) **/
   simdjson_really_inline void clear();
   /** 
@@ -44,7 +50,7 @@ public:
    */
   simdjson_really_inline std::string_view str() const;
   /** Append a key_value_pair to the builder (to be printed) **/
-  simdjson_really_inline void append(dom::key_value_pair value);
+  simdjson_really_inline void append(simdjson::dom::key_value_pair value);
 private:
   formatter format{};
 };
@@ -99,7 +105,9 @@ private:
   std::vector<char> buffer{}; // not ideal!
 };
 
+} // internal
 
+namespace dom {
 
 /**
  * Print JSON to an output stream.
@@ -109,7 +117,7 @@ private:
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
 inline std::ostream& operator<<(std::ostream& out, simdjson::dom::element value) { 
-    simdjson::dom::string_builder<> sb;
+    simdjson::internal::string_builder<> sb;
     sb.append(value);
     return (out << sb.str());
 }
@@ -127,7 +135,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
 inline std::ostream& operator<<(std::ostream& out, simdjson::dom::array value)  { 
-    simdjson::dom::string_builder<> sb;
+    simdjson::internal::string_builder<> sb;
     sb.append(value);
     return (out << sb.str());
 }
@@ -145,7 +153,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
 inline std::ostream& operator<<(std::ostream& out, simdjson::dom::object value)   { 
-    simdjson::dom::string_builder<> sb;
+    simdjson::internal::string_builder<> sb;
     sb.append(value);
     return (out << sb.str());
 }
@@ -170,7 +178,7 @@ std::string to_string(T x)   {
     // in C++, to_string is standard: http://www.cplusplus.com/reference/string/to_string/
     // Currently minify and to_string are identical but in the future, they may 
     // differ.
-    simdjson::dom::string_builder<> sb;
+    simdjson::internal::string_builder<> sb;
     sb.append(x);
     std::string_view answer = sb.str();
     return std::string(answer.data(), answer.size());
