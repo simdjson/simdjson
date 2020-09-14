@@ -69,7 +69,7 @@ static void serialize_twitter(State& state) {
 	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
 }
-BENCHMARK(serialize_twitter)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(serialize_twitter)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 
@@ -104,7 +104,7 @@ static void serialize_twitter_to_string(State& state) {
 	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
 }
-BENCHMARK(serialize_twitter_to_string)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(serialize_twitter_to_string)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 
@@ -141,7 +141,7 @@ static void serialize_twitter_string_builder(State& state) {
 	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
 }
-BENCHMARK(serialize_twitter_string_builder)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+BENCHMARK(serialize_twitter_string_builder)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 
