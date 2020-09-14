@@ -31,7 +31,6 @@ simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& i
 }
 
 simdjson_really_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
-  //*dst = '\0';
   error_code error = scanner.finish(false);
   if (error) { dst_len = 0; return error; }
   dst_len = dst - dst_start;
