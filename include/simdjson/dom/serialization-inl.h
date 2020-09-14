@@ -92,7 +92,10 @@ simdjson_really_inline void mini_formatter::number(int64_t x) {
 
 simdjson_really_inline void mini_formatter::number(double x) {
   char number_buffer[24];
-  char *newp = to_chars(number_buffer, nullptr, x);
+  // Currently, passing the nullptr to the second argument is
+  // safe because our implementation does not check the second 
+  // argument.
+  char *newp = internal::to_chars(number_buffer, nullptr, x);
   buffer.insert(buffer.end(), number_buffer, newp);
 }
 

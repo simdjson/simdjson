@@ -2,10 +2,12 @@
 #include <cstdint>
 #include <array>
 namespace simdjson {
+namespace internal {
 /*!
 implements the Grisu2 algorithm for binary to decimal floating-point
 conversion.
 Adapted from JSON for Modern C++
+
 This implementation is a slightly modified version of the reference
 implementation which may be obtained from
 http://florian.loitsch.com/publications (bench.tar.gz).
@@ -939,4 +941,5 @@ char *to_chars(char *first, const char *last, double value) {
   return dtoa_impl::format_buffer(first, len, decimal_exponent, kMinExp,
                                   kMaxExp);
 }
+} // namespace internal
 } // namespace simdjson
