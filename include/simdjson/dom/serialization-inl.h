@@ -23,6 +23,15 @@ inline bool parser::print_json(std::ostream &os) const noexcept {
 
 
 namespace {
+/**@private
+ * This converts a signed integer into a character sequence.
+ * The caller is responsible for providing enough memory (at least
+ * 20 characters.)
+ * Though various runtime libraries provide itoa functions,
+ * it is not part of the C++ standard. The C++17 standard
+ * adds the to_chars functions which would do as well, but
+ * we want to support C++11.
+ */
 char *fast_itoa(char *output, int64_t value) noexcept {
   // This is a standard implementation of itoa.
   // We first write in reverse order and then reverse.
