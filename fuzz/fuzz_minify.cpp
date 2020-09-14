@@ -11,7 +11,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     simdjson::dom::parser parser;
     simdjson::dom::element elem;
     auto error = parser.parse(str).get(elem);
-    if (error) { return 1; }
+    if (error) { return 0; }
 
     std::string minified=simdjson::minify(elem);
     (void)minified;
