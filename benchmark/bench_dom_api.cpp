@@ -63,6 +63,14 @@ static void serialize_twitter(State& state) {
     bytes += serial.size();
     benchmark::DoNotOptimize(serial);
   }
+  // we validate the result
+  {
+    auto serial = simdjson::minify(doc);
+    dom::element doc2; // we parse the minified output
+    if ((error = parser.parse(serial).get(doc2))) { throw std::runtime_error("serialization error"); }
+    auto serial2 = simdjson::minify(doc2); // we minify a second time
+    if(serial != serial2) { throw std::runtime_error("serialization mismatch"); }
+  }
   // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
   state.counters["Gigabytes"] = benchmark::Counter(
 	        double(bytes), benchmark::Counter::kIsRate,
@@ -97,6 +105,14 @@ static void serialize_twitter_to_string(State& state) {
     auto serial = simdjson::to_string(doc);
     bytes += serial.size();
     benchmark::DoNotOptimize(serial);
+  }
+  // we validate the result
+  {
+    auto serial = simdjson::to_string(doc); 
+    dom::element doc2; // we parse the stringify output
+    if ((error = parser.parse(serial).get(doc2))) { throw std::runtime_error("serialization error"); }
+    auto serial2 = simdjson::to_string(doc2); // we stringify again
+    if(serial != serial2) { throw std::runtime_error("serialization mismatch"); }
   }
   // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
   state.counters["Gigabytes"] = benchmark::Counter(

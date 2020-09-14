@@ -7,6 +7,11 @@
 const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
 const char *TWITTER_TIMELINE_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter_timeline.json";
 const char *REPEAT_JSON = SIMDJSON_BENCHMARK_DATA_DIR "repeat.json";
+const char *CANADA_JSON = SIMDJSON_BENCHMARK_DATA_DIR "canada.json";
+const char *MESH_JSON = SIMDJSON_BENCHMARK_DATA_DIR "mesh.json";
+const char *APACHE_JSON = SIMDJSON_BENCHMARK_DATA_DIR "apache_builds.json";
+const char *GSOC_JSON = SIMDJSON_BENCHMARK_DATA_DIR "gsoc-2018.json";
+
 const char *AMAZON_CELLPHONES_NDJSON = SIMDJSON_BENCHMARK_DATA_DIR "amazon_cellphones.ndjson";
 
 #define SIMDJSON_BENCHMARK_SMALLDATA_DIR SIMDJSON_BENCHMARK_DATA_DIR "small/"
