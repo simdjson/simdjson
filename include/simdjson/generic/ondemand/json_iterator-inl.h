@@ -41,7 +41,7 @@ simdjson_really_inline json_iterator::~json_iterator() noexcept {
 #endif
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_object() noexcept {
-  if (*advance() != '{') { logger::log_error(*this, "Not an object"); return INCORRECT_TYPE; }
+  if (*advance() != '{') { return report_error(INCORRECT_TYPE, "Not an object"); }
   return started_object();
 }
 
@@ -63,8 +63,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator:
     case ',':
       return true;
     default:
-      logger::log_error(*this, "Missing comma between object fields");
-      return TAPE_ERROR;
+      return report_error(TAPE_ERROR, "Missing comma between object fields");
   }
 }
 
@@ -73,7 +72,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator:
   do {
     raw_json_string actual_key;
     SIMDJSON_TRY( get_raw_json_string().get(actual_key) );
-    if (*advance() != ':') { logger::log_error(*this, "Missing colon in object field"); return TAPE_ERROR; }
+    if (*advance() != ':') { return report_error(TAPE_ERROR, "Missing colon in object field"); }
     if (actual_key == key) {
       logger::log_event(*this, "match", key);
       return true;
@@ -89,17 +88,17 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator:
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<raw_json_string> json_iterator::field_key() noexcept {
   const uint8_t *key = advance();
-  if (*(key++) != '"') { logger::log_error(*this, "Object key is not a string"); return TAPE_ERROR; }
+  if (*(key++) != '"') { return report_error(TAPE_ERROR, "Object key is not a string"); }
   return raw_json_string(key);
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::field_value() noexcept {
-  if (*advance() != ':') { logger::log_error(*this, "Missing colon in object field"); return TAPE_ERROR; }
+  if (*advance() != ':') { return report_error(TAPE_ERROR, "Missing colon in object field"); }
   return SUCCESS;
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_array() noexcept {
-  if (*advance() != '[') { logger::log_error(*this, "Not an array"); return INCORRECT_TYPE; }
+  if (*advance() != '[') { return report_error(INCORRECT_TYPE, "Not an array"); }
   return started_array();
 }
 
@@ -121,8 +120,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator:
     case ',':
       return true;
     default:
-      logger::log_error(*this, "Missing comma between array elements");
-      return TAPE_ERROR;
+      return report_error(TAPE_ERROR, "Missing comma between array elements");
   }
 }
 
@@ -148,7 +146,7 @@ SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::get_bool() noexcept {
   auto not_true = atomparsing::str4ncmp(json, "true");
   auto not_false = atomparsing::str4ncmp(json, "fals") | (json[4] ^ 'e');
   bool error = (not_true && not_false) || jsoncharutils::is_not_structural_or_whitespace(json[not_true ? 5 : 4]);
-  if (error) { logger::log_error(*this, "not a boolean"); return INCORRECT_TYPE; }
+  if (error) { return report_error(INCORRECT_TYPE, "not a boolean"); }
   return simdjson_result<bool>(!not_true);
 }
 simdjson_really_inline bool json_iterator::is_null() noexcept {
@@ -181,22 +179,28 @@ constexpr const uint32_t MAX_INT_LENGTH = 1024;
 
 SIMDJSON_WARN_UNUSED simdjson_result<uint64_t> json_iterator::get_root_uint64() noexcept {
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
-  if (!advance_to_buffer(tmpbuf)) { return NUMBER_ERROR; }
+  if (!advance_to_buffer(tmpbuf)) { return report_error(NUMBER_ERROR, "Root number more than 20 digits"); }
   logger::log_value(*this, "uint64", "", 0);
-  return numberparsing::parse_unsigned(buf);
+  auto result = numberparsing::parse_unsigned(buf);
+  if (result.error()) { report_error(result.error(), "Error parsing unsigned integer"); }
+  return result;
 }
 SIMDJSON_WARN_UNUSED simdjson_result<int64_t> json_iterator::get_root_int64() noexcept {
   uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer 
-  if (!advance_to_buffer(tmpbuf)) { return NUMBER_ERROR; }
+  if (!advance_to_buffer(tmpbuf)) { return report_error(NUMBER_ERROR, "Root number more than 20 characters"); }
   logger::log_value(*this, "int64", "", 0);
-  return numberparsing::parse_integer(buf);
+  auto result = numberparsing::parse_integer(buf);
+  if (result.error()) { report_error(result.error(), "Error parsing integer"); }
+  return result;
 }
 SIMDJSON_WARN_UNUSED simdjson_result<double> json_iterator::get_root_double() noexcept {
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/, 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest number: -0.<fraction>e-308.
   uint8_t tmpbuf[1074+8+1];
-  if (!advance_to_buffer(tmpbuf)) { return NUMBER_ERROR; }
+  if (!advance_to_buffer(tmpbuf)) { return report_error(NUMBER_ERROR, "Root float more than 1082 digits"); }
   logger::log_value(*this, "double", "", 0);
-  return numberparsing::parse_double(buf);
+  auto result = numberparsing::parse_double(buf);
+  if (result.error()) { report_error(result.error(), "Error parsing double"); }
+  return result;
 }
 SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::get_root_bool() noexcept {
   uint8_t tmpbuf[5+1];
@@ -248,8 +252,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::skip_conta
     }
   }
 
-  logger::log_error(*this, "not enough close braces");
-  return TAPE_ERROR;
+  return report_error(TAPE_ERROR, "not enough close braces");
 }
 
 simdjson_really_inline bool json_iterator::at_start() const noexcept {
@@ -274,6 +277,16 @@ simdjson_really_inline json_iterator_ref json_iterator::borrow() noexcept {
 #else
   return json_iterator_ref(this);
 #endif
+}
+
+simdjson_really_inline error_code json_iterator::report_error(error_code error, const char *message) noexcept {
+  SIMDJSON_ASSUME(error != SUCCESS && error != UNINITIALIZED && error != INCORRECT_TYPE && error != NO_SUCH_FIELD);
+  logger::log_error(*this, message);
+  _error = error;
+  return error;
+}
+simdjson_really_inline error_code json_iterator::error() const noexcept {
+  return _error;
 }
 
 //

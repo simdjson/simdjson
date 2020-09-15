@@ -9,7 +9,7 @@ namespace ondemand {
 simdjson_really_inline object_iterator::object_iterator(json_iterator_ref &_iter) noexcept : iter{&_iter} {}
 
 simdjson_really_inline simdjson_result<field> object_iterator::operator*() noexcept {
-  if (error) { iter->release(); return error; }
+  if ((*iter)->error()) { iter->release(); return (*iter)->error(); }
   return field::start(iter->borrow());
 }
 simdjson_really_inline bool object_iterator::operator==(const object_iterator &other) noexcept {
@@ -19,9 +19,9 @@ simdjson_really_inline bool object_iterator::operator!=(const object_iterator &)
   return iter->is_alive();
 }
 simdjson_really_inline object_iterator &object_iterator::operator++() noexcept {
-  if (error) { return *this; }
+  if ((*iter)->error()) { return *this; }
   bool has_value;
-  error = (*iter)->has_next_field().get(has_value);
+  error_code error = (*iter)->has_next_field().get(has_value);
   if (!(error || has_value)) { iter->release(); }
   return *this;
 }
