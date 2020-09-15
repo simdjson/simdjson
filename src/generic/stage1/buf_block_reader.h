@@ -75,6 +75,7 @@ simdjson_really_inline const uint8_t *buf_block_reader<STEP_SIZE>::full_block() 
 
 template<size_t STEP_SIZE>
 simdjson_really_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) const {
+  if(len == idx) { return 0; } // memcpy(dst, null, 0) will trigger an error with some sanitizers
   memset(dst, 0x20, STEP_SIZE); // memset STEP_SIZE because it's more efficient to write out 8 or 16 bytes at once.
   memcpy(dst, buf + idx, len - idx);
   return len - idx;

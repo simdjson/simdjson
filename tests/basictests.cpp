@@ -1270,6 +1270,14 @@ namespace validate_tests {
     }
     return true;
   }
+  bool test_range() {
+    std::cout << "Running " << __func__ << std::endl;
+    for(size_t len = 0; len <= 128; len++) {
+      std::vector<uint8_t> source(len,' ');
+      if(!simdjson::validate_utf8((const char*)source.data(), source.size())) { return false; }
+    }
+    return true;
+  }
 
   bool test_bad_validate() {
     std::cout << "Running " << __func__ << std::endl;
@@ -1279,8 +1287,46 @@ namespace validate_tests {
     }
     return true;
   }
+  bool test_issue1169() {
+    std::cout << "Running " << __func__ << std::endl;
+    std::vector<uint8_t> source(64,' ');
+    for(size_t idx = 0; idx < 64; idx++) {
+      source[idx] = 255;
+      if(simdjson::validate_utf8((const char*)source.data(), source.size())) { return false; }
+      source[idx] = 0;
+    }
+    return true;
+  }
+  bool test_issue1169_long() {
+    std::cout << "Running " << __func__ << std::endl;
+    for(size_t len = 1; len <= 128; len++) {
+      std::vector<uint8_t> source(len,' ');
+      source[len-1] = 255;
+      if(simdjson::validate_utf8((const char*)source.data(), source.size())) { return false; }
+    }
+    return true;
+  }
+  bool test_random() {
+    std::cout << "Running " << __func__ << std::endl;
+    std::vector<uint8_t> source(64,' ');
+    const simdjson::implementation *impl_fallback = simdjson::available_implementations["fallback"];
+    if(!impl_fallback) { return true; }
+    for(size_t i = 0; i < 10000; i++) {
+      std::vector<uint8_t>& s(source);
+      s[i%64] ^= uint8_t(1235 * i);
+      const bool active_ok = simdjson::active_implementation->validate_utf8((const char*)s.data(), s.size());
+      const bool fallback_ok = impl_fallback->validate_utf8((const char*)s.data(), s.size());
+      if(active_ok != fallback_ok) { return false; }
+      s[i%64] ^= uint8_t(1235 * i);
+    }
+    return true;
+  }
   bool run() {
-    return test_validate() &&
+    return test_range() &&
+           test_issue1169_long() &&
+           test_issue1169() &&
+           test_random() &&
+           test_validate() &&
            test_bad_validate();
   }
 }
