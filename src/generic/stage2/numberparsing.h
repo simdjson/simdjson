@@ -226,7 +226,16 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 
 static bool parse_float_strtod(const uint8_t *ptr, double *outDouble) {
   char *endptr;
-  *outDouble = strtod((const char *)ptr, &endptr);
+  // We want to call strtod with the C (default) locale to avoid
+  // potential issues in case someone has a different locale.
+  // Unfortunately, Visual Studio has a different syntax.
+#ifdef _WIN32
+  static _locale_t c_locale = _create_locale(LC_ALL, "C");
+  *outDouble = _strtod_l((const char *)ptr, &endptr, c_locale);
+#else
+  static locale_t c_locale = newlocale(LC_ALL_MASK, "C", NULL);
+  *outDouble = strtod_l((const char *)ptr, &endptr, c_locale);
+#endif
   // Some libraries will set errno = ERANGE when the value is subnormal,
   // yet we may want to be able to parse subnormal values.
   // However, we do not want to tolerate NAN or infinite values.

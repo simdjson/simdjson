@@ -73,7 +73,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define SIMDJSON_DISABLE_VS_WARNING(WARNING_NUMBER) __pragma(warning( disable : WARNING_NUMBER ))
   // Get rid of Intellisense-only warnings (Code Analysis)
   // Though __has_include is C++17, it is supported in Visual Studio 2017 or better (_MSC_VER>=1910).
-  #if defined(_MSC_VER) && (_MSC_VER>=1910) 
+  #ifdef __has_include
   #if __has_include(<CppCoreCheck\Warnings.h>)
   #include <CppCoreCheck\Warnings.h>
   #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS SIMDJSON_DISABLE_VS_WARNING(ALL_CPPCORECHECK_WARNINGS)
@@ -195,5 +195,54 @@ namespace std {
 }
 #endif // SIMDJSON_HAS_STRING_VIEW
 #undef SIMDJSON_HAS_STRING_VIEW // We are not going to need this macro anymore.
+
+
+
+
+
+/**
+ * We may fall back on the system's number parsing, and we want
+ * to be able to call a locale-insensitive number parser. It unfortunately
+ * means that we need to load up locale headers.
+ * The locale.h header is generally available:
+ */
+#include <locale.h>
+/**
+ * Determining whether we should import xlocale.h or not is 
+ * a bit of a nightmare. Visual Studio and recent recent GLIBC (GCC) do not need it. 
+ * However, FreeBSD and Apple platforms will need it.
+ * And we would want to cover as many platforms as possible.
+ */
+#ifdef __has_include
+// This is the easy case: we have __has_include and can check whether
+// xlocale is available. If so, we load it up.
+#if __has_include(<xlocale.h>)
+#include <xlocale.h>
+#endif // __has_include
+#else // We do not have __has_include
+// Here we do not have __has_include
+// We first check for __GLIBC__
+#ifdef __GLIBC__ // If we have __GLIBC__ then we should have features.h which should help.
+// Note that having __GLIBC__ does not imply that we are compiling against glibc. But
+// we hope that any platform that defines __GLIBC__ will mimick glibc.
+#include <features.h>
+// Check whether we have an old GLIBC.
+#if !((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ > 25)))
+#include <xlocale.h> // Old glibc needs xlocale, otherwise xlocale is unavailable.
+#endif // !((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ > 25)))
+#else // __GLIBC__
+// Ok. So we do not have __GLIBC__
+// We assume that everything that is not GLIBC and not on old freebsd or windows
+// needs xlocale.
+// It is likely that recent FreeBSD and Apple platforms load xlocale.h next:
+#if !(defined(_WIN32) || (__FreeBSD_version < 1000010))
+#include <xlocale.h> // Will always happen under apple.
+#endif // 
+#endif //  __GLIBC__
+#endif // __has_include
+/**
+ * End of the crazy locale headers.
+ */
+
 
 #endif // SIMDJSON_COMMON_DEFS_H
