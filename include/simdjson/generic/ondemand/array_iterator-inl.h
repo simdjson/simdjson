@@ -5,7 +5,7 @@ namespace ondemand {
 simdjson_really_inline array_iterator::array_iterator(json_iterator_ref &_iter) noexcept : iter{&_iter} {}
 
 simdjson_really_inline simdjson_result<value> array_iterator::operator*() noexcept {
-  if (error) { iter->release(); return error; }
+  if ((*iter)->error()) { iter->release(); return (*iter)->error(); }
   return value::start(iter->borrow());
 }
 simdjson_really_inline bool array_iterator::operator==(const array_iterator &other) noexcept {
@@ -16,7 +16,7 @@ simdjson_really_inline bool array_iterator::operator!=(const array_iterator &) n
 }
 simdjson_really_inline array_iterator &array_iterator::operator++() noexcept {
   bool has_value;
-  error = (*iter)->has_next_element().get(has_value); // If there's an error, has_next stays true.
+  error_code error = (*iter)->has_next_element().get(has_value); // If there's an error, has_next stays true.
   if (!(error || has_value)) { iter->release(); }
   return *this;
 }

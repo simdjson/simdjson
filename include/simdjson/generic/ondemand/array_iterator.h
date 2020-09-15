@@ -58,15 +58,6 @@ public:
 
 private:
   json_iterator_ref *iter{};
-  /**
-   * Error, if there is one. Errors are only yielded once.
-   *
-   * PERF NOTE: we *hope* this will be elided into control flow, as it is only used (a) in the first
-   * iteration of the loop, or (b) for the final iteration after a missing comma is found in ++. If
-   * this is not elided, we should make sure it's at least not using up a register. Failing that,
-   * we should store it in document so there's only one of them.
-   */
-  error_code error{};
 
   simdjson_really_inline array_iterator(json_iterator_ref &iter) noexcept;
 

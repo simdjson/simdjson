@@ -146,9 +146,39 @@ public:
    * Tell whether the iterator is live (has not been moved).
    */
   simdjson_really_inline bool is_alive() const noexcept;
+
+  /**
+   * Report an error, preventing further iteration.
+   * 
+   * @param error The error to report. Must not be SUCCESS, UNINITIALIZED, INCORRECT_TYPE, or NO_SUCH_FIELD.
+   * @param message An error message to report with the error.
+   */
+  simdjson_really_inline error_code report_error(error_code error, const char *message) noexcept;
+
+  /**
+   * Get the error (if any).
+   */
+  simdjson_really_inline error_code error() const noexcept;
+
 protected:
   ondemand::parser *parser{};
+  /**
+   * Next free location in the string buffer.
+   * 
+   * Used by raw_json_string::unescape() to have a place to unescape strings to.
+   */
   uint8_t *current_string_buf_loc{};
+  /**
+   * JSON error, if there is one.
+   * 
+   * INCORRECT_TYPE and NO_SUCH_FIELD are *not* stored here, ever.
+   *
+   * PERF NOTE: we *hope* this will be elided into control flow, as it is only used (a) in the first
+   * iteration of the loop, or (b) for the final iteration after a missing comma is found in ++. If
+   * this is not elided, we should make sure it's at least not using up a register. Failing that,
+   * we should store it in document so there's only one of them.
+   */
+  error_code _error{};
 #ifdef SIMDJSON_ONDEMAND_SAFETY_RAILS
   uint32_t active_lease_depth{};
 #endif
