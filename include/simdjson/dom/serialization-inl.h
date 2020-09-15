@@ -151,12 +151,36 @@ simdjson_really_inline void mini_formatter::key(std::string_view unescaped) {
   one_char(':');
 }
 simdjson_really_inline void mini_formatter::string(std::string_view unescaped) {
+  //printf("mini_formatter::string\n");
   one_char('\"');
   size_t i = 0;
   // Fast path for the case where we have no control character, no ", and no backslash.
   // This should include most keys.
-  for (; (i < unescaped.length()) && (uint8_t(unescaped[i]) > 0x1F) 
-        && (unescaped[i] != '\"') && (unescaped[i] != '\\'); i++) {}
+  constexpr static bool needs_escaping[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  for(;i + 8 <= unescaped.length(); i += 8) { 
+    // Poor's man vectorization. This could get much faster if we used SIMD.
+    if(needs_escaping[int(unescaped[i])] | needs_escaping[int(unescaped[i+1])] 
+      | needs_escaping[int(unescaped[i+2])] | needs_escaping[int(unescaped[i+3])]
+      | needs_escaping[int(unescaped[i+4])] | needs_escaping[int(unescaped[i+5])] 
+      | needs_escaping[int(unescaped[i+6])] | needs_escaping[int(unescaped[i+7])]
+      ) { break; }
+  }
+  for(;i < unescaped.length(); i++) { 
+    if(needs_escaping[int(unescaped[i])]) { break; }
+  }
+  // The following is also possible and omits a 256-byte table, but it is slower:
+  // for (; (i < unescaped.length()) && (uint8_t(unescaped[i]) > 0x1F) 
+  //      && (unescaped[i] != '\"') && (unescaped[i] != '\\'); i++) {}
+  // At least for long strings, the following should be fast:
   buffer.insert(buffer.end(), unescaped.data(), unescaped.data() + i);
   // We caught a control character if we enter this loop (slow).
   // Note that we are do not restart from the beginning, but rather we continue

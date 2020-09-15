@@ -82,6 +82,37 @@ BENCHMARK(serialize_twitter)->ComputeStatistics("max", [](const std::vector<doub
   })->DisplayAggregatesOnly(true);
 
 
+static void serialize_big_string_to_string(State& state) {
+  dom::parser parser;
+  std::vector<char> content;
+  content.push_back('\"');
+  for(size_t i = 0 ; i < 100000; i ++) {
+    content.push_back('0' + char(i%10)); // we add what looks like a long list of digits 
+  } 
+  content.push_back('\"');
+  dom::element doc;
+  simdjson::error_code error;
+  if ((error = parser.parse(content.data(), content.size()).get(doc))) {
+    cerr << "could not parse big string" << error << endl;
+    return;
+  }
+  size_t bytes = 0;
+  for (SIMDJSON_UNUSED auto _ : state) {
+    auto serial = simdjson::to_string(doc);
+    bytes += serial.size();
+    benchmark::DoNotOptimize(serial);
+  }
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
+  state.counters["Gigabytes"] = benchmark::Counter(
+	        double(bytes), benchmark::Counter::kIsRate,
+	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
+  state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+}
+BENCHMARK(serialize_big_string_to_string)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+
 static void serialize_twitter_to_string(State& state) {
   dom::parser parser;
   padded_string docdata;
