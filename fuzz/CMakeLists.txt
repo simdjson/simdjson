@@ -54,6 +54,7 @@ if(ENABLE_FUZZING)
     set_property(TEST ${name} APPEND PROPERTY LABELS fuzz)
   endfunction()
 
+  implement_fuzzer(fuzz_atpointer)
   implement_fuzzer(fuzz_dump)
   implement_fuzzer(fuzz_dump_raw_tape)
   implement_fuzzer(fuzz_implementations)
