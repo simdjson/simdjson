@@ -83,23 +83,10 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 
 // Implementations
 #include "simdjson/arm64.h"
-#include "simdjson/fallback.h"
 #include "simdjson/haswell.h"
 #include "simdjson/westmere.h"
-
-namespace simdjson {
-  /**
-   * Represents the best statically linked simdjson implementation that can be used by the compiling
-   * program.
-   * 
-   * Detects what options the program is compiled against, and picks the minimum implementation that
-   * will work on any computer that can run the program. For example, if you compile with g++
-   * -march=westmere, it will pick the westmere implementation. The haswell implementation will
-   * still be available, and can be selected at runtime, but the builtin implementation (and any
-   * code that uses it) will use westmere.
-   */
-  namespace builtin = SIMDJSON_BUILTIN_IMPLEMENTATION;
-} // namespace simdjson
+#include "simdjson/fallback.h"
+#include "simdjson/builtin.h"
 
 SIMDJSON_POP_DISABLE_WARNINGS
 

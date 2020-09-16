@@ -45,7 +45,12 @@ variant=sanitizers
 	      -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined" \
 	      -DCMAKE_BUILD_TYPE=Debug \
 	      -DSIMDJSON_FUZZ_LINKMAIN=Off \
+<<<<<<< HEAD
 	      -DSIMDJSON_FUZZ_LDFLAGS="-fsanitize=fuzzer"
+=======
+	      -DSIMDJSON_FUZZ_LDFLAGS=$LIB_FUZZING_ENGINE \
+			  -DSIMDJSON_EXCLUDE_IMPLEMENTATION=haswell
+>>>>>>> Kinder, gentler implementation selection
 	
 	ninja all_fuzzers
 	cd ..

@@ -1,7 +1,21 @@
 #ifndef SIMDJSON_HASWELL_H
 #define SIMDJSON_HASWELL_H
 
+#ifdef SIMDJSON_WESTMERE_H
+#error "haswell.h must be included before westmere.h"
+#endif
+#ifdef SIMDJSON_FALLBACK_H
+#error "haswell.h must be included before fallback.h"
+#endif
+
 #include "simdjson/portability.h"
+
+// Default Haswell to on if this is x86-64. Even if we're not compiled for it, it could be selected
+// at runtime.
+#ifndef SIMDJSON_IMPLEMENTATION_HASWELL
+#define SIMDJSON_IMPLEMENTATION_HASWELL (SIMDJSON_IS_X86_64)
+#endif
+#define SIMDJSON_CAN_ALWAYS_RUN_HASWELL ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__))
 
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 
