@@ -305,6 +305,33 @@ bool is_correct_string() {
   return is_ok;
 }
 
+void parse_documentation() {
+  const char *json      = "{\"key\":\"value\"}";
+  const size_t json_len = strlen(json);
+  simdjson::dom::parser parser;
+  // We comment out element since it is unused.
+  //simdjson::dom::element element = 
+  parser.parse(json, json_len);
+}
+
+
+void parse_documentation_lowlevel() {
+  // such low-level code is not recommended
+  // Motivation: https://github.com/simdjson/simdjson/issues/1175
+  const char *json      = "{\"key\":\"value\"}";
+  const size_t json_len = strlen(json);
+  char *padded_json_copy = (char *)malloc(json_len + SIMDJSON_PADDING);
+  memcpy(padded_json_copy, json, json_len);
+  // This next line is optional, and only meant to avoid false positives with valgrind
+  // and sanitizers:
+  memset(padded_json_copy + json_len, 0, SIMDJSON_PADDING);
+  simdjson::dom::parser parser;
+  // We comment out element since it is unused.
+  //simdjson::dom::element element = 
+  parser.parse(padded_json_copy, json_len, false);
+  free(padded_json_copy);
+}
+
 int main() {
   basics_dom_1();
   basics_dom_2();
