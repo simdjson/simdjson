@@ -22,8 +22,8 @@ namespace numberparsing {
 // true, negate the result.
 // This function will only work in some cases, when it does not work, success is
 // set to false. This should work *most of the time* (like 99% of the time).
-// We assume that power is in the [simdjson_smallest_power,
-// simdjson_largest_power] interval: the caller is responsible for this check.
+// We assume that power is in the [smallest_power,
+// largest_power] interval: the caller is responsible for this check.
 simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, double &d) {
   // we start with a fast path
   // It was described in
@@ -124,27 +124,32 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // We are going to need to do some 64-bit arithmetic to get a  precise product.
   // We use a table lookup approach.
   // It is safe because
-  // power >= simdjson_smallest_power
-  // and power <= simdjson_largest_power
+  // power >= smallest_power
+  // and power <= largest_power
   // We recover the mantissa of the power, it has a leading 1. It is always
   // rounded down.
   //
   // We want the most significant 64 bits of the product. We know
   // this will be non-zero because the most significant bit of i is
   // 1.
-  const uint32_t index = 2 * uint32_t(power - simdjson_smallest_power);
+  const uint32_t index = 2 * uint32_t(power - smallest_power);
   value128 firstproduct = full_multiplication(i, power_of_five_128[index]);
-  value128 secondproduct = full_multiplication(i, power_of_five_128[index + 1]);
-  firstproduct.low += secondproduct.high;
-  if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
+  // Unless the least significant 9 bits of the high (64-bit) part of the full
+  // product are all 1s, then we know that the most significant 54 bits are
+  // exact and no further work is needed.
+  if((firstproduct.high & 0x1FF) == 0x1FF) {
+    value128 secondproduct = full_multiplication(i, power_of_five_128[index + 1]);
+    firstproduct.low += secondproduct.high;
+    if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
+    // At this point, we might need to add at most one to firstproduct, but this
+    // can only change the value of firstproduct.high if firstproduct.low is maximal.
+    if(simdjson_unlikely(firstproduct.low  == 0xFFFFFFFFFFFFFFFF)) {
+      // This is very unlikely, but if so, we need to do much more work!
+      return false;
+    }
+  }
   uint64_t lower = firstproduct.low;
   uint64_t upper = firstproduct.high;
-  // At this point, we might need to add at most one to firstproduct, but this
-  // can only change the value of firstproduct.high if firstproduct.low is maximal.
-  if(simdjson_unlikely(firstproduct.low  == 0xFFFFFFFFFFFFFFFF)) {
-    // This is very unlikely, but if so, we need to do much more work!
-    return false;
-  }
   // The final mantissa should be 53 bits with a leading 1.
   // We shift it so that it occupies 54 bits with a leading 1.
   ///////
@@ -360,7 +365,7 @@ simdjson_really_inline error_code write_float(const uint8_t *const src, bool neg
   // NOTE: it's weird that the simdjson_unlikely() only wraps half the if, but it seems to get slower any other
   // way we've tried: https://github.com/simdjson/simdjson/pull/990#discussion_r448497331
   // To future reader: we'd love if someone found a better way, or at least could explain this result!
-  if (simdjson_unlikely(exponent < simdjson_smallest_power) || (exponent > simdjson_largest_power)) {
+  if (simdjson_unlikely(exponent < smallest_power) || (exponent > largest_power)) {
     // this is almost never going to get called!!!
     // we start anew, going slowly!!!
     // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
@@ -686,7 +691,7 @@ SIMDJSON_UNUSED simdjson_really_inline simdjson_result<double> parse_double(cons
     if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
 
     exponent += exp_neg ? 0-exp : exp;
-    overflow = overflow || exponent < simdjson_smallest_power || exponent > simdjson_largest_power;
+    overflow = overflow || exponent < smallest_power || exponent > largest_power;
   }
 
   //

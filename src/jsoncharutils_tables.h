@@ -201,8 +201,8 @@ const uint32_t digit_to_val32[886] = {
 // per instruction set).
 ///
 
-constexpr int simdjson_smallest_power = -344;
-constexpr int simdjson_largest_power = 308;
+constexpr int smallest_power = -344;
+constexpr int largest_power = 308;
 
 struct value128 {
   uint64_t low;
