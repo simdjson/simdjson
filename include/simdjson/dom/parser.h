@@ -115,33 +115,30 @@ public:
    * those bytes are initialized to, as long as they are allocated.
    *
    * If realloc_if_needed is true (the default), it is assumed that the buffer does *not* have enough padding,
-   * and it is copied into an enlarged temporary buffer before parsing. Thus the following is safe and should
-   * not trigger any warning with valgrind and sanitizers: 
+   * and it is copied into an enlarged temporary buffer before parsing. Thus the following is safe: 
    * 
    *   const char *json      = "{\"key\":\"value\"}";
    *   const size_t json_len = strlen(json);
    *   simdjson::dom::parser parser;
    *   simdjson::dom::element element = parser.parse(json, json_len);
    * 
-   * The padded bytes may be read. Thus if you are using a tool that warns when 
-   * uninitialized memory is being read (such as valgrind or a sanitizer), and you want to avoid
-   * warnings, then you need to initialize the padded bytes. It is not important how you initialize
+   * If you set realloc_if_needed to false (e.g., parser.parse(json, json_len, false)), 
+   * you must provide a buffer with at least SIMDJSON_PADDING extra bytes at the end.
+   * The benefit of setting realloc_if_needed to false is that you avoid a temporary
+   * memory allocation and a copy.
+   * 
+   * The padded bytes may be read. It is not important how you initialize
    * these bytes though we recommend a sensible default like null character values or spaces.
-   * For example, the following low-level code is safe and should not trigger any warning:
+   * For example, the following low-level code is safe:
    * 
    *   const char *json      = "{\"key\":\"value\"}";
    *   const size_t json_len = strlen(json);
    *   char *padded_json_copy = (char *)malloc(json_len + SIMDJSON_PADDING);
    *   memcpy(padded_json_copy, json, json_len);
-   *   // This next line is optional, and only meant to avoid false positives with valgrind
-   *   // and sanitizers:
    *   memset(padded_json_copy + json_len, 0, SIMDJSON_PADDING);
    *   simdjson::dom::parser parser;
    *   simdjson::dom::element element = parser.parse(padded_json_copy, json_len, false);
    *   free(padded_json_copy);
-   * 
-   * (We do not necessarily recommend such code as it is error prone, we only offer it as illustration for users
-   * who need to craft their own low-level code.)
    *
    * ### Parser Capacity
    *

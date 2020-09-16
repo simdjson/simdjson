@@ -322,8 +322,6 @@ void parse_documentation_lowlevel() {
   const size_t json_len = strlen(json);
   char *padded_json_copy = (char *)malloc(json_len + SIMDJSON_PADDING);
   memcpy(padded_json_copy, json, json_len);
-  // This next line is optional, and only meant to avoid false positives with valgrind
-  // and sanitizers:
   memset(padded_json_copy + json_len, 0, SIMDJSON_PADDING);
   simdjson::dom::parser parser;
   // We comment out element since it is unused.
