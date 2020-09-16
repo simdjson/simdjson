@@ -133,12 +133,11 @@ public:
    * 
    *   const char *json      = "{\"key\":\"value\"}";
    *   const size_t json_len = strlen(json);
-   *   char *padded_json_copy = (char *)malloc(json_len + SIMDJSON_PADDING);
-   *   memcpy(padded_json_copy, json, json_len);
-   *   memset(padded_json_copy + json_len, 0, SIMDJSON_PADDING);
+   *   std::unique_ptr<char[]> padded_json_copy{new char[json_len + SIMDJSON_PADDING]};
+   *   memcpy(padded_json_copy.get(), json, json_len);
+   *   memset(padded_json_copy.get() + json_len, 0, SIMDJSON_PADDING);
    *   simdjson::dom::parser parser;
-   *   simdjson::dom::element element = parser.parse(padded_json_copy, json_len, false);
-   *   free(padded_json_copy);
+   *   simdjson::dom::element element = parser.parse(padded_json_copy.get(), json_len, false);
    *
    * ### Parser Capacity
    *
