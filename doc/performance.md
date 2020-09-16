@@ -12,6 +12,8 @@ are still some scenarios where tuning can enhance performance.
 * [Visual Studio](#visual-studio)
 * [Downclocking](#downclocking)
 * [Best Use of the DOM API](#best-use-of-the-dom-api)
+* [Padding and Temporary Copies](#padding-and-temporary-copies)
+
 
 Reusing the parser for maximum efficiency
 -----------------------------------------
@@ -174,3 +176,18 @@ Best Use of the DOM API
 
 The simdjson API provides access to the JSON DOM (document-object-model) content as a tree of `dom::element` instances, each representing an object, an array or an atomic type (null, true, false, number). These `dom::element` instances are lightweight objects (e.g., spanning 16 bytes) and it might be advantageous to pass them by value, as opposed to passing them by reference or by pointer.
 
+Padding and Temporary Copies
+--------------
+
+The simdjson works on padded  buffer, containing SIMDJSON_PADDING extra bytes added at the end.
+If you are passing a `padded_string` to `parser.parse` or loading the JSON directly from
+disk (`parser.load`), padding is automatically  handled.
+When calling `parser.parse` on a pointer (e.g., `parser.parse(mystring, mylength)`) a temporary copy 
+is made with adequate padding and you, again, do not need to be concerned with padding.
+
+Some users may not be able use our `padded_string` class or to load the data directly from disk
+(`parser.load`). They may need to pass data pointers to the library.  If these users wish to 
+avoid temporary copies, they may want to call `parser.parse` with the `realloc_if_needed`
+parameter set to false (e.g., `parser.parse(mystring, mylength, false)`). In such cases, they need
+to ensure that there are at least SIMDJSON_PADDING extra bytes at the end that can be safely accessed
+and read. They do not need to initialize the padded bytes to any value in particular.
