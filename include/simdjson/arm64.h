@@ -1,7 +1,16 @@
 #ifndef SIMDJSON_ARM64_H
 #define SIMDJSON_ARM64_H
 
+#ifdef SIMDJSON_FALLBACK_H
+#error "arm64.h must be included before fallback.h"
+#endif
+
 #include "simdjson/portability.h"
+
+#include "simdjson/internal/isadetection.h"
+#include "simdjson/internal/jsoncharutils_tables.h"
+#include "simdjson/internal/numberparsing_tables.h"
+#include "simdjson/internal/simdprune_tables.h"
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 

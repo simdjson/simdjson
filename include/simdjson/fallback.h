@@ -3,6 +3,12 @@
 
 #include "simdjson/portability.h"
 
+// Default Fallback to on unless a builtin implementation has already been selected.
+#ifndef SIMDJSON_IMPLEMENTATION_FALLBACK
+#define SIMDJSON_IMPLEMENTATION_FALLBACK 1 // (!SIMDJSON_CAN_ALWAYS_RUN_ARM64 && !SIMDJSON_CAN_ALWAYS_RUN_HASWELL && !SIMDJSON_CAN_ALWAYS_RUN_WESTMERE)
+#endif
+#define SIMDJSON_CAN_ALWAYS_RUN_FALLBACK SIMDJSON_IMPLEMENTATION_FALLBACK
+
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
 
 namespace simdjson {
