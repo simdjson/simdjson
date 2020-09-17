@@ -33,13 +33,13 @@ public:
    *
    * Part of the std::iterable interface.
    */
-  simdjson_really_inline array_iterator begin() & noexcept;
+  simdjson_really_inline array_iterator<array> begin() & noexcept;
   /**
    * Sentinel representing the end of the array.
    *
    * Part of the std::iterable interface.
    */
-  simdjson_really_inline array_iterator end() & noexcept;
+  simdjson_really_inline array_iterator<array> end() & noexcept;
 
 protected:
   /**
@@ -69,6 +69,14 @@ protected:
    */
   simdjson_really_inline array(json_iterator_ref &&iter) noexcept;
 
+  //
+  // For array_iterator
+  //
+  simdjson_really_inline json_iterator &get_iterator() noexcept;
+  simdjson_really_inline json_iterator_ref borrow_iterator() noexcept;
+  simdjson_really_inline bool is_iteration_finished() const noexcept;
+  simdjson_really_inline void iteration_finished() noexcept;
+
   /**
    * Iterator marking current position.
    * 
@@ -79,6 +87,7 @@ protected:
   friend class value;
   friend struct simdjson_result<value>;
   friend struct simdjson_result<array>;
+  friend class array_iterator<array>;
 };
 
 } // namespace ondemand
@@ -97,8 +106,8 @@ public:
   simdjson_really_inline simdjson_result(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> &&a) noexcept = default;
   simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() & noexcept;
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<SIMDJSON_IMPLEMENTATION::ondemand::array>> begin() & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<SIMDJSON_IMPLEMENTATION::ondemand::array>> end() & noexcept;
 };
 
 } // namespace simdjson
