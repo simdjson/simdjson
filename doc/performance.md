@@ -179,15 +179,22 @@ The simdjson API provides access to the JSON DOM (document-object-model) content
 Padding and Temporary Copies
 --------------
 
-The simdjson works on padded  buffer, containing SIMDJSON_PADDING extra bytes added at the end.
+The simdjson function `parser.parse` reads data from a padded  buffer, containing SIMDJSON_PADDING extra bytes added at the end.
 If you are passing a `padded_string` to `parser.parse` or loading the JSON directly from
 disk (`parser.load`), padding is automatically  handled.
-When calling `parser.parse` on a pointer (e.g., `parser.parse(mystring, mylength)`) a temporary copy 
-is made with adequate padding and you, again, do not need to be concerned with padding.
+When calling `parser.parse` on a pointer (e.g., `parser.parse(mystring, mylength)`) a temporary copy  is made by default with adequate padding and you, again, do not need to be concerned with padding.
 
-Some users may not be able use our `padded_string` class or to load the data directly from disk
-(`parser.load`). They may need to pass data pointers to the library.  If these users wish to 
-avoid temporary copies, they may want to call `parser.parse` with the `realloc_if_needed`
-parameter set to false (e.g., `parser.parse(mystring, mylength, false)`). In such cases, they need
-to ensure that there are at least SIMDJSON_PADDING extra bytes at the end that can be safely accessed
-and read. They do not need to initialize the padded bytes to any value in particular.
+Some users may not be able use our `padded_string` class or to load the data directly from disk (`parser.load`). They may need to pass data pointers to the library.  If these users wish to avoid temporary copies and corresponding temporary memory allocations, they may want to call `parser.parse` with the `realloc_if_needed` parameter set to false (e.g., `parser.parse(mystring, mylength, false)`). In such cases, they need to ensure that there are at least SIMDJSON_PADDING extra bytes at the end that can be safely accessed and read. They do not need to initialize the padded bytes to any value in particular. The following example is safe:
+
+
+```C++
+const char *json      = "{\"key\":\"value\"}";
+const size_t json_len = strlen(json);
+std::unique_ptr<char[]> padded_json_copy{new char[json_len + SIMDJSON_PADDING]};
+memcpy(padded_json_copy.get(), json, json_len);
+memset(padded_json_copy.get() + json_len, 0, SIMDJSON_PADDING);
+simdjson::dom::parser parser;
+simdjson::dom::element element = parser.parse(padded_json_copy.get(), json_len, false);
+````
+
+Setting the `realloc_if_needed` parameter set to false in this manner may lead to better performance, but it requires that the user takes more responsabilities: the simdjson library cannot verify that the input buffer was buffered.
