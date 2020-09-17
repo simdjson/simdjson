@@ -197,4 +197,4 @@ simdjson::dom::parser parser;
 simdjson::dom::element element = parser.parse(padded_json_copy.get(), json_len, false);
 ````
 
-Setting the `realloc_if_needed` parameter set to false in this manner may lead to better performance, but it requires that the user takes more responsabilities: the simdjson library cannot verify that the input buffer was buffered.
+Setting the `realloc_if_needed` parameter set to false in this manner may lead to better performance, but it requires that the user takes more responsabilities: the simdjson library cannot verify that the input buffer was padded.
