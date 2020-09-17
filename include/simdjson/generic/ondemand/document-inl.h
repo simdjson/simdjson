@@ -92,6 +92,22 @@ simdjson_really_inline simdjson_result<value> document::operator[](const char *k
   return get_object()[key];
 }
 
+//
+// For array_iterator
+//
+simdjson_really_inline json_iterator &document::get_iterator() noexcept {
+  return iter;
+}
+simdjson_really_inline json_iterator_ref document::borrow_iterator() noexcept {
+  return iter.borrow();
+}
+simdjson_really_inline bool document::is_iteration_finished() const noexcept {
+  return json;
+}
+simdjson_really_inline void document::iteration_finished() noexcept {
+  json = nullptr;
+}
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
