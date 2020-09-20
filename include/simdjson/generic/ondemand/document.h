@@ -171,9 +171,19 @@ public:
   simdjson_really_inline operator bool() noexcept(false);
 #endif
 
-  // We don't have an array_iterator that can point at an owned json_iterator
-  // simdjson_really_inline simdjson_result<array::iterator> begin() & noexcept;
-  // simdjson_really_inline simdjson_result<array::iterator> end() & noexcept;
+  /**
+   * Begin array iteration.
+   *
+   * Part of the std::iterable interface.
+   */
+  simdjson_really_inline array_iterator<document> begin() & noexcept;
+  /**
+   * Sentinel representing the end of the array.
+   *
+   * Part of the std::iterable interface.
+   */
+  simdjson_really_inline array_iterator<document> end() & noexcept;
+
   /**
    * Look up a field by name on an object.
    *
@@ -209,10 +219,21 @@ protected:
   template<typename T>
   simdjson_result<T> consume_if_success(simdjson_result<T> &&result) noexcept;
 
+  simdjson_really_inline void assert_at_start() const noexcept;
+
+  //
+  // For array_iterator
+  //
+  simdjson_really_inline json_iterator &get_iterator() noexcept;
+  simdjson_really_inline json_iterator_ref borrow_iterator() noexcept;
+  simdjson_really_inline bool is_iteration_finished() const noexcept;
+  simdjson_really_inline void iteration_finished() noexcept;
+
+  //
+  // Fields
+  //
   json_iterator iter{}; ///< Current position in the document
   const uint8_t *json{}; ///< JSON for the value in the document (nullptr if value has been consumed)
-
-  simdjson_really_inline void assert_at_start() const noexcept;
 
   friend struct simdjson_result<document>;
   friend class value;
@@ -260,8 +281,8 @@ public:
   simdjson_really_inline operator bool() noexcept(false);
 #endif
 
-  // simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> begin() & noexcept;
-  // simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array::iterator> end() & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<SIMDJSON_IMPLEMENTATION::ondemand::document>> begin() & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<SIMDJSON_IMPLEMENTATION::ondemand::document>> end() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) & noexcept;
 };
