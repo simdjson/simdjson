@@ -41,15 +41,15 @@ simdjson_really_inline simdjson_result<object> document::get_object() & noexcept
 }
 simdjson_really_inline simdjson_result<uint64_t> document::get_uint64() noexcept {
   assert_at_start();
-  return consume_if_success( iter.get_root_uint64() );
+  return consume_if_success( iter.parse_uint64(json) );
 }
 simdjson_really_inline simdjson_result<int64_t> document::get_int64() noexcept {
   assert_at_start();
-  return consume_if_success( iter.get_root_int64() );
+  return consume_if_success( iter.parse_root_int64(json) );
 }
 simdjson_really_inline simdjson_result<double> document::get_double() noexcept {
   assert_at_start();
-  return consume_if_success( iter.get_root_double() );
+  return consume_if_success( iter.parse_root_double(json) );
 }
 simdjson_really_inline simdjson_result<std::string_view> document::get_string() & noexcept {
   return consume_if_success( as_value().get_string() );
@@ -59,11 +59,11 @@ simdjson_really_inline simdjson_result<raw_json_string> document::get_raw_json_s
 }
 simdjson_really_inline simdjson_result<bool> document::get_bool() noexcept {
   assert_at_start();
-  return consume_if_success( iter.get_root_bool() );
+  return consume_if_success( iter.parse_root_bool(json) );
 }
 simdjson_really_inline bool document::is_null() noexcept {
   assert_at_start();
-  if (iter.root_is_null()) { json = nullptr; return true; }
+  if (iter.root_is_null(json)) { json = nullptr; return true; }
   return false;
 }
 

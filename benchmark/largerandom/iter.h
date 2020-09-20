@@ -22,12 +22,12 @@ private:
 
   simdjson_really_inline double first_double(ondemand::json_iterator &iter) {
     if (iter.start_object().error() || iter.field_key().error() || iter.field_value()) { throw "Invalid field"; }
-    return iter.get_double();
+    return iter.consume_double();
   }
 
   simdjson_really_inline double next_double(ondemand::json_iterator &iter) {
     if (!iter.has_next_field() || iter.field_key().error() || iter.field_value()) { throw "Invalid field"; }
-    return iter.get_double();
+    return iter.consume_double();
   }
 
 };
@@ -72,11 +72,11 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
   if (!iter.start_array()) { return false; }
   do {
     if (!iter.start_object()   || iter.field_key().value() != "x" || iter.field_value()) { return false; }
-    sum.x += iter.get_double();
+    sum.x += iter.consume_double();
     if (!iter.has_next_field() || iter.field_key().value() != "y" || iter.field_value()) { return false; }
-    sum.y +=  iter.get_double();
+    sum.y +=  iter.consume_double();
     if (!iter.has_next_field() || iter.field_key().value() != "z" || iter.field_value()) { return false; }
-    sum.z +=  iter.get_double();
+    sum.z +=  iter.consume_double();
     if (*iter.advance() != '}') { return false; }
     count++;
   } while (iter.has_next_element());

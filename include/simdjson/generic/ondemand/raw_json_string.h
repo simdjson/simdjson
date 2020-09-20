@@ -87,6 +87,10 @@ public:
   simdjson_really_inline simdjson_result() noexcept = default;
   simdjson_really_inline simdjson_result(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> &a) noexcept = default;
   simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
+
+  simdjson_really_inline simdjson_result<const char *> raw() const noexcept;
+  simdjson_really_inline SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> unescape(uint8_t *&dst) const noexcept;
+  simdjson_really_inline SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept;
 };
 
 } // namespace simdjson

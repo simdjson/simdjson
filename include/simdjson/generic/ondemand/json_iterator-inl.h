@@ -40,9 +40,12 @@ simdjson_really_inline json_iterator::~json_iterator() noexcept {
 }
 #endif
 
-SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_object() noexcept {
-  if (*advance() != '{') { return report_error(INCORRECT_TYPE, "Not an object"); }
+SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_object(const uint8_t *json) noexcept {
+  if (*json != '{') { logger::log_error(*this, "Not an object"); return INCORRECT_TYPE; }
   return started_object();
+}
+SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_object() noexcept {
+  return start_object(advance());
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::started_object() noexcept {
@@ -71,7 +74,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator:
   bool has_next;
   do {
     raw_json_string actual_key;
-    SIMDJSON_TRY( get_raw_json_string().get(actual_key) );
+    SIMDJSON_TRY( consume_raw_json_string().get(actual_key) );
     if (*advance() != ':') { return report_error(TAPE_ERROR, "Missing colon in object field"); }
     if (actual_key == key) {
       logger::log_event(*this, "match", key);
@@ -97,9 +100,13 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::field_valu
   return SUCCESS;
 }
 
-SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_array() noexcept {
-  if (*advance() != '[') { return report_error(INCORRECT_TYPE, "Not an array"); }
+SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_array(const uint8_t *json) noexcept {
+  if (*json != '[') { logger::log_error(*this, "Not an array"); return INCORRECT_TYPE; }
   return started_array();
+}
+
+SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator::start_array() noexcept {
+  return start_array(advance());
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::started_array() noexcept {
@@ -124,35 +131,61 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> json_iterator:
   }
 }
 
-SIMDJSON_WARN_UNUSED simdjson_result<raw_json_string> json_iterator::get_raw_json_string() noexcept {
+SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> json_iterator::parse_string(const uint8_t *json) noexcept {
+  return parse_raw_json_string(json).unescape(current_string_buf_loc);
+}
+SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> json_iterator::consume_string() noexcept {
+  return parse_string(advance());
+}
+SIMDJSON_WARN_UNUSED simdjson_result<raw_json_string> json_iterator::parse_raw_json_string(const uint8_t *json) noexcept {
   logger::log_value(*this, "string", "", 0);
-  return raw_json_string(advance()+1);
+  if (*json != '"') { logger::log_error(*this, "Not a string"); return INCORRECT_TYPE; }
+  return raw_json_string(json+1);
 }
-SIMDJSON_WARN_UNUSED simdjson_result<uint64_t> json_iterator::get_uint64() noexcept {
+SIMDJSON_WARN_UNUSED simdjson_result<raw_json_string> json_iterator::consume_raw_json_string() noexcept {
+  return parse_raw_json_string(advance());
+}
+SIMDJSON_WARN_UNUSED simdjson_result<uint64_t> json_iterator::parse_uint64(const uint8_t *json) noexcept {
   logger::log_value(*this, "uint64", "", 0);
-  return numberparsing::parse_unsigned(advance());
+  return numberparsing::parse_unsigned(json);
 }
-SIMDJSON_WARN_UNUSED simdjson_result<int64_t> json_iterator::get_int64() noexcept {
+SIMDJSON_WARN_UNUSED simdjson_result<uint64_t> json_iterator::consume_uint64() noexcept {
+  return parse_uint64(advance());
+}
+SIMDJSON_WARN_UNUSED simdjson_result<int64_t> json_iterator::parse_int64(const uint8_t *json) noexcept {
   logger::log_value(*this, "int64", "", 0);
-  return numberparsing::parse_integer(advance());
+  return numberparsing::parse_integer(json);
 }
-SIMDJSON_WARN_UNUSED simdjson_result<double> json_iterator::get_double() noexcept {
+SIMDJSON_WARN_UNUSED simdjson_result<int64_t> json_iterator::consume_int64() noexcept {
+  return parse_int64(advance());
+}
+SIMDJSON_WARN_UNUSED simdjson_result<double> json_iterator::parse_double(const uint8_t *json) noexcept {
   logger::log_value(*this, "double", "", 0);
-  return numberparsing::parse_double(advance());
+  return numberparsing::parse_double(json);
 }
-SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::get_bool() noexcept {
+SIMDJSON_WARN_UNUSED simdjson_result<double> json_iterator::consume_double() noexcept {
+  return parse_double(advance());
+}
+SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::parse_bool(const uint8_t *json) noexcept {
   logger::log_value(*this, "bool", "", 0);
-  auto json = advance();
   auto not_true = atomparsing::str4ncmp(json, "true");
   auto not_false = atomparsing::str4ncmp(json, "fals") | (json[4] ^ 'e');
   bool error = (not_true && not_false) || jsoncharutils::is_not_structural_or_whitespace(json[not_true ? 5 : 4]);
-  if (error) { return report_error(INCORRECT_TYPE, "not a boolean"); }
+  if (error) { logger::log_error(*this, "Not a boolean"); return INCORRECT_TYPE; }
   return simdjson_result<bool>(!not_true);
 }
-simdjson_really_inline bool json_iterator::is_null() noexcept {
-  auto json = peek();
+SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::consume_bool() noexcept {
+  return parse_bool(advance());
+}
+simdjson_really_inline bool json_iterator::is_null(const uint8_t *json) noexcept {
   if (!atomparsing::str4ncmp(json, "null")) {
     logger::log_value(*this, "null", "", 0);
+    return true;
+  }
+  return false;
+}
+simdjson_really_inline bool json_iterator::is_null() noexcept {
+  if (is_null(peek())) {
     advance();
     return true;
   }
@@ -160,10 +193,9 @@ simdjson_really_inline bool json_iterator::is_null() noexcept {
 }
 
 template<int N>
-SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::advance_to_buffer(uint8_t (&tmpbuf)[N]) noexcept {
+SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::copy_to_buffer(const uint8_t *json, uint8_t (&tmpbuf)[N]) noexcept {
   // Truncate whitespace to fit the buffer.
-  auto len = peek_length();
-  auto json = advance();
+  auto len = peek_length(-1);
   if (len > N-1) {
     if (jsoncharutils::is_not_structural_or_whitespace(json[N])) { return false; }
     len = N-1;
@@ -177,39 +209,51 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline bool json_iterator::advance_to_buffe
 
 constexpr const uint32_t MAX_INT_LENGTH = 1024;
 
-SIMDJSON_WARN_UNUSED simdjson_result<uint64_t> json_iterator::get_root_uint64() noexcept {
+SIMDJSON_WARN_UNUSED simdjson_result<uint64_t> json_iterator::parse_root_uint64(const uint8_t *json) noexcept {
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
-  if (!advance_to_buffer(tmpbuf)) { return report_error(NUMBER_ERROR, "Root number more than 20 digits"); }
+  if (!copy_to_buffer(json, tmpbuf)) { logger::log_error(*this, "Root number more than 20 characters"); return NUMBER_ERROR; }
   logger::log_value(*this, "uint64", "", 0);
   auto result = numberparsing::parse_unsigned(buf);
-  if (result.error()) { report_error(result.error(), "Error parsing unsigned integer"); }
+  if (result.error()) { logger::log_error(*this, "Error parsing unsigned integer"); return result.error(); }
   return result;
 }
-SIMDJSON_WARN_UNUSED simdjson_result<int64_t> json_iterator::get_root_int64() noexcept {
+SIMDJSON_WARN_UNUSED simdjson_result<uint64_t> json_iterator::consume_root_uint64() noexcept {
+  return parse_root_uint64(advance());
+}
+SIMDJSON_WARN_UNUSED simdjson_result<int64_t> json_iterator::parse_root_int64(const uint8_t *json) noexcept {
   uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer 
-  if (!advance_to_buffer(tmpbuf)) { return report_error(NUMBER_ERROR, "Root number more than 20 characters"); }
+  if (!copy_to_buffer(json, tmpbuf)) { logger::log_error(*this, "Root number more than 20 characters"); return NUMBER_ERROR; }
   logger::log_value(*this, "int64", "", 0);
   auto result = numberparsing::parse_integer(buf);
   if (result.error()) { report_error(result.error(), "Error parsing integer"); }
   return result;
 }
-SIMDJSON_WARN_UNUSED simdjson_result<double> json_iterator::get_root_double() noexcept {
+SIMDJSON_WARN_UNUSED simdjson_result<int64_t> json_iterator::consume_root_int64() noexcept {
+  return parse_root_int64(advance());
+}
+SIMDJSON_WARN_UNUSED simdjson_result<double> json_iterator::parse_root_double(const uint8_t *json) noexcept {
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/, 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest number: -0.<fraction>e-308.
   uint8_t tmpbuf[1074+8+1];
-  if (!advance_to_buffer(tmpbuf)) { return report_error(NUMBER_ERROR, "Root float more than 1082 digits"); }
+  if (!copy_to_buffer(json, tmpbuf)) { logger::log_error(*this, "Root number more than 1082 characters"); return NUMBER_ERROR; }
   logger::log_value(*this, "double", "", 0);
   auto result = numberparsing::parse_double(buf);
   if (result.error()) { report_error(result.error(), "Error parsing double"); }
   return result;
 }
-SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::get_root_bool() noexcept {
-  uint8_t tmpbuf[5+1];
-  if (!advance_to_buffer(tmpbuf)) { return INCORRECT_TYPE; } // Too big! Can't be true or false
-  return get_bool();
+SIMDJSON_WARN_UNUSED simdjson_result<double> json_iterator::consume_root_double() noexcept {
+  return parse_root_double(advance());
 }
-simdjson_really_inline bool json_iterator::root_is_null() noexcept {
+SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::parse_root_bool(const uint8_t *json) noexcept {
+  uint8_t tmpbuf[5+1];
+  if (!copy_to_buffer(json, tmpbuf)) { logger::log_error(*this, "Not a boolean"); return INCORRECT_TYPE; }
+  return consume_bool();
+}
+SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::consume_root_bool() noexcept {
+  return parse_root_bool(advance());
+}
+simdjson_really_inline bool json_iterator::root_is_null(const uint8_t *json) noexcept {
   uint8_t tmpbuf[4+1];
-  if (!advance_to_buffer(tmpbuf)) { return false; } // Too big! Can't be null
+  if (!copy_to_buffer(json, tmpbuf)) { return false; }
   return is_null();
 }
 

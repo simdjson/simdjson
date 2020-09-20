@@ -33,6 +33,14 @@ public:
   /**
    * Check for an opening { and start an object iteration.
    *
+   * @param json A pointer to the potential {
+   * @returns Whether the object had any fields (returns false for empty).
+   * @error INCORRECT_TYPE if there is no opening {
+   */
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> start_object(const uint8_t *json) noexcept;
+  /**
+   * Check for an opening { and start an object iteration.
+   *
    * @returns Whether the object had any fields (returns false for empty).
    * @error INCORRECT_TYPE if there is no opening {
    */
@@ -82,6 +90,14 @@ public:
   /**
    * Check for an opening [ and start an array iteration.
    *
+   * @param json A pointer to the potential [.
+   * @returns Whether the array had any elements (returns false for empty).
+   * @error INCORRECT_TYPE If there is no [.
+   */
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> start_array(const uint8_t *json) noexcept;
+  /**
+   * Check for an opening [ and start an array iteration.
+   *
    * @returns Whether the array had any elements (returns false for empty).
    * @error INCORRECT_TYPE If there is no [.
    */
@@ -107,18 +123,31 @@ public:
    */
   SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> has_next_element() noexcept;
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<uint64_t> get_uint64() noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<int64_t> get_int64() noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<double> get_double() noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> get_bool() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<std::string_view> parse_string(const uint8_t *json) noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<std::string_view> consume_string() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<raw_json_string> parse_raw_json_string(const uint8_t *json) noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<raw_json_string> consume_raw_json_string() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<uint64_t> parse_uint64(const uint8_t *json) noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<uint64_t> consume_uint64() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<int64_t> parse_int64(const uint8_t *json) noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<int64_t> consume_int64() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<double> parse_double(const uint8_t *json) noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<double> consume_double() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> parse_bool(const uint8_t *json) noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> consume_bool() noexcept;
+  simdjson_really_inline bool is_null(const uint8_t *json) noexcept;
   simdjson_really_inline bool is_null() noexcept;
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<uint64_t> get_root_uint64() noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<int64_t> get_root_int64() noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<double> get_root_double() noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> get_root_bool() noexcept;
-  simdjson_really_inline bool root_is_null() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<uint64_t> parse_root_uint64(const uint8_t *json) noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<uint64_t> consume_root_uint64() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<int64_t> parse_root_int64(const uint8_t *json) noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<int64_t> consume_root_int64() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<double> parse_root_double(const uint8_t *json) noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<double> consume_root_double() noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> parse_root_bool(const uint8_t *json) noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> consume_root_bool() noexcept;
+  simdjson_really_inline bool root_is_null(const uint8_t *json) noexcept;
+  simdjson_really_inline bool root_is_null() & noexcept;
 
   /**
    * Skips a JSON value, whether it is a scalar, array or object.
@@ -185,7 +214,7 @@ protected:
 
   simdjson_really_inline json_iterator(ondemand::parser *parser) noexcept;
   template<int N>
-  SIMDJSON_WARN_UNUSED simdjson_really_inline bool advance_to_buffer(uint8_t (&buf)[N]) noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline bool copy_to_buffer(const uint8_t *json, uint8_t (&buf)[N]) noexcept;
 
   simdjson_really_inline json_iterator_ref borrow() noexcept;
 
