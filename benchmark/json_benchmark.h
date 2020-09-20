@@ -10,7 +10,7 @@ template<typename B, typename R> static void JsonBenchmark(benchmark::State &sta
   {
     R reference;
     if (!reference.Run(json)) { state.SkipWithError("reference tweet reading failed"); return; }
-    assert(bench.Result() == reference.Result());
+    if (bench.Result() != reference.Result()) { state.SkipWithError("results are not the same"); return; }
   }
 
   // Run the benchmark
