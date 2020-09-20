@@ -22,12 +22,12 @@ private:
 
   simdjson_really_inline simdjson_result<double> first_double(ondemand::json_iterator &iter, const char *key) {
     if (!iter.start_object() || ondemand::raw_json_string(iter.field_key()) != key || iter.field_value()) { throw "Invalid field"; }
-    return iter.get_double();
+    return iter.consume_double();
   }
 
   simdjson_really_inline simdjson_result<double> next_double(ondemand::json_iterator &iter, const char *key) {
     if (!iter.has_next_field() || ondemand::raw_json_string(iter.field_key()) != key || iter.field_value()) { throw "Invalid field"; }
-    return iter.get_double();
+    return iter.consume_double();
   }
 
 };
@@ -76,11 +76,11 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
   if (!iter.start_array()) { return false; }
   do {
     if (!iter.start_object()   || !iter.find_field_raw("x")) { return false; }
-    sum.x += iter.get_double();
+    sum.x += iter.consume_double();
     if (!iter.has_next_field() || !iter.find_field_raw("y")) { return false; }
-    sum.y +=  iter.get_double();
+    sum.y +=  iter.consume_double();
     if (!iter.has_next_field() || !iter.find_field_raw("z")) { return false; }
-    sum.z +=  iter.get_double();
+    sum.z +=  iter.consume_double();
     if (iter.skip_container()) { return false; } // Skip the rest of the coordinates object
     count++;
   } while (iter.has_next_element());

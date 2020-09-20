@@ -44,4 +44,17 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_js
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::simdjson_result(error_code error) noexcept
     : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>(error) {}
 
+simdjson_really_inline simdjson_result<const char *> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::raw() const noexcept {
+  if (error()) { return error(); }
+  return first.raw();
+}
+simdjson_really_inline SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::unescape(uint8_t *&dst) const noexcept {
+  if (error()) { return error(); }
+  return first.unescape(dst);
+}
+simdjson_really_inline SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept {
+  if (error()) { return error(); }
+  return first.unescape(iter);
+}
+
 } // namespace simdjson
