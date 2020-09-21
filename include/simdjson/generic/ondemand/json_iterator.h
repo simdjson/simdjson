@@ -18,13 +18,11 @@ class json_iterator_ref;
 class json_iterator : public token_iterator {
 public:
   simdjson_really_inline json_iterator() noexcept = default;
-#ifdef SIMDJSON_ONDEMAND_SAFETY_RAILS
   simdjson_really_inline json_iterator(json_iterator &&other) noexcept;
   simdjson_really_inline json_iterator &operator=(json_iterator &&other) noexcept;
+#ifdef SIMDJSON_ONDEMAND_SAFETY_RAILS
   simdjson_really_inline ~json_iterator() noexcept;
 #else
-  simdjson_really_inline json_iterator(json_iterator &&other) noexcept = default;
-  simdjson_really_inline json_iterator &operator=(json_iterator &&other) noexcept = default;
   simdjson_really_inline ~json_iterator() noexcept = default;
 #endif
   simdjson_really_inline json_iterator(const json_iterator &other) noexcept = delete;

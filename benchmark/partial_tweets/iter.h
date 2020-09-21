@@ -47,13 +47,13 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
     tweet tweet;
 
     if (!iter.start_object()   || !iter.find_field_raw("created_at")) { return false; }
-    tweet.created_at = iter.consume_raw_json_string().value().unescape(iter);
+    tweet.created_at = iter.consume_string();
 
     if (!iter.has_next_field() || !iter.find_field_raw("id")) { return false; }
     tweet.id = iter.consume_uint64();
 
     if (!iter.has_next_field() || !iter.find_field_raw("text")) { return false; }
-    tweet.text = iter.consume_raw_json_string().value().unescape(iter);
+    tweet.text = iter.consume_string();
 
     if (!iter.has_next_field() || !iter.find_field_raw("in_reply_to_status_id")) { return false; }
     if (!iter.is_null()) {
@@ -66,7 +66,7 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
       tweet.user.id = iter.consume_uint64();
 
       if (!iter.has_next_field() || !iter.find_field_raw("screen_name")) { return false; }
-      tweet.user.screen_name = iter.consume_raw_json_string().value().unescape(iter);
+      tweet.user.screen_name = iter.consume_string();
 
       if (iter.skip_container()) { return false; } // Skip the rest of the user object
     }

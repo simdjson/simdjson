@@ -15,7 +15,7 @@ simdjson_really_inline document::~document() noexcept {
 }
 
 simdjson_really_inline void document::assert_at_start() const noexcept {
-  SIMDJSON_ASSUME(json != nullptr);
+  SIMDJSON_ASSUME(json != nullptr && iter.is_alive());
 }
 simdjson_really_inline document document::start(json_iterator &&iter) noexcept {
   auto json = iter.advance();

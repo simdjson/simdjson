@@ -2,12 +2,13 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
-#ifdef SIMDJSON_ONDEMAND_SAFETY_RAILS
 simdjson_really_inline json_iterator::json_iterator(json_iterator &&other) noexcept
   : token_iterator(std::forward<token_iterator>(other)),
     parser{other.parser},
-    current_string_buf_loc{other.current_string_buf_loc},
-    active_lease_depth{other.active_lease_depth}
+    current_string_buf_loc{other.current_string_buf_loc}
+#ifdef SIMDJSON_ONDEMAND_SAFETY_RAILS
+    , active_lease_depth{other.active_lease_depth}
+#endif
 {
   other.parser = nullptr;
 }
@@ -16,11 +17,12 @@ simdjson_really_inline json_iterator &json_iterator::operator=(json_iterator &&o
   index = other.index;
   parser = other.parser;
   current_string_buf_loc = other.current_string_buf_loc;
+#ifdef SIMDJSON_ONDEMAND_SAFETY_RAILS
   active_lease_depth = other.active_lease_depth;
+#endif
   other.parser = nullptr;
   return *this;
 }
-#endif
 
 simdjson_really_inline json_iterator::json_iterator(ondemand::parser *_parser) noexcept
   : token_iterator(_parser->dom_parser.buf, _parser->dom_parser.structural_indexes.get()),
