@@ -145,7 +145,7 @@ public:
   SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> parse_root_bool(const uint8_t *json) noexcept;
   SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<bool> consume_root_bool() noexcept;
   simdjson_really_inline bool root_is_null(const uint8_t *json) noexcept;
-  simdjson_really_inline bool root_is_null() & noexcept;
+  simdjson_really_inline bool root_is_null() noexcept;
 
   /**
    * Skips a JSON value, whether it is a scalar, array or object.
