@@ -40,15 +40,15 @@ simdjson_really_inline simdjson_result<T> value::consume_if_success(simdjson_res
 }
 
 simdjson_really_inline simdjson_result<array> value::get_array() noexcept {
-  bool is_empty;
-  SIMDJSON_TRY( iter->start_array(json).get(is_empty) );
-  if (is_empty) { iter.release(); }
+  bool has_value;
+  SIMDJSON_TRY( iter->start_array(json).get(has_value) );
+  if (!has_value) { iter.release(); }
   return array(std::move(iter));
 }
 simdjson_really_inline simdjson_result<object> value::get_object() noexcept {
-  bool is_empty;
-  SIMDJSON_TRY( iter->start_object(json).get(is_empty) );
-  if (is_empty) { iter.release(); }
+  bool has_value;
+  SIMDJSON_TRY( iter->start_object(json).get(has_value) );
+  if (!has_value) { iter.release(); }
   return object(std::move(iter));
 }
 simdjson_really_inline simdjson_result<raw_json_string> value::get_raw_json_string() noexcept {
