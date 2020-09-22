@@ -179,8 +179,8 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code tape_builder::visit_root_
   //
   uint8_t *copy = static_cast<uint8_t *>(malloc(iter.remaining_len() + SIMDJSON_PADDING));
   if (copy == nullptr) { return MEMALLOC; }
-  memcpy(copy, value, iter.remaining_len());
-  memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  std::memcpy(copy, value, iter.remaining_len());
+  std::memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
   error_code error = visit_number(iter, copy);
   free(copy);
   return error;

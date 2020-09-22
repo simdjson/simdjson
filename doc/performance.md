@@ -188,8 +188,8 @@ Some users may not be able use our `padded_string` class or to load the data dir
 
 
 ```C++
-const char *json      = "{\"key\":\"value\"}";
-const size_t json_len = strlen(json);
+const char *json      = R"({"key":"value"})";
+const size_t json_len = std::strlen(json);
 std::unique_ptr<char[]> padded_json_copy{new char[json_len + SIMDJSON_PADDING]};
 memcpy(padded_json_copy.get(), json, json_len);
 memset(padded_json_copy.get() + json_len, 0, SIMDJSON_PADDING);
@@ -197,4 +197,4 @@ simdjson::dom::parser parser;
 simdjson::dom::element element = parser.parse(padded_json_copy.get(), json_len, false);
 ````
 
-Setting the `realloc_if_needed` parameter set to false in this manner may lead to better performance, but it requires that the user takes more responsabilities: the simdjson library cannot verify that the input buffer was padded.
+Setting the `realloc_if_needed` parameter false in this manner may lead to better performance, but it requires that the user takes more responsibilities: the simdjson library cannot verify that the input buffer was padded.

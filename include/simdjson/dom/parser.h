@@ -117,8 +117,8 @@ public:
    * If realloc_if_needed is true (the default), it is assumed that the buffer does *not* have enough padding,
    * and it is copied into an enlarged temporary buffer before parsing. Thus the following is safe: 
    * 
-   *   const char *json      = "{\"key\":\"value\"}";
-   *   const size_t json_len = strlen(json);
+   *   const char *json      = R"({"key":"value"})";
+   *   const size_t json_len = std::strlen(json);
    *   simdjson::dom::parser parser;
    *   simdjson::dom::element element = parser.parse(json, json_len);
    * 
@@ -131,11 +131,11 @@ public:
    * these bytes though we recommend a sensible default like null character values or spaces.
    * For example, the following low-level code is safe:
    * 
-   *   const char *json      = "{\"key\":\"value\"}";
-   *   const size_t json_len = strlen(json);
+   *   const char *json      = R"({"key":"value"})";
+   *   const size_t json_len = std::strlen(json);
    *   std::unique_ptr<char[]> padded_json_copy{new char[json_len + SIMDJSON_PADDING]};
-   *   memcpy(padded_json_copy.get(), json, json_len);
-   *   memset(padded_json_copy.get() + json_len, 0, SIMDJSON_PADDING);
+   *   std::memcpy(padded_json_copy.get(), json, json_len);
+   *   std::memset(padded_json_copy.get() + json_len, '\0', SIMDJSON_PADDING);
    *   simdjson::dom::parser parser;
    *   simdjson::dom::element element = parser.parse(padded_json_copy.get(), json_len, false);
    *

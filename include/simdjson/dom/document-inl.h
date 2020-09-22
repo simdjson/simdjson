@@ -66,7 +66,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
     switch (type) {
     case '"': // we have a string
       os << "string \"";
-      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
+      std::memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
       os << internal::escape_json_string(std::string_view(
         (const char *)(string_buf.get() + payload + sizeof(uint32_t)),
         string_length
@@ -92,7 +92,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
         return false;
       }
       double answer;
-      memcpy(&answer, &tape[++tape_idx], sizeof(answer));
+      std::memcpy(&answer, &tape[++tape_idx], sizeof(answer));
       os << answer << '\n';
       break;
     case 'n': // we have a null

@@ -8,7 +8,7 @@
 #include <unistd.h>           // for syscall
 
 #include <cerrno>  // for errno
-#include <cstring> // for memset
+#include <cstring> // for std::memset
 #include <stdexcept>
 
 #include <iostream>
@@ -24,7 +24,7 @@ template <int TYPE = PERF_TYPE_HARDWARE> class LinuxEvents {
 
 public:
   explicit LinuxEvents(std::vector<int> config_vec) : fd(0), working(true) {
-    memset(&attribs, 0, sizeof(attribs));
+    std::memset(&attribs, 0, sizeof(attribs));
     attribs.type = TYPE;
     attribs.size = sizeof(attribs);
     attribs.disabled = 1;

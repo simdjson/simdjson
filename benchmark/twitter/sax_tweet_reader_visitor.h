@@ -296,8 +296,8 @@ simdjson_really_inline void sax_tweet_reader_visitor::field_lookup::neg(const ch
 }
 
 sax_tweet_reader_visitor::field_lookup::field_lookup() {
-  add("\"statuses\"", strlen("\"statuses\""), containers::top_object, field_type::array, 0); // { "statuses": [...]
-  #define TWEET_FIELD(KEY, TYPE) add("\"" #KEY "\"", strlen("\"" #KEY "\""), containers::tweet, TYPE, offsetof(tweet, KEY));
+  add("\"statuses\"", std::strlen("\"statuses\""), containers::top_object, field_type::array, 0); // { "statuses": [...]
+  #define TWEET_FIELD(KEY, TYPE) add("\"" #KEY "\"", std::strlen("\"" #KEY "\""), containers::tweet, TYPE, offsetof(tweet, KEY));
   TWEET_FIELD(id, field_type::unsigned_integer);
   TWEET_FIELD(in_reply_to_status_id, field_type::nullable_unsigned_integer);
   TWEET_FIELD(retweet_count, field_type::unsigned_integer);
@@ -306,7 +306,7 @@ sax_tweet_reader_visitor::field_lookup::field_lookup() {
   TWEET_FIELD(created_at, field_type::string);
   TWEET_FIELD(user, field_type::object)
   #undef TWEET_FIELD
-  #define USER_FIELD(KEY, TYPE) add("\"" #KEY "\"", strlen("\"" #KEY "\""), containers::user, TYPE, offsetof(tweet, user)+offsetof(twitter_user, KEY));
+  #define USER_FIELD(KEY, TYPE) add("\"" #KEY "\"", std::strlen("\"" #KEY "\""), containers::user, TYPE, offsetof(tweet, user)+offsetof(twitter_user, KEY));
   USER_FIELD(id, field_type::unsigned_integer);
   USER_FIELD(screen_name, field_type::string);
   #undef USER_FIELD
