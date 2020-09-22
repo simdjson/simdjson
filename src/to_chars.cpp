@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstring>
 #include <cstdint>
 #include <array>
 namespace simdjson {
