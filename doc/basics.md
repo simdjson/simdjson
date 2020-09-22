@@ -279,9 +279,8 @@ In some cases, you may have valid JSON strings that you do not wish to parse but
   // It does not have to be null-terminated.
   const char * some_string = "[ 1, 2, 3, 4] ";
   size_t length = std::strlen(some_string);
-  // Create a buffer to receive the minified string. Make sure that there is enough room,
-  // including some padding (simdjson::SIMDJSON_PADDING).
-  std::unique_ptr<char[]> buffer{new(std::nothrow) char[length]};
+  // Create a buffer to receive the minified string. Make sure that there is enough room (length bytes).  
+  std::unique_ptr<char[]> buffer{new char[length]};
   size_t new_length{}; // It will receive the minified length.
   auto error = simdjson::minify(some_string, length, buffer.get(), new_length);
   // The buffer variable now has "[1,2,3,4]" and new_length has value 9.

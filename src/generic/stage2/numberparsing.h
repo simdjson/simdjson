@@ -62,7 +62,7 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
     return true;
   }
   // When 22 < power && power <  22 + 16, we could
-  // hope for another, secondary fast path.  It wa
+  // hope for another, secondary fast path.  It was
   // described by David M. Gay in  "Correctly rounded
   // binary-decimal and decimal-binary conversions." (1990)
   // If you need to compute i * 10^(22 + x) for x < 16,
