@@ -78,7 +78,7 @@ public:
   // return the length of the string in bytes
   inline uint32_t get_string_length() const {
       uint32_t answer;
-      memcpy(&answer,
+      std::memcpy(&answer,
           reinterpret_cast<const char *>(doc.string_buf.get() +
                                           (current_val & internal::JSON_VALUE_MASK)),
           sizeof(uint32_t));
@@ -93,7 +93,7 @@ public:
                                                       // case of error
       }
       double answer;
-      memcpy(&answer, &doc.tape[location + 1], sizeof(answer));
+      std::memcpy(&answer, &doc.tape[location + 1], sizeof(answer));
       return answer;
   }
 

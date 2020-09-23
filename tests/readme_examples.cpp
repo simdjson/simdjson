@@ -261,7 +261,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 
 void minify() {
   const char * some_string = "[ 1, 2, 3, 4] ";
-  size_t length = strlen(some_string);
+  size_t length = std::strlen(some_string);
   std::unique_ptr<char[]> buffer{new char[length]};
   size_t new_length{};
   auto error = simdjson::minify(some_string, length, buffer.get(), new_length);
@@ -270,7 +270,7 @@ void minify() {
     abort();
   } else {
     const char * expected_string = "[1,2,3,4]";
-    size_t expected_length = strlen(expected_string);
+    size_t expected_length = std::strlen(expected_string);
     if(expected_length != new_length) {
       std::cerr << "mismatched length (error) " << std::endl;
       abort();
@@ -286,14 +286,14 @@ void minify() {
 
 bool is_correct() {
   const char * some_string = "[ 1, 2, 3, 4] ";
-  size_t length = strlen(some_string);
+  size_t length = std::strlen(some_string);
   bool is_ok = simdjson::validate_utf8(some_string, length);
   return is_ok;
 }
 
 bool is_correct_string_view() {
   const char * some_string = "[ 1, 2, 3, 4] ";
-  size_t length = strlen(some_string);
+  size_t length = std::strlen(some_string);
   std::string_view v(some_string, length);
   bool is_ok = simdjson::validate_utf8(v);
   return is_ok;
@@ -303,6 +303,31 @@ bool is_correct_string() {
   const std::string some_string = "[ 1, 2, 3, 4] ";
   bool is_ok = simdjson::validate_utf8(some_string);
   return is_ok;
+}
+
+void parse_documentation() {
+  const char *json      = R"({"key":"value"})";
+  const size_t json_len = std::strlen(json);
+  simdjson::dom::parser parser;
+  simdjson::dom::element element = parser.parse(json, json_len);
+  // Next line is to avoid unused warning.
+  (void)element;
+}
+
+
+void parse_documentation_lowlevel() {
+  // Such low-level code is not generally recommended. Please
+  // see parse_documentation() instead.
+  // Motivation: https://github.com/simdjson/simdjson/issues/1175
+  const char *json      = R"({"key":"value"})";
+  const size_t json_len = std::strlen(json);
+  std::unique_ptr<char[]> padded_json_copy{new char[json_len + SIMDJSON_PADDING]};
+  std::memcpy(padded_json_copy.get(), json, json_len);
+  std::memset(padded_json_copy.get() + json_len, '\0', SIMDJSON_PADDING);
+  simdjson::dom::parser parser;
+  simdjson::dom::element element = parser.parse(padded_json_copy.get(), json_len, false);
+  // Next line is to avoid unused warning.
+  (void)element;
 }
 
 int main() {

@@ -278,7 +278,7 @@ In some cases, you may have valid JSON strings that you do not wish to parse but
   // Starts with a valid JSON document as a string.
   // It does not have to be null-terminated.
   const char * some_string = "[ 1, 2, 3, 4] ";
-  size_t length = strlen(some_string);
+  size_t length = std::strlen(some_string);
   // Create a buffer to receive the minified string. Make sure that there is enough room (length bytes).  
   std::unique_ptr<char[]> buffer{new char[length]};
   size_t new_length{}; // It will receive the minified length.
@@ -296,7 +296,7 @@ The simdjson library has fast functions to validate UTF-8 strings. They are many
 
 ```C++
   const char * some_string = "[ 1, 2, 3, 4] ";
-  size_t length = strlen(some_string);
+  size_t length = std::strlen(some_string);
   bool is_ok = simdjson::validate_utf8(some_string, length);
 ```
 

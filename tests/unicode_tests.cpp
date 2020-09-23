@@ -224,14 +224,14 @@ void test() {
       "\x91\x85\x95\x9e",
       "\x6c\x02\x8e\x18"};
   for (size_t i = 0; i < 8; i++) {
-    size_t len = strlen(goodsequences[i]);
+    size_t len = std::strlen(goodsequences[i]);
     if (!simdjson::validate_utf8(goodsequences[i], len)) {
       printf("bug goodsequences[%zu]\n", i);
       abort();
     }
   }
   for (size_t i = 0; i < 26; i++) {
-    size_t len = strlen(badsequences[i]);
+    size_t len = std::strlen(badsequences[i]);
     if (simdjson::validate_utf8(badsequences[i], len)) {
       printf("bug lookup2 badsequences[%zu]\n", i);
       abort();

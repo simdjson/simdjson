@@ -255,10 +255,10 @@ namespace parse_api_tests {
     uint64_t count = 0;
     constexpr const int BATCH_SIZE = 128;
     uint8_t empty_batches_ndjson[BATCH_SIZE*16+SIMDJSON_PADDING];
-    memset(&empty_batches_ndjson[0], ' ', BATCH_SIZE*16+SIMDJSON_PADDING);
-    memcpy(&empty_batches_ndjson[BATCH_SIZE*3+2], "1", 1);
-    memcpy(&empty_batches_ndjson[BATCH_SIZE*10+4], "2", 1);
-    memcpy(&empty_batches_ndjson[BATCH_SIZE*11+6], "3", 1);
+    std::memset(&empty_batches_ndjson[0], ' ', BATCH_SIZE*16+SIMDJSON_PADDING);
+    std::memcpy(&empty_batches_ndjson[BATCH_SIZE*3+2], "1", 1);
+    std::memcpy(&empty_batches_ndjson[BATCH_SIZE*10+4], "2", 1);
+    std::memcpy(&empty_batches_ndjson[BATCH_SIZE*11+6], "3", 1);
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS( parser.parse_many(empty_batches_ndjson, BATCH_SIZE*16).get(stream) );
     for (auto doc : stream) {
