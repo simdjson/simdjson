@@ -144,39 +144,9 @@ inline bool array::iterator::operator>=(const array::iterator& other) const noex
 inline bool array::iterator::operator>(const array::iterator& other) const noexcept {
   return tape.json_index > other.tape.json_index;
 }
-inline std::ostream& operator<<(std::ostream& out, const array &value) {
-  return out << minify<array>(value);
-}
 
 } // namespace dom
 
-template<>
-inline std::ostream& minifier<dom::array>::print(std::ostream& out) {
-  out << '[';
-  auto iter = value.begin();
-  auto end = value.end();
-  if (iter != end) {
-    out << minify<dom::element>(*iter);
-    for (++iter; iter != end; ++iter) {
-      out << "," << minify<dom::element>(*iter);
-    }
-  }
-  return out << ']';
-}
-
-#if SIMDJSON_EXCEPTIONS
-
-template<>
-inline std::ostream& minifier<simdjson_result<dom::array>>::print(std::ostream& out) {
-  if (value.error()) { throw simdjson_error(value.error()); }
-  return out << minify<dom::array>(value.first);
-}
-
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::array> &value) noexcept(false) {
-  return out << minify<simdjson_result<dom::array>>(value);
-}
-
-#endif
 
 } // namespace simdjson
 

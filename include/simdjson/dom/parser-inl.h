@@ -25,11 +25,7 @@ simdjson_really_inline parser &parser::operator=(parser &&other) noexcept = defa
 inline bool parser::is_valid() const noexcept { return valid; }
 inline int parser::get_error_code() const noexcept { return error; }
 inline std::string parser::get_error_message() const noexcept { return error_message(error); }
-inline bool parser::print_json(std::ostream &os) const noexcept {
-  if (!valid) { return false; }
-  os << doc.root();
-  return true;
-}
+
 inline bool parser::dump_raw_tape(std::ostream &os) const noexcept {
   return valid ? doc.dump_raw_tape(os) : false;
 }

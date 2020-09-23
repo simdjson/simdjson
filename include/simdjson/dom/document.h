@@ -2,7 +2,6 @@
 #define SIMDJSON_DOM_DOCUMENT_H
 
 #include "simdjson/common_defs.h"
-#include "simdjson/minify.h"
 #include <memory>
 #include <ostream>
 
@@ -67,8 +66,6 @@ public:
 
 private:
   inline error_code allocate(size_t len) noexcept;
-  template<typename T>
-  friend class simdjson::minifier;
   friend class parser;
 }; // class document
 

@@ -6,7 +6,6 @@
 #include "simdjson/error.h"
 #include "simdjson/internal/dom_parser_implementation.h"
 #include "simdjson/internal/tape_ref.h"
-#include "simdjson/minify.h"
 #include "simdjson/padded_string.h"
 #include "simdjson/portability.h"
 #include <memory>
