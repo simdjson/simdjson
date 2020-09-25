@@ -65,7 +65,7 @@ char *fast_itoa(char *output, int64_t value) noexcept {
   // A faster approach is possible if we expect large integers:
   // unroll the loop (work in 100s, 1000s) and use some kind of
   // memoization.
-  while(value_positive > 10) {
+  while(value_positive >= 10) {
     *write_pointer-- = char('0' + (value_positive % 10));
     value_positive /= 10;
   }
@@ -91,7 +91,7 @@ char *fast_itoa(char *output, uint64_t value) noexcept {
   // A faster approach is possible if we expect large integers:
   // unroll the loop (work in 100s, 1000s) and use some kind of
   // memoization.
-  while(value > 10) {
+  while(value >= 10) {
     *write_pointer-- = char('0' + (value % 10));
     value /= 10;
   };
