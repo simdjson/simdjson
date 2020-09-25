@@ -44,15 +44,22 @@ struct escape_sequence {
 char *fast_itoa(char *output, int64_t value) noexcept {
   // This is a standard implementation of itoa.
   // We first write in reverse order and then reverse.
+  uint64_t value_positive;
+  // In general, negating a signed integer is unsafe.
   if(value < 0) {
     *output++ = '-';
-    value = -value;
+    // Doing value_positive = -value; while avoiding
+    // undefined behavior warnings.
+    std::memcpy(&value_positive, &value, sizeof(value));
+    value_positive = (~value_positive) + 1;
+  } else {
+    value_positive = value;
   }
   char *write_pointer = output;
   do {
-    *write_pointer++ = char('0' + (value % 10));
-    value /= 10;
-  } while (value != 0);
+    *write_pointer++ = char('0' + (value_positive % 10));
+    value_positive /= 10;
+  } while (value_positive != 0);
   // then we reverse the result
   char *const answer = write_pointer;
   char *second_write_pointer = output;

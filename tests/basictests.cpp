@@ -1631,6 +1631,19 @@ namespace to_string_tests {
     return true;
   }
 
+  bool print_to_string_large_int() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    dom::element doc;
+    ASSERT_SUCCESS( parser.parse("-922337203685477580"_padded).get(doc) );
+    ostringstream s;
+    s << to_string(doc);
+    if(s.str() != "-922337203685477580") {
+      cerr << "failed to parse -922337203685477580" << endl;
+      return false;
+    }
+    return true;
+  }
 
   bool print_to_string_parser_parse() {
     std::cout << "Running " << __func__ << std::endl;
@@ -1739,10 +1752,11 @@ namespace to_string_tests {
 #endif // SIMDJSON_EXCEPTIONS
 
   bool run() {
-    return print_to_string_parser_parse() &&
+    return print_to_string_large_int() &&
+           print_to_string_parser_parse() &&
            print_to_string_element() &&
            print_to_string_array() &&
-          print_to_string_object() &&
+           print_to_string_object() &&
 #if SIMDJSON_EXCEPTIONS
            print_to_string_parser_parse_exception() &&
            print_to_string_element_result_exception() &&
