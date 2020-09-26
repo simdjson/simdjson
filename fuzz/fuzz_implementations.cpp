@@ -84,7 +84,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
     // let each implementation parse and store the result
     std::size_t nerrors=0;
-    for(auto& e: implementations) {
+    for(std::size_t i=0; i<Nimplementations; ++i) {
+        auto& e=implementations[i];
         simdjson::active_implementation=e.impl;
         e.error=e.parser.parse(Data,Size).get(e.element);
         if(e.error) {
