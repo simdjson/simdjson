@@ -12,7 +12,7 @@ jobs:
   build:    
     runs-on: ubuntu-latest
     env:
-      allfuzzers: atpointer dump dump_raw_tape parser print_json implementations
+      allfuzzers: atpointer dump dump_raw_tape implementations minify minifyimpl parser print_json utf8
       implementations: haswell westmere fallback
       UBSAN_OPTIONS: halt_on_error=1
       MAXLEN: -max_len=4000
@@ -24,7 +24,7 @@ jobs:
         sudo apt-get install --quiet ninja-build valgrind zip unzip
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh 9
+        sudo ./llvm.sh 10
 
     - uses: actions/checkout@v1
 
@@ -92,7 +92,7 @@ jobs:
         done
 
     - name: Save the corpus as a github artifact
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v2
       with:
         name: corpus
         path: corpus.tar
