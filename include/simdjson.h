@@ -43,6 +43,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 // Public API
 #include "simdjson/simdjson_version.h"
 #include "simdjson/error.h"
+#include "simdjson/minify.h"
 #include "simdjson/padded_string.h"
 #include "simdjson/implementation.h"
 #include "simdjson/dom/array.h"
@@ -51,6 +52,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "simdjson/dom/element.h"
 #include "simdjson/dom/object.h"
 #include "simdjson/dom/parser.h"
+#include "simdjson/dom/serialization.h"
 
 // Deprecated API
 #include "simdjson/dom/jsonparser.h"
@@ -68,6 +70,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "simdjson/dom/parsedjson_iterator-inl.h"
 #include "simdjson/dom/parser-inl.h"
 #include "simdjson/internal/tape_ref-inl.h"
+#include "simdjson/dom/serialization-inl.h"
 
 SIMDJSON_POP_DISABLE_WARNINGS
 

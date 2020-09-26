@@ -54,7 +54,7 @@ size_t invalid_count;
 const char *really_bad[] = {"013}", "0x14", "0e]", "0e+]", "0e+-1]"};
 
 bool starts_with(const char *pre, const char *str) {
-  size_t lenpre = strlen(pre);
+  size_t lenpre = std::strlen(pre);
   return strncmp(pre, str, lenpre) == 0;
 }
 
@@ -70,7 +70,13 @@ bool is_in_bad_list(const char *buf) {
 void found_invalid_number(const uint8_t *buf) {
   invalid_count++;
   char *endptr;
-  double expected = strtod((const char *)buf, &endptr);
+#ifdef _WIN32
+  static _locale_t c_locale = _create_locale(LC_ALL, "C");
+  double expected = _strtod_l((const char *)buf, &endptr, c_locale);
+#else
+  static locale_t c_locale = newlocale(LC_ALL_MASK, "C", NULL);
+  double expected = strtod_l((const char *)buf, &endptr, c_locale);
+#endif
   if (endptr != (const char *)buf) {
     if (!is_in_bad_list((const char *)buf)) {
       printf("Warning: found_invalid_number %.32s whereas strtod parses it to "
@@ -115,7 +121,13 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf) {
 void found_float(double result, const uint8_t *buf) {
   char *endptr;
   float_count++;
-  double expected = strtod((const char *)buf, &endptr);
+#ifdef _WIN32
+  static _locale_t c_locale = _create_locale(LC_ALL, "C");
+  double expected = _strtod_l((const char *)buf, &endptr, c_locale);
+#else
+  static locale_t c_locale = newlocale(LC_ALL_MASK, "C", NULL);
+  double expected = strtod_l((const char *)buf, &endptr, c_locale);
+#endif  
   if (endptr == (const char *)buf) {
     fprintf(stderr,
             "parsed %f from %.32s whereas strtod refuses to parse a float, ",
@@ -156,7 +168,7 @@ bool validate(const char *dirname) {
   parse_error = 0;
   size_t total_count = 0;
   const char *extension = ".json";
-  size_t dirlen = strlen(dirname);
+  size_t dirlen = std::strlen(dirname);
   struct dirent **entry_list;
   int c = scandir(dirname, &entry_list, 0, alphasort);
   if (c < 0) {
@@ -171,7 +183,7 @@ bool validate(const char *dirname) {
   for (int i = 0; i < c; i++) {
     const char *name = entry_list[i]->d_name;
     if (has_extension(name, extension)) {
-      size_t filelen = strlen(name);
+      size_t filelen = std::strlen(name);
       fullpath = (char *)malloc(dirlen + filelen + 1 + 1);
       strcpy(fullpath, dirname);
       if (needsep) {

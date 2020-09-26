@@ -305,7 +305,7 @@ static bool has_extension(const char *filename, const char *extension) {
 }
 
 bool starts_with(const char *pre, const char *str) {
-  size_t lenpre = strlen(pre), lenstr = strlen(str);
+  size_t lenpre = std::strlen(pre), lenstr = std::strlen(str);
   return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
 }
 
@@ -313,7 +313,7 @@ bool validate(const char *dirname) {
   size_t total_strings = 0;
   probable_bug = false;
   const char *extension = ".json";
-  size_t dirlen = strlen(dirname);
+  size_t dirlen = std::strlen(dirname);
   struct dirent **entry_list;
   int c = scandir(dirname, &entry_list, 0, alphasort);
   if (c < 0) {
@@ -328,7 +328,7 @@ bool validate(const char *dirname) {
   for (int i = 0; i < c; i++) {
     const char *name = entry_list[i]->d_name;
     if (has_extension(name, extension)) {
-      size_t filelen = strlen(name);
+      size_t filelen = std::strlen(name);
       fullpath = (char *)malloc(dirlen + filelen + 1 + 1);
       strcpy(fullpath, dirname);
       if (needsep) {

@@ -221,6 +221,7 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
     }
     parser.n_structural_indexes = new_structural_indexes;
   }
+  checker.check_eof();
   return checker.errors();
 }
 

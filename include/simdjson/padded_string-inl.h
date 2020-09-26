@@ -27,7 +27,7 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
   // We write zeroes in the padded region to avoid having uninitized 
   // garbage. If nothing else, garbage getting read might trigger a 
   // warning in a memory checking.
-  memset(padded_buffer + length, 0, totalpaddedlength - length);
+  std::memset(padded_buffer + length, 0, totalpaddedlength - length);
   return padded_buffer;
 } // allocate_padded_buffer()
 
@@ -43,7 +43,7 @@ inline padded_string::padded_string(size_t length) noexcept
 inline padded_string::padded_string(const char *data, size_t length) noexcept
     : viable_size(length), data_ptr(internal::allocate_padded_buffer(length)) {
   if ((data != nullptr) and (data_ptr != nullptr)) {
-    memcpy(data_ptr, data, length);
+    std::memcpy(data_ptr, data, length);
     data_ptr[length] = '\0'; // easier when you need a c_str
   }
 }
@@ -51,7 +51,7 @@ inline padded_string::padded_string(const char *data, size_t length) noexcept
 inline padded_string::padded_string(const std::string & str_ ) noexcept
     : viable_size(str_.size()), data_ptr(internal::allocate_padded_buffer(str_.size())) {
   if (data_ptr != nullptr) {
-    memcpy(data_ptr, str_.data(), str_.size());
+    std::memcpy(data_ptr, str_.data(), str_.size());
     data_ptr[str_.size()] = '\0'; // easier when you need a c_str
   }
 }
@@ -59,7 +59,7 @@ inline padded_string::padded_string(const std::string & str_ ) noexcept
 inline padded_string::padded_string(std::string_view sv_) noexcept
     : viable_size(sv_.size()), data_ptr(internal::allocate_padded_buffer(sv_.size())) {
   if (data_ptr != nullptr) {
-    memcpy(data_ptr, sv_.data(), sv_.size());
+    std::memcpy(data_ptr, sv_.data(), sv_.size());
     data_ptr[sv_.size()] = '\0'; // easier when you need a c_str
   }
 }

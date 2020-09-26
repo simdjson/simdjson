@@ -255,10 +255,10 @@ namespace parse_api_tests {
     uint64_t count = 0;
     constexpr const int BATCH_SIZE = 128;
     uint8_t empty_batches_ndjson[BATCH_SIZE*16+SIMDJSON_PADDING];
-    memset(&empty_batches_ndjson[0], ' ', BATCH_SIZE*16+SIMDJSON_PADDING);
-    memcpy(&empty_batches_ndjson[BATCH_SIZE*3+2], "1", 1);
-    memcpy(&empty_batches_ndjson[BATCH_SIZE*10+4], "2", 1);
-    memcpy(&empty_batches_ndjson[BATCH_SIZE*11+6], "3", 1);
+    std::memset(&empty_batches_ndjson[0], ' ', BATCH_SIZE*16+SIMDJSON_PADDING);
+    std::memcpy(&empty_batches_ndjson[BATCH_SIZE*3+2], "1", 1);
+    std::memcpy(&empty_batches_ndjson[BATCH_SIZE*10+4], "2", 1);
+    std::memcpy(&empty_batches_ndjson[BATCH_SIZE*11+6], "3", 1);
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS( parser.parse_many(empty_batches_ndjson, BATCH_SIZE*16).get(stream) );
     for (auto doc : stream) {
@@ -1270,6 +1270,14 @@ namespace validate_tests {
     }
     return true;
   }
+  bool test_range() {
+    std::cout << "Running " << __func__ << std::endl;
+    for(size_t len = 0; len <= 128; len++) {
+      std::vector<uint8_t> source(len,' ');
+      if(!simdjson::validate_utf8((const char*)source.data(), source.size())) { return false; }
+    }
+    return true;
+  }
 
   bool test_bad_validate() {
     std::cout << "Running " << __func__ << std::endl;
@@ -1279,8 +1287,46 @@ namespace validate_tests {
     }
     return true;
   }
+  bool test_issue1169() {
+    std::cout << "Running " << __func__ << std::endl;
+    std::vector<uint8_t> source(64,' ');
+    for(size_t idx = 0; idx < 64; idx++) {
+      source[idx] = 255;
+      if(simdjson::validate_utf8((const char*)source.data(), source.size())) { return false; }
+      source[idx] = 0;
+    }
+    return true;
+  }
+  bool test_issue1169_long() {
+    std::cout << "Running " << __func__ << std::endl;
+    for(size_t len = 1; len <= 128; len++) {
+      std::vector<uint8_t> source(len,' ');
+      source[len-1] = 255;
+      if(simdjson::validate_utf8((const char*)source.data(), source.size())) { return false; }
+    }
+    return true;
+  }
+  bool test_random() {
+    std::cout << "Running " << __func__ << std::endl;
+    std::vector<uint8_t> source(64,' ');
+    const simdjson::implementation *impl_fallback = simdjson::available_implementations["fallback"];
+    if(!impl_fallback) { return true; }
+    for(size_t i = 0; i < 10000; i++) {
+      std::vector<uint8_t>& s(source);
+      s[i%64] ^= uint8_t(1235 * i);
+      const bool active_ok = simdjson::active_implementation->validate_utf8((const char*)s.data(), s.size());
+      const bool fallback_ok = impl_fallback->validate_utf8((const char*)s.data(), s.size());
+      if(active_ok != fallback_ok) { return false; }
+      s[i%64] ^= uint8_t(1235 * i);
+    }
+    return true;
+  }
   bool run() {
-    return test_validate() &&
+    return test_range() &&
+           test_issue1169_long() &&
+           test_issue1169() &&
+           test_random() &&
+           test_validate() &&
            test_bad_validate();
   }
 }
@@ -1319,8 +1365,8 @@ namespace minify_tests {
 
   bool test_minify() {
     std::cout << "Running " << __func__ << std::endl;
-    const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })";
-    const std::string minified(R"({"foo":1,"bar":[1,2,3],"baz":{"a":1,"b":2,"c":3}})");
+    const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 0.11111111111111113 ], "baz": { "a": 3.1415926535897936, "b": 2, "c": 3.141592653589794 } })";
+    const std::string minified(R"({"foo":1,"bar":[1,2,0.11111111111111113],"baz":{"a":3.1415926535897936,"b":2,"c":3.141592653589794}})");
     return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
   }
   bool test_minify_array() {
@@ -1348,8 +1394,8 @@ namespace format_tests {
   using namespace simdjson;
   using namespace simdjson::dom;
   using namespace std;
-  const padded_string DOCUMENT = R"({ "foo" : 1, "bar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })"_padded;
-  const string MINIFIED(R"({"foo":1,"bar":[1,2,3],"baz":{"a":1,"b":2,"c":3}})");
+  const padded_string DOCUMENT = R"({ "foo" : 1, "bar" : [ 1, 2, 0.11111111111111113 ], "baz": { "a": 3.1415926535897936, "b": 2, "c": 3.141592653589794 } })"_padded;
+  const string MINIFIED(R"({"foo":1,"bar":[1,2,0.11111111111111113],"baz":{"a":3.1415926535897936,"b":2,"c":3.141592653589794}})");
   bool assert_minified(ostringstream &actual, const std::string &expected=MINIFIED) {
     if (actual.str() != expected) {
       cerr << "Failed to correctly minify " << DOCUMENT << endl;
@@ -1405,7 +1451,7 @@ namespace format_tests {
     ASSERT_SUCCESS( parser.parse(DOCUMENT)["bar"].get(array) );
     ostringstream s;
     s << array;
-    return assert_minified(s, "[1,2,3]");
+    return assert_minified(s, "[1,2,0.11111111111111113]");
   }
   bool print_minify_array() {
     std::cout << "Running " << __func__ << std::endl;
@@ -1414,7 +1460,7 @@ namespace format_tests {
     ASSERT_SUCCESS( parser.parse(DOCUMENT)["bar"].get(array) );
     ostringstream s;
     s << minify(array);
-    return assert_minified(s, "[1,2,3]");
+    return assert_minified(s, "[1,2,0.11111111111111113]");
   }
 
   bool print_object() {
@@ -1424,7 +1470,7 @@ namespace format_tests {
     ASSERT_SUCCESS( parser.parse(DOCUMENT)["baz"].get(object) );
     ostringstream s;
     s << object;
-    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
+    return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
   }
   bool print_minify_object() {
     std::cout << "Running " << __func__ << std::endl;
@@ -1433,7 +1479,7 @@ namespace format_tests {
     ASSERT_SUCCESS( parser.parse(DOCUMENT)["baz"].get(object) );
     ostringstream s;
     s << minify(object);
-    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
+    return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
   }
 
 #if SIMDJSON_EXCEPTIONS
@@ -1490,14 +1536,14 @@ namespace format_tests {
     dom::parser parser;
     ostringstream s;
     s << parser.parse(DOCUMENT)["bar"].get<dom::array>();
-    return assert_minified(s, "[1,2,3]");
+    return assert_minified(s, "[1,2,0.11111111111111113]");
   }
   bool print_minify_array_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     ostringstream s;
     s << minify(parser.parse(DOCUMENT)["bar"].get<dom::array>());
-    return assert_minified(s, "[1,2,3]");
+    return assert_minified(s, "[1,2,0.11111111111111113]");
   }
 
   bool print_object_result_exception() {
@@ -1505,14 +1551,14 @@ namespace format_tests {
     dom::parser parser;
     ostringstream s;
     s << parser.parse(DOCUMENT)["baz"].get<dom::object>();
-    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
+    return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
   }
   bool print_minify_object_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     ostringstream s;
     s << minify(parser.parse(DOCUMENT)["baz"].get<dom::object>());
-    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
+    return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
   }
 
   bool print_array_exception() {
@@ -1521,7 +1567,7 @@ namespace format_tests {
     dom::array array = parser.parse(DOCUMENT)["bar"];
     ostringstream s;
     s << array;
-    return assert_minified(s, "[1,2,3]");
+    return assert_minified(s, "[1,2,0.11111111111111113]");
   }
   bool print_minify_array_exception() {
     std::cout << "Running " << __func__ << std::endl;
@@ -1529,7 +1575,7 @@ namespace format_tests {
     dom::array array = parser.parse(DOCUMENT)["bar"];
     ostringstream s;
     s << minify(array);
-    return assert_minified(s, "[1,2,3]");
+    return assert_minified(s, "[1,2,0.11111111111111113]");
   }
 
   bool print_object_exception() {
@@ -1538,7 +1584,7 @@ namespace format_tests {
     dom::object object = parser.parse(DOCUMENT)["baz"];
     ostringstream s;
     s << object;
-    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
+    return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
   }
   bool print_minify_object_exception() {
     std::cout << "Running " << __func__ << std::endl;
@@ -1546,7 +1592,7 @@ namespace format_tests {
     dom::object object = parser.parse(DOCUMENT)["baz"];
     ostringstream s;
     s << minify(object);
-    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
+    return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
   }
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -1567,6 +1613,149 @@ namespace format_tests {
            true;
   }
 }
+
+
+namespace to_string_tests {
+  using namespace simdjson;
+  using namespace simdjson::dom;
+  using namespace std;
+  const padded_string DOCUMENT = R"({ "foo" : 1, "bar" : [ 1, 2, 0.11111111111111113 ], "baz": { "a": 3.1415926535897936, "b": 2, "c": 3.141592653589794 } })"_padded;
+  const string MINIFIED(R"({"foo":1,"bar":[1,2,0.11111111111111113],"baz":{"a":3.1415926535897936,"b":2,"c":3.141592653589794}})");
+  bool assert_minified(ostringstream &actual, const std::string &expected=MINIFIED) {
+    if (actual.str() != expected) {
+      cerr << "Failed to correctly to_string " << DOCUMENT << endl;
+      cerr << "Expected: " << expected << endl;
+      cerr << "Actual:   " << actual.str() << endl;
+      return false;
+    }
+    return true;
+  }
+
+
+  bool print_to_string_parser_parse() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    dom::element doc;
+    ASSERT_SUCCESS( parser.parse(DOCUMENT).get(doc) );
+    ostringstream s;
+    s << to_string(doc);
+    return assert_minified(s);
+  }
+
+
+  bool print_to_string_element() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    dom::element value;
+    ASSERT_SUCCESS( parser.parse(DOCUMENT)["foo"].get(value) );
+    ostringstream s;
+    s << to_string(value);
+    return assert_minified(s, "1");
+  }
+
+
+  bool print_to_string_array() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    dom::array array;
+    ASSERT_SUCCESS( parser.parse(DOCUMENT)["bar"].get(array) );
+    ostringstream s;
+    s << to_string(array);
+    return assert_minified(s, "[1,2,0.11111111111111113]");
+  }
+
+  bool print_to_string_object() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    dom::object object;
+    ASSERT_SUCCESS( parser.parse(DOCUMENT)["baz"].get(object) );
+    ostringstream s;
+    s << to_string(object);
+    return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
+  }
+
+#if SIMDJSON_EXCEPTIONS
+
+  bool print_to_string_parser_parse_exception() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    ostringstream s;
+    s << to_string(parser.parse(DOCUMENT));
+    return assert_minified(s);
+  }
+
+  bool print_to_string_element_result_exception() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    ostringstream s;
+    s << to_string(parser.parse(DOCUMENT)["foo"]);
+    return assert_minified(s, "1");
+  }
+
+  bool print_to_string_element_exception() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    element value = parser.parse(DOCUMENT)["foo"];
+    ostringstream s;
+    s << to_string(value);
+    return assert_minified(s, "1");
+  }
+
+  bool print_to_string_array_result_exception() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    ostringstream s;
+    s << to_string(parser.parse(DOCUMENT)["bar"].get<dom::array>());
+    return assert_minified(s, "[1,2,0.11111111111111113]");
+  }
+
+
+  bool print_to_string_object_result_exception() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    ostringstream s;
+    s << to_string(parser.parse(DOCUMENT)["baz"].get<dom::object>());
+    return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
+  }
+
+
+  bool print_to_string_array_exception() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    dom::array array = parser.parse(DOCUMENT)["bar"];
+    ostringstream s;
+    s << to_string(array);
+    return assert_minified(s, "[1,2,0.11111111111111113]");
+  }
+
+  bool print_to_string_object_exception() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    dom::object object = parser.parse(DOCUMENT)["baz"];
+    ostringstream s;
+    s << to_string(object);
+    return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
+  }
+#endif // SIMDJSON_EXCEPTIONS
+
+  bool run() {
+    return print_to_string_parser_parse() &&
+           print_to_string_element() &&
+           print_to_string_array() &&
+          print_to_string_object() &&
+#if SIMDJSON_EXCEPTIONS
+           print_to_string_parser_parse_exception() &&
+           print_to_string_element_result_exception() &&
+           print_to_string_array_result_exception() &&
+           print_to_string_object_result_exception() &&
+           print_to_string_element_exception() &&
+           print_to_string_array_exception() &&
+           print_to_string_object_exception() &&
+#endif
+           true;
+  }
+}
+
 
 
 int main(int argc, char *argv[]) {
@@ -1600,7 +1789,8 @@ int main(int argc, char *argv[]) {
   std::cout << "------------------------------------------------------------" << std::endl;
 
   std::cout << "Running basic tests." << std::endl;
-  if (validate_tests::run() &&
+  if (to_string_tests::run() &&
+      validate_tests::run() &&
       minify_tests::run() &&
       parse_api_tests::run() &&
       dom_api_tests::run() &&

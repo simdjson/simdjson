@@ -81,14 +81,14 @@ simdjson_really_inline T tape_ref::next_tape_value() const noexcept {
   // It is not generally safe. It is safer, and often faster to rely
   // on memcpy. Yes, it is uglier, but it is also encapsulated.
   T x;
-  memcpy(&x,&doc->tape[json_index + 1],sizeof(uint64_t));
+  std::memcpy(&x,&doc->tape[json_index + 1],sizeof(uint64_t));
   return x;
 }
 
 simdjson_really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
   size_t string_buf_index = size_t(tape_value());
   uint32_t len;
-  memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
+  std::memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
   return len;
 }
 

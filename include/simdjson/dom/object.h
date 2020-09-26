@@ -4,10 +4,12 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/error.h"
 #include "simdjson/internal/tape_ref.h"
-#include "simdjson/minify.h"
-#include <ostream>
 
 namespace simdjson {
+namespace internal {
+template<typename T>
+class string_builder;
+}
 namespace dom {
 
 class document;
@@ -211,7 +213,7 @@ private:
   friend class element;
   friend struct simdjson_result<element>;
   template<typename T>
-  friend class simdjson::minifier;
+  friend class simdjson::internal::string_builder;
 };
 
 /**
@@ -228,27 +230,6 @@ private:
   simdjson_really_inline key_value_pair(std::string_view _key, element _value) noexcept;
   friend class object;
 };
-
-/**
- * Print JSON to an output stream.
- *
- * By default, the value will be printed minified.
- *
- * @param out The output stream.
- * @param value The value to print.
- * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
- */
-inline std::ostream& operator<<(std::ostream& out, const object &value);
-/**
- * Print JSON to an output stream.
- *
- * By default, the value will be printed minified.
- *
- * @param out The output stream.
- * @param value The value to print.
- * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
- */
-inline std::ostream& operator<<(std::ostream& out, const key_value_pair &value);
 
 } // namespace dom
 
@@ -272,21 +253,6 @@ public:
   inline size_t size() const noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 };
-
-#if SIMDJSON_EXCEPTIONS
-/**
- * Print JSON to an output stream.
- *
- * By default, the value will be printed minified.
- *
- * @param out The output stream.
- * @param value The value to print.
- * @throw simdjson_error if the result being printed has an error. If there is an error with the
- *        underlying output stream, that error will be propagated (simdjson_error will not be
- *        thrown).
- */
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::object> &value) noexcept(false);
-#endif // SIMDJSON_EXCEPTIONS
 
 } // namespace simdjson
 

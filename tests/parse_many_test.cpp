@@ -22,7 +22,7 @@ static bool has_extension(const char *filename, const char *extension) {
 }
 
 bool starts_with(const char *pre, const char *str) {
-    size_t len_pre = strlen(pre), len_str = strlen(str);
+    size_t len_pre = std::strlen(pre), len_str = std::strlen(str);
     return len_str < len_pre ? false : strncmp(pre, str, len_pre) == 0;
 }
 
@@ -36,7 +36,7 @@ bool validate(const char *dirname) {
     const char *extension2 = ".jsonl";
     const char *extension3 = ".json"; // bad json files shoud fail
 
-    size_t dirlen = strlen(dirname);
+    size_t dirlen = std::strlen(dirname);
     struct dirent **entry_list;
     int c = scandir(dirname, &entry_list, nullptr, alphasort);
     if (c < 0) {
@@ -63,7 +63,7 @@ bool validate(const char *dirname) {
             /*  Finding the file path  */
             printf("validating: file %s ", name);
             fflush(nullptr);
-            size_t namelen = strlen(name);
+            size_t namelen = std::strlen(name);
             size_t fullpathlen = dirlen + 1 + namelen + 1;
             char *fullpath = static_cast<char *>(malloc(fullpathlen));
             snprintf(fullpath, fullpathlen, "%s%s%s", dirname, needsep ? "/" : "", name);

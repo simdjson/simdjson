@@ -43,7 +43,7 @@ enum error_code {
  *
  *   dom::parser parser;
  *   dom::element doc;
- *   auto error = parser.parse("foo").get(doc);
+ *   auto error = parser.parse("foo",3).get(doc);
  *   if (error) { printf("Error: %s\n", error_message(error)); }
  *
  * @return The error message.
