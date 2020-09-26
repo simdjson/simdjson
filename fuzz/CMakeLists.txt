@@ -28,10 +28,6 @@ if(ENABLE_FUZZING)
   # the fuzz targets, otherwise the cmake configuration step fails.
   set(SIMDJSON_FUZZ_LDFLAGS "" CACHE STRING "LDFLAGS for the fuzz targets")
 
-  add_custom_target(print_all_fuzz_targets
-    COMMAND ${CMAKE_COMMAND} -E echo ${SOURCES}
-  )
-
   # Fuzzer build flags and libraries
   add_library(simdjson-fuzzer INTERFACE)
   if (SIMDJSON_FUZZ_LINKMAIN)
@@ -46,12 +42,12 @@ if(ENABLE_FUZZING)
   # Define the fuzzers
   add_custom_target(all_fuzzers)
 
+  set(fuzzernames)
   function(implement_fuzzer name)
     add_executable(${name} ${name}.cpp)
     target_link_libraries(${name} PRIVATE simdjson-fuzzer)
     add_dependencies(all_fuzzers ${name})
-    add_test(${name} ${name})
-    set_property(TEST ${name} APPEND PROPERTY LABELS fuzz)
+    set(fuzzernames ${fuzzernames} ${name} PARENT_SCOPE)
   endfunction()
 
   implement_fuzzer(fuzz_atpointer)
@@ -63,5 +59,9 @@ if(ENABLE_FUZZING)
   implement_fuzzer(fuzz_parser)
   implement_fuzzer(fuzz_print_json)
   implement_fuzzer(fuzz_utf8)            # utf8 verification, compares across implementations
+
+  # to be able to get a list of all fuzzers from within a script
+  add_custom_target(print_all_fuzzernames
+    COMMAND ${CMAKE_COMMAND} -E echo ${fuzzernames})
 
 endif()
