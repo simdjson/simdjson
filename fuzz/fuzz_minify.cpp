@@ -3,6 +3,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+
+/*
+ * Minifies by first parsing, then minifying.
+ */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
     auto begin = as_chars(Data);
