@@ -382,6 +382,26 @@ steps:
     - ctest $CTEST_FLAGS
 ---
 kind: pipeline
+name: arm64-fuzz
+platform: { os: linux, arch: arm64 }
+steps:
+- name: Build and run fuzzers shortly
+  image: ubuntu:20.04
+  environment:
+    CC: clang
+    CXX: clang++
+    DEBIAN_FRONTEND: noninteractive
+    ASAN_OPTIONS: detect_leaks=0
+  commands:
+    - apt-get update -qq
+    - apt-get install -q -y clang cmake git wget zip ninja-build
+    - wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
+    - tar xf corpus.tar && rm corpus.tar
+    - fuzz/build_like_ossfuzz.sh
+    - mkdir -p common_out
+    - for fuzzer in build/fuzz/fuzz_* ; do echo $fuzzer;$fuzzer common_out out/* -max_total_time=40; done
+---
+kind: pipeline
 name: stylecheck
 platform: { os: linux, arch: amd64 }
 steps:
