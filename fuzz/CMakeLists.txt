@@ -57,11 +57,11 @@ if(ENABLE_FUZZING)
   implement_fuzzer(fuzz_atpointer)
   implement_fuzzer(fuzz_dump)
   implement_fuzzer(fuzz_dump_raw_tape)
-  implement_fuzzer(fuzz_implementations)
-  implement_fuzzer(fuzz_minify)
-  implement_fuzzer(fuzz_minifyimpl)
+  implement_fuzzer(fuzz_implementations) # parses and serializes again, compares across implementations
+  implement_fuzzer(fuzz_minify)          # minify *with* parsing
+  implement_fuzzer(fuzz_minifyimpl)      # minify *without* parsing, plus compare implementations
   implement_fuzzer(fuzz_parser)
   implement_fuzzer(fuzz_print_json)
-  implement_fuzzer(fuzz_utf8)
+  implement_fuzzer(fuzz_utf8)            # utf8 verification, compares across implementations
 
 endif()

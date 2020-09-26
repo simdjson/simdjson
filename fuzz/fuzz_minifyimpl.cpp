@@ -1,4 +1,6 @@
 /*
+ * Minifies using the minify() function directly, without parsing.
+ *
  * For fuzzing all of the implementations (haswell/fallback/westmere),
  * finding any difference between the output of each which would
  * indicate inconsistency. Also, it gets the non-default backend
@@ -23,6 +25,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
             std::string tmp = error_message(err);
             ret.assign(tmp.begin(),tmp.end());
         } else {
+            assert(retsize<=Size && "size should not grow by minimize()!");
             ret.resize(retsize);
         }
         return ret;
@@ -41,9 +44,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     for(auto it=first+1;it!=last; ++it) {
         const auto current=minify(*it);
         if(current!=reference) {
-            // hmm, seems like it is possible that the fallback can succeed where
-            // the simd implementations fail. might need to allow that? or is
-            // the fallback supposed to behave identically?
             failed=true;
         }
     }
@@ -57,7 +57,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
         }
         std::abort();
     }
-
 
     //all is well
     return 0;
