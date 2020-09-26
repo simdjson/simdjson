@@ -215,7 +215,7 @@ SIMDJSON_WARN_UNUSED simdjson_result<uint64_t> json_iterator::parse_root_uint64(
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
   if (!copy_to_buffer(json, tmpbuf)) { logger::log_error(*this, "Root number more than 20 characters"); return NUMBER_ERROR; }
   logger::log_value(*this, "uint64", "", 0);
-  auto result = numberparsing::parse_unsigned(buf);
+  auto result = numberparsing::parse_unsigned(tmpbuf);
   if (result.error()) { logger::log_error(*this, "Error parsing unsigned integer"); return result.error(); }
   return result;
 }
@@ -226,7 +226,7 @@ SIMDJSON_WARN_UNUSED simdjson_result<int64_t> json_iterator::parse_root_int64(co
   uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer 
   if (!copy_to_buffer(json, tmpbuf)) { logger::log_error(*this, "Root number more than 20 characters"); return NUMBER_ERROR; }
   logger::log_value(*this, "int64", "", 0);
-  auto result = numberparsing::parse_integer(buf);
+  auto result = numberparsing::parse_integer(tmpbuf);
   if (result.error()) { report_error(result.error(), "Error parsing integer"); }
   return result;
 }
@@ -238,7 +238,7 @@ SIMDJSON_WARN_UNUSED simdjson_result<double> json_iterator::parse_root_double(co
   uint8_t tmpbuf[1074+8+1];
   if (!copy_to_buffer(json, tmpbuf)) { logger::log_error(*this, "Root number more than 1082 characters"); return NUMBER_ERROR; }
   logger::log_value(*this, "double", "", 0);
-  auto result = numberparsing::parse_double(buf);
+  auto result = numberparsing::parse_double(tmpbuf);
   if (result.error()) { report_error(result.error(), "Error parsing double"); }
   return result;
 }

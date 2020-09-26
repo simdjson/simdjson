@@ -7,8 +7,10 @@
 namespace simdjson {
 namespace westmere {
 
+namespace {
 using namespace simdjson;
 using namespace simdjson::dom;
+}
 
 class implementation final : public simdjson::implementation {
 public:

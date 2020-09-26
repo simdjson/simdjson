@@ -41,7 +41,7 @@ simdjson_really_inline simdjson_result<object> document::get_object() & noexcept
 }
 simdjson_really_inline simdjson_result<uint64_t> document::get_uint64() noexcept {
   assert_at_start();
-  return consume_if_success( iter.parse_uint64(json) );
+  return consume_if_success( iter.parse_root_uint64(json) );
 }
 simdjson_really_inline simdjson_result<int64_t> document::get_int64() noexcept {
   assert_at_start();
