@@ -14,9 +14,10 @@ export OUT=$(pwd)/ossfuzz-out
 export CC=clang
 export CXX="clang++"
 export CFLAGS="-fsanitize=fuzzer-no-link"
-export CXXFLAGS="-fsanitize=fuzzer-no-link,address,undefined -O3"
+export CXXFLAGS="-fsanitize=fuzzer-no-link,address,undefined -O1"
 export LIB_FUZZING_ENGINE="-fsanitize=fuzzer"
 
 $ossfuzz
 
 echo "look at the results in $OUT"
+
