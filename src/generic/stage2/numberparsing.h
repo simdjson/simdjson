@@ -88,8 +88,8 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
     return true;
   }
 
-  
-  // The exponent is 1024 + 63 + power 
+
+  // The exponent is 1024 + 63 + power
   //     + floor(log(5**power)/log(2)).
   // The 1024 comes from the ieee64 standard.
   // The 63 comes from the fact that we use a 64-bit word.
@@ -102,19 +102,19 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // is equal to
   //  floor(log(5**power)/log(2)) + power
   //
-  // The 65536 is (1<<16) and corresponds to 
+  // The 65536 is (1<<16) and corresponds to
   // (65536 * power) >> 16 ---> power
   //
-  // ((152170 * power ) >> 16) is equal to 
-  // floor(log(5**power)/log(2)) 
+  // ((152170 * power ) >> 16) is equal to
+  // floor(log(5**power)/log(2))
   //
-  // Note that this is not magic: 152170/(1<<16) is 
+  // Note that this is not magic: 152170/(1<<16) is
   // approximatively equal to log(5)/log(2).
-  // The 1<<16 value is a power of two; we could use a 
+  // The 1<<16 value is a power of two; we could use a
   // larger power of 2 if we wanted to.
   //
   int64_t exponent = (((152170 + 65536) * power) >> 16) + 1024 + 63;
-  
+
 
   // We want the most significant bit of i to be 1. Shift if needed.
   int lz = leading_zeroes(i);
@@ -134,6 +134,7 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // 1.
   const uint32_t index = 2 * uint32_t(power - smallest_power);
   value128 firstproduct = full_multiplication(i, power_of_five_128[index]);
+
   // Unless the least significant 9 bits of the high (64-bit) part of the full
   // product are all 1s, then we know that the most significant 54 bits are
   // exact and no further work is needed.
@@ -164,9 +165,12 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // which we guard against.
   // If we have lots of trailing zeros, we may fall right between two
   // floating-point values.
-  if (simdjson_unlikely((lower == 0) && (power >= 0) && (power <= 23) && ((upper & 0x1FF) == 0) &&
+  // We have 5**27 < 2**64 and it is the largest power of 5 to do so.
+  if (simdjson_unlikely((lower == 0) && (power >= -27) && (power <= 27)  &&
                ((mantissa & 3) == 1))) {
+    if((mantissa  << (upperbit + 64 - 53 - 2)) ==  upper) {
       mantissa ^= 1;             // flip it so that we do not round up
+    }
   }
 
   mantissa += mantissa & 1;
@@ -282,14 +286,14 @@ simdjson_really_inline error_code parse_exponent(SIMDJSON_UNUSED const uint8_t *
   auto start_exp = p;
   int64_t exp_number = 0;
   while (parse_digit(*p, exp_number)) { ++p; }
-  // It is possible for parse_digit to overflow. 
+  // It is possible for parse_digit to overflow.
   // In particular, it could overflow to INT64_MIN, and we cannot do - INT64_MIN.
   // Thus we *must* check for possible overflow before we negate exp_number.
 
   // Performance notes: it may seem like combining the two "simdjson_unlikely checks" below into
   // a single simdjson_unlikely path would be faster. The reasoning is sound, but the compiler may
   // not oblige and may, in fact, generate two distinct paths in any case. It might be
-  // possible to do uint64_t(p - start_exp - 1) >= 18 but it could end up trading off 
+  // possible to do uint64_t(p - start_exp - 1) >= 18 but it could end up trading off
   // instructions for a simdjson_likely branch, an unconclusive gain.
 
   // If there were no digits, it's an error.
@@ -299,7 +303,7 @@ simdjson_really_inline error_code parse_exponent(SIMDJSON_UNUSED const uint8_t *
   // We have a valid positive exponent in exp_number at this point, except that
   // it may have overflowed.
 
-  // If there were more than 18 digits, we may have overflowed the integer. We have to do 
+  // If there were more than 18 digits, we may have overflowed the integer. We have to do
   // something!!!!
   if (simdjson_unlikely(p > start_exp+18)) {
     // Skip leading zeroes: 1e000000000000000000001 is technically valid and doesn't overflow
@@ -311,12 +315,12 @@ simdjson_really_inline error_code parse_exponent(SIMDJSON_UNUSED const uint8_t *
     // Note that 999999999999999999 is assuredly too large. The maximal ieee64 value before
     // infinity is ~1.8e308. The smallest subnormal is ~5e-324. So, actually, we could
     // truncate at 324.
-    // Note that there is no reason to fail per se at this point in time. 
+    // Note that there is no reason to fail per se at this point in time.
     // E.g., 0e999999999999999999999 is a fine number.
     if (p > start_exp+18) { exp_number = 999999999999999999; }
   }
   // At this point, we know that exp_number is a sane, positive, signed integer.
-  // It is <= 999,999,999,999,999,999. As long as 'exponent' is in 
+  // It is <= 999,999,999,999,999,999. As long as 'exponent' is in
   // [-8223372036854775808, 8223372036854775808], we won't overflow. Because 'exponent'
   // is bounded in magnitude by the size of the JSON input, we are fine in this universe.
   // To sum it up: the next line should never overflow.
