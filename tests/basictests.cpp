@@ -1262,6 +1262,14 @@ namespace type_tests {
 
 
 namespace validate_tests {
+  bool issue1187() {
+    std::cout << "Running " << __func__ << std::endl;
+    const std::string test = "\xf0\x8f\xbf\xbf";
+    if(simdjson::validate_utf8(test.data(), test.size())) {
+      return false;
+    }
+    return true;
+  }
   bool test_validate() {
     std::cout << "Running " << __func__ << std::endl;
     const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })";
@@ -1322,7 +1330,8 @@ namespace validate_tests {
     return true;
   }
   bool run() {
-    return test_range() &&
+    return issue1187() &&
+           test_range() &&
            test_issue1169_long() &&
            test_issue1169() &&
            test_random() &&
