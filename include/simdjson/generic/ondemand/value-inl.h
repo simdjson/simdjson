@@ -99,6 +99,31 @@ simdjson_really_inline bool value::is_null() & noexcept {
   return true;
 }
 
+template<> simdjson_really_inline simdjson_result<array> value::get() & noexcept { return get_array(); }
+template<> simdjson_really_inline simdjson_result<object> value::get() & noexcept { return get_object(); }
+template<> simdjson_really_inline simdjson_result<raw_json_string> value::get() & noexcept { return get_raw_json_string(); }
+template<> simdjson_really_inline simdjson_result<std::string_view> value::get() & noexcept { return get_string(); }
+template<> simdjson_really_inline simdjson_result<double> value::get() & noexcept { return get_double(); }
+template<> simdjson_really_inline simdjson_result<uint64_t> value::get() & noexcept { return get_uint64(); }
+template<> simdjson_really_inline simdjson_result<int64_t> value::get() & noexcept { return get_int64(); }
+template<> simdjson_really_inline simdjson_result<bool> value::get() & noexcept { return get_bool(); }
+
+template<> simdjson_really_inline simdjson_result<array> value::get() && noexcept { return std::forward<value>(*this).get_array(); }
+template<> simdjson_really_inline simdjson_result<object> value::get() && noexcept { return std::forward<value>(*this).get_object(); }
+template<> simdjson_really_inline simdjson_result<raw_json_string> value::get() && noexcept { return std::forward<value>(*this).get_raw_json_string(); }
+template<> simdjson_really_inline simdjson_result<std::string_view> value::get() && noexcept { return std::forward<value>(*this).get_string(); }
+template<> simdjson_really_inline simdjson_result<double> value::get() && noexcept { return std::forward<value>(*this).get_double(); }
+template<> simdjson_really_inline simdjson_result<uint64_t> value::get() && noexcept { return std::forward<value>(*this).get_uint64(); }
+template<> simdjson_really_inline simdjson_result<int64_t> value::get() && noexcept { return std::forward<value>(*this).get_int64(); }
+template<> simdjson_really_inline simdjson_result<bool> value::get() && noexcept { return std::forward<value>(*this).get_bool(); }
+
+template<typename T> simdjson_really_inline error_code value::get(T &out) & noexcept {
+  return get<T>().get(out);
+}
+template<typename T> simdjson_really_inline error_code value::get(T &out) && noexcept {
+  return std::forward<value>(*this).get<T>().get(out);
+}
+
 #if SIMDJSON_EXCEPTIONS
 simdjson_really_inline value::operator array() noexcept(false) {
   return std::forward<value>(*this).get_array();
@@ -288,6 +313,27 @@ simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::v
 simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::is_null() & noexcept {
   if (error()) { return false; }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).is_null();
+}
+
+template<typename T>
+simdjson_really_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get() & noexcept {
+  if (error()) { return error(); }
+  return first.get<T>();
+}
+template<typename T>
+simdjson_really_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get() && noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).get<T>();
+}
+template<typename T>
+simdjson_really_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get(T &out) & noexcept {
+  if (error()) { return error(); }
+  return first.get<T>(out);
+}
+template<typename T>
+simdjson_really_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get(T &out) && noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).get<T>(out);
 }
 
 #if SIMDJSON_EXCEPTIONS

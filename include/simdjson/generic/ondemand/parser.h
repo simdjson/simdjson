@@ -63,6 +63,7 @@ public:
    *         - UNCLOSED_STRING if there is an unclosed string in the document.
    */
   SIMDJSON_WARN_UNUSED simdjson_result<document> iterate(const padded_string &json) & noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_result<document> iterate(const std::string &json) & noexcept = delete;
   /**
    * @private
    * 

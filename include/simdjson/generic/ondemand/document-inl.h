@@ -67,6 +67,26 @@ simdjson_really_inline bool document::is_null() noexcept {
   return false;
 }
 
+template<> simdjson_really_inline simdjson_result<array> document::get() & noexcept { return get_array(); }
+template<> simdjson_really_inline simdjson_result<object> document::get() & noexcept { return get_object(); }
+template<> simdjson_really_inline simdjson_result<raw_json_string> document::get() & noexcept { return get_raw_json_string(); }
+template<> simdjson_really_inline simdjson_result<std::string_view> document::get() & noexcept { return get_string(); }
+template<> simdjson_really_inline simdjson_result<double> document::get() & noexcept { return get_double(); }
+template<> simdjson_really_inline simdjson_result<uint64_t> document::get() & noexcept { return get_uint64(); }
+template<> simdjson_really_inline simdjson_result<int64_t> document::get() & noexcept { return get_int64(); }
+template<> simdjson_really_inline simdjson_result<bool> document::get() & noexcept { return get_bool(); }
+
+template<> simdjson_really_inline simdjson_result<double> document::get() && noexcept { return std::forward<document>(*this).get_double(); }
+template<> simdjson_really_inline simdjson_result<uint64_t> document::get() && noexcept { return std::forward<document>(*this).get_uint64(); }
+template<> simdjson_really_inline simdjson_result<int64_t> document::get() && noexcept { return std::forward<document>(*this).get_int64(); }
+template<> simdjson_really_inline simdjson_result<bool> document::get() && noexcept { return std::forward<document>(*this).get_bool(); }
+
+template<typename T> simdjson_really_inline error_code document::get(T &out) & noexcept {
+  return get<T>().get(out);
+}
+template<typename T> simdjson_really_inline error_code document::get(T &out) && noexcept {
+  return std::forward<document>(*this).get<T>().get(out);
+}
 
 #if SIMDJSON_EXCEPTIONS
 simdjson_really_inline document::operator array() & noexcept(false) { return get_array(); }
@@ -182,6 +202,27 @@ simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTA
 simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::is_null() noexcept {
   if (error()) { return error(); }
   return first.is_null();
+}
+
+template<typename T>
+simdjson_really_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get() & noexcept {
+  if (error()) { return error(); }
+  return first.get<T>();
+}
+template<typename T>
+simdjson_really_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get() && noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document>(first).get<T>();
+}
+template<typename T>
+simdjson_really_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get(T &out) & noexcept {
+  if (error()) { return error(); }
+  return first.get<T>(out);
+}
+template<typename T>
+simdjson_really_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get(T &out) && noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document>(first).get<T>(out);
 }
 
 #if SIMDJSON_EXCEPTIONS

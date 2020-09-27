@@ -46,7 +46,7 @@ namespace number_tests {
         padded_string json = std::to_string(i);
         auto doc = parser.iterate(json);
         int64_t actual;
-        ASSERT_SUCCESS(doc.get_int64().get(actual));
+        ASSERT_SUCCESS(doc.get(actual));
         if (actual != i) {
           std::cerr << "JSON '" << json << "' parsed to " << actual << " instead of " << i << std::endl;
           return false;
@@ -69,7 +69,7 @@ namespace number_tests {
       double actual;
       padded_string json(buf, n);
       auto doc = parser.iterate(json);
-      auto error = doc.get_double().get(actual);
+      auto error = doc.get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
       uint64_t ulp = f64_ulp_dist(actual,expected);
       if(ulp > maxulp) maxulp = ulp;
@@ -173,7 +173,7 @@ namespace number_tests {
       padded_string json(buf, n);
       auto doc = parser.iterate(json);
       double actual;
-      auto error = doc.get_double().get(actual);
+      auto error = doc.get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
       double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
       int ulp = (int) f64_ulp_dist(actual, expected);
@@ -195,352 +195,92 @@ namespace number_tests {
 }
 
 
+namespace parse_api_tests {
+  using namespace std;
+  using namespace simdjson;
+  using namespace simdjson::dom;
 
-// namespace parse_api_tests {
-//   using namespace std;
-//   using namespace simdjson;
-//   using namespace simdjson::dom;
+  const padded_string BASIC_JSON = "[1,2,3]"_padded;
+  const padded_string BASIC_NDJSON = "[1,2,3]\n[4,5,6]"_padded;
+  const padded_string EMPTY_NDJSON = ""_padded;
 
-//   const padded_string BASIC_JSON = "[1,2,3]"_padded;
-//   const padded_string BASIC_NDJSON = "[1,2,3]\n[4,5,6]"_padded;
-//   const padded_string EMPTY_NDJSON = ""_padded;
-
-//   bool parser_parse() {
-//     std::cout << "Running " << __func__ << std::endl;
-//     ondemand::parser parser;
-//     ondemand::element doc;
-//     ASSERT_SUCCESS( parser.iterate(BASIC_JSON).get(doc) );
-//     ASSERT_EQUAL( doc.is<ondemand::array>(), true );
-//     return true;
-//   }
-//   bool parser_parse_many() {
-//     std::cout << "Running " << __func__ << std::endl;
-//     ondemand::parser parser;
-//     int count = 0;
-//     ondemand::document_stream stream;
-//     ASSERT_SUCCESS( parser.parse_many(BASIC_NDJSON).get(stream) );
-//     for (auto doc : stream) {
-//       SIMDJSON_UNUSED ondemand::array array;
-//       ASSERT_SUCCESS( doc.get(array) );
-//       count++;
-//     }
-//     ASSERT_EQUAL(count, 2);
-//     return true;
-//   }
-
-//   SIMDJSON_PUSH_DISABLE_WARNINGS
-//   SIMDJSON_DISABLE_DEPRECATED_WARNING
-//   bool parser_parse_many_deprecated() {
-//     std::cout << "Running " << __func__ << std::endl;
-//     ondemand::parser parser;
-//     int count = 0;
-//     for (auto doc : parser.parse_many(BASIC_NDJSON)) {
-//       SIMDJSON_UNUSED ondemand::array array;
-//       ASSERT_SUCCESS( doc.get(array) );
-//       count++;
-//     }
-//     ASSERT_EQUAL(count, 2);
-//     return true;
-//   }
-//   SIMDJSON_POP_DISABLE_WARNINGS
-//   bool parser_parse_many_empty() {
-//     std::cout << "Running " << __func__ << std::endl;
-//     ondemand::parser parser;
-//     int count = 0;
-//     ondemand::document_stream stream;
-//     ASSERT_SUCCESS( parser.parse_many(EMPTY_NDJSON).get(stream) );
-//     for (auto doc : stream) {
-//       ASSERT_SUCCESS( doc );
-//       count++;
-//     }
-//     ASSERT_EQUAL(count, 0);
-//     return true;
-//   }
-
-//   bool parser_parse_many_empty_batches() {
-//     std::cout << "Running " << __func__ << std::endl;
-//     ondemand::parser parser;
-//     uint64_t count = 0;
-//     constexpr const int BATCH_SIZE = 128;
-//     uint8_t empty_batches_ndjson[BATCH_SIZE*16+SIMDJSON_PADDING];
-//     memset(&empty_batches_ndjson[0], ' ', BATCH_SIZE*16+SIMDJSON_PADDING);
-//     memcpy(&empty_batches_ndjson[BATCH_SIZE*3+2], "1", 1);
-//     memcpy(&empty_batches_ndjson[BATCH_SIZE*10+4], "2", 1);
-//     memcpy(&empty_batches_ndjson[BATCH_SIZE*11+6], "3", 1);
-//     ondemand::document_stream stream;
-//     ASSERT_SUCCESS( parser.parse_many(empty_batches_ndjson, BATCH_SIZE*16).get(stream) );
-//     for (auto doc : stream) {
-//       count++;
-//       uint64_t val;
-//       ASSERT_SUCCESS( doc.get(val) );
-//       ASSERT_EQUAL( val, count );
-//     }
-//     ASSERT_EQUAL(count, 3);
-//     return true;
-//   }
-
-//   bool parser_load() {
-//     std::cout << "Running " << __func__ << " on " << TWITTER_JSON << std::endl;
-//     ondemand::parser parser;
-//     ondemand::object object;
-//     ASSERT_SUCCESS( parser.load(TWITTER_JSON).get(object) );
-//     return true;
-//   }
-//   bool parser_load_many() {
-//     std::cout << "Running " << __func__ << " on " << AMAZON_CELLPHONES_NDJSON << std::endl;
-//     ondemand::parser parser;
-//     int count = 0;
-//     ondemand::document_stream stream;
-//     ASSERT_SUCCESS( parser.load_many(AMAZON_CELLPHONES_NDJSON).get(stream) );
-//     for (auto doc : stream) {
-//       ondemand::array arr;
-//       ASSERT_SUCCESS( doc.get(arr) ); // let us get the array
-//       ASSERT_EQUAL( arr.size(), 9 );
-
-//       size_t arr_count = 0;
-//       for (auto v : arr) { arr_count++; (void)v; }
-//       ASSERT_EQUAL( arr_count, 9 );
-
-//       count++;
-//     }
-//     ASSERT_EQUAL(count, AMAZON_CELLPHONES_NDJSON_DOC_COUNT);
-//     return true;
-//   }
-
-//   SIMDJSON_PUSH_DISABLE_WARNINGS
-//   SIMDJSON_DISABLE_DEPRECATED_WARNING
-//   bool parser_load_many_deprecated() {
-//     std::cout << "Running " << __func__ << " on " << AMAZON_CELLPHONES_NDJSON << std::endl;
-//     ondemand::parser parser;
-//     int count = 0;
-//     for (auto doc : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
-//       ondemand::array arr;
-//       ASSERT_SUCCESS( doc.get(arr) );
-//       ASSERT_EQUAL( arr.size(), 9 );
-
-//       size_t arr_count = 0;
-//       for (auto v : arr) { arr_count++; (void)v; }
-//       ASSERT_EQUAL( arr_count, 9 );
-
-//       count++;
-//     }
-//     ASSERT_EQUAL( count, AMAZON_CELLPHONES_NDJSON_DOC_COUNT );
-//     return true;
-//   }
-//   SIMDJSON_POP_DISABLE_WARNINGS
+  bool parser_iterate() {
+    std::cout << "Running " << __func__ << std::endl;
+    ondemand::parser parser;
+    auto doc = parser.iterate(BASIC_JSON);
+    ASSERT_SUCCESS( doc.get_array() );
+    return true;
+  }
 
 // #if SIMDJSON_EXCEPTIONS
-
-//   bool parser_parse_exception() {
+//   bool parser_iterate_exception() {
 //     std::cout << "Running " << __func__ << std::endl;
 //     ondemand::parser parser;
-//     SIMDJSON_UNUSED ondemand::array array = parser.iterate(BASIC_JSON);
-//     return true;
-//   }
-//   bool parser_parse_many_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
-//     ondemand::parser parser;
-//     int count = 0;
-//     for (SIMDJSON_UNUSED ondemand::array doc : parser.parse_many(BASIC_NDJSON)) {
-//       count++;
-//     }
-//     ASSERT_EQUAL(count, 2);
-//     return true;
-//   }
-
-//   bool parser_load_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
-//     ondemand::parser parser;
-//     size_t count = 0;
-//     ondemand::object object = parser.load(TWITTER_JSON);
-//     for (SIMDJSON_UNUSED auto field : object) {
-//       count++;
-//     }
-//     ASSERT_EQUAL( count, object.size() );
-//     return true;
-//   }
-//   bool parser_load_many_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
-//     ondemand::parser parser;
-//     int count = 0;
-//     for (SIMDJSON_UNUSED ondemand::array doc : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
-//       count++;
-//     }
-//     ASSERT_EQUAL( count, AMAZON_CELLPHONES_NDJSON_DOC_COUNT );
+//     auto doc = parser.iterate(BASIC_JSON);
+//     SIMDJSON_UNUSED ondemand::array array = doc;
 //     return true;
 //   }
 // #endif
 
-//   bool run() {
-//     return parser_parse() &&
-//            parser_parse_many() &&
-//            parser_parse_many_deprecated() &&
-//            parser_parse_many_empty() &&
-//            parser_parse_many_empty_batches() &&
-//            parser_load() &&
-//            parser_load_many() &&
-//            parser_load_many_deprecated() &&
+  bool run() {
+    return parser_iterate() &&
 // #if SIMDJSON_EXCEPTIONS
-//            parser_parse_exception() &&
-//            parser_parse_many_exception() &&
-//            parser_load_exception() &&
-//            parser_load_many_exception() &&
+//            parser_iterate_exception() &&
 // #endif
-//            true;
-//   }
-// }
+           true;
+  }
+}
 
-// namespace dom_api_tests {
-//   using namespace std;
-//   using namespace simdjson;
-//   using namespace simdjson::dom;
+namespace dom_api_tests {
+  using namespace std;
+  using namespace simdjson;
+  using namespace simdjson::dom;
 
-//   SIMDJSON_PUSH_DISABLE_WARNINGS
-//   SIMDJSON_DISABLE_DEPRECATED_WARNING
-//   // returns true if successful
-//   bool ParsedJson_Iterator_test() {
-//     std::cout << "Running " << __func__ << std::endl;
-//     simdjson::padded_string json = R"({
-//           "Image": {
-//               "Width":  800,
-//               "Height": 600,
-//               "Title":  "View from 15th Floor",
-//               "Thumbnail": {
-//                   "Url":    "http://www.example.com/image/481989943",
-//                   "Height": 125,
-//                   "Width":  100
-//               },
-//               "Animated" : false,
-//               "IDs": [116, 943, 234, 38793]
-//             }
-//         })"_padded;
-//     simdjson::ParsedJson pj = build_parsed_json(json);
-//     if (pj.error) {
-//       printf("Could not parse '%s': %s\n", json.data(), simdjson::error_message(pj.error));
-//       return false;
-//     }
-//     simdjson::ParsedJson::Iterator iter(pj);
-//     if (!iter.is_object()) {
-//       printf("Root should be object\n");
-//       return false;
-//     }
-//     if (iter.move_to_key("bad key")) {
-//       printf("We should not move to a non-existing key\n");
-//       return false;
-//     }
-//     if (!iter.is_object()) {
-//       printf("We should have remained at the object.\n");
-//       return false;
-//     }
-//     if (iter.move_to_key_insensitive("bad key")) {
-//       printf("We should not move to a non-existing key\n");
-//       return false;
-//     }
-//     if (!iter.is_object()) {
-//       printf("We should have remained at the object.\n");
-//       return false;
-//     }
-//     if (!iter.down()) {
-//       printf("Root should not be emtpy\n");
-//       return false;
-//     }
-//     if (!iter.is_string()) {
-//       printf("Object should start with string key\n");
-//       return false;
-//     }
-//     if (iter.prev()) {
-//       printf("We should not be able to go back from the start of the scope.\n");
-//       return false;
-//     }
-//     if (strcmp(iter.get_string(),"Image")!=0) {
-//       printf("There should be a single key, image.\n");
-//       return false;
-//     }
-//     iter.move_to_value();
-//     if(!iter.is_object()) {
-//       printf("Value of image should be object\n");
-//       return false;
-//     }
-//     if(!iter.down()) {
-//       printf("Image key should not be emtpy\n");
-//       return false;
-//     }
-//     if(!iter.next()) {
-//       printf("key should have a value\n");
-//       return false;
-//     }
-//     if(!iter.prev()) {
-//       printf("We should go back to the key.\n");
-//       return false;
-//     }
-//     if (strcmp(iter.get_string(),"Width")!=0) {
-//       printf("There should be a  key Width.\n");
-//       return false;
-//     }
-//     if (!iter.up()) {
-//       return false;
-//     }
-//     if (!iter.move_to_key("IDs")) {
-//       printf("We should be able to move to an existing key\n");
-//       return false;
-//     }
-//     if (!iter.is_array()) {
-//       printf("Value of IDs should be array, it is %c \n", iter.get_type());
-//       return false;
-//     }
-//     if (iter.move_to_index(4)) {
-//       printf("We should not be able to move to a non-existing index\n");
-//       return false;
-//     }
-//     if (!iter.is_array()) {
-//       printf("We should have remained at the array\n");
-//       return false;
-//     }
-//     return true;
-//   }
-//   SIMDJSON_POP_DISABLE_WARNINGS
+  bool object_iterator() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
+    const char* expected_key[] = { "a", "b", "c" };
+    uint64_t expected_value[] = { 1, 2, 3 };
 
-//   bool object_iterator() {
-//     std::cout << "Running " << __func__ << std::endl;
-//     string json(R"({ "a": 1, "b": 2, "c": 3 })");
-//     const char* expected_key[] = { "a", "b", "c" };
-//     uint64_t expected_value[] = { 1, 2, 3 };
+    ondemand::parser parser;
+    auto doc = parser.iterate(json);
+    ondemand::object object;
+    ASSERT_SUCCESS( doc.get(object) );
+    int i = 0;
+    for (auto [ field, error ] : object) {
+      ASSERT_SUCCESS(error);
+      ASSERT( field.key() == expected_key[i] , "Keys not equal" );
+      // ASSERT_EQUAL( field.key(), expected_key[i] );
+      ASSERT_EQUAL( field.value().get<uint64_t>().first, expected_value[i] );
+      i++;
+    }
+    ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
+    return true;
+  }
 
-//     ondemand::parser parser;
-//     ondemand::object object;
-//     ASSERT_SUCCESS( parser.iterate(json).get(object) );
-//     int i = 0;
-//     for (auto [key, value] : object) {
-//       ASSERT_EQUAL( key, expected_key[i] );
-//       ASSERT_EQUAL( value.get<uint64_t>().first, expected_value[i] );
-//       i++;
-//     }
-//     ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
-//     return true;
-//   }
+  bool array_iterator() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto json = R"([ 1, 10, 100 ])"_padded;
+    uint64_t expected_value[] = { 1, 10, 100 };
 
-//   bool array_iterator() {
-//     std::cout << "Running " << __func__ << std::endl;
-//     string json(R"([ 1, 10, 100 ])");
-//     uint64_t expected_value[] = { 1, 10, 100 };
-
-//     ondemand::parser parser;
-//     ondemand::array array;
-//     ASSERT_SUCCESS( parser.iterate(json).get(array) );
-//     int i=0;
-//     for (auto value : array) {
-//       uint64_t v;
-//       ASSERT_SUCCESS( value.get(v) );
-//       ASSERT_EQUAL( v, expected_value[i] );
-//       i++;
-//     }
-//     ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
-//     return true;
-//   }
+    ondemand::parser parser;
+    auto doc = parser.iterate(json);
+    ondemand::array array;
+    ASSERT_SUCCESS( doc.get(array) );
+    int i=0;
+    for (auto value : array) {
+      uint64_t v;
+      ASSERT_SUCCESS( value.get(v) );
+      ASSERT_EQUAL( v, expected_value[i] );
+      i++;
+    }
+    ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
+    return true;
+  }
 
 //   bool object_iterator_empty() {
 //     std::cout << "Running " << __func__ << std::endl;
-//     string json(R"({})");
+//     auto json = R"({})"_padded;
 //     int i = 0;
 
 //     ondemand::parser parser;
@@ -556,7 +296,7 @@ namespace number_tests {
 
 //   bool array_iterator_empty() {
 //     std::cout << "Running " << __func__ << std::endl;
-//     string json(R"([])");
+//     auto json = R"([])"_padded;
 //     int i=0;
 
 //     ondemand::parser parser;
@@ -572,7 +312,7 @@ namespace number_tests {
 
 //   bool string_value() {
 //     std::cout << "Running " << __func__ << std::endl;
-//     string json(R"([ "hi", "has backslash\\" ])");
+//     auto json = R"([ "hi", "has backslash\\" ])"_padded;
 //     ondemand::parser parser;
 //     ondemand::array array;
 //     ASSERT_SUCCESS( parser.iterate(json).get(array) );
@@ -591,7 +331,7 @@ namespace number_tests {
 
 //   bool numeric_values() {
 //     std::cout << "Running " << __func__ << std::endl;
-//     string json(R"([ 0, 1, -1, 1.1 ])");
+//     auto json = R"([ 0, 1, -1, 1.1 ])"_padded;
 //     ondemand::parser parser;
 //     ondemand::array array;
 //     ASSERT_SUCCESS( parser.iterate(json).get(array) );
@@ -614,7 +354,7 @@ namespace number_tests {
 
 //   bool boolean_values() {
 //     std::cout << "Running " << __func__ << std::endl;
-//     string json(R"([ true, false ])");
+//     auto json = R"([ true, false ])"_padded;
 //     ondemand::parser parser;
 //     ondemand::array array;
 //     ASSERT_SUCCESS( parser.iterate(json).get(array) );
@@ -628,7 +368,7 @@ namespace number_tests {
 
 //   bool null_value() {
 //     std::cout << "Running " << __func__ << std::endl;
-//     string json(R"([ null ])");
+//     auto json = R"([ null ])"_padded;
 //     ondemand::parser parser;
 //     ondemand::array array;
 //     ASSERT_SUCCESS( parser.iterate(json).get(array) );
@@ -640,7 +380,7 @@ namespace number_tests {
 
 //   bool document_object_index() {
 //     std::cout << "Running " << __func__ << std::endl;
-//     string json(R"({ "a": 1, "b": 2, "c/d": 3})");
+//     auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
 //     ondemand::parser parser;
 //     ondemand::object object;
 //     ASSERT_SUCCESS( parser.iterate(json).get(object) );
@@ -670,9 +410,9 @@ namespace number_tests {
 
 //   bool object_index() {
 //     std::cout << "Running " << __func__ << std::endl;
-//     string json(R"({ "obj": { "a": 1, "b": 2, "c/d": 3 } })");
+//     auto json = R"({ "obj": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
 //     ondemand::parser parser;
-//     ondemand::element doc;
+//     ondemand::document doc;
 //     ASSERT_SUCCESS( parser.iterate(json).get(doc) );
 //     ASSERT_EQUAL( doc["obj"]["a"].get<uint64_t>().first, 1);
 
@@ -757,7 +497,7 @@ namespace number_tests {
 
 //   bool object_iterator_exception() {
 //     std::cout << "Running " << __func__ << std::endl;
-//     string json(R"({ "a": 1, "b": 2, "c": 3 })");
+//     auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
 //     const char* expected_key[] = { "a", "b", "c" };
 //     uint64_t expected_value[] = { 1, 2, 3 };
 //     int i = 0;
@@ -774,7 +514,7 @@ namespace number_tests {
 
 //   bool array_iterator_exception() {
 //     std::cout << "Running " << __func__ << std::endl;
-//     string json(R"([ 1, 10, 100 ])");
+//     auto json = R"([ 1, 10, 100 ])"_padded;
 //     uint64_t expected_value[] = { 1, 10, 100 };
 //     int i=0;
 
@@ -839,7 +579,7 @@ namespace number_tests {
 
 //   bool document_object_index_exception() {
 //     std::cout << "Running " << __func__ << std::endl;
-//     string json(R"({ "a": 1, "b": 2, "c": 3})");
+//     auto json = R"({ "a": 1, "b": 2, "c": 3})"_padded;
 //     ondemand::parser parser;
 //     auto obj = parser.iterate(json);
 
@@ -850,7 +590,7 @@ namespace number_tests {
 
 //   bool object_index_exception() {
 //     std::cout << "Running " << __func__ << std::endl;
-//     string json(R"({ "obj": { "a": 1, "b": 2, "c": 3 } })");
+//     auto json = R"({ "obj": { "a": 1, "b": 2, "c": 3 } })"_padded;
 //     ondemand::parser parser;
 //     object obj = parser.iterate(json)["obj"];
 
@@ -906,10 +646,10 @@ namespace number_tests {
 
 // #endif
 
-//   bool run() {
-//     return ParsedJson_Iterator_test() &&
-//            object_iterator() &&
-//            array_iterator() &&
+  bool run() {
+    return
+           object_iterator() &&
+           array_iterator() &&
 //            object_iterator_empty() &&
 //            array_iterator_empty() &&
 //            string_value() &&
@@ -933,9 +673,9 @@ namespace number_tests {
 //            twitter_default_profile_exception() &&
 //            twitter_image_sizes_exception() &&
 // #endif
-//            true;
-//   }
-// }
+           true;
+  }
+}
 
 // namespace type_tests {
 //   using namespace simdjson;
@@ -1414,19 +1154,19 @@ namespace number_tests {
 //     return true;
 //   }
 
-//   bool print_parser_parse() {
+//   bool print_parser_iterate() {
 //     std::cout << "Running " << __func__ << std::endl;
 //     ondemand::parser parser;
-//     ondemand::element doc;
+//     ondemand::document doc;
 //     ASSERT_SUCCESS( parser.iterate(DOCUMENT).get(doc) );
 //     ostringstream s;
 //     s << doc;
 //     return assert_minified(s);
 //   }
-//   bool print_minify_parser_parse() {
+//   bool print_minify_parser_iterate() {
 //     std::cout << "Running " << __func__ << std::endl;
 //     ondemand::parser parser;
-//     ondemand::element doc;
+//     ondemand::document doc;
 //     ASSERT_SUCCESS( parser.iterate(DOCUMENT).get(doc) );
 //     ostringstream s;
 //     s << minify(doc);
@@ -1492,14 +1232,14 @@ namespace number_tests {
 
 // #if SIMDJSON_EXCEPTIONS
 
-//   bool print_parser_parse_exception() {
+//   bool print_parser_iterate_exception() {
 //     std::cout << "Running " << __func__ << std::endl;
 //     ondemand::parser parser;
 //     ostringstream s;
 //     s << parser.iterate(DOCUMENT);
 //     return assert_minified(s);
 //   }
-//   bool print_minify_parser_parse_exception() {
+//   bool print_minify_parser_iterate_exception() {
 //     std::cout << "Running " << __func__ << std::endl;
 //     ondemand::parser parser;
 //     ostringstream s;
@@ -1605,12 +1345,12 @@ namespace number_tests {
 // #endif // SIMDJSON_EXCEPTIONS
 
 //   bool run() {
-//     return print_parser_parse() && print_minify_parser_parse() &&
+//     return print_parser_iterate() && print_minify_parser_iterate() &&
 //            print_element() && print_minify_element() &&
 //            print_array() && print_minify_array() &&
 //            print_object() && print_minify_object() &&
 // #if SIMDJSON_EXCEPTIONS
-//            print_parser_parse_exception() && print_minify_parser_parse_exception() &&
+//            print_parser_iterate_exception() && print_minify_parser_iterate_exception() &&
 //            print_element_result_exception() && print_minify_element_result_exception() &&
 //            print_array_result_exception() && print_minify_array_result_exception() &&
 //            print_object_result_exception() && print_minify_object_result_exception() &&
@@ -1657,8 +1397,8 @@ int main(int argc, char *argv[]) {
   if (
     //   validate_tests::run() &&
     //   minify_tests::run() &&
-    //   parse_api_tests::run() &&
-    //   dom_api_tests::run() &&
+      parse_api_tests::run() &&
+      dom_api_tests::run() &&
     //   type_tests::run() &&
     //   format_tests::run() &&
       number_tests::run() 

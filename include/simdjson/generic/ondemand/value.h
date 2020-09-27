@@ -33,6 +33,31 @@ public:
   simdjson_really_inline ~value() noexcept;
 
   /**
+   * Get this value as the given type.
+   *
+   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool
+   * 
+   * @returns A value of the given type, parsed from the JSON.
+   * @returns INCORRECT_TYPE If the JSON value is not the given type.
+   */
+  template<typename T> simdjson_really_inline simdjson_result<T> get() & noexcept;
+  /** @overload template<typename T> simdjson_result<T> get() & noexcept */
+  template<typename T> simdjson_really_inline simdjson_result<T> get() && noexcept;
+
+  /**
+   * Get this value as the given type.
+   *
+   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool
+   * 
+   * @param out This is set to a value of the given type, parsed from the JSON. If there is an error, this may not be initialized.
+   * @returns INCORRECT_TYPE If the JSON value is not an object.
+   * @returns SUCCESS If the parse succeeded and the out parameter was set to the value.
+   */
+  template<typename T> simdjson_really_inline error_code get(T &out) & noexcept;
+  /** @overload template<typename T> error_code get(T &out) & noexcept */
+  template<typename T> simdjson_really_inline error_code get(T &out) && noexcept;
+
+  /**
    * Cast this JSON value to an array.
    *
    * @returns An object that can be used to iterate the array.
@@ -329,6 +354,12 @@ public:
 
   simdjson_really_inline bool is_null() && noexcept;
   simdjson_really_inline bool is_null() & noexcept;
+
+  template<typename T> simdjson_really_inline simdjson_result<T> get() & noexcept;
+  template<typename T> simdjson_really_inline simdjson_result<T> get() && noexcept;
+
+  template<typename T> simdjson_really_inline error_code get(T &out) & noexcept;
+  template<typename T> simdjson_really_inline error_code get(T &out) && noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::array() noexcept(false);
