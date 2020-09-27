@@ -12,7 +12,7 @@ jobs:
   build:    
     runs-on: ubuntu-latest
     env:
-      allfuzzers: atpointer dump dump_raw_tape implementations minify minifyimpl parser print_json
+      allfuzzers: atpointer dump dump_raw_tape implementations minify minifyimpl parser print_json utf8
       implementations: haswell westmere fallback
       UBSAN_OPTIONS: halt_on_error=1
       MAXLEN: -max_len=4000

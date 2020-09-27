@@ -58,8 +58,7 @@ if(ENABLE_FUZZING)
   implement_fuzzer(fuzz_minifyimpl)      # minify *without* parsing, plus compare implementations
   implement_fuzzer(fuzz_parser)
   implement_fuzzer(fuzz_print_json)
-  # wait for https://github.com/simdjson/simdjson/issues/1187 to be fixed before adding this back
-  #implement_fuzzer(fuzz_utf8)            # utf8 verification, compares across implementations
+  implement_fuzzer(fuzz_utf8)            # utf8 verification, compares across implementations
 
   # to be able to get a list of all fuzzers from within a script
   add_custom_target(print_all_fuzzernames
