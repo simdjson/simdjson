@@ -247,6 +247,22 @@ namespace number_tests {
 
   bool basic_test_64bit(std::string vals, double val) {
     std::cout << " parsing "  << vals << std::endl;
+    double std_answer;
+    char *endptr;
+    // We want to call strtod with the C (default) locale to avoid
+    // potential issues in case someone has a different locale.
+    // Unfortunately, Visual Studio has a different syntax.
+    const char * cval = vals.c_str();
+#ifdef _WIN32
+    static _locale_t c_locale = _create_locale(LC_ALL, "C");
+    std_answer = _strtod_l(cval, &endptr, c_locale);
+#else
+    static locale_t c_locale = newlocale(LC_ALL_MASK, "C", NULL);
+    std_answer = strtod_l(cval, &endptr, c_locale);
+#endif
+    if(endptr == cval) {
+      std::cerr << "Your runtime library failed to parse " << vals << std::endl;
+    }
     double actual;
     simdjson::dom::parser parser;
     auto error = parser.parse(vals).get(actual);
@@ -259,6 +275,10 @@ namespace number_tests {
               << std::endl;
       std::cerr << "string: " << vals << std::endl;
       std::cout << std::dec;
+      if(std_answer == actual) {
+        std::cerr << "simdjson agrees with your runtime library, so we will accept the answer." << std::endl;
+        return true;
+      }
       return false;
     }
     std::cout << std::hexfloat << actual << " == " << val << std::endl;
