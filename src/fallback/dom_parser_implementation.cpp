@@ -297,7 +297,7 @@ SIMDJSON_WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t 
       code_point =
           (byte & 0b00000111) << 18 | (data[pos + 1] & 0b00111111) << 12 |
           (data[pos + 2] & 0b00111111) << 6 | (data[pos + 3] & 0b00111111);
-      if (code_point < 0xffff || 0x10ffff < code_point) { return false; }
+      if (code_point <= 0xffff || 0x10ffff < code_point) { return false; }
     } else {
       // we may have a continuation
       return false;
