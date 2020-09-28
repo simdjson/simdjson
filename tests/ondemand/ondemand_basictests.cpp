@@ -342,73 +342,100 @@ namespace dom_api_tests {
     TEST_SUCCEED();
   }
 
-//   bool string_value() {
-//     TEST_START();
-//     auto json = R"([ "hi", "has backslash\\" ])"_padded;
-//     ondemand::parser parser;
-//     ondemand::array array;
-//     ASSERT_SUCCESS( parser.iterate(json).get(array) );
+  template<typename T>
+  bool test_scalar_value(const padded_string &json, const T &expected) {
+    SUBTEST( "simdjson_result<document>", test_ondemand_doc(json, [&](auto doc_result) {
+      T actual;
+      ASSERT_SUCCESS( doc_result.get(actual) );
+      ASSERT_EQUAL( expected, actual );
+      return true;
+    }));
+    SUBTEST( "document", test_ondemand_doc(json, [&](auto doc_result) {
+      T actual;
+      ASSERT_SUCCESS( doc_result.get(actual) );
+      ASSERT_EQUAL( expected, actual );
+      return true;
+    }));
+    padded_string array_json = std::string("[") + std::string(json) + "]";
+    SUBTEST( "simdjson_result<ondemand::value>", test_ondemand_doc(array_json, [&](auto doc_result) {
+      int count = 0;
+      for (simdjson_result<ondemand::value> val_result : doc_result) {
+        T actual;
+        ASSERT_SUCCESS( val_result.get(actual) );
+        ASSERT_EQUAL(expected, actual);
+        count++;
+      }
+      ASSERT_EQUAL(count, 1);
+      return true;
+    }));
+    SUBTEST( "ondemand::value", test_ondemand_doc(array_json, [&](auto doc_result) {
+      int count = 0;
+      for (simdjson_result<ondemand::value> val_result : doc_result) {
+        ondemand::value val;
+        ASSERT_SUCCESS( std::move(val_result).get(val) );
+        T actual;
+        ASSERT_SUCCESS( val.get(actual) );
+        ASSERT_EQUAL(expected, actual);
+        count++;
+      }
+      ASSERT_EQUAL(count, 1);
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+  bool string_value() {
+    TEST_START();
+    return test_scalar_value(R"("hi")"_padded, std::string_view("hi"));
+  }
 
-//     auto iter = array.begin();
-//     std::string_view val;
-//     ASSERT_SUCCESS( (*iter).get(val) );
-//     ASSERT_EQUAL( val, "hi" );
+  // bool numeric_values() {
+  //   TEST_START();
+  //   auto json = R"([ 0, 1, -1, 1.1 ])"_padded;
+  //   ondemand::parser parser;
+  //   ondemand::array array;
+  //   ASSERT_SUCCESS( parser.iterate(json).get(array) );
 
-//     ++iter;
-//     ASSERT_SUCCESS( (*iter).get(val) );
-//     ASSERT_EQUAL( val, "has backslash\\" );
+  //   auto iter = array.begin();
+  //   ASSERT_EQUAL( (*iter).get<uint64_t>().first, 0 );
+  //   ASSERT_EQUAL( (*iter).get<int64_t>().first, 0 );
+  //   ASSERT_EQUAL( (*iter).get<double>().first, 0 );
+  //   ++iter;
+  //   ASSERT_EQUAL( (*iter).get<uint64_t>().first, 1 );
+  //   ASSERT_EQUAL( (*iter).get<int64_t>().first, 1 );
+  //   ASSERT_EQUAL( (*iter).get<double>().first, 1 );
+  //   ++iter;
+  //   ASSERT_EQUAL( (*iter).get<int64_t>().first, -1 );
+  //   ASSERT_EQUAL( (*iter).get<double>().first, -1 );
+  //   ++iter;
+  //   ASSERT_EQUAL( (*iter).get<double>().first, 1.1 );
+  //   return true;
+  // }
 
-//     return true;
-//   }
+  // bool boolean_values() {
+  //   TEST_START();
+  //   auto json = R"([ true, false ])"_padded;
+  //   ondemand::parser parser;
+  //   ondemand::array array;
+  //   ASSERT_SUCCESS( parser.iterate(json).get(array) );
 
-//   bool numeric_values() {
-//     TEST_START();
-//     auto json = R"([ 0, 1, -1, 1.1 ])"_padded;
-//     ondemand::parser parser;
-//     ondemand::array array;
-//     ASSERT_SUCCESS( parser.iterate(json).get(array) );
+  //   auto val = array.begin();
+  //   ASSERT_EQUAL( (*val).get<bool>().first, true );
+  //   ++val;
+  //   ASSERT_EQUAL( (*val).get<bool>().first, false );
+  //   return true;
+  // }
 
-//     auto iter = array.begin();
-//     ASSERT_EQUAL( (*iter).get<uint64_t>().first, 0 );
-//     ASSERT_EQUAL( (*iter).get<int64_t>().first, 0 );
-//     ASSERT_EQUAL( (*iter).get<double>().first, 0 );
-//     ++iter;
-//     ASSERT_EQUAL( (*iter).get<uint64_t>().first, 1 );
-//     ASSERT_EQUAL( (*iter).get<int64_t>().first, 1 );
-//     ASSERT_EQUAL( (*iter).get<double>().first, 1 );
-//     ++iter;
-//     ASSERT_EQUAL( (*iter).get<int64_t>().first, -1 );
-//     ASSERT_EQUAL( (*iter).get<double>().first, -1 );
-//     ++iter;
-//     ASSERT_EQUAL( (*iter).get<double>().first, 1.1 );
-//     return true;
-//   }
+  // bool null_value() {
+  //   TEST_START();
+  //   auto json = R"([ null ])"_padded;
+  //   ondemand::parser parser;
+  //   ondemand::array array;
+  //   ASSERT_SUCCESS( parser.iterate(json).get(array) );
 
-//   bool boolean_values() {
-//     TEST_START();
-//     auto json = R"([ true, false ])"_padded;
-//     ondemand::parser parser;
-//     ondemand::array array;
-//     ASSERT_SUCCESS( parser.iterate(json).get(array) );
-
-//     auto val = array.begin();
-//     ASSERT_EQUAL( (*val).get<bool>().first, true );
-//     ++val;
-//     ASSERT_EQUAL( (*val).get<bool>().first, false );
-//     return true;
-//   }
-
-//   bool null_value() {
-//     TEST_START();
-//     auto json = R"([ null ])"_padded;
-//     ondemand::parser parser;
-//     ondemand::array array;
-//     ASSERT_SUCCESS( parser.iterate(json).get(array) );
-
-//     auto val = array.begin();
-//     ASSERT_EQUAL( !(*val).is_null(), 0 );
-//     return true;
-//   }
+  //   auto val = array.begin();
+  //   ASSERT_EQUAL( !(*val).is_null(), 0 );
+  //   return true;
+  // }
 
 //   bool document_object_index() {
 //     TEST_START();
@@ -684,7 +711,7 @@ namespace dom_api_tests {
            iterate_empty_array() &&
            iterate_object() &&
            iterate_empty_object() &&
-//            string_value() &&
+           string_value() &&
 //            numeric_values() &&
 //            boolean_values() &&
 //            null_value() &&

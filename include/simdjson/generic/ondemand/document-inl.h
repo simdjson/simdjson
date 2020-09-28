@@ -215,11 +215,6 @@ simdjson_really_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATIO
   if (error()) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document>(first).get<T>();
 }
-template<>
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get<SIMDJSON_IMPLEMENTATION::ondemand::document>() && noexcept {
-  if (error()) { return error(); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document>(first);
-}
 template<typename T>
 simdjson_really_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get(T &out) & noexcept {
   if (error()) { return error(); }
@@ -230,9 +225,17 @@ simdjson_really_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondem
   if (error()) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document>(first).get<T>(out);
 }
-template<>
-simdjson_really_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get<SIMDJSON_IMPLEMENTATION::ondemand::document>(SIMDJSON_IMPLEMENTATION::ondemand::document &out) && noexcept {
-  return std::forward<simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>>(*this).SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::document>::get(out);
+
+template<> simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get<SIMDJSON_IMPLEMENTATION::ondemand::document>() & noexcept = delete;
+template<> simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get<SIMDJSON_IMPLEMENTATION::ondemand::document>() && noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document>(first);
+}
+template<> simdjson_really_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get<SIMDJSON_IMPLEMENTATION::ondemand::document>(SIMDJSON_IMPLEMENTATION::ondemand::document &out) & noexcept = delete;
+template<> simdjson_really_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get<SIMDJSON_IMPLEMENTATION::ondemand::document>(SIMDJSON_IMPLEMENTATION::ondemand::document &out) && noexcept {
+  if (error()) { return error(); }
+  out = std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document>(first);
+  return SUCCESS;
 }
 
 #if SIMDJSON_EXCEPTIONS
