@@ -37,7 +37,6 @@ namespace number_tests {
     return ua + ub + 0x80000000;
   }
 
-
   bool small_integers() {
     std::cout << __func__ << std::endl;
     ondemand::parser parser;
@@ -278,37 +277,39 @@ namespace dom_api_tests {
     return true;
   }
 
-//   bool object_iterator_empty() {
-//     std::cout << "Running " << __func__ << std::endl;
-//     auto json = R"({})"_padded;
-//     int i = 0;
+  bool object_iterator_empty() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto json = R"({})"_padded;
+    int i = 0;
 
-//     ondemand::parser parser;
-//     ondemand::object object;
-//     ASSERT_SUCCESS( parser.iterate(json).get(object) );
-//     for (SIMDJSON_UNUSED auto field : object) {
-//       TEST_FAIL("Unexpected field");
-//       i++;
-//     }
-//     ASSERT_EQUAL(i, 0);
-//     return true;
-//   }
+    ondemand::parser parser;
+    ondemand::object object;
+    auto doc = parser.iterate(json);
+    ASSERT_SUCCESS( doc.get(object) );
+    for (SIMDJSON_UNUSED auto field : object) {
+      TEST_FAIL("Unexpected field");
+      i++;
+    }
+    ASSERT_EQUAL(i, 0);
+    return true;
+  }
 
-//   bool array_iterator_empty() {
-//     std::cout << "Running " << __func__ << std::endl;
-//     auto json = R"([])"_padded;
-//     int i=0;
+  bool array_iterator_empty() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto json = R"([])"_padded;
+    int i=0;
 
-//     ondemand::parser parser;
-//     ondemand::array array;
-//     ASSERT_SUCCESS( parser.iterate(json).get(array) );
-//     for (SIMDJSON_UNUSED auto value : array) {
-//       TEST_FAIL("Unexpected value");
-//       i++;
-//     }
-//     ASSERT_EQUAL(i, 0);
-//     return true;
-//   }
+    ondemand::parser parser;
+    ondemand::array array;
+    auto doc = parser.iterate(json);
+    ASSERT_SUCCESS( doc.get(array) );
+    for (SIMDJSON_UNUSED auto value : array) {
+      TEST_FAIL("Unexpected value");
+      i++;
+    }
+    ASSERT_EQUAL(i, 0);
+    return true;
+  }
 
 //   bool string_value() {
 //     std::cout << "Running " << __func__ << std::endl;
@@ -650,8 +651,8 @@ namespace dom_api_tests {
     return
            object_iterator() &&
            array_iterator() &&
-//            object_iterator_empty() &&
-//            array_iterator_empty() &&
+           object_iterator_empty() &&
+           array_iterator_empty() &&
 //            string_value() &&
 //            numeric_values() &&
 //            boolean_values() &&

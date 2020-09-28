@@ -45,7 +45,7 @@ namespace ondemand {
 
 simdjson_really_inline object::object(json_iterator_ref &&_iter) noexcept
   : iter{std::forward<json_iterator_ref>(_iter)},
-    at_start{true}
+    at_start{iter.is_alive()}
 {
 }
 
