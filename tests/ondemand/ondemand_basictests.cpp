@@ -344,6 +344,7 @@ namespace dom_api_tests {
 
   template<typename T>
   bool test_scalar_value(const padded_string &json, const T &expected) {
+    cout << "- JSON: " << json << endl;
     SUBTEST( "simdjson_result<document>", test_ondemand_doc(json, [&](auto doc_result) {
       T actual;
       ASSERT_SUCCESS( doc_result.get(actual) );
@@ -388,41 +389,25 @@ namespace dom_api_tests {
     return test_scalar_value(R"("hi")"_padded, std::string_view("hi"));
   }
 
-  // bool numeric_values() {
-  //   TEST_START();
-  //   auto json = R"([ 0, 1, -1, 1.1 ])"_padded;
-  //   ondemand::parser parser;
-  //   ondemand::array array;
-  //   ASSERT_SUCCESS( parser.iterate(json).get(array) );
-
-  //   auto iter = array.begin();
-  //   ASSERT_EQUAL( (*iter).get<uint64_t>().first, 0 );
-  //   ASSERT_EQUAL( (*iter).get<int64_t>().first, 0 );
-  //   ASSERT_EQUAL( (*iter).get<double>().first, 0 );
-  //   ++iter;
-  //   ASSERT_EQUAL( (*iter).get<uint64_t>().first, 1 );
-  //   ASSERT_EQUAL( (*iter).get<int64_t>().first, 1 );
-  //   ASSERT_EQUAL( (*iter).get<double>().first, 1 );
-  //   ++iter;
-  //   ASSERT_EQUAL( (*iter).get<int64_t>().first, -1 );
-  //   ASSERT_EQUAL( (*iter).get<double>().first, -1 );
-  //   ++iter;
-  //   ASSERT_EQUAL( (*iter).get<double>().first, 1.1 );
-  //   return true;
-  // }
+  bool numeric_values() {
+    TEST_START();
+    if (!test_scalar_value<int64_t> ("0"_padded,   0)) { return false; }
+    if (!test_scalar_value<uint64_t>("0"_padded,   0)) { return false; }
+    if (!test_scalar_value<double>  ("0"_padded,   0)) { return false; }
+    if (!test_scalar_value<int64_t> ("1"_padded,   1)) { return false; }
+    if (!test_scalar_value<uint64_t>("1"_padded,   1)) { return false; }
+    if (!test_scalar_value<double>  ("1"_padded,   1)) { return false; }
+    if (!test_scalar_value<int64_t> ("-1"_padded,  -1)) { return false; }
+    if (!test_scalar_value<double>  ("-1"_padded,  -1)) { return false; }
+    if (!test_scalar_value<double>  ("1.1"_padded, 1.1)) { return false; }
+    TEST_SUCCEED();
+  }
 
   // bool boolean_values() {
   //   TEST_START();
-  //   auto json = R"([ true, false ])"_padded;
-  //   ondemand::parser parser;
-  //   ondemand::array array;
-  //   ASSERT_SUCCESS( parser.iterate(json).get(array) );
-
-  //   auto val = array.begin();
-  //   ASSERT_EQUAL( (*val).get<bool>().first, true );
-  //   ++val;
-  //   ASSERT_EQUAL( (*val).get<bool>().first, false );
-  //   return true;
+  //   if (!test_scalar_value<bool> ("true"_padded,  true)) { return false; }
+  //   if (!test_scalar_value<bool> ("false"_padded, false)) { return false; }
+  //   TEST_SUCCEED();
   // }
 
   // bool null_value() {
@@ -712,8 +697,8 @@ namespace dom_api_tests {
            iterate_object() &&
            iterate_empty_object() &&
            string_value() &&
-//            numeric_values() &&
-//            boolean_values() &&
+           numeric_values() &&
+          //  boolean_values() &&
 //            null_value() &&
 //            document_object_index() &&
 //            object_index() &&
