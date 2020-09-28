@@ -296,7 +296,7 @@ protected:
   //
   simdjson_really_inline json_iterator &get_iterator() noexcept;
   simdjson_really_inline json_iterator_ref borrow_iterator() noexcept;
-  simdjson_really_inline bool is_iteration_finished() const noexcept;
+  simdjson_really_inline bool is_iterator_alive() const noexcept;
   simdjson_really_inline void iteration_finished() noexcept;
   simdjson_really_inline const uint8_t *consume() noexcept;
   template<typename T>

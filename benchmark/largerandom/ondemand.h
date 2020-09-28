@@ -25,7 +25,7 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
   container.clear();
 
   auto doc = parser.iterate(json);
-  for (ondemand::object coord : doc.get_array()) {
+  for (ondemand::object coord : doc) {
     container.emplace_back(my_point{coord["x"], coord["y"], coord["z"]});
   }
 

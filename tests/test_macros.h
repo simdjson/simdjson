@@ -41,6 +41,12 @@ simdjson_really_inline simdjson::error_code to_error_code(const simdjson::simdjs
 }
 
 #define TEST_START() { cout << "Running " << __func__ << " ..." << endl; }
+#define SUBTEST(NAME, TEST) \
+{ \
+  cout << "- Subtest " << (NAME) << " ..." << endl; \
+  bool succeeded = (TEST); \
+  ASSERT(succeeded, "Subtest " NAME " failed"); \
+}
 #define ASSERT_EQUAL(ACTUAL, EXPECTED)        \
 do {                                          \
   auto _actual = (ACTUAL);                    \
@@ -56,5 +62,6 @@ do {                                          \
 #define ASSERT_SUCCESS(ERROR) do { auto _error = to_error_code(ERROR); if (_error) { std::cerr << _error << std::endl; return false; } } while(0);
 #define TEST_FAIL(MESSAGE) { std::cerr << "FAIL: " << (MESSAGE) << std::endl; return false; }
 #define TEST_SUCCEED() { return true; }
+
 
 #endif // TEST_MACROS_H

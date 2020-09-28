@@ -73,7 +73,7 @@ simdjson_really_inline json_iterator &array::get_iterator() noexcept {
 simdjson_really_inline json_iterator_ref array::borrow_iterator() noexcept {
   return iter.borrow();
 }
-simdjson_really_inline bool array::is_iteration_finished() const noexcept {
+simdjson_really_inline bool array::is_iterator_alive() const noexcept {
   return iter.is_alive();
 }
 simdjson_really_inline void array::iteration_finished() noexcept {

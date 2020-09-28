@@ -62,6 +62,9 @@ private:
 
   simdjson_really_inline array_iterator(T &iter) noexcept;
 
+  static simdjson_really_inline simdjson_result<array_iterator<T>> start(T &iter, const uint8_t *json) noexcept;
+
+  friend T;
   friend class array;
   friend class value;
   friend struct simdjson_result<array_iterator<T>>;

@@ -13,8 +13,7 @@
 #include <unistd.h>
 
 #include "simdjson.h"
-#include "cast_tester.h"
-#include "test_macros.h"
+#include "test_ondemand.h"
 
 // const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
 #define SIMDJSON_SHOW_DEFINE(x) printf("%s=%s\n", #x, STRINGIFY(x))
@@ -39,17 +38,12 @@ namespace number_tests {
 
   bool small_integers() {
     std::cout << __func__ << std::endl;
-    ondemand::parser parser;
     for (int m = 10; m < 20; m++) {
       for (int i = -1024; i < 1024; i++) {
-        padded_string json = std::to_string(i);
-        auto doc = parser.iterate(json);
-        int64_t actual;
-        ASSERT_SUCCESS(doc.get(actual));
-        if (actual != i) {
-          std::cerr << "JSON '" << json << "' parsed to " << actual << " instead of " << i << std::endl;
-          return false;
-        }
+        return test_ondemand<int64_t>(std::to_string(i), [&](int64_t actual) {
+          ASSERT_EQUAL(actual, i);
+          return true;
+        });
       }
     }
     return true;
@@ -58,26 +52,23 @@ namespace number_tests {
   bool powers_of_two() {
     std::cout << __func__ << std::endl;
     char buf[1024];
-    ondemand::parser parser;
     uint64_t maxulp = 0;
     for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
       double expected = pow(2, i);
       size_t n = snprintf(buf, sizeof(buf), "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
       if (n >= sizeof(buf)) { abort(); }
       fflush(NULL);
-      double actual;
-      padded_string json(buf, n);
-      auto doc = parser.iterate(json);
-      auto error = doc.get(actual);
-      if (error) { std::cerr << error << std::endl; return false; }
-      uint64_t ulp = f64_ulp_dist(actual,expected);
-      if(ulp > maxulp) maxulp = ulp;
-      if(ulp > 0) {
-        std::cerr << "JSON '" << json << " parsed to ";
-        fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
-        SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
-        return false;
-      }
+      return test_ondemand<double>(padded_string(buf, n), [&](double actual) {
+        uint64_t ulp = f64_ulp_dist(actual,expected);
+        if(ulp > maxulp) maxulp = ulp;
+        if(ulp > 0) {
+          std::cerr << "JSON '" << buf << " parsed to ";
+          fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
+          SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
+          return false;
+        }
+        return true;
+      });
     }
     return true;
   }
@@ -158,7 +149,6 @@ namespace number_tests {
   bool powers_of_ten() {
     std::cout << __func__ << std::endl;
     char buf[1024];
-    ondemand::parser parser;
 
     bool is_pow_correct{1e-308 == std::pow(10,-308)};
     int start_point = is_pow_correct ? -10000 : -307;
@@ -169,19 +159,17 @@ namespace number_tests {
       size_t n = snprintf(buf, sizeof(buf), "1e%d", i);
       if (n >= sizeof(buf)) { abort(); }
       fflush(NULL);
-      padded_string json(buf, n);
-      auto doc = parser.iterate(json);
-      double actual;
-      auto error = doc.get(actual);
-      if (error) { std::cerr << error << std::endl; return false; }
       double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
-      int ulp = (int) f64_ulp_dist(actual, expected);
-      if(ulp > 0) {
-        std::cerr << "JSON '" << json << " parsed to ";
-        fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
-        SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
-        return false;
-      }
+      return test_ondemand<double>(padded_string(buf, n), [&](double actual) {
+        int ulp = (int) f64_ulp_dist(actual, expected);
+        if(ulp > 0) {
+          std::cerr << "JSON '" << buf << " parsed to ";
+          fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
+          SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
+          return false;
+        }
+        return true;
+      });
     }
     printf("Powers of 10 can be parsed.\n");
     return true;
@@ -204,7 +192,7 @@ namespace parse_api_tests {
   const padded_string EMPTY_NDJSON = ""_padded;
 
   bool parser_iterate() {
-    std::cout << "Running " << __func__ << std::endl;
+    TEST_START();
     ondemand::parser parser;
     auto doc = parser.iterate(BASIC_JSON);
     ASSERT_SUCCESS( doc.get_array() );
@@ -213,7 +201,7 @@ namespace parse_api_tests {
 
 // #if SIMDJSON_EXCEPTIONS
 //   bool parser_iterate_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     auto doc = parser.iterate(BASIC_JSON);
 //     SIMDJSON_UNUSED ondemand::array array = doc;
@@ -235,84 +223,127 @@ namespace dom_api_tests {
   using namespace simdjson;
   using namespace simdjson::dom;
 
-  bool object_iterator() {
-    std::cout << "Running " << __func__ << std::endl;
+  bool iterate_object() {
+    TEST_START();
     auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
     const char* expected_key[] = { "a", "b", "c" };
     uint64_t expected_value[] = { 1, 2, 3 };
-
-    ondemand::parser parser;
-    auto doc = parser.iterate(json);
-    ondemand::object object;
-    ASSERT_SUCCESS( doc.get(object) );
-    int i = 0;
-    for (auto [ field, error ] : object) {
-      ASSERT_SUCCESS(error);
-      ASSERT( field.key() == expected_key[i] , "Keys not equal" );
-      // ASSERT_EQUAL( field.key(), expected_key[i] );
-      ASSERT_EQUAL( field.value().get<uint64_t>().first, expected_value[i] );
-      i++;
-    }
-    ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
-    return true;
+    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      int i = 0;
+      for (auto [ field, error ] : object) {
+        ASSERT_SUCCESS(error);
+        ASSERT( field.key() == expected_key[i] , "Keys not equal" );
+        ASSERT_EQUAL( field.value().get_uint64().first, expected_value[i] );
+        i++;
+      }
+      ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<ondemand::object> object_result = doc_result.get_object();
+      int i = 0;
+      for (auto [ field, error ] : object_result) {
+        ASSERT_SUCCESS(error);
+        ASSERT( field.key() == expected_key[i] , "Keys not equal" );
+        ASSERT_EQUAL( field.value().get_uint64().first, expected_value[i] );
+        i++;
+      }
+      ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
+      return true;
+    }));
+    TEST_SUCCEED();
   }
 
-  bool array_iterator() {
-    std::cout << "Running " << __func__ << std::endl;
+  bool iterate_array() {
+    TEST_START();
     auto json = R"([ 1, 10, 100 ])"_padded;
     uint64_t expected_value[] = { 1, 10, 100 };
 
-    ondemand::parser parser;
-    auto doc = parser.iterate(json);
-    ondemand::array array;
-    ASSERT_SUCCESS( doc.get(array) );
-    int i=0;
-    for (auto value : array) {
-      uint64_t v;
-      ASSERT_SUCCESS( value.get(v) );
-      ASSERT_EQUAL( v, expected_value[i] );
-      i++;
-    }
-    ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
-    return true;
+    SUBTEST("ondemand::array", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_SUCCESS( doc_result.get(array) );
+      int i=0;
+      for (SIMDJSON_UNUSED auto value : array) { int64_t actual; ASSERT_SUCCESS( value.get(actual) ); ASSERT_EQUAL(actual, expected_value[i]); i++; }
+      ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::array>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<ondemand::array> array = doc_result.get_array();
+      int i=0;
+      for (SIMDJSON_UNUSED auto value : array) { int64_t actual; ASSERT_SUCCESS( value.get(actual) ); ASSERT_EQUAL(actual, expected_value[i]); i++; }
+      ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
+      return true;
+    }));
+    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::document doc;
+      ASSERT_SUCCESS( std::move(doc_result).get(doc) );
+      int i=0;
+      for (SIMDJSON_UNUSED auto value : doc) { int64_t actual; ASSERT_SUCCESS( value.get(actual) ); ASSERT_EQUAL(actual, expected_value[i]); i++; }
+      ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+      int i=0;
+      for (SIMDJSON_UNUSED auto value : doc_result) { int64_t actual; ASSERT_SUCCESS( value.get(actual) ); ASSERT_EQUAL(actual, expected_value[i]); i++; }
+      ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
+      return true;
+    }));
+    TEST_SUCCEED();
   }
 
-  bool object_iterator_empty() {
-    std::cout << "Running " << __func__ << std::endl;
+  bool iterate_empty_object() {
+    TEST_START();
     auto json = R"({})"_padded;
-    int i = 0;
 
-    ondemand::parser parser;
-    ondemand::object object;
-    auto doc = parser.iterate(json);
-    ASSERT_SUCCESS( doc.get(object) );
-    for (SIMDJSON_UNUSED auto field : object) {
-      TEST_FAIL("Unexpected field");
-      i++;
-    }
-    ASSERT_EQUAL(i, 0);
-    return true;
+    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      for (SIMDJSON_UNUSED auto field : object) {
+        TEST_FAIL("Unexpected field");
+      }
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<ondemand::object> object_result = doc_result.get_object();
+      for (SIMDJSON_UNUSED auto field : object_result) {
+        TEST_FAIL("Unexpected field");
+      }
+      return true;
+    }));
+    TEST_SUCCEED();
   }
 
-  bool array_iterator_empty() {
-    std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([])"_padded;
-    int i=0;
-
-    ondemand::parser parser;
-    ondemand::array array;
-    auto doc = parser.iterate(json);
-    ASSERT_SUCCESS( doc.get(array) );
-    for (SIMDJSON_UNUSED auto value : array) {
-      TEST_FAIL("Unexpected value");
-      i++;
-    }
-    ASSERT_EQUAL(i, 0);
-    return true;
+  bool iterate_empty_array() {
+    TEST_START();
+    auto json = "[]"_padded;
+    SUBTEST("ondemand::array", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_SUCCESS( doc_result.get(array) );
+      for (SIMDJSON_UNUSED auto value : array) { TEST_FAIL("Unexpected value"); }
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::array>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<ondemand::array> array_result = doc_result.get_array();
+      for (SIMDJSON_UNUSED auto value : array_result) { TEST_FAIL("Unexpected value"); }
+      return true;
+    }));
+    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::document doc;
+      ASSERT_SUCCESS( std::move(doc_result).get(doc) );
+      for (SIMDJSON_UNUSED auto value : doc) { TEST_FAIL("Unexpected value"); }
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+      for (SIMDJSON_UNUSED auto value : doc_result) { TEST_FAIL("Unexpected value"); }
+      return true;
+    }));
+    TEST_SUCCEED();
   }
 
 //   bool string_value() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     auto json = R"([ "hi", "has backslash\\" ])"_padded;
 //     ondemand::parser parser;
 //     ondemand::array array;
@@ -331,7 +362,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool numeric_values() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     auto json = R"([ 0, 1, -1, 1.1 ])"_padded;
 //     ondemand::parser parser;
 //     ondemand::array array;
@@ -354,7 +385,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool boolean_values() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     auto json = R"([ true, false ])"_padded;
 //     ondemand::parser parser;
 //     ondemand::array array;
@@ -368,7 +399,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool null_value() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     auto json = R"([ null ])"_padded;
 //     ondemand::parser parser;
 //     ondemand::array array;
@@ -380,7 +411,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool document_object_index() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
 //     ondemand::parser parser;
 //     ondemand::object object;
@@ -410,7 +441,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool object_index() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     auto json = R"({ "obj": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
 //     ondemand::parser parser;
 //     ondemand::document doc;
@@ -436,7 +467,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool twitter_count() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     // Prints the number of results in twitter.json
 //     ondemand::parser parser;
 //     uint64_t result_count;
@@ -446,7 +477,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool twitter_default_profile() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     // Print users with a default profile.
 //     set<string_view> default_users;
 //     ondemand::parser parser;
@@ -468,7 +499,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool twitter_image_sizes() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     // Print image names and sizes
 //     set<pair<uint64_t, uint64_t>> image_sizes;
 //     simdjson::error_code error;
@@ -497,7 +528,7 @@ namespace dom_api_tests {
 // #if SIMDJSON_EXCEPTIONS
 
 //   bool object_iterator_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
 //     const char* expected_key[] = { "a", "b", "c" };
 //     uint64_t expected_value[] = { 1, 2, 3 };
@@ -514,7 +545,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool array_iterator_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     auto json = R"([ 1, 10, 100 ])"_padded;
 //     uint64_t expected_value[] = { 1, 10, 100 };
 //     int i=0;
@@ -529,7 +560,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool string_value_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ASSERT_EQUAL( (const char *)parser.iterate(R"("hi")"_padded), "hi" );
 //     ASSERT_EQUAL( string_view(parser.iterate(R"("hi")"_padded)), "hi" );
@@ -539,7 +570,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool numeric_values_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 
 //     ASSERT_EQUAL( uint64_t(parser.iterate("0"_padded)), 0);
@@ -559,7 +590,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool boolean_values_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 
 //     ASSERT_EQUAL( bool(parser.iterate("true"_padded)), true);
@@ -570,7 +601,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool null_value_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 
 //     ASSERT_EQUAL( bool(parser.iterate("null"_padded).is_null()), true );
@@ -579,7 +610,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool document_object_index_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     auto json = R"({ "a": 1, "b": 2, "c": 3})"_padded;
 //     ondemand::parser parser;
 //     auto obj = parser.iterate(json);
@@ -590,7 +621,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool object_index_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     auto json = R"({ "obj": { "a": 1, "b": 2, "c": 3 } })"_padded;
 //     ondemand::parser parser;
 //     object obj = parser.iterate(json)["obj"];
@@ -601,7 +632,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool twitter_count_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     // Prints the number of results in twitter.json
 //     ondemand::parser parser;
 //     element doc = parser.load(TWITTER_JSON);
@@ -611,7 +642,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool twitter_default_profile_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     // Print users with a default profile.
 //     set<string_view> default_users;
 //     ondemand::parser parser;
@@ -627,7 +658,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool twitter_image_sizes_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     // Print image names and sizes
 //     set<pair<uint64_t, uint64_t>> image_sizes;
 //     ondemand::parser parser;
@@ -649,10 +680,10 @@ namespace dom_api_tests {
 
   bool run() {
     return
-           object_iterator() &&
-           array_iterator() &&
-           object_iterator_empty() &&
-           array_iterator_empty() &&
+           iterate_array() &&
+           iterate_empty_array() &&
+           iterate_object() &&
+           iterate_empty_object() &&
 //            string_value() &&
 //            numeric_values() &&
 //            boolean_values() &&
@@ -828,7 +859,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool cast_array() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 
 //     ondemand::parser parser;
 //     simdjson_result<ondemand::element> result = parser.iterate(ALL_TYPES_JSON)["array"];
@@ -847,7 +878,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool cast_object() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 
 //     ondemand::parser parser;
 //     simdjson_result<ondemand::element> result = parser.iterate(ALL_TYPES_JSON)["object"];
@@ -866,7 +897,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool cast_string() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 
 //     ondemand::parser parser;
 //     simdjson_result<ondemand::element> result = parser.iterate(ALL_TYPES_JSON)["string"];
@@ -961,7 +992,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool cast_null() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 
 //     ondemand::parser parser;
 //     simdjson_result<ondemand::element> result = parser.iterate(ALL_TYPES_JSON)["null"];
@@ -1012,7 +1043,7 @@ namespace dom_api_tests {
 
 // namespace validate_tests {
 //   bool test_validate() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })";
 //     if(!simdjson::validate_utf8(test.data(), test.size())) {
 //       return false;
@@ -1020,7 +1051,7 @@ namespace dom_api_tests {
 //     return true;
 //   }
 //   bool test_range() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     for(size_t len = 0; len <= 128; len++) {
 //       std::vector<uint8_t> source(len,' ');
 //       if(!simdjson::validate_utf8((const char*)source.data(), source.size())) { return false; }
@@ -1029,7 +1060,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool test_bad_validate() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     const std::string test = "\x80\x81";
 //     if(simdjson::validate_utf8(test.data(), test.size())) {
 //       return false;
@@ -1037,7 +1068,7 @@ namespace dom_api_tests {
 //     return true;
 //   }
 //   bool test_issue1169() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     std::vector<uint8_t> source(64,' ');
 //     for(size_t idx = 0; idx < 64; idx++) {
 //       source[idx] = 255;
@@ -1047,7 +1078,7 @@ namespace dom_api_tests {
 //     return true;
 //   }
 //   bool test_issue1169_long() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     for(size_t len = 1; len <= 128; len++) {
 //       std::vector<uint8_t> source(len,' ');
 //       source[len-1] = 255;
@@ -1056,7 +1087,7 @@ namespace dom_api_tests {
 //     return true;
 //   }
 //   bool test_random() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     std::vector<uint8_t> source(64,' ');
 //     const simdjson::implementation *impl_fallback = simdjson::available_implementations["fallback"];
 //     if(!impl_fallback) { return true; }
@@ -1099,7 +1130,7 @@ namespace dom_api_tests {
 //     return true;
 //   }
 //   bool test_single_quote() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     const std::string test = "\"";
 //     char output[1];
 //     size_t newlength;
@@ -1113,19 +1144,19 @@ namespace dom_api_tests {
 //   }
 
 //   bool test_minify() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })";
 //     const std::string minified(R"({"foo":1,"bar":[1,2,3],"baz":{"a":1,"b":2,"c":3}})");
 //     return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
 //   }
 //   bool test_minify_array() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     std::string test("[ 1,    2,    3]");
 //     std::string minified("[1,2,3]");
 //     return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
 //   }
 //   bool test_minify_object() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     std::string test(R"({ "foo   " : 1, "b  ar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })");
 //     std::string minified(R"({"foo   ":1,"b  ar":[1,2,3],"baz":{"a":1,"b":2,"c":3}})");
 //     return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
@@ -1156,7 +1187,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool print_parser_iterate() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ondemand::document doc;
 //     ASSERT_SUCCESS( parser.iterate(DOCUMENT).get(doc) );
@@ -1165,7 +1196,7 @@ namespace dom_api_tests {
 //     return assert_minified(s);
 //   }
 //   bool print_minify_parser_iterate() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ondemand::document doc;
 //     ASSERT_SUCCESS( parser.iterate(DOCUMENT).get(doc) );
@@ -1175,7 +1206,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool print_element() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ondemand::element value;
 //     ASSERT_SUCCESS( parser.iterate(DOCUMENT)["foo"].get(value) );
@@ -1184,7 +1215,7 @@ namespace dom_api_tests {
 //     return assert_minified(s, "1");
 //   }
 //   bool print_minify_element() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ondemand::element value;
 //     ASSERT_SUCCESS( parser.iterate(DOCUMENT)["foo"].get(value) );
@@ -1194,7 +1225,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool print_array() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ondemand::array array;
 //     ASSERT_SUCCESS( parser.iterate(DOCUMENT)["bar"].get(array) );
@@ -1203,7 +1234,7 @@ namespace dom_api_tests {
 //     return assert_minified(s, "[1,2,3]");
 //   }
 //   bool print_minify_array() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ondemand::array array;
 //     ASSERT_SUCCESS( parser.iterate(DOCUMENT)["bar"].get(array) );
@@ -1213,7 +1244,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool print_object() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ondemand::object object;
 //     ASSERT_SUCCESS( parser.iterate(DOCUMENT)["baz"].get(object) );
@@ -1222,7 +1253,7 @@ namespace dom_api_tests {
 //     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
 //   }
 //   bool print_minify_object() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ondemand::object object;
 //     ASSERT_SUCCESS( parser.iterate(DOCUMENT)["baz"].get(object) );
@@ -1234,14 +1265,14 @@ namespace dom_api_tests {
 // #if SIMDJSON_EXCEPTIONS
 
 //   bool print_parser_iterate_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ostringstream s;
 //     s << parser.iterate(DOCUMENT);
 //     return assert_minified(s);
 //   }
 //   bool print_minify_parser_iterate_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ostringstream s;
 //     s << minify(parser.iterate(DOCUMENT));
@@ -1249,14 +1280,14 @@ namespace dom_api_tests {
 //   }
 
 //   bool print_element_result_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ostringstream s;
 //     s << parser.iterate(DOCUMENT)["foo"];
 //     return assert_minified(s, "1");
 //   }
 //   bool print_minify_element_result_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ostringstream s;
 //     s << minify(parser.iterate(DOCUMENT)["foo"]);
@@ -1264,7 +1295,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool print_element_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     element value = parser.iterate(DOCUMENT)["foo"];
 //     ostringstream s;
@@ -1272,7 +1303,7 @@ namespace dom_api_tests {
 //     return assert_minified(s, "1");
 //   }
 //   bool print_minify_element_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     element value = parser.iterate(DOCUMENT)["foo"];
 //     ostringstream s;
@@ -1281,14 +1312,14 @@ namespace dom_api_tests {
 //   }
 
 //   bool print_array_result_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ostringstream s;
 //     s << parser.iterate(DOCUMENT)["bar"].get<ondemand::array>();
 //     return assert_minified(s, "[1,2,3]");
 //   }
 //   bool print_minify_array_result_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ostringstream s;
 //     s << minify(parser.iterate(DOCUMENT)["bar"].get<ondemand::array>());
@@ -1296,14 +1327,14 @@ namespace dom_api_tests {
 //   }
 
 //   bool print_object_result_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ostringstream s;
 //     s << parser.iterate(DOCUMENT)["baz"].get<ondemand::object>();
 //     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
 //   }
 //   bool print_minify_object_result_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ostringstream s;
 //     s << minify(parser.iterate(DOCUMENT)["baz"].get<ondemand::object>());
@@ -1311,7 +1342,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool print_array_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ondemand::array array = parser.iterate(DOCUMENT)["bar"];
 //     ostringstream s;
@@ -1319,7 +1350,7 @@ namespace dom_api_tests {
 //     return assert_minified(s, "[1,2,3]");
 //   }
 //   bool print_minify_array_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ondemand::array array = parser.iterate(DOCUMENT)["bar"];
 //     ostringstream s;
@@ -1328,7 +1359,7 @@ namespace dom_api_tests {
 //   }
 
 //   bool print_object_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ondemand::object object = parser.iterate(DOCUMENT)["baz"];
 //     ostringstream s;
@@ -1336,7 +1367,7 @@ namespace dom_api_tests {
 //     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
 //   }
 //   bool print_minify_object_exception() {
-//     std::cout << "Running " << __func__ << std::endl;
+//     TEST_START();
 //     ondemand::parser parser;
 //     ondemand::object object = parser.iterate(DOCUMENT)["baz"];
 //     ostringstream s;

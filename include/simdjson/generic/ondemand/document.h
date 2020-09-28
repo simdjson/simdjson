@@ -9,6 +9,7 @@ class array;
 class object;
 class value;
 class raw_json_string;
+template<typename T> class array_iterator;
 
 /**
  * A JSON document iteration.
@@ -201,13 +202,13 @@ public:
    *
    * Part of the std::iterable interface.
    */
-  simdjson_really_inline array_iterator<document> begin() & noexcept;
+  simdjson_really_inline simdjson_result<array_iterator<document>> begin() & noexcept;
   /**
    * Sentinel representing the end of the array.
    *
    * Part of the std::iterable interface.
    */
-  simdjson_really_inline array_iterator<document> end() & noexcept;
+  simdjson_really_inline simdjson_result<array_iterator<document>> end() & noexcept;
 
   /**
    * Look up a field by name on an object.
@@ -251,7 +252,7 @@ protected:
   //
   simdjson_really_inline json_iterator &get_iterator() noexcept;
   simdjson_really_inline json_iterator_ref borrow_iterator() noexcept;
-  simdjson_really_inline bool is_iteration_finished() const noexcept;
+  simdjson_really_inline bool is_iterator_alive() const noexcept;
   simdjson_really_inline void iteration_finished() noexcept;
 
   //
@@ -261,6 +262,7 @@ protected:
   const uint8_t *json{}; ///< JSON for the value in the document (nullptr if value has been consumed)
 
   friend struct simdjson_result<document>;
+  friend class array_iterator<document>;
   friend class value;
   friend class ondemand::parser;
   friend class object;

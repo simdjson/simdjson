@@ -6,6 +6,13 @@ template<typename T>
 simdjson_really_inline array_iterator<T>::array_iterator(T &_iter) noexcept : iter{&_iter} {}
 
 template<typename T>
+simdjson_really_inline simdjson_result<array_iterator<T>> array_iterator<T>::start(T &iter, const uint8_t *json) noexcept {
+  bool has_value;
+  SIMDJSON_TRY( iter.get_iterator().start_array(json).get(has_value) );
+  if (!has_value) { iter.iteration_finished(); }
+  return array_iterator<T>(iter);
+}
+template<typename T>
 simdjson_really_inline simdjson_result<value> array_iterator<T>::operator*() noexcept {
   if (iter->get_iterator().error()) { iter->iteration_finished(); return iter->get_iterator().error(); }
   return value::start(iter->borrow_iterator());
@@ -16,7 +23,7 @@ simdjson_really_inline bool array_iterator<T>::operator==(const array_iterator<T
 }
 template<typename T>
 simdjson_really_inline bool array_iterator<T>::operator!=(const array_iterator<T> &) noexcept {
-  return iter->is_iteration_finished();
+  return iter->is_iterator_alive();
 }
 template<typename T>
 simdjson_really_inline array_iterator<T> &array_iterator<T>::operator++() noexcept {

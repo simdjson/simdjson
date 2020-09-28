@@ -170,12 +170,7 @@ simdjson_really_inline value::operator bool() & noexcept(false) {
 #endif
 
 simdjson_really_inline simdjson_result<array_iterator<value>> value::begin() & noexcept {
-  if (*json != '[') {
-    log_error("not an array");
-    return INCORRECT_TYPE;
-  }
-  if (!iter->started_array()) { iter.release(); }
-  return array_iterator(*this);
+  return array_iterator<value>::start(*this, json);
 }
 simdjson_really_inline simdjson_result<array_iterator<value>> value::end() & noexcept {
   return {};
@@ -205,7 +200,7 @@ simdjson_really_inline json_iterator &value::get_iterator() noexcept {
 simdjson_really_inline json_iterator_ref value::borrow_iterator() noexcept {
   return iter.borrow();
 }
-simdjson_really_inline bool value::is_iteration_finished() const noexcept {
+simdjson_really_inline bool value::is_iterator_alive() const noexcept {
   return iter.is_alive();
 }
 simdjson_really_inline void value::iteration_finished() noexcept {
