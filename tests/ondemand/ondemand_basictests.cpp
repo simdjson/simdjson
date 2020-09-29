@@ -710,65 +710,81 @@ namespace twitter_tests {
     TEST_SUCCEED();
   }
 
-// #if SIMDJSON_EXCEPTIONS
+#if SIMDJSON_EXCEPTIONS
 
-//   bool twitter_count_exception() {
-//     TEST_START();
-//     // Prints the number of results in twitter.json
-//     ondemand::parser parser;
-//     element doc = parser.load(TWITTER_JSON);
-//     uint64_t result_count = doc["search_metadata"]["count"];
-//     if (result_count != 100) { cerr << "Expected twitter.json[metadata_count][count] = 100, got " << result_count << endl; return false; }
-//     return true;
-//   }
+  bool twitter_count_exception() {
+    TEST_START();
+    padded_string json;
+    ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
+    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+      auto metadata = doc_result["search_metadata"].get_object();
+      uint64_t count;
+      ASSERT_SUCCESS( metadata["count"].get(count) );
+      ASSERT_EQUAL( count, 100 );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
 
-//   bool twitter_default_profile_exception() {
-//     TEST_START();
-//     // Print users with a default profile.
-//     set<string_view> default_users;
-//     ondemand::parser parser;
-//     element doc = parser.load(TWITTER_JSON);
-//     for (object tweet : doc["statuses"].get<ondemand::array>()) {
-//       object user = tweet["user"];
-//       if (user["default_profile"]) {
-//         default_users.insert(user["screen_name"]);
-//       }
-//     }
-//     if (default_users.size() != 86) { cerr << "Expected twitter.json[statuses][user] to contain 86 default_profile users, got " << default_users.size() << endl; return false; }
-//     return true;
-//   }
+  bool twitter_default_profile_exception() {
+    TEST_START();
+    padded_string json = padded_string::load(TWITTER_JSON);
+    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+      // Print users with a default profile.
+      set<string_view> default_users;
+      auto tweets = doc_result["statuses"];
+      for (ondemand::object tweet : tweets) {
+        ondemand::object user = tweet["user"];
 
-//   bool twitter_image_sizes_exception() {
-//     TEST_START();
-//     // Print image names and sizes
-//     set<pair<uint64_t, uint64_t>> image_sizes;
-//     ondemand::parser parser;
-//     for (object tweet : parser.load(TWITTER_JSON)["statuses"]) {
-//       auto media = tweet["entities"]["media"];
-//       if (!media.error()) {
-//         for (object image : media) {
-//           for (auto size : object(image["sizes"])) {
-//             image_sizes.insert(make_pair(size.value["w"], size.value["h"]));
-//           }
-//         }
-//       }
-//     }
-//     ASSERT_EQUAL( image_sizes.size(), 15 );
-//     return true;
-//   }
+        // We have to get the screen name before default_profile because it appears first
+        std::string_view screen_name = user["screen_name"];
+        if (user["default_profile"]) {
+          default_users.insert(screen_name);
+        }
+      }
+      ASSERT_EQUAL( default_users.size(), 86 );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
 
-// #endif
+  bool twitter_image_sizes_exception() {
+    TEST_START();
+    padded_string json = padded_string::load(TWITTER_JSON);
+    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+      // Print image names and sizes
+      set<pair<uint64_t, uint64_t>> image_sizes;
+      for (ondemand::object tweet : doc_result["statuses"]) {
+        ondemand::object entities = tweet["entities"];
+        auto media = entities["media"];
+        if (media.error() == SUCCESS) {
+          for (ondemand::object image : media) {
+            auto sizes = image["sizes"].get_object();
+            for (auto size : sizes) {
+              ondemand::object size_value = size.value();
+              image_sizes.insert(make_pair(size_value["w"], size_value["h"]));
+            }
+          }
+        }
+      }
+      ASSERT_EQUAL( image_sizes.size(), 15 );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+#endif
 
   bool run() {
     return
            twitter_count() &&
            twitter_default_profile() &&
            twitter_image_sizes() &&
-// #if SIMDJSON_EXCEPTIONS
-//            twitter_count_exception() &&
-//            twitter_default_profile_exception() &&
-//            twitter_image_sizes_exception() &&
-// #endif
+#if SIMDJSON_EXCEPTIONS
+           twitter_count_exception() &&
+           twitter_default_profile_exception() &&
+           twitter_image_sizes_exception() &&
+#endif
            true;
   }
 }
