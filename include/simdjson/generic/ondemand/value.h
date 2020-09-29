@@ -245,26 +245,6 @@ public:
    * Part of the std::iterable interface.
    */
   simdjson_really_inline simdjson_result<array_iterator<value>> end() & noexcept;
-  /**
-   * Look up a field by name on an object.
-   *
-   * This method may only be called once on a given value. If you want to look up multiple fields,
-   * you must first get the object using value.get_object() or object(value).
-   * 
-   * @param key The key to look up.
-   * @returns INCORRECT_TYPE If the JSON value is not an array.
-   */
-  simdjson_really_inline simdjson_result<value> operator[](std::string_view key) && noexcept;
-  /**
-   * Look up a field by name on an object.
-   *
-   * This method may only be called once on a given value. If you want to look up multiple fields,
-   * you must first get the object using value.get_object() or object(value).
-   * 
-   * @param key The key to look up.
-   * @returns INCORRECT_TYPE If the JSON value is not an array.
-   */
-  simdjson_really_inline simdjson_result<value> operator[](const char *key) && noexcept;
 
 protected:
   /**
@@ -380,8 +360,6 @@ public:
 
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<SIMDJSON_IMPLEMENTATION::ondemand::value>> begin() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<SIMDJSON_IMPLEMENTATION::ondemand::value>> end() & noexcept;
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) && noexcept;
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) && noexcept;
 };
 
 } // namespace simdjson

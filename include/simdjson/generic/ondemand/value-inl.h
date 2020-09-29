@@ -176,12 +176,6 @@ simdjson_really_inline simdjson_result<array_iterator<value>> value::begin() & n
 simdjson_really_inline simdjson_result<array_iterator<value>> value::end() & noexcept {
   return {};
 }
-simdjson_really_inline simdjson_result<value> value::operator[](std::string_view key) && noexcept {
-  return std::forward<value>(*this).get_object()[key];
-}
-simdjson_really_inline simdjson_result<value> value::operator[](const char *key) && noexcept {
-  return std::forward<value>(*this).get_object()[key];
-}
 
 simdjson_really_inline void value::log_value(const char *type) const noexcept {
   char json_char[]{char(json[0]), '\0'};
@@ -236,14 +230,6 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<SIMDJSON_IMPLEMENTATION::ondemand::value>> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::end() & noexcept {
   if (error()) { return error(); }
   return {};
-}
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator[](std::string_view key) && noexcept {
-  if (error()) { return error(); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first)[key];
-}
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator[](const char *key) && noexcept {
-  if (error()) { return error(); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first)[key];
 }
 
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_array() noexcept {
