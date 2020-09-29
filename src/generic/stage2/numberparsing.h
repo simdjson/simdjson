@@ -396,7 +396,9 @@ simdjson_really_inline error_code write_float(const uint8_t *const src, bool neg
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
   // digit count is off by 1 because of the decimal (assuming there was one).
-  if (simdjson_unlikely(digit_count-1 >= 19 && significant_digits(start_digits, digit_count) >= 19)) {
+  //
+  // 9999999999999999999 < 2**64 so we can accomodate 19 digits.
+  if (simdjson_unlikely(digit_count-1 > 19 && significant_digits(start_digits, digit_count) > 19)) {
     // Ok, chances are good that we had an overflow!
     // this is almost never going to get called!!!
     // we start anew, going slowly!!!
@@ -715,16 +717,16 @@ SIMDJSON_UNUSED simdjson_really_inline simdjson_result<double> parse_double(cons
     while (parse_digit(*p, i)) { p++; }
     exponent = -(p - start_decimal_digits);
 
-    // Overflow check. 19 digits (minus the decimal) may be overflow.
-    overflow = p-src-1 >= 19;
+    // Overflow check. More than 19 digits (minus the decimal) may be overflow.
+    overflow = p-src-1 > 19;
     if (simdjson_unlikely(overflow && leading_zero)) {
       // Skip leading 0.00000 and see if it still overflows
       const uint8_t *start_digits = src + 2;
       while (*start_digits == '0') { start_digits++; }
-      overflow = start_digits-src >= 19;
+      overflow = start_digits-src > 19;
     }
   } else {
-    overflow = p-src >= 19;
+    overflow = p-src > 19;
   }
 
   //
