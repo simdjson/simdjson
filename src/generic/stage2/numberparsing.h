@@ -355,6 +355,13 @@ void decimal_right_shift(decimal &h, uint32_t shift) {
 
 template <typename binary> adjusted_mantissa compute_float(decimal &d) {
   adjusted_mantissa answer;
+  if (d.num_digits == 0) {
+    // should be zero
+    answer.power2 = 0;
+    answer.mantissa = 0;
+    return answer;
+  }
+  // At this point, going further, we can assume that d.num_digits > 0.
 
   static const uint32_t max_shift = 60;
   static const uint32_t num_powers = 19;
