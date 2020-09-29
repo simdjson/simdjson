@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
+
 #ifndef JSON_TEST_NUMBERS
 #define JSON_TEST_NUMBERS
 #endif
@@ -15,6 +17,16 @@
 #include <dirent_portable.h>
 #endif
 #include "simdjson.h"
+
+
+#define IEEE_8087
+
+/**
+ * We cannot trust all systems to have sane strtod functions.
+ **/
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+#include "dtoa.c"
+SIMDJSON_POP_DISABLE_WARNINGS
 
 // ulp distance
 // Marc B. Reynolds, 2016-2019
@@ -70,13 +82,7 @@ bool is_in_bad_list(const char *buf) {
 void found_invalid_number(const uint8_t *buf) {
   invalid_count++;
   char *endptr;
-#ifdef _WIN32
-  static _locale_t c_locale = _create_locale(LC_ALL, "C");
-  double expected = _strtod_l((const char *)buf, &endptr, c_locale);
-#else
-  static locale_t c_locale = newlocale(LC_ALL_MASK, "C", NULL);
-  double expected = strtod_l((const char *)buf, &endptr, c_locale);
-#endif
+  double expected = netlib_strtod((const char *)buf, &endptr);
   if (endptr != (const char *)buf) {
     if (!is_in_bad_list((const char *)buf)) {
       printf("Warning: found_invalid_number %.32s whereas strtod parses it to "
@@ -95,7 +101,7 @@ void found_integer(int64_t result, const uint8_t *buf) {
   if ((endptr == (const char *)buf) || (expected != result)) {
 #if (!(__MINGW32__) && !(__MINGW64__))
     fprintf(stderr, "Error: parsed %" PRId64 " out of %.32s, ", result, buf);
-#else // mingw is busted since we include #include <inttypes.h>
+#else // mingw is busted since we include #include <inttypes.h> and it will still  not provide PRId64
     fprintf(stderr, "Error: parsed %lld out of %.32s, ", (long long)result, buf);
 #endif
     fprintf(stderr, " while parsing %s \n", fullpath);
