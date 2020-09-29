@@ -19,14 +19,26 @@
 #include "simdjson.h"
 
 
-#define IEEE_8087
 
 /**
- * We cannot trust all systems to have sane strtod functions.
- **/
-SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
-#include "dtoa.c"
-SIMDJSON_POP_DISABLE_WARNINGS
+ * Some systems have bad floating-point parsing. We want to exclude them.
+ */
+#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined (__linux__) || defined (__APPLE__) || defined(__FreeBSD__) 
+// Ok. So under Visual Studio, linux, apple and freebsd systems, we have a good chance of having a decent
+// enough strtod. It is not certain, but it is maybe a good enough heuristics. We exclude systems like msys2 
+// or cygwin.
+//
+// Finally, we want to exclude legacy 32-bit systems.
+#ifndef SIMDJSON_IS_32BITS
+#define TEST_FLOATS
+// Apple and freebsd need a special header, typically.
+#if defined __APPLE__ || defined(__FreeBSD__)
+#  include <xlocale.h> 
+#endif
+
+#endif
+
+#endif
 
 // ulp distance
 // Marc B. Reynolds, 2016-2019
@@ -79,10 +91,20 @@ bool is_in_bad_list(const char *buf) {
   return false;
 }
 
+#ifndef TEST_FLOATS
+// We do not recognize the system, so we do not verify our results.
+void found_invalid_number(const uint8_t *buf) {}
+#else
 void found_invalid_number(const uint8_t *buf) {
   invalid_count++;
   char *endptr;
-  double expected = netlib_strtod((const char *)buf, &endptr);
+#ifdef _WIN32
+  static _locale_t c_locale = _create_locale(LC_ALL, "C");
+  double expected = _strtod_l((const char *)buf, &endptr, c_locale);
+#else
+  static locale_t c_locale = newlocale(LC_ALL_MASK, "C", NULL);
+  double expected = strtod_l((const char *)buf, &endptr, c_locale);
+#endif     
   if (endptr != (const char *)buf) {
     if (!is_in_bad_list((const char *)buf)) {
       printf("Warning: found_invalid_number %.32s whereas strtod parses it to "
@@ -93,6 +115,7 @@ void found_invalid_number(const uint8_t *buf) {
     }
   }
 }
+#endif
 
 void found_integer(int64_t result, const uint8_t *buf) {
   int_count++;
@@ -124,10 +147,20 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf) {
   }
 }
 
+#ifndef TEST_FLOATS
+// We do not recognize the system, so we do not verify our results.
+void found_float(double result, const uint8_t *buf) {}
+#else
 void found_float(double result, const uint8_t *buf) {
   char *endptr;
   float_count++;
-  double expected = netlib_strtod((const char *)buf, &endptr);
+#ifdef _WIN32
+  static _locale_t c_locale = _create_locale(LC_ALL, "C");
+  double expected = _strtod_l((const char *)buf, &endptr, c_locale);
+#else
+  static locale_t c_locale = newlocale(LC_ALL_MASK, "C", NULL);
+  double expected = strtod_l((const char *)buf, &endptr, c_locale);
+#endif    
   if (endptr == (const char *)buf) {
     fprintf(stderr,
             "parsed %f from %.32s whereas strtod refuses to parse a float, ",
@@ -152,6 +185,7 @@ void found_float(double result, const uint8_t *buf) {
     parse_error |= PARSE_ERROR;
   }
 }
+#endif
 
 #include "simdjson.h"
 #include "simdjson.cpp"
