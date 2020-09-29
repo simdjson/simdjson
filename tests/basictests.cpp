@@ -1358,6 +1358,41 @@ namespace minify_tests {
     }
     return true;
   }
+
+  // this is meant to test buffer overflows.
+  bool test_various_lengths() {
+    std::cout << "Running " << __func__ << std::endl;
+    for(size_t i = 0; i < 1024; i++) {
+      std::unique_ptr<char[]> bogus_json = std::make_unique<char[]>(i);
+      std::unique_ptr<char[]> output_json = std::make_unique<char[]>(i);
+      size_t newlength{};
+      for(size_t j = 0; j < i; j++) { bogus_json.get()[j] = char('\\'); }
+      auto e = simdjson::minify(bogus_json.get(), i, output_json.get(), newlength);
+      if(e) {
+        std::cerr << "got an error (unexpected) : " << e << std::endl;
+        return false;       
+      }
+    }
+    return true;
+  }
+  // this is meant to test buffer overflows.
+  bool test_various_lengths2() {
+    std::cout << "Running " << __func__ << std::endl;
+    for(size_t i = 2; i < 1024; i++) {
+      std::unique_ptr<char[]> bogus_json = std::make_unique<char[]>(i);
+      std::unique_ptr<char[]> output_json = std::make_unique<char[]>(i);
+      size_t newlength{};
+      for(size_t j = 0; j < i; j++) { bogus_json.get()[j] = char(' '); }
+      bogus_json.get()[0] = '\"';
+      bogus_json.get()[i - 1] = '\"';
+      auto e = simdjson::minify(bogus_json.get(), i, output_json.get(), newlength);
+      if(e) {
+        std::cerr << "got an error (unexpected) : " << e << std::endl;
+        return false;       
+      }
+    }
+    return true;
+  }
   bool test_single_quote() {
     std::cout << "Running " << __func__ << std::endl;
     const std::string test = "\"";
@@ -1391,7 +1426,9 @@ namespace minify_tests {
     return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
   }
   bool run() {
-    return test_single_quote() &&
+    return test_various_lengths2() &&
+           test_various_lengths() &&
+           test_single_quote() &&
            test_minify() &&
            test_minify_array() &&
            test_minify_object();
