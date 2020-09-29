@@ -479,84 +479,6 @@ namespace dom_api_tests {
     TEST_SUCCEED();
   }
 
-  bool twitter_count() {
-    TEST_START();
-    padded_string json;
-    ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
-    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
-      auto metadata = doc_result["search_metadata"].get_object();
-      uint64_t count;
-      ASSERT_SUCCESS( metadata["count"].get(count) );
-      ASSERT_EQUAL( count, 100 );
-      return true;
-    }));
-    TEST_SUCCEED();
-  }
-
-  bool twitter_default_profile() {
-    TEST_START();
-    padded_string json;
-    ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
-    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
-      // Print users with a default profile.
-      set<string_view> default_users;
-      ondemand::array tweets;
-      ASSERT_SUCCESS( doc_result["statuses"].get(tweets) );
-      for (auto tweet_value : tweets) {
-        auto tweet = tweet_value.get_object();
-
-        ondemand::object user;
-        ASSERT_SUCCESS( tweet["user"].get(user) );
-
-        // We have to get the screen name before default_profile because it appears first
-        std::string_view screen_name;
-        ASSERT_SUCCESS( user["screen_name"].get(screen_name) );
-
-        bool default_profile;
-        ASSERT_SUCCESS( user["default_profile"].get(default_profile) );
-        if (default_profile) {
-          default_users.insert(screen_name);
-        }
-      }
-      ASSERT_EQUAL( default_users.size(), 86 );
-      return true;
-    }));
-    TEST_SUCCEED();
-  }
-
-  bool twitter_image_sizes() {
-    TEST_START();
-    padded_string json;
-    ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
-    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
-      // Print image names and sizes
-      set<pair<uint64_t, uint64_t>> image_sizes;
-      ondemand::array tweets;
-      ASSERT_SUCCESS( doc_result["statuses"].get(tweets) );
-      for (auto tweet_value : tweets) {
-        auto tweet = tweet_value.get_object();
-        auto entities = tweet["entities"].get_object();
-        ondemand::array media;
-        if (entities["media"].get(media) == SUCCESS) {
-          for (auto image_value : media) {
-            auto image = image_value.get_object();
-            auto sizes = image["sizes"].get_object();
-            for (auto size : sizes) {
-              auto size_value = size.value().get_object();
-              uint64_t width, height;
-              ASSERT_SUCCESS( size_value["w"].get(width) );
-              ASSERT_SUCCESS( size_value["h"].get(height) );
-              image_sizes.insert(make_pair(width, height));
-            }
-          }
-        }
-      }
-      ASSERT_EQUAL( image_sizes.size(), 15 );
-      return true;
-    }));
-    TEST_SUCCEED();
-  }
-
 // #if SIMDJSON_EXCEPTIONS
 
 //   bool object_iterator_exception() {
@@ -663,6 +585,117 @@ namespace dom_api_tests {
 //     return true;
 //   }
 
+// #endif
+
+  bool run() {
+    return
+           iterate_array() &&
+           iterate_empty_array() &&
+           iterate_object() &&
+           iterate_empty_object() &&
+           string_value() &&
+           numeric_values() &&
+           boolean_values() &&
+           null_value() &&
+           object_index() &&
+// #if SIMDJSON_EXCEPTIONS
+//            object_iterator_exception() &&
+//            array_iterator_exception() &&
+//            string_value_exception() &&
+//            numeric_values_exception() &&
+//            boolean_values_exception() &&
+//            null_value_exception() &&
+//            document_object_index() &&
+// #endif
+           true;
+  }
+}
+
+namespace twitter_tests {
+  using namespace std;
+  using namespace simdjson;
+  using namespace simdjson::dom;
+
+  bool twitter_count() {
+    TEST_START();
+    padded_string json;
+    ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
+    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+      auto metadata = doc_result["search_metadata"].get_object();
+      uint64_t count;
+      ASSERT_SUCCESS( metadata["count"].get(count) );
+      ASSERT_EQUAL( count, 100 );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+  bool twitter_default_profile() {
+    TEST_START();
+    padded_string json;
+    ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
+    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+      // Print users with a default profile.
+      set<string_view> default_users;
+      ondemand::array tweets;
+      ASSERT_SUCCESS( doc_result["statuses"].get(tweets) );
+      for (auto tweet_value : tweets) {
+        auto tweet = tweet_value.get_object();
+
+        ondemand::object user;
+        ASSERT_SUCCESS( tweet["user"].get(user) );
+
+        // We have to get the screen name before default_profile because it appears first
+        std::string_view screen_name;
+        ASSERT_SUCCESS( user["screen_name"].get(screen_name) );
+
+        bool default_profile;
+        ASSERT_SUCCESS( user["default_profile"].get(default_profile) );
+        if (default_profile) {
+          default_users.insert(screen_name);
+        }
+      }
+      ASSERT_EQUAL( default_users.size(), 86 );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+  bool twitter_image_sizes() {
+    TEST_START();
+    padded_string json;
+    ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
+    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+      // Print image names and sizes
+      set<pair<uint64_t, uint64_t>> image_sizes;
+      ondemand::array tweets;
+      ASSERT_SUCCESS( doc_result["statuses"].get(tweets) );
+      for (auto tweet_value : tweets) {
+        auto tweet = tweet_value.get_object();
+        auto entities = tweet["entities"].get_object();
+        ondemand::array media;
+        if (entities["media"].get(media) == SUCCESS) {
+          for (auto image_value : media) {
+            auto image = image_value.get_object();
+            auto sizes = image["sizes"].get_object();
+            for (auto size : sizes) {
+              auto size_value = size.value().get_object();
+              uint64_t width, height;
+              ASSERT_SUCCESS( size_value["w"].get(width) );
+              ASSERT_SUCCESS( size_value["h"].get(height) );
+              image_sizes.insert(make_pair(width, height));
+            }
+          }
+        }
+      }
+      ASSERT_EQUAL( image_sizes.size(), 15 );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+// #if SIMDJSON_EXCEPTIONS
+
 //   bool twitter_count_exception() {
 //     TEST_START();
 //     // Prints the number of results in twitter.json
@@ -712,26 +745,10 @@ namespace dom_api_tests {
 
   bool run() {
     return
-           iterate_array() &&
-           iterate_empty_array() &&
-           iterate_object() &&
-           iterate_empty_object() &&
-           string_value() &&
-           numeric_values() &&
-           boolean_values() &&
-           null_value() &&
-           object_index() &&
            twitter_count() &&
            twitter_default_profile() &&
            twitter_image_sizes() &&
 // #if SIMDJSON_EXCEPTIONS
-//            object_iterator_exception() &&
-//            array_iterator_exception() &&
-//            string_value_exception() &&
-//            numeric_values_exception() &&
-//            boolean_values_exception() &&
-//            null_value_exception() &&
-//            document_object_index() &&
 //            twitter_count_exception() &&
 //            twitter_default_profile_exception() &&
 //            twitter_image_sizes_exception() &&
@@ -1462,6 +1479,7 @@ int main(int argc, char *argv[]) {
     //   minify_tests::run() &&
       parse_api_tests::run() &&
       dom_api_tests::run() &&
+      twitter_tests::run() &&
     //   type_tests::run() &&
     //   format_tests::run() &&
       number_tests::run() 
