@@ -93,7 +93,7 @@ bool is_in_bad_list(const char *buf) {
 
 #ifndef TEST_FLOATS
 // We do not recognize the system, so we do not verify our results.
-void found_invalid_number(const uint8_t *buf) {}
+void found_invalid_number(const uint8_t *) {}
 #else
 void found_invalid_number(const uint8_t *buf) {
   invalid_count++;
@@ -149,7 +149,7 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf) {
 
 #ifndef TEST_FLOATS
 // We do not recognize the system, so we do not verify our results.
-void found_float(double result, const uint8_t *buf) {}
+void found_float(double , const uint8_t *) {}
 #else
 void found_float(double result, const uint8_t *buf) {
   char *endptr;
