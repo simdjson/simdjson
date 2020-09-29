@@ -358,6 +358,7 @@ namespace dom_api_tests {
       return true;
     }));
     padded_string array_json = std::string("[") + std::string(json) + "]";
+    cout << "- JSON: " << array_json << endl;
     SUBTEST( "simdjson_result<ondemand::value>", test_ondemand_doc(array_json, [&](auto doc_result) {
       int count = 0;
       for (simdjson_result<ondemand::value> val_result : doc_result) {
@@ -479,113 +480,129 @@ namespace dom_api_tests {
     TEST_SUCCEED();
   }
 
-// #if SIMDJSON_EXCEPTIONS
+#if SIMDJSON_EXCEPTIONS
 
-//   bool object_iterator_exception() {
-//     TEST_START();
-//     auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
-//     const char* expected_key[] = { "a", "b", "c" };
-//     uint64_t expected_value[] = { 1, 2, 3 };
-//     int i = 0;
+  bool iterate_object_exception() {
+    TEST_START();
+    auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
+    const char* expected_key[] = { "a", "b", "c" };
+    uint64_t expected_value[] = { 1, 2, 3 };
+    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+      int i = 0;
+      for (ondemand::field field : doc_result.get_object()) {
+        ASSERT( field.key() == expected_key[i] , "Keys not equal" );
+        ASSERT_EQUAL( uint64_t(field.value()), expected_value[i] );
+        i++;
+      }
+      ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
 
-//     ondemand::parser parser;
-//     for (auto [key, value] : ondemand::object(parser.iterate(json))) {
-//       ASSERT_EQUAL( key, expected_key[i]);
-//       ASSERT_EQUAL( uint64_t(value), expected_value[i] );
-//       i++;
-//     }
-//     ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
-//     return true;
-//   }
+  bool iterate_array_exception() {
+    TEST_START();
+    auto json = R"([ 1, 10, 100 ])"_padded;
+    uint64_t expected_value[] = { 1, 10, 100 };
 
-//   bool array_iterator_exception() {
-//     TEST_START();
-//     auto json = R"([ 1, 10, 100 ])"_padded;
-//     uint64_t expected_value[] = { 1, 10, 100 };
-//     int i=0;
+    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+      int i=0;
+      for (int64_t actual : doc_result) { ASSERT_EQUAL(actual, expected_value[i]); i++; }
+      ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
 
-//     ondemand::parser parser;
-//     for (uint64_t value : parser.iterate(json)) {
-//       ASSERT_EQUAL( value, expected_value[i] );
-//       i++;
-//     }
-//     ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
-//     return true;
-//   }
+  bool iterate_empty_object_exception() {
+    TEST_START();
+    auto json = R"({})"_padded;
 
-//   bool string_value_exception() {
-//     TEST_START();
-//     ondemand::parser parser;
-//     ASSERT_EQUAL( (const char *)parser.iterate(R"("hi")"_padded), "hi" );
-//     ASSERT_EQUAL( string_view(parser.iterate(R"("hi")"_padded)), "hi" );
-//     ASSERT_EQUAL( (const char *)parser.iterate(R"("has backslash\\")"_padded), "has backslash\\");
-//     ASSERT_EQUAL( string_view(parser.iterate(R"("has backslash\\")"_padded)), "has backslash\\" );
-//     return true;
-//   }
+    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+      for (SIMDJSON_UNUSED ondemand::field field : doc_result.get_object()) {
+        TEST_FAIL("Unexpected field");
+      }
+      return true;
+    }));
 
-//   bool numeric_values_exception() {
-//     TEST_START();
-//     ondemand::parser parser;
+    TEST_SUCCEED();
+  }
 
-//     ASSERT_EQUAL( uint64_t(parser.iterate("0"_padded)), 0);
-//     ASSERT_EQUAL( int64_t(parser.iterate("0"_padded)), 0);
-//     ASSERT_EQUAL( double(parser.iterate("0"_padded)), 0);
+  bool iterate_empty_array_exception() {
+    TEST_START();
+    auto json = "[]"_padded;
 
-//     ASSERT_EQUAL( uint64_t(parser.iterate("1"_padded)), 1);
-//     ASSERT_EQUAL( int64_t(parser.iterate("1"_padded)), 1);
-//     ASSERT_EQUAL( double(parser.iterate("1"_padded)), 1);
+    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+      for (SIMDJSON_UNUSED ondemand::value value : doc_result) { TEST_FAIL("Unexpected value"); }
+      return true;
+    }));
 
-//     ASSERT_EQUAL( int64_t(parser.iterate("-1"_padded)), -1);
-//     ASSERT_EQUAL( double(parser.iterate("-1"_padded)), -1);
+    TEST_SUCCEED();
+  }
 
-//     ASSERT_EQUAL( double(parser.iterate("1.1"_padded)), 1.1);
+  template<typename T>
+  bool test_scalar_value_exception(const padded_string &json, const T &expected) {
+    cout << "- JSON: " << json << endl;
+    SUBTEST( "document", test_ondemand_doc(json, [&](auto doc_result) {
+      ASSERT_EQUAL( expected, T(doc_result) );
+      return true;
+    }));
+    padded_string array_json = std::string("[") + std::string(json) + "]";
+    cout << "- JSON: " << array_json << endl;
+    SUBTEST( "value", test_ondemand_doc(array_json, [&](auto doc_result) {
+      int count = 0;
+      for (T actual : doc_result) {
+        ASSERT_EQUAL( expected, actual );
+        count++;
+      }
+      ASSERT_EQUAL(count, 1);
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+  bool string_value_exception() {
+    TEST_START();
+    return test_scalar_value_exception(R"("hi")"_padded, std::string_view("hi"));
+  }
 
-//     return true;
-//   }
+  bool numeric_values_exception() {
+    TEST_START();
+    if (!test_scalar_value_exception<int64_t> ("0"_padded,   0)) { return false; }
+    if (!test_scalar_value_exception<uint64_t>("0"_padded,   0)) { return false; }
+    if (!test_scalar_value_exception<double>  ("0"_padded,   0)) { return false; }
+    if (!test_scalar_value_exception<int64_t> ("1"_padded,   1)) { return false; }
+    if (!test_scalar_value_exception<uint64_t>("1"_padded,   1)) { return false; }
+    if (!test_scalar_value_exception<double>  ("1"_padded,   1)) { return false; }
+    if (!test_scalar_value_exception<int64_t> ("-1"_padded,  -1)) { return false; }
+    if (!test_scalar_value_exception<double>  ("-1"_padded,  -1)) { return false; }
+    if (!test_scalar_value_exception<double>  ("1.1"_padded, 1.1)) { return false; }
+    TEST_SUCCEED();
+  }
 
-//   bool boolean_values_exception() {
-//     TEST_START();
-//     ondemand::parser parser;
+  bool boolean_values_exception() {
+    TEST_START();
+    if (!test_scalar_value_exception<bool> ("true"_padded,  true)) { return false; }
+    if (!test_scalar_value_exception<bool> ("false"_padded, false)) { return false; }
+    TEST_SUCCEED();
+  }
 
-//     ASSERT_EQUAL( bool(parser.iterate("true"_padded)), true);
 
-//     ASSERT_EQUAL( bool(parser.iterate("false"_padded)), false);
+  bool object_index_exception() {
+    TEST_START();
+    auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
+    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object = doc_result;
 
-//     return true;
-//   }
+      ASSERT_EQUAL( uint64_t(object["a"]), 1 );
+      ASSERT_EQUAL( uint64_t(object["b"]), 2 );
+      ASSERT_EQUAL( uint64_t(object["c/d"]), 3 );
 
-//   bool null_value_exception() {
-//     TEST_START();
-//     ondemand::parser parser;
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
 
-//     ASSERT_EQUAL( bool(parser.iterate("null"_padded).is_null()), true );
-
-//     return true;
-//   }
-
-//   bool document_object_index_exception() {
-//     TEST_START();
-//     auto json = R"({ "a": 1, "b": 2, "c": 3})"_padded;
-//     ondemand::parser parser;
-//     auto obj = parser.iterate(json);
-
-//     ASSERT_EQUAL(uint64_t(obj["a"]), 1);
-
-//     return true;
-//   }
-
-//   bool object_index_exception() {
-//     TEST_START();
-//     auto json = R"({ "obj": { "a": 1, "b": 2, "c": 3 } })"_padded;
-//     ondemand::parser parser;
-//     object obj = parser.iterate(json)["obj"];
-
-//     ASSERT_EQUAL( uint64_t(obj["a"]), 1);
-
-//     return true;
-//   }
-
-// #endif
+#endif
 
   bool run() {
     return
@@ -598,15 +615,14 @@ namespace dom_api_tests {
            boolean_values() &&
            null_value() &&
            object_index() &&
-// #if SIMDJSON_EXCEPTIONS
-//            object_iterator_exception() &&
-//            array_iterator_exception() &&
-//            string_value_exception() &&
-//            numeric_values_exception() &&
-//            boolean_values_exception() &&
-//            null_value_exception() &&
-//            document_object_index() &&
-// #endif
+#if SIMDJSON_EXCEPTIONS
+           iterate_object_exception() &&
+           iterate_array_exception() &&
+           string_value_exception() &&
+           numeric_values_exception() &&
+           boolean_values_exception() &&
+           object_index_exception() &&
+#endif
            true;
   }
 }
