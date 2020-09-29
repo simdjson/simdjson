@@ -410,17 +410,42 @@ namespace dom_api_tests {
     TEST_SUCCEED();
   }
 
-  // bool null_value() {
-  //   TEST_START();
-  //   auto json = R"([ null ])"_padded;
-  //   ondemand::parser parser;
-  //   ondemand::array array;
-  //   ASSERT_SUCCESS( parser.iterate(json).get(array) );
-
-  //   auto val = array.begin();
-  //   ASSERT_EQUAL( !(*val).is_null(), 0 );
-  //   return true;
-  // }
+  bool null_value() {
+    TEST_START();
+    auto json = "null"_padded;
+    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::document doc;
+      ASSERT_SUCCESS( std::move(doc_result).get(doc) );
+      ASSERT_EQUAL( doc.is_null(), true );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+      ASSERT_EQUAL( doc_result.is_null(), true );
+      return true;
+    }));
+    json = "[null]"_padded;
+    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
+      int count = 0;
+      for (auto value_result : doc_result) {
+        ondemand::value value;
+        ASSERT_SUCCESS( std::move(value_result).get(value) );
+        ASSERT_EQUAL( value.is_null(), true );
+        count++;
+      }
+      ASSERT_EQUAL( count, 1 );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
+      int count = 0;
+      for (auto value_result : doc_result) {
+        ASSERT_EQUAL( value_result.is_null(), true );
+        count++;
+      }
+      ASSERT_EQUAL( count, 1 );
+      return true;
+    }));
+    return true;
+  }
 
 //   bool document_object_index() {
 //     TEST_START();
@@ -699,7 +724,7 @@ namespace dom_api_tests {
            string_value() &&
            numeric_values() &&
            boolean_values() &&
-//            null_value() &&
+           null_value() &&
 //            document_object_index() &&
 //            object_index() &&
 //            twitter_count() &&

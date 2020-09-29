@@ -256,7 +256,7 @@ SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::consume_root_bool() no
 simdjson_really_inline bool json_iterator::root_is_null(const uint8_t *json) noexcept {
   uint8_t tmpbuf[4+1];
   if (!copy_to_buffer(json, tmpbuf)) { return false; }
-  return is_null();
+  return is_null(tmpbuf);
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::skip() noexcept {
