@@ -447,35 +447,59 @@ namespace dom_api_tests {
     return true;
   }
 
-//   bool document_object_index() {
-//     TEST_START();
-//     auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
-//     ondemand::parser parser;
-//     ondemand::object object;
-//     ASSERT_SUCCESS( parser.iterate(json).get(object) );
-//     ASSERT_EQUAL( object["a"].get<uint64_t>().first, 1 );
-//     ASSERT_EQUAL( object["b"].get<uint64_t>().first, 2 );
-//     ASSERT_EQUAL( object["c/d"].get<uint64_t>().first, 3 );
-//     // Check all three again in backwards order, to ensure we can go backwards
-//     ASSERT_EQUAL( object["c/d"].get<uint64_t>().first, 3 );
-//     ASSERT_EQUAL( object["b"].get<uint64_t>().first, 2 );
-//     ASSERT_EQUAL( object["a"].get<uint64_t>().first, 1 );
+  bool object_index() {
+    TEST_START();
+    auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
+    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
 
-//     simdjson::error_code error;
-//     SIMDJSON_UNUSED element val;
-// #ifndef _LIBCPP_VERSION // should work everywhere but with libc++, must include the <ciso646> header.
-//     std::tie(val,error) = object["d"];
-//     ASSERT_ERROR( error, NO_SUCH_FIELD );
-//     std::tie(std::ignore,error) = object["d"];
-//     ASSERT_ERROR( error, NO_SUCH_FIELD );
-// #endif
-//     // tie(val, error) = object["d"]; fails with "no viable overloaded '='" on Apple clang version 11.0.0	    tie(val, error) = doc["d"];
-//     object["d"].tie(val, error);
-//     ASSERT_ERROR( error, NO_SUCH_FIELD );
-//     ASSERT_ERROR( object["d"].get(val), NO_SUCH_FIELD );
-//     ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
-//     return true;
-//   }
+      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
+      ASSERT_EQUAL( object["b"].get_uint64().first, 2 );
+      ASSERT_EQUAL( object["c/d"].get_uint64().first, 3 );
+
+      ASSERT_ERROR( object["a"], NO_SUCH_FIELD );
+      ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
+      ASSERT_EQUAL( doc_result.get_object()["a"].get_uint64().first, 1 );
+      return true;
+    }));
+    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::document doc;
+      ASSERT_SUCCESS( std::move(doc_result).get(doc) );
+      ASSERT_EQUAL( doc["a"].get_uint64().first, 1 );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+      ASSERT_EQUAL( doc_result["a"].get_uint64().first, 1 );
+      return true;
+    }));
+
+    json = R"([{ "a": 1, "b": 2, "c/d": 3}])"_padded;
+    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
+      int count = 0;
+      for (auto value_result : doc_result) {
+        ondemand::value value;
+        ASSERT_SUCCESS( std::move(value_result).get(value) );
+        ASSERT_EQUAL( std::move(value)["a"].get_uint64().first, 1 );
+        return true;
+      }
+      ASSERT_EQUAL( count, 1 );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
+      int count = 0;
+      for (auto value_result : doc_result) {
+        ASSERT_EQUAL( std::move(value_result)["a"].get_uint64().first, 1 );
+        return true;
+      }
+      ASSERT_EQUAL( count, 1 );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
 
 //   bool object_index() {
 //     TEST_START();
@@ -725,8 +749,7 @@ namespace dom_api_tests {
            numeric_values() &&
            boolean_values() &&
            null_value() &&
-//            document_object_index() &&
-//            object_index() &&
+           object_index() &&
 //            twitter_count() &&
 //            twitter_default_profile() &&
 //            twitter_image_sizes() &&
