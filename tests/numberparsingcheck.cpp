@@ -127,13 +127,7 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf) {
 void found_float(double result, const uint8_t *buf) {
   char *endptr;
   float_count++;
-#ifdef _WIN32
-  static _locale_t c_locale = _create_locale(LC_ALL, "C");
-  double expected = _strtod_l((const char *)buf, &endptr, c_locale);
-#else
-  static locale_t c_locale = newlocale(LC_ALL_MASK, "C", NULL);
-  double expected = strtod_l((const char *)buf, &endptr, c_locale);
-#endif  
+  double expected = netlib_strtod((const char *)buf, &endptr);
   if (endptr == (const char *)buf) {
     fprintf(stderr,
             "parsed %f from %.32s whereas strtod refuses to parse a float, ",
