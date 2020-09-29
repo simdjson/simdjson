@@ -43,29 +43,36 @@ struct escape_sequence {
  */
 char *fast_itoa(char *output, int64_t value) noexcept {
   // This is a standard implementation of itoa.
-  // We first write in reverse order and then reverse.
+  char buffer[20];
+  uint64_t value_positive;
+  // In general, negating a signed integer is unsafe.
   if(value < 0) {
     *output++ = '-';
-    value = -value;
+    // Doing value_positive = -value; while avoiding
+    // undefined behavior warnings.
+    // It assumes two complement's which is universal at this
+    // point in time.
+    std::memcpy(&value_positive, &value, sizeof(value));
+    value_positive = (~value_positive) + 1; // this is a negation
+  } else {
+    value_positive = value;
   }
-  char *write_pointer = output;
-  do {
-    *write_pointer++ = char('0' + (value % 10));
-    value /= 10;
-  } while (value != 0);
-  // then we reverse the result
-  char *const answer = write_pointer;
-  char *second_write_pointer = output;
-  write_pointer -= 1;
-  while (second_write_pointer < write_pointer) {
-    char c1 = *write_pointer;
-    char c2 = *second_write_pointer;
-    *second_write_pointer = c1;
-    *write_pointer = c2;
-    write_pointer--;
-    second_write_pointer++;
+  // We work solely with value_positive. It *might* be easier
+  // for an optimizing compiler to deal with an unsigned variable
+  // as far as performance goes.
+  const char *const end_buffer = buffer + 20;
+  char *write_pointer = buffer + 19;
+  // A faster approach is possible if we expect large integers:
+  // unroll the loop (work in 100s, 1000s) and use some kind of
+  // memoization.
+  while(value_positive >= 10) {
+    *write_pointer-- = char('0' + (value_positive % 10));
+    value_positive /= 10;
   }
-  return answer;
+  *write_pointer = char('0' + value_positive);
+  size_t len = end_buffer - write_pointer;
+  std::memcpy(output, write_pointer, len);
+  return output + len;
 }
 /**@private
  * This converts an unsigned integer into a character sequence.
@@ -78,25 +85,20 @@ char *fast_itoa(char *output, int64_t value) noexcept {
  */
 char *fast_itoa(char *output, uint64_t value) noexcept {
   // This is a standard implementation of itoa.
-  // We first write in reverse order and then reverse.
-  char *write_pointer = output;
-  do {
-    *write_pointer++ = char('0' + (value % 10));
+  char buffer[20];
+  const char *const end_buffer = buffer + 20;
+  char *write_pointer = buffer + 19;
+  // A faster approach is possible if we expect large integers:
+  // unroll the loop (work in 100s, 1000s) and use some kind of
+  // memoization.
+  while(value >= 10) {
+    *write_pointer-- = char('0' + (value % 10));
     value /= 10;
-  } while (value != 0);
-  // then we reverse the result
-  char *const answer = write_pointer;
-  char *second_write_pointer = output;
-  write_pointer -= 1;
-  while (second_write_pointer < write_pointer) {
-    char c1 = *write_pointer;
-    char c2 = *second_write_pointer;
-    *second_write_pointer = c1;
-    *write_pointer = c2;
-    write_pointer--;
-    second_write_pointer++;
-  }
-  return answer;
+  };
+  *write_pointer = char('0' + value);
+  size_t len = end_buffer - write_pointer;
+  std::memcpy(output, write_pointer, len);
+  return output + len;
 }
 } // anonymous namespace
 namespace internal {
