@@ -403,12 +403,12 @@ namespace dom_api_tests {
     TEST_SUCCEED();
   }
 
-  // bool boolean_values() {
-  //   TEST_START();
-  //   if (!test_scalar_value<bool> ("true"_padded,  true)) { return false; }
-  //   if (!test_scalar_value<bool> ("false"_padded, false)) { return false; }
-  //   TEST_SUCCEED();
-  // }
+  bool boolean_values() {
+    TEST_START();
+    if (!test_scalar_value<bool> ("true"_padded,  true)) { return false; }
+    if (!test_scalar_value<bool> ("false"_padded, false)) { return false; }
+    TEST_SUCCEED();
+  }
 
   // bool null_value() {
   //   TEST_START();
@@ -698,7 +698,7 @@ namespace dom_api_tests {
            iterate_empty_object() &&
            string_value() &&
            numeric_values() &&
-          //  boolean_values() &&
+           boolean_values() &&
 //            null_value() &&
 //            document_object_index() &&
 //            object_index() &&

@@ -248,7 +248,7 @@ SIMDJSON_WARN_UNUSED simdjson_result<double> json_iterator::consume_root_double(
 SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::parse_root_bool(const uint8_t *json) noexcept {
   uint8_t tmpbuf[5+1];
   if (!copy_to_buffer(json, tmpbuf)) { logger::log_error(*this, "Not a boolean"); return INCORRECT_TYPE; }
-  return consume_bool();
+  return parse_bool(tmpbuf);
 }
 SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::consume_root_bool() noexcept {
   return parse_root_bool(advance());
