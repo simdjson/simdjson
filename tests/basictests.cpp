@@ -34,6 +34,29 @@ namespace number_tests {
     return ua + ub + 0x80000000;
   }
 
+  bool ground_truth() {
+    std::cout << __func__ << std::endl;
+    std::pair<std::string,double> ground_truth[] = {
+      {"-92666518056446206563E3", -0x1.39f764644154dp+76},
+      {"-42823146028335318693e-128", -0x1.0176daa6cdaafp-360},
+      {"90054602635948575728E72", 0x1.61ab4ea9cb6c3p+305},
+      {"1.00000000000000188558920870223463870174566020691753515394643550663070558368373221972569761144603605635692374830246134201063722058e-309", 0x0.0b8157268fdafp-1022},
+      {"0e9999999999999999999999999999", 0x0p+0},
+      {"-2402844368454405395.2", -0x1.0ac4f1c7422e7p+61}
+    };
+    simdjson::dom::parser parser;
+    for(auto string_double : ground_truth) {
+        double result;
+        ASSERT_SUCCESS(parser.parse(string_double.first).get(result));
+        if(result != string_double.second) {
+          std::cerr << std::hexfloat << result << " vs " << string_double.second << std::endl;
+          std::cerr << string_double.first << std::endl;
+          return false;
+        }
+    }
+    return true;
+  }
+
 
   bool small_integers() {
     std::cout << __func__ << std::endl;
@@ -218,7 +241,8 @@ namespace number_tests {
     return true;
   }
   bool run() {
-    return small_integers() &&
+    return ground_truth() && 
+           small_integers() &&
            powers_of_two() &&
            powers_of_ten() &&
            nines();
