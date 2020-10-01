@@ -36,14 +36,13 @@ namespace number_tests {
 
   bool ground_truth() {
     std::cout << __func__ << std::endl;
-    // I really would prefer to enter hexfloat values, but it is possible that some systems do not support them well?
     std::pair<std::string,double> ground_truth[] = {
-      {"-92666518056446206563E3", -9.2666518056446199E+22}, //-0x1.39f764644154dp+76},
-      {"-42823146028335318693e-128", -4.2823146028335323E-109}, //-0x1.0176daa6cdaafp-360},
-      {"90054602635948575728E72", 9.0054602635948576E+91}, //0x1.61ab4ea9cb6c3p+305},
-      {"1.00000000000000188558920870223463870174566020691753515394643550663070558368373221972569761144603605635692374830246134201063722058e-309", 1.0000000000000019E-309}, //0x0.0b8157268fdafp-1022},
-      {"0e9999999999999999999999999999", 0.0}, //0x0p+0},
-      {"-2402844368454405395.2", -2.4028443684544056E+18} //-0x1.0ac4f1c7422e7p+61}
+      {"-92666518056446206563E3", -0x1.39f764644154dp+76},
+      {"-42823146028335318693e-128", -0x1.0176daa6cdaafp-360},
+      {"90054602635948575728E72", 0x1.61ab4ea9cb6c3p+305},
+      {"1.00000000000000188558920870223463870174566020691753515394643550663070558368373221972569761144603605635692374830246134201063722058e-309", 0x0.0b8157268fdafp-1022},
+      {"0e9999999999999999999999999999", 0x0p+0},
+      {"-2402844368454405395.2", -0x1.0ac4f1c7422e7p+61}
     };
     simdjson::dom::parser parser;
     for(auto string_double : ground_truth) {
@@ -126,7 +125,7 @@ namespace number_tests {
       double expected = pow(2, i);
       size_t n = snprintf(buf, sizeof(buf), "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
       if (n >= sizeof(buf)) { abort(); }
-      fflush(NULL);
+      // fflush(NULL); // This should hopefully not be needed.
       double actual;
       auto error = parser.parse(buf, n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
@@ -221,14 +220,14 @@ namespace number_tests {
     simdjson::dom::parser parser;
 
     bool is_pow_correct{1e-308 == std::pow(10,-308)};
-    int start_point = is_pow_correct ? -10000 : -307;
+    int start_point = is_pow_correct ? -1000 : -307;
     if(!is_pow_correct) {
       std::cout << "On your system, the pow function is busted. Sorry about that. " << std::endl;
     }
     for (int i = start_point; i <= 308; ++i) {// large negative values should be zero.
       size_t n = snprintf(buf, sizeof(buf), "1e%d", i);
       if (n >= sizeof(buf)) { abort(); }
-      fflush(NULL);
+      // fflush(NULL); // This should hopefully not be needed.      
       double actual;
       auto error = parser.parse(buf, n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
