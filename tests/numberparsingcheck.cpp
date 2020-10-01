@@ -167,7 +167,7 @@ void found_float(double result, const uint8_t *buf) {
     fprintf(stderr, " while parsing %s \n", fullpath);
     parse_error |= PARSE_ERROR;
   }
-  if (fpclassify(expected) != fpclassify(result)) {
+  if (std::fpclassify(expected) != std::fpclassify(result)) {
     fprintf(stderr,
             "floats not in the same category expected: %f observed: %f \n",
             expected, result);
