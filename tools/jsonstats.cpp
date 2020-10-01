@@ -189,7 +189,7 @@ stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
   return s;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, const char *argv[]) {
 #ifdef __cpp_exceptions
   try {
 #endif

@@ -67,7 +67,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     // make this dynamic, so it works regardless of how it was compiled
     // or what hardware it runs on
     constexpr std::size_t Nimplementations_max=3;
-    const std::size_t Nimplementations=simdjson::available_implementations.size();
+    std::size_t Nimplementations = 0;
+    
+    for(auto impl : simdjson::available_implementations) {
+        if(impl->supported_by_runtime_system()) {
+              Nimplementations++;
+        }
+    }
     if(Nimplementations>Nimplementations_max) {
         //there is another backend added, please bump Nimplementations_max!
         std::abort();
@@ -78,7 +84,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     {
         std::size_t i=0;
         for(auto& e: simdjson::available_implementations) {
-            implementations[i++].impl=e;
+            if(e->supported_by_runtime_system()) {
+              implementations[i++].impl=e;
+            }
         }
     }
 

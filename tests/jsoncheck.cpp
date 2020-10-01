@@ -119,6 +119,10 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Unsupported architecture value -a %s\n", optarg);
         return EXIT_FAILURE;
       }
+      if(!impl->supported_by_runtime_system()) {
+        fprintf(stderr, "The selected implementation does not match your current CPU: -a %s\n", optarg);
+        return EXIT_FAILURE;
+      }
       simdjson::active_implementation = impl;
       break;
     }
