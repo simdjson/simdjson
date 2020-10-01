@@ -46,8 +46,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #ifndef SIMDJSON_ISADETECTION_H
 #define SIMDJSON_ISADETECTION_H
 
-#include <stdint.h>
-#include <stdlib.h>
+#include <cstdint>
+#include <cstdlib>
 #if defined(_MSC_VER)
 #include <intrin.h>
 #elif defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)
