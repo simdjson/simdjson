@@ -9,7 +9,7 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 #include "cxxopts.hpp"
 SIMDJSON_POP_DISABLE_WARNINGS
 
-int main(int argc, char *argv[]) {
+int main(int argc, const char *argv[]) {
 #ifdef __cpp_exceptions
   try {
 #endif

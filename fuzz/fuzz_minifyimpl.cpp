@@ -32,16 +32,19 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     };
 
 
-    auto first=simdjson::available_implementations.begin();
-    auto last=simdjson::available_implementations.end();
+    auto const first = simdjson::available_implementations.begin();
+    auto const last = simdjson::available_implementations.end();
 
-    //make sure there is an implementation
-    assert(first!=last);
+
+    auto it = first;
+    while((it != last) && (!(*it)->supported_by_runtime_system())) { it++; }
+    assert(it != last);
 
     const auto reference=minify(*first);
 
     bool failed=false;
-    for(auto it=first+1;it!=last; ++it) {
+    for(;it != last; ++it) {
+        if(!(*it)->supported_by_runtime_system()) { continue; }
         const auto current=minify(*it);
         if(current!=reference) {
             failed=true;
@@ -50,7 +53,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
     if(failed) {
         std::cerr<<std::boolalpha<<"Mismatch between implementations of minify() found:\n";
-        for(auto it=first;it!=last; ++it) {
+        for(it = first;it != last; ++it) {
+            if(!(*it)->supported_by_runtime_system()) { continue; }
             const auto current=minify(*it);
             std::string tmp(current.begin(),current.end());
             std::cerr<<(*it)->name()<<" returns "<<tmp<<std::endl;

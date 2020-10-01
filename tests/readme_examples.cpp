@@ -201,8 +201,22 @@ void implementation_selection_2() {
   }
 }
 
+void implementation_selection_2_safe() {
+  for (auto implementation : simdjson::available_implementations) {
+    if(implementation->supported_by_runtime_system()) {
+      cout << implementation->name() << ": " << implementation->description() << endl;
+    }
+  }
+}
 void implementation_selection_3() {
   cout << simdjson::available_implementations["fallback"]->description() << endl;
+}
+
+void implementation_selection_safe() {
+  auto my_implementation = simdjson::available_implementations["haswell"];
+  if(! my_implementation) { exit(1); }
+  if(! my_implementation->supported_by_runtime_system()) { exit(1); }
+  simdjson::active_implementation = my_implementation;
 }
 
 void implementation_selection_4() {
