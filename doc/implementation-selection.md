@@ -116,4 +116,4 @@ for (auto implementation : simdjson::available_implementations) {
 ```
 
 The call to `supported_by_runtime_system()` maybe relatively expensive. Do not call  `supported_by_runtime_system()` each
-time you parse a JSON input (for example).
+time you parse a JSON input (for example). It is meant to be called a handful of times at most in the life of a program.
