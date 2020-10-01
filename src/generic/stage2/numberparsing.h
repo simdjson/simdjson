@@ -42,6 +42,18 @@ struct decimal {
   uint8_t digits[max_digits];
 };
 
+/** If you ever want to see what is going on, the following function might prove handy:
+ * **/
+void print(const decimal d, int32_t exp2 = 0) {
+  printf("0.");
+  for(size_t i = 0; i < d.num_digits; i++) {
+    printf("%d", int(d.digits[i]));
+  }
+  printf(" * 10 **%d ", d.decimal_point);
+  printf(" * 2 **%d ", exp2);
+
+}
+
 template <typename T> struct binary_format {
   static constexpr int mantissa_explicit_bits();
   static constexpr int minimum_exponent();
@@ -354,6 +366,7 @@ void decimal_right_shift(decimal &h, uint32_t shift) {
 }
 
 template <typename binary> adjusted_mantissa compute_float(decimal &d) {
+    printf("compute_float : "); print(d); printf("\n");
   adjusted_mantissa answer;
   if (d.num_digits == 0) {
     // should be zero
@@ -422,8 +435,11 @@ template <typename binary> adjusted_mantissa compute_float(decimal &d) {
 
   const int mantissa_size_in_bits = binary::mantissa_explicit_bits() + 1;
   decimal_left_shift(d, mantissa_size_in_bits);
+    printf("compute_float before round: "); print(d); printf("\n");
 
   uint64_t mantissa = round(d);
+  std::cout << "compute_float mantissa " << mantissa << std::endl;
+    std::cout << "compute_float exp2 " << exp2 << std::endl;
   // It is possible that we have an overflow, in which case we need
   // to shift back.
   if (mantissa >= (uint64_t(1) << mantissa_size_in_bits)) {
@@ -442,12 +458,15 @@ template <typename binary> adjusted_mantissa compute_float(decimal &d) {
   }
   answer.mantissa =
       mantissa & ((uint64_t(1) << binary::mantissa_explicit_bits()) - 1);
+  std::cout << "compute_float final mantissa " << answer.mantissa << std::endl;
+    std::cout << "compute_float answer.power2 " << answer.power2 << std::endl;
   return answer;
 }
 
 template <typename binary>
 adjusted_mantissa parse_long_mantissa(const char *first) {
   decimal d = parse_decimal(first);
+  printf("parsed : "); print(d); printf("\n");
   return compute_float<binary>(d);
 }
 
