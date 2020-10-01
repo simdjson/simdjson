@@ -1,9 +1,8 @@
 #include <cstring>
-#include <inttypes.h>
-#include <math.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cinttypes>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
 
 

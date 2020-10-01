@@ -362,6 +362,26 @@ template <typename binary> adjusted_mantissa compute_float(decimal &d) {
     return answer;
   }
   // At this point, going further, we can assume that d.num_digits > 0.
+  // We want to guard against excessive decimal point values because
+  // they can result in long running times. Indeed, we do 
+  // shifts by at most 60 bits. We have that log(10**400)/log(2**60) ~= 22
+  // which is fine, but log(10**299995)/log(2**60) ~= 16609 which is not
+  // fine (runs for a long time).
+  //
+  if(d.decimal_point < -324) {
+    // We have something smaller than 1e-324 which is always zero
+    // in binary64 and binary32. 
+    // It should be zero.
+    answer.power2 = 0;
+    answer.mantissa = 0;
+    return answer;
+  } else if(d.decimal_point >= 310) {
+    // We have something at least as large as 0.1e310 which is
+    // always infinite.    
+    answer.power2 = binary::infinite_power();
+    answer.mantissa = 0;
+    return answer;
+  }
 
   static const uint32_t max_shift = 60;
   static const uint32_t num_powers = 19;
