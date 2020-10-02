@@ -1,0 +1,27 @@
+name: Alpine Linux
+'on':
+  - push
+  - pull_request
+jobs:
+  ubuntu-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: start docker
+        run: |
+          docker run -w /src -dit --name alpine -v $PWD:/src alpine:latest
+          echo 'docker exec alpine "$@";' > ./alpine.sh
+          chmod +x ./alpine.sh
+      - name: install packages
+        run: |
+          ./alpine.sh apk update
+          ./alpine.sh apk add build-base cmake g++ linux-headers git bash
+      - name: cmake
+        run: |
+          ./alpine.sh cmake -B build_for_alpine
+      - name: build
+        run: |
+          ./alpine.sh cmake --build build_for_alpine
+      - name: test
+        run: |
+          ./alpine.sh bash -c "cd build_for_alpine && ctest"
