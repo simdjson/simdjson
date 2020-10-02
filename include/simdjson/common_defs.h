@@ -13,6 +13,12 @@ namespace internal {
  * Defined in src/to_chars
  */
 char *to_chars(char *first, const char *last, double value);
+/**
+ * @private
+ * A number parsing routine.
+ * Defined in src/from_chars
+ */
+double from_chars(const char *first) noexcept;
 }
 
 #ifndef SIMDJSON_EXCEPTIONS

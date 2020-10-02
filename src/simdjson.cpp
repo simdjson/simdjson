@@ -3,6 +3,7 @@
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "to_chars.cpp"
+#include "from_chars.cpp"
 #include "error.cpp"
 #include "implementation.cpp"
 
