@@ -40,10 +40,10 @@ simdjson_really_inline simdjson::error_code to_error_code(const simdjson::simdjs
   return result.error();
 }
 
-#define TEST_START() { cout << "Running " << __func__ << " ..." << endl; }
+#define TEST_START() { std::cout << "Running " << __func__ << " ..." << std::endl; }
 #define SUBTEST(NAME, TEST) \
 { \
-  cout << "- Subtest " << (NAME) << " ..." << endl; \
+  std::cout << "- Subtest " << (NAME) << " ..." << std::endl; \
   bool succeeded = (TEST); \
   ASSERT(succeeded, "Subtest " NAME " failed"); \
 }

@@ -199,21 +199,21 @@ namespace parse_api_tests {
     return true;
   }
 
-// #if SIMDJSON_EXCEPTIONS
-//   bool parser_iterate_exception() {
-//     TEST_START();
-//     ondemand::parser parser;
-//     auto doc = parser.iterate(BASIC_JSON);
-//     SIMDJSON_UNUSED ondemand::array array = doc;
-//     return true;
-//   }
-// #endif
+#if SIMDJSON_EXCEPTIONS
+  bool parser_iterate_exception() {
+    TEST_START();
+    ondemand::parser parser;
+    auto doc = parser.iterate(BASIC_JSON);
+    SIMDJSON_UNUSED ondemand::array array = doc;
+    return true;
+  }
+#endif
 
   bool run() {
     return parser_iterate() &&
-// #if SIMDJSON_EXCEPTIONS
-//            parser_iterate_exception() &&
-// #endif
+#if SIMDJSON_EXCEPTIONS
+           parser_iterate_exception() &&
+#endif
            true;
   }
 }
@@ -789,6 +789,169 @@ namespace twitter_tests {
   }
 }
 
+namespace error_tests {
+  using namespace std;
+  using namespace simdjson;
+  using namespace simdjson::builtin;
+
+  bool empty_document_error() {
+    TEST_START();
+    ondemand::parser parser;
+    ASSERT_ERROR( parser.iterate(""_padded), EMPTY );
+    TEST_SUCCEED();
+  }
+
+#define TEST_CAST_ERROR(JSON, TYPE, ERROR) \
+  std::cout << "- Subtest: get_" << (#TYPE) << "() - JSON: " << (JSON) << std::endl; \
+  if (!test_ondemand_doc((JSON##_padded), [&](auto doc_result) { \
+    ASSERT_ERROR( doc_result.get_##TYPE(), (ERROR) ); \
+    return true; \
+  })) { \
+    return false; \
+  } \
+  { \
+    padded_string a_json(std::string(R"({ "a": )") + JSON + " })"); \
+    std::cout << R"(- Subtest: get_)" << (#TYPE) << "() - JSON: " << a_json << std::endl; \
+    if (!test_ondemand_doc(a_json, [&](auto doc_result) { \
+      ASSERT_ERROR( doc_result["a"].get_##TYPE(), (ERROR) ); \
+      return true; \
+    })) { \
+      return false; \
+    }; \
+  }
+
+
+  bool document_wrong_type() {
+    TEST_START();
+
+    TEST_CAST_ERROR("[]", object, INCORRECT_TYPE);
+    TEST_CAST_ERROR("[]", bool, INCORRECT_TYPE);
+    TEST_CAST_ERROR("[]", int64, NUMBER_ERROR);
+    TEST_CAST_ERROR("[]", uint64, NUMBER_ERROR);
+    TEST_CAST_ERROR("[]", double, NUMBER_ERROR);
+    TEST_CAST_ERROR("[]", string, INCORRECT_TYPE);
+    TEST_CAST_ERROR("[]", raw_json_string, INCORRECT_TYPE);
+
+    TEST_CAST_ERROR("{}", array, INCORRECT_TYPE);
+    TEST_CAST_ERROR("{}", bool, INCORRECT_TYPE);
+    TEST_CAST_ERROR("{}", int64, NUMBER_ERROR);
+    TEST_CAST_ERROR("{}", uint64, NUMBER_ERROR);
+    TEST_CAST_ERROR("{}", double, NUMBER_ERROR);
+    TEST_CAST_ERROR("{}", string, INCORRECT_TYPE);
+    TEST_CAST_ERROR("{}", raw_json_string, INCORRECT_TYPE);
+
+    TEST_CAST_ERROR("true", array, INCORRECT_TYPE);
+    TEST_CAST_ERROR("true", object, INCORRECT_TYPE);
+    TEST_CAST_ERROR("true", int64, NUMBER_ERROR);
+    TEST_CAST_ERROR("true", uint64, NUMBER_ERROR);
+    TEST_CAST_ERROR("true", double, NUMBER_ERROR);
+    TEST_CAST_ERROR("true", string, INCORRECT_TYPE);
+    TEST_CAST_ERROR("true", raw_json_string, INCORRECT_TYPE);
+
+    TEST_CAST_ERROR("false", array, INCORRECT_TYPE);
+    TEST_CAST_ERROR("false", object, INCORRECT_TYPE);
+    TEST_CAST_ERROR("false", int64, NUMBER_ERROR);
+    TEST_CAST_ERROR("false", uint64, NUMBER_ERROR);
+    TEST_CAST_ERROR("false", double, NUMBER_ERROR);
+    TEST_CAST_ERROR("false", string, INCORRECT_TYPE);
+    TEST_CAST_ERROR("false", raw_json_string, INCORRECT_TYPE);
+
+    TEST_CAST_ERROR("null", array, INCORRECT_TYPE);
+    TEST_CAST_ERROR("null", object, INCORRECT_TYPE);
+    TEST_CAST_ERROR("null", int64, NUMBER_ERROR);
+    TEST_CAST_ERROR("null", uint64, NUMBER_ERROR);
+    TEST_CAST_ERROR("null", double, NUMBER_ERROR);
+    TEST_CAST_ERROR("null", string, INCORRECT_TYPE);
+    TEST_CAST_ERROR("null", raw_json_string, INCORRECT_TYPE);
+
+    TEST_CAST_ERROR("1", array, INCORRECT_TYPE);
+    TEST_CAST_ERROR("1", object, INCORRECT_TYPE);
+    TEST_CAST_ERROR("1", bool, INCORRECT_TYPE);
+    TEST_CAST_ERROR("1", string, INCORRECT_TYPE);
+    TEST_CAST_ERROR("1", raw_json_string, INCORRECT_TYPE);
+
+    TEST_CAST_ERROR("-1", array, INCORRECT_TYPE);
+    TEST_CAST_ERROR("-1", object, INCORRECT_TYPE);
+    TEST_CAST_ERROR("-1", bool, INCORRECT_TYPE);
+    TEST_CAST_ERROR("-1", uint64, NUMBER_ERROR);
+    TEST_CAST_ERROR("-1", string, INCORRECT_TYPE);
+    TEST_CAST_ERROR("-1", raw_json_string, INCORRECT_TYPE);
+
+    TEST_CAST_ERROR("1.1", array, INCORRECT_TYPE);
+    TEST_CAST_ERROR("1.1", object, INCORRECT_TYPE);
+    TEST_CAST_ERROR("1.1", bool, INCORRECT_TYPE);
+    TEST_CAST_ERROR("1.1", int64, NUMBER_ERROR);
+    TEST_CAST_ERROR("1.1", uint64, NUMBER_ERROR);
+    TEST_CAST_ERROR("1.1", string, INCORRECT_TYPE);
+    TEST_CAST_ERROR("1.1", raw_json_string, INCORRECT_TYPE);
+
+    TEST_CAST_ERROR("-9223372036854775809", array, INCORRECT_TYPE);
+    TEST_CAST_ERROR("-9223372036854775809", object, INCORRECT_TYPE);
+    TEST_CAST_ERROR("-9223372036854775809", bool, INCORRECT_TYPE);
+    TEST_CAST_ERROR("-9223372036854775809", int64, NUMBER_ERROR);
+    TEST_CAST_ERROR("-9223372036854775809", uint64, NUMBER_ERROR);
+    TEST_CAST_ERROR("-9223372036854775809", string, INCORRECT_TYPE);
+    TEST_CAST_ERROR("-9223372036854775809", raw_json_string, INCORRECT_TYPE);
+
+    TEST_CAST_ERROR("9223372036854775808", array, INCORRECT_TYPE);
+    TEST_CAST_ERROR("9223372036854775808", object, INCORRECT_TYPE);
+    TEST_CAST_ERROR("9223372036854775808", bool, INCORRECT_TYPE);
+    // TODO BUG: this should be an error but is presently not
+    // TEST_CAST_ERROR("9223372036854775808", int64, NUMBER_ERROR);
+    TEST_CAST_ERROR("9223372036854775808", string, INCORRECT_TYPE);
+    TEST_CAST_ERROR("9223372036854775808", raw_json_string, INCORRECT_TYPE);
+
+    TEST_CAST_ERROR("18446744073709551616", array, INCORRECT_TYPE);
+    TEST_CAST_ERROR("18446744073709551616", object, INCORRECT_TYPE);
+    TEST_CAST_ERROR("18446744073709551616", bool, INCORRECT_TYPE);
+    TEST_CAST_ERROR("18446744073709551616", int64, NUMBER_ERROR);
+    // TODO BUG: this should be an error but is presently not
+    // TEST_CAST_ERROR("18446744073709551616", uint64, NUMBER_ERROR);
+    TEST_CAST_ERROR("18446744073709551616", string, INCORRECT_TYPE);
+    TEST_CAST_ERROR("18446744073709551616", raw_json_string, INCORRECT_TYPE);
+
+    TEST_CAST_ERROR(R"("[]")", array, INCORRECT_TYPE);
+    TEST_CAST_ERROR(R"("{}")", object, INCORRECT_TYPE);
+    TEST_CAST_ERROR(R"("true")", bool, INCORRECT_TYPE);
+    TEST_CAST_ERROR(R"("1")", int64, NUMBER_ERROR);
+    TEST_CAST_ERROR(R"("1")", uint64, NUMBER_ERROR);
+    TEST_CAST_ERROR(R"("1")", double, NUMBER_ERROR);
+
+    TEST_SUCCEED();
+  }
+
+
+  bool value_wrong_type() {
+    TEST_START();
+    ondemand::parser parser;
+    SUBTEST("number -> array", test_ondemand_doc(R"({"a":1})"_padded, [&](auto doc_result) {
+      ASSERT_ERROR( doc_result["a"].get_array(), INCORRECT_TYPE );
+      return true;
+    }));
+    SUBTEST("object -> array", test_ondemand_doc(R"({"a":{}})"_padded, [&](auto doc_result) {
+      ASSERT_ERROR( doc_result["a"].get_array(), INCORRECT_TYPE );
+      return true;
+    }));
+    SUBTEST("number -> object", test_ondemand_doc(R"({"a":1})"_padded, [&](auto doc_result) {
+      ASSERT_ERROR( doc_result["a"].get_object(), INCORRECT_TYPE );
+      return true;
+    }));
+    SUBTEST("array -> object", test_ondemand_doc(R"({"a":[])"_padded, [&](auto doc_result) {
+      ASSERT_ERROR( doc_result["a"].get_object(), INCORRECT_TYPE );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+  bool run() {
+    return
+           empty_document_error() &&
+           document_wrong_type() &&
+           value_wrong_type() &&
+           true;
+  }
+}
+
 int main(int argc, char *argv[]) {
   std::cout << std::unitbuf;
   int c;
@@ -824,7 +987,9 @@ int main(int argc, char *argv[]) {
       parse_api_tests::run() &&
       dom_api_tests::run() &&
       twitter_tests::run() &&
-      number_tests::run() 
+      number_tests::run() &&
+      error_tests::run() &&
+      true
   ) {
     std::cout << "Basic tests are ok." << std::endl;
     return EXIT_SUCCESS;
