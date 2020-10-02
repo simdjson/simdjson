@@ -67,7 +67,9 @@ void print_usage(ostream& out) {
   out << "-a IMPL      - Use the given parser implementation. By default, detects the most advanced" << endl;
   out << "               implementation supported on the host machine." << endl;
   for (auto impl : simdjson::available_implementations) {
-    out << "-a " << std::left << std::setw(9) << impl->name() << " - Use the " << impl->description() << " parser implementation." << endl;
+    if(impl->supported_by_runtime_system()) {
+      out << "-a " << std::left << std::setw(9) << impl->name() << " - Use the " << impl->description() << " parser implementation." << endl;
+    }
   }
 }
 
@@ -115,11 +117,13 @@ struct option_struct {
         break;
       case 'a': {
         const implementation *impl = simdjson::available_implementations[optarg];
-        if (!impl) {
+        if ((!impl) || (!impl->supported_by_runtime_system())) {
           std::string exit_message = string("Unsupported option value -a ") + optarg + ": expected -a  with one of ";
           for (auto imple : simdjson::available_implementations) {
-            exit_message += imple->name();
-            exit_message += " ";
+            if(imple->supported_by_runtime_system()) {
+              exit_message += imple->name();
+              exit_message += " ";
+            }
           }
           exit_usage(exit_message);
         }

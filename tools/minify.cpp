@@ -20,7 +20,11 @@ void usage(std::string message) {
   std::cerr << options.help() << std::endl;
 }
 
+#if CXXOPTS__VERSION_MAJOR < 3 
 int main(int argc, char *argv[]) {
+#else
+int main(int argc, const char *argv[]) {
+#endif
 #ifdef __cpp_exceptions
   try {
 #endif
@@ -28,7 +32,9 @@ int main(int argc, char *argv[]) {
   ss << "Parser implementation (by default, detects the most advanced implementation supported on the host machine)."  << std::endl;
   ss << "Available parser implementations:" << std::endl;
   for (auto impl : simdjson::available_implementations) {
-    ss << "-a " << std::left << std::setw(9) << impl->name() << " - Use the " << impl->description() << " parser implementation." << std::endl;
+    if(impl->supported_by_runtime_system()) {
+      ss << "-a " << std::left << std::setw(9) << impl->name() << " - Use the " << impl->description() << " parser implementation." << std::endl;
+    }
   }
   options.add_options()
     ("a,arch", ss.str(), cxxopts::value<std::string>())
@@ -52,6 +58,10 @@ int main(int argc, char *argv[]) {
     const simdjson::implementation *impl = simdjson::available_implementations[result["arch"].as<std::string>().c_str()];
     if(!impl) {
       usage("Unsupported implementation.");
+      return EXIT_FAILURE;
+    }
+    if(!impl->supported_by_runtime_system()) {
+      usage("The selected implementation does not match your current CPU.");
       return EXIT_FAILURE;
     }
     simdjson::active_implementation = impl;

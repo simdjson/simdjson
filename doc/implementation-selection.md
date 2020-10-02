@@ -6,6 +6,7 @@ CPU Architecture-Specific Implementations
 * [Inspecting the Detected Implementation](#inspecting-the-detected-implementation)
 * [Querying Available Implementations](#querying-available-implementations)
 * [Manually Selecting the Implementation](#manually-selecting-the-implementation)
+* [Checking that an Implementation can Run on your System](#checking-that-an-implementation-can-run-on-your-system)
 
 Overview
 --------
@@ -70,6 +71,14 @@ And look them up by name:
 ```c++
 cout << simdjson::available_implementations["fallback"]->description() << endl;
 ```
+Though the fallback implementation should always be available, others might be missing. When 
+an implementation is not available, the bracket call `simdjson::available_implementations[name]`
+will return the null pointer.
+
+The available implementations have been compiled but may not necessarily be run safely on your system
+see [Checking that an Implementation can Run on your System](#checking-that-an-implementation-can-run-on-your-system).
+
+
 
 Manually Selecting the Implementation
 -------------------------------------
@@ -81,3 +90,30 @@ can select the CPU architecture yourself:
 // Use the fallback implementation, even though my machine is fast enough for anything
 simdjson::active_implementation = simdjson::available_implementations["fallback"];
 ```
+
+You are responsible for ensuring that the requirements of the selected implementation match your current system.
+Furthermore, you should check that the implementation is available before setting it to `simdjson::active_implementation`
+by comparing it with the null pointer.
+
+```c++
+auto my_implementation = simdjson::available_implementations["haswell"];
+if(! my_implementation) { exit(1); }
+if(! my_implementation->supported_by_runtime_system()) { exit(1); }
+simdjson::active_implementation = my_implementation;
+```
+
+Checking that an Implementation can Run on your System
+-------------------------------------
+
+You should call `supported_by_runtime_system()` to compare the processor's features with the need of the implementation.
+
+```c++
+for (auto implementation : simdjson::available_implementations) {
+  if(implementation->supported_by_runtime_system()) {
+    cout << implementation->name() << ": " << implementation->description() << endl;
+  }
+}
+```
+
+The call to `supported_by_runtime_system()` maybe relatively expensive. Do not call  `supported_by_runtime_system()` each
+time you parse a JSON input (for example). It is meant to be called a handful of times at most in the life of a program.

@@ -30,6 +30,13 @@ namespace simdjson { namespace internal { const fallback::implementation fallbac
 #endif // SIMDJSON_IMPLEMENTATION_FALLBACK
 
 namespace simdjson {
+
+bool implementation::supported_by_runtime_system() const {
+  uint32_t required_instruction_sets = this->required_instruction_sets();
+  uint32_t supported_instruction_sets = detect_supported_architectures();
+  return ((supported_instruction_sets & required_instruction_sets) == required_instruction_sets);
+}
+
 namespace internal {
 
 /**

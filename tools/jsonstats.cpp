@@ -188,8 +188,11 @@ stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
   recurse(doc, s, 0);
   return s;
 }
-
+#if CXXOPTS__VERSION_MAJOR < 3 
 int main(int argc, char *argv[]) {
+#else
+int main(int argc, const char *argv[]) {
+#endif
 #ifdef __cpp_exceptions
   try {
 #endif

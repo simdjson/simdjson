@@ -71,6 +71,16 @@ public:
    * @return the name of the implementation, e.g. "haswell", "westmere", "arm64"
    */
   virtual const std::string &description() const { return _description; }
+  
+  /**
+   * The instruction sets this implementation is compiled against
+   * and the current CPU match. This function may poll the current CPU/system
+   * and should therefore not be called too often if performance is a concern.
+   * 
+   *
+   * @return true if the implementation can be safely used on the current system (determined at runtime)
+   */
+  bool supported_by_runtime_system() const;
 
   /**
    * @private For internal implementation use
@@ -180,6 +190,7 @@ public:
    *
    *     const implementation *impl = simdjson::available_implementations["westmere"];
    *     if (!impl) { exit(1); }
+   *     if (!imp->supported_by_runtime_system()) { exit(1); }
    *     simdjson::active_implementation = impl;
    *
    * @param name the implementation to find, e.g. "westmere", "haswell", "arm64"

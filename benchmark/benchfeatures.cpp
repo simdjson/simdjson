@@ -96,8 +96,14 @@ struct option_struct {
       case 'v':
         verbose = true;
         break;
-      case 'a':
-        simdjson::active_implementation = simdjson::available_implementations[optarg];
+      case 'a': {
+          auto impl = simdjson::available_implementations[optarg];
+          if(impl && impl->supported_by_runtime_system()) {
+            simdjson::active_implementation = impl; 
+          } else { 
+            std::cerr << "implementation " << optarg << " not found or not supported " << std::endl;
+          }
+        } 
         break;
       case 's':
         if (!strcmp(optarg, "stage1")) {
