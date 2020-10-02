@@ -57,10 +57,10 @@ do {                                          \
   }                                           \
 } while(0);
 #define ASSERT_ERROR(ACTUAL, EXPECTED) do { auto _actual = to_error_code(ACTUAL); auto _expected = to_error_code(EXPECTED); if (_actual != _expected) { std::cerr << "FAIL: Unexpected error \"" << _actual << "\" (expected \"" << _expected << "\")" << std::endl; return false; } } while (0);
-#define ASSERT_TRUE(RESULT) if (!(RESULT)) { std::cerr << "Test failed" << std::endl; return false; }
+#define ASSERT_TRUE(RESULT) if (!(RESULT)) { std::cerr << "False invariant: " << #RESULT << std::endl; return false; }
 #define ASSERT(RESULT, MESSAGE) if (!(RESULT)) { std::cerr << MESSAGE << std::endl; return false; }
 #define RUN_TEST(RESULT) if (!RESULT) { return false; }
-#define ASSERT_SUCCESS(ERROR) do { auto _error = to_error_code(ERROR); if (_error) { std::cerr << _error << std::endl; return false; } } while(0);
+#define ASSERT_SUCCESS(ERROR) do { auto _error = to_error_code(ERROR); if (_error) { std::cerr << "Expected success, got error: " << _error << std::endl; return false; } } while(0);
 #define TEST_FAIL(MESSAGE) { std::cerr << "FAIL: " << (MESSAGE) << std::endl; return false; }
 #define TEST_SUCCEED() { return true; }
 

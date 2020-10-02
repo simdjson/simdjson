@@ -21,6 +21,16 @@
 using namespace simdjson;
 using namespace simdjson::builtin;
 
+#define ONDEMAND_SUBTEST(NAME, JSON, TEST) \
+{ \
+  std::cout << "- Subtest " << (NAME) << " - JSON: " << (JSON) << " ..." << std::endl; \
+  if (!test_ondemand_doc(JSON##_padded, [&](auto doc) { \
+    return (TEST); \
+  })) { \
+    return false; \
+  } \
+}
+
 namespace number_tests {
 
   // ulp distance
@@ -820,8 +830,7 @@ namespace error_tests {
     }; \
   }
 
-
-  bool document_wrong_type() {
+  bool wrong_type() {
     TEST_START();
 
     TEST_CAST_ERROR("[]", object, INCORRECT_TYPE);
@@ -920,34 +929,58 @@ namespace error_tests {
     TEST_SUCCEED();
   }
 
+  template<typename V, typename T>
+  bool assert_iterate(T &array, V *expected, size_t N, simdjson::error_code *expected_error, size_t N2) {
+    size_t count = 0;
+    for (auto elem : array) {
+      V actual;
+      auto actual_error = elem.get(actual);
+      if (count >= N) {
+        ASSERT(count < (N+N2), "Extra error reported")
+        ASSERT_ERROR(actual_error, expected_error[count - N]);
+      } else {
+        ASSERT_SUCCESS(actual_error);
+        ASSERT_EQUAL(actual, expected[count]);
+      }
+      count++;
+    }
+    ASSERT_EQUAL(count, N+N2);
+    return true;
+  }
 
-  bool value_wrong_type() {
+  template<typename V, size_t N, size_t N2, typename T>
+  bool assert_iterate(T &array, V (&&expected)[N], simdjson::error_code (&&expected_error)[N2]) {
+    return assert_iterate<V, T>(array, expected, N, expected_error, N2);
+  }
+
+  template<size_t N2, typename T>
+  bool assert_iterate(T &array, simdjson::error_code (&&expected_error)[N2]) {
+    return assert_iterate<int64_t, T>(array, nullptr, 0, expected_error, N2);
+  }
+
+  template<typename V, size_t N, typename T>
+  bool assert_iterate(T &array, V (&&expected)[N]) {
+    return assert_iterate<V, T>(array, expected, N, nullptr, 0);
+  }
+
+  bool array_iterate_error() {
     TEST_START();
-    ondemand::parser parser;
-    SUBTEST("number -> array", test_ondemand_doc(R"({"a":1})"_padded, [&](auto doc_result) {
-      ASSERT_ERROR( doc_result["a"].get_array(), INCORRECT_TYPE );
-      return true;
-    }));
-    SUBTEST("object -> array", test_ondemand_doc(R"({"a":{}})"_padded, [&](auto doc_result) {
-      ASSERT_ERROR( doc_result["a"].get_array(), INCORRECT_TYPE );
-      return true;
-    }));
-    SUBTEST("number -> object", test_ondemand_doc(R"({"a":1})"_padded, [&](auto doc_result) {
-      ASSERT_ERROR( doc_result["a"].get_object(), INCORRECT_TYPE );
-      return true;
-    }));
-    SUBTEST("array -> object", test_ondemand_doc(R"({"a":[])"_padded, [&](auto doc_result) {
-      ASSERT_ERROR( doc_result["a"].get_object(), INCORRECT_TYPE );
-      return true;
-    }));
+    ONDEMAND_SUBTEST("missing comma ", "[1 1]",  assert_iterate(doc, { int64_t(1) }, { TAPE_ERROR }));
+    ONDEMAND_SUBTEST("extra comma   ", "[1,,1]", assert_iterate(doc, { int64_t(1) }, { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("extra comma   ", "[,",     assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed array", "[1 ",    assert_iterate(doc, { int64_t(1) }, { TAPE_ERROR }));
+    // TODO These pass the user values that may run past the end of the buffer if they aren't careful
+    ONDEMAND_SUBTEST("unclosed array", "[1,",    assert_iterate(doc, { int64_t(1) }, { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed array", "[1",     assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed array", "[",      assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
     TEST_SUCCEED();
   }
 
   bool run() {
     return
            empty_document_error() &&
-           document_wrong_type() &&
-           value_wrong_type() &&
+           wrong_type() &&
+           array_iterate_error() &&
            true;
   }
 }
