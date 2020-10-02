@@ -136,8 +136,10 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   value128 firstproduct = full_multiplication(i, power_of_five_128[index]);
 
   // Unless the least significant 9 bits of the high (64-bit) part of the full
-  // product are all 1s, then we know that the most significant 54 bits are
-  // exact and no further work is needed.
+  // product are all 1s, then we know that the most significant 55 bits are
+  // exact and no further work is needed. Having 55 bits is necessary because
+  // we need 53 bits for the mantissa but we have to have one rounding bit and
+  // we can waste a bit if the most significant bit of the product is zero.
   if((firstproduct.high & 0x1FF) == 0x1FF) {
     value128 secondproduct = full_multiplication(i, power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
