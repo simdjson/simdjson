@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <string>
 #include <array>
+#include "supported_implementations.h"
 
 
 // store each implementation along with it's intermediate results,
@@ -64,16 +65,15 @@ void showOutputAndAbort(Iterator first, Iterator last) {
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
+  // since this check is expensive, only do it once
+  static const auto supported_implementations=get_runtime_supported_implementations();
+
+
     // make this dynamic, so it works regardless of how it was compiled
     // or what hardware it runs on
     constexpr std::size_t Nimplementations_max=3;
-    std::size_t Nimplementations = 0;
+    const std::size_t Nimplementations = supported_implementations.size();
     
-    for(auto impl : simdjson::available_implementations) {
-        if(impl->supported_by_runtime_system()) {
-              Nimplementations++;
-        }
-    }
     if(Nimplementations>Nimplementations_max) {
         //there is another backend added, please bump Nimplementations_max!
         std::abort();
@@ -83,10 +83,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     std::array<Impl,Nimplementations_max> implementations;
     {
         std::size_t i=0;
-        for(auto& e: simdjson::available_implementations) {
-            if(e->supported_by_runtime_system()) {
+        for(auto& e: supported_implementations) {
               implementations[i++].impl=e;
-            }
         }
     }
 
