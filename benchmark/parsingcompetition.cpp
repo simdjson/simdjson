@@ -26,6 +26,8 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
+#include <boost/json/parse.hpp>
+
 #ifdef ALLPARSER
 
 #include "fastjson.cpp"
@@ -166,6 +168,20 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
             false,
             memcpy(buffer, p.data(), p.size()) && (buffer[p.size()] = '\0'),
             repeat, volume, !just_data);
+
+  {
+    boost::json::string_view sv(p.data(),p.size());
+        auto doit=[](auto sv)->bool {
+            boost::json::error_code ec;
+            auto jv = boost::json::parse( sv, ec ); return !!ec;
+        };
+
+    BEST_TIME("Boost.json",
+              doit(sv),
+              false,
+              ,
+              repeat, volume, !just_data);
+  }
 #ifndef ALLPARSER
   if (!just_data)
 #endif
