@@ -170,14 +170,14 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
             repeat, volume, !just_data);
 
   {
-    boost::json::string_view sv(p.data(),p.size());
-        auto doit=[](auto sv)->bool {
-            boost::json::error_code ec;
-            auto jv = boost::json::parse( sv, ec ); return !!ec;
-        };
+    const boost::json::string_view sv(p.data(),p.size());
+    auto execute=[](auto sv)->bool {
+          boost::json::error_code ec;
+          auto jv = boost::json::parse( sv, ec ); return !!ec;
+    };
 
     BEST_TIME("Boost.json",
-              doit(sv),
+              execute(sv),
               false,
               ,
               repeat, volume, !just_data);

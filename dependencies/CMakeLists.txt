@@ -67,10 +67,10 @@ if ((Git_FOUND) AND SIMDJSON_GIT AND (SIMDJSON_IS_UNDER_GIT))
     add_library(competition-ujson4c ujson4c/src/ujdecode.c)
     target_include_directories(competition-ujson4c PUBLIC ujson4c/3rdparty ujson4c/src)
 
-    #initialize_submodule(boost.json)
+    initialize_submodule(boost.json)
     add_library(boostjson boost.json/src/src.cpp)
-    target_compile_definitions(boostjson PUBLIC xxxxxx BOOST_JSON_STANDALONE)
-    target_include_directories(boostjson PUBLIC xxxxxx boost.json/include)
+    target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
+    target_include_directories(boostjson PUBLIC boost.json/include)
 
     add_library(competition-core INTERFACE)
     target_link_libraries(competition-core INTERFACE competition-json competition-rapidjson competition-sajson competition-cJSON competition-jsmn boostjson)

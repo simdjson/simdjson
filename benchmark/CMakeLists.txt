@@ -22,11 +22,13 @@ target_compile_definitions(parse_nonumberparsing PRIVATE SIMDJSON_SKIPNUMBERPARS
 add_executable(parse_nostringparsing parse.cpp)
 target_compile_definitions(parse_nostringparsing PRIVATE SIMDJSON_SKIPSTRINGPARSING)
 
-#if (TARGET competition-all)
+if (TARGET competition-all)
   add_executable(distinctuseridcompetition distinctuseridcompetition.cpp)
   target_link_libraries(distinctuseridcompetition competition-core)
+
   add_executable(minifiercompetition minifiercompetition.cpp)
   target_link_libraries(minifiercompetition competition-core)
+
   add_executable(parseandstatcompetition parseandstatcompetition.cpp)
   target_link_libraries(parseandstatcompetition competition-core)
 
@@ -36,7 +38,7 @@ target_compile_definitions(parse_nostringparsing PRIVATE SIMDJSON_SKIPSTRINGPARS
   add_executable(allparsingcompetition parsingcompetition.cpp)
   target_link_libraries(allparsingcompetition competition-all)
   target_compile_definitions(allparsingcompetition PRIVATE ALLPARSER)
-#endif()
+endif()
 
 if (TARGET benchmark::benchmark)
   link_libraries(benchmark::benchmark)
