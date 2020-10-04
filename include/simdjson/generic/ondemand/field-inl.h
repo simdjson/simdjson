@@ -10,11 +10,11 @@ simdjson_really_inline field::field(raw_json_string key, ondemand::value &&value
 {
 }
 
-simdjson_really_inline simdjson_result<field> field::start(json_iterator_ref &&iter) noexcept {
+simdjson_really_inline simdjson_result<field> field::start(json_iterator_ref &parent_iter) noexcept {
   raw_json_string key;
-  SIMDJSON_TRY( iter->field_key().get(key) );
-  SIMDJSON_TRY( iter->field_value() );
-  return field::start(std::forward<json_iterator_ref>(iter), key);
+  SIMDJSON_TRY( parent_iter->field_key().get(key) );
+  SIMDJSON_TRY( parent_iter->field_value() );
+  return field::start(parent_iter.borrow(), key);
 }
 
 simdjson_really_inline simdjson_result<field> field::start(json_iterator_ref &&iter, raw_json_string key) noexcept {

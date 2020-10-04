@@ -32,7 +32,7 @@ simdjson_really_inline bool equals_expected<const char *, const char *>(const ch
   return !strcmp(actual, expected);
 }
 template<>
-simdjson_really_inline bool equals_expected<simdjson::builtin::ondemand::raw_json_string, const char *>(simdjson::builtin::ondemand::raw_json_string actual, const char *expected) {
+simdjson_really_inline bool equals_expected<simdjson::builtin::ondemand::raw_json_string, const char *>(simdjson::builtin::ondemand::raw_json_string actual, const char * expected) {
   return actual == expected;
 }
 
@@ -44,29 +44,61 @@ simdjson_really_inline simdjson::error_code to_error_code(const simdjson::simdjs
   return result.error();
 }
 
-#define TEST_START() { std::cout << "Running " << __func__ << " ..." << std::endl; }
-#define SUBTEST(NAME, TEST) \
-{ \
-  std::cout << "- Subtest " << (NAME) << " ..." << std::endl; \
-  bool succeeded = (TEST); \
-  ASSERT(succeeded, "Subtest " NAME " failed"); \
+template<typename T>
+simdjson_really_inline bool assert_success(const T &actual, const char *operation = "result") {
+  simdjson::error_code error = to_error_code(actual);
+  if (error) {
+    std::cerr << "FAIL: " << operation << " returned error: " << error << std::endl;
+    return false;
+  }
+  return true;
 }
-#define ASSERT_EQUAL(ACTUAL, EXPECTED)        \
-do {                                          \
-  auto _actual = (ACTUAL);                    \
-  auto _expected = (EXPECTED);                \
-  if (!equals_expected(_actual, _expected)) { \
-    std::cerr << "Expected " << (#ACTUAL) << " to be " << _expected << ", got " << _actual << " instead!" << std::endl; \
-    return false;                             \
-  }                                           \
-} while(0);
-#define ASSERT_ERROR(ACTUAL, EXPECTED) do { auto _actual = to_error_code(ACTUAL); auto _expected = to_error_code(EXPECTED); if (_actual != _expected) { std::cerr << "FAIL: Unexpected error \"" << _actual << "\" (expected \"" << _expected << "\")" << std::endl; return false; } } while (0);
-#define ASSERT_TRUE(RESULT) if (!(RESULT)) { std::cerr << "False invariant: " << #RESULT << std::endl; return false; }
-#define ASSERT(RESULT, MESSAGE) if (!(RESULT)) { std::cerr << MESSAGE << std::endl; return false; }
-#define RUN_TEST(RESULT) if (!RESULT) { return false; }
-#define ASSERT_SUCCESS(ERROR) do { auto _error = to_error_code(ERROR); if (_error) { std::cerr << "Expected success, got error: " << _error << std::endl; return false; } } while(0);
-#define TEST_FAIL(MESSAGE) { std::cerr << "FAIL: " << (MESSAGE) << std::endl; return false; }
-#define TEST_SUCCEED() { return true; }
+template<typename A, typename E=A>
+simdjson_really_inline bool assert_equal(const A &actual, const E &expected, const char *operation = "result") {
+  if (!equals_expected(actual, expected)) {
+    std::cerr << "FAIL: " << operation << " returned " << actual << " (expected " << expected << ")" << std::endl;
+    return false;
+  }
+  return true;
+}
+template<typename T>
+simdjson_really_inline bool assert_error(const T &actual_result, simdjson::error_code expected, const char *operation = "result") {
+  simdjson::error_code actual = to_error_code(actual_result);
+  if (actual != expected) {
+    if (actual) {
+      std::cerr << "FAIL: " << operation << " failed with error \"" << actual << "\"";
+    } else {
+      std::cerr << "FAIL: " << operation << " succeeded";
+    }
+    std::cerr << " (expected error \"" << expected << "\")" << std::endl;
+    return false;
+  }
+  return true;
+}
+template<typename E, typename A>
+simdjson_really_inline bool assert_result(simdjson::simdjson_result<A> &&actual_result, const E &expected, const char *operation = "result") {
+  E actual;
+  return assert_success(actual_result.get(actual), operation) && assert_equal(actual, expected, operation);
+}
+simdjson_really_inline bool assert_true(bool value, const char *operation = "result") {
+  if (!value) {
+    std::cerr << "FAIL: " << operation << " was false!" << std::endl;
+    return false;
+  }
+  return true;
+}
+
+#define TEST_START()                    do { std::cout << "Running " << __func__ << " ..." << std::endl; } while(0);
+#define SUBTEST(NAME, TEST)             do { std::cout << "- Subtest " << (NAME) << " ..." << std::endl; if (!(TEST)) { return false; } } while (0);
+#define ASSERT_EQUAL(ACTUAL, EXPECTED)  do { if (!::assert_equal  ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
+#define ASSERT_RESULT(ACTUAL, EXPECTED) do { if (!::assert_equal  ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
+#define ASSERT_SUCCESS(ACTUAL)          do { if (!::assert_success((ACTUAL),             #ACTUAL)) { return false; } } while (0);
+#define ASSERT_ERROR(ACTUAL, EXPECTED)  do { if (!::assert_error  ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
+#define ASSERT_TRUE(ACTUAL)             do { if (!::assert_true   ((ACTUAL),             #ACTUAL)) { return false; } } while (0);
+#define ASSERT(ACTUAL, MESSAGE)         do { if (!::assert_true   ((ACTUAL),           (MESSAGE))) { return false; } } while (0); 
+#define RUN_TEST(ACTUAL)                do { if (!(ACTUAL)) { return false; } } while (0);
+#define TEST_FAIL(MESSAGE)              do { std::cerr << "FAIL: " << (MESSAGE) << std::endl; return false; } while (0);
+#define TEST_SUCCEED()                  do { return true; } while (0);
 
 
 #endif // TEST_MACROS_H

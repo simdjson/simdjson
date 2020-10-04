@@ -140,7 +140,7 @@ SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> json_iterator::consume_st
   return parse_string(advance());
 }
 SIMDJSON_WARN_UNUSED simdjson_result<raw_json_string> json_iterator::parse_raw_json_string(const uint8_t *json) noexcept {
-  logger::log_value(*this, "string", "", 0);
+  logger::log_value(*this, "string", "");
   if (*json != '"') { logger::log_error(*this, "Not a string"); return INCORRECT_TYPE; }
   return raw_json_string(json+1);
 }
@@ -148,28 +148,28 @@ SIMDJSON_WARN_UNUSED simdjson_result<raw_json_string> json_iterator::consume_raw
   return parse_raw_json_string(advance());
 }
 SIMDJSON_WARN_UNUSED simdjson_result<uint64_t> json_iterator::parse_uint64(const uint8_t *json) noexcept {
-  logger::log_value(*this, "uint64", "", 0);
+  logger::log_value(*this, "uint64", "");
   return numberparsing::parse_unsigned(json);
 }
 SIMDJSON_WARN_UNUSED simdjson_result<uint64_t> json_iterator::consume_uint64() noexcept {
   return parse_uint64(advance());
 }
 SIMDJSON_WARN_UNUSED simdjson_result<int64_t> json_iterator::parse_int64(const uint8_t *json) noexcept {
-  logger::log_value(*this, "int64", "", 0);
+  logger::log_value(*this, "int64", "");
   return numberparsing::parse_integer(json);
 }
 SIMDJSON_WARN_UNUSED simdjson_result<int64_t> json_iterator::consume_int64() noexcept {
   return parse_int64(advance());
 }
 SIMDJSON_WARN_UNUSED simdjson_result<double> json_iterator::parse_double(const uint8_t *json) noexcept {
-  logger::log_value(*this, "double", "", 0);
+  logger::log_value(*this, "double", "");
   return numberparsing::parse_double(json);
 }
 SIMDJSON_WARN_UNUSED simdjson_result<double> json_iterator::consume_double() noexcept {
   return parse_double(advance());
 }
 SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::parse_bool(const uint8_t *json) noexcept {
-  logger::log_value(*this, "bool", "", 0);
+  logger::log_value(*this, "bool", "");
   auto not_true = atomparsing::str4ncmp(json, "true");
   auto not_false = atomparsing::str4ncmp(json, "fals") | (json[4] ^ 'e');
   bool error = (not_true && not_false) || jsoncharutils::is_not_structural_or_whitespace(json[not_true ? 5 : 4]);
@@ -181,7 +181,7 @@ SIMDJSON_WARN_UNUSED simdjson_result<bool> json_iterator::consume_bool() noexcep
 }
 simdjson_really_inline bool json_iterator::is_null(const uint8_t *json) noexcept {
   if (!atomparsing::str4ncmp(json, "null")) {
-    logger::log_value(*this, "null", "", 0);
+    logger::log_value(*this, "null", "");
     return true;
   }
   return false;
@@ -214,7 +214,7 @@ constexpr const uint32_t MAX_INT_LENGTH = 1024;
 SIMDJSON_WARN_UNUSED simdjson_result<uint64_t> json_iterator::parse_root_uint64(const uint8_t *json) noexcept {
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
   if (!copy_to_buffer(json, tmpbuf)) { logger::log_error(*this, "Root number more than 20 characters"); return NUMBER_ERROR; }
-  logger::log_value(*this, "uint64", "", 0);
+  logger::log_value(*this, "uint64", "");
   auto result = numberparsing::parse_unsigned(tmpbuf);
   if (result.error()) { logger::log_error(*this, "Error parsing unsigned integer"); return result.error(); }
   return result;
@@ -225,7 +225,7 @@ SIMDJSON_WARN_UNUSED simdjson_result<uint64_t> json_iterator::consume_root_uint6
 SIMDJSON_WARN_UNUSED simdjson_result<int64_t> json_iterator::parse_root_int64(const uint8_t *json) noexcept {
   uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer 
   if (!copy_to_buffer(json, tmpbuf)) { logger::log_error(*this, "Root number more than 20 characters"); return NUMBER_ERROR; }
-  logger::log_value(*this, "int64", "", 0);
+  logger::log_value(*this, "int64", "");
   auto result = numberparsing::parse_integer(tmpbuf);
   if (result.error()) { report_error(result.error(), "Error parsing integer"); }
   return result;
@@ -237,7 +237,7 @@ SIMDJSON_WARN_UNUSED simdjson_result<double> json_iterator::parse_root_double(co
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/, 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest number: -0.<fraction>e-308.
   uint8_t tmpbuf[1074+8+1];
   if (!copy_to_buffer(json, tmpbuf)) { logger::log_error(*this, "Root number more than 1082 characters"); return NUMBER_ERROR; }
-  logger::log_value(*this, "double", "", 0);
+  logger::log_value(*this, "double", "");
   auto result = numberparsing::parse_double(tmpbuf);
   if (result.error()) { report_error(result.error(), "Error parsing double"); }
   return result;
@@ -427,7 +427,7 @@ simdjson_really_inline void json_iterator_ref::assert_is_active() const noexcept
 #endif
 }
 simdjson_really_inline void json_iterator_ref::assert_is_not_active() const noexcept {
-// We don't call const functions because VC++ doesn't 
+// We don't call const functions because VC++ is worried they might have side effects in __assume
 #ifdef SIMDJSON_ONDEMAND_SAFETY_RAILS
   SIMDJSON_ASSUME(!(iter != nullptr && lease_depth == iter->active_lease_depth));
 #else

@@ -14,7 +14,8 @@ simdjson_really_inline simdjson_result<array_iterator<T>> array_iterator<T>::sta
 }
 template<typename T>
 simdjson_really_inline simdjson_result<value> array_iterator<T>::operator*() noexcept {
-  if (iter->get_iterator().error()) { iter->iteration_finished(); return iter->get_iterator().error(); }
+  error_code error = iter->get_iterator().error();
+  if (error) { iter->iteration_finished(); return error; }
   return value::start(iter->borrow_iterator());
 }
 template<typename T>
