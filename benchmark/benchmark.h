@@ -12,9 +12,9 @@
 #define BEST_TIME(name, test, expected, pre, repeat, size, verbose)            \
   do {                                                                         \
     if (verbose)                                                               \
-      printf("%-40s\t: ", name);                                               \
+      std::printf("%-40s\t: ", name);                                          \
     else                                                                       \
-      printf("\"%-40s\"", name);                                               \
+      std::printf("\"%-40s\"", name);                                          \
     fflush(NULL);                                                              \
     event_collector collector;                                                 \
     event_aggregate aggregate{};                                               \
@@ -23,7 +23,8 @@
       std::atomic_thread_fence(std::memory_order_acquire);                     \
       collector.start();                                                       \
       if (test != expected) {                                                  \
-        fprintf(stderr, "not expected (%d , %d )", (int)test, (int)expected);  \
+        std::fprintf(stderr, "not expected (%d , %d )", (int)test,             \
+                     (int)expected);                                           \
         break;                                                                 \
       }                                                                        \
       std::atomic_thread_fence(std::memory_order_release);                     \
@@ -31,39 +32,40 @@
       aggregate << allocate_count;                                             \
     }                                                                          \
     if (collector.has_events()) {                                              \
-      printf("%7.3f", aggregate.best.cycles() / static_cast<double>(size));    \
+      std::printf("%7.3f",                                                     \
+                  aggregate.best.cycles() / static_cast<double>(size));        \
       if (verbose) {                                                           \
-        printf(" cycles/byte ");                                               \
+        std::printf(" cycles/byte ");                                          \
       }                                                                        \
-      printf("\t");                                                            \
-      printf("%7.3f",                                                          \
-             aggregate.best.instructions() / static_cast<double>(size));       \
+      std::printf("\t");                                                       \
+      std::printf("%7.3f",                                                     \
+                  aggregate.best.instructions() / static_cast<double>(size));  \
       if (verbose) {                                                           \
-        printf(" instructions/byte ");                                         \
+        std::printf(" instructions/byte ");                                    \
       }                                                                        \
-      printf("\t");                                                            \
+      std::printf("\t");                                                       \
     }                                                                          \
     double gb = static_cast<double>(size) / 1000000000.0;                      \
-    printf("%7.3f", gb / aggregate.best.elapsed_sec());                        \
+    std::printf("%7.3f", gb / aggregate.best.elapsed_sec());                   \
     if (verbose) {                                                             \
-      printf(" GB/s ");                                                        \
+      std::printf(" GB/s ");                                                   \
     }                                                                          \
-    printf("%7.3f", 1.0 / aggregate.best.elapsed_sec());                       \
+    std::printf("%7.3f", 1.0 / aggregate.best.elapsed_sec());                  \
     if (verbose) {                                                             \
-      printf(" documents/s ");                                                 \
+      std::printf(" documents/s ");                                            \
     }                                                                          \
-    printf("\n");                                                              \
-    fflush(NULL);                                                              \
+    std::printf("\n");                                                         \
+    std::fflush(NULL);                                                         \
   } while (0)
 
 // like BEST_TIME, but no check
 #define BEST_TIME_NOCHECK(name, test, pre, repeat, size, verbose)              \
   do {                                                                         \
     if (verbose)                                                               \
-      printf("%-40s\t: ", name);                                               \
+      std::printf("%-40s\t: ", name);                                          \
     else                                                                       \
-      printf("\"%-40s\"", name);                                               \
-    fflush(NULL);                                                              \
+      std::printf("\"%-40s\"", name);                                          \
+    std::fflush(NULL);                                                         \
     event_collector collector;                                                 \
     event_aggregate aggregate{};                                               \
     for (decltype(repeat) i = 0; i < repeat; i++) {                            \
@@ -76,29 +78,30 @@
       aggregate << allocate_count;                                             \
     }                                                                          \
     if (collector.has_events()) {                                              \
-      printf("%7.3f", aggregate.best.cycles() / static_cast<double>(size));    \
+      std::printf("%7.3f",                                                     \
+                  aggregate.best.cycles() / static_cast<double>(size));        \
       if (verbose) {                                                           \
-        printf(" cycles/byte ");                                               \
+        std::printf(" cycles/byte ");                                          \
       }                                                                        \
-      printf("\t");                                                            \
-      printf("%7.3f",                                                          \
-             aggregate.best.instructions() / static_cast<double>(size));       \
+      std::printf("\t");                                                       \
+      std::printf("%7.3f",                                                     \
+                  aggregate.best.instructions() / static_cast<double>(size));  \
       if (verbose) {                                                           \
-        printf(" instructions/byte ");                                         \
+        std::printf(" instructions/byte ");                                    \
       }                                                                        \
-      printf("\t");                                                            \
+      std::printf("\t");                                                       \
     }                                                                          \
     double gb = static_cast<double>(size) / 1000000000.0;                      \
-    printf("%7.3f", gb / aggregate.best.elapsed_sec());                        \
+    std::printf("%7.3f", gb / aggregate.best.elapsed_sec());                   \
     if (verbose) {                                                             \
-      printf(" GB/s ");                                                        \
+      std::printf(" GB/s ");                                                   \
     }                                                                          \
-    printf("%7.3f", 1.0 / aggregate.best.elapsed_sec());                       \
+    std::printf("%7.3f", 1.0 / aggregate.best.elapsed_sec());                  \
     if (verbose) {                                                             \
-      printf(" documents/s ");                                                 \
+      std::printf(" documents/s ");                                            \
     }                                                                          \
-    printf("\n");                                                              \
-    fflush(NULL);                                                              \
+    std::printf("\n");                                                         \
+    std::fflush(NULL);                                                         \
   } while (0)
 
 #endif

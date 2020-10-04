@@ -34,3 +34,6 @@
 [submodule "dependencies/cxxopts"]
 	path = dependencies/cxxopts
 	url = https://github.com/jarro2783/cxxopts
+[submodule "dependencies/boost.json"]
+	path = dependencies/boost.json
+	url = https://github.com/CPPAlliance/json.git

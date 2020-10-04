@@ -25,12 +25,16 @@ target_compile_definitions(parse_nostringparsing PRIVATE SIMDJSON_SKIPSTRINGPARS
 if (TARGET competition-all)
   add_executable(distinctuseridcompetition distinctuseridcompetition.cpp)
   target_link_libraries(distinctuseridcompetition competition-core)
+
   add_executable(minifiercompetition minifiercompetition.cpp)
   target_link_libraries(minifiercompetition competition-core)
+
   add_executable(parseandstatcompetition parseandstatcompetition.cpp)
   target_link_libraries(parseandstatcompetition competition-core)
+
   add_executable(parsingcompetition parsingcompetition.cpp)
   target_link_libraries(parsingcompetition competition-core)
+
   add_executable(allparsingcompetition parsingcompetition.cpp)
   target_link_libraries(allparsingcompetition competition-all)
   target_compile_definitions(allparsingcompetition PRIVATE ALLPARSER)
