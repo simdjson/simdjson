@@ -9,8 +9,13 @@ namespace ondemand {
 simdjson_really_inline object_iterator::object_iterator(json_iterator_ref &_iter) noexcept : iter{&_iter} {}
 
 simdjson_really_inline simdjson_result<field> object_iterator::operator*() noexcept {
-  if ((*iter)->error()) { iter->release(); return (*iter)->error(); }
-  return field::start(iter->borrow());
+  error_code error = (*iter)->error();
+  if (error) { iter->release(); return error; }
+  auto result = field::start(iter->borrow());
+  // TODO this is a safety rail ... users should exit loops as soon as they receive an error.
+  // Nonetheless, let's see if performance is OK with this if statement--the compiler may give it to us for free.
+  if (result.error()) { iter->release(); }
+  return result;
 }
 simdjson_really_inline bool object_iterator::operator==(const object_iterator &other) noexcept {
   return !(*this != other);
@@ -19,10 +24,12 @@ simdjson_really_inline bool object_iterator::operator!=(const object_iterator &)
   return iter->is_alive();
 }
 simdjson_really_inline object_iterator &object_iterator::operator++() noexcept {
-  if ((*iter)->error()) { return *this; }
+  // TODO this is a safety rail ... users should exit loops as soon as they receive an error.
+  // Nonetheless, let's see if performance is OK with this if statement--the compiler may give it to us for free.
+  if (!iter->is_alive()) { return *this; } // Iterator will be released if there is an error
   bool has_value;
   error_code error = (*iter)->has_next_field().get(has_value);
-  if (!(error || has_value)) { iter->release(); }
+  if (!(error || has_value)) { std::cout << std::endl; iter->release(); }
   return *this;
 }
 

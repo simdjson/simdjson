@@ -27,6 +27,9 @@ simdjson_really_inline bool array_iterator<T>::operator!=(const array_iterator<T
 }
 template<typename T>
 simdjson_really_inline array_iterator<T> &array_iterator<T>::operator++() noexcept {
+  // TODO this is a safety rail ... users should exit loops as soon as they receive an error.
+  // Nonetheless, let's see if performance is OK with this if statement--the compiler may give it to us for free.
+  if (!iter->is_iterator_alive()) { return *this; } // Iterator will be released if there is an error
   bool has_value;
   error_code error = iter->get_iterator().has_next_element().get(has_value); // If there's an error, has_next stays true.
   if (!(error || has_value)) { iter->iteration_finished(); }

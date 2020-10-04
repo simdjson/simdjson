@@ -936,8 +936,8 @@ namespace error_tests {
       V actual;
       auto actual_error = elem.get(actual);
       if (count >= N) {
-        ASSERT(count < (N+N2), "Extra error reported")
         ASSERT_ERROR(actual_error, expected_error[count - N]);
+        ASSERT(count < (N+N2), "Extra error reported");
       } else {
         ASSERT_SUCCESS(actual_error);
         ASSERT_EQUAL(actual, expected[count]);
@@ -963,16 +963,82 @@ namespace error_tests {
     return assert_iterate<V, T>(array, expected, N, nullptr, 0);
   }
 
+
   bool array_iterate_error() {
     TEST_START();
-    ONDEMAND_SUBTEST("missing comma ", "[1 1]",  assert_iterate(doc, { int64_t(1) }, { TAPE_ERROR }));
-    ONDEMAND_SUBTEST("extra comma   ", "[1,,1]", assert_iterate(doc, { int64_t(1) }, { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("extra comma   ", "[,",     assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("unclosed array", "[1 ",    assert_iterate(doc, { int64_t(1) }, { TAPE_ERROR }));
+    ONDEMAND_SUBTEST("missing comma", "[1 1]",  assert_iterate(doc, { int64_t(1) }, { TAPE_ERROR }));
+    ONDEMAND_SUBTEST("extra comma  ", "[1,,1]", assert_iterate(doc, { int64_t(1) }, { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("extra comma  ", "[,",     assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed     ", "[1 ",    assert_iterate(doc, { int64_t(1) }, { TAPE_ERROR }));
     // TODO These pass the user values that may run past the end of the buffer if they aren't careful
-    ONDEMAND_SUBTEST("unclosed array", "[1,",    assert_iterate(doc, { int64_t(1) }, { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("unclosed array", "[1",     assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("unclosed array", "[",      assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
+    // In particular, if the padding is decorated with the wrong values, we could cause overrun!
+    ONDEMAND_SUBTEST("unclosed     ", "[1,",    assert_iterate(doc, { int64_t(1) }, { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed     ", "[1",     assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed     ", "[",      assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
+    TEST_SUCCEED();
+  }
+
+  template<typename V, typename T>
+  bool assert_iterate_object(T &&object, const char **expected_key, V *expected, size_t N, simdjson::error_code *expected_error, size_t N2) {
+    size_t count = 0;
+    for (auto field : object) {
+      V actual;
+      auto actual_error = field.value().get(actual);
+      if (count >= N) {
+        ASSERT((count - N) < N2, "Extra error reported");
+        ASSERT_ERROR(actual_error, expected_error[count - N]);
+      } else {
+        ASSERT_SUCCESS(actual_error);
+        ASSERT_EQUAL(field.key().first, expected_key[count]);
+        ASSERT_EQUAL(actual, expected[count]);
+      }
+      count++;
+    }
+    ASSERT_EQUAL(count, N+N2);
+    return true;
+  }
+
+  template<typename V, size_t N, size_t N2, typename T>
+  bool assert_iterate_object(T &&object, const char *(&&expected_key)[N], V (&&expected)[N], simdjson::error_code (&&expected_error)[N2]) {
+    return assert_iterate_object<V, T>(std::forward<T>(object), expected_key, expected, N, expected_error, N2);
+  }
+
+  template<size_t N2, typename T>
+  bool assert_iterate_object(T &&object, simdjson::error_code (&&expected_error)[N2]) {
+    return assert_iterate_object<int64_t, T>(std::forward<T>(object), nullptr, nullptr, 0, expected_error, N2);
+  }
+
+  template<typename V, size_t N, typename T>
+  bool assert_iterate_object(T &&object, const char *(&&expected_key)[N], V (&&expected)[N]) {
+    return assert_iterate_object<V, T>(std::forward<T>(object), expected_key, expected, N, nullptr, 0);
+  }
+
+  bool object_iterate_error() {
+    TEST_START();
+
+    ONDEMAND_SUBTEST("missing semicolon", R"({ "a"  1, "b": 2 })",    assert_iterate_object(doc.get_object(),                          { TAPE_ERROR }));
+
+    ONDEMAND_SUBTEST("missing key      ", R"({    : 1, "b": 2 })",    assert_iterate_object(doc.get_object(),                          { TAPE_ERROR }));
+
+    ONDEMAND_SUBTEST("missing value    ", R"({ "a":  , "b": 2 })",    assert_iterate_object(doc.get_object(),                          { NUMBER_ERROR, TAPE_ERROR }));
+
+    ONDEMAND_SUBTEST("missing comma    ", R"({ "a": 1  "b": 2 })",    assert_iterate_object(doc.get_object(), { "a" }, { int64_t(1) }, { TAPE_ERROR }));
+
+    ONDEMAND_SUBTEST("wrong key type   ", R"({ 1:   1, "b": 2 })",    assert_iterate_object(doc.get_object(),                          { TAPE_ERROR }));
+    ONDEMAND_SUBTEST("wrong key type   ", R"({ true: 1, "b": 2 })",   assert_iterate_object(doc.get_object(),                          { TAPE_ERROR }));
+    ONDEMAND_SUBTEST("wrong key type   ", R"({ false: 1, "b": 2 })",  assert_iterate_object(doc.get_object(),                          { TAPE_ERROR }));
+    ONDEMAND_SUBTEST("wrong key type   ", R"({ null: 1, "b": 2 })",   assert_iterate_object(doc.get_object(),                          { TAPE_ERROR }));
+    ONDEMAND_SUBTEST("wrong key type   ", R"({ []:  1, "b": 2 })",    assert_iterate_object(doc.get_object(),                          { TAPE_ERROR }));
+    ONDEMAND_SUBTEST("wrong key type   ", R"({ {}:  1, "b": 2 })",    assert_iterate_object(doc.get_object(),                          { TAPE_ERROR }));
+
+    ONDEMAND_SUBTEST("unclosed         ", R"({ "a": 1,         )",    assert_iterate_object(doc.get_object(), { "a" }, { int64_t(1) }, { TAPE_ERROR }));
+    // TODO These next two pass the user a value that may run past the end of the buffer if they aren't careful.
+    // In particular, if the padding is decorated with the wrong values, we could cause overrun!
+    ONDEMAND_SUBTEST("unclosed         ", R"({ "a": 1          )",    assert_iterate_object(doc.get_object(), { "a" }, { int64_t(1) }, { TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed         ", R"({ "a":            )",    assert_iterate_object(doc.get_object(),                          { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed         ", R"({ "a"             )",    assert_iterate_object(doc.get_object(),                          { TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed         ", R"({                 )",    assert_iterate_object(doc.get_object(),                          { TAPE_ERROR }));
+
     TEST_SUCCEED();
   }
 
@@ -981,6 +1047,7 @@ namespace error_tests {
            empty_document_error() &&
            wrong_type() &&
            array_iterate_error() &&
+           object_iterate_error() &&
            true;
   }
 }

@@ -33,6 +33,20 @@ SIMDJSON_UNUSED simdjson_really_inline bool operator!=(std::string_view a, const
   return !(a == b);
 }
 
+SIMDJSON_UNUSED simdjson_really_inline std::ostream &operator<<(std::ostream &out, const raw_json_string &str) noexcept {
+  bool in_escape = false;
+  const char *s = str.raw();
+  while (true) {
+    switch (*s) {
+      case '\\': in_escape = !in_escape; break;
+      case '"': if (in_escape) { in_escape = false; } else { return out; } break;
+      default: if (in_escape) { in_escape = false; }
+    }
+    out << *s;
+    s++;
+  }
+}
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

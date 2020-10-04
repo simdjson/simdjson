@@ -31,6 +31,10 @@ template<>
 simdjson_really_inline bool equals_expected<const char *, const char *>(const char *actual, const char *expected) {
   return !strcmp(actual, expected);
 }
+template<>
+simdjson_really_inline bool equals_expected<simdjson::builtin::ondemand::raw_json_string, const char *>(simdjson::builtin::ondemand::raw_json_string actual, const char *expected) {
+  return actual == expected;
+}
 
 simdjson_really_inline simdjson::error_code to_error_code(simdjson::error_code error) {
   return error;
