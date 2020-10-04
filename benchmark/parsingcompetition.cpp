@@ -106,7 +106,7 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
   }
   size_t volume = p.size();
   if (just_data) {
-    printf("%-42s %20s %20s %20s %20s \n", "name", "cycles_per_byte",
+    std::printf("%-42s %20s %20s %20s %20s \n", "name", "cycles_per_byte",
            "cycles_per_byte_err", "gb_per_s", "gb_per_s_err");
   }
   if (!just_data) {
@@ -133,14 +133,14 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
  
   rapidjson::Document d;
 
-  char *buffer = (char *)malloc(p.size() + 1);
-  memcpy(buffer, p.data(), p.size());
+  char *buffer = (char *)std::malloc(p.size() + 1);
+  std::memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
 #ifndef ALLPARSER
   if (!just_data)
 #endif
   {
-    memcpy(buffer, p.data(), p.size());
+    std::memcpy(buffer, p.data(), p.size());
     BEST_TIME("RapidJSON  ",
               d.Parse<kParseValidateEncodingFlag>((const char *)buffer)
                   .HasParseError(),
@@ -151,7 +151,7 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
   if (!just_data)
 #endif
   {
-    memcpy(buffer, p.data(), p.size());
+    std::memcpy(buffer, p.data(), p.size());
     BEST_TIME("RapidJSON (accurate number parsing)  ",
               d.Parse<kParseValidateEncodingFlag|kParseFullPrecisionFlag>((const char *)buffer)
                   .HasParseError(),
@@ -161,12 +161,12 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
   BEST_TIME("RapidJSON (insitu)",
             d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError(),
             false,
-            memcpy(buffer, p.data(), p.size()) && (buffer[p.size()] = '\0'),
+            std::memcpy(buffer, p.data(), p.size()) && (buffer[p.size()] = '\0'),
             repeat, volume, !just_data);
   BEST_TIME("RapidJSON (insitu, accurate number parsing)",
             d.ParseInsitu<kParseValidateEncodingFlag|kParseFullPrecisionFlag>(buffer).HasParseError(),
             false,
-            memcpy(buffer, p.data(), p.size()) && (buffer[p.size()] = '\0'),
+            std::memcpy(buffer, p.data(), p.size()) && (buffer[p.size()] = '\0'),
             repeat, volume, !just_data);
 
   {
@@ -189,20 +189,20 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
               sajson::parse(sajson::dynamic_allocation(),
                             sajson::mutable_string_view(p.size(), buffer))
                   .is_valid(),
-              true, memcpy(buffer, p.data(), p.size()), repeat, volume,
+              true, std::memcpy(buffer, p.data(), p.size()), repeat, volume,
               !just_data);
 
   size_t ast_buffer_size = p.size();
-  size_t *ast_buffer = (size_t *)malloc(ast_buffer_size * sizeof(size_t));
+  size_t *ast_buffer = (size_t *)std::malloc(ast_buffer_size * sizeof(size_t));
   //  (static alloc, insitu)
   BEST_TIME(
       "sajson",
       sajson::parse(sajson::bounded_allocation(ast_buffer, ast_buffer_size),
                     sajson::mutable_string_view(p.size(), buffer))
           .is_valid(),
-      true, memcpy(buffer, p.data(), p.size()), repeat, volume, !just_data);
+      true, std::memcpy(buffer, p.data(), p.size()), repeat, volume, !just_data);
 
-  memcpy(buffer, p.data(), p.size());
+  std::memcpy(buffer, p.data(), p.size());
   size_t expected = json::parse(p.data(), p.data() + p.size()).size();
   BEST_TIME("nlohmann-json", json::parse(buffer, buffer + p.size()).size(),
             expected, , repeat, volume,
@@ -213,35 +213,35 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
   BEST_TIME("dropbox (json11)     ",
             ((json11::Json::parse(buffer, json11err).is_null()) ||
              (!json11err.empty())),
-            false, memcpy(buffer, p.data(), p.size()), repeat, volume,
+            false, std::memcpy(buffer, p.data(), p.size()), repeat, volume,
             !just_data);
 
   BEST_TIME("fastjson             ", fastjson_parse(buffer), true,
-            memcpy(buffer, p.data(), p.size()), repeat, volume, !just_data);
+            std::memcpy(buffer, p.data(), p.size()), repeat, volume, !just_data);
   JsonValue value;
   JsonAllocator allocator;
   char *endptr;
   BEST_TIME("gason             ", jsonParse(buffer, &endptr, &value, allocator),
-            JSON_OK, memcpy(buffer, p.data(), p.size()), repeat, volume,
+            JSON_OK, std::memcpy(buffer, p.data(), p.size()), repeat, volume,
             !just_data);
   void *state;
   BEST_TIME("ultrajson         ",
             (UJDecode(buffer, p.size(), NULL, &state) == NULL), false,
-            memcpy(buffer, p.data(), p.size()), repeat, volume, !just_data);
+            std::memcpy(buffer, p.data(), p.size()), repeat, volume, !just_data);
 
   {
     std::unique_ptr<jsmntok_t[]> tokens =
         std::make_unique<jsmntok_t[]>(p.size());
     jsmn_parser jparser;
     jsmn_init(&jparser);
-    memcpy(buffer, p.data(), p.size());
+    std::memcpy(buffer, p.data(), p.size());
     buffer[p.size()] = '\0';
     BEST_TIME(
         "jsmn           ",
         (jsmn_parse(&jparser, buffer, p.size(), tokens.get(), static_cast<unsigned int>(p.size())) > 0),
         true, jsmn_init(&jparser), repeat, volume, !just_data);
   }
-  memcpy(buffer, p.data(), p.size());
+  std::memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
   cJSON *tree = cJSON_Parse(buffer);
   BEST_TIME("cJSON           ", ((tree = cJSON_Parse(buffer)) != NULL), true,
@@ -259,11 +259,11 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
 #endif
   if (!just_data)
     BEST_TIME("memcpy            ",
-              (memcpy(buffer, p.data(), p.size()) == buffer), true, , repeat,
+              (std::memcpy(buffer, p.data(), p.size()) == buffer), true, , repeat,
               volume, !just_data);
 #ifdef __linux__
   if (!just_data) {
-    printf("\n \n <doing additional analysis with performance counters (Linux "
+    std::printf("\n \n <doing additional analysis with performance counters (Linux "
            "only)>\n");
     std::vector<int> evts;
     evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
@@ -281,12 +281,12 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
       unified.start();
       auto parse_error = parser.parse(p).error();
       if (parse_error)
-        printf("bug\n");
+        std::printf("bug\n");
       unified.end(results);
       std::transform(stats.begin(), stats.end(), results.begin(), stats.begin(),
                      std::plus<unsigned long long>());
     }
-    printf("simdjson : cycles %10.0f instructions %10.0f branchmisses %10.0f "
+    std::printf("simdjson : cycles %10.0f instructions %10.0f branchmisses %10.0f "
            "cacheref %10.0f cachemisses %10.0f  bytespercachemiss %10.0f "
            "inspercycle %10.1f insperbyte %10.1f\n",
            static_cast<double>(stats[0]) / static_cast<double>(repeat), static_cast<double>(stats[1]) / static_cast<double>(repeat),
@@ -296,17 +296,17 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
 
     std::fill(stats.begin(), stats.end(), 0);
     for (decltype(repeat) i = 0; i < repeat; i++) {
-      memcpy(buffer, p.data(), p.size());
+      std::memcpy(buffer, p.data(), p.size());
       buffer[p.size()] = '\0';
       unified.start();
       if (d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError() !=
           false)
-        printf("bug\n");
+        std::printf("bug\n");
       unified.end(results);
       std::transform(stats.begin(), stats.end(), results.begin(), stats.begin(),
                      std::plus<unsigned long long>());
     }
-    printf("RapidJSON: cycles %10.0f instructions %10.0f branchmisses %10.0f "
+    std::printf("RapidJSON: cycles %10.0f instructions %10.0f branchmisses %10.0f "
            "cacheref %10.0f cachemisses %10.0f  bytespercachemiss %10.0f "
            "inspercycle %10.1f insperbyte %10.1f\n",
            static_cast<double>(stats[0]) / static_cast<double>(repeat), static_cast<double>(stats[1]) / static_cast<double>(repeat),
@@ -316,17 +316,17 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
 
     std::fill(stats.begin(), stats.end(), 0); // unnecessary
     for (decltype(repeat) i = 0; i < repeat; i++) {
-      memcpy(buffer, p.data(), p.size());
+      std::memcpy(buffer, p.data(), p.size());
       unified.start();
       if (sajson::parse(sajson::bounded_allocation(ast_buffer, ast_buffer_size),
                         sajson::mutable_string_view(p.size(), buffer))
               .is_valid() != true)
-        printf("bug\n");
+        std::printf("bug\n");
       unified.end(results);
       std::transform(stats.begin(), stats.end(), results.begin(), stats.begin(),
                      std::plus<unsigned long long>());
     }
-    printf("sajson   : cycles %10.0f instructions %10.0f branchmisses %10.0f "
+    std::printf("sajson   : cycles %10.0f instructions %10.0f branchmisses %10.0f "
            "cacheref %10.0f cachemisses %10.0f  bytespercachemiss %10.0f "
            "inspercycle %10.1f insperbyte %10.1f\n",
            static_cast<double>(stats[0]) / static_cast<double>(repeat), static_cast<double>(stats[1]) / static_cast<double>(repeat),
@@ -337,8 +337,8 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
   }
 #endif //  __linux__
 
-  free(ast_buffer);
-  free(buffer);
+  std::free(ast_buffer);
+  std::free(buffer);
   return true;
 }
 
@@ -371,7 +371,7 @@ int main(int argc, char *argv[]) {
   int result = EXIT_SUCCESS;
   for (int fileind = optind; fileind < argc; fileind++) {
     if (!bench(argv[fileind], verbose, just_data, repeat_multiplier)) { result = EXIT_FAILURE; }
-    printf("\n\n");
+    std::printf("\n\n");
   }
   return result;
 }

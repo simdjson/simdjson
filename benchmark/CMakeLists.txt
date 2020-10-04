@@ -33,7 +33,7 @@ if (TARGET competition-all)
   target_link_libraries(parseandstatcompetition competition-core)
 
   add_executable(parsingcompetition parsingcompetition.cpp)
-  target_link_libraries(parsingcompetition competition-core )
+  target_link_libraries(parsingcompetition competition-core)
 
   add_executable(allparsingcompetition parsingcompetition.cpp)
   target_link_libraries(allparsingcompetition competition-all)
