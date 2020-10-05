@@ -582,7 +582,7 @@ format. If your JSON documents all contain arrays or objects, we even support di
 concatenation without whitespace. The concatenated file has no size restrictions (including larger
 than 4GB), though each individual document must be no larger than 4 GB.
 
-Here is a simple example, given "x.json" with this content:
+Here is a simple example, given `x.json` with this content:
 
 ```json
 { "foo": 1 }
@@ -625,6 +625,8 @@ document at a time.
 
 
 Both `load_many` and `parse_many` take an optional parameter `size_t batch_size` which defines the window processing size. It is set by default to a large value (`1000000` corresponding to 1 MB). None of your JSON documents should exceed this window size, or else you will get  the error `simdjson::CAPACITY`. You cannot set this window size larger than 4 GB: you will get  the error `simdjson::CAPACITY`. The smaller the window size is, the less memory the function will use. Setting the window size too small (e.g., less than 100 kB) may also impact performance negatively. Leaving it to 1 MB is expected to be a good choice, unless you have some larger documents.
+
+If your documents are large (e.g., larger than a megabyte), then the `load_many` and `parse_many` functions are maybe ill-suited. They are really meant to support reading efficiently streams of relatively small documents (e.g., a few kilobytes each). If you have larger documents, you should use other functions like `parse`.
 
 See [parse_many.md](parse_many.md) for detailed information and design.
 
