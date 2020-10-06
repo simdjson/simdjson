@@ -1,0 +1,122 @@
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
+
+// This is a near copy of include/error.h's implementation_simdjson_result_base, except it doesn't use std::pair
+// so we can avoid inlining errors
+// TODO reconcile these!
+/**
+ * The result of a simdjson operation that could fail.
+ *
+ * Gives the option of reading error codes, or throwing an exception by casting to the desired result.
+ *
+ * This is a base class for implementations that want to add functions to the result type for
+ * chaining.
+ *
+ * Override like:
+ *
+ *   struct simdjson_result<T> : public internal::implementation_simdjson_result_base<T> {
+ *     simdjson_result() noexcept : internal::implementation_simdjson_result_base<T>() {}
+ *     simdjson_result(error_code error) noexcept : internal::implementation_simdjson_result_base<T>(error) {}
+ *     simdjson_result(T &&value) noexcept : internal::implementation_simdjson_result_base<T>(std::forward(value)) {}
+ *     simdjson_result(T &&value, error_code error) noexcept : internal::implementation_simdjson_result_base<T>(value, error) {}
+ *     // Your extra methods here
+ *   }
+ *
+ * Then any method returning simdjson_result<T> will be chainable with your methods.
+ */
+template<typename T>
+struct implementation_simdjson_result_base {
+
+  /**
+   * Create a new empty result with error = UNINITIALIZED.
+   */
+  simdjson_really_inline implementation_simdjson_result_base() noexcept;
+
+  /**
+   * Create a new error result.
+   */
+  simdjson_really_inline implementation_simdjson_result_base(error_code error) noexcept;
+
+  /**
+   * Create a new successful result.
+   */
+  simdjson_really_inline implementation_simdjson_result_base(T &&value) noexcept;
+
+  /**
+   * Create a new result with both things (use if you don't want to branch when creating the result).
+   */
+  simdjson_really_inline implementation_simdjson_result_base(T &&value, error_code error) noexcept;
+
+  /**
+   * Move a result.
+   */
+  simdjson_really_inline implementation_simdjson_result_base(implementation_simdjson_result_base<T> &&value) noexcept = default;
+
+  /**
+   * Copy a result.
+   */
+  simdjson_really_inline implementation_simdjson_result_base(const implementation_simdjson_result_base<T> &value) = default;
+
+  /**
+   * Create a new empty result with error = UNINITIALIZED.
+   */
+  simdjson_really_inline ~implementation_simdjson_result_base() noexcept;
+
+  /**
+   * Move the value and the error to the provided variables.
+   *
+   * @param value The variable to assign the value to. May not be set if there is an error.
+   * @param error The variable to assign the error to. Set to SUCCESS if there is no error.
+   */
+  simdjson_really_inline void tie(T &value, error_code &error) && noexcept;
+
+  /**
+   * Move the value to the provided variable.
+   *
+   * @param value The variable to assign the value to. May not be set if there is an error.
+   */
+  simdjson_really_inline error_code get(T &value) && noexcept;
+
+  /**
+   * The error.
+   */
+  simdjson_really_inline error_code error() const noexcept;
+
+#if SIMDJSON_EXCEPTIONS
+
+  /**
+   * Get the result value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_really_inline T& value() & noexcept(false);
+
+  /**
+   * Take the result value (move it).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_really_inline T&& value() && noexcept(false);
+
+  /**
+   * Take the result value (move it).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_really_inline T&& take_value() && noexcept(false);
+
+  /**
+   * Cast to the value (will throw on error).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_really_inline operator T&&() && noexcept(false);
+
+#endif // SIMDJSON_EXCEPTIONS
+
+  T first;
+  error_code second;
+}; // struct implementation_simdjson_result_base
+
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

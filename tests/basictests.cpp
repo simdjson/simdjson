@@ -959,7 +959,7 @@ namespace dom_api_tests {
            numeric_values_exception() &&
            boolean_values_exception() &&
            null_value_exception() &&
-           document_object_index() &&
+           document_object_index_exception() &&
            twitter_count_exception() &&
            twitter_default_profile_exception() &&
            twitter_image_sizes_exception() &&

@@ -1,14 +1,13 @@
-#include "fallback/begin_implementation.h"
-#include "fallback/dom_parser_implementation.h"
-#include "generic/stage2/jsoncharutils.h"
+#include "simdjson/fallback/begin.h"
 
 //
 // Stage 1
 //
 #include "generic/stage1/find_next_document_index.h"
 
-namespace {
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 namespace stage1 {
 
 class structural_scanner {
@@ -179,6 +178,7 @@ private:
 }; // structural_scanner
 
 } // namespace stage1
+} // unnamed namespace
 
 SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, bool partial) noexcept {
   this->buf = _buf;
@@ -308,16 +308,14 @@ SIMDJSON_WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t 
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace
+} // namespace simdjson
 
 //
 // Stage 2
 //
-#include "fallback/stringparsing.h"
-#include "fallback/numberparsing.h"
 #include "generic/stage2/tape_builder.h"
 
-namespace {
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 
 SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
@@ -335,6 +333,6 @@ SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace
+} // namespace simdjson
 
-#include "fallback/end_implementation.h"
+#include "simdjson/fallback/end.h"

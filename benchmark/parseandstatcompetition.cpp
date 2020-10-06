@@ -131,24 +131,34 @@ struct Stat {
   size_t stringLength; // Number of code units in all strings
 };
 
-static void GenStatPlus(Stat &stat, const dom::element v) {
+static error_code GenStatPlus(Stat &stat, const dom::element &v);
+static error_code GenStatPlus(Stat &stat, const simdjson_result<dom::element> &r) {
+  dom::element v;
+  SIMDJSON_TRY( r.get(v) );
+  return GenStatPlus(stat, v);
+}
+static error_code GenStatPlus(Stat &stat, const dom::element &v) {
   switch (v.type()) {
-  case dom::element_type::ARRAY:
-    for (dom::element child : dom::array(v)) {
+  case dom::element_type::ARRAY: {
+    dom::array a;
+    SIMDJSON_TRY( v.get(a) )
+    for (auto child : a) {
       GenStatPlus(stat, child);
       stat.elementCount++;
     }
     stat.arrayCount++;
-    break;
-  case dom::element_type::OBJECT:
-    for (dom::key_value_pair kv : dom::object(v)) {
+  } break;
+  case dom::element_type::OBJECT: {
+    dom::object o;
+    SIMDJSON_TRY( v.get(o) );
+    for (dom::key_value_pair kv : o) {
       GenStatPlus(stat, kv.value);
       stat.stringLength += kv.key.size();
       stat.memberCount++;
       stat.stringCount++;
     }
     stat.objectCount++;
-    break;
+  } break;
   case dom::element_type::INT64:
   case dom::element_type::UINT64:
   case dom::element_type::DOUBLE:
@@ -156,20 +166,24 @@ static void GenStatPlus(Stat &stat, const dom::element v) {
     break;
   case dom::element_type::STRING: {
     stat.stringCount++;
-    auto sv = std::string_view(v);
+    std::string_view sv;
+    SIMDJSON_TRY( v.get(sv) );
     stat.stringLength += sv.size();
   } break;
-  case dom::element_type::BOOL:
-    if (bool(v)) {
+  case dom::element_type::BOOL: {
+    bool b;
+    SIMDJSON_TRY( v.get(b) );
+    if (b) {
       stat.trueCount++;
     } else {
       stat.falseCount++;
     }
-    break;
+  } break;
   case dom::element_type::NULL_VALUE:
     ++stat.nullCount;
     break;
   }
+  return SUCCESS;
 }
 
 static void RapidGenStat(Stat &stat, const rapidjson::Value &v) {
@@ -221,7 +235,8 @@ simdjson_never_inline Stat rapidjson_compute_stats_ref(const rapidjson::Value &d
 simdjson_never_inline Stat
 simdjson_compute_stats_refplus(const simdjson::dom::element &doc) {
   Stat s{};
-  GenStatPlus(s, doc);
+  auto error = GenStatPlus(s, doc);
+  if (error) { std::cerr << error << std::endl; abort(); }
   return s;
 }
 
@@ -469,9 +484,7 @@ int main(int argc, char *argv[]) {
     simdjson::dom::parser parser;
     simdjson::dom::element doc;
     auto error = parser.parse(p).get(doc);
-    if (error) {
-      std::cerr << error << std::endl;
-    }
+    if (error) { std::cerr << error << std::endl; abort(); }
     size_t refval = simdjson_compute_stats_refplus(doc).objectCount;
 
     BEST_TIME("simdjson            ",

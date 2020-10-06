@@ -48,7 +48,9 @@ std::string rapid_stringme(char *json) {
 std::string simdjson_stringme(simdjson::padded_string & json) {
   std::stringstream ss;
   dom::parser parser;
-  dom::element doc = parser.parse(json);
+  dom::element doc;
+  auto error = parser.parse(json).get(doc);
+  if (error) { std::cerr << error << std::endl; abort(); }
   ss << simdjson::minify(doc);
   return ss.str();
 }

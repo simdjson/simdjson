@@ -1,9 +1,9 @@
 #include "generic/stage2/json_iterator.h"
 #include "generic/stage2/tape_writer.h"
-#include "generic/stage2/atomparsing.h"
 
-namespace {
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 namespace stage2 {
 
 struct tape_builder {
@@ -145,7 +145,7 @@ simdjson_really_inline tape_builder::tape_builder(dom::document &doc) noexcept :
 SIMDJSON_WARN_UNUSED simdjson_really_inline error_code tape_builder::visit_string(json_iterator &iter, const uint8_t *value, bool key) noexcept {
   iter.log_value(key ? "key" : "string");
   uint8_t *dst = on_start_string(iter);
-  dst = stringparsing::parse_string(value, dst);
+  dst = stringparsing::parse_string(value+1, dst);
   if (dst == nullptr) {
     iter.log_error("Invalid escape in string");
     return STRING_ERROR;
@@ -279,5 +279,6 @@ simdjson_really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 }
 
 } // namespace stage2
-} // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

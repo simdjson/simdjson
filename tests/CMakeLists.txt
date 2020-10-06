@@ -34,10 +34,13 @@ function(add_cpp_test TEST_NAME)
     set_property(TEST ${TEST_NAME} PROPERTY WILL_FAIL TRUE)
   endif()
 endfunction()
+
 # Most tests need test data, and many need windows headers.
 link_libraries(simdjson-internal-flags test-data simdjson-windows-headers)
 
 include(${PROJECT_SOURCE_DIR}/cmake/add_cpp_test.cmake)
+
+add_subdirectory(ondemand)
 
 #
 # These tests explicitly do #include "simdjson.cpp" so they can override stuff
@@ -110,7 +113,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
   #
   # SIMDJSON_FORCE_IMPLEMENTATION tests: run json2json with SIMDJSON
   #
-  if (SIMDJSON_IMPLEMENTATION_FALLBACK)
+  if (SIMDJSON_IMPLEMENTATION MATCHES "fallback")
     add_test(
       NAME simdjson_force_implementation
       COMMAND

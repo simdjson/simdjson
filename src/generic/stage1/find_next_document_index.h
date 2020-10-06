@@ -1,5 +1,6 @@
-namespace {
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 
 /**
   * This algorithm is used to quickly identify the last structural position that
@@ -67,5 +68,6 @@ simdjson_really_inline uint32_t find_next_document_index(dom_parser_implementati
   return 0;
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

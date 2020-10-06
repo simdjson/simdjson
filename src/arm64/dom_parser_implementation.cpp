@@ -1,12 +1,11 @@
-#include "arm64/begin_implementation.h"
-#include "arm64/dom_parser_implementation.h"
-#include "generic/stage2/jsoncharutils.h"
+#include "simdjson/arm64/begin.h"
 
 //
 // Stage 1
 //
-namespace {
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 
 using namespace simd;
 
@@ -77,7 +76,7 @@ simdjson_really_inline json_character_block json_character_block::classify(const
 
 simdjson_really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
     simd8<uint8_t> bits = input.reduce_or();
-    return bits.max() < 0b10000000u;
+    return bits.max_val() < 0b10000000u;
 }
 
 SIMDJSON_UNUSED simdjson_really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
@@ -98,8 +97,9 @@ simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>
     return is_third_byte ^ is_fourth_byte;
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
 } // unnamed namespace
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
 #include "generic/stage1/utf8_lookup4_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
@@ -109,15 +109,14 @@ simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>
 // Stage 2
 //
 
-#include "arm64/stringparsing.h"
-#include "arm64/numberparsing.h"
 #include "generic/stage2/tape_builder.h"
 
 //
 // Implementation-specific overrides
 //
-namespace {
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 namespace stage1 {
 
 simdjson_really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
@@ -128,6 +127,7 @@ simdjson_really_inline uint64_t json_string_scanner::find_escaped(uint64_t backs
 }
 
 } // namespace stage1
+} // unnamed namespace
 
 SIMDJSON_WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
   return arm64::stage1::json_minifier::minify<64>(buf, len, dst, dst_len);
@@ -158,6 +158,6 @@ SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace
+} // namespace simdjson
 
-#include "arm64/end_implementation.h"
+#include "simdjson/arm64/end.h"

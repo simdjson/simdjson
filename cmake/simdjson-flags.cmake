@@ -94,23 +94,87 @@ else()
   target_compile_options(simdjson-internal-flags INTERFACE -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion)
 endif()
 
+#
 # Optional flags
+#
+
+#
+# Implementation selection
+#
+set(SIMDJSON_ALL_IMPLEMENTATIONS "fallback;westmere;haswell;arm64")
+
+set(SIMDJSON_IMPLEMENTATION "" CACHE STRING "Semicolon-separated list of implementations to include (${SIMDJSON_ALL_IMPLEMENTATIONS}). If this is not set, any implementations that are supported at compile time and may be selected at runtime will be included.")
+foreach(implementation ${SIMDJSON_IMPLEMENTATION})
+  if(NOT (implementation IN_LIST SIMDJSON_ALL_IMPLEMENTATIONS))
+    message(ERROR "Implementation ${implementation} not supported by simdjson. Possible implementations: ${SIMDJSON_ALL_IMPLEMENTATIONS}")
+  endif()
+endforeach(implementation)
+
+set(SIMDJSON_EXCLUDE_IMPLEMENTATION "" CACHE STRING "Semicolon-separated list of implementations to exclude (haswell/westmere/arm64/fallback). By default, excludes any implementations that are unsupported at compile time or cannot be selected at runtime.")
+foreach(implementation ${SIMDJSON_EXCLUDE_IMPLEMENTATION})
+  if(NOT (implementation IN_LIST SIMDJSON_ALL_IMPLEMENTATIONS))
+    message(ERROR "Implementation ${implementation} not supported by simdjson. Possible implementations: ${SIMDJSON_ALL_IMPLEMENTATIONS}")
+  endif()
+endforeach(implementation)
+
+foreach(implementation ${SIMDJSON_ALL_IMPLEMENTATIONS})
+  string(TOUPPER ${implementation} implementation_upper)
+  if(implementation IN_LIST SIMDJSON_EXCLUDE_IMPLEMENTATION)
+    message(STATUS "Excluding implementation ${implementation} due to SIMDJSON_EXCLUDE_IMPLEMENTATION=${SIMDJSON_EXCLUDE_IMPLEMENTATION}")
+    target_compile_definitions(simdjson-flags INTERFACE "SIMDJSON_IMPLEMENTATION_${implementation_upper}=0")
+  elseif(implementation IN_LIST SIMDJSON_IMPLEMENTATION)
+    message(STATUS "Including implementation ${implementation} due to SIMDJSON_IMPLEMENTATION=${SIMDJSON_IMPLEMENTATION}")
+    target_compile_definitions(simdjson-flags INTERFACE "SIMDJSON_IMPLEMENTATION_${implementation_upper}=1")
+  elseif(SIMDJSON_IMPLEMENTATION)
+    message(STATUS "Excluding implementation ${implementation} due to SIMDJSON_IMPLEMENTATION=${SIMDJSON_IMPLEMENTATION}")
+    target_compile_definitions(simdjson-flags INTERFACE "SIMDJSON_IMPLEMENTATION_${implementation_upper}=0")
+  endif()
+endforeach(implementation)
+
+# TODO make it so this generates the necessary compiler flags to select the given implementation as the builtin automatically!
+option(SIMDJSON_BUILTIN_IMPLEMENTATION "Select the implementation that will be used for user code. Defaults to the most universal implementation in SIMDJSON_IMPLEMENTATION (in the order ${SIMDJSON_ALL_IMPLEMENTATIONS}) if specified; otherwise, by default the compiler will pick the best implementation that can always be selected given the compiler flags." "")
+if(SIMDJSON_BUILTIN_IMPLEMENTATION)
+  target_compile_definitions(simdjson-flags INTERFACE "SIMDJSON_BUILTIN_IMPLEMENTATION=${SIMDJSON_BUILTIN_IMPLEMENTATION}")
+else()
+  # Pick the most universal implementation out of the selected implementations (if any)
+  foreach(implementation ${SIMDJSON_ALL_IMPLEMENTATIONS})
+    if(implementation IN_LIST SIMDJSON_IMPLEMENTATION AND NOT (implementation IN_LIST SIMDJSON_EXCLUDE_IMPLEMENTATION))
+      message(STATUS "Selected implementation ${implementation} as builtin implementation based on ${SIMDJSON_IMPLEMENTATION}.")
+      target_compile_definitions(simdjson-flags INTERFACE "SIMDJSON_BUILTIN_IMPLEMENTATION=${implementation}")
+      break()
+    endif()
+  endforeach(implementation)
+endif(SIMDJSON_BUILTIN_IMPLEMENTATION)
+
 option(SIMDJSON_IMPLEMENTATION_HASWELL "Include the haswell implementation" ON)
 if(NOT SIMDJSON_IMPLEMENTATION_HASWELL)
-  target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_IMPLEMENTATION_HASWELL=0)
+  message(DEPRECATION "SIMDJSON_IMPLEMENTATION_HASWELL is deprecated. Use SIMDJSON_IMPLEMENTATION=-haswell instead.")
+  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_IMPLEMENTATION_HASWELL=0)
 endif()
 option(SIMDJSON_IMPLEMENTATION_WESTMERE "Include the westmere implementation" ON)
 if(NOT SIMDJSON_IMPLEMENTATION_WESTMERE)
-  target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_IMPLEMENTATION_WESTMERE=0)
+  message(DEPRECATION "SIMDJSON_IMPLEMENTATION_WESTMERE is deprecated. SIMDJSON_IMPLEMENTATION=-westmere instead.")
+  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_IMPLEMENTATION_WESTMERE=0)
 endif()
 option(SIMDJSON_IMPLEMENTATION_ARM64 "Include the arm64 implementation" ON)
 if(NOT SIMDJSON_IMPLEMENTATION_ARM64)
-  target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_IMPLEMENTATION_ARM64=0)
+  message(DEPRECATION "SIMDJSON_IMPLEMENTATION_ARM64 is deprecated. Use SIMDJSON_IMPLEMENTATION=-arm64 instead.")
+  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_IMPLEMENTATION_ARM64=0)
 endif()
 option(SIMDJSON_IMPLEMENTATION_FALLBACK "Include the fallback implementation" ON)
 if(NOT SIMDJSON_IMPLEMENTATION_FALLBACK)
-  target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_IMPLEMENTATION_FALLBACK=0)
+  message(DEPRECATION "SIMDJSON_IMPLEMENTATION_FALLBACK is deprecated. Use SIMDJSON_IMPLEMENTATION=-fallback instead.")
+  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_IMPLEMENTATION_FALLBACK=0)
 endif()
+
+#
+# Other optional flags
+#
+option(SIMDJSON_ONDEMAND_SAFETY_RAILS "Validate ondemand user code at runtime to ensure it is being used correctly. Defaults to ON for debug builds, OFF for release builds." $<IF:$<CONFIG:DEBUG>,ON,OFF>)
+if(SIMDJSON_ONDEMAND_SAFETY_RAILS)
+  message(STATUS "Ondemand safety rails enabled. Ondemand user code will be checked at runtime. This will be slower than normal!")
+  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_ONDEMAND_SAFETY_RAILS)
+endif(SIMDJSON_ONDEMAND_SAFETY_RAILS)
 
 option(SIMDJSON_BASH "Allow usage of bash within CMake" ON)
 
@@ -119,7 +183,7 @@ option(SIMDJSON_GIT "Allow usage of git within CMake" ON)
 option(SIMDJSON_EXCEPTIONS "Enable simdjson's exception-throwing interface" ON)
 if(NOT SIMDJSON_EXCEPTIONS)
   message(STATUS "simdjson exception interface turned off. Code that does not check error codes will not compile.")
-  target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_EXCEPTIONS=0)
+  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_EXCEPTIONS=0)
 endif()
 
 option(SIMDJSON_ENABLE_THREADS "Link with thread support" ON)
@@ -131,6 +195,11 @@ if(SIMDJSON_ENABLE_THREADS)
   target_link_libraries(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT})
   target_compile_options(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT})
   target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_THREADS_ENABLED=1) # This will be set in the code automatically.
+endif()
+
+option(SIMDJSON_VERBOSE_LOGGING, "Enable verbose logging for internal simdjson library development." OFF)
+if (SIMDJSON_VERBOSE_LOGGING)
+  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_VERBOSE_LOGGING=1)
 endif()
 
 if(SIMDJSON_USE_LIBCPP)

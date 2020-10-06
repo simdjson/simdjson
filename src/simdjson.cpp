@@ -2,15 +2,13 @@
 
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_UNDESIRED_WARNINGS
-#include "to_chars.cpp"
-#include "error.cpp"
-#include "implementation.cpp"
 
-// Anything in the top level directory MUST be included outside of the #if statements
-// below, or amalgamation will screw them up!
-#include "isadetection.h"
-#include "jsoncharutils_tables.h"
-#include "simdprune_tables.h"
+#include "to_chars.cpp"
+#include "internal/error_tables.cpp"
+#include "internal/jsoncharutils_tables.cpp"
+#include "internal/numberparsing_tables.cpp"
+#include "internal/simdprune_tables.cpp"
+#include "implementation.cpp"
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 #include "arm64/implementation.cpp"
