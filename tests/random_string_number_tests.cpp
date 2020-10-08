@@ -147,7 +147,7 @@ bool tester(int seed, size_t volume) {
   return true;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
   // We test 1,000,000 random strings by default.
   // You can specify more tests with the '-m' flag if you want.
   size_t howmany = 1000000;
@@ -171,11 +171,12 @@ int main() {
     case 'h': {
       std::cout << "-a to select an architecture" << std::endl;
       std::cout << "-m to select a number of tests" << std::endl;
+      return EXIT_SUCCESS;
     }
     case 'm': {
       long long requested_howmany = atoll(optarg);
       if(requested_howmany <= 0) {
-        fprintf(stderr, "Please provide a positive number of tests -m %s no larger than %ll \n", optarg, LLONG_MAX);
+        fprintf(stderr, "Please provide a positive number of tests -m %s no larger than %lld \n", optarg, LLONG_MAX);
         return EXIT_FAILURE;
       }
       howmany = size_t(requested_howmany);
