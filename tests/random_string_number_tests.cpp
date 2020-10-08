@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <cstdint>
 #include <random>
+#include <climits>
+#include <unistd.h>
 
 #include "simdjson.h"
 
@@ -146,12 +148,48 @@ bool tester(int seed, size_t volume) {
 }
 
 int main() {
-  // We test 1,000,000 random strings.
-  if (tester(1234344, 1000000)) {
+  // We test 1,000,000 random strings by default.
+  // You can specify more tests with the '-m' flag if you want.
+  size_t howmany = 1000000;
+
+  int c;
+  while ((c = getopt(argc, argv, "a:m:h")) != -1) {
+    switch (c) {
+    case 'a': {
+      const simdjson::implementation *impl = simdjson::available_implementations[optarg];
+      if (!impl) {
+        fprintf(stderr, "Unsupported architecture value -a %s\n", optarg);
+        return EXIT_FAILURE;
+      }
+      if(!impl->supported_by_runtime_system()) {
+        fprintf(stderr, "The selected implementation does not match your current CPU: -a %s\n", optarg);
+        return EXIT_FAILURE;
+      }
+      simdjson::active_implementation = impl;
+      break;
+    }
+    case 'h': {
+      std::cout << "-a to select an architecture" << std::endl;
+      std::cout << "-m to select a number of tests" << std::endl;
+    }
+    case 'm': {
+      long long requested_howmany = atoll(optarg);
+      if(requested_howmany <= 0) {
+        fprintf(stderr, "Please provide a positive number of tests -m %s no larger than %ll \n", optarg, LLONG_MAX);
+        return EXIT_FAILURE;
+      }
+      howmany = size_t(requested_howmany);
+      break;
+    }
+    default:
+      fprintf(stderr, "Unexpected argument %c\n", c);
+      return EXIT_FAILURE;
+    }
+  }
+  if (tester(1234344, howmany)) {
     std::cout << "All tests ok." << std::endl;
     return EXIT_SUCCESS;
   }
   std::cout << "Failure." << std::endl;
-  
   return EXIT_FAILURE;
 }

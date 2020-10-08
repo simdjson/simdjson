@@ -126,7 +126,6 @@ namespace number_tests {
       double expected = pow(2, i);
       size_t n = snprintf(buf, sizeof(buf), "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
       if (n >= sizeof(buf)) { abort(); }
-      // fflush(NULL); // This should hopefully not be needed.
       double actual;
       auto error = parser.parse(buf, n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
@@ -228,7 +227,6 @@ namespace number_tests {
     for (int i = start_point; i <= 308; ++i) {// large negative values should be zero.
       size_t n = snprintf(buf, sizeof(buf), "1e%d", i);
       if (n >= sizeof(buf)) { abort(); }
-      // fflush(NULL); // This should hopefully not be needed.
       double actual;
       auto error = parser.parse(buf, n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
