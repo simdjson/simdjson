@@ -1,7 +1,6 @@
-#include "westmere/begin_implementation.h"
-#include "westmere/dom_parser_implementation.h"
+#include "simdjson/westmere/begin.h"
 
-namespace {
+namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 
 SIMDJSON_WARN_UNUSED error_code implementation::create_dom_parser_implementation(
@@ -17,6 +16,6 @@ SIMDJSON_WARN_UNUSED error_code implementation::create_dom_parser_implementation
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace
+} // namespace simdjson
 
-#include "westmere/end_implementation.h"
+#include "simdjson/westmere/end.h"

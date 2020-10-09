@@ -1,8 +1,16 @@
 // https://github.com/WojciechMula/toys/blob/master/000helpers/linux-perf-events.h
 #pragma once
 #ifdef __linux__
-
+#ifdef __has_include
+#if __has_include(<asm/unistd.h>)
 #include <asm/unistd.h>       // for __NR_perf_event_open
+#else
+#warning "Header asm/unistd.h cannot be found though it is a linux system. Are linux headers missing?"
+#endif
+#else // no __has_include
+// Please insure that linux headers have been installed.
+#include <asm/unistd.h>       // for __NR_perf_event_open
+#endif 
 #include <linux/perf_event.h> // for perf event constants
 #include <sys/ioctl.h>        // for ioctl
 #include <unistd.h>           // for syscall
@@ -21,9 +29,10 @@ template <int TYPE = PERF_TYPE_HARDWARE> class LinuxEvents {
   size_t num_events{};
   std::vector<uint64_t> temp_result_vec{};
   std::vector<uint64_t> ids{};
+  bool quiet;
 
 public:
-  explicit LinuxEvents(std::vector<int> config_vec) : fd(0), working(true) {
+  explicit LinuxEvents(std::vector<int> config_vec, bool _quiet=false) : fd(0), working(true), quiet{_quiet} {
     std::memset(&attribs, 0, sizeof(attribs));
     attribs.type = TYPE;
     attribs.size = sizeof(attribs);
@@ -93,8 +102,11 @@ public:
 
 private:
   void report_error(const std::string &context) {
-    if (working)
-      std::cerr << (context + ": " + std::string(strerror(errno))) << std::endl;
+    if (!quiet) {
+      if (working) {
+        std::cerr << (context + ": " + std::string(strerror(errno))) << std::endl;
+      }
+    }
     working = false;
   }
 };

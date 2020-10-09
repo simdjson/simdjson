@@ -37,7 +37,6 @@ public:
      * Get the next value.
      *
      * Part of the std::iterator interface.
-     *
      */
     inline iterator& operator++() noexcept;
     /**

@@ -1,12 +1,11 @@
 #include <cassert>
 #include <climits>
 #include <cstring>
-#include <inttypes.h>
+#include <cinttypes>
 #include <iostream>
-#include <math.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
 #ifndef JSON_TEST_STRINGS
 #define JSON_TEST_STRINGS

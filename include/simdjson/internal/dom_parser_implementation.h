@@ -152,7 +152,19 @@ protected:
    * Defaults to DEFAULT_MAX_DEPTH.
    */
   size_t _max_depth{0};
+
+  // Declaring these so that subclasses can use them to implement their constructors.
+  simdjson_really_inline dom_parser_implementation() noexcept;
+  simdjson_really_inline dom_parser_implementation(dom_parser_implementation &&other) noexcept;
+  simdjson_really_inline dom_parser_implementation &operator=(dom_parser_implementation &&other) noexcept;
+
+  simdjson_really_inline dom_parser_implementation(const dom_parser_implementation &) noexcept = delete;
+  simdjson_really_inline dom_parser_implementation &operator=(const dom_parser_implementation &other) noexcept = delete;
 }; // class dom_parser_implementation
+
+simdjson_really_inline dom_parser_implementation::dom_parser_implementation() noexcept = default;
+simdjson_really_inline dom_parser_implementation::dom_parser_implementation(dom_parser_implementation &&other) noexcept = default;
+simdjson_really_inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parser_implementation &&other) noexcept = default;
 
 simdjson_really_inline size_t dom_parser_implementation::capacity() const noexcept {
   return _capacity;

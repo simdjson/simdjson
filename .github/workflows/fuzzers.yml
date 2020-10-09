@@ -12,7 +12,10 @@ jobs:
   build:    
     runs-on: ubuntu-latest
     env:
-      allfuzzers: atpointer dump dump_raw_tape implementations minify minifyimpl parser print_json utf8
+      # fuzzers that use the default implementation
+      defaultimplfuzzers: atpointer dump dump_raw_tape  minify  parser print_json
+      # fuzzers that loop over the implementations themselves
+      implfuzzers: implementations minifyimpl utf8
       implementations: haswell westmere fallback
       UBSAN_OPTIONS: halt_on_error=1
       MAXLEN: -max_len=4000
@@ -50,20 +53,20 @@ jobs:
     - name: Build all the variants
       run: fuzz/build_fuzzer_variants.sh
 
-    - name: Run the fast fuzzer (release build, default implementation, to explore fast)
+    - name: Explore fast (release build, default implementation)
       run: |
         set -eux
-        for fuzzer in $allfuzzers; do
+        for fuzzer in $defaultimplfuzzers $implfuzzers; do
           mkdir -p out/$fuzzer # in case this is a new fuzzer, or corpus.tar is broken
           # get input from everyone else (corpus cross pollination)
           others=$(find out -type d -not -name $fuzzer -not -name out -not -name cmin)
           build-fast/fuzz/fuzz_$fuzzer out/$fuzzer $others seedcorpus -max_total_time=30 $MAXLEN
         done
 
-    - name: Run the slow fuzzer (sanitizer+asserts, good at detecting errors)
+    - name: Fuzz default impl. fuzzers with sanitizer+asserts (good at detecting errors)
       run: |
         set -eux
-        for fuzzer in $allfuzzers; do
+        for fuzzer in $defaultimplfuzzers; do
           # get input from everyone else (corpus cross pollination)
           others=$(find out -type d -not -name $fuzzer -not -name out -not -name cmin)
           for implementation in $implementations; do
@@ -73,10 +76,20 @@ jobs:
           echo now have $(ls out/$fuzzer |wc -l) files in corpus        
         done
 
+    - name: Fuzz differential impl. fuzzers with sanitizer+asserts (good at detecting errors)
+      run: |
+        set -eux
+        for fuzzer in $implfuzzers; do
+          # get input from everyone else (corpus cross pollination)
+          others=$(find out -type d -not -name $fuzzer -not -name out -not -name cmin)
+          build-sanitizers/fuzz/fuzz_$fuzzer out/$fuzzer $others seedcorpus -max_total_time=20 $MAXLEN
+          echo now have $(ls out/$fuzzer |wc -l) files in corpus
+        done
+
     - name: Minimize the corpus with the fast fuzzer on the default implementation
       run: |
         set -eux
-        for fuzzer in $allfuzzers; do      
+        for fuzzer in $defaultimplfuzzers $implfuzzers; do
           mkdir -p out/cmin/$fuzzer
           # get input from everyone else (corpus cross pollination)
           others=$(find out -type d -not -name $fuzzer -not -name out -not -name cmin)
@@ -87,7 +100,7 @@ jobs:
 
     - name: Package the corpus into an artifact
       run: |
-        for fuzzer in $allfuzzers; do      
+        for fuzzer in $defaultimplfuzzers $implfuzzers; do      
           tar rf corpus.tar out/$fuzzer
         done
 
@@ -102,7 +115,7 @@ jobs:
     # which are hashes of the content.
     - name: Run some of the minimized corpus through valgrind (replay build, default implementation)
       run: |
-        for fuzzer in $allfuzzers; do      
+        for fuzzer in $defaultimplfuzzers $implfuzzers; do
           find out/$fuzzer -type f |sort|head -n200|xargs -n40 valgrind build-replay/fuzz/fuzz_$fuzzer 2>&1|tee valgrind-$fuzzer.txt
         done 
 

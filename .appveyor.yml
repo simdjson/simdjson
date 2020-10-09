@@ -17,7 +17,7 @@ environment:
     - job_name: VS2019 (Win32)
       platform: Win32
       CMAKE_ARGS:  -A %Platform% -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_ENABLE_THREADS=ON # This should be the default. Testing anyway.
-      CTEST_ARGS: -E checkperf
+      CTEST_ARGS: -E "checkperf|ondemand_basictests"
     - job_name: VS2015
       image: Visual Studio 2015
       CMAKE_ARGS:  -A %Platform% -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_ENABLE_THREADS=OFF

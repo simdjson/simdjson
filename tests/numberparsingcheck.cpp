@@ -15,6 +15,12 @@
 #else
 #include <dirent_portable.h>
 #endif
+
+void found_invalid_number(const uint8_t *buf);
+void found_float(double result, const uint8_t *buf);
+void found_integer(int64_t result, const uint8_t *buf);
+void found_unsigned_integer(uint64_t result, const uint8_t *buf);
+
 #include "simdjson.h"
 
 

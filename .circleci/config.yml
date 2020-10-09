@@ -96,7 +96,7 @@ commands:
       - run: |
           cd build &&
           tools/json2json -h &&
-          ctest $CTEST_FLAGS -L acceptance -LE per_implementation &&
+          ctest $CTEST_FLAGS -DSIMDJSON_IMPLEMENTATION="haswell;westmere;fallback" -L acceptance -LE per_implementation &&
           SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation -E checkperf &&
           SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation -E checkperf &&
           SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation -E checkperf &&

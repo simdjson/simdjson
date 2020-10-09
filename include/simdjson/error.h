@@ -34,6 +34,7 @@ enum error_code {
   INVALID_JSON_POINTER,     ///< Invalid JSON pointer reference
   INVALID_URI_FRAGMENT,     ///< Invalid URI fragment
   UNEXPECTED_ERROR,         ///< indicative of a bug in simdjson
+  PARSER_IN_USE,            ///< parser is already in use.
   /** @private Number of error codes */
   NUM_ERROR_CODES
 };
@@ -145,7 +146,14 @@ struct simdjson_result_base : public std::pair<T, error_code> {
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_really_inline T& value() noexcept(false);
+  simdjson_really_inline T& value() & noexcept(false);
+
+  /**
+   * Take the result value (move it).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_really_inline T&& value() && noexcept(false);
 
   /**
    * Take the result value (move it).
@@ -217,7 +225,14 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_really_inline T& value() noexcept(false);
+  simdjson_really_inline T& value() & noexcept(false);
+
+  /**
+   * Take the result value (move it).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_really_inline T&& value() && noexcept(false);
 
   /**
    * Take the result value (move it).

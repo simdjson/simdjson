@@ -1,7 +1,7 @@
 parse_many
 ==========
 
-An interface providing features to work with files or streams containing multiple JSON documents.
+An interface providing features to work with files or streams containing multiple small JSON documents.
 As fast and convenient as possible.
 
 Contents
@@ -14,16 +14,16 @@ Contents
 - [API](#api)
 - [Use cases](#use-cases)
 
-Motivations
+Motivation
 -----------
 
 The main motivation for this piece of software is to achieve maximum speed and offer a
-better quality of life in parsing files containing multiple JSON documents.
+better quality of life in parsing files containing multiple small JSON documents.
 
-The JavaScript Object Notation (JSON) [RFC7159](https://tools.ietf.org/html/rfc7159) is a very handy
+The JavaScript Object Notation (JSON) [RFC7159](https://tools.ietf.org/html/rfc7159) is a handy
 serialization format.  However, when serializing a large sequence of
 values as an array, or a possibly indeterminate-length or never-
-ending sequence of values, JSON becomes difficult to work with.
+ending sequence of values, JSON may be inconvenient.
 
 Consider a sequence of one million values, each possibly one kilobyte
 when encoded -- roughly one gigabyte.  It is often desirable to process such a dataset incrementally
@@ -32,9 +32,9 @@ without having to first read all of it before beginning to produce results.
 Performance
 -----------
 
-Here is a chart comparing the speed of the different alternatives to parse a multiline JSON.
-The simdjson library provides a threaded and non-threaded parse_many() implementation.  As the
-figure below shows, if you can, use threads, but if you can't, it's still pretty fast!
+The following is a chart comparing the speed of the different alternatives to parse a multiline JSON.
+The simdjson library provides a threaded and non-threaded `parse_many()` implementation.  As the
+figure below shows, if you can, use threads, but if you cannot, the unthreaded mode is still fast!
 [![Chart.png](/doc/Multiline_JSON_Parse_Competition.png)](/doc/Multiline_JSON_Parse_Competition.png)
 
 How it works
@@ -71,7 +71,7 @@ allocate enough memory so that all the documents can fit. This value is what we 
 As of right now, we need to manually specify a value for this batch size, it has to be at least as
 big as the biggest document in your file, but not too big so that it submerges the cached memory.
 The bigger the batch size, the fewer we need to make allocations. We found that 1MB is somewhat a
-sweet spot for now.
+sweet spot.
 
 1. When the user calls `parse_many`, we return a `document_stream` which the user can iterate over
    to receive parsed documents.

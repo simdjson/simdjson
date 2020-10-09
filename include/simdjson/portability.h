@@ -70,18 +70,6 @@ use a 64-bit target such as x64 or 64-bit ARM.")
 #define STRINGIFY_IMPLEMENTATION_(a) #a
 #define STRINGIFY(a) STRINGIFY_IMPLEMENTATION_(a)
 
-#ifndef SIMDJSON_IMPLEMENTATION_FALLBACK
-#define SIMDJSON_IMPLEMENTATION_FALLBACK 1
-#endif
-
-#if SIMDJSON_IS_ARM64
-#ifndef SIMDJSON_IMPLEMENTATION_ARM64
-#define SIMDJSON_IMPLEMENTATION_ARM64 1
-#endif
-#define SIMDJSON_IMPLEMENTATION_HASWELL 0
-#define SIMDJSON_IMPLEMENTATION_WESTMERE 0
-#endif // SIMDJSON_IS_ARM64
-
 // Our fast kernels require 64-bit systems.
 //
 // On 32-bit x86, we lack 64-bit popcnt, lzcnt, blsr instructions. 
@@ -91,15 +79,10 @@ use a 64-bit target such as x64 or 64-bit ARM.")
 //
 // The simdjson users should still have the fallback kernel. It is 
 // slower, but it should run everywhere.
-#if SIMDJSON_IS_X86_64
-#ifndef SIMDJSON_IMPLEMENTATION_HASWELL
-#define SIMDJSON_IMPLEMENTATION_HASWELL 1
-#endif
-#ifndef SIMDJSON_IMPLEMENTATION_WESTMERE
-#define SIMDJSON_IMPLEMENTATION_WESTMERE 1
-#endif
-#define SIMDJSON_IMPLEMENTATION_ARM64 0
-#endif // SIMDJSON_IS_X86_64
+
+//
+// Enable valid runtime implementations, and select SIMDJSON_BUILTIN_IMPLEMENTATION
+//
 
 // We are going to use runtime dispatch.
 #ifdef SIMDJSON_IS_X86_64
