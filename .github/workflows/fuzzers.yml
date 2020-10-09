@@ -100,7 +100,7 @@ jobs:
 
     - name: Package the corpus into an artifact
       run: |
-        for fuzzer in $allfuzzers; do      
+        for fuzzer in $defaultimplfuzzers $implfuzzers; do      
           tar rf corpus.tar out/$fuzzer
         done
 
