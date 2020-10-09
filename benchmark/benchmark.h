@@ -50,6 +50,7 @@
     if (verbose) {                                                             \
       std::printf(" GB/s ");                                                   \
     }                                                                          \
+    std::printf("\t"); \
     std::printf("%7.3f", 1.0 / aggregate.best.elapsed_sec());                  \
     if (verbose) {                                                             \
       std::printf(" documents/s ");                                            \
@@ -96,6 +97,7 @@
     if (verbose) {                                                             \
       std::printf(" GB/s ");                                                   \
     }                                                                          \
+    std::printf("\t");                                                       \
     std::printf("%7.3f", 1.0 / aggregate.best.elapsed_sec());                  \
     if (verbose) {                                                             \
       std::printf(" documents/s ");                                            \

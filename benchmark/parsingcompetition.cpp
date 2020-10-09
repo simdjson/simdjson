@@ -26,7 +26,8 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-#include <boost/json/parse.hpp>
+#include <boost/json/parser.hpp>
+#include <boost/json/monotonic_resource.hpp>
 
 #ifdef ALLPARSER
 
@@ -176,10 +177,15 @@ bool bench(const char *filename, bool verbose, bool just_data,
 
   {
     const boost::json::string_view sv(p.data(), p.size());
-    auto execute = [](auto sv) -> bool {
+    boost::json::parser p;
+    auto execute = [&p](auto sv) -> bool {
       boost::json::error_code ec;
-      auto jv = boost::json::parse(sv, ec);
-      return !!ec;
+      boost::json::monotonic_resource mr;
+        p.reset( &mr );
+        p.write(sv,ec);
+       if(!ec)
+         auto jv=p.release();
+       return !!ec;
     };
 
     BEST_TIME("Boost.json", execute(sv), false, , repeat, volume, !just_data);
