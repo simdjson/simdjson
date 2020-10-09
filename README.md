@@ -158,8 +158,12 @@ instructions, reducing branch misprediction, and reducing data dependency to tak
 CPU's multiple execution cores.
 
 Some people [enjoy reading our paper](https://arxiv.org/abs/1902.08318): A description of the design
-and implementation of simdjson is in our research article: Geoff Langdale, Daniel
-Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal 28 (6), 2019.
+and implementation of simdjson is in our research article: 
+- Geoff Langdale, Daniel Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal 28 (6), 2019.
+
+We have an in-depth paper focused on the UTF-8 validation:
+
+- John Keiser, Daniel Lemire, [Validating UTF-8 In Less Than One Instruction Per Byte](https://arxiv.org/abs/2010.03090), Software: Practice & Experience (to appear)
 
 We also have an informal [blog post providing some background and context](https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/).
 
