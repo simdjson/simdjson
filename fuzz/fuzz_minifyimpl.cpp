@@ -13,8 +13,12 @@
 #include <cstddef>
 #include <cstdlib>
 #include <vector>
+#include "supported_implementations.h"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
+
+  // since this check is expensive, only do it once
+  static const auto implementations=get_runtime_supported_implementations();
 
     using Buffer=std::vector<uint8_t>;
     auto minify=[Data,Size](const simdjson::implementation* impl) -> Buffer {
@@ -31,20 +35,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
         return ret;
     };
 
-
-    auto const first = simdjson::available_implementations.begin();
-    auto const last = simdjson::available_implementations.end();
-
-
-    auto it = first;
-    while((it != last) && (!(*it)->supported_by_runtime_system())) { it++; }
-    assert(it != last);
+    auto const first = implementations.begin();
+    auto const last = implementations.end();
 
     const auto reference=minify(*first);
 
     bool failed=false;
-    for(;it != last; ++it) {
-        if(!(*it)->supported_by_runtime_system()) { continue; }
+    for(auto it=first+1;it != last; ++it) {
         const auto current=minify(*it);
         if(current!=reference) {
             failed=true;
@@ -53,11 +50,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
     if(failed) {
         std::cerr<<std::boolalpha<<"Mismatch between implementations of minify() found:\n";
-        for(it = first;it != last; ++it) {
-            if(!(*it)->supported_by_runtime_system()) { continue; }
-            const auto current=minify(*it);
+        for(const auto& e:implementations) {
+            const auto current=minify(e);
             std::string tmp(current.begin(),current.end());
-            std::cerr<<(*it)->name()<<" returns "<<tmp<<std::endl;
+            std::cerr<<e->name()<<" returns "<<tmp<<std::endl;
         }
         std::abort();
     }
