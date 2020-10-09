@@ -21,6 +21,7 @@
 //
 // Finally, we want to exclude legacy 32-bit systems.
 #ifndef SIMDJSON_IS_32BITS
+// So we only run some of the floating-point tests under 64-bit linux, apple, regular visual studio, freebsd.
 #define TEST_FLOATS
 // Apple and freebsd need a special header, typically.
 #if defined __APPLE__ || defined(__FreeBSD__)

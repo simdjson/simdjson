@@ -16,6 +16,17 @@
 #include "cast_tester.h"
 #include "test_macros.h"
 
+/**
+ * Some systems have bad floating-point parsing. We want to exclude them.
+ */
+#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined (__linux__) || defined (__APPLE__) || defined(__FreeBSD__) 
+// Finally, we want to exclude legacy 32-bit systems.
+#ifndef SIMDJSON_IS_32BITS
+// So we only run some of the floating-point tests under 64-bit linux, apple, regular visual studio, freebsd.
+#define TEST_FLOATS
+#endif
+#endif
+
 const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
 #define SIMDJSON_SHOW_DEFINE(x) printf("%s=%s\n", #x, STRINGIFY(x))
 
@@ -1277,7 +1288,14 @@ namespace type_tests {
       && (expected_value >= 0 ?
           test_cast<uint64_t>(result, expected_value) :
           test_cast_error<uint64_t>(result, NUMBER_OUT_OF_RANGE))
+#ifdef TEST_FLOATS
+      // We trust the underlying system to be accurate.
       && test_cast<double>(result, static_cast<double>(expected_value))
+#else
+      // We don't trust the underlying system so we only run the test_cast
+      // exact test when the expected_value is within the 53-bit range.
+      && ((expected_value<-9007199254740992) || (expected_value>9007199254740992) || test_cast<double>(result, static_cast<double>(expected_value))) 
+#endif
       && test_cast_error<bool>(result, INCORRECT_TYPE)
       && test_is_null(result, false);
   }
@@ -1297,6 +1315,14 @@ namespace type_tests {
       && test_cast_error<int64_t>(result, NUMBER_OUT_OF_RANGE)
       && test_cast<uint64_t>(result, expected_value)
       && test_cast<double>(result, static_cast<double>(expected_value))
+#ifdef TEST_FLOATS
+      // We trust the underlying system to be accurate.
+      && test_cast<double>(result, static_cast<double>(expected_value))
+#else
+      // We don't trust the underlying system so we only run the test_cast
+      // exact test when the expected_value is within the 53-bit range.
+      && ((expected_value>9007199254740992) || test_cast<double>(result, static_cast<double>(expected_value))) 
+#endif
       && test_cast_error<bool>(result, INCORRECT_TYPE)
       && test_is_null(result, false);
   }
