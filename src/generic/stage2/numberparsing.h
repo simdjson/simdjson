@@ -134,7 +134,7 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   i <<= lz;
 
 
-  // We are going to need to do some 64-bit arithmetic to get a  precise product.
+  // We are going to need to do some 64-bit arithmetic to get a precise product.
   // We use a table lookup approach.
   // It is safe because
   // power >= smallest_power
@@ -145,8 +145,19 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // We want the most significant 64 bits of the product. We know
   // this will be non-zero because the most significant bit of i is
   // 1.
-  const uint32_t index = 2 * uint32_t(power - smallest_power);
+  const uint32_t index = 2 * uint32_t(power - smallest_power); 
+  // Optimization: It may be that materializing the index as a variable might confuse some compilers and prevent effective complex-addressing loads. (Done for code clarity.)
+  //
+  // The full_multiplication function computes the 128-bit product of two 64-bit words
+  // with a returned value of type value128 with a "low component" corresponding to the
+  // 64-bit least significant bits of the product and with a "high component" corresponding
+  // to the 64-bit most significant bits of the product.
   value128 firstproduct = full_multiplication(i, power_of_five_128[index]);
+  // Both i and power_of_five_128[index] have their most significant bit set to 1 which
+  // implies that the either the most or the second most significant bit of the product 
+  // is 1. We pack values in this manner for efficiency reasons: it maximizes the use
+  // we make of the product. It also makes it easy to reason aboutthe product: there
+  // 0 or 1 leading zero in the product.
 
   // Unless the least significant 9 bits of the high (64-bit) part of the full
   // product are all 1s, then we know that the most significant 55 bits are
@@ -154,6 +165,27 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // we need 53 bits for the mantissa but we have to have one rounding bit and
   // we can waste a bit if the most significant bit of the product is zero.
   if((firstproduct.high & 0x1FF) == 0x1FF) {
+    // We want to compute i * 5^q, but only care about the top 55 bits at most.
+    // Consider the scenario where q>=0. Then 5^q may not fit in 64-bits. Doing
+    // the full computation is wasteful. So we do what is called a "truncated
+    // multiplication".
+    // We take the most significant 64-bits, and we put them in 
+    // power_of_five_128[index]. Usually, that's good enough to approximate i * 5^q
+    // to the desired approximation using one multiplication. Sometimes it does not suffice. 
+    // Then we store the next most significant 64 bits in power_of_five_128[index + 1], and
+    // then we get a better approximation to i * 5^q. In very rare cases, even that
+    // will not suffice, though it is seemingly very hard to find such a scenario.
+    // 
+    // That's for when q>=0. The logic for q<0 is somewhat similar but it is somewhat
+    // more complicated.
+    //
+    // There is an extra layer of complexity in that we need more than 55 bits of 
+    // accuracy in the round-to-even scenario.
+    //
+    // The full_multiplication function computes the 128-bit product of two 64-bit words
+    // with a returned value of type value128 with a "low component" corresponding to the
+    // 64-bit least significant bits of the product and with a "high component" corresponding
+    // to the 64-bit most significant bits of the product.
     value128 secondproduct = full_multiplication(i, power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
@@ -203,7 +235,6 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // which we guard against.
   // If we have lots of trailing zeros, we may fall right between two
   // floating-point values.
-  // We have 5**27 < 2**64 and it is the largest power of 5 to do so.
   // 
   // The round-to-even cases take the form of a number 2m+1 which is in (2^53,2^54]
   // times a power of two. That is, it is right between a number with binary significand
@@ -217,14 +248,13 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // When q<0, we have  w  >=  (2m+1) x 5^{-q}.  We must have that w<2^{64} so
   // (2m+1) x 5^{-q} < 2^{64}. We have that 2m+1>2^{53}. Hence, we must have 
   // 2^{53} x 5^{-q} < 2^{64}.
-  // Hence we have 5^{-q} < 2^{11}$ or q>= -4$  (64-bit case). 
+  // Hence we have 5^{-q} < 2^{11}$ or q>= -4. 
   //
   // We require lower <= 1 and not lower == 0 because we could not prove that 
-  // that lower == 0 is implied; but we could prove that lower <= 1 is a sufficient test.
-  if (simdjson_unlikely((lower <= 1) && (power >= -4) && (power <= 23)  &&
-               ((mantissa & 3) == 1))) {
+  // that lower == 0 is implied; but we could prove that lower <= 1 is a necessary and sufficient test.
+  if (simdjson_unlikely((lower <= 1) && (power >= -4) && (power <= 23) && ((mantissa & 3) == 1))) {
     if((mantissa  << (upperbit + 64 - 53 - 2)) ==  upper) {
-      mantissa ^= 1;             // flip it so that we do not round up
+      mantissa &= ~1;             // flip it so that we do not round up
     }
   }
 
@@ -254,7 +284,8 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 // before you call parse_float_fallback, you need to have validated the input
 // string with the JSON grammar.
 // It will return an error (false) if the parsed number is infinite.
-// The string parsing itself always succeeds.
+// The string parsing itself always succeeds. We know that there is at least
+// one digit.
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
   // We do not accept infinite values.
