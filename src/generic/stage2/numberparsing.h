@@ -18,6 +18,19 @@ namespace numberparsing {
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
 #endif
 
+namespace {
+// Convert a mantissa, an exponent and a sign bit into an ieee64 double.
+// The real_exponent needs to be in [0, 2046] (technically real_exponent = 2047 would be acceptable).
+// The mantissa should be in [0,1<<53). The bit at index (1ULL << 52) while be zeroed. 
+simdjson_really_inline double to_double(uint64_t mantissa, uint64_t real_exponent, bool negative) {
+    double d;
+    mantissa &= ~(1ULL << 52);
+    mantissa |= real_exponent << 52;
+    mantissa |= (((uint64_t)negative) << 63);
+    memcpy(&d, &mantissa, sizeof(d));
+    return d;
+}
+}
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
 // true, negate the result.
 // This function will only work in some cases, when it does not work, success is
@@ -161,14 +174,54 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   lz += int(1 ^ upperbit);
 
   // Here we have mantissa < (1<<54).
-
+  int64_t real_exponent = exponent - lz;
+  if (real_exponent <= 0) { // we have a subnormal?
+    // Here have that real_exponent <= 0 so -real_exponent >= 0
+    if(-real_exponent + 1 >= 64) { // if we have more than 64 bits below the minimum exponent, you have a zero for sure.
+      d = 0.0;
+      return true;
+    } 
+    // next line is safe because -real_exponent + 1 < 0
+    mantissa >>= -real_exponent + 1;
+    // Thankfully, we can't have both "round-to-even" and subnormals because
+    // "round-to-even" only occurs for powers close to 0.
+    mantissa += (mantissa & 1); // round up
+    mantissa >>= 1;
+    // There is a weird scenario where we don't have a subnormal but just.
+    // Suppose we start with 2.2250738585072013e-308, we end up
+    // with 0x3fffffffffffff x 2^-1023-53 which is technically subnormal
+    // whereas 0x40000000000000 x 2^-1023-53  is normal. Now, we need to round
+    // up 0x3fffffffffffff x 2^-1023-53  and once we do, we are no longer
+    // subnormal, but we can only know this after rounding.
+    // So we only declare a subnormal if we are smaller than the threshold.    
+    real_exponent = (mantissa < (uint64_t(1) << 52)) ? 0 : 1;
+    d = to_double(mantissa, real_exponent, negative);
+    return true;
+  }
   // We have to round to even. The "to even" part
   // is only a problem when we are right in between two floats
   // which we guard against.
   // If we have lots of trailing zeros, we may fall right between two
   // floating-point values.
   // We have 5**27 < 2**64 and it is the largest power of 5 to do so.
-  if (simdjson_unlikely((lower == 0) && (power >= -27) && (power <= 27)  &&
+  // 
+  // The round-to-even cases take the form of a number 2m+1 which is in (2^53,2^54]
+  // times a power of two. That is, it is right between a number with binary significand
+  // m and another number with binary significand m+1; and it must be the case
+  // that it cannot be represented by a float itself.
+  //
+  // We must have that w * 10 ^q == (2m+1) * 2^p for some power of two 2^p.
+  // Recall that 10^q = 5^q * 2^q.
+  // When q >= 0, we must have that (2m+1) is divible by 5^q, so 5^q <= 2^54. We have that
+  //  5^23 <=  2^54 and it is the last power of five to qualify, so q <= 23.
+  // When q<0, we have  w  >=  (2m+1) x 5^{-q}.  We must have that w<2^{64} so
+  // (2m+1) x 5^{-q} < 2^{64}. We have that 2m+1>2^{53}. Hence, we must have 
+  // 2^{53} x 5^{-q} < 2^{64}.
+  // Hence we have 5^{-q} < 2^{11}$ or q>= -4$  (64-bit case). 
+  //
+  // We require lower <= 1 and not lower == 0 because we could not prove that 
+  // that lower == 0 is implied; but we could prove that lower <= 1 is a sufficient test.
+  if (simdjson_unlikely((lower <= 1) && (power >= -4) && (power <= 23)  &&
                ((mantissa & 3) == 1))) {
     if((mantissa  << (upperbit + 64 - 53 - 2)) ==  upper) {
       mantissa ^= 1;             // flip it so that we do not round up
@@ -184,17 +237,15 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
     // This will happen when parsing values such as 7.2057594037927933e+16
     ////////
     mantissa = (1ULL << 52);
-    lz--; // undo previous addition
+    real_exponent++;
   }
   mantissa &= ~(1ULL << 52);
-  uint64_t real_exponent = exponent - lz;
   // we have to check that real_exponent is in range, otherwise we bail out
-  if (simdjson_unlikely((real_exponent < 1) || (real_exponent > 2046))) {
+  if (simdjson_unlikely(real_exponent > 2046)) {
+    // We have an infinte value!!! We could actually throw an error here if we could.
     return false;
   }
-  mantissa |= real_exponent << 52;
-  mantissa |= (((uint64_t)negative) << 63);
-  memcpy(&d, &mantissa, sizeof(d));
+  d = to_double(mantissa, real_exponent, negative);
   return true;
 }
 
@@ -372,16 +423,19 @@ simdjson_really_inline error_code write_float(const uint8_t *const src, bool neg
   // way we've tried: https://github.com/simdjson/simdjson/pull/990#discussion_r448497331
   // To future reader: we'd love if someone found a better way, or at least could explain this result!
   if (simdjson_unlikely(exponent < smallest_power) || (exponent > largest_power)) {
-    // this is almost never going to get called!!!
-    // we start anew, going slowly!!!
-    // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
-    // because slow_float_parsing is a non-inlined function. If we passed our writer reference to
-    // it, it would force it to be stored in memory, preventing the compiler from picking it apart
-    // and putting into registers. i.e. if we pass it as reference, it gets slow.
-    // This is what forces the skip_double, as well.
-    error_code error = slow_float_parsing(src, writer);
-    writer.skip_double();
-    return error;
+    //
+    // Important: smallest_power is such that it leads to a zero value.
+    // Observe that 18446744073709551615e-343 == 0, i.e. (2**64 - 1) e -343 is zero
+    // so something x 10^-343 goes to zero, but not so with  something x 10^-342.
+    static_assert(smallest_power <= -342, "smallest_power is not small enough");
+    // 
+    if((exponent < smallest_power) || (i == 0)) {
+      WRITE_DOUBLE(0, src, writer);
+      return SUCCESS;
+    } else { // (exponent > largest_power) and (i != 0)
+      // We have, for sure, an infinite value and simdjson refuses to parse infinite values.
+      return INVALID_NUMBER(src);
+    }
   }
   double d;
   if (!compute_float_64(exponent, i, negative, d)) {

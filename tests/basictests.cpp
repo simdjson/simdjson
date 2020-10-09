@@ -37,6 +37,8 @@ namespace number_tests {
   bool ground_truth() {
     std::cout << __func__ << std::endl;
     std::pair<std::string,double> ground_truth[] = {
+      {"2.2250738585072013e-308",0x1p-1022},
+      {"-92666518056446206563E3", -0x1.39f764644154dp+76},
       {"-92666518056446206563E3", -0x1.39f764644154dp+76},
       {"-42823146028335318693e-128", -0x1.0176daa6cdaafp-360},
       {"90054602635948575728E72", 0x1.61ab4ea9cb6c3p+305},

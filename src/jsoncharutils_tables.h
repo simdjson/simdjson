@@ -239,6 +239,7 @@ static const double power_of_ten[] = {
  * affect the binary significand.
  */ 
 
+
 // The truncated powers of five from 5^-342 all the way to 5^308
 // The mantissa is truncated to 128 bits, and
 // never rounded up. Uses about 5KB.
