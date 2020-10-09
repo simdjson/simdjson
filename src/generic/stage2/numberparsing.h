@@ -397,7 +397,6 @@ simdjson_really_inline error_code write_float(const uint8_t *const src, bool neg
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
-  // digit count is off by 1 because of the decimal (assuming there was one).
   //
   // 9999999999999999999 < 2**64 so we can accomodate 19 digits.
   // If we have a decimal separator, then digit_count - 1 is the number of digits, but we
