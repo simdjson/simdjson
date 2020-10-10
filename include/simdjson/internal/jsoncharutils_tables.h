@@ -11,15 +11,6 @@ void found_bad_string(const uint8_t *buf);
 
 namespace simdjson {
 namespace internal {
-
-constexpr int FASTFLOAT_SMALLEST_POWER = -325;
-constexpr int FASTFLOAT_LARGEST_POWER = 308;
-
-struct value128 {
-  uint64_t low;
-  uint64_t high;
-};
-
 // structural chars here are
 // they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c (and NULL)
 // we are also interested in the four whitespace characters

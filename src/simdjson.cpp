@@ -4,6 +4,7 @@ SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 
 #include "to_chars.cpp"
+#include "from_chars.cpp"
 #include "internal/error_tables.cpp"
 #include "internal/jsoncharutils_tables.cpp"
 #include "internal/numberparsing_tables.cpp"

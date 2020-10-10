@@ -8,12 +8,7 @@ namespace {
 /// @private
 namespace numberparsing {
 
-using internal::FASTFLOAT_LARGEST_POWER;
-using internal::FASTFLOAT_SMALLEST_POWER;
-using internal::value128;
-using internal::power_of_ten;
-using internal::mantissa_64;
-using internal::mantissa_128;
+
 
 #ifdef JSON_TEST_NUMBERS
 #define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
@@ -27,12 +22,25 @@ using internal::mantissa_128;
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
 #endif
 
+namespace {
+// Convert a mantissa, an exponent and a sign bit into an ieee64 double.
+// The real_exponent needs to be in [0, 2046] (technically real_exponent = 2047 would be acceptable).
+// The mantissa should be in [0,1<<53). The bit at index (1ULL << 52) while be zeroed. 
+simdjson_really_inline double to_double(uint64_t mantissa, uint64_t real_exponent, bool negative) {
+    double d;
+    mantissa &= ~(1ULL << 52);
+    mantissa |= real_exponent << 52;
+    mantissa |= (((uint64_t)negative) << 63);
+    memcpy(&d, &mantissa, sizeof(d));
+    return d;
+}
+}
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
 // true, negate the result.
 // This function will only work in some cases, when it does not work, success is
 // set to false. This should work *most of the time* (like 99% of the time).
-// We assume that power is in the [FASTFLOAT_SMALLEST_POWER,
-// FASTFLOAT_LARGEST_POWER] interval: the caller is responsible for this check.
+// We assume that power is in the [smallest_power,
+// largest_power] interval: the caller is responsible for this check.
 simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, double &d) {
   // we start with a fast path
   // It was described in
@@ -61,9 +69,9 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
     // and s / p will produce correctly rounded values.
     //
     if (power < 0) {
-      d = d / power_of_ten[-power];
+      d = d / simdjson::internal::power_of_ten[-power];
     } else {
-      d = d * power_of_ten[power];
+      d = d * simdjson::internal::power_of_ten[power];
     }
     if (negative) {
       d = -d;
@@ -97,16 +105,8 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
     return true;
   }
 
-  // We are going to need to do some 64-bit arithmetic to get a more precise product.
-  // We use a table lookup approach.
-  // It is safe because
-  // power >= FASTFLOAT_SMALLEST_POWER
-  // and power <= FASTFLOAT_LARGEST_POWER
-  // We recover the mantissa of the power, it has a leading 1. It is always
-  // rounded down.
-  uint64_t factor_mantissa = mantissa_64[power - FASTFLOAT_SMALLEST_POWER];
-  
-  // The exponent is 1024 + 63 + power 
+
+  // The exponent is 1024 + 63 + power
   //     + floor(log(5**power)/log(2)).
   // The 1024 comes from the ieee64 standard.
   // The 63 comes from the fact that we use a 64-bit word.
@@ -119,61 +119,89 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // is equal to
   //  floor(log(5**power)/log(2)) + power
   //
-  // The 65536 is (1<<16) and corresponds to 
+  // The 65536 is (1<<16) and corresponds to
   // (65536 * power) >> 16 ---> power
   //
-  // ((152170 * power ) >> 16) is equal to 
-  // floor(log(5**power)/log(2)) 
+  // ((152170 * power ) >> 16) is equal to
+  // floor(log(5**power)/log(2))
   //
-  // Note that this is not magic: 152170/(1<<16) is 
+  // Note that this is not magic: 152170/(1<<16) is
   // approximatively equal to log(5)/log(2).
-  // The 1<<16 value is a power of two; we could use a 
+  // The 1<<16 value is a power of two; we could use a
   // larger power of 2 if we wanted to.
   //
   int64_t exponent = (((152170 + 65536) * power) >> 16) + 1024 + 63;
-  
+
 
   // We want the most significant bit of i to be 1. Shift if needed.
   int lz = leading_zeroes(i);
   i <<= lz;
+
+
+  // We are going to need to do some 64-bit arithmetic to get a precise product.
+  // We use a table lookup approach.
+  // It is safe because
+  // power >= smallest_power
+  // and power <= largest_power
+  // We recover the mantissa of the power, it has a leading 1. It is always
+  // rounded down.
+  //
   // We want the most significant 64 bits of the product. We know
   // this will be non-zero because the most significant bit of i is
   // 1.
-  value128 product = jsoncharutils::full_multiplication(i, factor_mantissa);
-  uint64_t lower = product.low;
-  uint64_t upper = product.high;
+  const uint32_t index = 2 * uint32_t(power - simdjson::internal::smallest_power); 
+  // Optimization: It may be that materializing the index as a variable might confuse some compilers and prevent effective complex-addressing loads. (Done for code clarity.)
+  //
+  // The full_multiplication function computes the 128-bit product of two 64-bit words
+  // with a returned value of type value128 with a "low component" corresponding to the
+  // 64-bit least significant bits of the product and with a "high component" corresponding
+  // to the 64-bit most significant bits of the product.
+  simdjson::internal::value128 firstproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index]);
+  // Both i and power_of_five_128[index] have their most significant bit set to 1 which
+  // implies that the either the most or the second most significant bit of the product 
+  // is 1. We pack values in this manner for efficiency reasons: it maximizes the use
+  // we make of the product. It also makes it easy to reason aboutthe product: there
+  // 0 or 1 leading zero in the product.
 
-  // We know that upper has at most one leading zero because
-  // both i and  factor_mantissa have a leading one. This means
-  // that the result is at least as large as ((1<<63)*(1<<63))/(1<<64).
-
-  // As long as the first 9 bits of "upper" are not "1", then we
-  // know that we have an exact computed value for the leading
-  // 55 bits because any imprecision would play out as a +1, in
-  // the worst case.
-  if (simdjson_unlikely((upper & 0x1FF) == 0x1FF) && (lower + i < lower)) {
-    uint64_t factor_mantissa_low =
-        mantissa_128[power - FASTFLOAT_SMALLEST_POWER];
-    // next, we compute the 64-bit x 128-bit multiplication, getting a 192-bit
-    // result (three 64-bit values)
-    product = jsoncharutils::full_multiplication(i, factor_mantissa_low);
-    uint64_t product_low = product.low;
-    uint64_t product_middle2 = product.high;
-    uint64_t product_middle1 = lower;
-    uint64_t product_high = upper;
-    uint64_t product_middle = product_middle1 + product_middle2;
-    if (product_middle < product_middle1) {
-      product_high++; // overflow carry
-    }
-    // We want to check whether mantissa *i + i would affect our result.
-    // This does happen, e.g. with 7.3177701707893310e+15.
-    if (((product_middle + 1 == 0) && ((product_high & 0x1FF) == 0x1FF) &&
-         (product_low + i < product_low))) { // let us be prudent and bail out.
+  // Unless the least significant 9 bits of the high (64-bit) part of the full
+  // product are all 1s, then we know that the most significant 55 bits are
+  // exact and no further work is needed. Having 55 bits is necessary because
+  // we need 53 bits for the mantissa but we have to have one rounding bit and
+  // we can waste a bit if the most significant bit of the product is zero.
+  if((firstproduct.high & 0x1FF) == 0x1FF) {
+    // We want to compute i * 5^q, but only care about the top 55 bits at most.
+    // Consider the scenario where q>=0. Then 5^q may not fit in 64-bits. Doing
+    // the full computation is wasteful. So we do what is called a "truncated
+    // multiplication".
+    // We take the most significant 64-bits, and we put them in 
+    // power_of_five_128[index]. Usually, that's good enough to approximate i * 5^q
+    // to the desired approximation using one multiplication. Sometimes it does not suffice. 
+    // Then we store the next most significant 64 bits in power_of_five_128[index + 1], and
+    // then we get a better approximation to i * 5^q. In very rare cases, even that
+    // will not suffice, though it is seemingly very hard to find such a scenario.
+    // 
+    // That's for when q>=0. The logic for q<0 is somewhat similar but it is somewhat
+    // more complicated.
+    //
+    // There is an extra layer of complexity in that we need more than 55 bits of 
+    // accuracy in the round-to-even scenario.
+    //
+    // The full_multiplication function computes the 128-bit product of two 64-bit words
+    // with a returned value of type value128 with a "low component" corresponding to the
+    // 64-bit least significant bits of the product and with a "high component" corresponding
+    // to the 64-bit most significant bits of the product.
+    simdjson::internal::value128 secondproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
+    firstproduct.low += secondproduct.high;
+    if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
+    // At this point, we might need to add at most one to firstproduct, but this
+    // can only change the value of firstproduct.high if firstproduct.low is maximal.
+    if(simdjson_unlikely(firstproduct.low  == 0xFFFFFFFFFFFFFFFF)) {
+      // This is very unlikely, but if so, we need to do much more work!
       return false;
     }
-    upper = product_high;
-    lower = product_middle;
   }
+  uint64_t lower = firstproduct.low;
+  uint64_t upper = firstproduct.high;
   // The final mantissa should be 53 bits with a leading 1.
   // We shift it so that it occupies 54 bits with a leading 1.
   ///////
@@ -182,32 +210,56 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   lz += int(1 ^ upperbit);
 
   // Here we have mantissa < (1<<54).
-
+  int64_t real_exponent = exponent - lz;
+  if (simdjson_unlikely(real_exponent <= 0)) { // we have a subnormal?
+    // Here have that real_exponent <= 0 so -real_exponent >= 0
+    if(-real_exponent + 1 >= 64) { // if we have more than 64 bits below the minimum exponent, you have a zero for sure.
+      d = 0.0;
+      return true;
+    } 
+    // next line is safe because -real_exponent + 1 < 0
+    mantissa >>= -real_exponent + 1;
+    // Thankfully, we can't have both "round-to-even" and subnormals because
+    // "round-to-even" only occurs for powers close to 0.
+    mantissa += (mantissa & 1); // round up
+    mantissa >>= 1;
+    // There is a weird scenario where we don't have a subnormal but just.
+    // Suppose we start with 2.2250738585072013e-308, we end up
+    // with 0x3fffffffffffff x 2^-1023-53 which is technically subnormal
+    // whereas 0x40000000000000 x 2^-1023-53  is normal. Now, we need to round
+    // up 0x3fffffffffffff x 2^-1023-53  and once we do, we are no longer
+    // subnormal, but we can only know this after rounding.
+    // So we only declare a subnormal if we are smaller than the threshold.    
+    real_exponent = (mantissa < (uint64_t(1) << 52)) ? 0 : 1;
+    d = to_double(mantissa, real_exponent, negative);
+    return true;
+  }
   // We have to round to even. The "to even" part
   // is only a problem when we are right in between two floats
   // which we guard against.
   // If we have lots of trailing zeros, we may fall right between two
   // floating-point values.
-  if (simdjson_unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
-               ((mantissa & 3) == 1))) {
-    // if mantissa & 1 == 1 we might need to round up.
-    //
-    // Scenarios:
-    // 1. We are not in the middle. Then we should round up.
-    //
-    // 2. We are right in the middle. Whether we round up depends
-    // on the last significant bit: if it is "one" then we round
-    // up (round to even) otherwise, we do not.
-    //
-    // So if the last significant bit is 1, we can safely round up.
-    // Hence we only need to bail out if (mantissa & 3) == 1.
-    // Otherwise we may need more accuracy or analysis to determine whether
-    // we are exactly between two floating-point numbers.
-    // It can be triggered with 1e23.
-    // Note: because the factor_mantissa and factor_mantissa_low are
-    // almost always rounded down (except for small positive powers),
-    // almost always should round up.
-    return false;
+  // 
+  // The round-to-even cases take the form of a number 2m+1 which is in (2^53,2^54]
+  // times a power of two. That is, it is right between a number with binary significand
+  // m and another number with binary significand m+1; and it must be the case
+  // that it cannot be represented by a float itself.
+  //
+  // We must have that w * 10 ^q == (2m+1) * 2^p for some power of two 2^p.
+  // Recall that 10^q = 5^q * 2^q.
+  // When q >= 0, we must have that (2m+1) is divible by 5^q, so 5^q <= 2^54. We have that
+  //  5^23 <=  2^54 and it is the last power of five to qualify, so q <= 23.
+  // When q<0, we have  w  >=  (2m+1) x 5^{-q}.  We must have that w<2^{64} so
+  // (2m+1) x 5^{-q} < 2^{64}. We have that 2m+1>2^{53}. Hence, we must have 
+  // 2^{53} x 5^{-q} < 2^{64}.
+  // Hence we have 5^{-q} < 2^{11}$ or q>= -4. 
+  //
+  // We require lower <= 1 and not lower == 0 because we could not prove that 
+  // that lower == 0 is implied; but we could prove that lower <= 1 is a necessary and sufficient test.
+  if (simdjson_unlikely((lower <= 1) && (power >= -4) && (power <= 23) && ((mantissa & 3) == 1))) {
+    if((mantissa  << (upperbit + 64 - 53 - 2)) ==  upper) {
+      mantissa &= ~1;             // flip it so that we do not round up
+    }
   }
 
   mantissa += mantissa & 1;
@@ -219,53 +271,29 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
     // This will happen when parsing values such as 7.2057594037927933e+16
     ////////
     mantissa = (1ULL << 52);
-    lz--; // undo previous addition
+    real_exponent++;
   }
   mantissa &= ~(1ULL << 52);
-  uint64_t real_exponent = exponent - lz;
   // we have to check that real_exponent is in range, otherwise we bail out
-  if (simdjson_unlikely((real_exponent < 1) || (real_exponent > 2046))) {
+  if (simdjson_unlikely(real_exponent > 2046)) {
+    // We have an infinte value!!! We could actually throw an error here if we could.
     return false;
   }
-  mantissa |= real_exponent << 52;
-  mantissa |= (((uint64_t)negative) << 63);
-  memcpy(&d, &mantissa, sizeof(d));
+  d = to_double(mantissa, real_exponent, negative);
   return true;
 }
 
-static bool parse_float_strtod(const uint8_t *ptr, double *outDouble) {
-  char *endptr;
-  // We want to call strtod with the C (default) locale to avoid
-  // potential issues in case someone has a different locale.
-  // Unfortunately, Visual Studio has a different syntax.
-#ifdef _WIN32
-  static _locale_t c_locale = _create_locale(LC_ALL, "C");
-  *outDouble = _strtod_l((const char *)ptr, &endptr, c_locale);
-#else
-  static locale_t c_locale = newlocale(LC_ALL_MASK, "C", NULL);
-  *outDouble = strtod_l((const char *)ptr, &endptr, c_locale);
-#endif
-  // Some libraries will set errno = ERANGE when the value is subnormal,
-  // yet we may want to be able to parse subnormal values.
-  // However, we do not want to tolerate NAN or infinite values.
-  //
-  // Values like infinity or NaN are not allowed in the JSON specification.
-  // If you consume a large value and you map it to "infinity", you will no
-  // longer be able to serialize back a standard-compliant JSON. And there is
-  // no realistic application where you might need values so large than they
-  // can't fit in binary64. The maximal value is about  1.7976931348623157 x
-  // 10^308 It is an unimaginable large number. There will never be any piece of
-  // engineering involving as many as 10^308 parts. It is estimated that there
-  // are about 10^80 atoms in the universe.  The estimate for the total number
-  // of electrons is similar. Using a double-precision floating-point value, we
-  // can represent easily the number of atoms in the universe. We could  also
-  // represent the number of ways you can pick any three individual atoms at
-  // random in the universe. If you ever encounter a number much larger than
-  // 10^308, you know that you have a bug. RapidJSON will reject a document with
-  // a float that does not fit in binary64. JSON for Modern C++ (nlohmann/json)
-  // will flat out throw an exception.
-  //
-  if ((endptr == (const char *)ptr) || (!std::isfinite(*outDouble))) {
+// We call a fallback floating-point parser that might be slow. Note
+// it will accept JSON numbers, but the JSON spec. is more restrictive so
+// before you call parse_float_fallback, you need to have validated the input
+// string with the JSON grammar.
+// It will return an error (false) if the parsed number is infinite.
+// The string parsing itself always succeeds. We know that there is at least
+// one digit.
+static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
+  *outDouble = simdjson::internal::from_chars((const char *)ptr);
+  // We do not accept infinite values.
+  if (!std::isfinite(*outDouble)) {
     return false;
   }
   return true;
@@ -292,7 +320,7 @@ simdjson_really_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
 template<typename W>
 error_code slow_float_parsing(SIMDJSON_UNUSED const uint8_t * src, W writer) {
   double d;
-  if (parse_float_strtod(src, &d)) {
+  if (parse_float_fallback(src, &d)) {
     writer.append_double(d);
     return SUCCESS;
   }
@@ -346,14 +374,14 @@ simdjson_really_inline error_code parse_exponent(SIMDJSON_UNUSED const uint8_t *
   auto start_exp = p;
   int64_t exp_number = 0;
   while (parse_digit(*p, exp_number)) { ++p; }
-  // It is possible for parse_digit to overflow. 
+  // It is possible for parse_digit to overflow.
   // In particular, it could overflow to INT64_MIN, and we cannot do - INT64_MIN.
   // Thus we *must* check for possible overflow before we negate exp_number.
 
   // Performance notes: it may seem like combining the two "simdjson_unlikely checks" below into
   // a single simdjson_unlikely path would be faster. The reasoning is sound, but the compiler may
   // not oblige and may, in fact, generate two distinct paths in any case. It might be
-  // possible to do uint64_t(p - start_exp - 1) >= 18 but it could end up trading off 
+  // possible to do uint64_t(p - start_exp - 1) >= 18 but it could end up trading off
   // instructions for a simdjson_likely branch, an unconclusive gain.
 
   // If there were no digits, it's an error.
@@ -363,7 +391,7 @@ simdjson_really_inline error_code parse_exponent(SIMDJSON_UNUSED const uint8_t *
   // We have a valid positive exponent in exp_number at this point, except that
   // it may have overflowed.
 
-  // If there were more than 18 digits, we may have overflowed the integer. We have to do 
+  // If there were more than 18 digits, we may have overflowed the integer. We have to do
   // something!!!!
   if (simdjson_unlikely(p > start_exp+18)) {
     // Skip leading zeroes: 1e000000000000000000001 is technically valid and doesn't overflow
@@ -375,12 +403,12 @@ simdjson_really_inline error_code parse_exponent(SIMDJSON_UNUSED const uint8_t *
     // Note that 999999999999999999 is assuredly too large. The maximal ieee64 value before
     // infinity is ~1.8e308. The smallest subnormal is ~5e-324. So, actually, we could
     // truncate at 324.
-    // Note that there is no reason to fail per se at this point in time. 
+    // Note that there is no reason to fail per se at this point in time.
     // E.g., 0e999999999999999999999 is a fine number.
     if (p > start_exp+18) { exp_number = 999999999999999999; }
   }
   // At this point, we know that exp_number is a sane, positive, signed integer.
-  // It is <= 999,999,999,999,999,999. As long as 'exponent' is in 
+  // It is <= 999,999,999,999,999,999. As long as 'exponent' is in
   // [-8223372036854775808, 8223372036854775808], we won't overflow. Because 'exponent'
   // is bounded in magnitude by the size of the JSON input, we are fine in this universe.
   // To sum it up: the next line should never overflow.
@@ -404,10 +432,11 @@ simdjson_really_inline error_code write_float(const uint8_t *const src, bool neg
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
-  // digit count is off by 1 because of the decimal (assuming there was one).
   //
   // 9999999999999999999 < 2**64 so we can accomodate 19 digits.
-  if (simdjson_unlikely(digit_count-1 > 19 && significant_digits(start_digits, digit_count) > 19)) {
+  // If we have a decimal separator, then digit_count - 1 is the number of digits, but we
+  // may not have a decimal separator!
+  if (simdjson_unlikely(digit_count > 19 && significant_digits(start_digits, digit_count) > 19)) {
     // Ok, chances are good that we had an overflow!
     // this is almost never going to get called!!!
     // we start anew, going slowly!!!
@@ -427,22 +456,25 @@ simdjson_really_inline error_code write_float(const uint8_t *const src, bool neg
   // NOTE: it's weird that the simdjson_unlikely() only wraps half the if, but it seems to get slower any other
   // way we've tried: https://github.com/simdjson/simdjson/pull/990#discussion_r448497331
   // To future reader: we'd love if someone found a better way, or at least could explain this result!
-  if (simdjson_unlikely(exponent < FASTFLOAT_SMALLEST_POWER) || (exponent > FASTFLOAT_LARGEST_POWER)) {
-    // this is almost never going to get called!!!
-    // we start anew, going slowly!!!
-    // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
-    // because slow_float_parsing is a non-inlined function. If we passed our writer reference to
-    // it, it would force it to be stored in memory, preventing the compiler from picking it apart
-    // and putting into registers. i.e. if we pass it as reference, it gets slow.
-    // This is what forces the skip_double, as well.
-    error_code error = slow_float_parsing(src, writer);
-    writer.skip_double();
-    return error;
+  if (simdjson_unlikely(exponent < simdjson::internal::smallest_power) || (exponent > simdjson::internal::largest_power)) {
+    //
+    // Important: smallest_power is such that it leads to a zero value.
+    // Observe that 18446744073709551615e-343 == 0, i.e. (2**64 - 1) e -343 is zero
+    // so something x 10^-343 goes to zero, but not so with  something x 10^-342.
+    static_assert(simdjson::internal::smallest_power <= -342, "smallest_power is not small enough");
+    // 
+    if((exponent < simdjson::internal::smallest_power) || (i == 0)) {
+      WRITE_DOUBLE(0, src, writer);
+      return SUCCESS;
+    } else { // (exponent > largest_power) and (i != 0)
+      // We have, for sure, an infinite value and simdjson refuses to parse infinite values.
+      return INVALID_NUMBER(src);
+    }
   }
   double d;
   if (!compute_float_64(exponent, i, negative, d)) {
     // we are almost never going to get here.
-    if (!parse_float_strtod(src, &d)) { return INVALID_NUMBER(src); }
+    if (!parse_float_fallback(src, &d)) { return INVALID_NUMBER(src); }
   }
   WRITE_DOUBLE(d, src, writer);
   return SUCCESS;
@@ -757,7 +789,7 @@ SIMDJSON_UNUSED simdjson_really_inline simdjson_result<double> parse_double(cons
     if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
 
     exponent += exp_neg ? 0-exp : exp;
-    overflow = overflow || exponent < FASTFLOAT_SMALLEST_POWER || exponent > FASTFLOAT_LARGEST_POWER;
+    overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
   }
 
   if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
@@ -769,7 +801,7 @@ SIMDJSON_UNUSED simdjson_really_inline simdjson_result<double> parse_double(cons
   if (simdjson_likely(!overflow)) {
     if (compute_float_64(exponent, i, negative, d)) { return d; }
   }
-  if (!parse_float_strtod(src-negative, &d)) {
+  if (!parse_float_fallback(src-negative, &d)) {
     return NUMBER_ERROR;
   }
   return d;
