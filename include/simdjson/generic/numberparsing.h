@@ -211,7 +211,7 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 
   // Here we have mantissa < (1<<54).
   int64_t real_exponent = exponent - lz;
-  if (real_exponent <= 0) { // we have a subnormal?
+  if (simdjson_unlikely(real_exponent <= 0)) { // we have a subnormal?
     // Here have that real_exponent <= 0 so -real_exponent >= 0
     if(-real_exponent + 1 >= 64) { // if we have more than 64 bits below the minimum exponent, you have a zero for sure.
       d = 0.0;
