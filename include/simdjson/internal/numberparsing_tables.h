@@ -51,7 +51,7 @@ extern SIMDJSON_DLLIMPORTEXPORT const double power_of_ten[];
 
 // The truncated powers of five from 5^-342 all the way to 5^308
 // The mantissa is truncated to 128 bits, and
-// never rounded up. Uses about 5KB.
+// never rounded up. Uses about 10KB.
 extern SIMDJSON_DLLIMPORTEXPORT const uint64_t power_of_five_128[];
 } // namespace internal
 } // namespace simdjson
