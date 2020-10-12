@@ -355,7 +355,7 @@ public:
    * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
    * @return The error, if there is one.
    */
-  SIMDJSON_WARN_UNUSED inline error_code allocate(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
+  simdjson_warn_unused inline error_code allocate(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
 
   /**
    * @private deprecated because it returns bool instead of error_code, which is our standard for
@@ -369,7 +369,7 @@ public:
    * @return true if successful, false if allocation failed.
    */
   [[deprecated("Use allocate() instead.")]]
-  SIMDJSON_WARN_UNUSED inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
+  simdjson_warn_unused inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
 
   /**
    * The largest document this parser can support without reallocating.

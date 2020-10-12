@@ -62,8 +62,8 @@ public:
    *         - UNESCAPED_CHARS if a string contains control characters that must be escaped
    *         - UNCLOSED_STRING if there is an unclosed string in the document.
    */
-  SIMDJSON_WARN_UNUSED simdjson_result<document> iterate(const padded_string &json) & noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_result<document> iterate(const std::string &json) & noexcept = delete;
+  simdjson_warn_unused simdjson_result<document> iterate(const padded_string &json) & noexcept;
+  simdjson_warn_unused simdjson_result<document> iterate(const std::string &json) & noexcept = delete;
   /**
    * @private
    * 
@@ -98,7 +98,7 @@ public:
    *         - UNESCAPED_CHARS if a string contains control characters that must be escaped
    *         - UNCLOSED_STRING if there is an unclosed string in the document.
    */
-  SIMDJSON_WARN_UNUSED simdjson_result<json_iterator> iterate_raw(const padded_string &json) & noexcept;
+  simdjson_warn_unused simdjson_result<json_iterator> iterate_raw(const padded_string &json) & noexcept;
 
 private:
   dom_parser_implementation dom_parser{};
@@ -114,7 +114,7 @@ private:
    * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
    * @return The error, if there is one.
    */
-  SIMDJSON_WARN_UNUSED error_code allocate(size_t capacity, size_t max_depth=DEFAULT_MAX_DEPTH) noexcept;
+  simdjson_warn_unused error_code allocate(size_t capacity, size_t max_depth=DEFAULT_MAX_DEPTH) noexcept;
 
   friend class json_iterator;
 };

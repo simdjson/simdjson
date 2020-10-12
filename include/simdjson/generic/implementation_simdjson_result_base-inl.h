@@ -24,7 +24,7 @@ simdjson_really_inline void implementation_simdjson_result_base<T>::tie(T &value
 }
 
 template<typename T>
-SIMDJSON_WARN_UNUSED simdjson_really_inline error_code implementation_simdjson_result_base<T>::get(T &value) && noexcept {
+simdjson_warn_unused simdjson_really_inline error_code implementation_simdjson_result_base<T>::get(T &value) && noexcept {
   error_code error;
   std::forward<implementation_simdjson_result_base<T>>(*this).tie(value, error);
   return error;

@@ -42,7 +42,7 @@ struct tweet {
   simdjson_really_inline bool operator!=(const tweet &other) const { return !(*this == other); }
 };
 
-SIMDJSON_UNUSED static std::ostream &operator<<(std::ostream &o, const tweet &t) {
+simdjson_unused static std::ostream &operator<<(std::ostream &o, const tweet &t) {
   o << "created_at: " << t.created_at << std::endl;
   o << "id: " << t.id << std::endl;
   o << "text: " << t.text << std::endl;

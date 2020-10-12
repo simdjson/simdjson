@@ -50,7 +50,7 @@ public:
    * @return A string_view pointing at the unescaped string in dst
    * @error STRING_ERROR if escapes are incorrect.
    */
-  simdjson_really_inline SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> unescape(uint8_t *&dst) const noexcept;
+  simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(uint8_t *&dst) const noexcept;
   /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
    * 
@@ -60,19 +60,19 @@ public:
    * 
    * @param iter A json_iterator, which contains a buffer where the string will be written.
    */
-  simdjson_really_inline SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> unescape(json_iterator &iter) const noexcept;
+  simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(json_iterator &iter) const noexcept;
 
 private:
   const uint8_t * buf{};
   friend class object;
 };
 
-SIMDJSON_UNUSED simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view b) noexcept;
-SIMDJSON_UNUSED simdjson_really_inline bool operator==(std::string_view a, const raw_json_string &b) noexcept;
-SIMDJSON_UNUSED simdjson_really_inline bool operator!=(const raw_json_string &a, std::string_view b) noexcept;
-SIMDJSON_UNUSED simdjson_really_inline bool operator!=(std::string_view a, const raw_json_string &b) noexcept;
+simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view b) noexcept;
+simdjson_unused simdjson_really_inline bool operator==(std::string_view a, const raw_json_string &b) noexcept;
+simdjson_unused simdjson_really_inline bool operator!=(const raw_json_string &a, std::string_view b) noexcept;
+simdjson_unused simdjson_really_inline bool operator!=(std::string_view a, const raw_json_string &b) noexcept;
 
-SIMDJSON_UNUSED simdjson_really_inline std::ostream &operator<<(std::ostream &, const raw_json_string &) noexcept;
+simdjson_unused simdjson_really_inline std::ostream &operator<<(std::ostream &, const raw_json_string &) noexcept;
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
@@ -91,8 +91,8 @@ public:
   simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 
   simdjson_really_inline simdjson_result<const char *> raw() const noexcept;
-  simdjson_really_inline SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> unescape(uint8_t *&dst) const noexcept;
-  simdjson_really_inline SIMDJSON_WARN_UNUSED simdjson_result<std::string_view> unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept;
+  simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(uint8_t *&dst) const noexcept;
+  simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept;
 };
 
 } // namespace simdjson

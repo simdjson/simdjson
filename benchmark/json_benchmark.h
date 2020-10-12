@@ -14,7 +14,7 @@ template<typename B, typename R> static void JsonBenchmark(benchmark::State &sta
   }
 
   // Run the benchmark
-  for (SIMDJSON_UNUSED auto _ : state) {
+  for (simdjson_unused auto _ : state) {
     collector.start();
 
     if (!bench.Run(json)) { state.SkipWithError("tweet reading failed"); return; }

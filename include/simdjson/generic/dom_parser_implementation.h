@@ -31,15 +31,15 @@ public:
   dom_parser_implementation(const dom_parser_implementation &) = delete;
   dom_parser_implementation &operator=(const dom_parser_implementation &) = delete;
 
-  SIMDJSON_WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, dom::document &doc) noexcept final;
-  SIMDJSON_WARN_UNUSED error_code stage1(const uint8_t *buf, size_t len, bool partial) noexcept final;
-  SIMDJSON_WARN_UNUSED error_code check_for_unclosed_array() noexcept;
-  SIMDJSON_WARN_UNUSED error_code stage2(dom::document &doc) noexcept final;
-  SIMDJSON_WARN_UNUSED error_code stage2_next(dom::document &doc) noexcept final;
-  inline SIMDJSON_WARN_UNUSED error_code set_capacity(size_t capacity) noexcept final;
-  inline SIMDJSON_WARN_UNUSED error_code set_max_depth(size_t max_depth) noexcept final;
+  simdjson_warn_unused error_code parse(const uint8_t *buf, size_t len, dom::document &doc) noexcept final;
+  simdjson_warn_unused error_code stage1(const uint8_t *buf, size_t len, bool partial) noexcept final;
+  simdjson_warn_unused error_code check_for_unclosed_array() noexcept;
+  simdjson_warn_unused error_code stage2(dom::document &doc) noexcept final;
+  simdjson_warn_unused error_code stage2_next(dom::document &doc) noexcept final;
+  inline simdjson_warn_unused error_code set_capacity(size_t capacity) noexcept final;
+  inline simdjson_warn_unused error_code set_max_depth(size_t max_depth) noexcept final;
 private:
-  simdjson_really_inline SIMDJSON_WARN_UNUSED error_code set_capacity_stage1(size_t capacity);
+  simdjson_really_inline simdjson_warn_unused error_code set_capacity_stage1(size_t capacity);
 
 };
 
@@ -54,7 +54,7 @@ inline dom_parser_implementation::dom_parser_implementation(dom_parser_implement
 inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parser_implementation &&other) noexcept = default;
 
 // Leaving these here so they can be inlined if so desired
-inline SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::set_capacity(size_t capacity) noexcept {
+inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(size_t capacity) noexcept {
   // Stage 1 index output
   size_t max_structures = SIMDJSON_ROUNDUP_N(capacity, 64) + 2 + 7;
   structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
@@ -66,7 +66,7 @@ inline SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::set_capacity(s
   return SUCCESS;
 }
 
-inline SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::set_max_depth(size_t max_depth) noexcept {
+inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(size_t max_depth) noexcept {
   // Stage 2 stacks
   open_containers.reset(new (std::nothrow) open_container[max_depth]);
   is_array.reset(new (std::nothrow) bool[max_depth]);

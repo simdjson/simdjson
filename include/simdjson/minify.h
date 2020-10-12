@@ -25,7 +25,7 @@ namespace simdjson {
  * @param dst_len the number of bytes written. Output only.
  * @return the error code, or SUCCESS if there was no error.
  */
-SIMDJSON_WARN_UNUSED error_code minify(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept;
+simdjson_warn_unused error_code minify(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept;
 
 } // namespace simdjson
 

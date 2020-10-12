@@ -33,7 +33,7 @@ simdjson_really_inline simdjson_result<T> simdjson_result<dom::element>::get() c
   return first.get<T>();
 }
 template<typename T>
-SIMDJSON_WARN_UNUSED simdjson_really_inline error_code simdjson_result<dom::element>::get(T &value) const noexcept {
+simdjson_warn_unused simdjson_really_inline error_code simdjson_result<dom::element>::get(T &value) const noexcept {
   if (error()) { return error(); }
   return first.get<T>(value);
 }
@@ -285,12 +285,12 @@ inline simdjson_result<object> element::get_object() const noexcept {
 }
 
 template<typename T>
-SIMDJSON_WARN_UNUSED simdjson_really_inline error_code element::get(T &value) const noexcept {
+simdjson_warn_unused simdjson_really_inline error_code element::get(T &value) const noexcept {
   return get<T>().get(value);
 }
 // An element-specific version prevents recursion with simdjson_result::get<element>(value)
 template<>
-SIMDJSON_WARN_UNUSED simdjson_really_inline error_code element::get<element>(element &value) const noexcept {
+simdjson_warn_unused simdjson_really_inline error_code element::get<element>(element &value) const noexcept {
   value = element(tape);
   return SUCCESS;
 }

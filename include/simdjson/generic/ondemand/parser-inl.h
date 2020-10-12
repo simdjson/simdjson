@@ -2,7 +2,7 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
-SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
+simdjson_warn_unused simdjson_really_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
   if (string_buf && new_capacity == _capacity && new_max_depth == _max_depth) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
@@ -18,7 +18,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parser::allocate(size_t n
   return SUCCESS;
 }
 
-SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<document> parser::iterate(const padded_string &buf) & noexcept {
+simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const padded_string &buf) & noexcept {
   // Allocate if needed
   if (_capacity < buf.size() || !string_buf) {
     SIMDJSON_TRY( allocate(buf.size(), _max_depth) );
@@ -29,7 +29,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<document> parser::it
   return document::start(this);
 }
 
-SIMDJSON_WARN_UNUSED simdjson_really_inline simdjson_result<json_iterator> parser::iterate_raw(const padded_string &buf) & noexcept {
+simdjson_warn_unused simdjson_really_inline simdjson_result<json_iterator> parser::iterate_raw(const padded_string &buf) & noexcept {
   // Allocate if needed
   if (_capacity < buf.size()) {
     SIMDJSON_TRY( allocate(buf.size(), _max_depth) );

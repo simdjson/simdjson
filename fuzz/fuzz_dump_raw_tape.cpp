@@ -13,6 +13,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     if (error) { return 0; }
 
     NulOStream os;
-    SIMDJSON_UNUSED auto dumpstatus = elem.dump_raw_tape(os);
+    simdjson_unused auto dumpstatus = elem.dump_raw_tape(os);
     return 0;
 }

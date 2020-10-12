@@ -53,7 +53,7 @@ simdjson_really_inline object::object(json_iterator_ref &&_iter) noexcept
 simdjson_really_inline object::~object() noexcept {
   if (iter.is_alive()) {
     logger::log_event(*iter, "unfinished", "object");
-    SIMDJSON_UNUSED auto _err = iter->skip_container();
+    simdjson_unused auto _err = iter->skip_container();
     iter.release();
   }
 }

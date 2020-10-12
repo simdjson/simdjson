@@ -64,7 +64,7 @@ struct my_point {
   simdjson_really_inline bool operator!=(const my_point &other) const { return !(*this == other); }
 };
 
-SIMDJSON_UNUSED static std::ostream &operator<<(std::ostream &o, const my_point &p) {
+simdjson_unused static std::ostream &operator<<(std::ostream &o, const my_point &p) {
   return o << p.x << "," << p.y << "," << p.z << std::endl;
 }
 

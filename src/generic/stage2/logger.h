@@ -38,7 +38,7 @@ namespace logger {
     }
   }
 
-  SIMDJSON_UNUSED static simdjson_really_inline void log_string(const char *message) {
+  simdjson_unused static simdjson_really_inline void log_string(const char *message) {
     if (LOG_ENABLED) {
       printf("%s\n", message);
     }

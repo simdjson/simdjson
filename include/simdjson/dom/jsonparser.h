@@ -59,7 +59,7 @@ inline int json_parse(const padded_string &s, dom::parser &parser) noexcept {
 }
 
 [[deprecated("Use parser.parse() instead")]]
-SIMDJSON_WARN_UNUSED inline dom::parser build_parsed_json(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept {
+simdjson_warn_unused inline dom::parser build_parsed_json(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept {
   dom::parser parser;
   error_code code = parser.parse(buf, len, realloc_if_needed).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
@@ -71,7 +71,7 @@ SIMDJSON_WARN_UNUSED inline dom::parser build_parsed_json(const uint8_t *buf, si
   return parser;
 }
 [[deprecated("Use parser.parse() instead")]]
-SIMDJSON_WARN_UNUSED inline dom::parser build_parsed_json(const char *buf, size_t len, bool realloc_if_needed = true) noexcept {
+simdjson_warn_unused inline dom::parser build_parsed_json(const char *buf, size_t len, bool realloc_if_needed = true) noexcept {
   dom::parser parser;
   error_code code = parser.parse(buf, len, realloc_if_needed).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
@@ -83,7 +83,7 @@ SIMDJSON_WARN_UNUSED inline dom::parser build_parsed_json(const char *buf, size_
   return parser;
 }
 [[deprecated("Use parser.parse() instead")]]
-SIMDJSON_WARN_UNUSED inline dom::parser build_parsed_json(const std::string &s, bool realloc_if_needed = true) noexcept {
+simdjson_warn_unused inline dom::parser build_parsed_json(const std::string &s, bool realloc_if_needed = true) noexcept {
   dom::parser parser;
   error_code code = parser.parse(s.data(), s.length(), realloc_if_needed).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
@@ -95,7 +95,7 @@ SIMDJSON_WARN_UNUSED inline dom::parser build_parsed_json(const std::string &s, 
   return parser;
 }
 [[deprecated("Use parser.parse() instead")]]
-SIMDJSON_WARN_UNUSED inline dom::parser build_parsed_json(const padded_string &s) noexcept {
+simdjson_warn_unused inline dom::parser build_parsed_json(const padded_string &s) noexcept {
   dom::parser parser;
   error_code code = parser.parse(s).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
