@@ -73,8 +73,8 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define simdjson_really_inline __forceinline
   #define simdjson_never_inline __declspec(noinline)
 
-  #define SIMDJSON_UNUSED
-  #define SIMDJSON_WARN_UNUSED
+  #define simdjson_unused
+  #define simdjson_warn_unused
 
   #ifndef simdjson_likely
   #define simdjson_likely(x) x
@@ -107,8 +107,8 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define simdjson_really_inline inline __attribute__((always_inline))
   #define simdjson_never_inline inline __attribute__((noinline))
 
-  #define SIMDJSON_UNUSED __attribute__((unused))
-  #define SIMDJSON_WARN_UNUSED __attribute__((warn_unused_result))
+  #define simdjson_unused __attribute__((unused))
+  #define simdjson_warn_unused __attribute__((warn_unused_result))
 
   #ifndef simdjson_likely
   #define simdjson_likely(x) __builtin_expect(!!(x), 1)

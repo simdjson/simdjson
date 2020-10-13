@@ -17,7 +17,7 @@ namespace simdjson {
  * @param len the length of the string in bytes.
  * @return true if the string is valid UTF-8.
  */
-SIMDJSON_WARN_UNUSED bool validate_utf8(const char * buf, size_t len) noexcept;
+simdjson_warn_unused bool validate_utf8(const char * buf, size_t len) noexcept;
 
 
 /**
@@ -26,7 +26,7 @@ SIMDJSON_WARN_UNUSED bool validate_utf8(const char * buf, size_t len) noexcept;
  * @param sv the string_view to validate.
  * @return true if the string is valid UTF-8.
  */
-simdjson_really_inline SIMDJSON_WARN_UNUSED bool validate_utf8(const std::string_view sv) noexcept {
+simdjson_really_inline simdjson_warn_unused bool validate_utf8(const std::string_view sv) noexcept {
   return validate_utf8(sv.data(), sv.size());
 }
 
@@ -36,7 +36,7 @@ simdjson_really_inline SIMDJSON_WARN_UNUSED bool validate_utf8(const std::string
  * @param p the string to validate.
  * @return true if the string is valid UTF-8.
  */
-simdjson_really_inline SIMDJSON_WARN_UNUSED bool validate_utf8(const std::string& s) noexcept {
+simdjson_really_inline simdjson_warn_unused bool validate_utf8(const std::string& s) noexcept {
   return validate_utf8(s.data(), s.size());
 }
 
@@ -122,7 +122,7 @@ public:
    * @param dst_len the number of bytes written. Output only.
    * @return the error code, or SUCCESS if there was no error.
    */
-  SIMDJSON_WARN_UNUSED virtual error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept = 0;
+  simdjson_warn_unused virtual error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept = 0;
   
   
   /**   
@@ -134,7 +134,7 @@ public:
    * @param len the length of the string in bytes.
    * @return true if and only if the string is valid UTF-8.
    */
-  SIMDJSON_WARN_UNUSED virtual bool validate_utf8(const char *buf, size_t len) const noexcept = 0;
+  simdjson_warn_unused virtual bool validate_utf8(const char *buf, size_t len) const noexcept = 0;
 
 protected:
   /** @private Construct an implementation with the given name and description. For subclasses. */

@@ -20,7 +20,7 @@ inline element document::root() const noexcept {
   return element(internal::tape_ref(this, 1));
 }
 
-SIMDJSON_WARN_UNUSED
+simdjson_warn_unused
 inline error_code document::allocate(size_t capacity) noexcept {
   if (capacity == 0) {
     string_buf.reset();

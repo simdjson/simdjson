@@ -134,7 +134,7 @@ simdjson_really_inline size_t parser::max_depth() const noexcept {
   return implementation ? implementation->max_depth() : DEFAULT_MAX_DEPTH;
 }
 
-SIMDJSON_WARN_UNUSED
+simdjson_warn_unused
 inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   //
   // Reallocate implementation and document if needed
@@ -160,7 +160,7 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   return SUCCESS;
 }
 
-SIMDJSON_WARN_UNUSED
+simdjson_warn_unused
 inline bool parser::allocate_capacity(size_t capacity, size_t max_depth) noexcept {
   return !allocate(capacity, max_depth);
 }

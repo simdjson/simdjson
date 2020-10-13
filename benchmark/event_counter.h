@@ -127,7 +127,7 @@ struct event_collector {
     return linux_events.is_working();
   }
 #else
-  event_collector(SIMDJSON_UNUSED bool _quiet = false) {}
+  event_collector(simdjson_unused bool _quiet = false) {}
   bool has_events() {
     return false;
   }

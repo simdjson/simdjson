@@ -94,7 +94,7 @@ namespace document_tests {
     myStream << parser.parse(json);
 #else
     simdjson::dom::element doc;
-    SIMDJSON_UNUSED auto error = parser.parse(json).get(doc);
+    simdjson_unused auto error = parser.parse(json).get(doc);
     myStream << doc;
 #endif
     std::string newjson = myStream.str();

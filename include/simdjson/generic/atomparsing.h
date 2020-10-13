@@ -15,7 +15,7 @@ simdjson_really_inline uint32_t string_to_uint32(const char* str) { uint32_t val
 
 // Again in str4ncmp we use a memcpy to avoid undefined behavior. The memcpy may appear expensive.
 // Yet all decent optimizing compilers will compile memcpy to a single instruction, just about.
-SIMDJSON_WARN_UNUSED
+simdjson_warn_unused
 simdjson_really_inline uint32_t str4ncmp(const uint8_t *src, const char* atom) {
   uint32_t srcval; // we want to avoid unaligned 32-bit loads (undefined in C/C++)
   static_assert(sizeof(uint32_t) <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be larger than 4 bytes");
@@ -23,36 +23,36 @@ simdjson_really_inline uint32_t str4ncmp(const uint8_t *src, const char* atom) {
   return srcval ^ string_to_uint32(atom);
 }
 
-SIMDJSON_WARN_UNUSED
+simdjson_warn_unused
 simdjson_really_inline bool is_valid_true_atom(const uint8_t *src) {
   return (str4ncmp(src, "true") | jsoncharutils::is_not_structural_or_whitespace(src[4])) == 0;
 }
 
-SIMDJSON_WARN_UNUSED
+simdjson_warn_unused
 simdjson_really_inline bool is_valid_true_atom(const uint8_t *src, size_t len) {
   if (len > 4) { return is_valid_true_atom(src); }
   else if (len == 4) { return !str4ncmp(src, "true"); }
   else { return false; }
 }
 
-SIMDJSON_WARN_UNUSED
+simdjson_warn_unused
 simdjson_really_inline bool is_valid_false_atom(const uint8_t *src) {
   return (str4ncmp(src+1, "alse") | jsoncharutils::is_not_structural_or_whitespace(src[5])) == 0;
 }
 
-SIMDJSON_WARN_UNUSED
+simdjson_warn_unused
 simdjson_really_inline bool is_valid_false_atom(const uint8_t *src, size_t len) {
   if (len > 5) { return is_valid_false_atom(src); }
   else if (len == 5) { return !str4ncmp(src+1, "alse"); }
   else { return false; }
 }
 
-SIMDJSON_WARN_UNUSED
+simdjson_warn_unused
 simdjson_really_inline bool is_valid_null_atom(const uint8_t *src) {
   return (str4ncmp(src, "null") | jsoncharutils::is_not_structural_or_whitespace(src[4])) == 0;
 }
 
-SIMDJSON_WARN_UNUSED
+simdjson_warn_unused
 simdjson_really_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
   if (len > 4) { return is_valid_null_atom(src); }
   else if (len == 4) { return !str4ncmp(src, "null"); }

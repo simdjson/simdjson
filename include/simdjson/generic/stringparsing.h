@@ -39,7 +39,7 @@ static const uint8_t escape_map[256] = {
 // dest will advance a variable amount (return via pointer)
 // return true if the unicode codepoint was valid
 // We work in little-endian then swap at write time
-SIMDJSON_WARN_UNUSED
+simdjson_warn_unused
 simdjson_really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
                                             uint8_t **dst_ptr) {
   // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
@@ -73,7 +73,7 @@ simdjson_really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   return offset > 0;
 }
 
-SIMDJSON_WARN_UNUSED simdjson_really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst) {
+simdjson_warn_unused simdjson_really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst) {
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
     auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
@@ -119,7 +119,7 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline uint8_t *parse_string(const uint8_t 
   return nullptr;
 }
 
-SIMDJSON_UNUSED SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_string_to_buffer(const uint8_t *src, uint8_t *&current_string_buf_loc, std::string_view &s) {
+simdjson_unused simdjson_warn_unused simdjson_really_inline error_code parse_string_to_buffer(const uint8_t *src, uint8_t *&current_string_buf_loc, std::string_view &s) {
   if (*(src++) != '"') { return STRING_ERROR; }
   auto end = stringparsing::parse_string(src, current_string_buf_loc);
   if (!end) { return STRING_ERROR; }

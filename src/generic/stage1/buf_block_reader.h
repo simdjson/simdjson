@@ -29,7 +29,7 @@ private:
 };
 
 // Routines to print masks and text for debugging bitmask operations
-SIMDJSON_UNUSED static char * format_input_text_64(const uint8_t *text) {
+simdjson_unused static char * format_input_text_64(const uint8_t *text) {
   static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
@@ -39,7 +39,7 @@ SIMDJSON_UNUSED static char * format_input_text_64(const uint8_t *text) {
 }
 
 // Routines to print masks and text for debugging bitmask operations
-SIMDJSON_UNUSED static char * format_input_text(const simd8x64<uint8_t>& in) {
+simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
   static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
   in.store((uint8_t*)buf);
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
@@ -49,7 +49,7 @@ SIMDJSON_UNUSED static char * format_input_text(const simd8x64<uint8_t>& in) {
   return buf;
 }
 
-SIMDJSON_UNUSED static char * format_mask(uint64_t mask) {
+simdjson_unused static char * format_mask(uint64_t mask) {
   static char *buf = (char*)malloc(64 + 1);
   for (size_t i=0; i<64; i++) {
     buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
