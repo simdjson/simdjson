@@ -89,7 +89,7 @@ SIMDJSON_PADDING bytes at the end) and calling `parse()`:
 
 ```
 dom::parser parser;
-dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string
+dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string, the _padded suffix adds padding
 ```
 
 The parsed document resulting from the `parser.load` and `parser.parse` calls depends on the `parser` instance. Thus the `parser` instance must remain in scope. Furthermore, you must have at most one parsed document in play per `parser` instance.
