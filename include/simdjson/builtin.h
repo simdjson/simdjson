@@ -29,6 +29,10 @@ namespace simdjson {
    * code that uses it) will use westmere.
    */
   namespace builtin = SIMDJSON_BUILTIN_IMPLEMENTATION;
+  /**
+   * It is handy to be able to check what builtin was used.
+   */
+  constexpr const char * builtin_name = STRINGIFY(SIMDJSON_BUILTIN_IMPLEMENTATION);
 } // namespace simdjson
 
 #endif // SIMDJSON_BUILTIN_H
