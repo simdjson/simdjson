@@ -445,6 +445,46 @@ When the user requests strings, we unescape them to a single string buffer much 
 so that users enjoy the same string performance as the core simdjson. We do not write the length to the 
 string buffer, however; that is stored in the `string_view` instance we return to the user.
 
+```C++
+  ondemand::parser parser;
+  auto doc = parser.iterate(bogus);
+  std::set<std::string_view> default_users;
+  ondemand::array tweets;
+  doc["statuses"].get(tweets);
+  for (auto tweet_value : tweets) {
+    auto tweet = tweet_value.get_object();
+    ondemand::object user;
+    tweet["user"].get(user);
+    std::string_view screen_name;
+    user["screen_name"].get(screen_name);
+    bool default_profile{};
+    user["default_profile"].get(default_profile);
+    if (default_profile) { default_users.insert(screen_name); }
+  }
+```
+
+By using `string_view` instances, we avoid the high cost of allocating many small strings (as would be the
+case with `std::string`) but be mindful that the life cycle of these `string_view` instances is tied to the
+parser instance. If the parser instance is destroyed or reused for a new JSON document, these strings are no longer valid.
+
+The keys are treated differently and are made available as as special type `raw_json_string` which are just
+temporary pointers to the JSON input. If you occasionally need to access and store the key values, you may
+use the `to_string` method. Be warned that this creates a small dynamically allocated string and it should
+therefore be used sparingly.
+
+
+```C++
+  for (auto field : tweet) {
+    // keys are just temporary pointer to the JSON input, but we can persist them with the to_string method.
+    std::string key = field.key().value().to_string();
+    std::cout << "key = " << key << std::endl;
+    // in contrast, values can be accessed as  std::string_view types.
+    std::string_view val = field.value().value();
+    std::cout << "value (assuming it is a string) = " << val << std::endl;
+
+  }
+```
+
 ### Object/Array Iteration
 
 Because the C++ iterator contract requires iterators to be const-assignable and const-constructable,

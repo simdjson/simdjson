@@ -15,11 +15,55 @@
 #include "simdjson.h"
 #include "test_ondemand.h"
 
+
 // const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
 #define SIMDJSON_SHOW_DEFINE(x) printf("%s=%s\n", #x, STRINGIFY(x))
 
 using namespace simdjson;
 using namespace simdjson::builtin;
+
+
+#if SIMDJSON_EXCEPTIONS
+
+// Do not run this, it is only meant to compile
+ void compilation_test_2() {
+  const padded_string bogus = ""_padded;
+  ondemand::parser parser;
+  auto doc = parser.iterate(bogus);
+  std::set<std::string_view> default_users;
+  ondemand::array tweets;
+  doc["statuses"].get(tweets);
+  for (auto tweet_value : tweets) {
+    auto tweet = tweet_value.get_object();
+    ondemand::object user;
+    tweet["user"].get(user);
+    std::string_view screen_name;
+    user["screen_name"].get(screen_name);
+    bool default_profile{};
+    user["default_profile"].get(default_profile);
+    if (default_profile) { default_users.insert(screen_name); }
+  }
+}
+
+
+// Do not run this, it is only meant to compile
+void compilation_test_3() {
+  const padded_string bogus = ""_padded;
+  ondemand::parser parser;
+  auto doc = parser.iterate(bogus);
+  ondemand::array tweets;
+  doc["statuses"].get(tweets);
+  for (auto tweet_value : tweets) {
+    auto tweet = tweet_value.get_object();
+    for (auto field : tweet) {
+      std::string key = field.key().value().to_string();
+      std::cout << "key = " << key << std::endl;
+      std::string_view val = field.value().value();
+      std::cout << "value (assuming it is a string) = " << val << std::endl;
+    }
+  }
+}
+#endif
 
 #define ONDEMAND_SUBTEST(NAME, JSON, TEST) \
 { \
