@@ -661,6 +661,7 @@ namespace ordering_tests {
   using namespace std;
   using namespace simdjson;
   using namespace simdjson::dom;
+#if SIMDJSON_EXCEPTIONS
 
   auto json = "{\"coordinates\":[{\"x\":1.1,\"y\":2.2,\"z\":3.3}]}"_padded;
 
@@ -716,6 +717,7 @@ namespace ordering_tests {
     }
     return (x == 1.1) && (y == 2.2) && (z == 3.3);     
   }
+#endif
 
   bool run() {
     return
