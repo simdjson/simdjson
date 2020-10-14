@@ -496,5 +496,5 @@ Good applications for the On Demand API might be:
 
 * You are working from pre-existing large JSON files that have been vetted. You expect them to be well formed and to have a consistent layout. For example, you might be doing biomedical research or machine learning on top of static data dumps in JSON.
 * You have a closed system on predetermined hardware. Both the generation and the consumption of JSON data is within your system. Your team controls both the software that produces the JSON and the software the parses it, your team knows and control the hardware. Thus you can fully test your system.
-
+* You are working with stable JSON APIs which have a consistent layout and JSON dialect.
 
