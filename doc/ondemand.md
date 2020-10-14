@@ -487,9 +487,9 @@ There are currently additional technical limitations which we expect to resolve 
 ```C++
     for (ondemand::object my_object : doc["mykey"]) {
       for (auto field : my_object) {
-        if (field.key() == "key_value1") { process(field.value()); }
-        else if (field.key() == "key_value2") { process(field.value()); }
-        else if (field.key() == "key_value3") { process(field.value()); }
+        if      (field.key() == "key_value1") { process1(field.value()); }
+        else if (field.key() == "key_value2") { process2(field.value()); }
+        else if (field.key() == "key_value3") { process3(field.value()); }
       }
     }
 ```

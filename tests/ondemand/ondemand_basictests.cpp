@@ -21,6 +21,25 @@
 using namespace simdjson;
 using namespace simdjson::builtin;
 
+// bogus functions for compilation tests
+void process1(int ) {}
+void process2(int ) {}
+void process3(int ) {}
+
+// Do not run this, it is only meant to compile
+void compilation_test_1() {
+    const padded_string bogus = ""_padded;
+    ondemand::parser parser;
+    auto doc = parser.iterate(bogus);
+    for (ondemand::object my_object : doc["mykey"]) {
+       for (auto field : my_object) {
+         if (field.key() == "key_value1") { process1(field.value()); }
+         else if (field.key() == "key_value2") { process2(field.value()); }
+         else if (field.key() == "key_value3") { process3(field.value()); }
+       }
+     }
+}
+
 #define ONDEMAND_SUBTEST(NAME, JSON, TEST) \
 { \
   std::cout << "- Subtest " << (NAME) << " - JSON: " << (JSON) << " ..." << std::endl; \
@@ -672,11 +691,11 @@ namespace ordering_tests {
       try {
         x += double(point_object["x"]);
         return false;
-      } catch(simdjson_error& e) {}
+      } catch(simdjson_error&) {}
       try {
         y += double(point_object["y"]);
         return false;
-      } catch(simdjson_error& e) {}
+      } catch(simdjson_error&) {}
     }
     return (x == 0) && (y == 0) && (z == 3.3);     
   }
