@@ -9,7 +9,7 @@ Whether we parse JSON or XML, or any other serialized format, there are relative
 - Another popular approach is the schema-based deserialization model. 
 
 We propose an approach that is as easy 
-to use and as flexible as the DOM approach, yet as fast and efficient as the schema-based  or event-based approaches. 
+to use and as flexible as the DOM approach, yet as fast and efficient as the schema-based or event-based approaches. 
 We call this new approach "On Demand". The simdjson On Demand API offers a familiar, friendly DOM API and 
 provides the performance of just-in-time parsing on top of the simdjson superior performance.
 
@@ -18,6 +18,8 @@ arrays, look up fields in objects, and extract native values like `double`, `uin
 To achieve performance, we introduced some key limitations that make the DOM API *streaming*:
 array/object iteration cannot be restarted, and fields must be looked up in order, and string/number
 values can only be parsed once.
+
+A code example illustrates our API from a programmer's point of view:
 
 ```c++
 ondemand::parser parser;
@@ -31,11 +33,43 @@ for (auto tweet : doc["statuses"]) {
 }
 ```
 
+Such code would be apply to a JSON document such as the following (mimicking a sample result from the Twitter API):
+
+```json
+{
+	"statuses": [{
+			"text": "@aym0566x \n\n名前:前田あゆみ\n第一印象:なんか怖っ！\n今の印象:とりあえずキモい。噛み合わない\n好きなところ:ぶすでキモいとこ😋✨✨\n思い出:んーーー、ありすぎ😊❤️\nLINE交換できる？:あぁ……ごめん✋\nトプ画をみて:照れますがな😘✨\n一言:お前は一生もんのダチ💖",
+			"user": {
+				"name": "AYUMI",
+				"screen_name": "ayuu0123",
+				"followers_count": 262,
+				"friends_count": 252
+			},
+			"retweet_count": 0,
+			"favorite_count": 0
+		},
+		{
+			"text": "RT @KATANA77: えっそれは・・・（一同） http://t.co/PkCJAcSuYK",
+			"user": {
+				"name": "RT&ファボ魔のむっつんさっm",
+				"screen_name": "yuttari1998",
+				"followers_count": 95,
+				"friends_count": 158
+			},
+			"retweet_count": 82,
+			"favorite_count": 42
+		}
+	]
+}
+```
+
 This streaming approach means that unused fields and values are not parsed or
-converted, thus saving space and time.
+converted, thus saving space and time. In our example, the `"name"`, `"followers_count"`,
+and `"friends_count"` keys and matching values are skipped.
 
 Further, the On Demand API does not parse a value *at all* until you try to convert it (e.g., to `double`,
-`int`, `string`, or `bool`). Because the programmer specifies the data type, we avoid branch
+`int`, `string`, or `bool`). In our example, when accessing the key-value pair `"retweet_count": 82`, the parser
+may not convert the pair of  characters `82` to the binary integer 82. Because the programmer specifies the data type, we avoid branch
 mispredictions related to data type determination and improve the performance.
 
 
@@ -55,18 +89,18 @@ approaches to parsing and parser APIs in use today.
 ### DOM Parsers
 
 Many of the most usable, popular JSON APIs (including simdjson) deserialize into a **DOM**: an intermediate tree of
-objects, arrays and values.  In this model, we convert the input data all at once into a tree-like structure (the DOM). 
-The DOM is then accessed by the programmer like any other in-memory data structure.  The resulting API let 
+objects, arrays and values. In this model, we convert the input data all at once into a tree-like structure (the DOM). 
+The DOM is then accessed by the programmer like any other in-memory data structure. The resulting API let 
 you refer to each array or object separately, using familiar techniques like iteration (`for (auto value : array)`) 
 or indexing (`object["key"]`). In some cases, the values are even deserialized directly into familiar C++ constructs like vectors and
 maps.
 
- The DOM approach is conceptually simple and "programmer friendly". Using the
-DOM tree is  often easy enough that many users use the DOM as-is instead of creating their own
+The DOM approach is conceptually simple and "programmer friendly". Using the
+DOM tree is often easy enough that many users use the DOM as-is instead of creating their own
 their own custom data structures.
 
 The DOM approach was the only way to parse JSON documents up to version 0.6 of the simdjson library.
-Our DOM API looks  similar to our On Demand example, except
+Our DOM API looks similar to our On Demand example, except
 it calls `parse` instead of `iterate`:
 
 ```c++
@@ -98,14 +132,14 @@ of several gigabytes per second. However, in some instances, it may be possible 
 ### Event-Based Parsers (SAX, SAJ, etc.)
 
 
-The event-based model (originally from the "Streaming API for XML") uses streaming to eliminate the  cost of
+The event-based model (originally from the "Streaming API for XML") uses streaming to eliminate the cost of
 parsing and storing the entire JSON. In the event-based model, a core JSON engine parses the JSON document
 piece by piece, but instead of stuffing values in a DOM tree, it passes each value to a callback function,
-letting the user decide for themselves how to handle it.  In such a model, the programmer may need to provide functions 
+letting the user decide for themselves how to handle it. In such a model, the programmer may need to provide functions 
 for all possible events (a number, a string, a new object, a new array, the array ends, the object ends, and so on). 
 This allows programmers to work with much larger files without running out of memory. 
 
-The  drawback is complexity: event-based  APIs generally have you define a single callback for each type
+The drawback is complexity: event-based APIs generally have you define a single callback for each type
 (e.g. `string_field(std::string_view key, std::string_view value)`). Because of this, the programmer suffers
 from context blindness: when they find a string they have to check where it is before they know what to
 do with it. Is this string the text of the tweet, the screen name, or something else? Are we even in 
@@ -172,21 +206,20 @@ Though an event-based approach might have its niche uses, we believe that it is 
 ### Schema-Based Parser Generators
 
 
-In a schema-based  model, the programmer provides a description of a data structure, and the parser constructs the data structure in question during parsing.   These parsers take a schema--a description of
+In a schema-based model, the programmer provides a description of a data structure, and the parser constructs the data structure in question during parsing. These parsers take a schema--a description of
 your JSON, with field names, types, everything--and generate classes/structs in your language of
-choice, as well as a parser to deserialize the JSON into those structs. Some such parsers let  you
-define your own data structures (`struct`) and they let a  preprocessor inspects it and generates a custom JSON parser for it.
+choice, as well as a parser to deserialize the JSON into those structs. Some such parsers let you
+define your own data structures (`struct`) and they let a preprocessor inspects it and generates a custom JSON parser for it.
 Though not all of these schema-based parser generators generate a parser or even optimize for
 streaming, but they are *able* to in principle. Unlike the DOM and the event-based models, a schema-based approach assumes
- that the structure of  the document is known at compile-time. 
+ that the structure of the document is known at compile-time. 
 
 
 Pros of the schema-based approach:
 * Ease of Use is on par with DOM
 * Parsers that generate iterators and lazy values in structs can keep memory pressure down to event-based levels.
 * Type Blindness can be entirely solved with specific parsers for each type, saving many branches.
-* Context Blindness can be solved, especially if object fields are required and in order, saving
-  even more branches.
+* Context Blindness can be solved, especially if object fields are required and in order, saving even more branches.
 * Can be made a safe as DOM: the input can be entirely validated prior to ingestion.
 
 Cons of the schema-based approach:
@@ -197,28 +230,26 @@ Cons of the schema-based approach:
 ### Type Blindness and Branch Misprediction
 
 The DOM and event-based parsing model suffer from **type
-blindness**: even when the programmer knows exactly what fields and what types are in the  JSON document,
-the parser does not.  This means it has to look at each value blind with a big "switch"
+blindness**: even when the programmer knows exactly what fields and what types are in the JSON document,
+the parser does not. This means it has to look at each value blind with a big "switch"
 statement, asking "is this a number? A string? A boolean? An array? An object?"
 
 In modern processors, this kind of switch statement can make your program run slower
 than it needs to because of the high cost of branch misprediction. Indeed, modern processor 
-cores rely on speculative execution for speed.  They "read ahead" in your program, predicting 
+cores rely on speculative execution for speed. They "read ahead" in your program, predicting 
 which instructions to run as soon as the data is available. A single-threaded program can 
-execute 2, 3 or even more  instructions per cycle--largely because of speculative execution.
+execute 2, 3 or even more instructions per cycle--largely because of speculative execution.
 
 Unfortunately, when the processor mispredicts the instructions, typically due to a mispredicted
 branch, all of the work done from the misprediction has be discarded and started anew. The
 processor may have been executing 3 or 4 instructions per cycle, and consuming the corresponding
 power, but all of the work may have been wasteful.
 
-
-Type blindness means that the processor  has
-to guess, for every JSON value, whether it will be an array, an object, number, string or boolean
-since these correspond to distinct code paths.
+Type blindness means that the processor has to guess, for every JSON value, whether it will be an array,
+an object, number, string or boolean since these correspond to distinct code paths.
 Though some JSON files have predictable content, we find in practice that many JSON files
-stress the  branch prediction. Though branch predictors improve  with each new generation of processors,
-the cost of branch mispredictions also tends to increase  as pipelines expand, and the processors become 
+stress the branch prediction. Though branch predictors improve with each new generation of processors,
+the cost of branch mispredictions also tends to increase as pipelines expand, and the processors become 
 able to schedule longer streams of instructions.
 
 On Demand parsing is tailor-made to solve this problem at the source, parsing values only after the
@@ -409,7 +440,7 @@ Design Features
 ### String Parsing
 
 When the user requests strings, we unescape them to a single string buffer much like the DOM parser
-so that users enjoy the same string performance as the core simdjson.  We do not write the length to the 
+so that users enjoy the same string performance as the core simdjson. We do not write the length to the 
 string buffer, however; that is stored in the `string_view` instance we return to the user.
 
 ### Object/Array Iteration
@@ -426,7 +457,7 @@ in production systems:
   - If the value fails to be parsed as one type, the program can try to parse it as something else until the program succeeds. Thus 
     the programmer can engineer fall back routines.
   - If the value succeeds in being parsed or converted to a type, the program cannot try again. An attempt to parse the same node twice will
-    cause the  program to abort. We put this safety measure in the API to prevent double iteration of an array which
+    cause the program to abort. We put this safety measure in the API to prevent double iteration of an array which
     would cause inconsistent iterator state or double-unescaping a string which may cause memory
     overruns if done.
   - Guaranteed Iteration: If you discard a value without using it--perhaps you just wanted to know
@@ -442,10 +473,10 @@ Pros of the On Demand approach:
 * Straightforward, programmer-friendly interface (arrays and objects).
 
 Cons of the On Demand approach:
-* Because it operates in streaming mode, you only have access to the current element in the JSON document.
-* Less safe than DOM: the document is only partially validated and it is possible to begin ingesting an invalid document.
+* Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX).
+* Less safe than DOM: the document is only partially validated and it is possible to begin ingesting an invalid document only to find out later that the document is invalid.
 
 There are currently at least two additional technical limitations which we expect to resolve in future releases of the simdjson library:
 
-* The simdjson library offers runtime dispatching which allows you to compile one binary and have it run at full speed on different processors, taking advantage of the specific features of the processor. The On Demand API does have runtime dispatch support at this time. To benefit from the On Demand API, you must compile your code for a specific processor. E.g., if your processor supports AVX2 instructions, you should compile your binary executable with AVX2 instruction support (by using your compiler's commands). If you are sufficiently technically proficient, you can implement runtime dispatching within your application, by compiling your On Demand code for different processors.
+* The simdjson library offers runtime dispatching which allows you to compile one binary and have it run at full speed on different processors, taking advantage of the specific features of the processor. The On Demand API does not have runtime dispatch support at this time. To benefit from the On Demand API, you must compile your code for a specific processor. E.g., if your processor supports AVX2 instructions, you should compile your binary executable with AVX2 instruction support (by using your compiler's commands). If you are sufficiently technically proficient, you can implement runtime dispatching within your application, by compiling your On Demand code for different processors.
 * There is an initial phase which scans the entire document quickly, irrespective of the size of the document. We plan to break this phase into distinct steps for large files in a future release as we have done with other components of our API (e.g., `parse_many`).
