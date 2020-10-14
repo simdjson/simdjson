@@ -8,16 +8,18 @@ Whether we parse JSON or XML, or any other serialized format, there are relative
 - Another established approach is a event-based approach (like SAX, SAJ). 
 - Another popular approach is the schema-based deserialization model. 
 
-We propose an approach that is as easy 
-to use and as flexible as the DOM approach, yet as fast and efficient as the schema-based or event-based approaches. 
-We call this new approach "On Demand". The simdjson On Demand API offers a familiar, friendly DOM API and 
+We propose an approach that is as easy  to use and often as flexible as the DOM approach, yet as fast and 
+efficient as the schema-based or event-based approaches.  We call this new approach "On Demand". The 
+simdjson On Demand API offers a familiar, friendly DOM API and 
 provides the performance of just-in-time parsing on top of the simdjson superior performance.
 
 To achieve ease of use, we mimicked the *form* of a traditional DOM API: you can iterate over
 arrays, look up fields in objects, and extract native values like `double`, `uint64_t`, `string` and `bool`.
+
 To achieve performance, we introduced some key limitations that make the DOM API *streaming*:
 array/object iteration cannot be restarted, and fields must be looked up in order, and string/number
-values can only be parsed once.
+values can only be parsed once. If these limitations are acceptable to you, the On Demand API could
+help you write maintainable applications with a computation efficiency that is difficult to surpass.
 
 A code example illustrates our API from a programmer's point of view:
 
@@ -33,7 +35,7 @@ for (auto tweet : doc["statuses"]) {
 }
 ```
 
-Such code would be apply to a JSON document such as the following (mimicking a sample result from the Twitter API):
+Such code would be apply to a JSON document such as the following JSON mimicking a sample result from the Twitter API:
 
 ```json
 {
@@ -464,7 +466,7 @@ in production systems:
     if it was `nullptr` but did not care what the actual value was--it will iterate. The destructor automates
     the iteration.
 
-### Limitations of the On Demand Approach
+### Applicability and Limitations of the On Demand Approach
 
 We expect that the On Demand approach has many of the performance benefits of the schema-based approach, while providing a flexibility that is similar to that of the DOM-based approach. However, there are some limitations.
 
@@ -473,10 +475,24 @@ Pros of the On Demand approach:
 * Straightforward, programmer-friendly interface (arrays and objects).
 
 Cons of the On Demand approach:
-* Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX).
-* Less safe than DOM: the document is only partially validated and it is possible to begin ingesting an invalid document only to find out later that the document is invalid.
+* Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX). It is possible for the programmer to handle out-of-order keys, but it requires additional care. Yiou should be mindful that the though your software might write the keys in a consistent manner, the JSON specification does not prescribe that the order be significant and thus, a JSON producer could change the order of the keys within an object. The On Demand API will still help the programmer by throwing an exception when the unexpected occurs, but the programmer is responsible for handling such cases.
+* Less safe than DOM: the document is only partially validated and it is possible to begin ingesting an invalid document only to find out later that the document is invalid. Are you fine ingesting a large JSON document that starts with well formed JSON but ends with invalid JSON content?
 
-There are currently at least two additional technical limitations which we expect to resolve in future releases of the simdjson library:
+There are currently additional technical limitations which we expect to resolve in future releases of the simdjson library:
 
 * The simdjson library offers runtime dispatching which allows you to compile one binary and have it run at full speed on different processors, taking advantage of the specific features of the processor. The On Demand API does not have runtime dispatch support at this time. To benefit from the On Demand API, you must compile your code for a specific processor. E.g., if your processor supports AVX2 instructions, you should compile your binary executable with AVX2 instruction support (by using your compiler's commands). If you are sufficiently technically proficient, you can implement runtime dispatching within your application, by compiling your On Demand code for different processors.
 * There is an initial phase which scans the entire document quickly, irrespective of the size of the document. We plan to break this phase into distinct steps for large files in a future release as we have done with other components of our API (e.g., `parse_many`).
+* The On Demand API does not support JSON Pointer. This capability is currently limited to our core API.
+
+Hence, at this time we recommend the On Demand API in the following cases:
+
+1. The 64-bit hardware (CPU) used to run the software is known at compile time. If you need runtime dispatching because you cannot be certain of the hardware used to run your software, you will be better served with the core simdjson API. (This only applies to x64 (AMD/Intel). On 64-bit ARM hardware, runtime dispatching is unnecessary.)
+2. The JSON files do not need full validation and the layout of the nodes is in a known order. If you are receiving JSON from other systems, you might be better served with core simdjson API as it fully validates the JSON inputs and allows you to navigate through the document at will.
+3. Speed and efficiency are of the utmost importance. The core simdjson API is highly efficient so switching to the On Demand API.
+
+Good applications for the On Demand API might be: 
+
+* You are working from pre-existing large JSON files that have been vetted. You expect them to be well formed and to have a consistent layout. For example, you might be doing biomedical research or machine learning on top of static data dumps in JSON.
+* You have a closed system on predetermined hardware. Both the generation and the consumption of JSON data is within your system. Your team controls both the software that produces the JSON and the software the parses it, your team knows and control the hardware. Thus you can fully test your system.
+
+
