@@ -769,10 +769,30 @@ namespace twitter_tests {
         auto media = entities["media"];
         if (media.error() == SUCCESS) {
           for (ondemand::object image : media) {
+            /**
+             * Fun fact: id and id_str can differ:
+             * 505866668485386240 and 505866668485386241.
+             * Presumably, it is because doubles are used
+             * at some point in the process and the number
+             * 505866668485386241 cannot be represented as a double.
+             * (not our fault)
+             */
+            uint64_t id_val = image["id"].get_uint64();
+            std::cout << "id = " <<id_val << std::endl;
+            auto id_string = std::string_view(image["id_str"].value());
+            std::cout << "id_string = " << id_string << std::endl;
             auto sizes = image["sizes"].get_object();
             for (auto size : sizes) {
+              /**
+               * We want to know the key that describes the size.
+               */
+              std::string raw_size_key_v = size.key().value().to_string();
+              std::cout << "Type of image size = " << raw_size_key_v << std::endl;
               ondemand::object size_value = size.value();
-              image_sizes.insert(make_pair(size_value["w"], size_value["h"]));
+              int64_t width = size_value["w"];
+              int64_t height = size_value["h"];
+              std::cout <<  width << " x " << height << std::endl;
+              image_sizes.insert(make_pair(width, height));
             }
           }
         }
@@ -1246,10 +1266,10 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Running basic tests." << std::endl;
   if (
-      // parse_api_tests::run() &&
-      // dom_api_tests::run() &&
-      // twitter_tests::run() &&
-      // number_tests::run() &&
+      parse_api_tests::run() &&
+      dom_api_tests::run() &&
+      twitter_tests::run() &&
+      number_tests::run() &&
       error_tests::run() &&
       true
   ) {

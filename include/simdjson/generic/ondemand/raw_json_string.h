@@ -37,6 +37,14 @@ public:
    * Get the raw pointer to the beginning of the string in the JSON (just after the ").
    */
   simdjson_really_inline const char * raw() const noexcept;
+
+  /**
+   * Create a string representation of this raw_json_string. This function is not computationally
+   * free and should be used with moderation in performance-sensitive code.
+   * It will throw an exception if and only if the string constructor does.
+   */
+  simdjson_really_inline simdjson_warn_unused simdjson_result<std::string> to_string() const;
+
   /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
    * 
