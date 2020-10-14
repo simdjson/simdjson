@@ -489,7 +489,8 @@ Hence, at this time we recommend the On Demand API in the following cases:
 
 1. The 64-bit hardware (CPU) used to run the software is known at compile time. If you need runtime dispatching because you cannot be certain of the hardware used to run your software, you will be better served with the core simdjson API. (This only applies to x64 (AMD/Intel). On 64-bit ARM hardware, runtime dispatching is unnecessary.)
 2. The used parts of JSON files do not need to be validated and the layout of the nodes is in a known order. If you are receiving JSON from other systems, you might be better served with core simdjson API as it fully validates the JSON inputs and allows you to navigate through the document at will.
-3. Speed and efficiency are of the utmost importance. The core simdjson API is highly efficient so switching to the On Demand API.
+3. Speed and efficiency are of the utmost importance. Keep in mind that the core simdjson API is highly efficient so adopting the On Demand API is not necessary for high efficiency.
+4. As a developer, you value a clean, flexible and maintainable API.
 
 Good applications for the On Demand API might be: 
 
