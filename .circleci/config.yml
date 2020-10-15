@@ -258,6 +258,11 @@ workflows:
       - arch-haswell-gcc10
       - arch-nehalem-gcc10
 
+
+      # sanitized single-implementation tests
+      - sanitize-haswell-gcc10
+      - sanitize-haswell-clang10
+
       # testing "just the library"
       - justlib-gcc10
 
