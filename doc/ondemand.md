@@ -466,7 +466,7 @@ in production systems:
     if it was `nullptr` but did not care what the actual value was--it will iterate. The destructor automates
     the iteration.
 
-### Applicability and Limitations of the On Demand Approach
+### Limitations of the On Demand Approach
 
 We expect that the On Demand approach has many of the performance benefits of the schema-based approach, while providing a flexibility that is similar to that of the DOM-based approach. However, there are some limitations.
 
@@ -480,12 +480,23 @@ Cons of the On Demand approach:
 
 There are currently additional technical limitations which we expect to resolve in future releases of the simdjson library:
 
-* We intend to help users who wish to use the On Demand API but require support for order-insensitive semantics, but in our current implementation support for out-of-order keys (if needed) must be provided by the programmer.
 * The simdjson library offers runtime dispatching which allows you to compile one binary and have it run at full speed on different processors, taking advantage of the specific features of the processor. The On Demand API does not have runtime dispatch support at this time. To benefit from the On Demand API, you must compile your code for a specific processor. E.g., if your processor supports AVX2 instructions, you should compile your binary executable with AVX2 instruction support (by using your compiler's commands). If you are sufficiently technically proficient, you can implement runtime dispatching within your application, by compiling your On Demand code for different processors.
 * There is an initial phase which scans the entire document quickly, irrespective of the size of the document. We plan to break this phase into distinct steps for large files in a future release as we have done with other components of our API (e.g., `parse_many`).
 * The On Demand API does not support JSON Pointer. This capability is currently limited to our core API.
+* We intend to help users who wish to use the On Demand API but require support for order-insensitive semantics, but in our current implementation support for out-of-order keys (if needed) must be provided by the programmer. Currently, one might proceed in the following manner as a fallback measure if keys can appear in any order:
+```C++
+    for (ondemand::object my_object : doc["mykey"]) {
+      for (auto field : my_object) {
+        if      (field.key() == "key_value1") { process1(field.value()); }
+        else if (field.key() == "key_value2") { process2(field.value()); }
+        else if (field.key() == "key_value3") { process3(field.value()); }
+      }
+    }
+```
 
-Hence, at this time we recommend the On Demand API in the following cases:
+### Applicability of the On Demand Approach
+
+At this time we recommend the On Demand API in the following cases:
 
 1. The 64-bit hardware (CPU) used to run the software is known at compile time. If you need runtime dispatching because you cannot be certain of the hardware used to run your software, you will be better served with the core simdjson API. (This only applies to x64 (AMD/Intel). On 64-bit ARM hardware, runtime dispatching is unnecessary.)
 2. The used parts of JSON files do not need to be validated and the layout of the nodes is in a known order. If you are receiving JSON from other systems, you might be better served with core simdjson API as it fully validates the JSON inputs and allows you to navigate through the document at will.
