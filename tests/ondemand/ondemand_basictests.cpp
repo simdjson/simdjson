@@ -31,16 +31,12 @@ using namespace simdjson::builtin;
   ondemand::parser parser;
   auto doc = parser.iterate(bogus);
   std::set<std::string_view> default_users;
-  ondemand::array tweets;
-  doc["statuses"].get(tweets);
+  ondemand::array tweets = doc["statuses"].get_array();
   for (auto tweet_value : tweets) {
     auto tweet = tweet_value.get_object();
-    ondemand::object user;
-    tweet["user"].get(user);
-    std::string_view screen_name;
-    user["screen_name"].get(screen_name);
-    bool default_profile{};
-    user["default_profile"].get(default_profile);
+    ondemand::object user = tweet["user"].get_object();
+    std::string_view screen_name = user["screen_name"].get_string();
+    bool default_profile = user["default_profile"].get_bool();
     if (default_profile) { default_users.insert(screen_name); }
   }
 }
@@ -52,7 +48,7 @@ void compilation_test_3() {
   ondemand::parser parser;
   auto doc = parser.iterate(bogus);
   ondemand::array tweets;
-  doc["statuses"].get(tweets);
+  if(! doc["statuses"].get(tweets)) { return; }
   for (auto tweet_value : tweets) {
     auto tweet = tweet_value.get_object();
     for (auto field : tweet) {
