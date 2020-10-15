@@ -630,7 +630,7 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(
 // Call this version of the method if you regularly expect 8- or 16-digit numbers.
 simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_large_unsigned(const uint8_t * const src) noexcept {
   const uint8_t *p = src;
-
+std::abort();
   //
   // Parse the integer part.
   //
