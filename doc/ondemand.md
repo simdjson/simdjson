@@ -498,3 +498,11 @@ Good applications for the On Demand API might be:
 * You have a closed system on predetermined hardware. Both the generation and the consumption of JSON data is within your system. Your team controls both the software that produces the JSON and the software the parses it, your team knows and control the hardware. Thus you can fully test your system.
 * You are working with stable JSON APIs which have a consistent layout and JSON dialect.
 
+## Checking Your CPU Selection
+
+Given that the On Demand API does not offer runtime dispatching, your code is compiled against a specific CPU target. You should
+verify that the code is compiled against the target you expect: `haswell` (AVX2 x64 processors), `westmere` (SSE4 x64 processors), `arm64` (64-bit ARM), `fallback` (others).
+
+```C++
+  std::cout << simdjson::builtin_implementation.name() << std::endl;
+```
