@@ -11,6 +11,7 @@ using namespace simdjson::builtin;
 
 class OnDemand {
 public:
+  OnDemand() { std::cout << "On Demand implementation: " << builtin_implementation.name() << std::endl; } 
   simdjson_really_inline bool Run(const padded_string &json);
 
   simdjson_really_inline const std::vector<tweet> &Result() { return tweets; }

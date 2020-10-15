@@ -30,9 +30,9 @@ namespace simdjson {
    */
   namespace builtin = SIMDJSON_BUILTIN_IMPLEMENTATION;
   /**
-   * It is handy to be able to check what builtin was used.
+   * It is handy to be able to check what builtin was used: builtin_implementation.name().
    */
-  constexpr const char * builtin_name = STRINGIFY(SIMDJSON_BUILTIN_IMPLEMENTATION);
+  const builtin::implementation builtin_implementation{};
 } // namespace simdjson
 
 #endif // SIMDJSON_BUILTIN_H
