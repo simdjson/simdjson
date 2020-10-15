@@ -125,7 +125,7 @@ public:
    */
   inline simdjson_result<uint64_t> get_uint64() const noexcept;
   /**
-   * Cast this element to an double floating-point.
+   * Cast this element to a double floating-point.
    *
    * Equivalent to get<double>().
    *
@@ -179,12 +179,14 @@ public:
    * Equivalent to is<double>().
    */
   inline bool is_double() const noexcept;
+#if 0
   /**
    * Whether this element is a json number.
    *
    * Both integers and floating points will return true.
    */
   inline bool is_number() const noexcept;
+#endif
   /**
    * Whether this element is a json `true` or `false`.
    *
@@ -248,6 +250,7 @@ public:
   template<typename T>
   simdjson_warn_unused simdjson_really_inline error_code get(T &value) const noexcept;
 
+#if 0
   /**
    * Get the value as the provided type (T), setting error if it's not the given type.
    *
@@ -265,6 +268,7 @@ public:
    */
   template<typename T>
   inline void tie(T &value, error_code &error) && noexcept;
+#endif
 
 #if SIMDJSON_EXCEPTIONS
   /**
