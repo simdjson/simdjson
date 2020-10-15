@@ -501,8 +501,9 @@ Good applications for the On Demand API might be:
 ## Checking Your CPU Selection
 
 Given that the On Demand API does not offer runtime dispatching, your code is compiled against a specific CPU target. You should
-verify that the code is compiled against the target you expect: `haswell` (AVX2 x64 processors), `westmere` (SSE4 x64 processors), `arm64` (64-bit ARM), `fallback` (others).
+verify that the code is compiled against the target you expect: `haswell` (AVX2 x64 processors), `westmere` (SSE4 x64 processors), `arm64` (64-bit ARM), `fallback` (others). Under x64 processors, many programmers will want to target `haswell` whereas under ARM,
+most programmers will want to target `arm64`. The `fallback` is probably only good for testing purposes, not for deployment.
 
 ```C++
-  std::cout << simdjson::builtin_implementation.name() << std::endl;
+  std::cout << simdjson::builtin_implementation()->name() << std::endl;
 ```

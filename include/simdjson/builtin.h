@@ -30,9 +30,12 @@ namespace simdjson {
    */
   namespace builtin = SIMDJSON_BUILTIN_IMPLEMENTATION;
   /**
-   * It is handy to be able to check what builtin was used: builtin_implementation.name().
+   * Function which returns a pointer to an implementation matching the "builtin" implementation.
+   * The builtin implementation is the best statically linked simdjson implementation that can be used by the compiling
+   * program. If you compile with g++ -march=haswell, this will return the haswell implementation.
+   * It is handy to be able to check what builtin was used: builtin_implementation()->name().
    */
-  const builtin::implementation builtin_implementation{};
+  const implementation * builtin_implementation();
 } // namespace simdjson
 
 #endif // SIMDJSON_BUILTIN_H
