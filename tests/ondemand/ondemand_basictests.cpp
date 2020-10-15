@@ -21,6 +21,8 @@
 using namespace simdjson;
 using namespace simdjson::builtin;
 
+#if SIMDJSON_EXCEPTIONS
+
 // bogus functions for compilation tests
 void process1(int ) {}
 void process2(int ) {}
@@ -39,6 +41,7 @@ void compilation_test_1() {
        }
      }
 }
+#endif
 
 #define ONDEMAND_SUBTEST(NAME, JSON, TEST) \
 { \
