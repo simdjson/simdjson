@@ -91,7 +91,7 @@ private:
   const uint8_t * buf{};
   friend class object;
   friend class field;
-  friend class simdjson_result<raw_json_string>;
+  friend struct simdjson_result<raw_json_string>;
 };
 
 simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view b) noexcept;
