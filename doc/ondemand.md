@@ -475,8 +475,8 @@ Pros of the On Demand approach:
 * Straightforward, programmer-friendly interface (arrays and objects).
 
 Cons of the On Demand approach:
-* Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX). It is possible for the programmer to handle out-of-order keys, but it requires additional care. You should be mindful that the though your software might write the keys in a consistent manner, the JSON specification does not prescribe that the order be significant and thus, a JSON producer could change the order of the keys within an object. The On Demand API will still help the programmer by throwing an exception when the unexpected occurs, but the programmer is responsible for handling such cases (e.g., by rejecting the JSON input).
-* Less safe than DOM: the document is only partially validated and it is possible to begin ingesting an invalid document only to find out later that the document is invalid. Are you fine ingesting a large JSON document that starts with well formed JSON but ends with invalid JSON content?
+* Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX). It is possible for the programmer to handle out-of-order keys when the JSON dialect is underspecified, but it requires additional care. You should be mindful that the though your software might write the keys in a consistent manner, the JSON specification does not prescribe that the order be significant and thus, a JSON producer could change the order of the keys within an object. The On Demand API will still help the programmer by throwing an exception when the unexpected occurs, but the programmer is responsible for handling such cases (e.g., by rejecting the JSON input that does not follow the expected JSON dialect). 
+* Less safe than DOM: we only validate the components of the JSON document that are used and it is possible to begin ingesting an invalid document only to find out later that the document is invalid. Are you fine ingesting a large JSON document that starts with well formed JSON but ends with invalid JSON content?
 
 There are currently additional technical limitations which we expect to resolve in future releases of the simdjson library:
 
@@ -499,13 +499,13 @@ There are currently additional technical limitations which we expect to resolve 
 At this time we recommend the On Demand API in the following cases:
 
 1. The 64-bit hardware (CPU) used to run the software is known at compile time. If you need runtime dispatching because you cannot be certain of the hardware used to run your software, you will be better served with the core simdjson API. (This only applies to x64 (AMD/Intel). On 64-bit ARM hardware, runtime dispatching is unnecessary.)
-2. The used parts of JSON files do not need to be validated and the layout of the nodes is in a known order. If you are receiving JSON from other systems, you might be better served with core simdjson API as it fully validates the JSON inputs and allows you to navigate through the document at will.
+2. The used parts of JSON files do not need to be validated and the layout of the nodes follows a strict JSON dialect. If you are receiving JSON from other systems, you might be better served with core simdjson API as it fully validates the JSON inputs and allows you to navigate through the document at will.
 3. Speed and efficiency are of the utmost importance. Keep in mind that the core simdjson API is highly efficient so adopting the On Demand API is not necessary for high efficiency.
 4. As a developer, you value a clean, flexible and maintainable API.
 
 Good applications for the On Demand API might be: 
 
-* You are working from pre-existing large JSON files that have been vetted. You expect them to be well formed and to have a consistent layout. For example, you might be doing biomedical research or machine learning on top of static data dumps in JSON.
+* You are working from pre-existing large JSON files that have been vetted. You expect them to be well formed according to a known JSON dialect and to have a consistent layout. For example, you might be doing biomedical research or machine learning on top of static data dumps in JSON.
 * You have a closed system on predetermined hardware. Both the generation and the consumption of JSON data is within your system. Your team controls both the software that produces the JSON and the software the parses it, your team knows and control the hardware. Thus you can fully test your system.
 * You are working with stable JSON APIs which have a consistent layout and JSON dialect.
 
