@@ -1337,8 +1337,11 @@ int main(int argc, char *argv[]) {
     printf("unsupported CPU\n");
   }
   // We want to know what we are testing.
-  std::cout << "Running tests against this implementation: " << simdjson::active_implementation->name();
-  std::cout << "(" << simdjson::active_implementation->description() << ")" << std::endl;
+  // Next line would be the runtime dispatched implementation but that's not necessarily what gets tested.
+  // std::cout << "Running tests against this implementation: " << simdjson::active_implementation->name();
+  // Rather, we want to display builtin_implementation()->name().
+  // In practice, by default, we often end up testing against fallback.
+  std::cout << "builtin_implementation -- " << builtin_implementation()->name() << std::endl;
   std::cout << "------------------------------------------------------------" << std::endl;
 
   std::cout << "Running basic tests." << std::endl;
