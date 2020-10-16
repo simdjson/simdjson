@@ -77,6 +77,7 @@ void compilation_test_3() {
       std::cout << "value (assuming it is a string) = " << val << std::endl;
     }
   }
+}
 #endif
 
 #define ONDEMAND_SUBTEST(NAME, JSON, TEST) \
