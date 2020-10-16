@@ -22,14 +22,14 @@ simdjson_really_inline simdjson_result<field> field::start(json_iterator_ref &&i
 }
 
 simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> field::key_as_string() noexcept {
-  SIMDJSON_ASSUME(first.alive());
+  SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
   simdjson_result<std::string_view> answer = first.unescape(second.get_iterator());
   first.consume();
   return answer;
 }
 
 simdjson_really_inline raw_json_string field::key() const noexcept {
-  SIMDJSON_ASSUME(first.alive());
+  SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
   return first;
 }
 
