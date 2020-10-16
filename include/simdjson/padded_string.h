@@ -85,6 +85,7 @@ struct padded_string final {
    * The string data.
    **/
   const char *data() const noexcept;
+  const uint8_t *u8data() const noexcept { return static_cast<const uint8_t*>(static_cast<const void*>(data_ptr));}
 
   /**
    * The string data.
