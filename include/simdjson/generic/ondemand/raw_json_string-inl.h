@@ -19,7 +19,7 @@ simdjson_really_inline simdjson_warn_unused simdjson_result<std::string> raw_jso
   // We better not have an unterminated string!
   for(; !((buf[i] == '"') && (buf[i-1] != '\\')) ; i++) {}
   // We know that the string has length i.
-  std::unique_ptr<uint8_t[]> tmp_buf(new(std::nothrow) uint8_t[i+1]); // +1 because stringparsing::parse_string may write the quote
+  std::unique_ptr<uint8_t[]> tmp_buf(new(std::nothrow) uint8_t[i+1+SIMDJSON_PADDING]); // +1 because stringparsing::parse_string may write the quote, +32 for SIMD operations
   if(!tmp_buf.get()) { return MEMALLOC; }
   uint8_t *dst = tmp_buf.get();
   uint8_t *end = stringparsing::parse_string(buf, dst);
