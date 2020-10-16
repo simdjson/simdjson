@@ -507,3 +507,12 @@ most programmers will want to target `arm64`. The `fallback` is probably only go
 ```C++
   std::cout << simdjson::builtin_implementation()->name() << std::endl;
 ```
+
+If you are using CMake for your C++ project, then you can pass compilation flags to your compiler during the first configuration
+by using the `CXXFLAGS`  configuration variable:
+```
+CXXFLAGS=-march=haswell cmake -B build_haswell
+cmake --build build_haswell
+```
+
+You may also use the  `CMAKE_CXX_FLAGS` variable.
