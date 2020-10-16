@@ -83,7 +83,8 @@ this parsed result cannot be safely returned as a JSON string (e.g., there is no
 Instead of allowing such arbitrary JSON documents, we expect JSON that producers and consumers often agree on a dialect: we
 might agree that keys should not be repeated within the same object and should appear in a prescribed order, that numbers should fit 
 as normal  64-bit floating-point (binary64) numbers or otherwise be representable as 64-bit integers, that keys should be 
-unescaped ASCII strings, and so forth. Popular systems such as [MongoDB define their own JSON dialects](https://docs.mongodb.com/manual/reference/method/db.collection.find/#query-exact-matches-on-embedded-documents), and might consider `{ first: "Yukihiro", last: "Matsumoto" }` and `{ last: "Matsumoto", first: "Yukihiro" }` as being distinct JSON inputs and represent all numbers as floating-point values.
+unescaped ASCII strings, and so forth. Popular systems such as [MongoDB define their own JSON dialects](https://docs.mongodb.com/manual/reference/method/db.collection.find/#query-exact-matches-on-embedded-documents), and might consider `{ first: "Yukihiro", last: "Matsumoto" }` and `{ last: "Matsumoto", first: "Yukihiro" }` as being distinct JSON inputs and represent all numbers as floating-point values. Major web APIs often have constraints above
+and beyond the JSON specification: e.g., [Authorize.Net](https://developer.authorize.net/api/reference/index.html) requires keys to follow a specific order.
 
 The On Demand approach is designed around several principles:
 
