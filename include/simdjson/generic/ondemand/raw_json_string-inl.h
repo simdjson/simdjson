@@ -13,20 +13,6 @@ simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> ra
   return result;
 }
 
-simdjson_really_inline simdjson_warn_unused simdjson_result<std::string> raw_json_string::to_string() const {
-  if(buf[0] == '"') { return std::string(); } // empty string
-  size_t i = 1;
-  // We better not have an unterminated string!
-  for(; !((buf[i] == '"') && (buf[i-1] != '\\')) ; i++) {}
-  // We know that the string has length i.
-  std::unique_ptr<uint8_t[]> tmp_buf(new(std::nothrow) uint8_t[i+1+SIMDJSON_PADDING]); // +1 because stringparsing::parse_string may write the quote, +32 for SIMD operations
-  if(!tmp_buf.get()) { return MEMALLOC; }
-  uint8_t *dst = tmp_buf.get();
-  uint8_t *end = stringparsing::parse_string(buf, dst);
-  if (!end) { return STRING_ERROR; }
-  return std::string((const char *)tmp_buf.get(), size_t(end-dst)); // sadly, might throw
-}
-
 simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(json_iterator &iter) const noexcept {
   return unescape(iter.current_string_buf_loc);
 }

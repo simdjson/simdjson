@@ -71,9 +71,9 @@ void compilation_test_3() {
   for (auto tweet_value : tweets) {
     auto tweet = tweet_value.get_object();
     for (auto field : tweet) {
-      std::string key = field.key().value().to_string();
+      std::string_view key = field.key_as_string().value();
       std::cout << "key = " << key << std::endl;
-      std::string_view val = field.value().value();
+      std::string_view val = std::string_view(field.value());
       std::cout << "value (assuming it is a string) = " << val << std::endl;
     }
   }
@@ -88,6 +88,32 @@ void compilation_test_3() {
   })) { \
     return false; \
   } \
+}
+
+
+namespace key_string_tests {
+#if SIMDJSON_EXCEPTIONS
+  bool parser_key_value() {
+    TEST_START();
+    ondemand::parser parser;
+    const padded_string json = R"({ "1": "1", "2": "2", "3": "3", "abc": "abc", "\u0075": "\u0075" })"_padded;
+    auto doc = parser.iterate(json);
+    for(auto field : doc.get_object())  {
+      std::string_view keyv = field.key_as_string();
+      std::string_view valuev = field.value();
+      if(keyv != valuev) { return false; }
+    }
+    return true;
+  }
+#endif
+  bool run() {
+    return 
+#if SIMDJSON_EXCEPTIONS
+      parser_key_value() &&
+#endif
+      true;
+  }
+
 }
 
 namespace number_tests {
@@ -920,7 +946,7 @@ namespace twitter_tests {
               /**
                * We want to know the key that describes the size.
                */
-              std::string raw_size_key_v = size.key().value().to_string();
+              std::string_view raw_size_key_v = size.key_as_string().value();
               std::cout << "Type of image size = " << raw_size_key_v << std::endl;
               ondemand::object size_value = size.value();
               int64_t width = size_value["w"];
@@ -1406,6 +1432,7 @@ int main(int argc, char *argv[]) {
       number_tests::run() &&
       error_tests::run() &&
       ordering_tests::run() &&
+      key_string_tests::run() &&
       true
   ) {
     std::cout << "Basic tests are ok." << std::endl;
