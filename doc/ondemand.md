@@ -75,6 +75,15 @@ may not convert the pair of  characters `82` to the binary integer 82. Because t
 mispredictions related to data type determination and improve the performance.
 
 
+We expect users of an On Demand API to work in terms of a JSON dialect, which is a set of expectations and specifications
+that come in addition to the [JSON specification](https://www.rfc-editor.org/rfc/rfc8259.txt). To illustrate the concept
+of dialect, let us consider the following JSON string: `{"k":111,"k":222,"j":1e10000,"\u0078":false}`. Such a string is allowable as 
+a JSON document as per the JSON specification and is parsed in JavaScript (Node.js) as `{ k: 222, j: Infinity, x: false }`;
+this parsed result cannot be safely returned as a JSON string (e.g., there is no `Infinity` value in the JSON specification).
+Instead of allowing such arbitrary JSON documents, we expect JSON that producers and consumers often agree on a dialect: we
+might agree that keys should not be repeated within the same object and should appear in a prescribed order, that numbers should fit 
+as normal  64-bit floating-point (binary64) numbers or otherwise be representable as 64-bit integers, that keys should be 
+unescaped ASCII strings, and so forth. Popular systems such as [MongoDB define their own JSON dialects](https://docs.mongodb.com/manual/reference/method/db.collection.find/#query-exact-matches-on-embedded-documents), and might consider `{ first: "Yukihiro", last: "Matsumoto" }` and `{ last: "Matsumoto", first: "Yukihiro" }` as being distinct JSON inputs and represent all numbers as floating-point values.
 
 The On Demand approach is designed around several principles:
 
@@ -83,6 +92,7 @@ The On Demand approach is designed around several principles:
 * **Natural Iteration:** A JSON array or object can be iterated with a normal C++ for loop. Nested arrays and objects are supported by nested for loops.
 * **Use-Specific Parsing:** Parsing is always specific to the type required by the programmer. For example, if the programmer asks for an unsigned integer, we just start parsing digits. If there were no digits, we toss an error. There are even different parsers for `double`, `uint64_t` and `int64_t` values. This use-specific parsing avoids the branchiness of a generic "type switch," and makes the code more inlineable and compact.
 * **Validate What You Use:** On Demand deliberately validates the values you use and the structure leading to it, but nothing else. The goal is a guarantee that the value you asked for is the correct one and is not malformed: there must be no confusion over whether you got the right value.
+
 
 
 To understand why On Demand is different, it is helpful to review the major
@@ -475,7 +485,7 @@ Pros of the On Demand approach:
 * Straightforward, programmer-friendly interface (arrays and objects).
 
 Cons of the On Demand approach:
-* Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX). It is possible for the programmer to handle out-of-order keys when the JSON dialect is underspecified, but it requires additional care. You should be mindful that the though your software might write the keys in a consistent manner, the JSON specification does not prescribe that the order be significant and thus, a JSON producer could change the order of the keys within an object. The On Demand API will still help the programmer by throwing an exception when the unexpected occurs, but the programmer is responsible for handling such cases (e.g., by rejecting the JSON input that does not follow the expected JSON dialect). 
+* Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX). It is possible for the programmer to handle out-of-order keys when the JSON dialect is underspecified, but it requires additional care. You should be mindful that the though your software might write the keys in a consistent manner, the [JSON specification](https://www.rfc-editor.org/rfc/rfc8259.txt) merely states that "JSON parsing libraries have been observed to differ as to whether or  not they make the ordering of object members visible". The On Demand API will help the programmer handle unexpected JSON dialects by throwing an exception when the unexpected occurs, but the programmer is responsible for handling such cases: e.g., by rejecting the JSON input that does not follow the expected JSON dialect. 
 * Less safe than DOM: we only validate the components of the JSON document that are used and it is possible to begin ingesting an invalid document only to find out later that the document is invalid. Are you fine ingesting a large JSON document that starts with well formed JSON but ends with invalid JSON content?
 
 There are currently additional technical limitations which we expect to resolve in future releases of the simdjson library:
