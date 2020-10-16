@@ -53,7 +53,7 @@ error_code Sax::RunNoExcept(const padded_string &json) noexcept {
 
 error_code Sax::Allocate(size_t new_capacity) {
   // string_capacity copied from document::allocate
-  size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * new_capacity / 3 + 32, 64);
+  size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * new_capacity / 3 + SIMDJSON_PADDING, 64);
   string_buf.reset(new (std::nothrow) uint8_t[string_capacity]);
   if (auto error = dom_parser.set_capacity(new_capacity)) { return error; }
   if (capacity == 0) { // set max depth the first time only
