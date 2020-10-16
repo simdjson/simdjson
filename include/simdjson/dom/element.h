@@ -517,6 +517,7 @@ public:
   simdjson_really_inline bool is_int64() const noexcept;
   simdjson_really_inline bool is_uint64() const noexcept;
   simdjson_really_inline bool is_double() const noexcept;
+  simdjson_really_inline bool is_number() const noexcept;
   simdjson_really_inline bool is_bool() const noexcept;
   simdjson_really_inline bool is_null() const noexcept;
 

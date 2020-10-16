@@ -93,6 +93,9 @@ simdjson_really_inline bool simdjson_result<dom::element>::is_uint64() const noe
 simdjson_really_inline bool simdjson_result<dom::element>::is_double() const noexcept {
   return !error() && first.is_double();
 }
+simdjson_really_inline bool simdjson_result<dom::element>::is_number() const noexcept {
+  return !error() && first.is_number();
+}
 simdjson_really_inline bool simdjson_result<dom::element>::is_bool() const noexcept {
   return !error() && first.is_bool();
 }
@@ -294,6 +297,10 @@ simdjson_warn_unused simdjson_really_inline error_code element::get<element>(ele
   value = element(tape);
   return SUCCESS;
 }
+template<typename T>
+inline void element::tie(T &value, error_code &error) && noexcept {
+  error = get<T>(value);
+}
 
 template<typename T>
 simdjson_really_inline bool element::is() const noexcept {
@@ -317,6 +324,7 @@ inline bool element::is_int64() const noexcept { return is<int64_t>(); }
 inline bool element::is_uint64() const noexcept { return is<uint64_t>(); }
 inline bool element::is_double() const noexcept { return is<double>(); }
 inline bool element::is_bool() const noexcept { return is<bool>(); }
+inline bool element::is_number() const noexcept { return is_int64() || is_uint64() || is_double(); }
 
 inline bool element::is_null() const noexcept {
   return tape.is_null_on_tape();
