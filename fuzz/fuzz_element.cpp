@@ -77,8 +77,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
       CASE(13, is_int64);
       CASE(14, is_uint64);
       CASE(15, is_double);
-      // This one does not seem to be defined, only declared, so must be unused
-      // CASE(16,is_number);
+      CASE(16, is_number);
       CASE(17, is_bool);
       CASE(18, is_null);
       // element.is<>() :
@@ -91,14 +90,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
           invoke_with_type([&elem](auto t){ simdjson_unused auto v = elem.get<decltype (t)>();  });
         } break;
 
-#if 0
-      // CASE(xx,tie);  // tie seems to be defined, only declared, so must be unused
+      // CASE(xx,tie);
       case 21: {
           invoke_with_type([&elem](auto t){
-            simdjson::error_code error;
-            simdjson::dom::element{elem}.tie(t,error);  });
+            simdjson::error_code ec;
+            simdjson::dom::element{elem}.tie(t,ec);  });
         } break;
-#endif
+
 #if SIMDJSON_EXCEPTIONS
       // cast to type
       case 22: {
