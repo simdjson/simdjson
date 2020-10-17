@@ -37,14 +37,11 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
 inline padded_string::padded_string() noexcept {}
 inline padded_string::padded_string(size_t length) noexcept
     : viable_size(length), data_ptr(internal::allocate_padded_buffer(length)) {
-  if (data_ptr != nullptr)
-    data_ptr[length] = '\0'; // easier when you need a c_str
 }
 inline padded_string::padded_string(const char *data, size_t length) noexcept
     : viable_size(length), data_ptr(internal::allocate_padded_buffer(length)) {
   if ((data != nullptr) and (data_ptr != nullptr)) {
     std::memcpy(data_ptr, data, length);
-    data_ptr[length] = '\0'; // easier when you need a c_str
   }
 }
 // note: do not pass std::string arguments by value
@@ -52,15 +49,13 @@ inline padded_string::padded_string(const std::string & str_ ) noexcept
     : viable_size(str_.size()), data_ptr(internal::allocate_padded_buffer(str_.size())) {
   if (data_ptr != nullptr) {
     std::memcpy(data_ptr, str_.data(), str_.size());
-    data_ptr[str_.size()] = '\0'; // easier when you need a c_str
   }
 }
 // note: do pass std::string_view arguments by value
 inline padded_string::padded_string(std::string_view sv_) noexcept
     : viable_size(sv_.size()), data_ptr(internal::allocate_padded_buffer(sv_.size())) {
-  if (data_ptr != nullptr) {
+  if (sv_.size()) {
     std::memcpy(data_ptr, sv_.data(), sv_.size());
-    data_ptr[sv_.size()] = '\0'; // easier when you need a c_str
   }
 }
 inline padded_string::padded_string(padded_string &&o) noexcept

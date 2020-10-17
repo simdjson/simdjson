@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # fuzzers that use the default implementation
-      defaultimplfuzzers: atpointer dump dump_raw_tape  minify  parser print_json
+      defaultimplfuzzers: atpointer dump dump_raw_tape element minify  parser print_json
       # fuzzers that loop over the implementations themselves
       implfuzzers: implementations minifyimpl utf8
       implementations: haswell westmere fallback
