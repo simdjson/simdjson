@@ -8,8 +8,8 @@ Whether we parse JSON or XML, or any other serialized format, there are relative
 - Another established approach is a event-based approach (like SAX, SAJ). 
 - Another popular approach is the schema-based deserialization model. 
 
-We propose an approach that is as easy  to use and often as flexible as the DOM approach, yet as fast and 
-efficient as the schema-based or event-based approaches.  We call this new approach "On Demand". The 
+We propose an approach that is as easy to use and often as flexible as the DOM approach, yet as fast and 
+efficient as the schema-based or event-based approaches. We call this new approach "On Demand". The 
 simdjson On Demand API offers a familiar, friendly DOM API and 
 provides the performance of just-in-time parsing on top of the simdjson superior performance.
 
@@ -71,21 +71,12 @@ and `"friends_count"` keys and matching values are skipped.
 
 Further, the On Demand API does not parse a value *at all* until you try to convert it (e.g., to `double`,
 `int`, `string`, or `bool`). In our example, when accessing the key-value pair `"retweet_count": 82`, the parser
-may not convert the pair of  characters `82` to the binary integer 82. Because the programmer specifies the data type, we avoid branch
+may not convert the pair of characters `82` to the binary integer 82. Because the programmer specifies the data type, we avoid branch
 mispredictions related to data type determination and improve the performance.
 
 
-We expect users of an On Demand API to work in terms of a JSON dialect, which is a set of expectations and specifications
-that come in addition to the [JSON specification](https://www.rfc-editor.org/rfc/rfc8259.txt). To illustrate the concept
-of dialect, let us consider the following JSON string: `{"k":111,"k":222,"j":1e10000,"\u0078":false}`. Such a string is allowable as 
-a JSON document as per the JSON specification and is parsed in JavaScript (Node.js) as `{ k: 222, j: Infinity, x: false }`;
-this parsed result cannot be safely returned as a JSON string (e.g., there is no `Infinity` value in the JSON specification).
-Instead of allowing such arbitrary JSON documents, we expect JSON that producers and consumers often agree on a dialect: we
-might agree that keys should not be repeated within the same object and should appear in a prescribed order, that numbers should fit 
-as normal  64-bit floating-point (binary64) numbers or otherwise be representable as 64-bit integers, that keys should be 
-unescaped ASCII strings, and so forth. Popular systems such as [MongoDB define their own JSON dialects](https://docs.mongodb.com/manual/reference/method/db.collection.find/#query-exact-matches-on-embedded-documents), and might consider `{ first: "Yukihiro", last: "Matsumoto" }` and `{ last: "Matsumoto", first: "Yukihiro" }` as being distinct JSON inputs and represent all numbers as floating-point values. Major web APIs often have constraints above
-and beyond the JSON specification: e.g., [Authorize.Net](https://developer.authorize.net/api/reference/index.html) requires keys to follow a specific order. Some JSON dialects require us to compare strings while ignoring case, while others require byte-by-byte raw comparisons.
-
+We expect users of an On Demand API to work in terms of a JSON dialect, which is a set of expectations and
+specifications that come in addition to the [JSON specification](https://www.rfc-editor.org/rfc/rfc8259.txt). 
 The On Demand approach is designed around several principles:
 
 * **Streaming (\*):** It avoids preparsing values, keeping the memory usage and the latency down. 
@@ -286,7 +277,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 ### Starting the iteration
 
 1. First, we declare a parser object that keeps internal buffers necessary for parsing. This can be
-   reused to parse multiple JSON files, so you don't pay the high cost of allocating memory every
+   reused to parse multiple JSON files, so you do not pay the high cost of allocating memory every
    time (and so it can stay in cache!).
 
    This declaration does not allocate any memory; that will happen in the next step.
@@ -336,8 +327,8 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
   ondemand::object top = doc.get_object();
 
   // Find the field statuses by:
-  // 1. Check whether the object is empty (check for }). (TODO we don't really need to do this unless the key lookup fails!)
-  // 2. Check if we're at the field by looking for the string "statuses".
+  // 1. Check whether the object is empty (check for }). (We do not really need to do this unless the key lookup fails!)
+  // 2. Check if we're at the field by looking for the string "statuses" using byte-by-byte comparison.
   // 3. Validate that there is a `:` after it.
   auto tweets_field = top["statuses"];
 
@@ -370,14 +361,14 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    std::string_view text        = tweet["text"];
    ```
 
-   First, `["text"]` skips the `"id"` field because it doesn't match: skips the key, `:` and
+   First, `["text"]` skips the `"id"` field because it does not match: skips the key, `:` and
    value (`1`). We then check whether there are more fields by looking for either `,`
    or `}`.
 
    The second field is matched (`"text"`), so we validate the `:` and move to the actual value.
 
    NOTE: `["text"]` does a *raw match*, comparing the key directly against the raw JSON. This means
-   that keys with escapes in them may not be matched.
+   that keys with escapes in them may not be matched and the letter case must match exactly.
 
    To convert to a string, we check for `"` and use simdjson's fast unescaping algorithm to copy
    `first!` (plus a terminating `\0`) into a buffer managed by the `document`. This buffer stores
@@ -486,7 +477,7 @@ Pros of the On Demand approach:
 * Straightforward, programmer-friendly interface (arrays and objects).
 
 Cons of the On Demand approach:
-* Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX). It is possible for the programmer to handle out-of-order keys when the JSON dialect is underspecified, but it requires additional care. You should be mindful that the though your software might write the keys in a consistent manner, the [JSON specification](https://www.rfc-editor.org/rfc/rfc8259.txt) merely states that "JSON parsing libraries have been observed to differ as to whether or  not they make the ordering of object members visible". The On Demand API will help the programmer handle unexpected JSON dialects by throwing an exception when the unexpected occurs, but the programmer is responsible for handling such cases: e.g., by rejecting the JSON input that does not follow the expected JSON dialect. 
+* Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX). It is possible for the programmer to handle out-of-order keys when the JSON dialect is underspecified, but it requires additional care. You should be mindful that the though your software might write the keys in a consistent manner, the [JSON specification](https://www.rfc-editor.org/rfc/rfc8259.txt) states that "JSON parsing libraries have been observed to differ as to whether or not they make the ordering of object members visible". The On Demand API will help the programmer handle unexpected JSON dialects by throwing an exception when the unexpected occurs, but the programmer is responsible for handling such cases: e.g., by rejecting the JSON input that does not follow the expected JSON dialect. 
 * Less safe than DOM: we only validate the components of the JSON document that are used and it is possible to begin ingesting an invalid document only to find out later that the document is invalid. Are you fine ingesting a large JSON document that starts with well formed JSON but ends with invalid JSON content?
 
 There are currently additional technical limitations which we expect to resolve in future releases of the simdjson library:
@@ -531,10 +522,10 @@ most programmers will want to target `arm64`. The `fallback` is probably only go
 ```
 
 If you are using CMake for your C++ project, then you can pass compilation flags to your compiler during the first configuration
-by using the `CXXFLAGS`  configuration variable:
+by using the `CXXFLAGS` configuration variable:
 ```
 CXXFLAGS=-march=haswell cmake -B build_haswell
 cmake --build build_haswell
 ```
 
-You may also use the  `CMAKE_CXX_FLAGS` variable.
+You may also use the `CMAKE_CXX_FLAGS` variable.
