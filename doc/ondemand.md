@@ -71,8 +71,8 @@ and `"friends_count"` keys and matching values are skipped.
 
 Further, the On Demand API does not parse a value *at all* until you try to convert it (e.g., to `double`,
 `int`, `string`, or `bool`). In our example, when accessing the key-value pair `"retweet_count": 82`, the parser
-may not convert the pair of characters `82` to the binary integer 82. Because the programmer specifies the data type, we avoid branch
-mispredictions related to data type determination and improve the performance.
+may not convert the pair of characters `82` to the binary integer 82. Because the programmer specifies the data
+type, we avoid branch mispredictions related to data type determination and improve the performance.
 
 
 We expect users of an On Demand API to work in terms of a JSON dialect, which is a set of expectations and
@@ -447,11 +447,6 @@ When the user requests strings, we unescape them to a single string buffer much 
 so that users enjoy the same string performance as the core simdjson. We do not write the length to the 
 string buffer, however; that is stored in the `string_view` instance we return to the user.
 
-### Object/Array Iteration
-
-Because the C++ iterator contract requires iterators to be const-assignable and const-constructable,
-object and array iterators are separate classes from the object/array itself, and have an interior
-mutable reference to it.
 
 ### Iteration Safety
 
@@ -468,24 +463,27 @@ in production systems:
     if it was `nullptr` but did not care what the actual value was--it will iterate. The destructor automates
     the iteration.
 
-### Limitations of the On Demand Approach
+### Benefits of the On Demand Approach
 
-We expect that the On Demand approach has many of the performance benefits of the schema-based approach, while providing a flexibility that is similar to that of the DOM-based approach. However, there are some limitations.
+We expect that the On Demand approach has many of the performance benefits of the schema-based approach, while providing a flexibility that is similar to that of the DOM-based approach.
 
-Pros of the On Demand approach:
 * Faster than DOM in some cases. Reduced memory usage.
 * Straightforward, programmer-friendly interface (arrays and objects).
+* Highly expressive, beyond deserialization and pointer queries: many tasks can be accomplished with little code.
 
-Cons of the On Demand approach:
-* Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX). It is possible for the programmer to handle out-of-order keys when the JSON dialect is underspecified, but it requires additional care. You should be mindful that the though your software might write the keys in a consistent manner, the [JSON specification](https://www.rfc-editor.org/rfc/rfc8259.txt) states that "JSON parsing libraries have been observed to differ as to whether or not they make the ordering of object members visible". The On Demand API will help the programmer handle unexpected JSON dialects by throwing an exception when the unexpected occurs, but the programmer is responsible for handling such cases: e.g., by rejecting the JSON input that does not follow the expected JSON dialect. 
-* Less safe than DOM: we only validate the components of the JSON document that are used and it is possible to begin ingesting an invalid document only to find out later that the document is invalid. Are you fine ingesting a large JSON document that starts with well formed JSON but ends with invalid JSON content?
+### Limitations of the On Demand Approach
+
+The On Demand approach has  some limitations:
+
+* Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX).
+* The On Demand approach is less safe than DOM: we only validate the components of the JSON document that are used and it is possible to begin ingesting an invalid document only to find out later that the document is invalid. Are you fine ingesting a large JSON document that starts with well formed JSON but ends with invalid JSON content?
 
 There are currently additional technical limitations which we expect to resolve in future releases of the simdjson library:
 
 * The simdjson library offers runtime dispatching which allows you to compile one binary and have it run at full speed on different processors, taking advantage of the specific features of the processor. The On Demand API does not have runtime dispatch support at this time. To benefit from the On Demand API, you must compile your code for a specific processor. E.g., if your processor supports AVX2 instructions, you should compile your binary executable with AVX2 instruction support (by using your compiler's commands). If you are sufficiently technically proficient, you can implement runtime dispatching within your application, by compiling your On Demand code for different processors.
 * There is an initial phase which scans the entire document quickly, irrespective of the size of the document. We plan to break this phase into distinct steps for large files in a future release as we have done with other components of our API (e.g., `parse_many`).
 * The On Demand API does not support JSON Pointer. This capability is currently limited to our core API.
-* We intend to help users who wish to use the On Demand API but require support for order-insensitive semantics, but in our current implementation support for out-of-order keys (if needed) must be provided by the programmer. Currently, one might proceed in the following manner as a fallback measure if keys can appear in any order:
+* You should be mindful that the though your software might write the keys in a consistent manner, the [JSON specification](https://www.rfc-editor.org/rfc/rfc8259.txt) states that "JSON parsing libraries have been observed to differ as to whether or not they make the ordering of object members visible". The On Demand API will help the programmer handle unexpected JSON dialects by throwing an exception when the unexpected occurs, but the programmer is responsible for handling such cases: e.g., by rejecting the JSON input that does not follow the expected JSON dialect. We intend to help users who wish to use the On Demand API but require support for order-insensitive semantics, but in our current implementation support for out-of-order keys (if needed) must be provided by the programmer. Currently, one might proceed in the following manner as a fallback measure if keys can appear in any order:
 ```C++
     for (ondemand::object my_object : doc["mykey"]) {
       for (auto field : my_object) {
@@ -521,11 +519,10 @@ most programmers will want to target `arm64`. The `fallback` is probably only go
   std::cout << simdjson::builtin_implementation()->name() << std::endl;
 ```
 
-If you are using CMake for your C++ project, then you can pass compilation flags to your compiler during the first configuration
-by using the `CXXFLAGS` configuration variable:
+If you are using CMake for your C++ project, then you can pass compilation flags to your compiler by using
+the `CMAKE_CXX_FLAGS` variable:
+
 ```
-CXXFLAGS=-march=haswell cmake -B build_haswell
+cmake  -DCMAKE_CXX_FLAGS="-march=haswell" -B build_haswell
 cmake --build build_haswell
 ```
-
-You may also use the `CMAKE_CXX_FLAGS` variable.
