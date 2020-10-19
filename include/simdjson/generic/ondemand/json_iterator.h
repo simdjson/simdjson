@@ -20,11 +20,6 @@ public:
   simdjson_really_inline json_iterator() noexcept = default;
   simdjson_really_inline json_iterator(json_iterator &&other) noexcept;
   simdjson_really_inline json_iterator &operator=(json_iterator &&other) noexcept;
-#ifdef SIMDJSON_ONDEMAND_SAFETY_RAILS
-  simdjson_really_inline ~json_iterator() noexcept;
-#else
-  simdjson_really_inline ~json_iterator() noexcept = default;
-#endif
   simdjson_really_inline json_iterator(const json_iterator &other) noexcept = delete;
   simdjson_really_inline json_iterator &operator=(const json_iterator &other) noexcept = delete;
 
@@ -153,6 +148,11 @@ public:
   simdjson_warn_unused simdjson_really_inline error_code skip() noexcept;
 
   /**
+   * Finishes iteration of a child in an object or array.
+   */
+  simdjson_warn_unused simdjson_really_inline error_code finish_child(uint32_t depth) noexcept;
+
+  /**
    * Skips to the end of a JSON object or array.
    *
    * @return true if this was the end of an array, false if it was the end of an object.
@@ -206,15 +206,11 @@ protected:
    * we should store it in document so there's only one of them.
    */
   error_code _error{};
-#ifdef SIMDJSON_ONDEMAND_SAFETY_RAILS
-  uint32_t active_lease_depth{};
-#endif
+  uint32_t container_depth{};
 
   simdjson_really_inline json_iterator(ondemand::parser *parser) noexcept;
   template<int N>
   simdjson_warn_unused simdjson_really_inline bool copy_to_buffer(const uint8_t *json, uint8_t (&buf)[N]) noexcept;
-
-  simdjson_really_inline json_iterator_ref borrow() noexcept;
 
   friend class document;
   friend class object;
@@ -232,17 +228,17 @@ public:
   simdjson_really_inline json_iterator_ref(json_iterator_ref &&other) noexcept;
   simdjson_really_inline json_iterator_ref &operator=(json_iterator_ref &&other) noexcept;
 
-#ifdef SIMDJSON_ONDEMAND_SAFETY_RAILS
-  simdjson_really_inline ~json_iterator_ref() noexcept;
-#else
-  simdjson_really_inline ~json_iterator_ref() noexcept = default;
-#endif // SIMDJSON_ONDEMAND_SAFETY_RAILS
-
   simdjson_really_inline json_iterator_ref(const json_iterator_ref &other) noexcept = delete;
   simdjson_really_inline json_iterator_ref &operator=(const json_iterator_ref &other) noexcept = delete;
 
+  /** Borrow this iterator, incrementing depth */
   simdjson_really_inline json_iterator_ref borrow() noexcept;
-  simdjson_really_inline void release() noexcept;
+  /** Identify this iterator as a container, incrementing container_depth */
+  simdjson_really_inline void started_container() noexcept;
+  /** Denote the container as having finished iterating, decrementing container_depth */
+  simdjson_really_inline void finished_container() noexcept;
+  /** Release this iterator without modifying depth */
+  simdjson_really_inline void abandon() noexcept;
 
   simdjson_really_inline json_iterator *operator->() noexcept;
   simdjson_really_inline json_iterator &operator*() noexcept;
@@ -254,16 +250,18 @@ public:
   simdjson_really_inline void assert_is_active() const noexcept;
   simdjson_really_inline void assert_is_not_active() const noexcept;
 
+  /**
+   * Finishes iteration of a child in an object or array.
+   */
+  simdjson_warn_unused simdjson_really_inline error_code finish_child() noexcept;
+
 private:
   json_iterator *iter{};
-#ifdef SIMDJSON_ONDEMAND_SAFETY_RAILS
-  uint32_t lease_depth{};
-  simdjson_really_inline json_iterator_ref(json_iterator *iter, uint32_t lease_depth) noexcept;
-#else
-  simdjson_really_inline json_iterator_ref(json_iterator *iter) noexcept;
-#endif
+  uint32_t depth{};
+  simdjson_really_inline json_iterator_ref(json_iterator *iter, uint32_t depth) noexcept;
 
   friend class json_iterator;
+  friend class document;
 }; // class json_iterator_ref
 
 } // namespace ondemand

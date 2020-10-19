@@ -7,29 +7,27 @@ simdjson_really_inline document::document(ondemand::json_iterator &&_iter, const
     json{_json}
 {
   logger::log_start_value(iter, "document");
-}
-simdjson_really_inline document::~document() noexcept {
-  if (iter.is_alive()) {
-    logger::log_end_value(iter, "document");
-  }
+  SIMDJSON_ASSUME(json);
 }
 
 simdjson_really_inline void document::assert_at_start() const noexcept {
-  SIMDJSON_ASSUME(json != nullptr);
+  SIMDJSON_ASSUME(json);
 }
 simdjson_really_inline document document::start(json_iterator &&iter) noexcept {
+  SIMDJSON_ASSUME(iter.container_depth == DOCUMENT_DEPTH);
   auto json = iter.advance();
   return document(std::forward<json_iterator>(iter), json);
 }
 
 simdjson_really_inline value document::as_value() noexcept {
   assert_at_start();
-  return { iter.borrow(), json };
+  SIMDJSON_ASSUME(iter.container_depth == DOCUMENT_DEPTH);
+  return { json_iterator_ref(&iter, DOCUMENT_DEPTH + 1), json };
 }
 
 template<typename T>
 simdjson_result<T> document::consume_if_success(simdjson_result<T> &&result) noexcept {
-  if (result.error()) { json = nullptr; }
+  if (!result.error()) { json = nullptr; }
   return std::forward<simdjson_result<T>>(result);
 }
 
@@ -102,7 +100,7 @@ simdjson_really_inline document::operator bool() noexcept(false) { return get_bo
 #endif
 
 simdjson_really_inline simdjson_result<array_iterator<document>> document::begin() & noexcept {
-  return array_iterator<document>::start(*this, json);
+  return consume_if_success( array_iterator<document>::start(*this, json) );
 }
 simdjson_really_inline simdjson_result<array_iterator<document>> document::end() & noexcept {
   return {};
@@ -120,14 +118,25 @@ simdjson_really_inline simdjson_result<value> document::operator[](const char *k
 simdjson_really_inline json_iterator &document::get_iterator() noexcept {
   return iter;
 }
-simdjson_really_inline json_iterator_ref document::borrow_iterator() noexcept {
-  return iter.borrow();
+simdjson_really_inline json_iterator_ref document::borrow_iterator_child() noexcept {
+  SIMDJSON_ASSUME(iter.container_depth == DOCUMENT_DEPTH + 1);
+  return json_iterator_ref(&iter, DOCUMENT_DEPTH);
 }
 simdjson_really_inline bool document::is_iterator_alive() const noexcept {
-  return json;
+  return iter.container_depth != DOCUMENT_DEPTH;
 }
-simdjson_really_inline void document::iteration_finished() noexcept {
-  json = nullptr;
+simdjson_really_inline void document::start_iterator() noexcept {
+  SIMDJSON_ASSUME(iter.container_depth == DOCUMENT_DEPTH + 1);
+}
+simdjson_really_inline void document::finish_iterator() noexcept {
+  SIMDJSON_ASSUME(iter.container_depth == DOCUMENT_DEPTH);
+}
+simdjson_really_inline void document::abandon_iterator() noexcept {
+  iter.container_depth = DOCUMENT_DEPTH;
+}
+simdjson_warn_unused simdjson_really_inline error_code document::finish_iterator_child() noexcept {
+  SIMDJSON_ASSUME(iter.container_depth > DOCUMENT_DEPTH);
+  return iter.finish_child(DOCUMENT_DEPTH + 1);
 }
 
 } // namespace ondemand

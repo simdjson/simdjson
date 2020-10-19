@@ -45,22 +45,20 @@ simdjson_really_inline array::array(json_iterator_ref &&_iter) noexcept
 {
 }
 
-simdjson_really_inline array::~array() noexcept {
-  if (iter.is_alive()) {
-    logger::log_event(*iter, "unfinished", "array");
-    simdjson_unused auto _err = iter->skip_container();
-    iter.release();
-  }
-}
-
 simdjson_really_inline simdjson_result<array> array::start(json_iterator_ref &&iter) noexcept {
   bool has_value;
   SIMDJSON_TRY( iter->start_array().get(has_value) );
-  if (!has_value) { iter.release(); }
+  if (has_value) { iter.started_container(); } else { iter.abandon(); }
+  return array(std::forward<json_iterator_ref>(iter));
+}
+simdjson_really_inline simdjson_result<array> array::start(const uint8_t *json, json_iterator_ref &&iter) noexcept {
+  bool has_value;
+  SIMDJSON_TRY( iter->start_array(json).get(has_value) );
+  if (has_value) { iter.started_container(); } else { iter.abandon(); }
   return array(std::forward<json_iterator_ref>(iter));
 }
 simdjson_really_inline array array::started(json_iterator_ref &&iter) noexcept {
-  if (!iter->started_array()) { iter.release(); }
+  if (iter->started_array()) { iter.started_container(); } else { iter.abandon(); }
   return array(std::forward<json_iterator_ref>(iter));
 }
 
@@ -70,14 +68,23 @@ simdjson_really_inline array array::started(json_iterator_ref &&iter) noexcept {
 simdjson_really_inline json_iterator &array::get_iterator() noexcept {
   return *iter;
 }
-simdjson_really_inline json_iterator_ref array::borrow_iterator() noexcept {
+simdjson_really_inline json_iterator_ref array::borrow_iterator_child() noexcept {
   return iter.borrow();
 }
 simdjson_really_inline bool array::is_iterator_alive() const noexcept {
   return iter.is_alive();
 }
-simdjson_really_inline void array::iteration_finished() noexcept {
-  iter.release();
+simdjson_really_inline void array::start_iterator() noexcept {
+  iter.started_container();
+}
+simdjson_really_inline void array::finish_iterator() noexcept {
+  iter.finished_container();
+}
+simdjson_really_inline void array::abandon_iterator() noexcept {
+  iter.abandon();
+}
+simdjson_warn_unused simdjson_really_inline error_code array::finish_iterator_child() noexcept {
+  return iter.finish_child();
 }
 
 simdjson_really_inline array_iterator<array> array::begin() & noexcept {

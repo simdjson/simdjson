@@ -7,7 +7,19 @@ simdjson_really_inline value::value(json_iterator_ref && _iter, const uint8_t *_
     json{_json}
 {
   iter.assert_is_active();
-  SIMDJSON_ASSUME(json != nullptr);
+  SIMDJSON_ASSUME(json);
+}
+
+simdjson_really_inline value::value(value &&other) noexcept
+  : iter{std::move(other.iter)},
+    json{other.json} {
+  other.json = nullptr;
+}
+simdjson_really_inline value &value::operator=(value && other) noexcept {
+  iter = std::move(other.iter);
+  json = other.json;
+  other.json = nullptr;
+  return *this;
 }
 
 simdjson_really_inline value::~value() noexcept {
@@ -15,14 +27,20 @@ simdjson_really_inline value::~value() noexcept {
   // depth so that the array/object iteration routines will work correctly.
   // PERF TODO this better be elided entirely when people actually use the value. Don't care if it
   // gets bumped on the error path unless that's costing us something important.
-  if (iter.is_alive()) {
-    if (*json == '[' || *json == '{') {
-      logger::log_start_value(*iter, "unused");
-      simdjson_unused auto _err = iter->skip_container();
-    } else {
-      logger::log_value(*iter, "unused");
+  if (json) {
+    switch (*json) {
+      case '[': {
+        logger::log_start_value(*iter, "unused array");
+        if (iter->started_array()) { iter.started_container(); }
+        break;
+      }
+      case '{': {
+        logger::log_start_value(*iter, "unused object");
+        if (iter->started_object()) { iter.started_container(); }
+        break;
+      }
+      default: logger::log_value(*iter, "unused");
     }
-    iter.release();
   }
 }
 
@@ -31,26 +49,37 @@ simdjson_really_inline value value::start(json_iterator_ref &&iter) noexcept {
 }
 
 simdjson_really_inline const uint8_t *value::consume() noexcept {
-  iter.release();
-  return json;
+  auto old_json = json;
+  json = nullptr;
+  return old_json;
+}
+simdjson_really_inline json_iterator_ref value::consume_container() noexcept {
+  consume();
+  return std::move(iter);
 }
 template<typename T>
 simdjson_really_inline simdjson_result<T> value::consume_if_success(simdjson_result<T> &&result) noexcept {
   if (!result.error()) { consume(); }
   return std::forward<simdjson_result<T>>(result);
 }
-
-simdjson_really_inline simdjson_result<array> value::get_array() noexcept {
-  bool has_value;
-  SIMDJSON_TRY( iter->start_array(json).get(has_value) );
-  if (!has_value) { iter.release(); }
-  return array(std::move(iter));
+simdjson_really_inline error_code value::consume_if_success(error_code error) noexcept {
+  if (!error) { consume(); }
+  return error;
 }
-simdjson_really_inline simdjson_result<object> value::get_object() noexcept {
-  bool has_value;
-  SIMDJSON_TRY( iter->start_object(json).get(has_value) );
-  if (!has_value) { iter.release(); }
-  return object(std::move(iter));
+
+simdjson_really_inline simdjson_result<array> value::get_array() & noexcept {
+  if (*json != '[') { return INCORRECT_TYPE; }
+  return array::started(consume_container());
+}
+simdjson_really_inline simdjson_result<array> value::get_array() && noexcept {
+  return array::start(json, consume_container());
+}
+simdjson_really_inline simdjson_result<object> value::get_object() & noexcept {
+  if (*json != '{') { return INCORRECT_TYPE; }
+  return object::started(consume_container());
+}
+simdjson_really_inline simdjson_result<object> value::get_object() && noexcept {
+  return object::start(json, consume_container());
 }
 simdjson_really_inline simdjson_result<raw_json_string> value::get_raw_json_string() && noexcept {
   return iter->consume_raw_json_string();
@@ -126,10 +155,16 @@ template<typename T> simdjson_really_inline error_code value::get(T &out) && noe
 }
 
 #if SIMDJSON_EXCEPTIONS
-simdjson_really_inline value::operator array() noexcept(false) {
+simdjson_really_inline value::operator array() && noexcept(false) {
   return std::forward<value>(*this).get_array();
 }
-simdjson_really_inline value::operator object() noexcept(false) {
+simdjson_really_inline value::operator array() & noexcept(false) {
+  return std::forward<value>(*this).get_array();
+}
+simdjson_really_inline value::operator object() && noexcept(false) {
+  return std::forward<value>(*this).get_object();
+}
+simdjson_really_inline value::operator object() & noexcept(false) {
   return std::forward<value>(*this).get_object();
 }
 simdjson_really_inline value::operator uint64_t() && noexcept(false) {
@@ -171,7 +206,7 @@ simdjson_really_inline value::operator bool() & noexcept(false) {
 #endif
 
 simdjson_really_inline simdjson_result<array_iterator<value>> value::begin() & noexcept {
-  return array_iterator<value>::start(*this, json);
+  return consume_if_success( array_iterator<value>::start(*this, json) );
 }
 simdjson_really_inline simdjson_result<array_iterator<value>> value::end() & noexcept {
   return {};
@@ -192,14 +227,23 @@ simdjson_really_inline void value::log_error(const char *message) const noexcept
 simdjson_really_inline json_iterator &value::get_iterator() noexcept {
   return *iter;
 }
-simdjson_really_inline json_iterator_ref value::borrow_iterator() noexcept {
+simdjson_really_inline json_iterator_ref value::borrow_iterator_child() noexcept {
   return iter.borrow();
 }
 simdjson_really_inline bool value::is_iterator_alive() const noexcept {
   return iter.is_alive();
 }
-simdjson_really_inline void value::iteration_finished() noexcept {
-  iter.release();
+simdjson_really_inline void value::start_iterator() noexcept {
+  iter.started_container();
+}
+simdjson_really_inline void value::finish_iterator() noexcept {
+  iter.finished_container();
+}
+simdjson_really_inline void value::abandon_iterator() noexcept {
+  iter.abandon();
+}
+simdjson_warn_unused simdjson_really_inline error_code value::finish_iterator_child() noexcept {
+  return iter.finish_child();
 }
 
 } // namespace ondemand
@@ -232,11 +276,19 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_
   return {};
 }
 
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_array() noexcept {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_array() && noexcept {
   if (error()) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).get_array();
 }
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_object() noexcept {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_array() & noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).get_array();
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_object() && noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).get_object();
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_object() & noexcept {
   if (error()) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).get_object();
 }
@@ -327,11 +379,19 @@ template<> simdjson_really_inline error_code simdjson_result<SIMDJSON_IMPLEMENTA
 }
 
 #if SIMDJSON_EXCEPTIONS
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() noexcept(false) {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() && noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first);
 }
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator SIMDJSON_IMPLEMENTATION::ondemand::object() noexcept(false) {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first);
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator SIMDJSON_IMPLEMENTATION::ondemand::object() && noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first);
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator SIMDJSON_IMPLEMENTATION::ondemand::object() & noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first);
 }

@@ -50,14 +50,6 @@ simdjson_really_inline object::object(json_iterator_ref &&_iter) noexcept
 }
 
 
-simdjson_really_inline object::~object() noexcept {
-  if (iter.is_alive()) {
-    logger::log_event(*iter, "unfinished", "object");
-    simdjson_unused auto _err = iter->skip_container();
-    iter.release();
-  }
-}
-
 simdjson_really_inline error_code object::find_field(const std::string_view key) noexcept {
   if (!iter.is_alive()) { return NO_SUCH_FIELD; }
 
@@ -68,13 +60,14 @@ simdjson_really_inline error_code object::find_field(const std::string_view key)
     at_start = false;
     has_value = true;
   } else {
-    if ((error = iter->has_next_field().get(has_value) )) { iter.release(); return error; }
+    if ((error = iter.finish_child() )) { iter.abandon(); return error; }
+    if ((error = iter->has_next_field().get(has_value) )) { iter.abandon(); return error; }
   }
   while (has_value) {
     // Get the key
     raw_json_string actual_key;
-    if ((error = iter->field_key().get(actual_key) )) { iter.release(); return error; };
-    if ((error = iter->field_value() )) { iter.release(); return error; }
+    if ((error = iter->field_key().get(actual_key) )) { iter.abandon(); return error; };
+    if ((error = iter->field_value() )) { iter.abandon(); return error; }
 
     // Check if it matches
     if (actual_key == key) {
@@ -83,11 +76,11 @@ simdjson_really_inline error_code object::find_field(const std::string_view key)
     }
     logger::log_event(*iter, "no match", key, -2);
     SIMDJSON_TRY( iter->skip() ); // Skip the value entirely
-    if ((error = iter->has_next_field().get(has_value) )) { iter.release(); return error; }
+    if ((error = iter->has_next_field().get(has_value) )) { iter.abandon(); return error; }
   }
 
   // If the loop ended, we're out of fields to look at.
-  iter.release();
+  iter.finished_container();
   return NO_SUCH_FIELD;
 }
 
@@ -98,17 +91,23 @@ simdjson_really_inline simdjson_result<value> object::operator[](const std::stri
 
 simdjson_really_inline simdjson_result<value> object::operator[](const std::string_view key) && noexcept {
   SIMDJSON_TRY( find_field(key) );
-  return value::start(std::forward<json_iterator_ref>(iter));
+  return value::start(iter.borrow());
 }
 
 simdjson_really_inline simdjson_result<object> object::start(json_iterator_ref &&iter) noexcept {
   bool has_value;
   SIMDJSON_TRY( iter->start_object().get(has_value) );
-  if (!has_value) { iter.release(); }
+  if (has_value) { iter.started_container(); } else { iter.abandon(); }
+  return object(std::forward<json_iterator_ref>(iter));
+}
+simdjson_really_inline simdjson_result<object> object::start(const uint8_t *json, json_iterator_ref &&iter) noexcept {
+  bool has_value;
+  SIMDJSON_TRY( iter->start_object(json).get(has_value) );
+  if (has_value) { iter.started_container(); } else { iter.abandon(); }
   return object(std::forward<json_iterator_ref>(iter));
 }
 simdjson_really_inline object object::started(json_iterator_ref &&iter) noexcept {
-  if (!iter->started_object()) { iter.release(); }
+  if (iter->started_object()) { iter.started_container(); } else { iter.abandon(); }
   return object(std::forward<json_iterator_ref>(iter));
 }
 simdjson_really_inline object_iterator object::begin() noexcept {

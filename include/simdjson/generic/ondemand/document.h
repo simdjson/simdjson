@@ -31,10 +31,6 @@ public:
   simdjson_really_inline document() noexcept = default;
   simdjson_really_inline document(const document &other) = delete;
   simdjson_really_inline document &operator=(const document &other) = delete;
-  /**
-   * Finishes logging (if logging is enabled).
-   */
-  simdjson_really_inline ~document() noexcept;
 
   /**
    * Cast this JSON value to an array.
@@ -251,15 +247,19 @@ protected:
   // For array_iterator
   //
   simdjson_really_inline json_iterator &get_iterator() noexcept;
-  simdjson_really_inline json_iterator_ref borrow_iterator() noexcept;
+  simdjson_really_inline json_iterator_ref borrow_iterator_child() noexcept;
   simdjson_really_inline bool is_iterator_alive() const noexcept;
-  simdjson_really_inline void iteration_finished() noexcept;
+  simdjson_really_inline void start_iterator() noexcept;
+  simdjson_really_inline void finish_iterator() noexcept;
+  simdjson_really_inline void abandon_iterator() noexcept;
+  simdjson_warn_unused simdjson_really_inline error_code finish_iterator_child() noexcept;
 
   //
   // Fields
   //
   json_iterator iter{}; ///< Current position in the document
   const uint8_t *json{}; ///< JSON for the value in the document (nullptr if value has been consumed)
+  static constexpr uint32_t DOCUMENT_DEPTH = 0; ///< document depth is always 0
 
   friend struct simdjson_result<document>;
   friend class array_iterator<document>;

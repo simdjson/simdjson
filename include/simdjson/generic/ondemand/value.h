@@ -22,8 +22,8 @@ public:
    */
   simdjson_really_inline value() noexcept = default;
 
-  simdjson_really_inline value(value &&other) noexcept = default;
-  simdjson_really_inline value &operator=(value && other) noexcept = default;
+  simdjson_really_inline value(value &&other) noexcept;
+  simdjson_really_inline value &operator=(value && other) noexcept;
   simdjson_really_inline value(const value &) noexcept = delete;
   simdjson_really_inline value &operator=(const value &) noexcept = delete;
 
@@ -63,7 +63,9 @@ public:
    * @returns An object that can be used to iterate the array.
    * @returns INCORRECT_TYPE If the JSON value is not an array.
    */
-  simdjson_really_inline simdjson_result<array> get_array() noexcept;
+  simdjson_really_inline simdjson_result<array> get_array() && noexcept;
+  /** @overload simdjson_really_inline operator get_array() && noexcept(false); */
+  simdjson_really_inline simdjson_result<array> get_array() & noexcept;
 
   /**
    * Cast this JSON value to an object.
@@ -71,7 +73,9 @@ public:
    * @returns An object that can be used to look up or iterate fields.
    * @returns INCORRECT_TYPE If the JSON value is not an object.
    */
-  simdjson_really_inline simdjson_result<object> get_object() noexcept;
+  simdjson_really_inline simdjson_result<object> get_object() && noexcept;
+  /** @overload simdjson_really_inline operator object() && noexcept(false); */
+  simdjson_really_inline simdjson_result<object> get_object() & noexcept;
 
   // PERF NOTE: get_XXX() methods generally have both && and & variants because performance is demonstrably better on clang.
   // Specifically, in typical cases where you use a temporary value (like doc["x"].get_double()) the && version is faster
@@ -160,14 +164,18 @@ public:
    * @returns An object that can be used to iterate the array.
    * @exception simdjson_error(INCORRECT_TYPE) If the JSON value is not an array.
    */
-  simdjson_really_inline operator array() noexcept(false);
+  simdjson_really_inline operator array() && noexcept(false);
+  /** @overload simdjson_really_inline operator array() && noexcept(false); */
+  simdjson_really_inline operator array() & noexcept(false);
   /**
    * Cast this JSON value to an object.
    *
    * @returns An object that can be used to look up or iterate fields.
    * @exception simdjson_error(INCORRECT_TYPE) If the JSON value is not an object.
    */
-  simdjson_really_inline operator object() noexcept(false);
+  simdjson_really_inline operator object() && noexcept(false);
+  /** @overload simdjson_really_inline operator object() && noexcept(false); */
+  simdjson_really_inline operator object() & noexcept(false);
   /**
    * Cast this JSON value to an unsigned integer.
    *
@@ -275,12 +283,18 @@ protected:
   // For array_iterator
   //
   simdjson_really_inline json_iterator &get_iterator() noexcept;
-  simdjson_really_inline json_iterator_ref borrow_iterator() noexcept;
+  simdjson_really_inline json_iterator_ref borrow_iterator_child() noexcept;
   simdjson_really_inline bool is_iterator_alive() const noexcept;
-  simdjson_really_inline void iteration_finished() noexcept;
+  simdjson_really_inline void start_iterator() noexcept;
+  simdjson_really_inline void finish_iterator() noexcept;
+  simdjson_really_inline void abandon_iterator() noexcept;
+  simdjson_warn_unused simdjson_really_inline error_code finish_iterator_child() noexcept;
+
   simdjson_really_inline const uint8_t *consume() noexcept;
+  simdjson_really_inline json_iterator_ref consume_container() noexcept;
   template<typename T>
   simdjson_really_inline simdjson_result<T> consume_if_success(simdjson_result<T> &&result) noexcept;
+  simdjson_warn_unused simdjson_really_inline error_code consume_if_success(error_code error) noexcept;
 
   json_iterator_ref iter{};
   const uint8_t *json{}; // The JSON text of the value
@@ -310,9 +324,11 @@ public:
   simdjson_really_inline simdjson_result(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> &&a) noexcept = default;
   simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> get_array() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> get_array() && noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> get_array() & noexcept;
 
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> get_object() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> get_object() && noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> get_object() & noexcept;
 
   simdjson_really_inline simdjson_result<uint64_t> get_uint64() && noexcept;
   simdjson_really_inline simdjson_result<uint64_t> get_uint64() & noexcept;
@@ -342,8 +358,10 @@ public:
   template<typename T> simdjson_really_inline error_code get(T &out) && noexcept;
 
 #if SIMDJSON_EXCEPTIONS
-  simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::array() noexcept(false);
-  simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::object() noexcept(false);
+  simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::array() && noexcept(false);
+  simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false);
+  simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::object() && noexcept(false);
+  simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::object() & noexcept(false);
   simdjson_really_inline operator uint64_t() && noexcept(false);
   simdjson_really_inline operator uint64_t() & noexcept(false);
   simdjson_really_inline operator int64_t() && noexcept(false);

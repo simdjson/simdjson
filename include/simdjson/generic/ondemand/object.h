@@ -21,8 +21,6 @@ public:
   object(const object &) = delete;
   object &operator=(const object &) = delete;
 
-  simdjson_really_inline ~object() noexcept;
-
   simdjson_really_inline object_iterator begin() noexcept;
   simdjson_really_inline object_iterator end() noexcept;
   simdjson_really_inline simdjson_result<value> operator[](const std::string_view key) & noexcept;
@@ -36,6 +34,7 @@ protected:
    * @param error If this is not SUCCESS, creates an error chained object.
    */
   static simdjson_really_inline simdjson_result<object> start(json_iterator_ref &&iter) noexcept;
+  static simdjson_really_inline simdjson_result<object> start(const uint8_t *json, json_iterator_ref &&iter) noexcept;
   static simdjson_really_inline object started(json_iterator_ref &&iter) noexcept;
 
   /**

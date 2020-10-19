@@ -9,14 +9,14 @@ template<typename T>
 simdjson_really_inline simdjson_result<array_iterator<T>> array_iterator<T>::start(T &iter, const uint8_t *json) noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.get_iterator().start_array(json).get(has_value) );
-  if (!has_value) { iter.iteration_finished(); }
+  if (has_value) { iter.start_iterator(); } else { iter.abandon_iterator(); }
   return array_iterator<T>(iter);
 }
 template<typename T>
 simdjson_really_inline simdjson_result<value> array_iterator<T>::operator*() noexcept {
   error_code error = iter->get_iterator().error();
-  if (error) { iter->iteration_finished(); return error; }
-  return value::start(iter->borrow_iterator());
+  if (error) { iter->abandon_iterator(); return error; }
+  return value::start(iter->borrow_iterator_child());
 }
 template<typename T>
 simdjson_really_inline bool array_iterator<T>::operator==(const array_iterator<T> &other) const noexcept {
@@ -31,9 +31,14 @@ simdjson_really_inline array_iterator<T> &array_iterator<T>::operator++() noexce
   // TODO this is a safety rail ... users should exit loops as soon as they receive an error.
   // Nonetheless, let's see if performance is OK with this if statement--the compiler may give it to us for free.
   if (!iter->is_iterator_alive()) { return *this; } // Iterator will be released if there is an error
+
+  auto error = iter->finish_iterator_child();
+  if (error) { return *this; }
+
   bool has_value;
-  error_code error = iter->get_iterator().has_next_element().get(has_value); // If there's an error, has_next stays true.
-  if (!(error || has_value)) { iter->iteration_finished(); }
+  error = iter->get_iterator().has_next_element().get(has_value);
+  if (error) { return *this; }
+  if (!has_value) { iter->finish_iterator(); }
   return *this;
 }
 
