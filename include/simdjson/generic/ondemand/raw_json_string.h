@@ -20,7 +20,7 @@ class parser;
  * 
  * They originate typically from field instance which in turn represent key-value pairs from
  * object instances. From a field instance, you get the raw_json_string instance by calling key().
- * You can, if you want a more usable string_view instance, call the key_as_string() method
+ * You can, if you want a more usable string_view instance, call the unescaped_key() method
  * on the field instance.
  */
 class raw_json_string {

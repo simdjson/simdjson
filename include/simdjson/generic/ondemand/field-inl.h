@@ -21,7 +21,7 @@ simdjson_really_inline simdjson_result<field> field::start(json_iterator_ref &&i
     return field(key, value::start(std::forward<json_iterator_ref>(iter)));
 }
 
-simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> field::key_as_string() noexcept {
+simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> field::unescaped_key() noexcept {
   SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
   simdjson_result<std::string_view> answer = first.unescape(second.get_iterator());
   first.consume();
@@ -66,9 +66,9 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_js
   if (error()) { return error(); }
   return first.key();
 }
-simdjson_really_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::key_as_string() noexcept {
+simdjson_really_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::unescaped_key() noexcept {
   if (error()) { return error(); }
-  return first.key_as_string();
+  return first.unescaped_key();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::value() noexcept {
   if (error()) { return error(); }

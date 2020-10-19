@@ -27,13 +27,13 @@ public:
 
   /**
    * Get the key as a string_view (for higher speed, consider raw_key).
-   * We deliberately use a more cumbersome name (key_as_string) to force users
+   * We deliberately use a more cumbersome name (unescaped_key) to force users
    * to think twice about using it.
    * 
-   * This consumes the key: once you have called key_as_string(), you cannot
+   * This consumes the key: once you have called unescaped_key(), you cannot
    * call it again nor can you call key().
    */
-  simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> key_as_string() noexcept;
+  simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> unescaped_key() noexcept;
   /**
    * Get the key as a raw_json_string: this is fast and allows straight comparisons.
    * We want this to be the default for most users.
@@ -72,7 +72,7 @@ public:
   simdjson_really_inline simdjson_result(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field> &&a) noexcept = default;
   simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 
-  simdjson_really_inline simdjson_result<std::string_view> key_as_string() noexcept;
+  simdjson_really_inline simdjson_result<std::string_view> unescaped_key() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> key() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> value() noexcept;
 };

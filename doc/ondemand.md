@@ -470,17 +470,17 @@ is accessible by the `value()` method whereas the key is accessible by the `key(
 The keys are treated differently than values are made available as as special type `raw_json_string` 
 which is a lightweight type that is meant to be used on a temporary basis, amost solely for 
 direct raw ASCII comparisons (`field.key() == "mykey"`). If you occasionally need to access and store the
-unescaped key values, you may use the `key_as_string()` method. Once you have called `key_as_string()` method, 
-neither the `key()` nor the `key_as_string()` methods should be called: the current field instance
+unescaped key values, you may use the `unescaped_key()` method. Once you have called `unescaped_key()` method, 
+neither the `key()` nor the `unescaped_key()` methods should be called: the current field instance
 has no longer a key (that is by design). Like other strings, the resulting `std::string_view` generated
-from the `key_as_string()` method has a lifecycle tied to the `parser` instance: once the parser
+from the `unescaped_key()` method has a lifecycle tied to the `parser` instance: once the parser
 is destroyed or reused with another document, the `std::string_view` instance becomes invalid.
 
 
 ```C++
 auto doc = parser.iterate(json);
 for(auto field : doc.get_object())  {
-      std::string_view keyv = field.key_as_string();
+      std::string_view keyv = field.unescaped_key();
 }
 ```
 

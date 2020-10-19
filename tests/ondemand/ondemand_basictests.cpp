@@ -71,7 +71,7 @@ void compilation_test_3() {
   for (auto tweet_value : tweets) {
     auto tweet = tweet_value.get_object();
     for (auto field : tweet) {
-      std::string_view key = field.key_as_string().value();
+      std::string_view key = field.unescaped_key().value();
       std::cout << "key = " << key << std::endl;
       std::string_view val = std::string_view(field.value());
       std::cout << "value (assuming it is a string) = " << val << std::endl;
@@ -99,7 +99,7 @@ namespace key_string_tests {
     const padded_string json = R"({ "1": "1", "2": "2", "3": "3", "abc": "abc", "\u0075": "\u0075" })"_padded;
     auto doc = parser.iterate(json);
     for(auto field : doc.get_object())  {
-      std::string_view keyv = field.key_as_string();
+      std::string_view keyv = field.unescaped_key();
       std::string_view valuev = field.value();
       if(keyv != valuev) { return false; }
     }
@@ -946,7 +946,7 @@ namespace twitter_tests {
               /**
                * We want to know the key that describes the size.
                */
-              std::string_view raw_size_key_v = size.key_as_string().value();
+              std::string_view raw_size_key_v = size.unescaped_key().value();
               std::cout << "Type of image size = " << raw_size_key_v << std::endl;
               ondemand::object size_value = size.value();
               int64_t width = size_value["w"];
