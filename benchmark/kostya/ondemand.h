@@ -12,7 +12,6 @@ using namespace simdjson::builtin;
 class OnDemand {
 public:
   simdjson_really_inline bool Run(const padded_string &json);
-
   simdjson_really_inline const std::vector<my_point> &Result() { return container; }
   simdjson_really_inline size_t ItemCount() { return container.size(); }
 
@@ -43,7 +42,6 @@ namespace sum {
 class OnDemand {
 public:
   simdjson_really_inline bool Run(const padded_string &json);
-
   simdjson_really_inline my_point &Result() { return sum; }
   simdjson_really_inline size_t ItemCount() { return count; }
 
