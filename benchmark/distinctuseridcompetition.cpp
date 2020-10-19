@@ -38,7 +38,7 @@ void print_vec(const std::vector<int64_t> &v) {
 
 // clang-format off
 
-// simdjson_recurse below come be implemented like so but it is slow:
+// simdjson_recurse below can be implemented like so but it is slow:
 /*void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::element element) {
   error_code error;
   if (element.is_array()) {
