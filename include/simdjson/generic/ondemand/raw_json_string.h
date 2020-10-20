@@ -8,10 +8,20 @@ class object;
 class parser;
 
 /**
- * A string escaped per JSON rules, terminated with quote (")
+ * A string escaped per JSON rules, terminated with quote ("). They are used to represent
+ * unescaped keys inside JSON documents.
  *
  * (In other words, a pointer to the beginning of a string, just after the start quote, inside a
  * JSON file.)
+ * 
+ * This class is deliberately simplistic and has little functionality. You can
+ * compare two raw_json_string instances, or compare a raw_json_string with a string_view, but
+ * that is pretty much all you can do.
+ * 
+ * They originate typically from field instance which in turn represent key-value pairs from
+ * object instances. From a field instance, you get the raw_json_string instance by calling key().
+ * You can, if you want a more usable string_view instance, call the unescaped_key() method
+ * on the field instance.
  */
 class raw_json_string {
 public:
@@ -35,8 +45,24 @@ public:
   simdjson_really_inline raw_json_string(const uint8_t * _buf) noexcept;
   /**
    * Get the raw pointer to the beginning of the string in the JSON (just after the ").
+   * 
+   * It is possible for this function to return a null pointer if the instance
+   * has outlived its existence.
    */
   simdjson_really_inline const char * raw() const noexcept;
+
+private:
+  /**
+   * This will set the inner pointer to zero, effectively making
+   * this instance unusable.
+   */
+  simdjson_really_inline void consume() noexcept { buf = nullptr; }
+
+  /**
+   * Checks whether the inner pointer is non-null and thus usable.
+   */
+  simdjson_really_inline simdjson_warn_unused bool alive() const noexcept { return buf != nullptr; }
+
   /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
    * 
@@ -62,9 +88,10 @@ public:
    */
   simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(json_iterator &iter) const noexcept;
 
-private:
   const uint8_t * buf{};
   friend class object;
+  friend class field;
+  friend struct simdjson_result<raw_json_string>;
 };
 
 simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view b) noexcept;

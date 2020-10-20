@@ -8,9 +8,8 @@ simdjson_warn_unused simdjson_really_inline error_code parser::allocate(size_t n
   // string_capacity copied from document::allocate
   _capacity = 0;
   _max_depth = 0;
-  // The most string buffer we could possibly need is capacity-2 (a string the whole document long).
-  // Allocate up to capacity so we don't have to check for capacity == 0 or 1.
-  string_buf.reset(new (std::nothrow) uint8_t[new_capacity]);
+  size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * new_capacity / 3 + SIMDJSON_PADDING, 64);
+  string_buf.reset(new (std::nothrow) uint8_t[string_capacity]);
   SIMDJSON_TRY( dom_parser.set_capacity(new_capacity) );
   SIMDJSON_TRY( dom_parser.set_max_depth(DEFAULT_MAX_DEPTH) );
   _capacity = new_capacity;
