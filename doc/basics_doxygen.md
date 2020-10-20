@@ -110,7 +110,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 * **Extracting Values (with exceptions):** You can cast a JSON element to a native type: `double(element)` or
   `double x = json_element`. This works for double, uint64_t, int64_t, bool,
   dom::object and dom::array. An exception is thrown if the cast is not possible.
-* **Extracting Values (without expceptions):** You can use a variant usage of `get()` with error codes to avoid exceptions. You first declare the variable of the appropriate type (`double`, `uint64_t`, `int64_t`, `bool`,
+* **Extracting Values (without exceptions):** You can use a variant usage of `get()` with error codes to avoid exceptions. You first declare the variable of the appropriate type (`double`, `uint64_t`, `int64_t`, `bool`,
   `dom::object` and `dom::array`) and pass it by reference to `get()` which gives you back an error code: e.g.,
   ```
   simdjson::error_code error;
@@ -133,11 +133,11 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 * **Array and Object size** Given an array or an object, you can get its size (number of elements or keys)
   with the `size()` method.
 * **Checking an Element Type:** You can check an element's type with `element.type()`. It
-  returns an `element_type`.
+  returns an `element_type` with values such as `simdjson::dom::element_type::ARRAY`, `simdjson::dom::element_type::OBJECT`, `simdjson::dom::element_type::INT64`,  `simdjson::dom::element_type::UINT64`,`simdjson::dom::element_type::DOUBLE`, `simdjson::dom::element_type::BOOL` or, `simdjson::dom::element_type::NULL_VALUE`.
 * **Output to Streams and Strings:** Given a document or an element (or node) out of a JSON document, you can output a minified string version using the C++ stream idiom (`out << element`). You can also request the construction of a minified string version (`simdjson::minify(element)`).
 
 
-Here are some examples of all of the above:
+The following code illustrates all of the above:
 
 ```
 auto cars_json = R"( [
