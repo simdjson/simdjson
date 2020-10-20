@@ -209,14 +209,24 @@ jobs:
 
   # make (test and checkperf)
   arch-haswell-gcc10:
-    description: Build, run tests and check performance on GCC 7 with -march=haswell
+    description: Build, run tests and check performance on GCC 10 with -march=haswell
     executor: gcc10
     environment: { CXXFLAGS: -march=haswell }
     steps: [ cmake_test ]
   arch-nehalem-gcc10:
-    description: Build, run tests and check performance on GCC 7 with -march=nehalem
+    description: Build, run tests and check performance on GCC 10 with -march=nehalem
     executor: gcc10
     environment: { CXXFLAGS: -march=nehalem }
+    steps: [ cmake_test ]
+  sanitize-haswell-gcc10:
+    description: Build and run tests on GCC 10 and AVX 2 with a cmake sanitize build
+    executor: gcc10
+    environment: {  CXXFLAGS: -march=haswell, CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, BUILD_FLAGS: "", CTEST_FLAGS: --output-on-failure -E checkperf }
+    steps: [ cmake_test ]
+  sanitize-haswell-clang10:
+    description: Build and run tests on clang 10 and AVX 2 with a cmake sanitize build
+    executor: clang10
+    environment: { CXXFLAGS: -march=haswell, CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -E checkperf }
     steps: [ cmake_test ]
 
 workflows:
@@ -247,6 +257,11 @@ workflows:
       # quicker make single-implementation tests
       - arch-haswell-gcc10
       - arch-nehalem-gcc10
+
+
+      # sanitized single-implementation tests
+      - sanitize-haswell-gcc10
+      - sanitize-haswell-clang10
 
       # testing "just the library"
       - justlib-gcc10

@@ -73,6 +73,10 @@ simdjson_really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   return offset > 0;
 }
 
+/**
+ * Unescape a string from src to dst, stopping at a final unescaped quote. E.g., if src points at 'joe"', then
+ * dst needs to have four free bytes.
+ */
 simdjson_warn_unused simdjson_really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst) {
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
