@@ -50,7 +50,7 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
       // we want to go and find the user within.
       auto retweet = tweet["retweeted_status"];
       if(!retweet.error()) {
-          ondemand::object retweet_content = retweet.value();
+          ondemand::object retweet_content = retweet;
           ondemand::object reuser = retweet_content["user"];
           int64_t rid = reuser["id"]; 
           ids.push_back(rid);
