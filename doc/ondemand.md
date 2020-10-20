@@ -447,6 +447,44 @@ When the user requests strings, we unescape them to a single string buffer much 
 so that users enjoy the same string performance as the core simdjson. We do not write the length to the 
 string buffer, however; that is stored in the `string_view` instance we return to the user.
 
+```C++
+  ondemand::parser parser;
+  auto doc = parser.iterate(json);
+  std::set<std::string_view> default_users;
+  ondemand::array tweets = doc["statuses"].get_array();
+  for (auto tweet_value : tweets) {
+    auto tweet = tweet_value.get_object();
+    ondemand::object user = tweet["user"].get_object();
+    std::string_view screen_name = user["screen_name"].get_string();
+    bool default_profile = user["default_profile"].get_bool();
+    if (default_profile) { default_users.insert(screen_name); }
+  }
+```
+
+By using `string_view` instances, we avoid the high cost of allocating many small strings (as would be the
+case with `std::string`) but be mindful that the life cycle of these `string_view` instances is tied to the
+parser instance. If the parser instance is destroyed or reused for a new JSON document, these strings are no longer valid.
+
+We iterate through object instances using `field` instances which represent key-value pairs. The value
+is accessible by the `value()` method whereas the key is accessible by the `key()` method. 
+The keys are treated differently than values are made available as as special type `raw_json_string` 
+which is a lightweight type that is meant to be used on a temporary basis, amost solely for 
+direct raw ASCII comparisons (`field.key() == "mykey"`). If you occasionally need to access and store the
+unescaped key values, you may use the `unescaped_key()` method. Once you have called `unescaped_key()` method, 
+neither the `key()` nor the `unescaped_key()` methods should be called: the current field instance
+has no longer a key (that is by design). Like other strings, the resulting `std::string_view` generated
+from the `unescaped_key()` method has a lifecycle tied to the `parser` instance: once the parser
+is destroyed or reused with another document, the `std::string_view` instance becomes invalid.
+
+
+```C++
+auto doc = parser.iterate(json);
+for(auto field : doc.get_object())  {
+      std::string_view keyv = field.unescaped_key();
+}
+```
+
+
 
 ### Iteration Safety
 

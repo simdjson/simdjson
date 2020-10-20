@@ -15,6 +15,7 @@
 #include "simdjson.h"
 #include "test_ondemand.h"
 
+
 // const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
 #define SIMDJSON_SHOW_DEFINE(x) printf("%s=%s\n", #x, STRINGIFY(x))
 
@@ -41,6 +42,42 @@ void compilation_test_1() {
        }
      }
 }
+
+
+// Do not run this, it is only meant to compile
+ void compilation_test_2() {
+  const padded_string bogus = ""_padded;
+  ondemand::parser parser;
+  auto doc = parser.iterate(bogus);
+  std::set<std::string_view> default_users;
+  ondemand::array tweets = doc["statuses"].get_array();
+  for (auto tweet_value : tweets) {
+    auto tweet = tweet_value.get_object();
+    ondemand::object user = tweet["user"].get_object();
+    std::string_view screen_name = user["screen_name"].get_string();
+    bool default_profile = user["default_profile"].get_bool();
+    if (default_profile) { default_users.insert(screen_name); }
+  }
+}
+
+
+// Do not run this, it is only meant to compile
+void compilation_test_3() {
+  const padded_string bogus = ""_padded;
+  ondemand::parser parser;
+  auto doc = parser.iterate(bogus);
+  ondemand::array tweets;
+  if(! doc["statuses"].get(tweets)) { return; }
+  for (auto tweet_value : tweets) {
+    auto tweet = tweet_value.get_object();
+    for (auto field : tweet) {
+      std::string_view key = field.unescaped_key().value();
+      std::cout << "key = " << key << std::endl;
+      std::string_view val = std::string_view(field.value());
+      std::cout << "value (assuming it is a string) = " << val << std::endl;
+    }
+  }
+}
 #endif
 
 #define ONDEMAND_SUBTEST(NAME, JSON, TEST) \
@@ -51,6 +88,32 @@ void compilation_test_1() {
   })) { \
     return false; \
   } \
+}
+
+
+namespace key_string_tests {
+#if SIMDJSON_EXCEPTIONS
+  bool parser_key_value() {
+    TEST_START();
+    ondemand::parser parser;
+    const padded_string json = R"({ "1": "1", "2": "2", "3": "3", "abc": "abc", "\u0075": "\u0075" })"_padded;
+    auto doc = parser.iterate(json);
+    for(auto field : doc.get_object())  {
+      std::string_view keyv = field.unescaped_key();
+      std::string_view valuev = field.value();
+      if(keyv != valuev) { return false; }
+    }
+    return true;
+  }
+#endif
+  bool run() {
+    return 
+#if SIMDJSON_EXCEPTIONS
+      parser_key_value() &&
+#endif
+      true;
+  }
+
 }
 
 namespace number_tests {
@@ -866,10 +929,30 @@ namespace twitter_tests {
         auto media = entities["media"];
         if (media.error() == SUCCESS) {
           for (ondemand::object image : media) {
+            /**
+             * Fun fact: id and id_str can differ:
+             * 505866668485386240 and 505866668485386241.
+             * Presumably, it is because doubles are used
+             * at some point in the process and the number
+             * 505866668485386241 cannot be represented as a double.
+             * (not our fault)
+             */
+            uint64_t id_val = image["id"].get_uint64();
+            std::cout << "id = " <<id_val << std::endl;
+            auto id_string = std::string_view(image["id_str"].value());
+            std::cout << "id_string = " << id_string << std::endl;
             auto sizes = image["sizes"].get_object();
             for (auto size : sizes) {
+              /**
+               * We want to know the key that describes the size.
+               */
+              std::string_view raw_size_key_v = size.unescaped_key().value();
+              std::cout << "Type of image size = " << raw_size_key_v << std::endl;
               ondemand::object size_value = size.value();
-              image_sizes.insert(make_pair(size_value["w"], size_value["h"]));
+              int64_t width = size_value["w"];
+              int64_t height = size_value["h"];
+              std::cout <<  width << " x " << height << std::endl;
+              image_sizes.insert(make_pair(width, height));
             }
           }
         }
@@ -1346,12 +1429,13 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Running basic tests." << std::endl;
   if (
-      // parse_api_tests::run() &&
-      // dom_api_tests::run() &&
-      // twitter_tests::run() &&
-      // number_tests::run() &&
+      parse_api_tests::run() &&
+      dom_api_tests::run() &&
+      twitter_tests::run() &&
+      number_tests::run() &&
       error_tests::run() &&
       ordering_tests::run() &&
+      key_string_tests::run() &&
       true
   ) {
     std::cout << "Basic tests are ok." << std::endl;
