@@ -939,14 +939,14 @@ namespace twitter_tests {
              */
             uint64_t id_val = image["id"].get_uint64();
             std::cout << "id = " <<id_val << std::endl;
-            auto id_string = std::string_view(image["id_str"].value());
+            auto id_string = std::string_view(image["id_str"]);
             std::cout << "id_string = " << id_string << std::endl;
             auto sizes = image["sizes"].get_object();
             for (auto size : sizes) {
               /**
                * We want to know the key that describes the size.
                */
-              std::string_view raw_size_key_v = size.unescaped_key().value();
+              std::string_view raw_size_key_v = size.unescaped_key();
               std::cout << "Type of image size = " << raw_size_key_v << std::endl;
               ondemand::object size_value = size.value();
               int64_t width = size_value["w"];
