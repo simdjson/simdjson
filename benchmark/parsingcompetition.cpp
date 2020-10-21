@@ -13,6 +13,7 @@
 #include "benchmark.h"
 
 SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+#include "yyjson.h"
 
 // #define RAPIDJSON_SSE2 // bad for performance
 // #define RAPIDJSON_SSE42 // bad for performance
@@ -189,6 +190,17 @@ bool bench(const char *filename, bool verbose, bool just_data,
     };
 
     BEST_TIME("Boost.json", execute(sv), false, , repeat, volume, !just_data);
+  }
+  {
+    
+    auto execute = [&p]() -> bool {
+      yyjson_doc *doc = yyjson_read(p.data(), p.size(), 0);
+      bool is_ok = doc != nullptr;
+      yyjson_doc_free(doc);
+      return is_ok;
+    };
+    
+    BEST_TIME("yyjson", execute(), true, , repeat, volume, !just_data);
   }
 #ifndef ALLPARSER
   if (!just_data)
