@@ -149,6 +149,8 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 - [fast_jsonparser](https://github.com/anilmaurya/fast_jsonparser): Ruby bindings for the simdjson project.
 - [simdjson-go](https://github.com/minio/simdjson-go): Go port using Golang assembly.
 - [rcppsimdjson](https://github.com/eddelbuettel/rcppsimdjson): R bindings.
+- [simdjson_erlang](https://github.com/ChomperT/simdjson_erlang): erlang bindings.
+
 
 About simdjson
 --------------
