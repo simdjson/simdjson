@@ -872,6 +872,7 @@ namespace twitter_tests {
     }));
     TEST_SUCCEED();
   }
+#if SIMDJSON_EXCEPTIONS
   bool twitter_example() {
     TEST_START();
     padded_string json;
@@ -881,19 +882,6 @@ namespace twitter_tests {
     for (ondemand::object tweet : doc["statuses"]) {
       uint64_t         id            = tweet["id"];
       std::string_view text          = tweet["text"];
-      /**
-       *  Here we are constrained by the API.
-       * Doing 
-       *  std::string_view screen_name = tweet["user"]["screen_name"];
-       * fails to compile with the error
-       * "error: invalid conversion from 'char' to 'const char*'"
-       * 
-       * Doing 
-       * std::string_view screen_name = tweet["user"].get_object()["screen_name"];
-       * fails at runtime with 
-       * "terminate called after throwing an instance of 'simdjson::simdjson_error'
-       *   what():  The JSON field referenced does not exist in this object."
-       */
       std::string_view screen_name;
       {
         ondemand::object user        = tweet["user"];
@@ -909,6 +897,7 @@ namespace twitter_tests {
     }
     TEST_SUCCEED();
   }
+#endif
 
   bool twitter_default_profile() {
     TEST_START();
