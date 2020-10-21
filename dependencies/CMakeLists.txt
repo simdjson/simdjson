@@ -72,8 +72,12 @@ if ((Git_FOUND) AND SIMDJSON_GIT AND (SIMDJSON_IS_UNDER_GIT))
     target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
     target_include_directories(boostjson PUBLIC boost.json/include)
 
+    initialize_submodule(yyjson)
+    add_library(yyjson yyjson/src/yyjson.c)
+    target_include_directories(yyjson PUBLIC yyjson/src)
+
     add_library(competition-core INTERFACE)
-    target_link_libraries(competition-core INTERFACE competition-json competition-rapidjson competition-sajson competition-cJSON competition-jsmn boostjson)
+    target_link_libraries(competition-core INTERFACE competition-json competition-rapidjson competition-sajson competition-cJSON competition-jsmn boostjson yyjson)
 
     add_library(competition-all INTERFACE)
     target_link_libraries(competition-all INTERFACE competition-core competition-jsoncppdist competition-json11 competition-fastjson competition-gason competition-ujson4c)

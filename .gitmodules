@@ -37,3 +37,6 @@
 [submodule "dependencies/boost.json"]
 	path = dependencies/boost.json
 	url = https://github.com/CPPAlliance/json.git
+[submodule "dependencies/yyjson"]
+	path = dependencies/yyjson
+	url = https://github.com/ibireme/yyjson.git
