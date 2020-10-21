@@ -116,6 +116,63 @@ namespace key_string_tests {
 
 }
 
+namespace active_tests {
+#if SIMDJSON_EXCEPTIONS
+  bool parser_child() {
+    TEST_START();
+    ondemand::parser parser;
+    const padded_string json = R"({ "parent": {"child1": {"name": "John"} , "child2": {"name": "Daniel"}} })"_padded;
+    auto doc = parser.iterate(json);
+    ondemand::object parent = doc["parent"];
+    {
+      ondemand::object c1 = parent["child1"];
+      if(std::string_view(c1["name"]) != "John") { return false; } 
+    }
+    {
+      ondemand::object c2 = parent["child2"];
+      if(std::string_view(c2["name"]) != "Daniel") { return false; }
+    }
+    return true;
+  }
+  bool parser_doc_correct() {
+    TEST_START();
+    ondemand::parser parser;
+    const padded_string json = R"({ "key1": 1, "key2":2, "key3": 3 })"_padded;
+    auto doc = parser.iterate(json);
+    ondemand::object root_object = doc.get_object();
+    int64_t k1 = root_object["key1"];
+    int64_t k2 = root_object["key2"];
+    int64_t k3 = root_object["key3"];
+    return (k1 == 1) && (k2 == 2) && (k3 == 3);
+  }
+
+  bool parser_doc_limits() {
+    TEST_START();
+    ondemand::parser parser;
+    const padded_string json = R"({ "key1": 1, "key2":2, "key3": 3 })"_padded;
+    auto doc = parser.iterate(json);
+    int64_t k1 = doc["key1"];
+    try {
+      int64_t k2 = doc["key2"];
+      (void) k2;
+    } catch (simdjson::simdjson_error &) {
+      return true; // we expect to fail.
+    }
+    (void) k1;
+    return false;
+  }
+#endif
+  bool run() {
+    return 
+#if SIMDJSON_EXCEPTIONS
+      parser_child() &&
+      parser_doc_correct() &&
+      parser_doc_limits() &&
+#endif
+      true;
+  }
+
+}
 namespace number_tests {
 
   // ulp distance
@@ -815,6 +872,43 @@ namespace twitter_tests {
     }));
     TEST_SUCCEED();
   }
+  bool twitter_example() {
+    TEST_START();
+    padded_string json;
+    ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
+    ondemand::parser parser;
+    auto doc = parser.iterate(json);
+    for (ondemand::object tweet : doc["statuses"]) {
+      uint64_t         id            = tweet["id"];
+      std::string_view text          = tweet["text"];
+      /**
+       *  Here we are constrained by the API.
+       * Doing 
+       *  std::string_view screen_name = tweet["user"]["screen_name"];
+       * fails to compile with the error
+       * "error: invalid conversion from 'char' to 'const char*'"
+       * 
+       * Doing 
+       * std::string_view screen_name = tweet["user"].get_object()["screen_name"];
+       * fails at runtime with 
+       * "terminate called after throwing an instance of 'simdjson::simdjson_error'
+       *   what():  The JSON field referenced does not exist in this object."
+       */
+      std::string_view screen_name;
+      {
+        ondemand::object user        = tweet["user"];
+        screen_name                  = user["screen_name"];
+      }
+      uint64_t         retweets      = tweet["retweet_count"];
+      uint64_t         favorites     = tweet["favorite_count"];
+      (void) id;
+      (void) text;
+      (void) retweets;
+      (void) favorites;
+      (void) screen_name;
+    }
+    TEST_SUCCEED();
+  }
 
   bool twitter_default_profile() {
     TEST_START();
@@ -972,6 +1066,7 @@ namespace twitter_tests {
            twitter_image_sizes() &&
 #if SIMDJSON_EXCEPTIONS
            twitter_count_exception() &&
+           twitter_example() &&
            twitter_default_profile_exception() &&
            twitter_image_sizes_exception() &&
 #endif
@@ -1436,6 +1531,7 @@ int main(int argc, char *argv[]) {
       error_tests::run() &&
       ordering_tests::run() &&
       key_string_tests::run() &&
+      active_tests::run() &&
       true
   ) {
     std::cout << "Basic tests are ok." << std::endl;
