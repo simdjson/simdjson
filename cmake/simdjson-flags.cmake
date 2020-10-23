@@ -7,12 +7,6 @@ target_link_libraries(simdjson-internal-flags INTERFACE simdjson-flags)
 
 
 
-if(MSVC)
-  option(SIMDJSON_BUILD_STATIC "Build a static library" ON) # turning it on disables the production of a dynamic library
-else()
-  option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
-  option(SIMDJSON_USE_LIBCPP "Use the libc++ library" OFF)
-endif()
 option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
 
 option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON)
