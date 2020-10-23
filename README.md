@@ -124,8 +124,10 @@ speed for [synthetic files over various sizes generated with a script](https://g
 
 [All our experiments are reproducible](https://github.com/simdjson/simdjson_experiments_vldb2019).
 
-You can go even faster with our new [On Demand API](https://github.com/simdjson/simdjson/blob/master/doc/ondemand.md).
-For NDJON files, checkout [our safe multithreaded parsing functions](https://github.com/simdjson/simdjson/blob/master/doc/parse_many.md).
+
+You can go beyond 4 GB/s with our new [On Demand API](https://github.com/simdjson/simdjson/blob/master/doc/ondemand.md).
+For NDJSON files, we can exceed 3 GB/s with [our  multithreaded parsing functions](https://github.com/simdjson/simdjson/blob/master/doc/parse_many.md).
+
 
 
 Real-world usage
