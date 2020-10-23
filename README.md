@@ -11,10 +11,12 @@ simdjson : Parsing gigabytes of JSON per second
 <img src="images/logo.png" width="10%" style="float: right">
 JSON is everywhere on the Internet. Servers spend a *lot* of time parsing it. We need a fresh
 approach. The simdjson library uses commonly available SIMD instructions and microparallel algorithms
-to parse JSON 2.5x faster than anything else out there.
+to parse JSON 2.5x  faster than RapidJSON and 25x faster than JSON for Modern C++.
 
-* **Fast:** Over 2.5x faster than other production-grade JSON parsers.
-* **Easy:** First-class, easy to use API.
+* **Fast:** Over 2.5x faster than commonly used production-grade JSON parsers.
+* **Record Breaking Features:** Minify JSON  at 6 GB/s, validate UTF-8  at 13 GB/s,  NDJSON at 3.5 GB/s.
+* **Easy:** First-class, easy to use and carefully documented APIs.
+* **Beyond DOM:** Try the new On Demand API for twice the speed (>4GB/s).
 * **Strict:** Full JSON and UTF-8 validation, lossless parsing. Performance with no compromises.
 * **Automatic:** Selects a CPU-tailored parser at runtime. No configuration needed.
 * **Reliable:** From memory allocation to error handling, simdjson's design avoids surprises.
@@ -119,8 +121,11 @@ or larger files (e.g., 3MB). The following plot presents parsing
 speed for [synthetic files over various sizes generated with a script](https://github.com/simdjson/simdjson_experiments_vldb2019/blob/master/experiments/growing/gen.py) on a 3.4 GHz Skylake processor (GNU GCC 9, -O3).
 <img src="doc/growing.png" width="90%">
 
-
 [All our experiments are reproducible](https://github.com/simdjson/simdjson_experiments_vldb2019).
+
+You can go even faster with our new [On Demand API](https://github.com/simdjson/simdjson/blob/master/doc/ondemand.md).
+For NDJON files, checkout [our safe multithreaded parsing functions](https://github.com/simdjson/simdjson/blob/master/doc/parse_many.md).
+
 
 Real-world usage
 ----------------
