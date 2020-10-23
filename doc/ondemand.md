@@ -29,6 +29,11 @@ auto doc = parser.iterate(json);
 for (auto tweet : doc["statuses"]) {
   std::string_view text        = tweet["text"];
   std::string_view screen_name = tweet["user"]["screen_name"];
+  std::string_view screen_name;
+  {
+        ondemand::object user        = tweet["user"];
+        screen_name                  = user["screen_name"];
+  }
   uint64_t         retweets    = tweet["retweet_count"];
   uint64_t         favorites   = tweet["favorite_count"];
   cout << screen_name << " (" << retweets << " retweets / " << favorites << " favorites): " << text << endl;
@@ -313,6 +318,11 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    rely on error chaining, so it is possible to delay error checks: we shall shortly explain error
    chaining more fully.
 
+   NOTE: You should always have such a `document` instance (here `doc`) and it should remain in scope for the duration
+   of your parsing function. E.g., you should not use the returned document as a temporary (e.g., `auto x = parser.iterate(json).get_object();`)
+   followed by other operations as the destruction of the `document` instance makes all of the derived instances 
+   ill-defined.
+
 
 3. We iterate over the "statuses" field using a typical C++ iterator, reading past the initial
    `{ "statuses": [ {`.
@@ -355,6 +365,11 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    when you attempt to cast the final `simdjson_result<object>` to object. Upon casting, an exception is
    thrown if there was an error.
 
+   NOTE: while the document can be queried once for a key as if it were an object, it is not an actual object
+   instance. If you need to treat it as an object (e.g., to query more than one keys), you can cast it as 
+   such `ondemand::object root_object = doc.get_object();`.
+
+
 4. We get the `"text"` field as a string.
 
    ```c++
@@ -379,7 +394,8 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 4. We get the `"screen_name"` from the `"user"` object.
 
    ```c++
-   std::string_view screen_name = tweet["user"]["screen_name"];
+      ondemand::object user        = tweet["user"];
+      screen_name                  = user["screen_name"];
    ```
 
    First, `["user"]` checks whether there are any more object fields by looking for either `,` or
@@ -387,11 +403,18 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
    `["screen_name"]` then converts to object, checking for `{`, and finds `"screen_name"`.
 
-   To convert to string, `lemire` is written to the document's string buffer, which now has *two*
-   string_views pointing into it, and looks like `first!\0lemire\0`.
+   To convert the result to usable string (i.e., the screen name `lemire`), the characters are written to the document's 
+   string buffer (after possibly escaping them), which now has *two* string_views pointing into it, and looks like `first!\0lemire\0`.
 
    Finally, the temporary user object is destroyed, causing it to skip the remainder of the object
    (`}`).
+
+   NOTE: You may only have one active array or object active at any given time. An array or an object becomes
+   active when the `ondemand::object` or `ondemand::array` is created, and it releases its 'focus' when
+   its destructor is called. If you create an array or an object located inside a parent object or array,
+   the child array or object becomes active while the parent becomes temporarily inactive. If you access
+   several sibling objects or arrays, you must ensure that the destructor is called by scoping each access
+   (see Iteration Safety section below for further details).
 
 5. We get `"retweet_count"` and `"favorite_count"` as unsigned integers.
 
@@ -484,8 +507,6 @@ for(auto field : doc.get_object())  {
 }
 ```
 
-
-
 ### Iteration Safety
 
 The On Demand API is powerful. To compensate, we add some safeguards to ensure that it can be used without fear
@@ -500,6 +521,48 @@ in production systems:
   - Guaranteed Iteration: If you discard a value without using it--perhaps you just wanted to know
     if it was `nullptr` but did not care what the actual value was--it will iterate. The destructor automates
     the iteration.
+
+  Some care is needed when using the On Demand API in scenarios where you need to access several sibling arrays or objects because
+  only one object or array can be active at any one time. Let us consider the following example:
+
+```C++
+    ondemand::parser parser;
+    const padded_string json = R"({ "parent": {"child1": {"name": "John"} , "child2": {"name": "Daniel"}} })"_padded;
+    auto doc = parser.iterate(json);
+    ondemand::object parent = doc["parent"];
+    // parent owns the focus
+    ondemand::object c1 = parent["child1"];
+    // c1 owns the focus
+    // 
+    if(std::string_view(c1["name"]) != "John") { ... } 
+    // c2 attempts to grab the focus from parent but fails
+    ondemand::object c2 = parent["child2"];
+    // c2 is now in an unsafe state and the following line would be unsafe
+    // if(std::string_view(c2["name"]) != "Daniel") { return false; }
+```
+
+    A correct usage is given by the following example:
+
+```C++
+    ondemand::parser parser;
+    const padded_string json = R"({ "parent": {"child1": {"name": "John"} , "child2": {"name": "Daniel"}} })"_padded;
+    auto doc = parser.iterate(json);
+    ondemand::object parent = doc["parent"];
+    // At this point, parent owns the focus
+    {
+      ondemand::object c1 = parent["child1"];
+      // c1 grabbed the focus from parent
+      if(std::string_view(c1["name"]) != "John") { return false; } 
+    }
+    // c1 went out of scope, so its destructor was called and the focus
+    // was handed back to parent.
+    {
+      ondemand::object c2 = parent["child2"];
+      // c2 grabbed the focus from parent
+      // the following is safe:
+      if(std::string_view(c2["name"]) != "Daniel") { return false; }
+    }
+```
 
 ### Benefits of the On Demand Approach
 

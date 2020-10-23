@@ -19,4 +19,8 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "kostya/iter.h"
 #include "kostya/dom.h"
 
+#include "distinctuserid/ondemand.h"
+#include "distinctuserid/dom.h"
+
+
 BENCHMARK_MAIN();
