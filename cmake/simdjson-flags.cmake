@@ -14,8 +14,6 @@ if(SIMDJSON_COMPETITION)
   message(STATUS "Using SIMDJSON_GOOGLE_BENCHMARKS")
 endif()
 
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
-
 # We compile tools, tests, etc. with C++ 17. Override yourself if you need on a target.
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
