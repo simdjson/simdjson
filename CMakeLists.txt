@@ -1,17 +1,14 @@
-cmake_minimum_required(VERSION 3.9) # CMP0069 NEW
+cmake_minimum_required(VERSION 3.12)
 
 project(simdjson
-  DESCRIPTION "Parsing gigabytes of JSON per second"
-  LANGUAGES CXX C
-)
+        VERSION 0.6.0
+        DESCRIPTION "Parsing gigabytes of JSON per second"
+        HOMEPAGE_URL "https://github.com/simdjson/simdjson"
+        LANGUAGES CXX C)
 
-set(PROJECT_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MINOR 6)
-set(PROJECT_VERSION_PATCH 0)
-set(SIMDJSON_SEMANTIC_VERSION "0.6.0" CACHE STRING "simdjson semantic version")
+set(SIMDJSON_SEMANTIC_VERSION "${PROJECT_VERSION}" CACHE STRING "simdjson semantic version")
 set(SIMDJSON_LIB_VERSION "4.0.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "4" CACHE STRING "simdjson library soversion")
-set(SIMDJSON_GITHUB_REPOSITORY https://github.com/simdjson/simdjson)
 
 include(GNUInstallDirs)
 include(cmake/simdjson-flags.cmake)
