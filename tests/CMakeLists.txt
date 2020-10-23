@@ -21,6 +21,21 @@ if(SIMDJSON_SANITIZE)
   endif()
 endif()
 
+# Set possible values that can be selected from ccmake or the gui
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+        Debug
+        Release
+        MinSizeRel
+        RelWithDebInfo)
+
+if(NOT CMAKE_BUILD_TYPE)
+  message(STATUS "No build type selected, default to Release")
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+  if(SIMDJSON_SANITIZE)
+    message(WARNING "No build type selected and you have enabled the sanitizer. Consider setting CMAKE_BUILD_TYPE to Debug to help identify the eventual problems.")
+  endif()
+endif()
+
 # Helper so we don't have to repeat ourselves so much
 # Usage: add_cpp_test(testname [COMPILE_ONLY] [SOURCES a.cpp b.cpp ...] [LABELS acceptance per_implementation ...])
 # SOURCES defaults to testname.cpp if not specified.

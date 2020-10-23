@@ -6,13 +6,6 @@ add_library(simdjson-internal-flags INTERFACE)
 target_link_libraries(simdjson-internal-flags INTERFACE simdjson-flags)
 
 
-if (NOT CMAKE_BUILD_TYPE)
-  message(STATUS "No build type selected, default to Release")
-  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
-  if(SIMDJSON_SANITIZE)
-    message(WARNING "No build type selected and you have enabled the sanitizer. Consider setting CMAKE_BUILD_TYPE to Debug to help identify the eventual problems.")
-  endif()
-endif()
 
 if(MSVC)
   option(SIMDJSON_BUILD_STATIC "Build a static library" ON) # turning it on disables the production of a dynamic library
