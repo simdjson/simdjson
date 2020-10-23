@@ -6,6 +6,21 @@ include(FetchContent)
 FetchContent_Declare(simdjson SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
 FetchContent_MakeAvailable(simdjson)
 
+option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
+if(SIMDJSON_SANITIZE)
+  target_compile_options(simdjson
+          INTERFACE
+          -fsanitize=address
+          -fno-omit-frame-pointer
+          -fsanitize=undefined
+          -fno-sanitize-recover=all)
+
+  # Ubuntu bug for GCC 5.0+ (safe for all versions)
+  if (CMAKE_COMPILER_IS_GNUCC)
+    target_link_libraries(simdjson INTERFACE -fuse-ld=gold)
+  endif()
+endif()
+
 # Helper so we don't have to repeat ourselves so much
 # Usage: add_cpp_test(testname [COMPILE_ONLY] [SOURCES a.cpp b.cpp ...] [LABELS acceptance per_implementation ...])
 # SOURCES defaults to testname.cpp if not specified.
