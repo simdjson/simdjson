@@ -20,6 +20,7 @@ to parse JSON 2.5x  faster than RapidJSON and 25x faster than JSON for Modern C+
 * **Strict:** Full JSON and UTF-8 validation, lossless parsing. Performance with no compromises.
 * **Automatic:** Selects a CPU-tailored parser at runtime. No configuration needed.
 * **Reliable:** From memory allocation to error handling, simdjson's design avoids surprises.
+* **Peer Reviewed:** Our research appears in venues like VLDB Journal, Software: Practice and Experience.
 
 This library is part of the [Awesome Modern C++](https://awesomecpp.com) list.
 
