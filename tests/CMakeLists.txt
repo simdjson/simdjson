@@ -1,3 +1,7 @@
+cmake_minimum_required(VERSION 3.14)
+
+project(simdjson_tests CXX)
+
 # Helper so we don't have to repeat ourselves so much
 # Usage: add_cpp_test(testname [COMPILE_ONLY] [SOURCES a.cpp b.cpp ...] [LABELS acceptance per_implementation ...])
 # SOURCES defaults to testname.cpp if not specified.
