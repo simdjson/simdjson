@@ -39,3 +39,15 @@ if(NOT SIMDJSON_JUST_LIBRARY)
   add_rootdir(benchmark)
   add_rootdir(fuzz)
 endif()
+
+#
+# Source files should be just ASCII
+#
+find_program(FIND find)
+find_program(FILE file)
+find_program(GREP grep)
+if(FIND AND FILE AND GREP)
+  add_test(NAME "just_ascii"
+          COMMAND sh -c "${FIND} include src windows tools singleheader tests examples benchmark -path benchmark/checkperf-reference -prune -name '*.h' -o -name '*.cpp' -type f  -exec ${FILE} '{}' \; | ${GREP} -v ASCII || exit 0 && exit 1"
+          WORKING_DIRECTORY "${root}")
+endif()
