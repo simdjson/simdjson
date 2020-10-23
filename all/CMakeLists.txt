@@ -29,7 +29,6 @@ else()
 endif()
 
 if(NOT SIMDJSON_JUST_LIBRARY)
-  add_rootdir(dependencies) ## This needs to be before tools because of cxxopts
   add_rootdir(tools)  ## This needs to be before tests because of cxxopts
   add_rootdir(singleheader)
 endif()
