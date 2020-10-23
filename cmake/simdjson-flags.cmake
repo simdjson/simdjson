@@ -1,11 +1,3 @@
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
-  set(SIMDJSON_IS_UNDER_GIT ON CACHE BOOL  "Whether cmake is under git control")
-  message( STATUS "The simdjson repository appears to be under git." )
-else()
-  set(SIMDJSON_IS_UNDER_GIT OFF CACHE BOOL  "Whether cmake is under git control")
-  message( STATUS "The simdjson repository does not appear to be under git." )
-endif()
-
 #
 # Flags used by exes and by the simdjson library (project-wide flags)
 #
