@@ -10,6 +10,8 @@ set(SIMDJSON_SEMANTIC_VERSION "${PROJECT_VERSION}" CACHE STRING "simdjson semant
 set(SIMDJSON_LIB_VERSION "4.0.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "4" CACHE STRING "simdjson library soversion")
 
+# ---- Declare library ----
+
 include(cmake/sources.cmake)
 
 add_library(simdjson ${sources})
@@ -27,6 +29,8 @@ add_subdirectory(windows)
 
 include(cmake/implementations.cmake)
 include(cmake/options.cmake)
+
+# ---- Install ----
 
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
@@ -70,5 +74,7 @@ install(FILES
 
 install(DIRECTORY "include/"
         DESTINATION "${simdjson_include_directory}")
+
+# ---- CPack ----
 
 include(cmake/cpack.cmake)
