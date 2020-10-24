@@ -10,9 +10,6 @@ set(SIMDJSON_SEMANTIC_VERSION "${PROJECT_VERSION}" CACHE STRING "simdjson semant
 set(SIMDJSON_LIB_VERSION "4.0.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "4" CACHE STRING "simdjson library soversion")
 
-# Create the top level simdjson library (must be done at this level to use both src/ and include/
-# directories) and tools
-#
 add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(windows)
@@ -20,16 +17,4 @@ add_subdirectory(windows)
 include(cmake/implementations.cmake)
 include(cmake/options.cmake)
 
-install(FILES singleheader/simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-#
-# Compile tools / tests / benchmarks
-#
-
-
-
-
-#
-# CPack
-#
 include(cmake/cpack.cmake)
