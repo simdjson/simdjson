@@ -25,8 +25,6 @@ set_target_properties(simdjson PROPERTIES
 target_compile_features(simdjson PUBLIC cxx_std_11)
 target_include_directories(simdjson PUBLIC $<BUILD_INTERFACE:include>)
 
-add_subdirectory(windows)
-
 include(cmake/implementations.cmake)
 include(cmake/options.cmake)
 
