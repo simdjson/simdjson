@@ -34,7 +34,7 @@ target_compile_features(simdjson PUBLIC cxx_std_11)
 target_include_directories(simdjson
         ${simdjson_warning_guard}
         PUBLIC
-        $<BUILD_INTERFACE:include>)
+        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>")
 
 include(cmake/implementations.cmake)
 include(cmake/options.cmake)
