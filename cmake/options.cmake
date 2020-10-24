@@ -5,7 +5,8 @@ if(MSVC)
     target_compile_options(simdjson PUBLIC /Zi)
   endif()
 else()
-  set_property(TARGET simdjson PROPERTY POSITION_INDEPENDENT_CODE YES)
+  set_property(TARGET simdjson PROPERTY POSITION_INDEPENDENT_CODE
+          "$<STREQUAL:$<TARGET_PROPERTY:simdjson,TYPE>,SHARED_LIBRARY>")
 endif()
 
 # To have a default when no value is given this must be a STRING type variable
