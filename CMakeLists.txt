@@ -10,17 +10,14 @@ set(SIMDJSON_SEMANTIC_VERSION "${PROJECT_VERSION}" CACHE STRING "simdjson semant
 set(SIMDJSON_LIB_VERSION "4.0.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "4" CACHE STRING "simdjson library soversion")
 
-include(GNUInstallDirs)
-include(cmake/simdjson-flags.cmake)
-include(cmake/simdjson-user-cmakecache.cmake)
-
-
 # Create the top level simdjson library (must be done at this level to use both src/ and include/
 # directories) and tools
 #
 add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(windows)
+
+include(cmake/implementations.cmake)
 
 if(MSVC)
   option(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING "Under Visual Studio, add Zi to the compile flag and DEBUG to the link file to add debugging information to the release build for easier profiling inside tools like VTune" OFF)
