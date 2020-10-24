@@ -6,13 +6,16 @@ include(FetchContent)
 FetchContent_Declare(simdjson SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
 FetchContent_MakeAvailable(simdjson)
 
+enable_testing()
+
 if(MSVC)
   if(MSVC_TOOLSET_VERSION STREQUAL "140")
     # Visual Studio 2015 issues warnings and we tolerate it,  cmake -G"Visual Studio 14" ..
     target_compile_options(simdjson PUBLIC /W0 /sdl)
   else()
     # Recent version of Visual Studio expected (2017, 2019...). Prior versions are unsupported.
-    target_compile_options(simdjson PUBLIC /WX /W3 /sdl /w34714) # https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4714?view=vs-2019
+    # https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4714?view=vs-2019
+    target_compile_options(simdjson PUBLIC /WX /W3 /sdl /w34714)
   endif()
 else()
   target_compile_options(simdjson
@@ -32,8 +35,31 @@ if(SIMDJSON_SANITIZE)
           -fno-sanitize-recover=all)
 
   # Ubuntu bug for GCC 5.0+ (safe for all versions)
-  if (CMAKE_COMPILER_IS_GNUCC)
+  if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     target_link_libraries(simdjson INTERFACE -fuse-ld=gold)
+  endif()
+else()
+  find_program(GREP grep)
+  find_program(NM nm)
+  if(NOT GREP OR NOT NM)
+    message("grep and nm are unavailable on this system.")
+  else()
+    macro(add_avoid_test NAME)
+      add_test(NAME "add_${NAME}"
+              COMMAND sh -c
+              "${NM} $<TARGET_FILE_NAME:simdjson> | ${GREP} ' _*${NAME}' || exit 0 && exit 1"
+              WORKING_DIRECTORY ${simdjson_BINARY_DIR})
+    endmacro()
+
+    # Under FreeBSD, the __cxa_guard_abort symbol may appear but it is fine.
+    # So we want to look for <space><possibly _>abort as a test.
+    add_avoid_test(abort)
+
+    add_avoid_test(cout)
+    add_avoid_test(cerr)
+    add_avoid_test(printf)
+    add_avoid_test(stdout)
+    add_avoid_test(stderr)
   endif()
 endif()
 
