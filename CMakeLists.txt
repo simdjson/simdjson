@@ -10,7 +10,12 @@ set(SIMDJSON_SEMANTIC_VERSION "${PROJECT_VERSION}" CACHE STRING "simdjson semant
 set(SIMDJSON_LIB_VERSION "4.0.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "4" CACHE STRING "simdjson library soversion")
 
-add_subdirectory(include)
+add_library(simdjson-headers INTERFACE)
+target_compile_features(simdjson-headers INTERFACE cxx_std_11)
+target_include_directories(simdjson-headers
+        INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+
 add_subdirectory(src)
 add_subdirectory(windows)
 
