@@ -7,12 +7,7 @@ target_link_libraries(simdjson-internal-flags INTERFACE simdjson-flags)
 
 
 
-option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
 
-option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON)
-if(SIMDJSON_COMPETITION)
-  message(STATUS "Using SIMDJSON_GOOGLE_BENCHMARKS")
-endif()
 
 # LTO seems to create all sorts of fun problems. Let us
 # disable temporarily.
