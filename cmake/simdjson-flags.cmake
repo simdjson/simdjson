@@ -17,24 +17,7 @@ target_link_libraries(simdjson-internal-flags INTERFACE simdjson-flags)
 #  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 #endif()
 
-option(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING "Under Visual Studio, add Zi to the compile flag and DEBUG to the link file to add debugging information to the release build for easier profiling inside tools like VTune" OFF)
-if(MSVC)
-if("${MSVC_TOOLSET_VERSION}" STREQUAL "140")
-  # Visual Studio 2015 issues warnings and we tolerate it,  cmake -G"Visual Studio 14" ..
-  target_compile_options(simdjson-internal-flags INTERFACE /W0 /sdl)
-else()
-  # Recent version of Visual Studio expected (2017, 2019...). Prior versions are unsupported.
-  target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl /w34714) # https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4714?view=vs-2019
-endif()
-if(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING)
-  target_link_options(simdjson-flags  INTERFACE    /DEBUG ) 
-  target_compile_options(simdjson-flags INTERFACE  /Zi)
-endif()
-else()
-  target_compile_options(simdjson-internal-flags INTERFACE -fPIC)
-  target_compile_options(simdjson-internal-flags INTERFACE -Werror -Wall -Wextra -Weffc++)
-  target_compile_options(simdjson-internal-flags INTERFACE -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion)
-endif()
+
 
 #
 # Optional flags

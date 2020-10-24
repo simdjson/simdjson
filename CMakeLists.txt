@@ -22,6 +22,16 @@ add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(windows)
 
+if(MSVC)
+  option(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING "Under Visual Studio, add Zi to the compile flag and DEBUG to the link file to add debugging information to the release build for easier profiling inside tools like VTune" OFF)
+  if(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING)
+    target_link_options(simdjson INTERFACE /DEBUG)
+    target_compile_options(simdjson INTERFACE /Zi)
+  endif()
+else()
+  target_compile_options(simdjson INTERFACE -fPIC)
+endif()
+
 install(FILES singleheader/simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #
