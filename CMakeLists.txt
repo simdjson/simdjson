@@ -10,12 +10,6 @@ set(SIMDJSON_SEMANTIC_VERSION "${PROJECT_VERSION}" CACHE STRING "simdjson semant
 set(SIMDJSON_LIB_VERSION "4.0.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "4" CACHE STRING "simdjson library soversion")
 
-add_library(simdjson-headers INTERFACE)
-target_compile_features(simdjson-headers INTERFACE cxx_std_11)
-target_include_directories(simdjson-headers
-        INTERFACE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-
 include(cmake/sources.cmake)
 
 add_library(simdjson ${sources})
@@ -25,6 +19,9 @@ set_target_properties(simdjson PROPERTIES
         VERSION ${SIMDJSON_LIB_VERSION}
         SOVERSION ${SIMDJSON_LIB_SOVERSION}
         WINDOWS_EXPORT_ALL_SYMBOLS YES)
+
+target_compile_features(simdjson PUBLIC cxx_std_11)
+target_include_directories(simdjson PUBLIC $<BUILD_INTERFACE:include>)
 
 add_subdirectory(windows)
 
