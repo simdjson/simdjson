@@ -9,14 +9,14 @@ FetchContent_MakeAvailable(simdjson)
 if(MSVC)
   if(MSVC_TOOLSET_VERSION STREQUAL "140")
     # Visual Studio 2015 issues warnings and we tolerate it,  cmake -G"Visual Studio 14" ..
-    target_compile_options(simdjson INTERFACE /W0 /sdl)
+    target_compile_options(simdjson PUBLIC /W0 /sdl)
   else()
     # Recent version of Visual Studio expected (2017, 2019...). Prior versions are unsupported.
-    target_compile_options(simdjson INTERFACE /WX /W3 /sdl /w34714) # https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4714?view=vs-2019
+    target_compile_options(simdjson PUBLIC /WX /W3 /sdl /w34714) # https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4714?view=vs-2019
   endif()
 else()
   target_compile_options(simdjson
-          INTERFACE
+          PUBLIC
           -Werror -Wall -Wextra -Weffc++ -Wsign-compare -Wshadow
           -Wwrite-strings -Wpointer-arith -Winit-self -Wconversion
           -Wno-sign-conversion)
