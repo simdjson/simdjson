@@ -10,6 +10,14 @@ set(SIMDJSON_SEMANTIC_VERSION "${PROJECT_VERSION}" CACHE STRING "simdjson semant
 set(SIMDJSON_LIB_VERSION "4.0.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "4" CACHE STRING "simdjson library soversion")
 
+# ---- Warning guard ----
+
+# Protect dependents from this project's warnings if the guard isn't disabled
+set(simdjson_warning_guard "SYSTEM")
+if(simdjson_INCLUDE_WITHOUT_SYSTEM)
+  set(simdjson_warning_guard "")
+endif()
+
 # ---- Declare library ----
 
 include(cmake/sources.cmake)
@@ -23,7 +31,10 @@ set_target_properties(simdjson PROPERTIES
         WINDOWS_EXPORT_ALL_SYMBOLS YES)
 
 target_compile_features(simdjson PUBLIC cxx_std_11)
-target_include_directories(simdjson PUBLIC $<BUILD_INTERFACE:include>)
+target_include_directories(simdjson
+        ${simdjson_warning_guard}
+        PUBLIC
+        $<BUILD_INTERFACE:include>)
 
 include(cmake/implementations.cmake)
 include(cmake/options.cmake)
