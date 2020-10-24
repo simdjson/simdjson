@@ -68,7 +68,6 @@ install(EXPORT simdjsonTargets
         DESTINATION "${simdjson_install_cmakedir}")
 
 install(FILES
-        "${PROJECT_SOURCE_DIR}/cmake/simdjsonConfig.cmake"
         "${PROJECT_BINARY_DIR}/simdjsonConfigVersion.cmake"
         DESTINATION "${simdjson_install_cmakedir}")
 
