@@ -68,4 +68,7 @@ install(FILES
         "${PROJECT_BINARY_DIR}/simdjsonConfigVersion.cmake"
         DESTINATION "${simdjson_install_cmakedir}")
 
+install(DIRECTORY "include/"
+        DESTINATION "${simdjson_include_directory}")
+
 include(cmake/cpack.cmake)
