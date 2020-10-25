@@ -5,7 +5,7 @@
  * @mainpage
  *
  * Check the [README.md](https://github.com/lemire/simdjson/blob/master/README.md#simdjson--parsing-gigabytes-of-json-per-second).
- * 
+ *
  * Sample code. See https://github.com/simdjson/simdjson/blob/master/doc/basics.md for more examples.
 
     #include "simdjson.h"
@@ -21,7 +21,7 @@
         {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
         {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
         ] )"_padded;
-  
+
       for (simdjson::dom::object obj : parser.parse(abstract_json)) {
         for(const auto& key_value : obj) {
           cout << "key: " << key_value.key << " : ";
@@ -85,6 +85,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "simdjson/arm64.h"
 #include "simdjson/haswell.h"
 #include "simdjson/westmere.h"
+#include "simdjson/ppc64.h"
 #include "simdjson/fallback.h"
 #include "simdjson/builtin.h"
 

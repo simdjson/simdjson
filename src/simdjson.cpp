@@ -23,6 +23,10 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "haswell/implementation.cpp"
 #include "haswell/dom_parser_implementation.cpp"
 #endif
+#if SIMDJSON_IMPLEMENTATION_PPC64
+#include "ppc64/implementation.cpp"
+#include "ppc64/dom_parser_implementation.cpp"
+#endif
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
 #include "westmere/implementation.cpp"
 #include "westmere/dom_parser_implementation.cpp"

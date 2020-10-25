@@ -5,12 +5,12 @@ A Better Way to Parse Documents?
 Whether we parse JSON or XML, or any other serialized format, there are relatively few common strategies:
 
 - The most established approach is the construction of document-object-model (DOM).
-- Another established approach is a event-based approach (like SAX, SAJ). 
-- Another popular approach is the schema-based deserialization model. 
+- Another established approach is a event-based approach (like SAX, SAJ).
+- Another popular approach is the schema-based deserialization model.
 
-We propose an approach that is as easy to use and often as flexible as the DOM approach, yet as fast and 
-efficient as the schema-based or event-based approaches. We call this new approach "On Demand". The 
-simdjson On Demand API offers a familiar, friendly DOM API and 
+We propose an approach that is as easy to use and often as flexible as the DOM approach, yet as fast and
+efficient as the schema-based or event-based approaches. We call this new approach "On Demand". The
+simdjson On Demand API offers a familiar, friendly DOM API and
 provides the performance of just-in-time parsing on top of the simdjson superior performance.
 
 To achieve ease of use, we mimicked the *form* of a traditional DOM API: you can iterate over
@@ -81,10 +81,10 @@ type, we avoid branch mispredictions related to data type determination and impr
 
 
 We expect users of an On Demand API to work in terms of a JSON dialect, which is a set of expectations and
-specifications that come in addition to the [JSON specification](https://www.rfc-editor.org/rfc/rfc8259.txt). 
+specifications that come in addition to the [JSON specification](https://www.rfc-editor.org/rfc/rfc8259.txt).
 The On Demand approach is designed around several principles:
 
-* **Streaming (\*):** It avoids preparsing values, keeping the memory usage and the latency down. 
+* **Streaming (\*):** It avoids preparsing values, keeping the memory usage and the latency down.
 * **Forward-Only:** To prevent reiteration of the same values and to keep the number of variables down (literally), only a single index is maintained and everything uses it (even if you have nested for loops). This means when you are going through an array of arrays, for example, that the inner array loop will advance the index to the next comma, and the array can just pick it up and look at it.
 * **Natural Iteration:** A JSON array or object can be iterated with a normal C++ for loop. Nested arrays and objects are supported by nested for loops.
 * **Use-Specific Parsing:** Parsing is always specific to the type required by the programmer. For example, if the programmer asks for an unsigned integer, we just start parsing digits. If there were no digits, we toss an error. There are even different parsers for `double`, `uint64_t` and `int64_t` values. This use-specific parsing avoids the branchiness of a generic "type switch," and makes the code more inlineable and compact.
@@ -98,9 +98,9 @@ approaches to parsing and parser APIs in use today.
 ### DOM Parsers
 
 Many of the most usable, popular JSON APIs (including simdjson) deserialize into a **DOM**: an intermediate tree of
-objects, arrays and values. In this model, we convert the input data all at once into a tree-like structure (the DOM). 
-The DOM is then accessed by the programmer like any other in-memory data structure. The resulting API let 
-you refer to each array or object separately, using familiar techniques like iteration (`for (auto value : array)`) 
+objects, arrays and values. In this model, we convert the input data all at once into a tree-like structure (the DOM).
+The DOM is then accessed by the programmer like any other in-memory data structure. The resulting API let
+you refer to each array or object separately, using familiar techniques like iteration (`for (auto value : array)`)
 or indexing (`object["key"]`). In some cases, the values are even deserialized directly into familiar C++ constructs like vectors and
 maps.
 
@@ -144,14 +144,14 @@ of several gigabytes per second. However, in some instances, it may be possible 
 The event-based model (originally from the "Streaming API for XML") uses streaming to eliminate the cost of
 parsing and storing the entire JSON. In the event-based model, a core JSON engine parses the JSON document
 piece by piece, but instead of stuffing values in a DOM tree, it passes each value to a callback function,
-letting the user decide for themselves how to handle it. In such a model, the programmer may need to provide functions 
-for all possible events (a number, a string, a new object, a new array, the array ends, the object ends, and so on). 
-This allows programmers to work with much larger files without running out of memory. 
+letting the user decide for themselves how to handle it. In such a model, the programmer may need to provide functions
+for all possible events (a number, a string, a new object, a new array, the array ends, the object ends, and so on).
+This allows programmers to work with much larger files without running out of memory.
 
 The drawback is complexity: event-based APIs generally have you define a single callback for each type
 (e.g. `string_field(std::string_view key, std::string_view value)`). Because of this, the programmer suffers
 from context blindness: when they find a string they have to check where it is before they know what to
-do with it. Is this string the text of the tweet, the screen name, or something else? Are we even in 
+do with it. Is this string the text of the tweet, the screen name, or something else? Are we even in
 a tweet right now, or is this from some other place in the document
 entirely? Though an event-based approach may allow superior performance, it is demanding of the programmer
 who must efficiently keep track of its current state within the JSON input.
@@ -196,7 +196,7 @@ sax::parser parser;
 parser.parse(twitter_callbacks());
 ```
 
-This is a large amount of code, requiring mental gymnastics even to read. An actual implementation is  harder to write 
+This is a large amount of code, requiring mental gymnastics even to read. An actual implementation is  harder to write
 and to maintain.
 
 
@@ -221,7 +221,7 @@ choice, as well as a parser to deserialize the JSON into those structs. Some suc
 define your own data structures (`struct`) and they let a preprocessor inspects it and generates a custom JSON parser for it.
 Though not all of these schema-based parser generators generate a parser or even optimize for
 streaming, but they are *able* to in principle. Unlike the DOM and the event-based models, a schema-based approach assumes
- that the structure of the document is known at compile-time. 
+ that the structure of the document is known at compile-time.
 
 
 Pros of the schema-based approach:
@@ -244,9 +244,9 @@ the parser does not. This means it has to look at each value blind with a big "s
 statement, asking "is this a number? A string? A boolean? An array? An object?"
 
 In modern processors, this kind of switch statement can make your program run slower
-than it needs to because of the high cost of branch misprediction. Indeed, modern processor 
-cores rely on speculative execution for speed. They "read ahead" in your program, predicting 
-which instructions to run as soon as the data is available. A single-threaded program can 
+than it needs to because of the high cost of branch misprediction. Indeed, modern processor
+cores rely on speculative execution for speed. They "read ahead" in your program, predicting
+which instructions to run as soon as the data is available. A single-threaded program can
 execute 2, 3 or even more instructions per cycle--largely because of speculative execution.
 
 Unfortunately, when the processor mispredicts the instructions, typically due to a mispredicted
@@ -258,7 +258,7 @@ Type blindness means that the processor has to guess, for every JSON value, whet
 an object, number, string or boolean since these correspond to distinct code paths.
 Though some JSON files have predictable content, we find in practice that many JSON files
 stress the branch prediction. Though branch predictors improve with each new generation of processors,
-the cost of branch mispredictions also tends to increase as pipelines expand, and the processors become 
+the cost of branch mispredictions also tends to increase as pipelines expand, and the processors become
 able to schedule longer streams of instructions.
 
 On Demand parsing is tailor-made to solve this problem at the source, parsing values only after the
@@ -297,12 +297,12 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    ```c++
    auto doc = parser.iterate(json);
    ```
-   
+
    Since this is the first time this parser has been used, `iterate()` first allocates internal
    parser buffers if this is the first time through. When reusing an existing parser, allocation
-   only happens if the new document is bigger than internal buffers can handle. The On Demand 
+   only happens if the new document is bigger than internal buffers can handle. The On Demand
    API only ever allocates memory in the `iterate()` function call.
-   
+
    The simdjson library then preprocesses the JSON text at high speed, finding all tokens (i.e. the starting
    position of any JSON value, as well as any important operators like `,`, `:`, `]` or `}`).
 
@@ -320,7 +320,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
    NOTE: You should always have such a `document` instance (here `doc`) and it should remain in scope for the duration
    of your parsing function. E.g., you should not use the returned document as a temporary (e.g., `auto x = parser.iterate(json).get_object();`)
-   followed by other operations as the destruction of the `document` instance makes all of the derived instances 
+   followed by other operations as the destruction of the `document` instance makes all of the derived instances
    ill-defined.
 
 
@@ -357,16 +357,16 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
   }
   ```
    What is not explained in this code expansion is *error chaining*.
-   Generally, you can use `document` methods on a `simdjson_result<...>` value; any errors will 
+   Generally, you can use `document` methods on a `simdjson_result<...>` value; any errors will
    just be passed down the chain. Many method calls
    can be chained in this manner. So `for (object tweet : doc["statuses"])`, which is the equivalent of
-   `object tweet = *(doc.get_object()["statuses"].get_array().begin()).get_object()`, could fail in any of 
+   `object tweet = *(doc.get_object()["statuses"].get_array().begin()).get_object()`, could fail in any of
    6 method calls, and the error will only be checked at the end,
    when you attempt to cast the final `simdjson_result<object>` to object. Upon casting, an exception is
    thrown if there was an error.
 
    NOTE: while the document can be queried once for a key as if it were an object, it is not an actual object
-   instance. If you need to treat it as an object (e.g., to query more than one keys), you can cast it as 
+   instance. If you need to treat it as an object (e.g., to query more than one keys), you can cast it as
    such `ondemand::object root_object = doc.get_object();`.
 
 
@@ -403,7 +403,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
    `["screen_name"]` then converts to object, checking for `{`, and finds `"screen_name"`.
 
-   To convert the result to usable string (i.e., the screen name `lemire`), the characters are written to the document's 
+   To convert the result to usable string (i.e., the screen name `lemire`), the characters are written to the document's
    string buffer (after possibly escaping them), which now has *two* string_views pointing into it, and looks like `first!\0lemire\0`.
 
    Finally, the temporary user object is destroyed, causing it to skip the remainder of the object
@@ -454,7 +454,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
    At the end of the loop, the `tweet` is first destroyed, skipping the remainder of the tweet
    object (`}`).
-   
+
    The `iter++` instruction from `for (ondemand::object tweet : doc["statuses"])` then checks whether there are
    more values and finds that there are none (`]`). It marks the array iteration as finished and the for
    loop terminates.
@@ -467,7 +467,7 @@ Design Features
 ### String Parsing
 
 When the user requests strings, we unescape them to a single string buffer much like the DOM parser
-so that users enjoy the same string performance as the core simdjson. We do not write the length to the 
+so that users enjoy the same string performance as the core simdjson. We do not write the length to the
 string buffer, however; that is stored in the `string_view` instance we return to the user.
 
 ```C++
@@ -489,11 +489,11 @@ case with `std::string`) but be mindful that the life cycle of these `string_vie
 parser instance. If the parser instance is destroyed or reused for a new JSON document, these strings are no longer valid.
 
 We iterate through object instances using `field` instances which represent key-value pairs. The value
-is accessible by the `value()` method whereas the key is accessible by the `key()` method. 
-The keys are treated differently than values are made available as as special type `raw_json_string` 
-which is a lightweight type that is meant to be used on a temporary basis, amost solely for 
+is accessible by the `value()` method whereas the key is accessible by the `key()` method.
+The keys are treated differently than values are made available as as special type `raw_json_string`
+which is a lightweight type that is meant to be used on a temporary basis, amost solely for
 direct raw ASCII comparisons (`field.key() == "mykey"`). If you occasionally need to access and store the
-unescaped key values, you may use the `unescaped_key()` method. Once you have called `unescaped_key()` method, 
+unescaped key values, you may use the `unescaped_key()` method. Once you have called `unescaped_key()` method,
 neither the `key()` nor the `unescaped_key()` methods should be called: the current field instance
 has no longer a key (that is by design). Like other strings, the resulting `std::string_view` generated
 from the `unescaped_key()` method has a lifecycle tied to the `parser` instance: once the parser
@@ -512,7 +512,7 @@ for(auto field : doc.get_object())  {
 The On Demand API is powerful. To compensate, we add some safeguards to ensure that it can be used without fear
 in production systems:
 
-  - If the value fails to be parsed as one type, the program can try to parse it as something else until the program succeeds. Thus 
+  - If the value fails to be parsed as one type, the program can try to parse it as something else until the program succeeds. Thus
     the programmer can engineer fall back routines.
   - If the value succeeds in being parsed or converted to a type, the program cannot try again. An attempt to parse the same node twice will
     cause the program to abort. We put this safety measure in the API to prevent double iteration of an array which
@@ -533,8 +533,8 @@ in production systems:
     // parent owns the focus
     ondemand::object c1 = parent["child1"];
     // c1 owns the focus
-    // 
-    if(std::string_view(c1["name"]) != "John") { ... } 
+    //
+    if(std::string_view(c1["name"]) != "John") { ... }
     // c2 attempts to grab the focus from parent but fails
     ondemand::object c2 = parent["child2"];
     // c2 is now in an unsafe state and the following line would be unsafe
@@ -552,7 +552,7 @@ in production systems:
     {
       ondemand::object c1 = parent["child1"];
       // c1 grabbed the focus from parent
-      if(std::string_view(c1["name"]) != "John") { return false; } 
+      if(std::string_view(c1["name"]) != "John") { return false; }
     }
     // c1 went out of scope, so its destructor was called and the focus
     // was handed back to parent.
@@ -604,7 +604,7 @@ At this time we recommend the On Demand API in the following cases:
 3. Speed and efficiency are of the utmost importance. Keep in mind that the core simdjson API is highly efficient so adopting the On Demand API is not necessary for high efficiency.
 4. As a developer, you value a clean, flexible and maintainable API.
 
-Good applications for the On Demand API might be: 
+Good applications for the On Demand API might be:
 
 * You are working from pre-existing large JSON files that have been vetted. You expect them to be well formed according to a known JSON dialect and to have a consistent layout. For example, you might be doing biomedical research or machine learning on top of static data dumps in JSON.
 * You have a closed system on predetermined hardware. Both the generation and the consumption of JSON data is within your system. Your team controls both the software that produces the JSON and the software the parses it, your team knows and control the hardware. Thus you can fully test your system.
@@ -613,7 +613,7 @@ Good applications for the On Demand API might be:
 ## Checking Your CPU Selection
 
 Given that the On Demand API does not offer runtime dispatching, your code is compiled against a specific CPU target. You should
-verify that the code is compiled against the target you expect: `haswell` (AVX2 x64 processors), `westmere` (SSE4 x64 processors), `arm64` (64-bit ARM), `fallback` (others). Under x64 processors, many programmers will want to target `haswell` whereas under ARM,
+verify that the code is compiled against the target you expect: `haswell` (AVX2 x64 processors), `westmere` (SSE4 x64 processors), `arm64` (64-bit ARM), `ppc64` (64-bit POWER), `fallback` (others). Under x64 processors, many programmers will want to target `haswell` whereas under ARM,
 most programmers will want to target `arm64`. The `fallback` is probably only good for testing purposes, not for deployment.
 
 ```C++

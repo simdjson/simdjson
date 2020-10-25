@@ -10,6 +10,8 @@
 #define SIMDJSON_BUILTIN_IMPLEMENTATION westmere
 #elif SIMDJSON_CAN_ALWAYS_RUN_ARM64
 #define SIMDJSON_BUILTIN_IMPLEMENTATION arm64
+#elif SIMDJSON_CAN_ALWAYS_RUN_PPC64
+#define SIMDJSON_BUILTIN_IMPLEMENTATION ppc64
 #elif SIMDJSON_CAN_ALWAYS_RUN_FALLBACK
 #define SIMDJSON_BUILTIN_IMPLEMENTATION fallback
 #else
@@ -21,7 +23,7 @@ namespace simdjson {
   /**
    * Represents the best statically linked simdjson implementation that can be used by the compiling
    * program.
-   * 
+   *
    * Detects what options the program is compiled against, and picks the minimum implementation that
    * will work on any computer that can run the program. For example, if you compile with g++
    * -march=westmere, it will pick the westmere implementation. The haswell implementation will
