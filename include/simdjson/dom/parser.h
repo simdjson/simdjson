@@ -29,6 +29,15 @@ static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
  * as well as memory for a single document. The parsed document is overwritten on each parse.
  *
  * This class cannot be copied, only moved, to avoid unintended allocations.
+ * 
+ * @note Moving a parser instance may invalidate "dom::element" instances. If you need to 
+ * preserve both the "dom::element" instances and the parser, consider wrapping the parser
+ * instance in a std::unique_ptr instance:
+ * 
+ *   std::unique_ptr<dom::parser> parser(new dom::parser{});
+ *   auto error = parser->load(f).get(root);
+ * 
+ * You can then move std::unique_ptr safely.
  *
  * @note This is not thread safe: one parser cannot produce two documents at the same time!
  */
@@ -79,6 +88,10 @@ public:
    * documents because it reuses the same buffers, but you *must* use the document before you
    * destroy the parser or call parse() again.
    *
+   * Moving the parser instance is safe, but it invalidates the element instances. You may store
+   * the parser instance without moving it by wrapping it inside an `unique_ptr` instance like
+   * so: `std::unique_ptr<dom::parser> parser(new dom::parser{});`. 
+   * 
    * ### Parser Capacity
    *
    * If the parser's current capacity is less than the file length, it will allocate enough capacity
@@ -108,6 +121,10 @@ public:
    * The JSON document still lives in the parser: this is the most efficient way to parse JSON
    * documents because it reuses the same buffers, but you *must* use the document before you
    * destroy the parser or call parse() again.
+   * 
+   * Moving the parser instance is safe, but it invalidates the element instances. You may store
+   * the parser instance without moving it by wrapping it inside an `unique_ptr` instance like
+   * so: `std::unique_ptr<dom::parser> parser(new dom::parser{});`. 
    *
    * ### REQUIRED: Buffer Padding
    *

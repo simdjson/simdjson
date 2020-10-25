@@ -93,6 +93,9 @@ dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string, the _padde
 ```
 
 The parsed document resulting from the `parser.load` and `parser.parse` calls depends on the `parser` instance. Thus the `parser` instance must remain in scope. Furthermore, you must have at most one parsed document in play per `parser` instance.
+You cannot copy a `parser` instance, you may only move it. Moving the parser instance is safe, but it invalidates the element instances. To avoid element invalidation, you may wrap it inside an `unique_ptr` instance 
+(`std::unique_ptr<dom::parser> parser(new dom::parser{})`): a `unique_ptr` instance can be safely moved without 
+moving the `parser` instance and thus without invalidating the elements. 
 
 During the`load` or `parse` calls, neither the input file nor the input string are ever modified. After calling `load` or `parse`, the source (either a file or a string) can be safely discarded. All of the JSON data is stored in the `parser` instance.  The parsed document is also immutable in simdjson: you do not modify it by accessing it.
 
