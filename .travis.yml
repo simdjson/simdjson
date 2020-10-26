@@ -1,4 +1,5 @@
 language: cpp
+dist: bionic
 arch:
   - ppc64le
 matrix:
@@ -35,6 +36,13 @@ matrix:
 
 
 script:
+  - if [[ "${TRAVIS_CPU_ARCH}" == "ppc64le" ]]; then
+      sudo apt-get install libuv1 rhash libstdc++6;
+      wget https://anaconda.org/conda-forge/cmake/3.17.0/download/linux-ppc64le/cmake-3.17.0-hfb1cb51_0.tar.bz2;
+      mkdir $HOME/cmake;
+      tar -xjvf cmake-3.17.0-hfb1cb51_0.tar.bz2 -C $HOME/cmake;
+      export PATH=$HOME/cmake/bin:$PATH;
+    fi
   - sudo apt-get remove -y --purge cmake
   - sudo apt-get install snapd && sudo snap install cmake --beta --classic || exit $?
   - eval "${MATRIX_EVAL}"
