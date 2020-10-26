@@ -1,5 +1,7 @@
 # Initializes a git submodule if it hasn't been initialized before
 
+option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
+option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON)
 
 find_package(Git QUIET) # We want the library to build even if git is missing
 if (Git_FOUND)

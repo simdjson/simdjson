@@ -42,12 +42,6 @@ else()
   option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
   option(SIMDJSON_USE_LIBCPP "Use the libc++ library" OFF)
 endif()
-option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
-
-option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON)
-if(SIMDJSON_COMPETITION)
-  message(STATUS "Using SIMDJSON_GOOGLE_BENCHMARKS")
-endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
