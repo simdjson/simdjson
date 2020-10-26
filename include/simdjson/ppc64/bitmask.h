@@ -14,10 +14,10 @@ namespace {
 simdjson_really_inline uint64_t prefix_xor(uint64_t bitmask) {
   __vector unsigned long long all_ones = {~0ull, ~0ull};
   __vector unsigned long long mask = {bitmask, 0};
-  // Clang and GCC return different values for pmsum for ull so a bit strange
-  // dispatch. Generally it is not specified by ALTIVEC ISA what is returned by
+  // Clang and GCC return different values for pmsum for ull so cast it to one.
+  // Generally it is not specified by ALTIVEC ISA what is returned by
   // vec_pmsum_be.
-#if defined(__clang__) && defined(__LITTLE_ENDIAN__)
+#if defined(__LITTLE_ENDIAN__)
   return (uint64_t)(((__vector unsigned long long)vec_pmsum_be(all_ones, mask))[0]);
 #else
   return (uint64_t)(((__vector unsigned long long)vec_pmsum_be(all_ones, mask))[1]);

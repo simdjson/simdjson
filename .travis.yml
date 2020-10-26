@@ -12,7 +12,7 @@ matrix:
           packages:
             - g++-8
       env:
-         - COMPILER="CC=gcc-8 && CXX=g++-8"
+        - COMPILER="CC=gcc-8 && CXX=g++-8"
       compiler: gcc
 
     - os: linux
@@ -23,7 +23,7 @@ matrix:
           packages:
             - g++-9
       env:
-         - COMPILER="CC=gcc-9 && CXX=g++-9"
+        - COMPILER="CC=gcc-9 && CXX=g++-9"
       compiler: gcc
 
     - os: linux
@@ -34,8 +34,20 @@ matrix:
           packages:
             - g++-10
       env:
-         - COMPILER="CC=gcc-10 && CXX=g++-10"
+        - COMPILER="CC=gcc-10 && CXX=g++-10"
       compiler: gcc
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-10
+      env:
+        - COMPILER="CC=gcc-10 && CXX=g++-10"
+        - CMAKE_FLAGS="-DSIMDJSON_SANITIZE=on"
+      compiler: gcc-10-sanitize
 
     - os: linux
       addons:
@@ -47,6 +59,18 @@ matrix:
       env:
         - COMPILER="CC=clang-6.0 && CXX=clang++-6.0"
       compiler: clang
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-bionic-6.0
+          packages:
+            - clang-6.0
+      env:
+        - COMPILER="CC=clang-6.0 && CXX=clang++-6.0"
+        - SANITIZE="on"
+      compiler: clang-6-sanitize
 
     - os: linux
       addons:
@@ -94,6 +118,20 @@ matrix:
         - COMPILER="CC=clang-10 && CXX=clang++-10"
       compiler: clang
 
+    - os: linux
+      addons:
+        apt:
+          packages:
+            - clang-10
+          sources:
+            - ubuntu-toolchain-r-test
+            - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+      env:
+        - COMPILER="CC=clang-10 && CXX=clang++-10"
+        - SANITIZE="on"
+      compiler: clang-10-sanitize
+
 before_install:
   - eval "${COMPILER}"
 
@@ -105,11 +143,15 @@ install:
       tar -xjf cmake-3.17.0-hfb1cb51_0.tar.bz2 -C $HOME/cmake;
       export PATH=$HOME/cmake/bin:$PATH;
     fi
-  - export CTEST_FLAGS="-j4 --output-on-failure -E checkperf"
-
+  - if [[ "${SANITIZE}" == "on" ]]; then
+      export CMAKE_FLAGS="-DSIMDJSON_SANITIZE=on -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
+      export ASAN_OPTIONS="detect_leaks=0"
+    else
+      export CMAKE_FLAGS="-DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
+    fi
+  - export CTEST_FLAGS="-j4 --output-on-failure -E checkperf";
 
 script:
-  - export CMAKE_FLAGS="-DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
   - mkdir build
   - cd build
   - cmake $CMAKE_FLAGS ..
