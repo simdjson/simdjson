@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9) # CMP0069 NEW
+cmake_minimum_required(VERSION 3.13)
 
 project(simdjson
   DESCRIPTION "Parsing gigabytes of JSON per second"
