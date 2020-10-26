@@ -334,7 +334,23 @@ namespace parse_api_tests {
   const padded_string BASIC_JSON = "[1,2,3]"_padded;
   const padded_string BASIC_NDJSON = "[1,2,3]\n[4,5,6]"_padded;
   const padded_string EMPTY_NDJSON = ""_padded;
+  bool parser_moving_parser() {
+    std::cout << "Running " << __func__ << std::endl;
+    typedef std::tuple<std::string, std::unique_ptr<parser>,element> simdjson_tuple;
+    std::vector<simdjson_tuple> results;
+    std::vector<std::string> my_data = {"[1,2,3]", "[1,2,3]", "[1,2,3]"}; 
 
+    for (std::string s : my_data) {
+      std::unique_ptr<dom::parser> parser(new dom::parser{});
+      element root;
+      ASSERT_SUCCESS( parser->parse(s).get(root) );
+      results.emplace_back(s, std::move(parser), root);
+    }
+    for (auto &t : results) {
+      std::cout << "reserialized: " << simdjson::to_string(std::get<2>(t)) << " ...\n";
+    }
+    return true;
+  }
   bool parser_parse() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
@@ -502,7 +518,8 @@ namespace parse_api_tests {
 #endif
 
   bool run() {
-    return parser_parse() &&
+    return parser_moving_parser() &&
+           parser_parse() &&
            parser_parse_many() &&
            parser_parse_many_deprecated() &&
            parser_parse_many_empty() &&
