@@ -1,10 +1,6 @@
 language: cpp
 arch:
   - ppc64le
-addons:
-  snaps:
-    - name: cmake
-      confinement: classic
 matrix:
   include:
     - os: linux
@@ -39,6 +35,8 @@ matrix:
 
 
 script:
+  - sudo apt-get remove -y --purge cmake
+  - sudo apt-get install snapd && sudo snap install cmake --beta --classic || exit $?
   - eval "${MATRIX_EVAL}"
   - export PATH=/snap/bin:$PATH;
   - export CMAKE_FLAGS="-DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
