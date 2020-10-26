@@ -46,7 +46,7 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   v1.store(dst + sizeof(v0));
 
   // Getting a 64-bit bitmask is much cheaper than multiple 16-bit bitmasks on
-  // ARM; therefore, we smash them together into a 64-byte mask and get the
+  // PPC; therefore, we smash them together into a 64-byte mask and get the
   // bitmask from there.
   uint64_t bs_and_quote =
       simd8x64<bool>(v0 == '\\', v1 == '\\', v0 == '"', v1 == '"').to_bitmask();
