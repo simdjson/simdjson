@@ -46,7 +46,7 @@ matrix:
             - g++-10
       env:
         - COMPILER="CC=gcc-10 && CXX=g++-10"
-        - CMAKE_FLAGS="-DSIMDJSON_SANITIZE=on"
+        - SANITIZE="on"
       compiler: gcc-10-sanitize
 
     - os: linux
@@ -143,13 +143,12 @@ install:
       tar -xjf cmake-3.17.0-hfb1cb51_0.tar.bz2 -C $HOME/cmake;
       export PATH=$HOME/cmake/bin:$PATH;
     fi
+  - export CMAKE_FLAGS = "-DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
   - if [[ "${SANITIZE}" == "on" ]]; then
-      export CMAKE_FLAGS="-DSIMDJSON_SANITIZE=on -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
+      export CMAKE_FLAGS="${CMAKE_FLAGS} -DSIMDJSON_SANITIZE=on";
       export ASAN_OPTIONS="detect_leaks=0"
-    else
-      export CMAKE_FLAGS="-DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
     fi
-  - export CTEST_FLAGS="-j4 --output-on-failure -E checkperf";
+  - export CTEST_FLAGS="-j4 --output-on-failure -E checkperf"
 
 script:
   - mkdir build
