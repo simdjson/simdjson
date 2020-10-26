@@ -157,7 +157,7 @@ install:
       tar -xjf cmake-3.17.0-hfb1cb51_0.tar.bz2 -C $HOME/cmake;
       export PATH=$HOME/cmake/bin:$PATH;
     fi
-  - export CMAKE_FLAGS = "-DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
+  - export CMAKE_FLAGS="-DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
   - if [[ "${SANITIZE}" == "on" ]]; then
       export CMAKE_FLAGS="${CMAKE_FLAGS} -DSIMDJSON_SANITIZE=ON";
       export ASAN_OPTIONS="detect_leaks=0";
