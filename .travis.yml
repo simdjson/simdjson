@@ -36,7 +36,7 @@ matrix:
 
 before_install:
   - sudo apt-get install snapd
-  - sudo snap install cmake --beta --classic
+  - sudo snap install cmake - --beta --classic
 
 script:
   - eval "${MATRIX_EVAL}"
