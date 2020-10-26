@@ -13,32 +13,91 @@ matrix:
             - g++-8
       env:
          - COMPILER="CC=gcc-8 && CXX=g++-8"
+      compiler: gcc
 
     - os: linux
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-6.0
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-9
+      env:
+         - COMPILER="CC=gcc-9 && CXX=g++-9"
+      compiler: gcc
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-10
+      env:
+         - COMPILER="CC=gcc-10 && CXX=g++-10"
+      compiler: gcc
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-bionic-6.0
           packages:
             - clang-6.0
       env:
         - COMPILER="CC=clang-6.0 && CXX=clang++-6.0"
+      compiler: clang
 
     - os: linux
       addons:
         apt:
           sources:
-            - llvm-toolchain-xenial-8
+            - llvm-toolchain-bionic-7
+          packages:
+            - clang-7
+      env:
+        - COMPILER="CC=clang-7 && CXX=clang++-7"
+      compiler: clang
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-bionic-8
           packages:
             - clang-8
       env:
         - COMPILER="CC=clang-8 && CXX=clang++-8"
+      compiler: clang
 
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-bionic-9
+          packages:
+            - clang-9
+      env:
+        - COMPILER="CC=clang-9 && CXX=clang++-9"
+      compiler: clang
+
+    - os: linux
+      addons:
+        apt:
+          packages:
+            - clang-10
+          sources:
+            - ubuntu-toolchain-r-test
+            - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+      env:
+        - COMPILER="CC=clang-10 && CXX=clang++-10"
+      compiler: clang
 
 before_install:
   - eval "${COMPILER}"
 
-script:
+install:
   - if [[ "${TRAVIS_CPU_ARCH}" == "ppc64le" ]]; then
       sudo apt-get install libuv1 rhash libstdc++6;
       wget https://anaconda.org/conda-forge/cmake/3.17.0/download/linux-ppc64le/cmake-3.17.0-hfb1cb51_0.tar.bz2;
@@ -46,12 +105,25 @@ script:
       tar -xjf cmake-3.17.0-hfb1cb51_0.tar.bz2 -C $HOME/cmake;
       export PATH=$HOME/cmake/bin:$PATH;
     fi
-  - export CMAKE_FLAGS="-DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
   - export CTEST_FLAGS="-j4 --output-on-failure -E checkperf"
-  - mkdir build
-  - cd build
-  - cmake $CMAKE_FLAGS ..
-  - cmake --build . -- -j
-  - SIMDJSON_FORCE_IMPLEMENTATION=ppc64 ctest $CTEST_FLAGS -L per_implementation
-  - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
-  - ctest $CTEST_FLAGS -LE "acceptance|per_implementation"
+
+jobs:
+  include:
+    - name: "Static"
+      script:
+      - export CMAKE_FLAGS="-DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
+      - mkdir build
+      - cd build
+      - cmake $CMAKE_FLAGS ..
+      - cmake --build . -- -j
+      - SIMDJSON_FORCE_IMPLEMENTATION=ppc64 ctest $CTEST_FLAGS -L per_implementation
+      - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
+      - ctest $CTEST_FLAGS -LE "acceptance|per_implementation"
+    - name: "Dynamic"
+      script:
+      - mkdir build
+      - cd build
+      - cmake $CMAKE_FLAGS ..
+      - cmake --build . -- -j
+      - ctest $CTEST_FLAGS
+
