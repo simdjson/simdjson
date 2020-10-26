@@ -1,4 +1,4 @@
-# Initializes a git submodule if it hasn't been initialized before
+include(import.cmake)
 
 option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
 option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON)
