@@ -35,20 +35,15 @@ matrix:
 
 
 script:
-  - if [[ "${TRAVIS_CPU_ARCH}" == "ppc64le" ]]; then
-      sudo apt-get install libuv1 rhash libstdc++6;
-      wget https://anaconda.org/conda-forge/cmake/3.17.0/download/linux-ppc64le/cmake-3.17.0-hfb1cb51_0.tar.bz2;
-      mkdir $HOME/cmake;
-      tar -xjvf cmake-3.17.0-hfb1cb51_0.tar.bz2 -C $HOME/cmake;
-      export PATH=$HOME/cmake/bin:$PATH;
-    fi
+  - sudo apt-get install snapd
+  - sudo snap install cmake --classic
   - eval "${MATRIX_EVAL}"
   - export CMAKE_FLAGS="-DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
   - export CTEST_FLAGS="-j4 --output-on-failure -E checkperf"
   - mkdir build
   - cd build
-  - cmake $CMAKE_FLAGS ..
-  - cmake --build . -- -j
+  - /snap/cmake/current/bin/cmake $CMAKE_FLAGS ..
+  - /snap/cmake/current/bin/cmake --build . -- -j
   - SIMDJSON_FORCE_IMPLEMENTATION=ppc64 ctest $CTEST_FLAGS -L per_implementation
   - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
   - ctest $CTEST_FLAGS -LE "acceptance|per_implementation"
