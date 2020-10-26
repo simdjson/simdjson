@@ -13,7 +13,7 @@ matrix:
             - g++-8
       env:
         - COMPILER="CC=gcc-8 && CXX=g++-8"
-      compiler: gcc
+      compiler: gcc-8
 
     - os: linux
       addons:
@@ -24,7 +24,7 @@ matrix:
             - g++-9
       env:
         - COMPILER="CC=gcc-9 && CXX=g++-9"
-      compiler: gcc
+      compiler: gcc-9
 
     - os: linux
       addons:
@@ -35,7 +35,7 @@ matrix:
             - g++-10
       env:
         - COMPILER="CC=gcc-10 && CXX=g++-10"
-      compiler: gcc
+      compiler: gcc-10
 
     - os: linux
       addons:
@@ -53,12 +53,13 @@ matrix:
       addons:
         apt:
           sources:
-            - llvm-toolchain-bionic-6.0
+            - ubuntu-toolchain-r-test
           packages:
-            - clang-6.0
+            - g++-10
       env:
-        - COMPILER="CC=clang-6.0 && CXX=clang++-6.0"
-      compiler: clang
+        - COMPILER="CC=gcc-10 && CXX=g++-10"
+        - STATIC="on"
+      compiler: gcc-10-static
 
     - os: linux
       addons:
@@ -69,8 +70,7 @@ matrix:
             - clang-6.0
       env:
         - COMPILER="CC=clang-6.0 && CXX=clang++-6.0"
-        - SANITIZE="on"
-      compiler: clang-6-sanitize
+      compiler: clang-6
 
     - os: linux
       addons:
@@ -81,7 +81,7 @@ matrix:
             - clang-7
       env:
         - COMPILER="CC=clang-7 && CXX=clang++-7"
-      compiler: clang
+      compiler: clang-7
 
     - os: linux
       addons:
@@ -92,7 +92,7 @@ matrix:
             - clang-8
       env:
         - COMPILER="CC=clang-8 && CXX=clang++-8"
-      compiler: clang
+      compiler: clang-8
 
     - os: linux
       addons:
@@ -103,7 +103,7 @@ matrix:
             - clang-9
       env:
         - COMPILER="CC=clang-9 && CXX=clang++-9"
-      compiler: clang
+      compiler: clang-9
 
     - os: linux
       addons:
@@ -116,7 +116,21 @@ matrix:
               key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
       env:
         - COMPILER="CC=clang-10 && CXX=clang++-10"
-      compiler: clang
+      compiler: clang-10
+
+    - os: linux
+      addons:
+        apt:
+          packages:
+            - clang-10
+          sources:
+            - ubuntu-toolchain-r-test
+            - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+      env:
+        - COMPILER="CC=clang-10 && CXX=clang++-10"
+        - STATIC="on"
+      compiler: clang-10-static
 
     - os: linux
       addons:
@@ -145,8 +159,11 @@ install:
     fi
   - export CMAKE_FLAGS = "-DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
   - if [[ "${SANITIZE}" == "on" ]]; then
-      export CMAKE_FLAGS="${CMAKE_FLAGS} -DSIMDJSON_SANITIZE=on";
+      export CMAKE_FLAGS="${CMAKE_FLAGS} -DSIMDJSON_SANITIZE=ON";
       export ASAN_OPTIONS="detect_leaks=0";
+    fi
+  - if [[ "${STATIC}" == "on" ]]; then
+      export CMAKE_FLAGS="${CMAKE_FLAGS} -DSIMDJSON_BUILD_STATIC=ON";
     fi
   - export CTEST_FLAGS="-j4 --output-on-failure -E checkperf"
 
