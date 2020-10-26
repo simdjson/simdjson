@@ -34,16 +34,19 @@ matrix:
         - COMPILER="CC=clang-8 && CXX=clang++-8"
 
 
-script:
+before_install:
   - sudo apt-get install snapd
-  - sudo snap install cmake --classic
+  - sudo snap install cmake --beta --classic
+
+script:
   - eval "${MATRIX_EVAL}"
+  - export PATH=/snap/bin:$PATH;
   - export CMAKE_FLAGS="-DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
   - export CTEST_FLAGS="-j4 --output-on-failure -E checkperf"
   - mkdir build
   - cd build
-  - /snap/cmake/current/bin/cmake $CMAKE_FLAGS ..
-  - /snap/cmake/current/bin/cmake --build . -- -j
+  - cmake $CMAKE_FLAGS ..
+  - cmake --build . -- -j
   - SIMDJSON_FORCE_IMPLEMENTATION=ppc64 ctest $CTEST_FLAGS -L per_implementation
   - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
   - ctest $CTEST_FLAGS -LE "acceptance|per_implementation"
