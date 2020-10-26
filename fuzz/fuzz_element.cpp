@@ -58,7 +58,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     simdjson_unused auto v = elem fun;                                                         \
     break;                                                                     \
   }
+#if SIMDJSON_EXCEPTIONS
   try {
+#endif
 
     switch (action) {
       CASE(0, type);
@@ -122,9 +124,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 #undef CASE
 #undef CASE2
 
+#if SIMDJSON_EXCEPTIONS
   } catch (std::exception &) {
     // do nothing
   }
+#endif
 
   return 0;
 }
