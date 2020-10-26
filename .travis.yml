@@ -35,6 +35,9 @@ matrix:
         - COMPILER="CC=clang-8 && CXX=clang++-8"
 
 
+before_install:
+  - eval "${COMPILER}"
+
 script:
   - if [[ "${TRAVIS_CPU_ARCH}" == "ppc64le" ]]; then
       sudo apt-get install libuv1 rhash libstdc++6;
@@ -43,7 +46,6 @@ script:
       tar -xjf cmake-3.17.0-hfb1cb51_0.tar.bz2 -C $HOME/cmake;
       export PATH=$HOME/cmake/bin:$PATH;
     fi
-  - eval "${MATRIX_EVAL}"
   - export CMAKE_FLAGS="-DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
   - export CTEST_FLAGS="-j4 --output-on-failure -E checkperf"
   - mkdir build
