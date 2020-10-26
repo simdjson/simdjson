@@ -1,6 +1,10 @@
 language: cpp
 arch:
   - ppc64le
+addons:
+  snaps:
+    - name: cmake
+      confinement: classic
 matrix:
   include:
     - os: linux
@@ -33,10 +37,6 @@ matrix:
       env:
         - COMPILER="CC=clang-8 && CXX=clang++-8"
 
-
-before_install:
-  - sudo apt-get install snapd
-  - sudo snap install cmake - --beta --classic
 
 script:
   - eval "${MATRIX_EVAL}"
