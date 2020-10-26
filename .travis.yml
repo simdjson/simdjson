@@ -107,23 +107,13 @@ install:
     fi
   - export CTEST_FLAGS="-j4 --output-on-failure -E checkperf"
 
-jobs:
-  include:
-    - name: "Static"
-      script:
-      - export CMAKE_FLAGS="-DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
-      - mkdir build
-      - cd build
-      - cmake $CMAKE_FLAGS ..
-      - cmake --build . -- -j
-      - SIMDJSON_FORCE_IMPLEMENTATION=ppc64 ctest $CTEST_FLAGS -L per_implementation
-      - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
-      - ctest $CTEST_FLAGS -LE "acceptance|per_implementation"
-    - name: "Dynamic"
-      script:
-      - mkdir build
-      - cd build
-      - cmake $CMAKE_FLAGS ..
-      - cmake --build . -- -j
-      - ctest $CTEST_FLAGS
 
+script:
+  - export CMAKE_FLAGS="-DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
+  - mkdir build
+  - cd build
+  - cmake $CMAKE_FLAGS ..
+  - cmake --build . -- -j
+  - SIMDJSON_FORCE_IMPLEMENTATION=ppc64 ctest $CTEST_FLAGS -L per_implementation
+  - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
+  - ctest $CTEST_FLAGS -LE "acceptance|per_implementation"
