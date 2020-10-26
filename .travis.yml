@@ -32,22 +32,11 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-10
+            - g++-9
       env:
-        - COMPILER="CC=gcc-10 && CXX=g++-10"
-      compiler: gcc-10
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-10
-      env:
-        - COMPILER="CC=gcc-10 && CXX=g++-10"
+        - COMPILER="CC=gcc-9 && CXX=g++-9"
         - SANITIZE="on"
-      compiler: gcc-10-sanitize
+      compiler: gcc-9-sanitize
 
     - os: linux
       addons:
@@ -55,11 +44,23 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-10
+            - g++-9
       env:
-        - COMPILER="CC=gcc-10 && CXX=g++-10"
+        - COMPILER="CC=gcc-9 && CXX=g++-9"
         - STATIC="on"
-      compiler: gcc-10-static
+      compiler: gcc-9-static
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-9
+      env:
+        - COMPILER="CC=gcc-9 && CXX=g++-9"
+        - DEFAULT="on"
+      compiler: gcc-9-default
 
     - os: linux
       addons:
@@ -146,6 +147,20 @@ matrix:
         - SANITIZE="on"
       compiler: clang-10-sanitize
 
+    - os: linux
+      addons:
+        apt:
+          packages:
+            - clang-10
+          sources:
+            - ubuntu-toolchain-r-test
+            - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+      env:
+        - COMPILER="CC=clang-10 && CXX=clang++-10"
+        - DEFAULT="on"
+      compiler: clang-10-default
+
 before_install:
   - eval "${COMPILER}"
 
@@ -157,7 +172,10 @@ install:
       tar -xjf cmake-3.17.0-hfb1cb51_0.tar.bz2 -C $HOME/cmake;
       export PATH=$HOME/cmake/bin:$PATH;
     fi
-  - export CMAKE_FLAGS="-DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
+  - if [[ "${DEFAULT}" != "on" ]]; then
+      export CMAKE_FLAGS="${CMAKE_FLAGS} -DSIMDJSON_IMPLEMENTATION=ppc64;fallback";
+    fi
+  - export CMAKE_FLAGS=""
   - if [[ "${SANITIZE}" == "on" ]]; then
       export CMAKE_FLAGS="${CMAKE_FLAGS} -DSIMDJSON_SANITIZE=ON";
       export ASAN_OPTIONS="detect_leaks=0";
@@ -172,6 +190,10 @@ script:
   - cd build
   - cmake $CMAKE_FLAGS ..
   - cmake --build . -- -j
-  - SIMDJSON_FORCE_IMPLEMENTATION=ppc64 ctest $CTEST_FLAGS -L per_implementation
-  - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
-  - ctest $CTEST_FLAGS -LE "acceptance|per_implementation"
+  - if [[ "${DEFAULT}" != "on" ]]; then
+      SIMDJSON_FORCE_IMPLEMENTATION=ppc64 ctest $CTEST_FLAGS -L per_implementation;
+      SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation;
+      ctest $CTEST_FLAGS -LE "acceptance|per_implementation";
+    else
+      ctest $CTEST_FLAGS;
+    fi
