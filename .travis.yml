@@ -1,30 +1,46 @@
 language: cpp
-sudo: false
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - gcc-7
-      - g++-7
-      - clang-format
-      - python
-branches:
-  only:
-    - master
+arch:
+  - ppc64le
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-8
+      env:
+         - COMPILER="CC=gcc-8 && CXX=g++-8"
 
-script: 
-   - export CXX=g++-7
-   - export CC=gcc-7
-   - make
-   - make test 
-   - make everything
-   - make amalgamate
-   - make clean
-   - make SANITIZEGOLD=1 test
-   - make clean
-   - ARCHFLAGS="-march=nehalem" make 
-   - ARCHFLAGS="-march=nehalem" make test
-   - ARCHFLAGS="-march=nehalem" make everything
-   - ./style/run-clang-format.py -r include/ benchmark/ src/ tests/
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-6.0
+          packages:
+            - clang-6.0
+      env:
+        - COMPILER="CC=clang-6.0 && CXX=clang++-6.0"
 
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-xenial-8
+          packages:
+            - clang-8
+      env:
+        - COMPILER="CC=clang-8 && CXX=clang++-8"
+
+
+script:
+   - eval "${MATRIX_EVAL}"
+   - export CMAKE_FLAGS="-DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=ppc64;fallback"
+   - mkdir build
+   - cd build
+   - cmake $CMAKE_FLAGS ..
+   - cmake --build . -- -j
+   - SIMDJSON_FORCE_IMPLEMENTATION=ppc64 ctest $CTEST_FLAGS -L per_implementation
+   - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
+   - ctest $CTEST_FLAGS -LE "acceptance|per_implementation"

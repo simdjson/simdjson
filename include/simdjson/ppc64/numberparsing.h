@@ -13,7 +13,7 @@ static simdjson_really_inline uint32_t
 parse_eight_digits_unrolled(const uint8_t *chars) {
   uint64_t val;
   memcpy(&val, chars, sizeof(uint64_t));
-#if __BIG_ENDIAN__
+#ifdef __BIG_ENDIAN__
   val = bswap_64(val);
 #endif
   val = (val & 0x0F0F0F0F0F0F0F0F) * 2561 >> 8;

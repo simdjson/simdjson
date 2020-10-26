@@ -7,11 +7,12 @@
 // you use visual studio or other compilers.
 #include <altivec.h>
 
-#if defined(bool)
+// These are defined by altivec.h in GCC toolchain, it is safe to undef them.
+#ifdef bool
 #undef bool
 #endif
 
-#if defined(vector)
+#ifdef vector
 #undef vector
 #endif
 

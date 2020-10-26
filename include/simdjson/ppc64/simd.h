@@ -12,7 +12,6 @@ namespace {
 namespace simd {
 
 using __m128i = __vector unsigned char;
-template <typename T> struct simd8;
 
 template <typename Child> struct base {
   __m128i value;
