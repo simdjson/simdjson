@@ -71,7 +71,7 @@ add_cpp_test(padded_string_tests)
 
 find_program(BASH bash)
 
-# Below we skip anything on Windows, not just visual studio, because running bash under Windows requires you to 
+# Below we skip anything on Windows, not just visual studio, because running bash under Windows requires you to
 # map app paths to their "mounted" equivalent (e.g., /mnt/c/...). So even if you have bash under Windows, extra work would be
 # required to make things work robustly. Simply put: bash is not quite portable.
 
@@ -94,7 +94,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
   if ((SIMDJSON_COMPETITION) AND (!SIMDJSON_SANITIZE))
     # It looks like RapidJSON does not pass the sanitizer under some conditions (Clang 10)
     add_executable(allparserscheckfile allparserscheckfile.cpp)
-    target_link_libraries(allparserscheckfile competition-all)
+    target_link_libraries(allparserscheckfile PRIVATE competition-all)
 
     add_test(issue150 ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/issue150.sh)
     set_property(TEST issue150 APPEND PROPERTY DEPENDS allparserscheckfile)

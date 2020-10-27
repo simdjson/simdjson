@@ -4,7 +4,7 @@ link_libraries(simdjson-windows-headers test-data)
 
 if (TARGET benchmark::benchmark)
   add_executable(bench_sax bench_sax.cpp)
-  target_link_libraries(bench_sax simdjson-internal-flags simdjson-include-source benchmark::benchmark)
+  target_link_libraries(bench_sax PRIVATE simdjson-internal-flags simdjson-include-source benchmark::benchmark)
 endif (TARGET benchmark::benchmark)
 
 link_libraries(simdjson simdjson-flags)
@@ -24,19 +24,19 @@ target_compile_definitions(parse_nostringparsing PRIVATE SIMDJSON_SKIPSTRINGPARS
 
 if (TARGET competition-all)
   add_executable(distinctuseridcompetition distinctuseridcompetition.cpp)
-  target_link_libraries(distinctuseridcompetition competition-core)
+  target_link_libraries(distinctuseridcompetition PRIVATE competition-core)
 
   add_executable(minifiercompetition minifiercompetition.cpp)
-  target_link_libraries(minifiercompetition competition-core)
+  target_link_libraries(minifiercompetition PRIVATE competition-core)
 
   add_executable(parseandstatcompetition parseandstatcompetition.cpp)
-  target_link_libraries(parseandstatcompetition competition-core)
+  target_link_libraries(parseandstatcompetition PRIVATE competition-core)
 
   add_executable(parsingcompetition parsingcompetition.cpp)
-  target_link_libraries(parsingcompetition competition-core)
+  target_link_libraries(parsingcompetition PRIVATE competition-core)
 
   add_executable(allparsingcompetition parsingcompetition.cpp)
-  target_link_libraries(allparsingcompetition competition-all)
+  target_link_libraries(allparsingcompetition PRIVATE competition-all)
   target_compile_definitions(allparsingcompetition PRIVATE ALLPARSER)
 endif()
 
