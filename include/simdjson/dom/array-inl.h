@@ -62,7 +62,7 @@ inline size_t array::size() const noexcept {
   return tape.scope_count();
 }
 inline size_t array::slots() const noexcept {
-  return tape.matching_brace_index();
+  return tape.matching_brace_index() - tape.json_index;
 }
 inline simdjson_result<element> array::at_pointer(std::string_view json_pointer) const noexcept {
   if(json_pointer.empty()) { // an empty string means that we return the current node
