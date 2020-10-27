@@ -25,7 +25,7 @@ An overview of what you need to know to use simdjson, with examples.
 Requirements
 ------------------
 
-- A recent compiler (LLVM clang6 or better, GNU GCC 7.4 or better) on a 64-bit (ARM or x64 Intel/AMD) POSIX systems such as macOS, freeBSD or Linux. We require that the compiler supports the C++11 standard or better.
+- A recent compiler (LLVM clang6 or better, GNU GCC 7.4 or better) on a 64-bit (PPC, ARM or x64 Intel/AMD) POSIX systems such as macOS, freeBSD or Linux. We require that the compiler supports the C++11 standard or better.
 - Visual Studio 2017 or better under 64-bit Windows. Users should target a 64-bit build (x64) instead of a 32-bit build (x86). We support the LLVM clang compiler under Visual Studio (clangcl) as well as as the regular Visual Studio compiler. We also support MinGW 64-bit under Windows.
 
 Including simdjson
@@ -75,7 +75,7 @@ set(SIMDJSON_BUILD_STATIC ON CACHE INTERNAL "")
 FetchContent_MakeAvailable(simdjson)
 ```
 
-You should replace `GIT_TAG  v0.5.0` by the version you need. If you omit `GIT_TAG  v0.5.0`, you will work from the main branch of simdjson: we recommend that if you are working on production code, 
+You should replace `GIT_TAG  v0.5.0` by the version you need. If you omit `GIT_TAG  v0.5.0`, you will work from the main branch of simdjson: we recommend that if you are working on production code,
 
 Elsewhere in your project, you can  declare dependencies on simdjson with lines such as these:
 
@@ -240,7 +240,7 @@ available, we define the macro `SIMDJSON_HAS_STRING_VIEW`.
 
 When we detect that it is unavailable,
 we use [string-view-lite](https://github.com/martinmoene/string-view-lite) as a
-substitute. In such cases, we use the type alias `using string_view = nonstd::string_view;` to  
+substitute. In such cases, we use the type alias `using string_view = nonstd::string_view;` to
 offer the same API, irrespective of the compiler and standard library. The macro
 `SIMDJSON_HAS_STRING_VIEW` will be *undefined* to indicate that we emulate `string_view`.
 
@@ -285,7 +285,7 @@ In some cases, you may have valid JSON strings that you do not wish to parse but
   // It does not have to be null-terminated.
   const char * some_string = "[ 1, 2, 3, 4] ";
   size_t length = std::strlen(some_string);
-  // Create a buffer to receive the minified string. Make sure that there is enough room (length bytes).  
+  // Create a buffer to receive the minified string. Make sure that there is enough room (length bytes).
   std::unique_ptr<char[]> buffer{new char[length]};
   size_t new_length{}; // It will receive the minified length.
   auto error = simdjson::minify(some_string, length, buffer.get(), new_length);
@@ -332,10 +332,10 @@ index allows you to select the indexed node. Within objects, the string value of
 select the value. If your keys contain the characters '/' or '~', they must be escaped as '~1' and
 '~0' respectively. An empty JSON Path refers to the whole document.
 
-We also extend the JSON Pointer support to include *relative* paths.  
+We also extend the JSON Pointer support to include *relative* paths.
 You can apply a JSON path to any node and the path gets interpreted relatively, as if the currrent node were a whole JSON document.
 
-Consider the following example: 
+Consider the following example:
 
 ```c++
 auto cars_json = R"( [
@@ -605,7 +605,7 @@ for (dom::element doc : docs) {
 // Prints 1 2 3
 ```
 
-In-memory ndjson strings can be parsed as well, with `parser.parse_many(string)`: 
+In-memory ndjson strings can be parsed as well, with `parser.parse_many(string)`:
 
 
 ```c++
@@ -622,7 +622,7 @@ for (dom::element doc : docs) {
 
 
 Unlike `parser.parse`, both `parser.load_many(filename)` and `parser.parse_many(string)` may parse
-"on demand" (lazily). That is, no parsing may have been done before you enter the loop 
+"on demand" (lazily). That is, no parsing may have been done before you enter the loop
 `for (dom::element doc : docs) {` and you should expect the parser to only ever fully parse one JSON
 document at a time.
 
@@ -660,8 +660,8 @@ The simdjson library is fully compliant with  the [RFC 8259](https://www.tbray.o
 - The only insignificant whitespace characters allowed are the space, the horizontal tab, the line feed and the carriage return. In particular, a JSON document may not contain an unespaced null character.
 - A single string or a single number is considered to be a valid JSON document.
 - We fully validate the numbers according to the JSON specification. For example,  the string `01` is not valid JSON document since the specification states that *leading zeros are not allowed*.
-- The specification allows implementations to set limits on the range and precision of numbers accepted.  We support 64-bit floating-point numbers as well as integer values. 
-  - We parse integers and floating-point numbers as separate types which allows us to support all signed (two complement's) 64-bit integers, like a Java `long` or a C/C++ `long long` and all 64-bit unsigned integers. When we cannot represent exactly an integer as a signed or unsigned 64-bit value, we reject the JSON document. 
+- The specification allows implementations to set limits on the range and precision of numbers accepted.  We support 64-bit floating-point numbers as well as integer values.
+  - We parse integers and floating-point numbers as separate types which allows us to support all signed (two complement's) 64-bit integers, like a Java `long` or a C/C++ `long long` and all 64-bit unsigned integers. When we cannot represent exactly an integer as a signed or unsigned 64-bit value, we reject the JSON document.
   - We support the full range of 64-bit floating-point numbers (binary64). The values range from `std::numeric_limits<double>::lowest()`  to `std::numeric_limits<double>::max()`, so from -1.7976e308 all the way to 1.7975e308. Extreme values (less or equal to -1e308, greater or equal to 1e308) are rejected: we refuse to parse the input document. Numbers are parsed with with a perfect accuracy (ULP 0): the nearest floating-point value is chosen, rounding to even when needed. If you serialized your floating-point numbers with 17 significant digits in a standard compliant manner, the simdjson library is guaranteed to recovere the example same numbers, exactly.
 - The specification states that JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8. The simdjson library does full UTF-8 validation as part of the parsing. The specification states that implementations MUST NOT add a byte order mark: the simdjson library rejects documents starting with a  byte order mark.
 - The simdjson library validates string content for unescaped characters. Unescaped line breaks and tabs in strings are not allowed.

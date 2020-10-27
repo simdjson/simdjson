@@ -20,20 +20,22 @@ The current implementations are:
 * haswell: AVX2 (2013 Intel Haswell or later)
 * westmere: SSE4.2 (2010 Westmere or later).
 * arm64: 64-bit ARMv8-A NEON
+* ppc64: 64-bit POWER8 and POWER9 with VSX and ALTIVEC extensions. Both big endian and little endian are implemented, depends on the compiler you are using.
 * fallback: A generic implementation that runs on any 64-bit processor.
 
 In many cases, you don't know where your compiled binary is going to run, so simdjson automatically
 compiles *all* the implementations into the executable. On Intel, it will include 3 implementations
-(haswell, westmere and fallback), and on ARM it will include 2 (arm64 and fallback).
+(haswell, westmere and fallback), on ARM it will include 2 (arm64 and fallback), and on PPC it will include 2 (ppc64 and fallback).
 
 If you know more about where you're going to run and want to save the space, you can disable any of
 these implementations at compile time with `-DSIMDJSON_IMPLEMENTATION_X=0` (where X is HASWELL,
-WESTMERE, ARM64 and FALLBACK).
+WESTMERE, ARM64, PPC64 and FALLBACK).
 
 The simdjson library automatically sets header flags for each implementation as it compiles; there
 is no need to set architecture-specific flags yourself (e.g., `-mavx2`, `/AVX2`  or
 `-march=haswell`), and it may even break runtime dispatch and your binaries will fail to run on
-older processors.
+older processors. _Note:_ for POWER9 processors make sure you compile it with `-mcpu=power9` and `-mtune=power9` to
+get maximum performance.
 
 Runtime CPU Detection
 ---------------------
@@ -71,7 +73,7 @@ And look them up by name:
 ```c++
 cout << simdjson::available_implementations["fallback"]->description() << endl;
 ```
-Though the fallback implementation should always be available, others might be missing. When 
+Though the fallback implementation should always be available, others might be missing. When
 an implementation is not available, the bracket call `simdjson::available_implementations[name]`
 will return the null pointer.
 

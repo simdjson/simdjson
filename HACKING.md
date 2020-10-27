@@ -48,7 +48,7 @@ simdjson's source structure, from the top level, looks like this:
   implementations).
   * simdjson.cpp: A "main source" that includes all implementation files from src/. This is
     equivalent to the distributed simdjson.cpp.
-  * arm64/|fallback/|haswell/|westmere/: Architecture-specific implementations. All functions are
+  * arm64/|fallback/|haswell/|ppc64/|westmere/: Architecture-specific implementations. All functions are
     Each architecture defines its own namespace, e.g. simdjson::haswell.
   * generic/: Generic implementations of the simdjson parser. These files may be included and
     compiled multiple times, from whichever architectures use them. They assume they are already
@@ -67,7 +67,7 @@ Other important files and directories:
 * **.circleci:** Definitions for Circle CI.
 * **.github/workflows:** Definitions for GitHub Actions (CI).
 * **singleheader:** Contains generated `simdjson.h` and `simdjson.cpp` that we release. The files `singleheader/simdjson.h` and `singleheader/simdjson.cpp` should never be edited by hand.
-* **singleheader/amalgamate.sh:** Generates `singleheader/simdjson.h` and `singleheader/simdjson.cpp` for release (bash script). 
+* **singleheader/amalgamate.sh:** Generates `singleheader/simdjson.h` and `singleheader/simdjson.cpp` for release (bash script).
 * **benchmark:** This is where we do benchmarking. Benchmarking is core to every change we make; the
   cardinal rule is don't regress performance without knowing exactly why, and what you're trading
   for it. Many of our benchmarks are microbenchmarks. We are effectively doing controlled scientific experiments for the purpose of understanding what affects our performance. So we simplify as much as possible. We try to avoid irrelevant factors such as page faults, interrupts, unnnecessary system calls. We recommend checking the performance as follows:
@@ -251,7 +251,7 @@ We assume you have a common 64-bit Windows PC with at least Visual Studio 2019.
 - Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that `cmake` be made available from the command line. Please choose a recent version of cmake.
 - Create a subdirectory within simdjson, such as `build`.
 - Using a shell, go to this newly created directory. You can start a shell directly from GitHub Desktop (Repository > Open in Command Prompt).
-- Type `cmake  ..` in the shell while in the `build` repository. 
+- Type `cmake  ..` in the shell while in the `build` repository.
 - This last command (`cmake ...`) created a Visual Studio solution file in the newly created directory (e.g., `simdjson.sln`). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the `Solution Explorer` window (available from the `View` menu), right-click `ALL_BUILD` and select `Build`. To test the code, still in the `Solution Explorer` window, select `RUN_TESTS` and select `Build`.
 
 

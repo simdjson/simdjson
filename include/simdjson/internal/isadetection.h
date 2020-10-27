@@ -65,10 +65,17 @@ enum instruction_set {
   SSE42 = 0x8,
   PCLMULQDQ = 0x10,
   BMI1 = 0x20,
-  BMI2 = 0x40
+  BMI2 = 0x40,
+  ALTIVEC = 0x80
 };
 
-#if defined(__arm__) || defined(__aarch64__) // incl. armel, armhf, arm64
+#if defined(__PPC64__)
+
+static inline uint32_t detect_supported_architectures() {
+  return instruction_set::ALTIVEC;
+}
+
+#elif defined(__arm__) || defined(__aarch64__) // incl. armel, armhf, arm64
 
 #if defined(__ARM_NEON)
 

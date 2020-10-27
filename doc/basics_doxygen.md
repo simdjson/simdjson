@@ -7,7 +7,7 @@ An overview of what you need to know to use simdjson, with examples.
 Requirements
 ------------------
 
-- A recent compiler (LLVM clang6 or better, GNU GCC 7 or better) on a 64-bit (ARM or x64 Intel/AMD) POSIX systems such as macOS, freeBSD or Linux. We require that the compiler supports the C++11 standard or better.
+- A recent compiler (LLVM clang6 or better, GNU GCC 7 or better) on a 64-bit (PPC, ARM or x64 Intel/AMD) POSIX systems such as macOS, freeBSD or Linux. We require that the compiler supports the C++11 standard or better.
 - Visual Studio 2017 or better under 64-bit Windows. Users should target a 64-bit build (x64) instead of a 32-bit build (x86). We support the LLVM clang compiler under Visual Studio (clangcl) as well as as the regular Visual Studio compiler.
 
 Including simdjson
@@ -56,7 +56,7 @@ set(SIMDJSON_BUILD_STATIC ON CACHE INTERNAL "")
 FetchContent_MakeAvailable(simdjson)
 ```
 
-You should replace `GIT_TAG  v0.5.0` by the version you need. If you omit `GIT_TAG  v0.5.0`, you will work from the main branch of simdjson: we recommend that if you are working on production code, 
+You should replace `GIT_TAG  v0.5.0` by the version you need. If you omit `GIT_TAG  v0.5.0`, you will work from the main branch of simdjson: we recommend that if you are working on production code,
 
 Elsewhere in your project, you can  declare dependencies on simdjson with lines such as these:
 
@@ -99,7 +99,7 @@ If you need to keep a document around long term, you can keep or move the parser
 
 During the`load` or `parse` calls, neither the input file nor the input string are ever modified. After calling `load` or `parse`, the source (either a file or a string) can be safely discarded. All of the JSON data is stored in the `parser` instance.  The parsed document is also immutable in simdjson: you do not modify it by accessing it.
 
-For best performance, a `parser` instance should be reused over several files: otherwise you will needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory allocations during parsing when using simdjson. 
+For best performance, a `parser` instance should be reused over several files: otherwise you will needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory allocations during parsing when using simdjson.
 
 
 If you need a lower-level interface, you may call the function `parser.parse(const char * p, size_t l)` on a pointer `p` while specifying the
@@ -221,7 +221,7 @@ available, we define the macro `SIMDJSON_HAS_STRING_VIEW`.
 
 When we detect that it is unavailable,
 we use [string-view-lite](https://github.com/martinmoene/string-view-lite) as a
-substitute. In such cases, we use the type alias `using string_view = nonstd::string_view;` to  
+substitute. In such cases, we use the type alias `using string_view = nonstd::string_view;` to
 offer the same API, irrespective of the compiler and standard library. The macro
 `SIMDJSON_HAS_STRING_VIEW` will be *undefined* to indicate that we emulate `string_view`.
 
@@ -314,10 +314,10 @@ index allows you to select the indexed node. Within objects, the string value of
 select the value. If your keys contain the characters '/' or '~', they must be escaped as '~1' and
 '~0' respectively. An empty JSON Path refers to the whole document.
 
-We also extend the JSON Pointer support to include *relative* paths.  
+We also extend the JSON Pointer support to include *relative* paths.
 You can apply a JSON path to any node and the path gets interpreted relatively, as if the currrent node were a whole JSON document.
 
-Consider the following example: 
+Consider the following example:
 
 ```c++
 auto cars_json = R"( [
@@ -587,7 +587,7 @@ for (dom::element doc : docs) {
 ```
 
 
-In-memory ndjson strings can be parsed as well, with `parser.parse_many(string)`: 
+In-memory ndjson strings can be parsed as well, with `parser.parse_many(string)`:
 
 
 ```
@@ -604,7 +604,7 @@ for (dom::element doc : docs) {
 
 
 Unlike `parser.parse`, both `parser.load_many(filename)` and `parser.parse_many(string)` may parse
-"on demand" (lazily). That is, no parsing may have been done before you enter the loop 
+"on demand" (lazily). That is, no parsing may have been done before you enter the loop
 `for (dom::element doc : docs) {` and you should expect the parser to only ever fully parse one JSON
 document at a time.
 

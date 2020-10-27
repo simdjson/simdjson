@@ -63,8 +63,8 @@ void print_usage(ostream& out) {
   out << "-s STAGE   - Stop after the given stage." << endl;
   out << "             -s stage1 - Stop after find_structural_bits." << endl;
   out << "             -s all    - Run all stages." << endl;
-  out << "-a ARCH    - Use the parser with the designated architecture (HASWELL, WESTMERE" << endl;
-  out << "             or ARM64). By default, detects best supported architecture." << endl;
+  out << "-a ARCH    - Use the parser with the designated architecture (HASWELL, WESTMERE," << endl;
+  out << "             PPC64 or ARM64). By default, detects best supported architecture." << endl;
 }
 
 void exit_usage(string message) {
@@ -99,11 +99,11 @@ struct option_struct {
       case 'a': {
           auto impl = simdjson::available_implementations[optarg];
           if(impl && impl->supported_by_runtime_system()) {
-            simdjson::active_implementation = impl; 
-          } else { 
+            simdjson::active_implementation = impl;
+          } else {
             std::cerr << "implementation " << optarg << " not found or not supported " << std::endl;
           }
-        } 
+        }
         break;
       case 's':
         if (!strcmp(optarg, "stage1")) {
