@@ -53,8 +53,9 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
-    - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
-    - apt-get install -y cmake
+    - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
+    - apt-get update -qq
+    - apt-get -t buster-backports install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -102,8 +103,9 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
-    - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
-    - apt-get install -y cmake
+    - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
+    - apt-get update -qq
+    - apt-get -t buster-backports install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -143,8 +145,9 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
-    - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
-    - apt-get install -y cmake
+    - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
+    - apt-get update -qq
+    - apt-get -t buster-backports install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -192,8 +195,9 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=arm64;fallback
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
-    - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
-    - apt-get install -y cmake
+    - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
+    - apt-get update -qq
+    - apt-get -t buster-backports install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -237,8 +241,9 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
-    - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
-    - apt-get install -y cmake
+    - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
+    - apt-get update -qq
+    - apt-get -t buster-backports install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -279,8 +284,10 @@ steps:
     CC: gcc
     CXX: g++
   commands:
-    - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
-    - apt-get install -y cmake libstdc++6
+    - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
+    - apt-get update -qq
+    - apt-get -t buster-backports install -y cmake
+    - apt-get install -y libstdc++6
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -369,8 +376,9 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_EXCEPTIONS=OFF
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
-    - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
-    - apt-get install -y cmake
+    - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
+    - apt-get update -qq
+    - apt-get -t buster-backports install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
