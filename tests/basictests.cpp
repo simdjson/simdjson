@@ -374,6 +374,7 @@ namespace parse_api_tests {
     return true;
   }
 
+#if SIMDJSON_ENABLE_DEPRECATED_API
   SIMDJSON_PUSH_DISABLE_WARNINGS
   SIMDJSON_DISABLE_DEPRECATED_WARNING
   bool parser_parse_many_deprecated() {
@@ -389,6 +390,7 @@ namespace parse_api_tests {
     return true;
   }
   SIMDJSON_POP_DISABLE_WARNINGS
+#endif // SIMDJSON_ENABLE_DEPRECATED_API
   bool parser_parse_many_empty() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
@@ -453,6 +455,7 @@ namespace parse_api_tests {
     return true;
   }
 
+#if SIMDJSON_ENABLE_DEPRECATED_API
   SIMDJSON_PUSH_DISABLE_WARNINGS
   SIMDJSON_DISABLE_DEPRECATED_WARNING
   bool parser_load_many_deprecated() {
@@ -474,7 +477,7 @@ namespace parse_api_tests {
     return true;
   }
   SIMDJSON_POP_DISABLE_WARNINGS
-
+#endif // SIMDJSON_ENABLE_DEPRECATED_API
 #if SIMDJSON_EXCEPTIONS
 
   bool parser_parse_exception() {
@@ -521,12 +524,16 @@ namespace parse_api_tests {
     return parser_moving_parser() &&
            parser_parse() &&
            parser_parse_many() &&
+#if SIMDJSON_ENABLE_DEPRECATED_API
            parser_parse_many_deprecated() &&
+#endif
            parser_parse_many_empty() &&
            parser_parse_many_empty_batches() &&
            parser_load() &&
            parser_load_many() &&
+#if SIMDJSON_ENABLE_DEPRECATED_API
            parser_load_many_deprecated() &&
+#endif
 #if SIMDJSON_EXCEPTIONS
            parser_parse_exception() &&
            parser_parse_many_exception() &&

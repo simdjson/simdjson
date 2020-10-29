@@ -259,6 +259,7 @@ simdjson_really_inline dom::document_stream::iterator simdjson_result<dom::docum
   return first.end();
 }
 #else // SIMDJSON_EXCEPTIONS
+#if SIMDJSON_ENABLE_DEPRECATED_API
 simdjson_really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept {
   first.error = error();
   return first.begin();
@@ -267,6 +268,7 @@ simdjson_really_inline dom::document_stream::iterator simdjson_result<dom::docum
   first.error = error();
   return first.end();
 }
+#endif // SIMDJSON_ENABLE_DEPRECATED_API
 #endif // SIMDJSON_EXCEPTIONS
 
 } // namespace simdjson

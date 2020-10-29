@@ -374,6 +374,7 @@ public:
    */
   simdjson_warn_unused inline error_code allocate(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
 
+#if SIMDJSON_ENABLE_DEPRECATED_API
   /**
    * @private deprecated because it returns bool instead of error_code, which is our standard for
    * failures. Use allocate() instead.
@@ -387,7 +388,7 @@ public:
    */
   [[deprecated("Use allocate() instead.")]]
   simdjson_warn_unused inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
-
+#endif // SIMDJSON_ENABLE_DEPRECATED_API
   /**
    * The largest document this parser can support without reallocating.
    *

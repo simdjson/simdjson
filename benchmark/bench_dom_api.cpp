@@ -720,7 +720,7 @@ BENCHMARK(iterator_twitter_image_sizes);
 
 #endif // SIMDJSON_ENABLE_DEPRECATED_API
 
-
+#if SIMDJSON_ENABLE_DEPRECATED_API
 static void print_json(State& state) noexcept {
   // Prints the number of results in twitter.json
   dom::parser parser;
@@ -737,6 +737,7 @@ static void print_json(State& state) noexcept {
   }
 }
 BENCHMARK(print_json);
+#endif // SIMDJSON_ENABLE_DEPRECATED_API
 SIMDJSON_POP_DISABLE_WARNINGS
 
 BENCHMARK_MAIN();

@@ -160,11 +160,12 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   return SUCCESS;
 }
 
+#if SIMDJSON_ENABLE_DEPRECATED_API
 simdjson_warn_unused
 inline bool parser::allocate_capacity(size_t capacity, size_t max_depth) noexcept {
   return !allocate(capacity, max_depth);
 }
-
+#endif // SIMDJSON_ENABLE_DEPRECATED_API
 inline error_code parser::ensure_capacity(size_t desired_capacity) noexcept {
   // If we don't have enough capacity, (try to) automatically bump it.
   // If the document was taken, reallocate that too.
