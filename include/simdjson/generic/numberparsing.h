@@ -31,7 +31,7 @@ simdjson_really_inline double to_double(uint64_t mantissa, uint64_t real_exponen
     mantissa &= ~(1ULL << 52);
     mantissa |= real_exponent << 52;
     mantissa |= (((uint64_t)negative) << 63);
-    memcpy(&d, &mantissa, sizeof(d));
+    std::memcpy(&d, &mantissa, sizeof(d));
     return d;
 }
 }
@@ -307,7 +307,7 @@ simdjson_really_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
   // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
   static_assert(7 <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be bigger than 7");
-  memcpy(&val, chars, 8);
+  std::memcpy(&val, chars, 8);
   // a branchy method might be faster:
   // return (( val & 0xF0F0F0F0F0F0F0F0 ) == 0x3030303030303030)
   //  && (( (val + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0 ) ==
