@@ -10,7 +10,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-printf "Adding CMake PPA for %s\\n" "$1"
+echo "Adding CMake PPA for $1"
 
 # Exit immediately if one of the commands fail below
 trap exit ERR
