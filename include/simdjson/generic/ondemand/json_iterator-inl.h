@@ -204,7 +204,7 @@ simdjson_warn_unused simdjson_really_inline bool json_iterator::copy_to_buffer(c
   }
 
   // Copy to the buffer.
-  memcpy(tmpbuf, json, len);
+  std::memcpy(tmpbuf, json, len);
   tmpbuf[len] = ' ';
   return true;
 }
