@@ -544,6 +544,9 @@ namespace dom_api_tests {
 
   SIMDJSON_PUSH_DISABLE_WARNINGS
   SIMDJSON_DISABLE_DEPRECATED_WARNING
+
+#if SIMDJSON_ENABLE_DEPRECATED_API
+
   // returns true if successful
   bool ParsedJson_Iterator_test() {
     std::cout << "Running " << __func__ << std::endl;
@@ -566,6 +569,7 @@ namespace dom_api_tests {
       printf("Could not parse '%s': %s\n", json.data(), simdjson::error_message(pj.error));
       return false;
     }
+
     simdjson::ParsedJson::Iterator iter(pj);
     if (!iter.is_object()) {
       printf("Root should be object\n");
@@ -645,6 +649,8 @@ namespace dom_api_tests {
     }
     return true;
   }
+#endif // SIMDJSON_ENABLE_DEPRECATED_API
+
   SIMDJSON_POP_DISABLE_WARNINGS
 
   bool object_iterator() {
@@ -1054,7 +1060,10 @@ namespace dom_api_tests {
 #endif
 
   bool run() {
-    return ParsedJson_Iterator_test() &&
+    return
+    #if SIMDJSON_ENABLE_DEPRECATED_API
+        ParsedJson_Iterator_test() &&
+    #endif
            object_iterator() &&
            array_iterator() &&
            object_iterator_empty() &&

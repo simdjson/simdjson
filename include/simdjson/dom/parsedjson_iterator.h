@@ -15,7 +15,7 @@
 #include "simdjson/internal/jsonformatutils.h"
 
 namespace simdjson {
-
+#if SIMDJSON_ENABLE_DEPRECATED_API
 /** @private **/
 class [[deprecated("Use the new DOM navigation API instead (see doc/basics.md)")]] dom::parser::Iterator {
 public:
@@ -265,6 +265,7 @@ public:
   scopeindex_t *depth_index{};
 };
 
+#endif
 } // namespace simdjson
 
 #endif // SIMDJSON_DOM_PARSEDJSON_ITERATOR_H

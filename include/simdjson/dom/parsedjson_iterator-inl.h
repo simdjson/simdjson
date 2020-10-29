@@ -12,7 +12,7 @@ SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 
 // Because of template weirdness, the actual class definition is inline in the document class
-
+#if SIMDJSON_ENABLE_DEPRECATED_API
 simdjson_warn_unused bool dom::parser::Iterator::is_ok() const {
   return location < tape_length;
 }
@@ -478,9 +478,9 @@ bool dom::parser::Iterator::relative_move_to(const char *pointer,
 
   return found;
 }
+#endif
 
 SIMDJSON_POP_DISABLE_WARNINGS
-
 } // namespace simdjson
 
 #endif // SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H

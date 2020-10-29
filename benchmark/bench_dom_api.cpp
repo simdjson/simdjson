@@ -575,8 +575,11 @@ static void error_code_twitter_default_profile(State& state) noexcept {
 }
 BENCHMARK(error_code_twitter_default_profile);
 
+#if SIMDJSON_ENABLE_DEPRECATED_API
+
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
+
 static void iterator_twitter_default_profile(State& state) {
   // Count unique users with a default profile.
   padded_string json;
@@ -615,8 +618,10 @@ static void iterator_twitter_default_profile(State& state) {
     if (default_users.size() != 86) { return; }
   }
 }
+
 SIMDJSON_POP_DISABLE_WARNINGS
 BENCHMARK(iterator_twitter_default_profile);
+#endif // SIMDJSON_ENABLE_DEPRECATED_API
 
 static void error_code_twitter_image_sizes(State& state) noexcept {
   // Count unique image sizes
@@ -647,6 +652,8 @@ static void error_code_twitter_image_sizes(State& state) noexcept {
   }
 }
 BENCHMARK(error_code_twitter_image_sizes);
+
+#if SIMDJSON_ENABLE_DEPRECATED_API
 
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
@@ -710,6 +717,9 @@ static void iterator_twitter_image_sizes(State& state) {
   }
 }
 BENCHMARK(iterator_twitter_image_sizes);
+
+#endif // SIMDJSON_ENABLE_DEPRECATED_API
+
 
 static void print_json(State& state) noexcept {
   // Prints the number of results in twitter.json

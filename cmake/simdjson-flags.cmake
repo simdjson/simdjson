@@ -217,6 +217,11 @@ if (SIMDJSON_VERBOSE_LOGGING)
   target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_VERBOSE_LOGGING=1)
 endif()
 
+option(SIMDJSON_ENABLE_DEPRECATED_API "Enables deprecated APIs" Off)
+if (SIMDJSON_ENABLE_DEPRECATED_API)
+    target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_ENABLE_DEPRECATED_API=1)
+endif()
+
 if(SIMDJSON_USE_LIBCPP)
   target_link_libraries(simdjson-flags INTERFACE -stdlib=libc++ -lc++abi)
   # instead of the above line, we could have used
