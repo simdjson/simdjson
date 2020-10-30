@@ -13,7 +13,7 @@ fi
 echo "Adding CMake PPA for $1"
 
 # Exit immediately if one of the commands fail below
-trap exit ERR
+set -e
 
 # Commands taken from https://apt.kitware.com/
 
