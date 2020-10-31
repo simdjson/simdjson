@@ -19,6 +19,7 @@ jobs:
       implementations: haswell westmere fallback
       UBSAN_OPTIONS: halt_on_error=1
       MAXLEN: -max_len=4000
+      CLANGVER: 11
 
     steps:
     - name: Install packages necessary for building
@@ -27,7 +28,7 @@ jobs:
         sudo apt-get install --quiet ninja-build valgrind zip unzip
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh 10
+        sudo ./llvm.sh $CLANGVER
 
     - uses: actions/checkout@v1
 

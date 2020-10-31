@@ -4,17 +4,27 @@
 # - different sanitizers
 # - different build options
 # - reproduce build, for running through valgrind
+#
+# Set environment variable CLANGVERSION to select clang version (example: "-11")
 
 # fail on error
-set -eu
+set -e
 
 unset CXX CC CFLAGS CXXFLAGS LDFLAGS
 
 me=$(basename $0)
 
+
+if [ -z $CLANGVERSION ] ; then
+    # the default clang version is set low enough to be found on current Debian stable (Buster)
+    CLANGVERSION=-8
+fi
+
+# detect unset variables
+set -u
+
 # common options
-CLANGVER=-9
-COMMON="-GNinja -DCMAKE_CXX_COMPILER=clang++$CLANGVER -DCMAKE_C_COMPILER=clang$CLANGVER -DSIMDJSON_BUILD_STATIC=Off -DENABLE_FUZZING=On -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_GIT=Off"
+COMMON="-GNinja -DCMAKE_CXX_COMPILER=clang++$CLANGVERSION -DCMAKE_C_COMPILER=clang$CLANGVERSION -DSIMDJSON_BUILD_STATIC=Off -DENABLE_FUZZING=On -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_GIT=Off"
 
 # A replay build, as plain as it gets. For use with valgrind/gdb.
 variant=replay
