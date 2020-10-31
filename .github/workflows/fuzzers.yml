@@ -30,7 +30,7 @@ jobs:
         sudo apt-get install --quiet ninja-build valgrind zip unzip
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh $CLANGVER
+        sudo ./llvm.sh $CLANGVERSION
 
     - uses: actions/checkout@v1
 
@@ -54,7 +54,7 @@ jobs:
         clang++ --version
 
     - name: Build all the variants
-      run: fuzz/build_fuzzer_variants.sh
+      run: CLANGSUFFIX=-$CLANGVERSION fuzz/build_fuzzer_variants.sh
 
     - name: Explore fast (release build, default implementation)
       run: |
