@@ -13,7 +13,7 @@
 
 #include "simdjson.h"
 #include "test_ondemand.h"
-
+#include "number_comparison.h"
 
 // const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
 #define SIMDJSON_SHOW_DEFINE(x) printf("%s=%s\n", #x, STRINGIFY(x))
@@ -173,19 +173,6 @@ namespace active_tests {
 
 }
 namespace number_tests {
-
-  // ulp distance
-  // Marc B. Reynolds, 2016-2019
-  // Public Domain under http://unlicense.org, see link for details.
-  // adapted by D. Lemire
-  inline uint64_t f64_ulp_dist(double a, double b) {
-    uint64_t ua, ub;
-    std::memcpy(&ua, &a, sizeof(ua));
-    std::memcpy(&ub, &b, sizeof(ub));
-    if (static_cast<int64_t>(ub ^ ua) >= 0)
-      return static_cast<int64_t>(ua - ub) >= 0 ? (ua - ub) : (ub - ua);
-    return ua + ub + 0x80000000;
-  }
 
   bool small_integers() {
     std::cout << __func__ << std::endl;

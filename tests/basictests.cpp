@@ -15,6 +15,7 @@
 #include "simdjson.h"
 #include "cast_tester.h"
 #include "test_macros.h"
+#include "number_comparison.h"
 
 /**
  * Some systems have bad floating-point parsing. We want to exclude them.
@@ -31,19 +32,6 @@ const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
 #define SIMDJSON_SHOW_DEFINE(x) printf("%s=%s\n", #x, STRINGIFY(x))
 
 namespace number_tests {
-
-  // ulp distance
-  // Marc B. Reynolds, 2016-2019
-  // Public Domain under http://unlicense.org, see link for details.
-  // adapted by D. Lemire
-  inline uint64_t f64_ulp_dist(double a, double b) {
-    uint64_t ua, ub;
-    memcpy(&ua, &a, sizeof(ua));
-    memcpy(&ub, &b, sizeof(ub));
-    if ((int64_t)(ub ^ ua) >= 0)
-      return (int64_t)(ua - ub) >= 0 ? (ua - ub) : (ub - ua);
-    return ua + ub + 0x80000000;
-  }
 
   bool ground_truth() {
     std::cout << __func__ << std::endl;
