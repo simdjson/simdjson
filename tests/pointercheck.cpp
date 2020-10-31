@@ -109,6 +109,7 @@ bool json_pointer_failure_test(const padded_string & source, const char *json_po
   return true;
 }
 
+#if SIMDJSON_ENABLE_DEPRECATED_API
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 // for pre 0.4 users (not standard compliant)
@@ -132,6 +133,7 @@ bool legacy_support() {
   return true;
 }
 SIMDJSON_POP_DISABLE_WARNINGS
+#endif // #if SIMDJSON_ENABLE_DEPRECATED_API
 
 // for 0.5 version and following (standard compliant)
 bool modern_support() {
@@ -191,7 +193,9 @@ int main() {
   if (true
     && demo()
     && issue1142()
+#if SIMDJSON_ENABLE_DEPRECATED_API
     && legacy_support()
+#endif
     && modern_support()
     && json_pointer_success_test(TEST_RFC_JSON, "", R"({"foo":["bar","baz"],"":0,"a/b":1,"c%d":2,"e^f":3,"g|h":4,"i\\j":5,"k\"l":6," ":7,"m~n":8})")
     && json_pointer_success_test(TEST_RFC_JSON, "/foo", "[\"bar\",\"baz\"]")
