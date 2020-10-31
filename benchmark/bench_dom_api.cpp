@@ -472,7 +472,7 @@ static void twitter_count(State& state) {
 }
 BENCHMARK(twitter_count);
 
-#ifdef SIMDJSON_ENABLE_DEPRECATED_API
+#ifndef SIMDJSON_DISABLE_DEPRECATED_API
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void iterator_twitter_count(State& state) {
@@ -492,7 +492,7 @@ static void iterator_twitter_count(State& state) {
 }
 BENCHMARK(iterator_twitter_count);
 SIMDJSON_POP_DISABLE_WARNINGS
-#endif // SIMDJSON_ENABLE_DEPRECATED_API
+#endif // SIMDJSON_DISABLE_DEPRECATED_API
 
 static void twitter_default_profile(State& state) {
   // Count unique users with a default profile.
@@ -577,7 +577,7 @@ static void error_code_twitter_default_profile(State& state) noexcept {
 }
 BENCHMARK(error_code_twitter_default_profile);
 
-#ifdef SIMDJSON_ENABLE_DEPRECATED_API
+#ifndef SIMDJSON_DISABLE_DEPRECATED_API
 
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
@@ -623,7 +623,7 @@ static void iterator_twitter_default_profile(State& state) {
 
 SIMDJSON_POP_DISABLE_WARNINGS
 BENCHMARK(iterator_twitter_default_profile);
-#endif // SIMDJSON_ENABLE_DEPRECATED_API
+#endif // SIMDJSON_DISABLE_DEPRECATED_API
 
 static void error_code_twitter_image_sizes(State& state) noexcept {
   // Count unique image sizes
@@ -655,7 +655,7 @@ static void error_code_twitter_image_sizes(State& state) noexcept {
 }
 BENCHMARK(error_code_twitter_image_sizes);
 
-#ifdef SIMDJSON_ENABLE_DEPRECATED_API
+#ifndef SIMDJSON_DISABLE_DEPRECATED_API
 
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
@@ -720,9 +720,9 @@ static void iterator_twitter_image_sizes(State& state) {
 }
 BENCHMARK(iterator_twitter_image_sizes);
 
-#endif // SIMDJSON_ENABLE_DEPRECATED_API
+#endif // SIMDJSON_DISABLE_DEPRECATED_API
 
-#ifdef SIMDJSON_ENABLE_DEPRECATED_API
+#ifndef SIMDJSON_DISABLE_DEPRECATED_API
 static void print_json(State& state) noexcept {
   // Prints the number of results in twitter.json
   dom::parser parser;
@@ -739,7 +739,7 @@ static void print_json(State& state) noexcept {
   }
 }
 BENCHMARK(print_json);
-#endif // SIMDJSON_ENABLE_DEPRECATED_API
+#endif // SIMDJSON_DISABLE_DEPRECATED_API
 SIMDJSON_POP_DISABLE_WARNINGS
 
 BENCHMARK_MAIN();
