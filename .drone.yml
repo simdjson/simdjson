@@ -12,7 +12,7 @@ steps:
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf 
   commands:
     - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
-    - apt-get install -y g++ cmake gcc
+    - apt-get install -y g++ cmake gcc git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -33,7 +33,7 @@ steps:
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf 
   commands:
     - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
-    - apt-get install -y clang++-6.0 cmake
+    - apt-get install -y clang++-6.0 cmake git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -212,7 +212,7 @@ name: arm64-clang6
 platform: { os: linux, arch: arm64 }
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: debian:buster-backports
   environment:
     CC: clang-6.0
     CXX: clang++-6.0
@@ -220,8 +220,9 @@ steps:
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure  -E checkperf
   commands:
-    - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
-    - apt-get install -y clang cmake git
+    - apt-get -qq update
+    - apt-get -t buster-backports install -y cmake
+    - apt-get install -y clang-6.0 git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -255,7 +256,7 @@ name: arm64-dynamic-clang6
 platform: { os: linux, arch: arm64 }
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: debian:buster-backports
   environment:
     CC: clang-6.0
     CXX: clang++-6.0
@@ -263,8 +264,9 @@ steps:
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
-    - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
-    - apt-get install -y clang cmake git
+    - apt-get -qq update
+    - apt-get -t buster-backports install -y cmake
+    - apt-get install -y clang-6.0 git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -302,7 +304,7 @@ name: arm64-sanitize-clang6
 platform: { os: linux, arch: arm64 }
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: debian:buster-backports
   environment:
     CC: clang-6.0
     CXX: clang++-6.0
@@ -310,8 +312,9 @@ steps:
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
-    - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
-    - apt-get install -y clang cmake git
+    - apt-get -qq update
+    - apt-get -t buster-backports install -y cmake
+    - apt-get install -y clang-6.0 git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -397,7 +400,7 @@ steps:
     DEBIAN_FRONTEND: noninteractive
     ASAN_OPTIONS: detect_leaks=0
   commands:
-    - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
+    - apt-get -qq update
     - apt-get install -q -y clang cmake git wget zip ninja-build
     - wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
     - tar xf corpus.tar && rm corpus.tar
