@@ -221,7 +221,7 @@ steps:
     CTEST_FLAGS: -j4 --output-on-failure  -E checkperf
   commands:
     - apt-get -qq update
-    - apt-get install -y clang cmake git
+    - apt-get install -y clang-6.0 cmake git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -264,7 +264,7 @@ steps:
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - apt-get -qq update
-    - apt-get install -y clang cmake git
+    - apt-get install -y clang-6.0 cmake git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -311,7 +311,7 @@ steps:
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - apt-get -qq update
-    - apt-get install -y clang cmake git
+    - apt-get install -y clang-6.0 cmake git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
