@@ -259,7 +259,7 @@ simdjson_really_inline dom::document_stream::iterator simdjson_result<dom::docum
   return first.end();
 }
 #else // SIMDJSON_EXCEPTIONS
-#if SIMDJSON_ENABLE_DEPRECATED_API
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API
 simdjson_really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept {
   first.error = error();
   return first.begin();

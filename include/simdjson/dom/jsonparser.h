@@ -13,7 +13,7 @@ namespace simdjson {
 // C API (json_parse and build_parsed_json) declarations
 //
 
-#if SIMDJSON_ENABLE_DEPRECATED_API
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API
 [[deprecated("Use parser.parse() instead")]]
 inline int json_parse(const uint8_t *buf, size_t len, dom::parser &parser, bool realloc_if_needed = true) noexcept {
   error_code code = parser.parse(buf, len, realloc_if_needed).error();

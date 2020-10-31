@@ -116,7 +116,7 @@ simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::elemen
   if (error()) { return error(); }
   return first.at_pointer(json_pointer);
 }
-#if SIMDJSON_ENABLE_DEPRECATED_API
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API
 [[deprecated("For standard compliance, use at_pointer instead, and prefix your pointers with a slash '/', see RFC6901 ")]]
 simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(const std::string_view json_pointer) const noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
@@ -375,7 +375,7 @@ inline simdjson_result<element> element::at_pointer(std::string_view json_pointe
     }
   }
 }
-#if SIMDJSON_ENABLE_DEPRECATED_API
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API
 [[deprecated("For standard compliance, use at_pointer instead, and prefix your pointers with a slash '/', see RFC6901 ")]]
 inline simdjson_result<element> element::at(std::string_view json_pointer) const noexcept {
   // version 0.4 of simdjson allowed non-compliant pointers

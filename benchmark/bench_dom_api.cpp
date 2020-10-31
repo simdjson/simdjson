@@ -472,7 +472,7 @@ static void twitter_count(State& state) {
 }
 BENCHMARK(twitter_count);
 
-#if SIMDJSON_ENABLE_DEPRECATED_API
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void iterator_twitter_count(State& state) {
@@ -577,7 +577,7 @@ static void error_code_twitter_default_profile(State& state) noexcept {
 }
 BENCHMARK(error_code_twitter_default_profile);
 
-#if SIMDJSON_ENABLE_DEPRECATED_API
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API
 
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
@@ -655,7 +655,7 @@ static void error_code_twitter_image_sizes(State& state) noexcept {
 }
 BENCHMARK(error_code_twitter_image_sizes);
 
-#if SIMDJSON_ENABLE_DEPRECATED_API
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API
 
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
@@ -722,7 +722,7 @@ BENCHMARK(iterator_twitter_image_sizes);
 
 #endif // SIMDJSON_ENABLE_DEPRECATED_API
 
-#if SIMDJSON_ENABLE_DEPRECATED_API
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API
 static void print_json(State& state) noexcept {
   // Prints the number of results in twitter.json
   dom::parser parser;

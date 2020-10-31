@@ -251,7 +251,7 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
 #endif // SIMDJSON_EXCEPTIONS
 }; // struct simdjson_result
 
-#if SIMDJSON_ENABLE_DEPRECATED_API
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API
 /**
  * @deprecated This is an alias and will be removed, use error_code instead
  */

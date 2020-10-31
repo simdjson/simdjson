@@ -109,7 +109,7 @@ bool json_pointer_failure_test(const padded_string & source, const char *json_po
   return true;
 }
 
-#if SIMDJSON_ENABLE_DEPRECATED_API
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 // for pre 0.4 users (not standard compliant)
@@ -193,7 +193,7 @@ int main() {
   if (true
     && demo()
     && issue1142()
-#if SIMDJSON_ENABLE_DEPRECATED_API
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API
     && legacy_support()
 #endif
     && modern_support()

@@ -411,7 +411,7 @@ public:
    */
   inline simdjson_result<element> at_pointer(const std::string_view json_pointer) const noexcept;
 
-#if SIMDJSON_ENABLE_DEPRECATED_API  
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API  
   /**
    * 
    * Version 0.4 of simdjson used an incorrect interpretation of the JSON Pointer standard

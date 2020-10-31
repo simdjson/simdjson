@@ -5,7 +5,7 @@
 #include "simdjson/portability.h"
 #include <cstring>
 
-#if SIMDJSON_ENABLE_DEPRECATED_API
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API
 
 namespace simdjson {
 

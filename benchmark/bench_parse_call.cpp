@@ -111,7 +111,7 @@ BENCHMARK(parse_gsoc)->Repetitions(10)->ComputeStatistics("max", [](const std::v
 
 
 
-#if SIMDJSON_ENABLE_DEPRECATED_API
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void json_parse(State& state) {
@@ -154,7 +154,7 @@ BENCHMARK(parser_parse_exception);
 
 #endif // SIMDJSON_EXCEPTIONS
 
-#if SIMDJSON_ENABLE_DEPRECATED_API
+#ifdef SIMDJSON_ENABLE_DEPRECATED_API
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void build_parsed_json(State& state) {
