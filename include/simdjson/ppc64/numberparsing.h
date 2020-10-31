@@ -7,12 +7,12 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 
-// we don't have appropriate, so let us use a scalar function
+// we don't have appropriate instructions, so let us use a scalar function
 // credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
 static simdjson_really_inline uint32_t
 parse_eight_digits_unrolled(const uint8_t *chars) {
   uint64_t val;
-  memcpy(&val, chars, sizeof(uint64_t));
+  std::memcpy(&val, chars, sizeof(uint64_t));
 #ifdef __BIG_ENDIAN__
   val = bswap_64(val);
 #endif

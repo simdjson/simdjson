@@ -75,11 +75,10 @@ decimal parse_decimal(const char *&p) noexcept {
     ++p;
   }
   while (is_integer(*p)) {
-    if (answer.num_digits + 1 < max_digits) {
-      answer.digits[answer.num_digits++] = uint8_t(*p - '0');
-    } else {
-      answer.truncated = true;
-    }
+    if (answer.num_digits < max_digits) {
+      answer.digits[answer.num_digits] = uint8_t(*p - '0');
+    } 
+    answer.num_digits++;
     ++p;
   }
   const char *first_after_period{};
@@ -94,11 +93,10 @@ decimal parse_decimal(const char *&p) noexcept {
       }
     }
     while (is_integer(*p)) {
-      if (answer.num_digits + 1 < max_digits) {
-        answer.digits[answer.num_digits++] = uint8_t(*p - '0');
-      } else {
-        answer.truncated = true;
-      }
+      if (answer.num_digits < max_digits) {
+        answer.digits[answer.num_digits] = uint8_t(*p - '0');
+      } 
+      answer.num_digits++;
       ++p;
     }
     answer.decimal_point = int32_t(first_after_period - p);
@@ -124,6 +122,10 @@ decimal parse_decimal(const char *&p) noexcept {
     answer.decimal_point += (neg_exp ? -exp_number : exp_number);
   }
   answer.decimal_point += answer.num_digits;
+  if(answer.num_digits > max_digits ) {
+    answer.num_digits = max_digits;
+    answer.truncated = true;
+  }
   return answer;
 }
 

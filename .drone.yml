@@ -11,8 +11,8 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf 
   commands:
-    - apt-get update -qq
-    - apt-get install -y g++ cmake gcc
+    - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
+    - apt-get install -y g++ cmake gcc git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -32,8 +32,8 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf 
   commands:
-    - apt-get update -qq
-    - apt-get install -y clang++-6.0 cmake
+    - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
+    - apt-get install -y clang++-6.0 cmake git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -53,8 +53,9 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
+    - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
     - apt-get update -qq
-    - apt-get install -y cmake
+    - apt-get -t buster-backports install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -102,8 +103,9 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
+    - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
     - apt-get update -qq
-    - apt-get install -y cmake
+    - apt-get -t buster-backports install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -143,8 +145,9 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
+    - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
     - apt-get update -qq
-    - apt-get install -y cmake
+    - apt-get -t buster-backports install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -192,8 +195,9 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=arm64;fallback
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
+    - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
     - apt-get update -qq
-    - apt-get install -y cmake
+    - apt-get -t buster-backports install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -208,7 +212,7 @@ name: arm64-clang6
 platform: { os: linux, arch: arm64 }
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: debian:buster-backports
   environment:
     CC: clang-6.0
     CXX: clang++-6.0
@@ -216,8 +220,9 @@ steps:
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure  -E checkperf
   commands:
-    - apt-get update -qq
-    - apt-get install -y clang cmake git
+    - apt-get -qq update
+    - apt-get -t buster-backports install -y cmake
+    - apt-get install -y clang-6.0 git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -237,8 +242,9 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
+    - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
     - apt-get update -qq
-    - apt-get install -y cmake
+    - apt-get -t buster-backports install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -250,7 +256,7 @@ name: arm64-dynamic-clang6
 platform: { os: linux, arch: arm64 }
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: debian:buster-backports
   environment:
     CC: clang-6.0
     CXX: clang++-6.0
@@ -258,8 +264,9 @@ steps:
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
-    - apt-get update -qq
-    - apt-get install -y clang cmake git
+    - apt-get -qq update
+    - apt-get -t buster-backports install -y cmake
+    - apt-get install -y clang-6.0 git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -279,8 +286,10 @@ steps:
     CC: gcc
     CXX: g++
   commands:
+    - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
     - apt-get update -qq
-    - apt-get install -y cmake libstdc++6
+    - apt-get -t buster-backports install -y cmake
+    - apt-get install -y libstdc++6
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -295,7 +304,7 @@ name: arm64-sanitize-clang6
 platform: { os: linux, arch: arm64 }
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: debian:buster-backports
   environment:
     CC: clang-6.0
     CXX: clang++-6.0
@@ -303,8 +312,9 @@ steps:
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
-    - apt-get update -qq
-    - apt-get install -y clang cmake git
+    - apt-get -qq update
+    - apt-get -t buster-backports install -y cmake
+    - apt-get install -y clang-6.0 git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -329,8 +339,6 @@ steps:
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
     CXXFLAGS: -stdlib=libc++
   commands:
-    - apt-get update -qq
-    - apt-get install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -352,8 +360,6 @@ steps:
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
     CXXFLAGS: -stdlib=libc++
   commands:
-    - apt-get update -qq
-    - apt-get install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -373,8 +379,9 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_EXCEPTIONS=OFF
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
+    - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
     - apt-get update -qq
-    - apt-get install -y cmake
+    - apt-get -t buster-backports install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -393,7 +400,7 @@ steps:
     DEBIAN_FRONTEND: noninteractive
     ASAN_OPTIONS: detect_leaks=0
   commands:
-    - apt-get update -qq
+    - apt-get -qq update
     - apt-get install -q -y clang cmake git wget zip ninja-build
     - wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
     - tar xf corpus.tar && rm corpus.tar
