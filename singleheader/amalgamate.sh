@@ -105,7 +105,9 @@ function dofile()
     echo "/* end file $RELFILE */"
 }
 
-timestamp=$(date)
+# output the date in a locale and timezone independent way, and
+# take it from the git commit so it is reproducible
+timestamp=$(date --rfc-3339=s -d"$(git show -s --format=%ci HEAD)" --utc)
 mkdir -p $AMALGAMATE_OUTPUT_PATH
 
 AMAL_H="${AMALGAMATE_OUTPUT_PATH}/simdjson.h"
