@@ -472,6 +472,7 @@ static void twitter_count(State& state) {
 }
 BENCHMARK(twitter_count);
 
+#if SIMDJSON_ENABLE_DEPRECATED_API
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void iterator_twitter_count(State& state) {
@@ -491,6 +492,7 @@ static void iterator_twitter_count(State& state) {
 }
 BENCHMARK(iterator_twitter_count);
 SIMDJSON_POP_DISABLE_WARNINGS
+#endif // SIMDJSON_ENABLE_DEPRECATED_API
 
 static void twitter_default_profile(State& state) {
   // Count unique users with a default profile.
