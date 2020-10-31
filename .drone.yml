@@ -212,7 +212,7 @@ name: arm64-clang6
 platform: { os: linux, arch: arm64 }
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: debian:buster-backports
   environment:
     CC: clang-6.0
     CXX: clang++-6.0
@@ -255,7 +255,7 @@ name: arm64-dynamic-clang6
 platform: { os: linux, arch: arm64 }
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: debian:buster-backports
   environment:
     CC: clang-6.0
     CXX: clang++-6.0
@@ -302,7 +302,7 @@ name: arm64-sanitize-clang6
 platform: { os: linux, arch: arm64 }
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: debian:buster-backports
   environment:
     CC: clang-6.0
     CXX: clang++-6.0
