@@ -43,17 +43,28 @@ fi
 
 
 # A fuzzer with sanitizers. For improved capability to find bugs.
-variant=sanitizers
+# About the optimization level: (measured for fuzz_atpointer)
+# -O0 gives  4000 executions/s
+# -O1 gives 20000 executions/s
+# -O2 gives 32000 executions/s
+# -O3 gives 32000 executions/s
+# for reference, the release build (without sanitizers, but with fuzzing instrumentation)
+# gives 80000 executions/s.
+# A low level is good for debugging. A higher level gets more work done.
+# Different levels may uncover different types of bugs, see this interesting
+# thread: https://github.com/google/oss-fuzz/issues/2295#issuecomment-481493392
+# Oss-fuzz uses -O1 so it may be relevant to use something else than that,
+# to do something oss-fuzz doesn't.
+variant=sanitizers-O3
 
     if [ ! -d build-$variant ] ; then
 	
 	mkdir build-$variant
 	cd build-$variant
-	
 	cmake .. \
 	      $COMMON \
-	      -DCMAKE_CXX_FLAGS="-fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined" \
-	      -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined" \
+	      -DCMAKE_CXX_FLAGS="-O3 -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined" \
+	      -DCMAKE_C_FLAGS="-O3 -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined" \
 	      -DCMAKE_BUILD_TYPE=Debug \
 	      -DSIMDJSON_FUZZ_LINKMAIN=Off \
 	      -DSIMDJSON_FUZZ_LDFLAGS="-fsanitize=fuzzer"
@@ -62,6 +73,23 @@ variant=sanitizers
 	cd ..
     fi
 
+variant=sanitizers-O0
+
+    if [ ! -d build-$variant ] ; then
+	
+	mkdir build-$variant
+	cd build-$variant
+	cmake .. \
+	      $COMMON \
+	      -DCMAKE_CXX_FLAGS="-O0 -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined" \
+	      -DCMAKE_C_FLAGS="-O0 -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined" \
+	      -DCMAKE_BUILD_TYPE=Debug \
+	      -DSIMDJSON_FUZZ_LINKMAIN=Off \
+	      -DSIMDJSON_FUZZ_LDFLAGS="-fsanitize=fuzzer"
+	
+	ninja all_fuzzers
+	cd ..
+    fi
 
 
 # A fast fuzzer, for fast exploration rather than finding bugs.

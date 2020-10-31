@@ -27,7 +27,8 @@ if [ ! -d out ] ; then
   tar xf corpus.tar && rm corpus.tar
 fi
 
-builddir=build-sanitizers
+builddir=build-sanitizers-O3
+#builddir=build-fast
 
 if [ ! -d $builddir ] ; then
   fuzz/build_fuzzer_variants.sh
