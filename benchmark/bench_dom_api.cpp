@@ -8,8 +8,8 @@ using namespace std;
 
 const padded_string EMPTY_ARRAY("[]", 2);
 
-const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
-const char *NUMBERS_JSON = SIMDJSON_BENCHMARK_DATA_DIR "numbers.json";
+static const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
+static const char *NUMBERS_JSON = SIMDJSON_BENCHMARK_DATA_DIR "numbers.json";
 
 static void recover_one_string(State& state) {
   dom::parser parser;
