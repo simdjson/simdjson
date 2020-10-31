@@ -1,0 +1,31 @@
+name: Amalgamation
+
+on: [pull_request]
+
+jobs:
+  check-amalgamation:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Runs algamamation and check the diff
+        run: |
+          set -eu
+          singleheader/amalgamate.sh
+          git diff >algamamate.patch
+          if [ $(wc -c algamamate.patch) -ne 0 ] ; then
+             echo "you need to algamamate, please download the artifact"
+             echo "and apply with git apply <algamamate.patch or"
+             echo "run singleheader/amalgamate.sh locally."
+             exit 1
+          else
+             echo "no need for algamamate found, good!"
+          fi
+    - name: Archive whitespace patch
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: algamamate-patch
+        path: |
+          algamamate.patch
+        if-no-files-found: ignore
+
