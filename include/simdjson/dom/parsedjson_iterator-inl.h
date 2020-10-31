@@ -5,7 +5,7 @@
 #include "simdjson/portability.h"
 #include <cstring>
 
-#ifdef SIMDJSON_ENABLE_DEPRECATED_API
+#ifndef SIMDJSON_DISABLE_DEPRECATED_API
 
 namespace simdjson {
 
@@ -483,7 +483,7 @@ bool dom::parser::Iterator::relative_move_to(const char *pointer,
 SIMDJSON_POP_DISABLE_WARNINGS
 } // namespace simdjson
 
-#endif //#if SIMDJSON_ENABLE_DEPRECATED_API
+#endif // SIMDJSON_DISABLE_DEPRECATED_API
 
 
 #endif // SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H

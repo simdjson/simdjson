@@ -411,7 +411,7 @@ public:
    */
   inline simdjson_result<element> at_pointer(const std::string_view json_pointer) const noexcept;
 
-#ifdef SIMDJSON_ENABLE_DEPRECATED_API  
+#ifndef SIMDJSON_DISABLE_DEPRECATED_API  
   /**
    * 
    * Version 0.4 of simdjson used an incorrect interpretation of the JSON Pointer standard
@@ -434,7 +434,7 @@ public:
    */
   [[deprecated("For standard compliance, use at_pointer instead, and prefix your pointers with a slash '/', see RFC6901 ")]]
   inline simdjson_result<element> at(const std::string_view json_pointer) const noexcept;
-#endif // SIMDJSON_ENABLE_DEPRECATED_API
+#endif // SIMDJSON_DISABLE_DEPRECATED_API
 
   /**
    * Get the value at the given index.

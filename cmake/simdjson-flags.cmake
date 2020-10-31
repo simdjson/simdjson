@@ -217,9 +217,9 @@ if (SIMDJSON_VERBOSE_LOGGING)
   target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_VERBOSE_LOGGING=1)
 endif()
 
-option(SIMDJSON_ENABLE_DEPRECATED_API "Enables deprecated APIs" On)
-if (SIMDJSON_ENABLE_DEPRECATED_API)
-    target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_ENABLE_DEPRECATED_API=1)
+option(SIMDJSON_DISABLE_DEPRECATED_API "Disables deprecated APIs" Off)
+if (SIMDJSON_DISABLE_DEPRECATED_API)
+    target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_DISABLE_DEPRECATED_API=1)
 endif()
 
 if(SIMDJSON_USE_LIBCPP)

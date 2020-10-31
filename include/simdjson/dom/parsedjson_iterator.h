@@ -14,7 +14,7 @@
 #include "simdjson/dom/parsedjson.h"
 #include "simdjson/internal/jsonformatutils.h"
 
-#ifdef SIMDJSON_ENABLE_DEPRECATED_API
+#ifndef SIMDJSON_DISABLE_DEPRECATED_API
 
 namespace simdjson {
 /** @private **/
@@ -267,6 +267,6 @@ public:
 };
 
 } // namespace simdjson
-#endif //#if SIMDJSON_ENABLE_DEPRECATED_API
+#endif // SIMDJSON_DISABLE_DEPRECATED_API
 
 #endif // SIMDJSON_DOM_PARSEDJSON_ITERATOR_H
