@@ -25,6 +25,7 @@ if [ ! -d $bdir ] ; then
           -DCMAKE_BUILD_TYPE=Debug \
           -DSIMDJSON_BUILD_STATIC=On \
           -DENABLE_FUZZING=On \
+          -DSIMDJSON_ENABLE_DEPRECATED_API=Off \
 	  -DSIMDJSON_FUZZ_LINKMAIN=On
     ninja all_fuzzers
     cd ..
