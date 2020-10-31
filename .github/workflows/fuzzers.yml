@@ -19,6 +19,9 @@ jobs:
       implementations: haswell westmere fallback
       UBSAN_OPTIONS: halt_on_error=1
       MAXLEN: -max_len=4000
+      CLANGVERSION: 11
+      # which optimization level to use for the sanitizer build (see build_fuzzer.variants.sh)
+      OPTLEVEL: -O3
 
     steps:
     - name: Install packages necessary for building
@@ -27,7 +30,7 @@ jobs:
         sudo apt-get install --quiet ninja-build valgrind zip unzip
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh 10
+        sudo ./llvm.sh $CLANGVERSION
 
     - uses: actions/checkout@v1
 
@@ -51,7 +54,7 @@ jobs:
         clang++ --version
 
     - name: Build all the variants
-      run: fuzz/build_fuzzer_variants.sh
+      run: CLANGSUFFIX=-$CLANGVERSION fuzz/build_fuzzer_variants.sh
 
     - name: Explore fast (release build, default implementation)
       run: |
@@ -71,7 +74,7 @@ jobs:
           others=$(find out -type d -not -name $fuzzer -not -name out -not -name cmin)
           for implementation in $implementations; do
             export SIMDJSON_FORCE_IMPLEMENTATION=$implementation
-            build-sanitizers/fuzz/fuzz_$fuzzer out/$fuzzer $others seedcorpus -max_total_time=20 $MAXLEN
+            build-sanitizers$OPTLEVEL/fuzz/fuzz_$fuzzer out/$fuzzer $others seedcorpus -max_total_time=20 $MAXLEN
           done
           echo now have $(ls out/$fuzzer |wc -l) files in corpus        
         done
@@ -82,7 +85,7 @@ jobs:
         for fuzzer in $implfuzzers; do
           # get input from everyone else (corpus cross pollination)
           others=$(find out -type d -not -name $fuzzer -not -name out -not -name cmin)
-          build-sanitizers/fuzz/fuzz_$fuzzer out/$fuzzer $others seedcorpus -max_total_time=20 $MAXLEN
+          build-sanitizers$OPTLEVEL/fuzz/fuzz_$fuzzer out/$fuzzer $others seedcorpus -max_total_time=20 $MAXLEN
           echo now have $(ls out/$fuzzer |wc -l) files in corpus
         done
 
