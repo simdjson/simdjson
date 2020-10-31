@@ -178,15 +178,15 @@ namespace number_tests {
     std::cout << __func__ << std::endl;
     for (int64_t m = 10; m < 20; m++) {
       for (int64_t i = -1024; i < 1024; i++) {
-        auto test=[&](int64_t actual) {
-          ASSERT_EQUAL(actual, i);
-          return true;
-        };
-        if(!test_ondemand<int64_t>(std::to_string(i), test)) {
+        if(!test_ondemand<int64_t>(std::to_string(i),
+                                   [&](int64_t actual) {
+             ASSERT_EQUAL(actual, i);
+             return true;
+           })) {
           return false;
-        }
-      }
-    }
+        } // if
+      } // for i
+    } // for m
     return true;
   }
 
@@ -212,20 +212,20 @@ namespace number_tests {
       const double expected = std::pow(2, i);
       const auto buf=format_into_padded(expected);
       std::fflush(nullptr);
-      auto test=[&](double actual) {
-        const uint64_t ulp = f64_ulp_dist(actual,expected);
-        if(ulp > maxulp) maxulp = ulp;
-        if(ulp > 0) {
-          std::cerr << "JSON '" << buf << " parsed to ";
-          std::fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
-          SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
-          return false;
-        }
-        return true;
-      };
-      if(!test_ondemand<double>(buf, test)) {
+      if(!test_ondemand<double>(buf,
+                                [&](double actual) {
+                                const uint64_t ulp = f64_ulp_dist(actual,expected);
+                                if(ulp > maxulp) maxulp = ulp;
+                                if(ulp > 0) {
+                                  std::cerr << "JSON '" << buf << " parsed to ";
+                                  std::fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
+                                  SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
+                                  return false;
+                                }
+                                return true;
+                              })) {
         return false;
-      }
+      } // if
     } // for i
     return true;
   }
@@ -317,20 +317,20 @@ namespace number_tests {
       if (n >= sizeof(buf)) { std::abort(); }
       std::fflush(nullptr);
       const double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
-      auto test=[&](double actual) {
-        const auto ulp = f64_ulp_dist(actual, expected);
-        if(ulp > 0) {
-          std::cerr << "JSON '" << buf << " parsed to ";
-          std::fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
-          SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
-          return false;
-        }
-        return true;
-      };
-      if(!test_ondemand<double>(padded_string(buf, n), test)) {
+
+      if(!test_ondemand<double>(padded_string(buf, n), [&](double actual) {
+                                const auto ulp = f64_ulp_dist(actual, expected);
+                                if(ulp > 0) {
+                                  std::cerr << "JSON '" << buf << " parsed to ";
+                                  std::fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
+                                  SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
+                                  return false;
+                                }
+                                return true;
+                              })) {
         return false;
-      }
-    }
+      } // if
+    } // for i
     std::printf("Powers of 10 can be parsed.\n");
     return true;
   }
