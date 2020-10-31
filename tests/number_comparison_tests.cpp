@@ -58,7 +58,7 @@ template <class Real> void test_single_number(const Real y) {
 }
 
 void test_interesting_numbers() {
-  for (double x : {-1.0, 0., 1., 1e9, -1e9, M_PI, DBL_MIN, double(FLT_MIN),
+  for (double x : {-1.0, 0., 1., 0x1.1p55, 0x1.1p24, 0x1.1p50, 0x1.1p20, 3.14, DBL_MIN, double(FLT_MIN),
                    DBL_MAX, double(FLT_MAX)}) {
     test_single_number(x);
     test_single_number(static_cast<float>(x));
