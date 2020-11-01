@@ -42,6 +42,8 @@ simdjson_really_inline double to_double(uint64_t mantissa, uint64_t real_exponen
 // We assume that power is in the [smallest_power,
 // largest_power] interval: the caller is responsible for this check.
 simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, double &d) {
+  assert(power>=simdjson::internal::smallest_power);
+  assert(power<=simdjson::internal::largest_power);
   // we start with a fast path
   // It was described in
   // Clinger WD. How to read floating point numbers accurately.
@@ -734,10 +736,11 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
     if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
 
     exponent += exp_neg ? 0-exp : exp;
-    overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
   }
 
   if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
 
   //
   // Assemble (or slow-parse) the float
