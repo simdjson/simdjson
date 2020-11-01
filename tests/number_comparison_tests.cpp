@@ -58,10 +58,13 @@ template <class Real> void test_single_number(const Real y) {
 }
 
 void test_interesting_numbers() {
-  for (double x : {-1.0, 0., 1., 0x1.1p55, 0x1.1p24, 0x1.1p50, 0x1.1p20, 3.14, DBL_MIN, double(FLT_MIN),
-                   DBL_MAX, double(FLT_MAX)}) {
+  for (double x : {-1.0, 0., 1., 0x1.1p55, 0x1.1p24, 0x1.1p50, 0x1.1p20, 3.14,
+                   DBL_MIN, DBL_MAX}) {
     test_single_number(x);
-    test_single_number(static_cast<float>(x));
+  }
+  for (float x : {-1.0f, 0.f, 1.f, 0x1.1p24f, 0x1.1p50f, 0x1.1p20f, 3.14f,
+                  FLT_MIN, FLT_MAX}) {
+    test_single_number(x);
   }
 }
 
@@ -70,6 +73,7 @@ void test_random_numbers(RNG &rng, size_t count) {
   for (size_t i = 0; i < count; ++i) {
     const auto tmp = rng();
     Real x = 0;
+    static_assert(sizeof(tmp) >= sizeof(x), "output of RNG is too small");
     std::memcpy(&x, &tmp, std::min(sizeof(tmp), sizeof(x)));
     test_single_number(x);
   }
