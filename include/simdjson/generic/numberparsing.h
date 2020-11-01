@@ -42,6 +42,8 @@ simdjson_really_inline double to_double(uint64_t mantissa, uint64_t real_exponen
 // We assume that power is in the [smallest_power,
 // largest_power] interval: the caller is responsible for this check.
 simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, double &d) {
+  assert(power>=simdjson::internal::smallest_power);
+  assert(power<=simdjson::internal::largest_power);
   // we start with a fast path
   // It was described in
   // Clinger WD. How to read floating point numbers accurately.

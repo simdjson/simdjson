@@ -326,8 +326,19 @@ namespace number_tests {
     printf("Powers of 10 can be parsed.\n");
     return true;
   }
+
+  bool weird_case() {
+    padded_string bad(std::string_view("0.0300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000122978293824"));
+    simdjson::builtin::ondemand::parser parser;
+    simdjson_unused auto blah=parser.iterate(bad);
+    double x;
+    simdjson_unused auto blah2=blah.get(x);
+    return true;
+  }
+
   bool run() {
-    return small_integers() &&
+    return weird_case() &&
+           small_integers() &&
            powers_of_two() &&
            powers_of_ten();
   }
