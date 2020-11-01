@@ -6,11 +6,11 @@
 namespace simdjson {
 namespace internal {
 /**
- * The smallest non-zero float (binary64) is 2^−1074.
+ * The smallest non-zero float (binary64) is 2^-1074.
  * We take as input numbers of the form w x 10^q where w < 2^64.
  * We have that w * 10^-343  <  2^(64-344) 5^-343 < 2^-1076.
  * However, we have that 
- * (2^64-1) * 10^-342 =  (2^64-1) * 2^-342 * 5^-342 > 2^−1074.
+ * (2^64-1) * 10^-342 =  (2^64-1) * 2^-342 * 5^-342 > 2^-1074.
  * Thus it is possible for a number of the form w * 10^-342 where 
  * w is a 64-bit value to be a non-zero floating-point number.
  *********
