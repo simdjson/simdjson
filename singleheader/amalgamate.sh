@@ -105,7 +105,12 @@ function dofile()
     echo "/* end file $RELFILE */"
 }
 
-timestamp=$(date)
+# Get the generation date from git, so the output is reproducible.
+# The %ci specifier gives the unambiguous ISO 8601 format, and
+# does not change with locale and timezone at time of generation.
+# Forcing it to be UTC is difficult, because it needs to be portable
+# between gnu date and busybox date.
+timestamp=$(git show -s --format=%ci HEAD)
 mkdir -p $AMALGAMATE_OUTPUT_PATH
 
 AMAL_H="${AMALGAMATE_OUTPUT_PATH}/simdjson.h"
