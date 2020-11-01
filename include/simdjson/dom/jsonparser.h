@@ -13,6 +13,7 @@ namespace simdjson {
 // C API (json_parse and build_parsed_json) declarations
 //
 
+#ifndef SIMDJSON_DISABLE_DEPRECATED_API
 [[deprecated("Use parser.parse() instead")]]
 inline int json_parse(const uint8_t *buf, size_t len, dom::parser &parser, bool realloc_if_needed = true) noexcept {
   error_code code = parser.parse(buf, len, realloc_if_needed).error();
@@ -106,6 +107,7 @@ simdjson_warn_unused inline dom::parser build_parsed_json(const padded_string &s
   parser.error = code;
   return parser;
 }
+#endif // SIMDJSON_DISABLE_DEPRECATED_API
 
 /** @private We do not want to allow implicit conversion from C string to std::string. */
 int json_parse(const char *buf, dom::parser &parser) noexcept = delete;
