@@ -9,12 +9,10 @@
 #include <set>
 #include <sstream>
 #include <utility>
-#include <ciso646>
 #include <unistd.h>
 
 #include "simdjson.h"
 #include "test_ondemand.h"
-
 
 // const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
 #define SIMDJSON_SHOW_DEFINE(x) printf("%s=%s\n", #x, STRINGIFY(x))
@@ -175,53 +173,56 @@ namespace active_tests {
 }
 namespace number_tests {
 
-  // ulp distance
-  // Marc B. Reynolds, 2016-2019
-  // Public Domain under http://unlicense.org, see link for details.
-  // adapted by D. Lemire
-  inline uint64_t f64_ulp_dist(double a, double b) {
-    uint64_t ua, ub;
-    memcpy(&ua, &a, sizeof(ua));
-    memcpy(&ub, &b, sizeof(ub));
-    if ((int64_t)(ub ^ ua) >= 0)
-      return (int64_t)(ua - ub) >= 0 ? (ua - ub) : (ub - ua);
-    return ua + ub + 0x80000000;
-  }
-
   bool small_integers() {
     std::cout << __func__ << std::endl;
     for (int64_t m = 10; m < 20; m++) {
       for (int64_t i = -1024; i < 1024; i++) {
-        return test_ondemand<int64_t>(std::to_string(i), [&](int64_t actual) {
-          ASSERT_EQUAL(actual, i);
-          return true;
-        });
-      }
-    }
+        if(!test_ondemand<int64_t>(std::to_string(i),
+                                   [&](int64_t actual) {
+             ASSERT_EQUAL(actual, i);
+             return true;
+           })) {
+          return false;
+        } // if
+      } // for i
+    } // for m
     return true;
   }
 
   bool powers_of_two() {
     std::cout << __func__ << std::endl;
-    char buf[1024];
-    uint64_t maxulp = 0;
+
+    // converts the double "expected" to a padded string
+    auto format_into_padded=[](const double expected) -> padded_string
+    {
+      char buf[1024];
+      const auto n = std::snprintf(buf,
+                               sizeof(buf),
+                               "%.*e",
+                               std::numeric_limits<double>::max_digits10 - 1,
+                               expected);
+      const auto nz=static_cast<size_t>(n);
+      if (n<0 || nz >= sizeof(buf)) { std::abort(); }
+      return padded_string(buf, nz);
+    };
+
     for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
-      double expected = pow(2, i);
-      size_t n = snprintf(buf, sizeof(buf), "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
-      if (n >= sizeof(buf)) { abort(); }
-      fflush(NULL);
-      return test_ondemand<double>(padded_string(buf, n), [&](double actual) {
-        uint64_t ulp = f64_ulp_dist(actual,expected);
-        if(ulp > maxulp) maxulp = ulp;
-        if(ulp > 0) {
-          std::cerr << "JSON '" << buf << " parsed to ";
-          fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
-          SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
-          return false;
-        }
-        return true;
-      });
-    }
+      const double expected = std::pow(2, i);
+      const auto buf=format_into_padded(expected);
+      std::fflush(nullptr);
+      if(!test_ondemand<double>(buf,
+                                [&](double actual) {
+                                if(actual!=expected) {
+                                  std::cerr << "JSON '" << buf << " parsed to ";
+                                  std::fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
+                                  SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
+                                  return false;
+                                }
+                                return true;
+                              })) {
+        return false;
+      } // if
+    } // for i
     return true;
   }
 
@@ -302,28 +303,30 @@ namespace number_tests {
     std::cout << __func__ << std::endl;
     char buf[1024];
 
-    bool is_pow_correct{1e-308 == std::pow(10,-308)};
-    int start_point = is_pow_correct ? -10000 : -307;
+    const bool is_pow_correct{1e-308 == std::pow(10,-308)};
+    const int start_point = is_pow_correct ? -10000 : -307;
     if(!is_pow_correct) {
       std::cout << "On your system, the pow function is busted. Sorry about that. " << std::endl;
     }
     for (int i = start_point; i <= 308; ++i) {// large negative values should be zero.
-      size_t n = snprintf(buf, sizeof(buf), "1e%d", i);
-      if (n >= sizeof(buf)) { abort(); }
-      fflush(NULL);
-      double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
-      return test_ondemand<double>(padded_string(buf, n), [&](double actual) {
-        int ulp = (int) f64_ulp_dist(actual, expected);
-        if(ulp > 0) {
-          std::cerr << "JSON '" << buf << " parsed to ";
-          fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
-          SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
-          return false;
-        }
-        return true;
-      });
-    }
-    printf("Powers of 10 can be parsed.\n");
+      const size_t n = std::snprintf(buf, sizeof(buf), "1e%d", i);
+      if (n >= sizeof(buf)) { std::abort(); }
+      std::fflush(nullptr);
+      const double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
+
+      if(!test_ondemand<double>(padded_string(buf, n), [&](double actual) {
+                                if(actual!=expected) {
+                                  std::cerr << "JSON '" << buf << " parsed to ";
+                                  std::fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
+                                  SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
+                                  return false;
+                                }
+                                return true;
+                              })) {
+        return false;
+      } // if
+    } // for i
+    std::printf("Powers of 10 can be parsed.\n");
     return true;
   }
 
@@ -394,11 +397,11 @@ namespace dom_api_tests {
     TEST_START();
     auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
     const char* expected_key[] = { "a", "b", "c" };
-    uint64_t expected_value[] = { 1, 2, 3 };
+    const uint64_t expected_value[] = { 1, 2, 3 };
     SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::object object;
       ASSERT_SUCCESS( doc_result.get(object) );
-      int i = 0;
+      size_t i = 0;
       for (auto [ field, error ] : object) {
         ASSERT_SUCCESS(error);
         ASSERT_EQUAL( field.key(), expected_key[i]);
@@ -410,7 +413,7 @@ namespace dom_api_tests {
     }));
     SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::object> object_result = doc_result.get_object();
-      int i = 0;
+      size_t i = 0;
       for (auto [ field, error ] : object_result) {
         ASSERT_SUCCESS(error);
         ASSERT_EQUAL( field.key(), expected_key[i] );
@@ -425,20 +428,20 @@ namespace dom_api_tests {
 
   bool iterate_array() {
     TEST_START();
-    auto json = R"([ 1, 10, 100 ])"_padded;
-    uint64_t expected_value[] = { 1, 10, 100 };
+    const auto json = R"([ 1, 10, 100 ])"_padded;
+    const uint64_t expected_value[] = { 1, 10, 100 };
 
     SUBTEST("ondemand::array", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::array array;
       ASSERT_SUCCESS( doc_result.get(array) );
-      int i=0;
+      size_t i=0;
       for (simdjson_unused auto value : array) { int64_t actual; ASSERT_SUCCESS( value.get(actual) ); ASSERT_EQUAL(actual, expected_value[i]); i++; }
       ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
       return true;
     }));
     SUBTEST("simdjson_result<ondemand::array>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::array> array = doc_result.get_array();
-      int i=0;
+      size_t i=0;
       for (simdjson_unused auto value : array) { int64_t actual; ASSERT_SUCCESS( value.get(actual) ); ASSERT_EQUAL(actual, expected_value[i]); i++; }
       ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
       return true;
@@ -446,13 +449,13 @@ namespace dom_api_tests {
     SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
-      int i=0;
+      size_t i=0;
       for (simdjson_unused auto value : doc) { int64_t actual; ASSERT_SUCCESS( value.get(actual) ); ASSERT_EQUAL(actual, expected_value[i]); i++; }
       ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
       return true;
     }));
     SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
-      int i=0;
+      size_t i=0;
       for (simdjson_unused auto value : doc_result) { int64_t actual; ASSERT_SUCCESS( value.get(actual) ); ASSERT_EQUAL(actual, expected_value[i]); i++; }
       ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
       return true;
@@ -511,7 +514,7 @@ namespace dom_api_tests {
 
   template<typename T>
   bool test_scalar_value(const padded_string &json, const T &expected) {
-    cout << "- JSON: " << json << endl;
+    std::cout << "- JSON: " << json << endl;
     SUBTEST( "simdjson_result<document>", test_ondemand_doc(json, [&](auto doc_result) {
       T actual;
       ASSERT_SUCCESS( doc_result.get(actual) );
@@ -525,7 +528,7 @@ namespace dom_api_tests {
       return true;
     }));
     padded_string array_json = std::string("[") + std::string(json) + "]";
-    cout << "- JSON: " << array_json << endl;
+    std::cout << "- JSON: " << array_json << endl;
     SUBTEST( "simdjson_result<ondemand::value>", test_ondemand_doc(array_json, [&](auto doc_result) {
       int count = 0;
       for (simdjson_result<ondemand::value> val_result : doc_result) {
@@ -653,9 +656,9 @@ namespace dom_api_tests {
     TEST_START();
     auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
     const char* expected_key[] = { "a", "b", "c" };
-    uint64_t expected_value[] = { 1, 2, 3 };
+    const uint64_t expected_value[] = { 1, 2, 3 };
     ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
-      int i = 0;
+      size_t i = 0;
       for (ondemand::field field : doc_result.get_object()) {
         ASSERT_EQUAL( field.key(), expected_key[i] );
         ASSERT_EQUAL( uint64_t(field.value()), expected_value[i] );
@@ -670,10 +673,10 @@ namespace dom_api_tests {
   bool iterate_array_exception() {
     TEST_START();
     auto json = R"([ 1, 10, 100 ])"_padded;
-    uint64_t expected_value[] = { 1, 10, 100 };
+    const uint64_t expected_value[] = { 1, 10, 100 };
 
     ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
-      int i=0;
+      size_t i=0;
       for (int64_t actual : doc_result) { ASSERT_EQUAL(actual, expected_value[i]); i++; }
       ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
       return true;
@@ -709,13 +712,13 @@ namespace dom_api_tests {
 
   template<typename T>
   bool test_scalar_value_exception(const padded_string &json, const T &expected) {
-    cout << "- JSON: " << json << endl;
+    std::cout << "- JSON: " << json << endl;
     SUBTEST( "document", test_ondemand_doc(json, [&](auto doc_result) {
       ASSERT_EQUAL( expected, T(doc_result) );
       return true;
     }));
     padded_string array_json = std::string("[") + std::string(json) + "]";
-    cout << "- JSON: " << array_json << endl;
+    std::cout << "- JSON: " << array_json << endl;
     SUBTEST( "value", test_ondemand_doc(array_json, [&](auto doc_result) {
       int count = 0;
       for (T actual : doc_result) {
@@ -1501,14 +1504,14 @@ int main(int argc, char *argv[]) {
     case 'a': {
       const simdjson::implementation *impl = simdjson::available_implementations[optarg];
       if (!impl) {
-        fprintf(stderr, "Unsupported architecture value -a %s\n", optarg);
+        std::fprintf(stderr, "Unsupported architecture value -a %s\n", optarg);
         return EXIT_FAILURE;
       }
       simdjson::active_implementation = impl;
       break;
     }
     default:
-      fprintf(stderr, "Unexpected argument %c\n", c);
+      std::fprintf(stderr, "Unexpected argument %c\n", c);
       return EXIT_FAILURE;
     }
   }
@@ -1516,7 +1519,8 @@ int main(int argc, char *argv[]) {
   // this is put here deliberately to check that the documentation is correct (README),
   // should this fail to compile, you should update the documentation:
   if (simdjson::active_implementation->name() == "unsupported") {
-    printf("unsupported CPU\n");
+    std::printf("unsupported CPU\n");
+    std::abort();
   }
   // We want to know what we are testing.
   // Next line would be the runtime dispatched implementation but that's not necessarily what gets tested.

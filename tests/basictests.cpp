@@ -32,19 +32,6 @@ const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
 
 namespace number_tests {
 
-  // ulp distance
-  // Marc B. Reynolds, 2016-2019
-  // Public Domain under http://unlicense.org, see link for details.
-  // adapted by D. Lemire
-  inline uint64_t f64_ulp_dist(double a, double b) {
-    uint64_t ua, ub;
-    memcpy(&ua, &a, sizeof(ua));
-    memcpy(&ub, &b, sizeof(ub));
-    if ((int64_t)(ub ^ ua) >= 0)
-      return (int64_t)(ua - ub) >= 0 ? (ua - ub) : (ub - ua);
-    return ua + ub + 0x80000000;
-  }
-
   bool ground_truth() {
     std::cout << __func__ << std::endl;
     std::pair<std::string,double> ground_truth[] = {
@@ -135,17 +122,14 @@ namespace number_tests {
     std::cout << __func__ << std::endl;
     char buf[1024];
     simdjson::dom::parser parser;
-    uint64_t maxulp = 0;
     for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
       double expected = pow(2, i);
       size_t n = snprintf(buf, sizeof(buf), "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
       if (n >= sizeof(buf)) { abort(); }
       double actual;
       auto error = parser.parse(buf, n).get(actual);
-      if (error) { std::cerr << error << std::endl; return false; }
-      uint64_t ulp = f64_ulp_dist(actual,expected);
-      if(ulp > maxulp) maxulp = ulp;
-      if(ulp > 0) {
+      if (error) { std::cerr << error << std::endl; return false; }      
+      if(actual!=expected) {
         std::cerr << "JSON '" << buf << " parsed to ";
         fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
         SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
@@ -245,8 +229,7 @@ namespace number_tests {
       auto error = parser.parse(buf, n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
       double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
-      int ulp = (int) f64_ulp_dist(actual, expected);
-      if(ulp > 0) {
+      if(actual!=expected) {
         std::cerr << "JSON '" << buf << " parsed to ";
         fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
         SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
