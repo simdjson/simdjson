@@ -115,3 +115,21 @@ for c in ALLCFILES:
 
 amal_c.close()
 
+
+
+print("Done with all files generation.")
+
+print(f"Files have been written to directory: {AMALGAMATE_OUTPUT_PATH}/")
+print(subprocess.run(['ls','-la',AMAL_C,AMAL_H,DEMOCPP,README],stdout=subprocess.PIPE).stdout.decode('utf-8').strip())
+print("Done with all files generation.")
+
+
+#
+# Instructions to create demo
+#
+
+print("\nGiving final instructions:")
+with open(README) as r:
+   for line in r:
+     print(line)
+
