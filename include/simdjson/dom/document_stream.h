@@ -278,10 +278,12 @@ public:
   simdjson_really_inline dom::document_stream::iterator begin() noexcept(false);
   simdjson_really_inline dom::document_stream::iterator end() noexcept(false);
 #else // SIMDJSON_EXCEPTIONS
+#ifndef SIMDJSON_DISABLE_DEPRECATED_API
   [[deprecated("parse_many() and load_many() may return errors. Use document_stream stream; error = parser.parse_many().get(doc); instead.")]]
   simdjson_really_inline dom::document_stream::iterator begin() noexcept;
   [[deprecated("parse_many() and load_many() may return errors. Use document_stream stream; error = parser.parse_many().get(doc); instead.")]]
   simdjson_really_inline dom::document_stream::iterator end() noexcept;
+#endif // SIMDJSON_DISABLE_DEPRECATED_API
 #endif // SIMDJSON_EXCEPTIONS
 }; // struct simdjson_result<dom::document_stream>
 

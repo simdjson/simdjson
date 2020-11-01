@@ -111,6 +111,7 @@ BENCHMARK(parse_gsoc)->Repetitions(10)->ComputeStatistics("max", [](const std::v
 
 
 
+#ifndef SIMDJSON_DISABLE_DEPRECATED_API
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void json_parse(State& state) {
@@ -123,6 +124,8 @@ static void json_parse(State& state) {
 }
 SIMDJSON_POP_DISABLE_WARNINGS
 BENCHMARK(json_parse);
+#endif // SIMDJSON_DISABLE_DEPRECATED_API
+
 static void parser_parse_error_code(State& state) {
   dom::parser parser;
   if (parser.allocate(EMPTY_ARRAY.length())) { return; }
@@ -151,6 +154,7 @@ BENCHMARK(parser_parse_exception);
 
 #endif // SIMDJSON_EXCEPTIONS
 
+#ifndef SIMDJSON_DISABLE_DEPRECATED_API
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void build_parsed_json(State& state) {
@@ -162,6 +166,8 @@ static void build_parsed_json(State& state) {
 SIMDJSON_POP_DISABLE_WARNINGS
 
 BENCHMARK(build_parsed_json);
+#endif
+
 static void document_parse_error_code(State& state) {
   for (simdjson_unused auto _ : state) {
     dom::parser parser;
