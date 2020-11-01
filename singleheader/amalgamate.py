@@ -14,10 +14,18 @@ print(f"SCRIPTPATH={SCRIPTPATH} PROJECTPATH={PROJECTPATH}")
 
 print("We are about to amalgamate all simdjson files into one source file.")
 print("See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/wiki/Single_Compilation_Unit for rationale.")
-
-AMALGAMATE_SOURCE_PATH=os.path.join(PROJECTPATH,"src")
-AMALGAMATE_INCLUDE_PATH=os.path.join(PROJECTPATH,"include")
-AMALGAMATE_OUTPUT_PATH=os.path.join(SCRIPTPATH)
+if "AMALGAMATE_SOURCE_PATH" not in os.environ:
+  AMALGAMATE_SOURCE_PATH=os.path.join(PROJECTPATH,"src")
+else:
+  AMALGAMATE_SOURCE_PATH=os.environ["AMALGAMATE_SOURCE_PATH"]
+if "AMALGAMATE_INCLUDE_PATH" not in os.environ:
+  AMALGAMATE_INCLUDE_PATH=os.path.join(PROJECTPATH,"include")
+else:
+  AMALGAMATE_INCLUDE_PATH=os.environ["AMALGAMATE_INCLUDE_PATH"]
+if "AMALGAMATE_OUTPUT_PATH" not in os.environ:
+  AMALGAMATE_OUTPUT_PATH=os.path.join(SCRIPTPATH)
+else:
+  AMALGAMATE_OUTPUT_PATH=os.environ["AMALGAMATE_OUTPUT_PATH"]
 
 # this list excludes the "src/generic headers"
 ALLCFILES=["simdjson.cpp"]
@@ -58,7 +66,7 @@ def doinclude(fid,file,line):
     print(line,file=fid)
 
 def dofile(fid,prepath,filename):
-  print(f"// dofile: invoked with prepath={prepath}, filename={filename}",file=fid)
+  #print(f"// dofile: invoked with prepath={prepath}, filename={filename}",file=fid)
   file=Path(prepath)/filename
   RELFILE=file.relative_to(PROJECTPATH)
   # Last lines are always ignored. Files should end by an empty lines.

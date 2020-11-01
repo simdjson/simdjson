@@ -30,7 +30,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH)
       AMALGAMATE_SOURCE_PATH=${PROJECT_SOURCE_DIR}/src
       AMALGAMATE_INPUT_PATH=${PROJECT_SOURCE_DIR}/include
       AMALGAMATE_OUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}
-      ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.sh
+      ${PYTHON3} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.py
       #
       # This is the best way I could find to make amalgamation trigger whenever source files or
       # header files change: since the "simdjson" library has to get rebuilt when that happens, we
@@ -42,7 +42,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH)
       # It sucks that we have to build the actual library to make it happen, but it's better than\
       # nothing!
       #
-      DEPENDS amalgamate.sh simdjson
+      DEPENDS amalgamate.py simdjson
   )
 
   ##
