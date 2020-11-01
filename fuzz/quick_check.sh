@@ -27,7 +27,11 @@ if [ ! -d out ] ; then
   tar xf corpus.tar && rm corpus.tar
 fi
 
-builddir=build-sanitizers
+# By default, use the debug friendly variant since this script is intended
+# for developers reproducing bugs/validating fixes locally.
+builddir=build-sanitizers-O0
+#...but feel free to use this one instead, if you want to build coverage fast.
+#builddir=build-fast
 
 if [ ! -d $builddir ] ; then
   fuzz/build_fuzzer_variants.sh

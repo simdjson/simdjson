@@ -24,12 +24,14 @@ inline const char *error_message(error_code error) noexcept {
 }
 
 // deprecated function
+#ifndef SIMDJSON_DISABLE_DEPRECATED_API
 inline const std::string error_message(int error) noexcept {
   if (error < 0 || error >= error_code::NUM_ERROR_CODES) {
     return internal::error_codes[UNEXPECTED_ERROR].message;
   }
   return internal::error_codes[error].message;
 }
+#endif // SIMDJSON_DISABLE_DEPRECATED_API
 
 inline std::ostream& operator<<(std::ostream& out, error_code error) noexcept {
   return out << error_message(error);

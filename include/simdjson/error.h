@@ -251,6 +251,7 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
 #endif // SIMDJSON_EXCEPTIONS
 }; // struct simdjson_result
 
+#ifndef SIMDJSON_DISABLE_DEPRECATED_API
 /**
  * @deprecated This is an alias and will be removed, use error_code instead
  */
@@ -261,7 +262,7 @@ using ErrorValues [[deprecated("This is an alias and will be removed, use error_
  */
 [[deprecated("Error codes should be stored and returned as `error_code`, use `error_message()` instead.")]]
 inline const std::string error_message(int error) noexcept;
-
+#endif // SIMDJSON_DISABLE_DEPRECATED_API
 } // namespace simdjson
 
 #endif // SIMDJSON_ERROR_H
