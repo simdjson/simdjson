@@ -11,11 +11,14 @@ jobs:
         run: |
           set -eu
           singleheader/amalgamate.sh
-          git diff >amalgamate.patch
-          if [ $(wc -c <amalgamate.patch) -ne 0 ] ; then
+          # allow differences only depending on the commit date comment
+          # in the amalgamated file
+          git diff >amalgamate.full.patch
+          git diff -G'/\* auto-generated on .*\*/' >amalgamate.dateonly.patch
+          if ! diff -q amalgamate.full.patch amalgamate.dateonly.patch >/dev/null ; then
              echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
              echo "You need to amalgamate, please download the artifact"
-             echo "and apply with git apply <amalgamate.patch or"
+             echo "and apply with git apply <amalgamate.full.patch or"
              echo "run singleheader/amalgamate.sh locally."
              echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
              exit 1
@@ -28,6 +31,6 @@ jobs:
         with:
           name: amalgamate-patch
           path: |
-            amalgamate.patch
+            amalgamate.full.patch
           if-no-files-found: ignore
 
