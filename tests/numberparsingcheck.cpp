@@ -4,8 +4,6 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "number_comparison.h"
-
 #ifndef JSON_TEST_NUMBERS
 #define JSON_TEST_NUMBERS
 #endif
@@ -163,7 +161,6 @@ void found_float(double result, const uint8_t *buf) {
     fprintf(stderr, "       %.32s whereas strtod gives\n", buf);
     fprintf(stderr, "       %.128e,", expected);
     fprintf(stderr, " while parsing %s \n", fullpath);
-    fprintf(stderr, " ===========  ULP:  %u,", (unsigned int)number_tests::f64_ulp_dist(expected, result));
     parse_error |= PARSE_ERROR;
   }
 }

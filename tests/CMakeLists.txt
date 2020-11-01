@@ -40,8 +40,6 @@ link_libraries(simdjson-internal-flags test-data simdjson-windows-headers)
 
 include(${PROJECT_SOURCE_DIR}/cmake/add_cpp_test.cmake)
 
-add_cpp_test(number_comparison_tests)
-
 add_subdirectory(ondemand)
 
 #

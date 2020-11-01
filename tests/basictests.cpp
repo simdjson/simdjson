@@ -15,7 +15,6 @@
 #include "simdjson.h"
 #include "cast_tester.h"
 #include "test_macros.h"
-#include "number_comparison.h"
 
 /**
  * Some systems have bad floating-point parsing. We want to exclude them.
@@ -123,17 +122,14 @@ namespace number_tests {
     std::cout << __func__ << std::endl;
     char buf[1024];
     simdjson::dom::parser parser;
-    uint64_t maxulp = 0;
     for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
       double expected = pow(2, i);
       size_t n = snprintf(buf, sizeof(buf), "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
       if (n >= sizeof(buf)) { abort(); }
       double actual;
       auto error = parser.parse(buf, n).get(actual);
-      if (error) { std::cerr << error << std::endl; return false; }
-      uint64_t ulp = f64_ulp_dist(actual,expected);
-      if(ulp > maxulp) maxulp = ulp;
-      if(ulp > 0) {
+      if (error) { std::cerr << error << std::endl; return false; }      
+      if(actual!=expected) {
         std::cerr << "JSON '" << buf << " parsed to ";
         fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
         SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
@@ -233,8 +229,7 @@ namespace number_tests {
       auto error = parser.parse(buf, n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
       double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
-      int ulp = (int) f64_ulp_dist(actual, expected);
-      if(ulp > 0) {
+      if(actual!=expected) {
         std::cerr << "JSON '" << buf << " parsed to ";
         fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
         SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);

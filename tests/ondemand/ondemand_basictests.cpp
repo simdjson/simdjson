@@ -13,7 +13,6 @@
 
 #include "simdjson.h"
 #include "test_ondemand.h"
-#include "number_comparison.h"
 
 // const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
 #define SIMDJSON_SHOW_DEFINE(x) printf("%s=%s\n", #x, STRINGIFY(x))
@@ -207,16 +206,13 @@ namespace number_tests {
       return padded_string(buf, nz);
     };
 
-    uint64_t maxulp = 0;
     for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
       const double expected = std::pow(2, i);
       const auto buf=format_into_padded(expected);
       std::fflush(nullptr);
       if(!test_ondemand<double>(buf,
                                 [&](double actual) {
-                                const uint64_t ulp = f64_ulp_dist(actual,expected);
-                                if(ulp > maxulp) maxulp = ulp;
-                                if(ulp > 0) {
+                                if(actual!=expected) {
                                   std::cerr << "JSON '" << buf << " parsed to ";
                                   std::fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
                                   SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
@@ -319,8 +315,7 @@ namespace number_tests {
       const double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
 
       if(!test_ondemand<double>(padded_string(buf, n), [&](double actual) {
-                                const auto ulp = f64_ulp_dist(actual, expected);
-                                if(ulp > 0) {
+                                if(actual!=expected) {
                                   std::cerr << "JSON '" << buf << " parsed to ";
                                   std::fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
                                   SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
