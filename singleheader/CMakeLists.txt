@@ -22,15 +22,16 @@ find_program(BASH bash)
 
 # Under Windows, exectuting a bash script works, except that you cannot generally
 # do bash C:/path to my script. You need a  "mounted" path: /mnt/c/path
+find_package(Python3 COMPONENTS Interpreter)
 
-if (BASH AND (NOT WIN32) AND SIMDJSON_BASH)
+if (Python3 AND (NOT WIN32))
   add_custom_command(
     OUTPUT ${SINGLEHEADER_FILES}
     COMMAND ${CMAKE_COMMAND} -E env
       AMALGAMATE_SOURCE_PATH=${PROJECT_SOURCE_DIR}/src
       AMALGAMATE_INPUT_PATH=${PROJECT_SOURCE_DIR}/include
       AMALGAMATE_OUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}
-      ${PYTHON3} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.py
+      ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.py
       #
       # This is the best way I could find to make amalgamation trigger whenever source files or
       # header files change: since the "simdjson" library has to get rebuilt when that happens, we
