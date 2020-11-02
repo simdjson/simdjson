@@ -71,24 +71,24 @@ def dofile(fid,prepath,filename):
   RELFILE=file.relative_to(PROJECTPATH)
   # Last lines are always ignored. Files should end by an empty lines.
   print(f"/* begin file {RELFILE} */",file=fid)
-  fid2=open(file,'r')
-  for line in fid2:
-    line=line.rstrip('\n');
-    s=re.search('^#include "(.*)"',line)
-    if s:
-      includedfile=s.group(1)
-      # include all from simdjson.cpp except simdjson.h
-      if includedfile == "simdjson.h" and filename == "simdjson.cpp":
-         print(line,file=fid)
-         continue
+  with open(file,'r') as fid2:
+    for line in fid2:
+      line=line.rstrip('\n');
+      s=re.search('^#include "(.*)"',line)
+      if s:
+        includedfile=s.group(1)
+        # include all from simdjson.cpp except simdjson.h
+        if includedfile == "simdjson.h" and filename == "simdjson.cpp":
+           print(line,file=fid)
+           continue
 
-      if includedfile.startswith('../'):
-        includedfile=includedfile[2:]
-      # we explicitly include simdjson headers, one time each (unless they are generic, in which case multiple times is fine)
-      doinclude(fid,includedfile,line)
-    else:
-      # Otherwise we simply copy the line
-      print(line,file=fid)
+        if includedfile.startswith('../'):
+          includedfile=includedfile[2:]
+        # we explicitly include simdjson headers, one time each (unless they are generic, in which case multiple times is fine)
+        doinclude(fid,includedfile,line)
+      else:
+        # Otherwise we simply copy the line
+        print(line,file=fid)
   print(f"/* end file {RELFILE} */",file=fid)
 
 
