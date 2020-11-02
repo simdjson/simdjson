@@ -75,10 +75,11 @@ def dofile(fid, prepath, filename):
     RELFILE = os.path.relpath(file, PROJECTPATH)
     # Last lines are always ignored. Files should end by an empty lines.
     print(f"/* begin file {RELFILE} */", file=fid)
+    includepattern = re.compile('^#include "(.*)"')
     with open(file, 'r') as fid2:
         for line in fid2:
             line = line.rstrip('\n')
-            s = re.search('^#include "(.*)"', line)
+            s = includepattern.search(line)
             if s:
                 includedfile = s.group(1)
                 # include all from simdjson.cpp except simdjson.h
