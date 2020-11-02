@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+#
+# Creates the amalgamated source files.
+#
 
 import sys
 import os.path
