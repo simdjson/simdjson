@@ -3,7 +3,7 @@
 import sys
 import os.path
 import subprocess
-from pathlib import Path
+import os
 import re
 
 SCRIPTPATH=os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -37,10 +37,10 @@ found_includes=[]
 
 
 def doinclude(fid,file,line):
-  p=Path(AMALGAMATE_INCLUDE_PATH)/file
-  pi=Path(AMALGAMATE_SOURCE_PATH)/file
+  p=os.path.join(AMALGAMATE_INCLUDE_PATH,file)
+  pi=os.path.join(AMALGAMATE_SOURCE_PATH,file)
 
-  if p.exists():
+  if os.path.exists(p):
     # generic includes are included multiple times
     if re.match('.*generic/.*.h',file):
       dofile(fid,AMALGAMATE_INCLUDE_PATH,file)
@@ -52,7 +52,7 @@ def doinclude(fid,file,line):
     elif file not in found_includes:
       found_includes.append(file)
       dofile(fid,AMALGAMATE_INCLUDE_PATH,file)
-  elif pi.exists():
+  elif os.path.exists(pi):
     # generic includes are included multiple times
     if re.match('.*generic/.*h',file):
       dofile(fid,AMALGAMATE_SOURCE_PATH,file)
@@ -67,8 +67,8 @@ def doinclude(fid,file,line):
 
 def dofile(fid,prepath,filename):
   #print(f"// dofile: invoked with prepath={prepath}, filename={filename}",file=fid)
-  file=Path(prepath)/filename
-  RELFILE=file.relative_to(PROJECTPATH)
+  file=os.path.join(prepath,filename)
+  RELFILE=os.path.relpath(file,PROJECTPATH)
   # Last lines are always ignored. Files should end by an empty lines.
   print(f"/* begin file {RELFILE} */",file=fid)
   with open(file,'r') as fid2:
@@ -100,8 +100,7 @@ def dofile(fid,prepath,filename):
 timestamp = subprocess.run(['git','show','-s','--format=%ci','HEAD'], stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
 print(f"timestamp is {timestamp}")
 
-Path(AMALGAMATE_OUTPUT_PATH).mkdir(parents=True, exist_ok=True)
-
+os.makedirs(AMALGAMATE_OUTPUT_PATH,exist_ok=True)
 AMAL_H=os.path.join(AMALGAMATE_OUTPUT_PATH,"simdjson.h")
 AMAL_C=os.path.join(AMALGAMATE_OUTPUT_PATH,"simdjson.cpp")
 DEMOCPP=os.path.join(AMALGAMATE_OUTPUT_PATH,"amalgamate_demo.cpp")
