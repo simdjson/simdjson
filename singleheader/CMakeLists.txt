@@ -75,7 +75,7 @@ if (Python3_Interpreter_FOUND AND (NOT WIN32))
 
 else()
 
-  # We do not have bash, so we use existing amalgamated files instead of generating them ...
+  # We do not have python3, so we use existing amalgamated files instead of generating them ...
   # (Do not do this if the source and destination are the same!)
   if (NOT (${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR}))
     add_custom_command(
