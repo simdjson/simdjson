@@ -4,7 +4,13 @@ configuration: Release
 image: Visual Studio 2019
 platform: x64
 
+cache:
+  - C:\dependencies -> dependencies\CMakeLists.txt
+
 environment:
+  # Forward slash is used because this is used in CMake as is
+  simdjson_DEPENDENCY_CACHE_DIR: C:/dependencies
+
   matrix:
     - job_name: VS2019
       CMAKE_ARGS:  -A %Platform%

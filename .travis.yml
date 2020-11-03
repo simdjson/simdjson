@@ -2,6 +2,12 @@ language: cpp
 dist: bionic
 arch:
   - ppc64le
+cache:
+  directories:
+    - $HOME/.dep_cache
+env:
+  global:
+    - simdjson_DEPENDENCY_CACHE_DIR=$HOME/.dep_cache
 matrix:
   include:
     - os: linux

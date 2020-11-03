@@ -7,6 +7,10 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: dependencies/.cache
+          key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
       - name: Use cmake
         run: |
           mkdir build &&
@@ -14,4 +18,3 @@ jobs:
           cmake  -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
           cmake --build . --target checkperf  &&
           ctest --output-on-failure -R checkperf  ubuntu18-checkperf.yml
-
