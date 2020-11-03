@@ -64,7 +64,6 @@ decimal parse_decimal(const char *&p) noexcept {
   decimal answer;
   answer.num_digits = 0;
   answer.decimal_point = 0;
-  answer.negative = false;
   answer.truncated = false;
   answer.negative = (*p == '-');
   if ((*p == '-') || (*p == '+')) {
@@ -81,10 +80,9 @@ decimal parse_decimal(const char *&p) noexcept {
     answer.num_digits++;
     ++p;
   }
-  const char *first_after_period{};
   if (*p == '.') {
     ++p;
-    first_after_period = p;
+    const char *first_after_period = p;
     // if we have not yet encountered a zero, we have to skip it as well
     if (answer.num_digits == 0) {
       // skip zeros
