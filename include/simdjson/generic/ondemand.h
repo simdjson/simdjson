@@ -2,7 +2,7 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 /**
  * A fast, simple, DOM-like interface that parses JSON as you use it.
- * 
+ *
  * Designed for maximum speed and a lower memory profile.
  */
 namespace ondemand {

@@ -192,14 +192,14 @@ bool bench(const char *filename, bool verbose, bool just_data,
     BEST_TIME("Boost.json", execute(sv), false, , repeat, volume, !just_data);
   }
   {
-    
+
     auto execute = [&p]() -> bool {
       yyjson_doc *doc = yyjson_read(p.data(), p.size(), 0);
       bool is_ok = doc != nullptr;
       yyjson_doc_free(doc);
       return is_ok;
     };
-    
+
     BEST_TIME("yyjson", execute(), true, , repeat, volume, !just_data);
   }
 #ifndef ALLPARSER

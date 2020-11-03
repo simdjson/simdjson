@@ -12,7 +12,7 @@ class json_iterator_ref;
 
 /**
  * Iterates through JSON, with structure-sensitive algorithms.
- * 
+ *
  * @private This is not intended for external use.
  */
 class json_iterator : public token_iterator {
@@ -48,17 +48,17 @@ public:
    * Start an object iteration after the user has already checked and moved past the {.
    *
    * Does not move the iterator.
-   * 
+   *
    * @returns Whether the object had any fields (returns false for empty).
    */
   simdjson_warn_unused simdjson_really_inline bool started_object() noexcept;
 
   /**
    * Moves to the next field in an object.
-   * 
+   *
    * Looks for , and }. If } is found, the object is finished and the iterator advances past it.
    * Otherwise, it advances to the next value.
-   * 
+   *
    * @return whether there is another field in the object.
    * @error TAPE_ERROR If there is a comma missing between fields.
    */
@@ -78,7 +78,7 @@ public:
    * Find the next field with the given key.
    *
    * Assumes you have called next_field() or otherwise matched the previous value.
-   * 
+   *
    * Key is *raw JSON,* meaning it will be matched against the verbatim JSON without attempting to
    * unescape it. This works well for typical ASCII and UTF-8 keys (almost all of them), but may
    * fail to match some keys with escapes (\u, \n, etc.).
@@ -112,10 +112,10 @@ public:
 
   /**
    * Moves to the next element in an array.
-   * 
+   *
    * Looks for , and ]. If ] is found, the array is finished and the iterator advances past it.
    * Otherwise, it advances to the next value.
-   * 
+   *
    * @return Whether there is another element in the array.
    * @error TAPE_ERROR If there is a comma missing between elements.
    */
@@ -154,7 +154,7 @@ public:
 
   /**
    * Skips to the end of a JSON object or array.
-   * 
+   *
    * @return true if this was the end of an array, false if it was the end of an object.
    */
   simdjson_warn_unused simdjson_really_inline error_code skip_container() noexcept;
@@ -176,7 +176,7 @@ public:
 
   /**
    * Report an error, preventing further iteration.
-   * 
+   *
    * @param error The error to report. Must not be SUCCESS, UNINITIALIZED, INCORRECT_TYPE, or NO_SUCH_FIELD.
    * @param message An error message to report with the error.
    */
@@ -191,13 +191,13 @@ protected:
   ondemand::parser *parser{};
   /**
    * Next free location in the string buffer.
-   * 
+   *
    * Used by raw_json_string::unescape() to have a place to unescape strings to.
    */
   uint8_t *current_string_buf_loc{};
   /**
    * JSON error, if there is one.
-   * 
+   *
    * INCORRECT_TYPE and NO_SUCH_FIELD are *not* stored here, ever.
    *
    * PERF NOTE: we *hope* this will be elided into control flow, as it is only used (a) in the first

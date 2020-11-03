@@ -14,9 +14,9 @@
 /**
  * Some systems have bad floating-point parsing. We want to exclude them.
  */
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined (__linux__) || defined (__APPLE__) || defined(__FreeBSD__) 
+#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined (__linux__) || defined (__APPLE__) || defined(__FreeBSD__)
 // Ok. So under Visual Studio, linux, apple and freebsd systems, we have a good chance of having a decent
-// enough strtod. It is not certain, but it is maybe a good enough heuristics. We exclude systems like msys2 
+// enough strtod. It is not certain, but it is maybe a good enough heuristics. We exclude systems like msys2
 // or cygwin.
 //
 // Finally, we want to exclude legacy 32-bit systems.
@@ -25,7 +25,7 @@
 #define TEST_FLOATS
 // Apple and freebsd need a special header, typically.
 #if defined __APPLE__ || defined(__FreeBSD__)
-#  include <xlocale.h> 
+#  include <xlocale.h>
 #endif
 
 #endif
@@ -35,7 +35,7 @@
 
 struct RandomEngine {
    RandomEngine() = delete;
-   RandomEngine(uint32_t seed) : one_zero_generator(0,1), digit_generator(0,9),  nonzero_digit_generator(1,9), digit_count_generator (1,40),exp_count_generator (1,3), generator(seed) {} 
+   RandomEngine(uint32_t seed) : one_zero_generator(0,1), digit_generator(0,9),  nonzero_digit_generator(1,9), digit_count_generator (1,40),exp_count_generator (1,3), generator(seed) {}
    std::uniform_int_distribution<int> one_zero_generator;
    std::uniform_int_distribution<int> digit_generator;
    std::uniform_int_distribution<int> nonzero_digit_generator;
@@ -62,7 +62,7 @@ size_t build_random_string(RandomEngine &rand, char *buffer) {
   for (size_t i = 0; i < number_of_digits; i++) {
     if (i == location_of_decimal_separator) {
       buffer[pos++] = '.';
-    } 
+    }
     if (( i == 0) && (location_of_decimal_separator != 1)) {
       buffer[pos++] = char(rand.next_nonzero_digit() + '0');
     } else {
@@ -111,7 +111,7 @@ bool check_float(double result, const char *buf) {
 #else
   static locale_t c_locale = newlocale(LC_ALL_MASK, "C", NULL);
   double expected = strtod_l((const char *)buf, &endptr, c_locale);
-#endif    
+#endif
   if (endptr == (const char *)buf) {
     fprintf(stderr,
             "parsed %f from %.32s whereas strtod refuses to parse a float, ",
@@ -137,13 +137,13 @@ bool tester(int seed, size_t volume) {
   char buffer[1024]; // large buffer (can't overflow)
   simdjson::dom::parser parser;
   RandomEngine rand(seed);
-  double result;    
+  double result;
   for (size_t i = 0; i < volume; i++) {
     if((i%100000) == 0) { std::cout << "."; std::cout.flush(); }
     size_t length = build_random_string(rand, buffer);
     auto error = parser.parse(buffer, length).get(result);
     // When we parse a (finite) number, it better match strtod.
-    if ((!error) && (!check_float(result, buffer))) { return false; } 
+    if ((!error) && (!check_float(result, buffer))) { return false; }
   }
   return true;
 }

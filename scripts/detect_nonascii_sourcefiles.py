@@ -12,7 +12,7 @@ def verifyContent(f,filename):
       except UnicodeEncodeError as e:
         #print(f"a: found problem {e} at line {linenumber+1} in {filename}:")
         print(f"Found problem at line {linenumber+1} in {filename}:")
-        print(line.rstrip()) 
+        print(line.rstrip())
         for col, char in enumerate(line.encode('utf-8')):
           if char>=127:
              offender=char
@@ -27,7 +27,7 @@ def verifyContent(f,filename):
     sys.exit(1)
 
 
-    
+
 for filename in sys.argv[1:]:
   with open(filename,encoding='utf-8') as f:
     #print(f"file {filename} was possible to open as utf-8")

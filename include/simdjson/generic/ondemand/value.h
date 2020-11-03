@@ -17,7 +17,7 @@ class value {
 public:
   /**
    * Create a new invalid value.
-   * 
+   *
    * Exists so you can declare a variable and later assign to it before use.
    */
   simdjson_really_inline value() noexcept = default;
@@ -36,7 +36,7 @@ public:
    * Get this value as the given type.
    *
    * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool
-   * 
+   *
    * @returns A value of the given type, parsed from the JSON.
    * @returns INCORRECT_TYPE If the JSON value is not the given type.
    */
@@ -48,7 +48,7 @@ public:
    * Get this value as the given type.
    *
    * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool
-   * 
+   *
    * @param out This is set to a value of the given type, parsed from the JSON. If there is an error, this may not be initialized.
    * @returns INCORRECT_TYPE If the JSON value is not an object.
    * @returns SUCCESS If the parse succeeded and the out parameter was set to the value.
@@ -109,7 +109,7 @@ public:
 
   /**
    * Cast this JSON value to a string.
-   * 
+   *
    * The string is guaranteed to be valid UTF-8.
    *
    * Equivalent to get<std::string_view>().
@@ -124,7 +124,7 @@ public:
 
   /**
    * Cast this JSON value to a raw_json_string.
-   * 
+   *
    * The string is guaranteed to be valid UTF-8, and may have escapes in it (e.g. \\ or \n).
    *
    * @returns A pointer to the raw JSON for the given string.
@@ -146,7 +146,7 @@ public:
 
   /**
    * Checks if this JSON value is null.
-   * 
+   *
    * @returns Whether the value is null.
    */
   simdjson_really_inline bool is_null() && noexcept;
@@ -197,7 +197,7 @@ public:
   simdjson_really_inline operator double() & noexcept(false);
   /**
    * Cast this JSON value to a string.
-   * 
+   *
    * The string is guaranteed to be valid UTF-8.
    *
    * Equivalent to get<std::string_view>().
@@ -211,7 +211,7 @@ public:
   simdjson_really_inline operator std::string_view() & noexcept(false);
   /**
    * Cast this JSON value to a raw_json_string.
-   * 
+   *
    * The string is guaranteed to be valid UTF-8, and may have escapes in it (e.g. \\ or \n).
    *
    * @returns A pointer to the raw JSON for the given string.
@@ -235,7 +235,7 @@ public:
    * Begin array iteration.
    *
    * Part of the std::iterable interface.
-   * 
+   *
    * @returns INCORRECT_TYPE If the JSON value is not an array.
    */
   simdjson_really_inline simdjson_result<array_iterator<value>> begin() & noexcept;

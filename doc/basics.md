@@ -112,7 +112,7 @@ dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string, the _padde
 ```
 
 The parsed document resulting from the `parser.load` and `parser.parse` calls depends on the `parser` instance. Thus the `parser` instance must remain in scope. Furthermore, you must have at most one parsed document in play per `parser` instance.
-You cannot copy a `parser` instance, you may only move it. 
+You cannot copy a `parser` instance, you may only move it.
 
 If you need to keep a document around long term, you can keep or move the parser instance. Note that moving a parser instance, or keeping one in a movable data structure like vector or map, can cause any outstanding `element`, `object` or `array` instances to be invalidated. If you need to store a parser in a movable data structure, you should use a `std::unique_ptr` to avoid this invalidation(e.g., `std::unique_ptr<dom::parser> parser(new dom::parser{})`).
 

@@ -18,7 +18,7 @@ SIMDJSON_DLLIMPORTEXPORT const double power_of_ten[] = {
  * are not a concern since they can be represented
  * exactly using the binary notation, only the powers of five
  * affect the binary significand.
- */ 
+ */
 
 
 // The truncated powers of five from 5^-342 all the way to 5^308

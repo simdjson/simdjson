@@ -37,7 +37,7 @@ simdjson_really_inline bool Iter::Run(const padded_string &json) {
 
   // Walk the document, parsing the tweets as we go
 
-  // { "statuses": 
+  // { "statuses":
   auto iter = parser.iterate_raw(json).value();
   if (!iter.start_object()   || !iter.find_field_raw("statuses")) { return false; }
   // { "statuses": [

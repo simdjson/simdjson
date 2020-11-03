@@ -11,10 +11,10 @@ bool single_document() {
 
 #if COMPILATION_TEST_USE_FAILING_CODE
     auto error = parser.parse_many(json).get(R"({"hello": "world"})"_padded);
-#else 
+#else
     auto json = R"({"hello": "world"})"_padded;
     auto error = parser.parse_many(json).get(stream);
-#endif 
+#endif
     if(error) {
         std::cerr << error << std::endl;
         return false;

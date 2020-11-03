@@ -9,7 +9,7 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 #include "cxxopts.hpp"
 SIMDJSON_POP_DISABLE_WARNINGS
 
-#if CXXOPTS__VERSION_MAJOR < 3 
+#if CXXOPTS__VERSION_MAJOR < 3
 int main(int argc, char *argv[]) {
 #else
 int main(int argc, const char *argv[]) {

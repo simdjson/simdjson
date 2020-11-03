@@ -32,6 +32,6 @@ A clear and concise description of any alternative solutions or features you've 
 Add any other context or screenshots about the feature request here.
 
 ** Are you willing to contribute code or documentation toward this new feature? **
-If you plan to contribute to simdjson, please read our 
+If you plan to contribute to simdjson, please read our
 * CONTRIBUTING guide: https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md and our
 * HACKING guide: https://github.com/simdjson/simdjson/blob/master/HACKING.md

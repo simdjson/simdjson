@@ -64,14 +64,14 @@ public:
    */
   inline simdjson_result<object> get_object() const noexcept;
   /**
-   * Cast this element to a null-terminated C string. 
-   * 
+   * Cast this element to a null-terminated C string.
+   *
    * The string is guaranteed to be valid UTF-8.
    *
    * The get_c_str() function is equivalent to get<const char *>().
-   * 
+   *
    * The length of the string is given by get_string_length(). Because JSON strings
-   * may contain null characters, it may be incorrect to use strlen to determine the 
+   * may contain null characters, it may be incorrect to use strlen to determine the
    * string length.
    *
    * It is possible to get a single string_view instance which represents both the string
@@ -84,7 +84,7 @@ public:
   inline simdjson_result<const char *> get_c_str() const noexcept;
   /**
    * Gives the length in bytes of the string.
-   * 
+   *
    * It is possible to get a single string_view instance which represents both the string
    * content and its length: see get_string().
    *
@@ -93,8 +93,8 @@ public:
    */
   inline simdjson_result<size_t> get_string_length() const noexcept;
   /**
-   * Cast this element to a string. 
-   * 
+   * Cast this element to a string.
+   *
    * The string is guaranteed to be valid UTF-8.
    *
    * Equivalent to get<std::string_view>().
@@ -279,7 +279,7 @@ public:
 
   /**
    * Read this element as a null-terminated UTF-8 string.
-   * 
+   *
    * Be mindful that JSON allows strings to contain null characters.
    *
    * Does *not* convert other types to a string; requires that the JSON type of the element was
@@ -402,7 +402,7 @@ public:
    *   dom::parser parser;
    *   object obj = parser.parse(R"({ "": { "a": [ 10, 20, 30 ] }})"_padded);
    *   obj.at_pointer("//a/1") == 20
-   * 
+   *
    * @return The value associated with the given JSON pointer, or:
    *         - NO_SUCH_FIELD if a field does not exist in an object
    *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
@@ -411,21 +411,21 @@ public:
    */
   inline simdjson_result<element> at_pointer(const std::string_view json_pointer) const noexcept;
 
-#ifndef SIMDJSON_DISABLE_DEPRECATED_API  
+#ifndef SIMDJSON_DISABLE_DEPRECATED_API
   /**
-   * 
+   *
    * Version 0.4 of simdjson used an incorrect interpretation of the JSON Pointer standard
    * and allowed the following :
-   * 
+   *
    *   dom::parser parser;
    *   element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})"_padded);
    *   doc.at("foo/a/1") == 20
-   * 
+   *
    * Though it is intuitive, it is not compliant with RFC 6901
-   * https://tools.ietf.org/html/rfc6901 
-   * 
+   * https://tools.ietf.org/html/rfc6901
+   *
    * For standard compliance, use the at_pointer function instead.
-   * 
+   *
    * @return The value associated with the given JSON pointer, or:
    *         - NO_SUCH_FIELD if a field does not exist in an object
    *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length

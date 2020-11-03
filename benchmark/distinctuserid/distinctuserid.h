@@ -20,7 +20,7 @@ void remove_duplicates(std::vector<int64_t> &v) {
 
 namespace distinct_user_id {
 template<typename T> static void DistinctUserID(benchmark::State &state);
-} // namespace 
+} // namespace
 
 //
 // Implementation

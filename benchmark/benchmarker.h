@@ -228,7 +228,7 @@ struct progress_bar {
 /**
  * The speed at which we can allocate memory is strictly system specific.
  * It depends on the OS and the runtime library. It is subject to various
- * system-specific knobs. It is not something that we can reasonably 
+ * system-specific knobs. It is not something that we can reasonably
  * benchmark with crude timings.
  * If someone wants to optimize how simdjson allocate memory, then it will
  * almost surely require a distinct benchmarking tool. What is meant by

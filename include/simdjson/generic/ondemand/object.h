@@ -11,7 +11,7 @@ class object {
 public:
   /**
    * Create a new invalid object.
-   * 
+   *
    * Exists so you can declare a variable and later assign to it before use.
    */
   simdjson_really_inline object() noexcept = default;
@@ -57,7 +57,7 @@ protected:
   json_iterator_ref iter{};
   /**
    * Whether we are at the start.
-   * 
+   *
    * PERF NOTE: this should be elided into inline control flow: it is only used for the first []
    * or * call, and SSA optimizers commonly do first-iteration loop optimization.
    */

@@ -132,11 +132,11 @@ namespace simd {
       // next line just loads the 64-bit values thintable_epi8[mask1] and
       // thintable_epi8[mask2] into a 128-bit register, using only
       // two instructions on most compilers.
-      __m256i shufmask =  _mm256_set_epi64x(thintable_epi8[mask4], thintable_epi8[mask3], 
+      __m256i shufmask =  _mm256_set_epi64x(thintable_epi8[mask4], thintable_epi8[mask3],
         thintable_epi8[mask2], thintable_epi8[mask1]);
       // we increment by 0x08 the second half of the mask and so forth
       shufmask =
-      _mm256_add_epi8(shufmask, _mm256_set_epi32(0x18181818, 0x18181818, 
+      _mm256_add_epi8(shufmask, _mm256_set_epi32(0x18181818, 0x18181818,
          0x10101010, 0x10101010, 0x08080808, 0x08080808, 0, 0));
       // this is the version "nearly pruned"
       __m256i pruned = _mm256_shuffle_epi8(*this, shufmask);

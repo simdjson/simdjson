@@ -145,11 +145,11 @@ inline simdjson::padded_string operator "" _padded(const char *str, size_t len) 
 namespace simdjson {
 namespace internal {
 
-// The allocate_padded_buffer function is a low-level function to allocate memory 
-// with padding so we can read past the "length" bytes safely. It is used by 
+// The allocate_padded_buffer function is a low-level function to allocate memory
+// with padding so we can read past the "length" bytes safely. It is used by
 // the padded_string class automatically. It returns nullptr in case
 // of error: the caller should check for a null pointer.
-// The length parameter is the maximum size in bytes of the string. 
+// The length parameter is the maximum size in bytes of the string.
 // The caller is responsible to free the memory (e.g., delete[] (...)).
 inline char *allocate_padded_buffer(size_t length) noexcept;
 

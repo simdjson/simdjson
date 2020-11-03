@@ -2,7 +2,7 @@
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 cd $SCRIPTPATH/..
 make minifiercompetition
-echo 
+echo
 for i in $SCRIPTPATH/../jsonexamples/*.json; do
     [ -f "$i" ] || break
     echo $i

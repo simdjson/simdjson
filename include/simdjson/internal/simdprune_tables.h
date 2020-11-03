@@ -14,6 +14,6 @@ extern SIMDJSON_DLLIMPORTEXPORT const uint8_t pshufb_combine_table[272];
 extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
 
 } // namespace internal
-} // namespace simdjson 
+} // namespace simdjson
 
 #endif // SIMDJSON_INTERNAL_SIMDPRUNE_TABLES_H

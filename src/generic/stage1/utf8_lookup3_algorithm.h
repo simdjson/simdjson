@@ -93,7 +93,7 @@ using namespace simd;
     static const int TOO_LARGE   = 0x10; // 11110100 (1001|101_)____
     static const int TOO_LARGE_2 = 0x20; // 1111(1___|011_|0101) 10______
 
-    // New with lookup3. We want to catch the case where an non-continuation 
+    // New with lookup3. We want to catch the case where an non-continuation
     // follows a leading byte
     static const int TOO_SHORT_2_3_4 = 0x40; //  (110_|1110|1111) ____    (0___|110_|1111) ____
     // We also want to catch a continuation that is preceded by an ASCII byte
@@ -226,7 +226,7 @@ using namespace simd;
           this->check_utf8_bytes(input.chunks[1], input.chunks[0]);
           this->check_utf8_bytes(input.chunks[2], input.chunks[1]);
           this->check_utf8_bytes(input.chunks[3], input.chunks[2]);
-        } 
+        }
         this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
         this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
       }

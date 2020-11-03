@@ -5,9 +5,9 @@
  * DISCLAIMER
  * This file is part of the mingw-w64 runtime package.
  *
- * The mingw-w64 runtime package and its code is distributed in the hope that it 
- * will be useful but WITHOUT ANY WARRANTY.  ALL WARRANTIES, EXPRESSED OR 
- * IMPLIED ARE HEREBY DISCLAIMED.  This includes but is not limited to 
+ * The mingw-w64 runtime package and its code is distributed in the hope that it
+ * will be useful but WITHOUT ANY WARRANTY.  ALL WARRANTIES, EXPRESSED OR
+ * IMPLIED ARE HEREBY DISCLAIMED.  This includes but is not limited to
  * warranties of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
  /*
@@ -114,7 +114,7 @@ extern char __declspec(dllimport) *__progname;
 
 // D. Lemire (April 2020): adding __clang__
 // D. Lemire (June 2020): adding __MINGW32__ and __MINGW64__
-#if defined(__CYGWIN__) || defined(__clang__) || defined(__MINGW32__) || defined(__MINGW64__) 
+#if defined(__CYGWIN__) || defined(__clang__) || defined(__MINGW32__) || defined(__MINGW64__)
 static char EMSG[] = "";
 #else
 #define	EMSG		""

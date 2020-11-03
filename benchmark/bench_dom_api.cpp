@@ -87,8 +87,8 @@ static void serialize_big_string_to_string(State& state) {
   std::vector<char> content;
   content.push_back('\"');
   for(size_t i = 0 ; i < 100000; i ++) {
-    content.push_back('0' + char(i%10)); // we add what looks like a long list of digits 
-  } 
+    content.push_back('0' + char(i%10)); // we add what looks like a long list of digits
+  }
   content.push_back('\"');
   dom::element doc;
   simdjson::error_code error;
@@ -139,7 +139,7 @@ static void serialize_twitter_to_string(State& state) {
   }
   // we validate the result
   {
-    auto serial = simdjson::to_string(doc); 
+    auto serial = simdjson::to_string(doc);
     dom::element doc2; // we parse the stringify output
     if ((error = parser.parse(serial).get(doc2))) { throw std::runtime_error("serialization error"); }
     auto serial2 = simdjson::to_string(doc2); // we stringify again
@@ -211,7 +211,7 @@ static void numbers_scan(State& state) {
     }
     benchmark::DoNotOptimize(container.data());
     benchmark::ClobberMemory();
-  }  
+  }
 }
 BENCHMARK(numbers_scan);
 
@@ -236,7 +236,7 @@ static void numbers_size_scan(State& state) {
     if(pos != container.size()) { cerr << "bad count" << endl; }
     benchmark::DoNotOptimize(container.data());
     benchmark::ClobberMemory();
-  }  
+  }
 }
 BENCHMARK(numbers_size_scan);
 
@@ -315,7 +315,7 @@ static void numbers_load_scan(State& state) {
     }
     benchmark::DoNotOptimize(container.data());
     benchmark::ClobberMemory();
-  }  
+  }
 }
 BENCHMARK(numbers_load_scan);
 
@@ -341,7 +341,7 @@ static void numbers_load_size_scan(State& state) {
     if(pos != container.size()) { cerr << "bad count" << endl; }
     benchmark::DoNotOptimize(container.data());
     benchmark::ClobberMemory();
-  }  
+  }
 }
 BENCHMARK(numbers_load_size_scan);
 
@@ -360,7 +360,7 @@ static void numbers_exceptions_scan(State& state) {
     }
     benchmark::DoNotOptimize(container.data());
     benchmark::ClobberMemory();
-  }  
+  }
 }
 BENCHMARK(numbers_exceptions_scan);
 
@@ -378,7 +378,7 @@ static void numbers_exceptions_size_scan(State& state) {
     if(pos != container.size()) { cerr << "bad count" << endl; }
     benchmark::DoNotOptimize(container.data());
     benchmark::ClobberMemory();
-  }  
+  }
 }
 BENCHMARK(numbers_exceptions_size_scan);
 
@@ -437,7 +437,7 @@ static void numbers_exceptions_load_scan(State& state) {
     }
     benchmark::DoNotOptimize(container.data());
     benchmark::ClobberMemory();
-  }  
+  }
 }
 BENCHMARK(numbers_exceptions_load_scan);
 
@@ -456,7 +456,7 @@ static void numbers_exceptions_load_size_scan(State& state) {
     if(pos != container.size()) { cerr << "bad count" << endl; }
     benchmark::DoNotOptimize(container.data());
     benchmark::ClobberMemory();
-  }  
+  }
 }
 BENCHMARK(numbers_exceptions_load_size_scan);
 
@@ -711,7 +711,7 @@ static void iterator_twitter_image_sizes(State& state) {
             if (!iter.up()) { return; } // back to entities
           }
           if (!iter.up()) { return; } // back to status
-        } 
+        }
       } while (iter.next()); // next status
     }
 

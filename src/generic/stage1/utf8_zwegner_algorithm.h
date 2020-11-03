@@ -14,7 +14,7 @@ namespace SIMDJSON_IMPLEMENTATION {
 // are straight up concatenated into the final value. The first byte of a multibyte character is a
 // "leading byte" and starts with N 1's, where N is the total number of bytes (110_____ = 2 byte
 // lead). The remaining bytes of a multibyte character all start with 10. 1-byte characters just
-// start with 0, because that's what ASCII looks like. Here's what each size 
+// start with 0, because that's what ASCII looks like. Here's what each size
 //
 // | Character Length            | UTF-8 Byte Sequence                   |
 // |-----------------------------|---------------------------------------|
@@ -69,7 +69,7 @@ namespace SIMDJSON_IMPLEMENTATION {
 // e.g. `11101101 10100000 10000000` (U+D800)
 //
 // ### 5+ byte characters
-// 
+//
 // INVALID_5_BYTE: 5-byte, 6-byte, 7-byte and 8-byte characters are unsupported; Unicode does not
 // support values with more than 23 bits (which a 4-byte character supports).
 //
@@ -77,9 +77,9 @@ namespace SIMDJSON_IMPLEMENTATION {
 // Unicode max value), or overlong (could fit in 4+ bytes).
 //
 // e.g. `11111000 10100000 10000000 10000000 10000000` (U+800000)
-//   
+//
 // Legal utf-8 byte sequences per  http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94:
-// 
+//
 //  |  Code Points       |  1st   |  2nd   |   3s   |   4s   |
 //  |--------------------|--------|--------|--------|--------|
 //  | U+0000..U+007F     | 00..7F |        |        |        |
@@ -267,7 +267,7 @@ struct utf8_checker {
 
     // Look up error masks for three consecutive nibbles. We need to
     // AND with 0x0F for each one, because vpshufb has the neat
-    // "feature" that negative values in an index byte will result in 
+    // "feature" that negative values in an index byte will result in
     // a zero.
     simd8<uint8_t> nibble_1_error = shifted_bytes.shr<4>().lookup_16<uint8_t>(
         0, 0, 0, 0,
@@ -294,7 +294,7 @@ struct utf8_checker {
       TOO_LARGE_2,                           // 1111[0101..1111] ________        > U+10FFFF
       TOO_LARGE_2,
       TOO_LARGE_2,
-      
+
       TOO_LARGE_2,
       TOO_LARGE_2,
       TOO_LARGE_2,

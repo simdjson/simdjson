@@ -95,7 +95,7 @@ simdjson_really_inline bool assert_true(bool value, const char *operation = "res
 #define ASSERT_SUCCESS(ACTUAL)          do { if (!::assert_success((ACTUAL),             #ACTUAL)) { return false; } } while (0);
 #define ASSERT_ERROR(ACTUAL, EXPECTED)  do { if (!::assert_error  ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
 #define ASSERT_TRUE(ACTUAL)             do { if (!::assert_true   ((ACTUAL),             #ACTUAL)) { return false; } } while (0);
-#define ASSERT(ACTUAL, MESSAGE)         do { if (!::assert_true   ((ACTUAL),           (MESSAGE))) { return false; } } while (0); 
+#define ASSERT(ACTUAL, MESSAGE)         do { if (!::assert_true   ((ACTUAL),           (MESSAGE))) { return false; } } while (0);
 #define RUN_TEST(ACTUAL)                do { if (!(ACTUAL)) { return false; } } while (0);
 #define TEST_FAIL(MESSAGE)              do { std::cerr << "FAIL: " << (MESSAGE) << std::endl; return false; } while (0);
 #define TEST_SUCCEED()                  do { return true; } while (0);

@@ -29,14 +29,14 @@ static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
  * as well as memory for a single document. The parsed document is overwritten on each parse.
  *
  * This class cannot be copied, only moved, to avoid unintended allocations.
- * 
- * @note Moving a parser instance may invalidate "dom::element" instances. If you need to 
+ *
+ * @note Moving a parser instance may invalidate "dom::element" instances. If you need to
  * preserve both the "dom::element" instances and the parser, consider wrapping the parser
  * instance in a std::unique_ptr instance:
- * 
+ *
  *   std::unique_ptr<dom::parser> parser(new dom::parser{});
  *   auto error = parser->load(f).get(root);
- * 
+ *
  * You can then move std::unique_ptr safely.
  *
  * @note This is not thread safe: one parser cannot produce two documents at the same time!
@@ -78,10 +78,10 @@ public:
    *
    *   dom::parser parser;
    *   const element doc = parser.load("jsonexamples/twitter.json");
-   * 
+   *
    * The function is eager: the file's content is loaded in memory inside the parser instance
    * and immediately parsed. The file can be deleted after the  `parser.load` call.
-   * 
+   *
    * ### IMPORTANT: Document Lifetime
    *
    * The JSON document still lives in the parser: this is the most efficient way to parse JSON
@@ -90,8 +90,8 @@ public:
    *
    * Moving the parser instance is safe, but it invalidates the element instances. You may store
    * the parser instance without moving it by wrapping it inside an `unique_ptr` instance like
-   * so: `std::unique_ptr<dom::parser> parser(new dom::parser{});`. 
-   * 
+   * so: `std::unique_ptr<dom::parser> parser(new dom::parser{});`.
+   *
    * ### Parser Capacity
    *
    * If the parser's current capacity is less than the file length, it will allocate enough capacity
@@ -112,7 +112,7 @@ public:
    *
    *   dom::parser parser;
    *   element doc = parser.parse(buf, len);
-   * 
+   *
    * The function eagerly parses the input: the input can be modified and discarded after
    * the `parser.parse(buf, len)` call has completed.
    *
@@ -121,10 +121,10 @@ public:
    * The JSON document still lives in the parser: this is the most efficient way to parse JSON
    * documents because it reuses the same buffers, but you *must* use the document before you
    * destroy the parser or call parse() again.
-   * 
+   *
    * Moving the parser instance is safe, but it invalidates the element instances. You may store
    * the parser instance without moving it by wrapping it inside an `unique_ptr` instance like
-   * so: `std::unique_ptr<dom::parser> parser(new dom::parser{});`. 
+   * so: `std::unique_ptr<dom::parser> parser(new dom::parser{});`.
    *
    * ### REQUIRED: Buffer Padding
    *
@@ -132,22 +132,22 @@ public:
    * those bytes are initialized to, as long as they are allocated.
    *
    * If realloc_if_needed is true (the default), it is assumed that the buffer does *not* have enough padding,
-   * and it is copied into an enlarged temporary buffer before parsing. Thus the following is safe: 
-   * 
+   * and it is copied into an enlarged temporary buffer before parsing. Thus the following is safe:
+   *
    *   const char *json      = R"({"key":"value"})";
    *   const size_t json_len = std::strlen(json);
    *   simdjson::dom::parser parser;
    *   simdjson::dom::element element = parser.parse(json, json_len);
-   * 
-   * If you set realloc_if_needed to false (e.g., parser.parse(json, json_len, false)), 
+   *
+   * If you set realloc_if_needed to false (e.g., parser.parse(json, json_len, false)),
    * you must provide a buffer with at least SIMDJSON_PADDING extra bytes at the end.
    * The benefit of setting realloc_if_needed to false is that you avoid a temporary
    * memory allocation and a copy.
-   * 
+   *
    * The padded bytes may be read. It is not important how you initialize
    * these bytes though we recommend a sensible default like null character values or spaces.
    * For example, the following low-level code is safe:
-   * 
+   *
    *   const char *json      = R"({"key":"value"})";
    *   const size_t json_len = std::strlen(json);
    *   std::unique_ptr<char[]> padded_json_copy{new char[json_len + SIMDJSON_PADDING]};
@@ -197,11 +197,11 @@ public:
    *
    * The file is loaded in memory and can be safely deleted after the `parser.load_many(path)`
    * function has returned. The memory is held by the `parser` instance.
-   * 
+   *
    * The function is lazy: it may be that no more than one JSON document at a time is parsed.
    * And, possibly, no document many have been parsed when the `parser.load_many(path)` function
    * returned.
-   * 
+   *
    * ### Format
    *
    * The file must contain a series of one or more JSON documents, concatenated into a single
@@ -212,7 +212,7 @@ public:
    * Documents that consist of an object or array may omit the whitespace between them, concatenating
    * with no separator. documents that consist of a single primitive (i.e. documents that are not
    * arrays or objects) MUST be separated with whitespace.
-   * 
+   *
    * The documents must not exceed batch_size bytes (by default 1MB) or they will fail to parse.
    * Setting batch_size to excessively large or excesively small values may impact negatively the
    * performance.
@@ -245,7 +245,7 @@ public:
    * If the parser's current capacity is less than batch_size, it will allocate enough capacity
    * to handle it (up to max_capacity).
    *
-   * @param path File name pointing at the concatenated JSON to parse. 
+   * @param path File name pointing at the concatenated JSON to parse.
    * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
    *                   spot is cache-related: small enough to fit in cache, yet big enough to
    *                   parse as many documents as possible in one tight loop.
@@ -272,25 +272,25 @@ public:
    * The function is lazy: it may be that no more than one JSON document at a time is parsed.
    * And, possibly, no document many have been parsed when the `parser.load_many(path)` function
    * returned.
-   * 
+   *
    * The caller is responsabile to ensure that the input string data remains unchanged and is
    * not deleted during the loop. In particular, the following is unsafe and will not compile:
-   * 
+   *
    *   auto docs = parser.parse_many("[\"temporary data\"]"_padded);
    *   // here the string "[\"temporary data\"]" may no longer exist in memory
    *   // the parser instance may not have even accessed the input yet
    *   for (element doc : docs) {
    *     cout << std::string(doc["title"]) << endl;
    *   }
-   * 
-   * The following is safe: 
-   * 
+   *
+   * The following is safe:
+   *
    *   auto json = "[\"temporary data\"]"_padded;
    *   auto docs = parser.parse_many(json);
    *   for (element doc : docs) {
    *     cout << std::string(doc["title"]) << endl;
    *   }
-   *     
+   *
    * ### Format
    *
    * The buffer must contain a series of one or more JSON documents, concatenated into a single
@@ -301,7 +301,7 @@ public:
    * documents that consist of an object or array may omit the whitespace between them, concatenating
    * with no separator. documents that consist of a single primitive (i.e. documents that are not
    * arrays or objects) MUST be separated with whitespace.
-   * 
+   *
    * The documents must not exceed batch_size bytes (by default 1MB) or they will fail to parse.
    * Setting batch_size to excessively large or excesively small values may impact negatively the
    * performance.
@@ -360,7 +360,7 @@ public:
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> parse_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
   inline simdjson_result<document_stream> parse_many(const padded_string &&s, size_t batch_size) = delete;// unsafe
-  
+
   /** @private We do not want to allow implicit conversion from C string to std::string. */
   simdjson_result<document_stream> parse_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
 

@@ -10,7 +10,7 @@ os=$(uname)
 
 make parsingcompetition allparsingcompetition
 echo "parsing (with competition)"
-echo 
+echo
 for i in $SCRIPTPATH/../jsonexamples/*.json; do
     [ -f "$i" ] || break
     echo $i
@@ -23,4 +23,4 @@ done
 
 echo "see results in "$datadirectory
 
-cd $datadirectory && gnuplot bar.gnuplot 
+cd $datadirectory && gnuplot bar.gnuplot

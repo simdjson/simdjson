@@ -18,7 +18,7 @@ do
     echo -n "| $file Cycles | $file Instructions | $file Missed Branches "
 done
 echo "|"
-    
+
 git checkout jkeiser/lookup2_simpler_intel
 make parse
 report_perf lookup2 "$@"

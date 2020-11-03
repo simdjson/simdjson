@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
               << std::endl;
   }
   simdjson::padded_string p;
-  bench(filename, p); 
+  bench(filename, p);
   double meanval = 0;
   double maxval = 0;
   double minval = 10000;
