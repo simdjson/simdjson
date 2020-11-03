@@ -247,11 +247,10 @@ simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_
 simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t len) const noexcept { 
   const uint8_t *data = (const uint8_t *)buf;
   uint64_t pos = 0;
-  uint64_t next_pos = 0;
   uint32_t code_point = 0;
   while (pos < len) {
     // check of the next 8 bytes are ascii.
-    next_pos = pos + 16;
+    uint64_t next_pos = pos + 16;
     if (next_pos <= len) { // if it is safe to read 8 more bytes, check that they are ascii
       uint64_t v1;
       memcpy(&v1, data + pos, sizeof(uint64_t));
