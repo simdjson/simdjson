@@ -19,7 +19,7 @@
 /**
  * Some systems have bad floating-point parsing. We want to exclude them.
  */
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined (__linux__) || defined (__APPLE__) || defined(__FreeBSD__) 
+#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined (__linux__) || defined (__APPLE__) || defined(__FreeBSD__)
 // Finally, we want to exclude legacy 32-bit systems.
 #ifndef SIMDJSON_IS_32BITS
 // So we only run some of the floating-point tests under 64-bit linux, apple, regular visual studio, freebsd.
@@ -35,7 +35,7 @@ namespace number_tests {
   bool ground_truth() {
     std::cout << __func__ << std::endl;
     std::pair<std::string,double> ground_truth[] = {
-      {"9355950000000000000.00000000000000000000000000000000001844674407370955161600000184467440737095516161844674407370955161407370955161618446744073709551616000184467440737095516166000001844674407370955161618446744073709551614073709551616184467440737095516160001844674407370955161601844674407370955674451616184467440737095516140737095516161844674407370955161600018446744073709551616018446744073709551611616000184467440737095001844674407370955161600184467440737095516160018446744073709551168164467440737095516160001844073709551616018446744073709551616184467440737095516160001844674407536910751601611616000184467440737095001844674407370955161600184467440737095516160018446744073709551616184467440737095516160001844955161618446744073709551616000184467440753691075160018446744073709",0x1.03ae05e8fca1cp+63}, 
+      {"9355950000000000000.00000000000000000000000000000000001844674407370955161600000184467440737095516161844674407370955161407370955161618446744073709551616000184467440737095516166000001844674407370955161618446744073709551614073709551616184467440737095516160001844674407370955161601844674407370955674451616184467440737095516140737095516161844674407370955161600018446744073709551616018446744073709551611616000184467440737095001844674407370955161600184467440737095516160018446744073709551168164467440737095516160001844073709551616018446744073709551616184467440737095516160001844674407536910751601611616000184467440737095001844674407370955161600184467440737095516160018446744073709551616184467440737095516160001844955161618446744073709551616000184467440753691075160018446744073709",0x1.03ae05e8fca1cp+63},
       {"2.2250738585072013e-308",0x1p-1022},
       {"-92666518056446206563E3", -0x1.39f764644154dp+76},
       {"-92666518056446206563E3", -0x1.39f764644154dp+76},
@@ -128,7 +128,7 @@ namespace number_tests {
       if (n >= sizeof(buf)) { abort(); }
       double actual;
       auto error = parser.parse(buf, n).get(actual);
-      if (error) { std::cerr << error << std::endl; return false; }      
+      if (error) { std::cerr << error << std::endl; return false; }
       if(actual!=expected) {
         std::cerr << "JSON '" << buf << " parsed to ";
         fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
@@ -283,7 +283,7 @@ namespace number_tests {
 
   bool specific_tests() {
     std::cout << __func__ << std::endl;
-    return basic_test_64bit("-2402844368454405395.2",-2402844368454405395.2) &&  
+    return basic_test_64bit("-2402844368454405395.2",-2402844368454405395.2) &&
            basic_test_64bit("4503599627370496.5", 4503599627370496.5) &&
            basic_test_64bit("4503599627475352.5", 4503599627475352.5) &&
            basic_test_64bit("4503599627475353.5", 4503599627475353.5) &&
@@ -322,7 +322,7 @@ namespace parse_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     typedef std::tuple<std::string, std::unique_ptr<parser>,element> simdjson_tuple;
     std::vector<simdjson_tuple> results;
-    std::vector<std::string> my_data = {"[1,2,3]", "[1,2,3]", "[1,2,3]"}; 
+    std::vector<std::string> my_data = {"[1,2,3]", "[1,2,3]", "[1,2,3]"};
 
     for (std::string s : my_data) {
       std::unique_ptr<dom::parser> parser(new dom::parser{});
@@ -1311,7 +1311,7 @@ namespace type_tests {
 #else
       // We don't trust the underlying system so we only run the test_cast
       // exact test when the expected_value is within the 53-bit range.
-      && ((expected_value<-9007199254740992) || (expected_value>9007199254740992) || test_cast<double>(result, static_cast<double>(expected_value))) 
+      && ((expected_value<-9007199254740992) || (expected_value>9007199254740992) || test_cast<double>(result, static_cast<double>(expected_value)))
 #endif
       && test_cast_error<bool>(result, INCORRECT_TYPE)
       && test_is_null(result, false);
@@ -1338,7 +1338,7 @@ namespace type_tests {
 #else
       // We don't trust the underlying system so we only run the test_cast
       // exact test when the expected_value is within the 53-bit range.
-      && ((expected_value>9007199254740992) || test_cast<double>(result, static_cast<double>(expected_value))) 
+      && ((expected_value>9007199254740992) || test_cast<double>(result, static_cast<double>(expected_value)))
 #endif
       && test_cast_error<bool>(result, INCORRECT_TYPE)
       && test_is_null(result, false);

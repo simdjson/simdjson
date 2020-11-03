@@ -1,4 +1,4 @@
-/* auto-generated on 2020-11-03 06:07:17 +0100. Do not edit! */
+/* auto-generated on 2020-11-03 21:40:10 +0100. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -960,7 +960,7 @@ namespace simdjson {
 namespace internal {
 
 /**
- * The code in the internal::from_chars function is meant to handle the floating-point number parsing 
+ * The code in the internal::from_chars function is meant to handle the floating-point number parsing
  * when we have more than 19 digits in the decimal mantissa. This should only be seen
  * in adversarial scenarios: we do not expect production systems to even produce
  * such floating-point numbers.
@@ -1032,7 +1032,7 @@ decimal parse_decimal(const char *&p) noexcept {
   while (is_integer(*p)) {
     if (answer.num_digits < max_digits) {
       answer.digits[answer.num_digits] = uint8_t(*p - '0');
-    } 
+    }
     answer.num_digits++;
     ++p;
   }
@@ -1049,7 +1049,7 @@ decimal parse_decimal(const char *&p) noexcept {
     while (is_integer(*p)) {
       if (answer.num_digits < max_digits) {
         answer.digits[answer.num_digits] = uint8_t(*p - '0');
-      } 
+      }
       answer.num_digits++;
       ++p;
     }
@@ -1314,21 +1314,21 @@ template <typename binary> adjusted_mantissa compute_float(decimal &d) {
   }
   // At this point, going further, we can assume that d.num_digits > 0.
   // We want to guard against excessive decimal point values because
-  // they can result in long running times. Indeed, we do 
+  // they can result in long running times. Indeed, we do
   // shifts by at most 60 bits. We have that log(10**400)/log(2**60) ~= 22
   // which is fine, but log(10**299995)/log(2**60) ~= 16609 which is not
   // fine (runs for a long time).
   //
   if(d.decimal_point < -324) {
     // We have something smaller than 1e-324 which is always zero
-    // in binary64 and binary32. 
+    // in binary64 and binary32.
     // It should be zero.
     answer.power2 = 0;
     answer.mantissa = 0;
     return answer;
   } else if(d.decimal_point >= 310) {
     // We have something at least as large as 0.1e310 which is
-    // always infinite.    
+    // always infinite.
     answer.power2 = binary::infinite_power();
     answer.mantissa = 0;
     return answer;
@@ -1690,7 +1690,7 @@ SIMDJSON_DLLIMPORTEXPORT const double power_of_ten[] = {
  * are not a concern since they can be represented
  * exactly using the binary notation, only the powers of five
  * affect the binary significand.
- */ 
+ */
 
 
 // The truncated powers of five from 5^-342 all the way to 5^308
@@ -2927,7 +2927,7 @@ using namespace simd;
     }
 
     // The only problem that can happen at EOF is that a multibyte character is too short
-    // or a byte value too large in the last bytes: check_special_cases only checks for bytes 
+    // or a byte value too large in the last bytes: check_special_cases only checks for bytes
     // too large in the first of two bytes.
     simdjson_really_inline void check_eof() {
       // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
@@ -3229,7 +3229,7 @@ namespace stage1 {
  * We seek to identify pseudo-structural characters. Anything that is inside
  * a string must be omitted (hence  & ~_string.string_tail()).
  * Otherwise, pseudo-structural characters come in two forms.
- * 1. We have the structural characters ([,],{,},:, comma). The 
+ * 1. We have the structural characters ([,],{,},:, comma). The
  *    term 'structural character' is from the JSON RFC.
  * 2. We have the 'scalar pseudo-structural characters'.
  *    Scalars are quotes, and any character except structural characters and white space.
@@ -3439,7 +3439,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
   // Index the last (remainder) block, padded with spaces
   uint8_t block[STEP_SIZE];
-  size_t remaining_bytes = reader.get_remainder(block); 
+  size_t remaining_bytes = reader.get_remainder(block);
   if (remaining_bytes > 0) {
     // We do not want to write directly to the output stream. Rather, we write
     // to a local buffer (for safety).
@@ -4220,7 +4220,7 @@ namespace stage2 {
 struct tape_writer {
   /** The next place to write to tape */
   uint64_t *next_tape_loc;
-  
+
   /** Write a signed 64-bit value to tape. */
   simdjson_really_inline void append_s64(int64_t value) noexcept;
 
@@ -5007,7 +5007,7 @@ simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_
 }
 
 // credit: based on code from Google Fuchsia (Apache Licensed)
-simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t len) const noexcept { 
+simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
   const uint8_t *data = (const uint8_t *)buf;
   uint64_t pos = 0;
   uint32_t code_point = 0;
@@ -5493,7 +5493,7 @@ namespace stage2 {
 struct tape_writer {
   /** The next place to write to tape */
   uint64_t *next_tape_loc;
-  
+
   /** Write a signed 64-bit value to tape. */
   simdjson_really_inline void append_s64(int64_t value) noexcept;
 
@@ -6015,7 +6015,7 @@ simdjson_really_inline json_character_block json_character_block::classify(const
     _mm256_shuffle_epi8(op_table, in.chunks[0]),
     _mm256_shuffle_epi8(op_table, in.chunks[1])
   });
-  
+
   return { whitespace, op };
 }
 
@@ -6186,7 +6186,7 @@ using namespace simd;
     }
 
     // The only problem that can happen at EOF is that a multibyte character is too short
-    // or a byte value too large in the last bytes: check_special_cases only checks for bytes 
+    // or a byte value too large in the last bytes: check_special_cases only checks for bytes
     // too large in the first of two bytes.
     simdjson_really_inline void check_eof() {
       // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
@@ -6488,7 +6488,7 @@ namespace stage1 {
  * We seek to identify pseudo-structural characters. Anything that is inside
  * a string must be omitted (hence  & ~_string.string_tail()).
  * Otherwise, pseudo-structural characters come in two forms.
- * 1. We have the structural characters ([,],{,},:, comma). The 
+ * 1. We have the structural characters ([,],{,},:, comma). The
  *    term 'structural character' is from the JSON RFC.
  * 2. We have the 'scalar pseudo-structural characters'.
  *    Scalars are quotes, and any character except structural characters and white space.
@@ -6698,7 +6698,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
   // Index the last (remainder) block, padded with spaces
   uint8_t block[STEP_SIZE];
-  size_t remaining_bytes = reader.get_remainder(block); 
+  size_t remaining_bytes = reader.get_remainder(block);
   if (remaining_bytes > 0) {
     // We do not want to write directly to the output stream. Rather, we write
     // to a local buffer (for safety).
@@ -7478,7 +7478,7 @@ namespace stage2 {
 struct tape_writer {
   /** The next place to write to tape */
   uint64_t *next_tape_loc;
-  
+
   /** Write a signed 64-bit value to tape. */
   simdjson_really_inline void append_s64(int64_t value) noexcept;
 
@@ -8161,7 +8161,7 @@ using namespace simd;
     }
 
     // The only problem that can happen at EOF is that a multibyte character is too short
-    // or a byte value too large in the last bytes: check_special_cases only checks for bytes 
+    // or a byte value too large in the last bytes: check_special_cases only checks for bytes
     // too large in the first of two bytes.
     simdjson_really_inline void check_eof() {
       // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
@@ -8463,7 +8463,7 @@ namespace stage1 {
  * We seek to identify pseudo-structural characters. Anything that is inside
  * a string must be omitted (hence  & ~_string.string_tail()).
  * Otherwise, pseudo-structural characters come in two forms.
- * 1. We have the structural characters ([,],{,},:, comma). The 
+ * 1. We have the structural characters ([,],{,},:, comma). The
  *    term 'structural character' is from the JSON RFC.
  * 2. We have the 'scalar pseudo-structural characters'.
  *    Scalars are quotes, and any character except structural characters and white space.
@@ -8673,7 +8673,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
   // Index the last (remainder) block, padded with spaces
   uint8_t block[STEP_SIZE];
-  size_t remaining_bytes = reader.get_remainder(block); 
+  size_t remaining_bytes = reader.get_remainder(block);
   if (remaining_bytes > 0) {
     // We do not want to write directly to the output stream. Rather, we write
     // to a local buffer (for safety).
@@ -9454,7 +9454,7 @@ namespace stage2 {
 struct tape_writer {
   /** The next place to write to tape */
   uint64_t *next_tape_loc;
-  
+
   /** Write a signed 64-bit value to tape. */
   simdjson_really_inline void append_s64(int64_t value) noexcept;
 
@@ -10173,7 +10173,7 @@ using namespace simd;
     }
 
     // The only problem that can happen at EOF is that a multibyte character is too short
-    // or a byte value too large in the last bytes: check_special_cases only checks for bytes 
+    // or a byte value too large in the last bytes: check_special_cases only checks for bytes
     // too large in the first of two bytes.
     simdjson_really_inline void check_eof() {
       // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
@@ -10475,7 +10475,7 @@ namespace stage1 {
  * We seek to identify pseudo-structural characters. Anything that is inside
  * a string must be omitted (hence  & ~_string.string_tail()).
  * Otherwise, pseudo-structural characters come in two forms.
- * 1. We have the structural characters ([,],{,},:, comma). The 
+ * 1. We have the structural characters ([,],{,},:, comma). The
  *    term 'structural character' is from the JSON RFC.
  * 2. We have the 'scalar pseudo-structural characters'.
  *    Scalars are quotes, and any character except structural characters and white space.
@@ -10685,7 +10685,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
   // Index the last (remainder) block, padded with spaces
   uint8_t block[STEP_SIZE];
-  size_t remaining_bytes = reader.get_remainder(block); 
+  size_t remaining_bytes = reader.get_remainder(block);
   if (remaining_bytes > 0) {
     // We do not want to write directly to the output stream. Rather, we write
     // to a local buffer (for safety).
@@ -11465,7 +11465,7 @@ namespace stage2 {
 struct tape_writer {
   /** The next place to write to tape */
   uint64_t *next_tape_loc;
-  
+
   /** Write a signed 64-bit value to tape. */
   simdjson_really_inline void append_s64(int64_t value) noexcept;
 

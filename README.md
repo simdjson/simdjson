@@ -40,7 +40,7 @@ Table of Contents
 Quick Start
 -----------
 
-          
+
 The simdjson library is easily consumable with a single .h and .cpp file.
 
 0. Prerequisites: `g++` (version 7 or better) or `clang++` (version 6 or better), and a 64-bit system with a command-line shell (e.g., Linux, macOS, freeBSD). We also support programming environnements like Visual Studio and Xcode, but different steps are needed.
@@ -168,7 +168,7 @@ instructions, reducing branch misprediction, and reducing data dependency to tak
 CPU's multiple execution cores.
 
 Some people [enjoy reading our paper](https://arxiv.org/abs/1902.08318): A description of the design
-and implementation of simdjson is in our research article: 
+and implementation of simdjson is in our research article:
 - Geoff Langdale, Daniel Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal 28 (6), 2019.
 
 We have an in-depth paper focused on the UTF-8 validation:

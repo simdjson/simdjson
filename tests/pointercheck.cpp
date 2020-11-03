@@ -1,5 +1,5 @@
 /***************
- * We refer the programmer to 
+ * We refer the programmer to
  * JavaScript Object Notation (JSON) Pointer
  * https://tools.ietf.org/html/rfc6901
  */
@@ -165,7 +165,7 @@ bool issue1142() {
   ASSERT_EQUAL(std::string("1"), simdjson::minify(e0))
   auto o = dom::array(example).at(2).at_pointer("");
   ASSERT_EQUAL(std::string(R"({"1":"bla"})"), simdjson::minify(o))
-  std::string_view s0 = dom::array(example).at(2).at_pointer("/1").at_pointer(""); 
+  std::string_view s0 = dom::array(example).at(2).at_pointer("/1").at_pointer("");
   if(s0 != "bla") {
     std::cerr << s0 << std::endl;
     return false;

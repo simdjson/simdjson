@@ -72,12 +72,12 @@ public:
    * @return the name of the implementation, e.g. "haswell", "westmere", "arm64"
    */
   virtual const std::string &description() const { return _description; }
-  
+
   /**
    * The instruction sets this implementation is compiled against
    * and the current CPU match. This function may poll the current CPU/system
    * and should therefore not be called too often if performance is a concern.
-   * 
+   *
    *
    * @return true if the implementation can be safely used on the current system (determined at runtime)
    */
@@ -123,9 +123,9 @@ public:
    * @return the error code, or SUCCESS if there was no error.
    */
   simdjson_warn_unused virtual error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept = 0;
-  
-  
-  /**   
+
+
+  /**
    * Validate the UTF-8 string.
    *
    * Overridden by each implementation.

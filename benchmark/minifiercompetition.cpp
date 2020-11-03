@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
   BEST_TIME_NOCHECK(
       "despacing with std::minify", simdjson_stringme(p),, repeat, volume, !just_data);
 
-      
+
   memcpy(buffer, p.data(), p.size());
   size_t outlength;
   uint8_t *cbuffer = (uint8_t *)buffer;

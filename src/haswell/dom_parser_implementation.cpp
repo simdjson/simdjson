@@ -78,7 +78,7 @@ simdjson_really_inline json_character_block json_character_block::classify(const
     _mm256_shuffle_epi8(op_table, in.chunks[0]),
     _mm256_shuffle_epi8(op_table, in.chunks[1])
   });
-  
+
   return { whitespace, op };
 }
 

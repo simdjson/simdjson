@@ -9,12 +9,12 @@ namespace internal {
  * The smallest non-zero float (binary64) is 2^-1074.
  * We take as input numbers of the form w x 10^q where w < 2^64.
  * We have that w * 10^-343  <  2^(64-344) 5^-343 < 2^-1076.
- * However, we have that 
+ * However, we have that
  * (2^64-1) * 10^-342 =  (2^64-1) * 2^-342 * 5^-342 > 2^-1074.
- * Thus it is possible for a number of the form w * 10^-342 where 
+ * Thus it is possible for a number of the form w * 10^-342 where
  * w is a 64-bit value to be a non-zero floating-point number.
  *********
- * Any number of form w * 10^309 where w>= 1 is going to be 
+ * Any number of form w * 10^309 where w>= 1 is going to be
  * infinite in binary64 so we never need to worry about powers
  * of 5 greater than 308.
  */
@@ -46,7 +46,7 @@ extern SIMDJSON_DLLIMPORTEXPORT const double power_of_ten[];
  * are not a concern since they can be represented
  * exactly using the binary notation, only the powers of five
  * affect the binary significand.
- */ 
+ */
 
 
 // The truncated powers of five from 5^-342 all the way to 5^308

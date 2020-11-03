@@ -9,7 +9,7 @@ public:
   uint32_t *next_structural;
   dom_parser_implementation &dom_parser;
 
-  // Start a structural 
+  // Start a structural
   simdjson_really_inline structural_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
     : buf{_dom_parser.buf},
       next_structural{&_dom_parser.structural_indexes[start_structural_index]},

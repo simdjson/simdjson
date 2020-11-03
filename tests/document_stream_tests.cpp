@@ -178,7 +178,7 @@ namespace document_stream_tests {
     }
     return true;
   }
-#endif 
+#endif
 
   bool large_window() {
     std::cout << "Running " << __func__ << std::endl;
@@ -310,11 +310,11 @@ namespace document_stream_tests {
   }
 
   bool run() {
-    return test_current_index()  && 
+    return test_current_index()  &&
            single_document() &&
 #if SIMDJSON_EXCEPTIONS
            single_document_exceptions() &&
-           issue1133() && 
+           issue1133() &&
 #endif
 #ifdef SIMDJSON_THREADS_ENABLED
            threaded_disabled() &&

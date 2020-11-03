@@ -11,7 +11,7 @@ namespace utf8_validation {
 // are straight up concatenated into the final value. The first byte of a multibyte character is a
 // "leading byte" and starts with N 1's, where N is the total number of bytes (110_____ = 2 byte
 // lead). The remaining bytes of a multibyte character all start with 10. 1-byte characters just
-// start with 0, because that's what ASCII looks like. Here's what each size 
+// start with 0, because that's what ASCII looks like. Here's what each size
 //
 // - ASCII (7 bits):              0_______
 // - 2 byte character (11 bits):  110_____ 10______
@@ -52,9 +52,9 @@ namespace utf8_validation {
 //   support values with more than 23 bits (which a 4-byte character supports).
 //
 //   e.g. 11111000 10100000 10000000 10000000 10000000 (U+800000)
-//   
+//
 // Legal utf-8 byte sequences per  http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94:
-// 
+//
 //   Code Points        1st       2s       3s       4s
 //  U+0000..U+007F     00..7F
 //  U+0080..U+07FF     C2..DF   80..BF

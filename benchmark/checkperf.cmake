@@ -95,7 +95,7 @@ if (SIMDJSON_IS_UNDER_GIT AND SIMDJSON_GIT AND Git_FOUND AND (GIT_VERSION_STRING
 else()
   if (CMAKE_GENERATOR MATCHES Ninja)
    message(STATUS "We disable the checkperf targets under Ninja.")
-  else() 
+  else()
    message(STATUS "Either git is unavailable or else it is too old. We are disabling checkperf targets.")
   endif()
 endif ()

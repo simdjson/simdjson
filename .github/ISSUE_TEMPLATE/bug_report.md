@@ -18,7 +18,7 @@ Before submitting an issue, please ensure that you have read the documentation:
 **Describe the bug**
 A clear and concise description of what the bug is.
 
-Note that a compiler warning is not a bug. 
+Note that a compiler warning is not a bug.
 
 **To Reproduce**
 Steps to reproduce the behaviour: provide a code sample if possible.
@@ -32,10 +32,10 @@ Note that a stack trace from your own program is not enough.
  - Compiler [e.g. Apple clang version 11.0.3 (clang-1103.0.32.59) x86_64-apple-darwin19.4.0]
  - Version [e.g. 22]
 
-We support up-to-date 64-bit ARM and x64 FreeBSD, macOS, Windows and Linux systems. Please ensure that your configuration is supported before labelling the issue as a bug. In particular, we do not support legacy 32-bit systems. 
+We support up-to-date 64-bit ARM and x64 FreeBSD, macOS, Windows and Linux systems. Please ensure that your configuration is supported before labelling the issue as a bug. In particular, we do not support legacy 32-bit systems.
 
 **Indicate whether you are willing or able to provide a bug fix as a pull request**
 
-If you plan to contribute to simdjson, please read our 
+If you plan to contribute to simdjson, please read our
 * CONTRIBUTING guide: https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md and our
 * HACKING guide: https://github.com/simdjson/simdjson/blob/master/HACKING.md

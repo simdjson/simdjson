@@ -12,7 +12,7 @@ NO_SANITIZE_UNDEFINED
 simdjson_really_inline int trailing_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
-  // Search the mask data from least significant bit (LSB) 
+  // Search the mask data from least significant bit (LSB)
   // to the most significant bit (MSB) for a set bit (1).
   _BitScanForward64(&ret, input_num);
   return (int)ret;
@@ -30,7 +30,7 @@ simdjson_really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
 simdjson_really_inline int leading_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long leading_zero = 0;
-  // Search the mask data from most significant bit (MSB) 
+  // Search the mask data from most significant bit (MSB)
   // to least significant bit (LSB) for a set bit (1).
   if (_BitScanReverse64(&leading_zero, input_num))
     return (int)(63 - leading_zero);

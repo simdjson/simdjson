@@ -26,7 +26,7 @@ public:
    * @private For internal implementation use
    *
    * Run a full JSON parse on a single document (stage1 + stage2).
-   * 
+   *
    * Guaranteed only to be called when capacity > document length.
    *
    * Overridden by each implementation.
@@ -41,7 +41,7 @@ public:
    * @private For internal implementation use
    *
    * Stage 1 of the document parser.
-   * 
+   *
    * Guaranteed only to be called when capacity > document length.
    *
    * Overridden by each implementation.
@@ -57,7 +57,7 @@ public:
    * @private For internal implementation use
    *
    * Stage 2 of the document parser.
-   * 
+   *
    * Called after stage1().
    *
    * Overridden by each implementation.
@@ -82,7 +82,7 @@ public:
 
   /**
    * Change the capacity of this parser.
-   * 
+   *
    * Generally used for reallocation.
    *
    * @param capacity The new capacity.

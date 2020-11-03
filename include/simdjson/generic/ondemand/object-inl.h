@@ -18,7 +18,7 @@ namespace ondemand {
 //   Next state. In this state, depth > iter->depth, at_start == false, and error == SUCCESS.
 //
 // ## Error States
-// 
+//
 // In error states, we will yield exactly one more value before stopping. iter->depth == depth
 // and at_start is always false. We decrement after yielding the error, moving to the Finished
 // state.

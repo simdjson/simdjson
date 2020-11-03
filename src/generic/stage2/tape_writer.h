@@ -6,7 +6,7 @@ namespace stage2 {
 struct tape_writer {
   /** The next place to write to tape */
   uint64_t *next_tape_loc;
-  
+
   /** Write a signed 64-bit value to tape. */
   simdjson_really_inline void append_s64(int64_t value) noexcept;
 

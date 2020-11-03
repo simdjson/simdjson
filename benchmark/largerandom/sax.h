@@ -52,7 +52,7 @@ public:
   simdjson_really_inline error_code visit_key(json_iterator &, const uint8_t * key) {
     switch(key[1]) {
       // Technically, we should check the other characters
-      // in the key, but we are cheating to go as fast 
+      // in the key, but we are cheating to go as fast
       // as possible.
       case 'x':
         idx = GOT_X;
@@ -62,11 +62,11 @@ public:
         break;
       case 'z':
         idx = GOT_Z;
-        break; 
+        break;
       default:
-        idx = GOT_SOMETHING_ELSE; 
+        idx = GOT_SOMETHING_ELSE;
     }
-    return SUCCESS; 
+    return SUCCESS;
   }
   simdjson_really_inline error_code visit_array_start(json_iterator &)  { return SUCCESS; }
   simdjson_really_inline error_code visit_array_end(json_iterator &) { return SUCCESS; }

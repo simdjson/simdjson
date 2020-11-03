@@ -298,7 +298,7 @@ namespace simd {
       uint64_t r3 =          this->chunks[3].to_bitmask() ;
       return r0 | (r1 << 16) | (r2 << 32) | (r3 << 48);
     }
-    
+
     simdjson_really_inline uint64_t eq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
       return  simd8x64<bool>(

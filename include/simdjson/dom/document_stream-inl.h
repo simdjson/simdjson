@@ -94,7 +94,7 @@ simdjson_really_inline document_stream::document_stream() noexcept
     error{UNINITIALIZED}
 #ifdef SIMDJSON_THREADS_ENABLED
     , use_thread(false)
-#endif 
+#endif
 {
 }
 

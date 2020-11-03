@@ -117,7 +117,7 @@ simdjson_warn_unused simdjson_really_inline bool json_iterator::started_array() 
     advance();
     return false;
   }
-  logger::log_start_value(*this, "array"); 
+  logger::log_start_value(*this, "array");
   return true;
 }
 
@@ -223,7 +223,7 @@ simdjson_warn_unused simdjson_result<uint64_t> json_iterator::consume_root_uint6
   return parse_root_uint64(advance());
 }
 simdjson_warn_unused simdjson_result<int64_t> json_iterator::parse_root_int64(const uint8_t *json) noexcept {
-  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer 
+  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
   if (!copy_to_buffer(json, tmpbuf)) { logger::log_error(*this, "Root number more than 20 characters"); return NUMBER_ERROR; }
   logger::log_value(*this, "int64", "");
   auto result = numberparsing::parse_integer(tmpbuf);

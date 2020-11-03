@@ -12,12 +12,12 @@ using namespace simdjson::builtin;
 
 class OnDemand {
 public:
-  OnDemand() { 
+  OnDemand() {
     if(!displayed_implementation) {
-      std::cout << "On Demand implementation: " << builtin_implementation()->name() << std::endl; 
+      std::cout << "On Demand implementation: " << builtin_implementation()->name() << std::endl;
       displayed_implementation = true;
     }
-  } 
+  }
   simdjson_really_inline bool Run(const padded_string &json);
   simdjson_really_inline const std::vector<tweet> &Result() { return tweets; }
   simdjson_really_inline size_t ItemCount() { return tweets.size(); }

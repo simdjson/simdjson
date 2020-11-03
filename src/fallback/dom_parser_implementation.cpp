@@ -244,7 +244,7 @@ simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_
 }
 
 // credit: based on code from Google Fuchsia (Apache Licensed)
-simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t len) const noexcept { 
+simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
   const uint8_t *data = (const uint8_t *)buf;
   uint64_t pos = 0;
   uint32_t code_point = 0;

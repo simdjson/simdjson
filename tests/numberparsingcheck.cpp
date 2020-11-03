@@ -26,9 +26,9 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf);
 /**
  * Some systems have bad floating-point parsing. We want to exclude them.
  */
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined (__linux__) || defined (__APPLE__) || defined(__FreeBSD__) 
+#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined (__linux__) || defined (__APPLE__) || defined(__FreeBSD__)
 // Ok. So under Visual Studio, linux, apple and freebsd systems, we have a good chance of having a decent
-// enough strtod. It is not certain, but it is maybe a good enough heuristics. We exclude systems like msys2 
+// enough strtod. It is not certain, but it is maybe a good enough heuristics. We exclude systems like msys2
 // or cygwin.
 //
 // Finally, we want to exclude legacy 32-bit systems.
@@ -37,7 +37,7 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf);
 #define TEST_FLOATS
 // Apple and freebsd need a special header, typically.
 #if defined __APPLE__ || defined(__FreeBSD__)
-#  include <xlocale.h> 
+#  include <xlocale.h>
 #endif
 
 #endif
@@ -84,7 +84,7 @@ void found_invalid_number(const uint8_t *buf) {
 #else
   static locale_t c_locale = newlocale(LC_ALL_MASK, "C", NULL);
   double expected = strtod_l((const char *)buf, &endptr, c_locale);
-#endif     
+#endif
   if (endptr != (const char *)buf) {
     if (!is_in_bad_list((const char *)buf)) {
       printf("Warning: found_invalid_number %.32s whereas strtod parses it to "
@@ -140,7 +140,7 @@ void found_float(double result, const uint8_t *buf) {
 #else
   static locale_t c_locale = newlocale(LC_ALL_MASK, "C", NULL);
   double expected = strtod_l((const char *)buf, &endptr, c_locale);
-#endif    
+#endif
   if (endptr == (const char *)buf) {
     fprintf(stderr,
             "parsed %f from %.32s whereas strtod refuses to parse a float, ",

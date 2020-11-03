@@ -22,13 +22,13 @@ struct stage1_worker {
   stage1_worker(stage1_worker&&) = delete;
   stage1_worker operator=(const stage1_worker&) = delete;
   ~stage1_worker();
-  /** 
+  /**
    * We only start the thread when it is needed, not at object construction, this may throw.
-   * You should only call this once. 
+   * You should only call this once.
    **/
   void start_thread();
-  /** 
-   * Start a stage 1 job. You should first call 'run', then 'finish'. 
+  /**
+   * Start a stage 1 job. You should first call 'run', then 'finish'.
    * You must call start_thread once before.
    */
   void run(document_stream * ds, dom::parser * stage1, size_t next_batch_start);
@@ -37,10 +37,10 @@ struct stage1_worker {
 
 private:
 
-  /** 
+  /**
    * Normally, we would never stop the thread. But we do in the destructor.
-   * This function is only safe assuming that you are not waiting for results. You 
-   * should have called run, then finish, and be done. 
+   * This function is only safe assuming that you are not waiting for results. You
+   * should have called run, then finish, and be done.
    **/
   void stop_thread();
 
@@ -49,8 +49,8 @@ private:
   dom::parser * stage1_thread_parser{};
   size_t _next_batch_start{};
   document_stream * owner{};
-  /** 
-   * We have two state variables. This could be streamlined to one variable in the future but 
+  /**
+   * We have two state variables. This could be streamlined to one variable in the future but
    * we use two for clarity.
    */
   bool has_work{false};
@@ -108,7 +108,7 @@ public:
     simdjson_really_inline bool operator!=(const iterator &other) const noexcept;
     /**
      * @private
-     * 
+     *
      * Gives the current index in the input document in bytes.
      *
      *   document_stream stream = parser.parse_many(json,window);
@@ -116,15 +116,15 @@ public:
      *      auto doc = *i;
      *      size_t index = i.current_index();
      *   }
-     * 
+     *
      * This function (current_index()) is experimental and the usage
      * may change in future versions of simdjson: we find the API somewhat
-     * awkward and we would like to offer something friendlier.  
+     * awkward and we would like to offer something friendlier.
      */
      simdjson_really_inline size_t current_index() const noexcept;
     /**
      * @private
-     * 
+     *
      * Gives a view of the current document.
      *
      *   document_stream stream = parser.parse_many(json,window);
@@ -132,14 +132,14 @@ public:
      *      auto doc = *i;
      *      std::string_view v = i->source();
      *   }
-     * 
+     *
      * The returned string_view instance is simply a map to the (unparsed)
      * source string: it may thus include white-space characters and all manner
      * of padding.
-     * 
+     *
      * This function (source()) is experimental and the usage
      * may change in future versions of simdjson: we find the API somewhat
-     * awkward and we would like to offer something friendlier.  
+     * awkward and we would like to offer something friendlier.
      */
      simdjson_really_inline std::string_view source() const noexcept;
 
@@ -169,7 +169,7 @@ private:
   /**
    * Construct a document_stream. Does not allocate or parse anything until the iterator is
    * used.
-   * 
+   *
    * @param parser is a reference to the parser instance used to generate this document_stream
    * @param buf is the raw byte buffer we need to process
    * @param len is the length of the raw byte buffer in bytes
@@ -237,7 +237,7 @@ private:
 
 #ifdef SIMDJSON_THREADS_ENABLED
   /** Indicates whether we use threads. Note that this needs to be a constant during the execution of the parsing. */
-  bool use_thread; 
+  bool use_thread;
 
   inline void load_from_stage1_thread() noexcept;
 

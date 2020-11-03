@@ -122,7 +122,7 @@ simdjson_really_inline void mini_formatter::number(int64_t x) {
 simdjson_really_inline void mini_formatter::number(double x) {
   char number_buffer[24];
   // Currently, passing the nullptr to the second argument is
-  // safe because our implementation does not check the second 
+  // safe because our implementation does not check the second
   // argument.
   char *newp = internal::to_chars(number_buffer, nullptr, x);
   buffer.insert(buffer.end(), number_buffer, newp);
@@ -135,7 +135,7 @@ simdjson_really_inline void mini_formatter::end_object() { one_char('}'); }
 simdjson_really_inline void mini_formatter::comma() { one_char(','); }
 
 
-simdjson_really_inline void mini_formatter::true_atom() { 
+simdjson_really_inline void mini_formatter::true_atom() {
   const char * s = "true";
   buffer.insert(buffer.end(), s, s + 4);
 }
@@ -157,29 +157,29 @@ simdjson_really_inline void mini_formatter::string(std::string_view unescaped) {
   size_t i = 0;
   // Fast path for the case where we have no control character, no ", and no backslash.
   // This should include most keys.
-  constexpr static bool needs_escaping[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 
+  constexpr static bool needs_escaping[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  for(;i + 8 <= unescaped.length(); i += 8) { 
+  for(;i + 8 <= unescaped.length(); i += 8) {
     // Poor's man vectorization. This could get much faster if we used SIMD.
-    if(needs_escaping[uint8_t(unescaped[i])] | needs_escaping[uint8_t(unescaped[i+1])] 
+    if(needs_escaping[uint8_t(unescaped[i])] | needs_escaping[uint8_t(unescaped[i+1])]
       | needs_escaping[uint8_t(unescaped[i+2])] | needs_escaping[uint8_t(unescaped[i+3])]
-      | needs_escaping[uint8_t(unescaped[i+4])] | needs_escaping[uint8_t(unescaped[i+5])] 
+      | needs_escaping[uint8_t(unescaped[i+4])] | needs_escaping[uint8_t(unescaped[i+5])]
       | needs_escaping[uint8_t(unescaped[i+6])] | needs_escaping[uint8_t(unescaped[i+7])]
       ) { break; }
   }
-  for(;i < unescaped.length(); i++) { 
+  for(;i < unescaped.length(); i++) {
     if(needs_escaping[uint8_t(unescaped[i])]) { break; }
   }
   // The following is also possible and omits a 256-byte table, but it is slower:
-  // for (; (i < unescaped.length()) && (uint8_t(unescaped[i]) > 0x1F) 
+  // for (; (i < unescaped.length()) && (uint8_t(unescaped[i]) > 0x1F)
   //      && (unescaped[i] != '\"') && (unescaped[i] != '\\'); i++) {}
 
   // At least for long strings, the following should be fast. We could

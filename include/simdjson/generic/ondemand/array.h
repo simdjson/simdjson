@@ -14,7 +14,7 @@ class array {
 public:
   /**
    * Create a new invalid array.
-   * 
+   *
    * Exists so you can declare a variable and later assign to it before use.
    */
   simdjson_really_inline array() noexcept = default;
@@ -52,7 +52,7 @@ protected:
   static simdjson_really_inline simdjson_result<array> start(json_iterator_ref &&iter) noexcept;
   /**
    * Begin array iteration.
-   * 
+   *
    * This version of the method should be called after the initial [ has been verified, and is
    * intended for use by switch statements that check the type of a value.
    *
@@ -79,7 +79,7 @@ protected:
 
   /**
    * Iterator marking current position.
-   * 
+   *
    * iter.is_alive() == false indicates iteration is complete.
    */
   json_iterator_ref iter{};

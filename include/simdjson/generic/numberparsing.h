@@ -25,7 +25,7 @@ namespace numberparsing {
 namespace {
 // Convert a mantissa, an exponent and a sign bit into an ieee64 double.
 // The real_exponent needs to be in [0, 2046] (technically real_exponent = 2047 would be acceptable).
-// The mantissa should be in [0,1<<53). The bit at index (1ULL << 52) while be zeroed. 
+// The mantissa should be in [0,1<<53). The bit at index (1ULL << 52) while be zeroed.
 simdjson_really_inline double to_double(uint64_t mantissa, uint64_t real_exponent, bool negative) {
     double d;
     mantissa &= ~(1ULL << 52);
@@ -149,7 +149,7 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // We want the most significant 64 bits of the product. We know
   // this will be non-zero because the most significant bit of i is
   // 1.
-  const uint32_t index = 2 * uint32_t(power - simdjson::internal::smallest_power); 
+  const uint32_t index = 2 * uint32_t(power - simdjson::internal::smallest_power);
   // Optimization: It may be that materializing the index as a variable might confuse some compilers and prevent effective complex-addressing loads. (Done for code clarity.)
   //
   // The full_multiplication function computes the 128-bit product of two 64-bit words
@@ -158,7 +158,7 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // to the 64-bit most significant bits of the product.
   simdjson::internal::value128 firstproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index]);
   // Both i and power_of_five_128[index] have their most significant bit set to 1 which
-  // implies that the either the most or the second most significant bit of the product 
+  // implies that the either the most or the second most significant bit of the product
   // is 1. We pack values in this manner for efficiency reasons: it maximizes the use
   // we make of the product. It also makes it easy to reason aboutthe product: there
   // 0 or 1 leading zero in the product.
@@ -173,17 +173,17 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
     // Consider the scenario where q>=0. Then 5^q may not fit in 64-bits. Doing
     // the full computation is wasteful. So we do what is called a "truncated
     // multiplication".
-    // We take the most significant 64-bits, and we put them in 
+    // We take the most significant 64-bits, and we put them in
     // power_of_five_128[index]. Usually, that's good enough to approximate i * 5^q
-    // to the desired approximation using one multiplication. Sometimes it does not suffice. 
+    // to the desired approximation using one multiplication. Sometimes it does not suffice.
     // Then we store the next most significant 64 bits in power_of_five_128[index + 1], and
     // then we get a better approximation to i * 5^q. In very rare cases, even that
     // will not suffice, though it is seemingly very hard to find such a scenario.
-    // 
+    //
     // That's for when q>=0. The logic for q<0 is somewhat similar but it is somewhat
     // more complicated.
     //
-    // There is an extra layer of complexity in that we need more than 55 bits of 
+    // There is an extra layer of complexity in that we need more than 55 bits of
     // accuracy in the round-to-even scenario.
     //
     // The full_multiplication function computes the 128-bit product of two 64-bit words
@@ -216,7 +216,7 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
     if(-real_exponent + 1 >= 64) { // if we have more than 64 bits below the minimum exponent, you have a zero for sure.
       d = 0.0;
       return true;
-    } 
+    }
     // next line is safe because -real_exponent + 1 < 0
     mantissa >>= -real_exponent + 1;
     // Thankfully, we can't have both "round-to-even" and subnormals because
@@ -229,7 +229,7 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
     // whereas 0x40000000000000 x 2^-1023-53  is normal. Now, we need to round
     // up 0x3fffffffffffff x 2^-1023-53  and once we do, we are no longer
     // subnormal, but we can only know this after rounding.
-    // So we only declare a subnormal if we are smaller than the threshold.    
+    // So we only declare a subnormal if we are smaller than the threshold.
     real_exponent = (mantissa < (uint64_t(1) << 52)) ? 0 : 1;
     d = to_double(mantissa, real_exponent, negative);
     return true;
@@ -239,7 +239,7 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // which we guard against.
   // If we have lots of trailing zeros, we may fall right between two
   // floating-point values.
-  // 
+  //
   // The round-to-even cases take the form of a number 2m+1 which is in (2^53,2^54]
   // times a power of two. That is, it is right between a number with binary significand
   // m and another number with binary significand m+1; and it must be the case
@@ -250,11 +250,11 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // When q >= 0, we must have that (2m+1) is divible by 5^q, so 5^q <= 2^54. We have that
   //  5^23 <=  2^54 and it is the last power of five to qualify, so q <= 23.
   // When q<0, we have  w  >=  (2m+1) x 5^{-q}.  We must have that w<2^{64} so
-  // (2m+1) x 5^{-q} < 2^{64}. We have that 2m+1>2^{53}. Hence, we must have 
+  // (2m+1) x 5^{-q} < 2^{64}. We have that 2m+1>2^{53}. Hence, we must have
   // 2^{53} x 5^{-q} < 2^{64}.
-  // Hence we have 5^{-q} < 2^{11}$ or q>= -4. 
+  // Hence we have 5^{-q} < 2^{11}$ or q>= -4.
   //
-  // We require lower <= 1 and not lower == 0 because we could not prove that 
+  // We require lower <= 1 and not lower == 0 because we could not prove that
   // that lower == 0 is implied; but we could prove that lower <= 1 is a necessary and sufficient test.
   if (simdjson_unlikely((lower <= 1) && (power >= -4) && (power <= 23) && ((mantissa & 3) == 1))) {
     if((mantissa  << (upperbit + 64 - 53 - 2)) ==  upper) {
@@ -462,7 +462,7 @@ simdjson_really_inline error_code write_float(const uint8_t *const src, bool neg
     // Observe that 18446744073709551615e-343 == 0, i.e. (2**64 - 1) e -343 is zero
     // so something x 10^-343 goes to zero, but not so with  something x 10^-342.
     static_assert(simdjson::internal::smallest_power <= -342, "smallest_power is not small enough");
-    // 
+    //
     if((exponent < simdjson::internal::smallest_power) || (i == 0)) {
       WRITE_DOUBLE(0, src, writer);
       return SUCCESS;

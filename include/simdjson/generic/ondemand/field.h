@@ -6,16 +6,16 @@ namespace ondemand {
 
 /**
  * A JSON field (key/value pair) in an object.
- * 
+ *
  * Returned from object iteration.
- * 
+ *
  * Extends from std::pair<raw_json_string, value> so you can use C++ algorithms that rely on pairs.
  */
 class field : public std::pair<raw_json_string, value> {
 public:
   /**
    * Create a new invalid field.
-   * 
+   *
    * Exists so you can declare a variable and later assign to it before use.
    */
   simdjson_really_inline field() noexcept;
@@ -29,7 +29,7 @@ public:
    * Get the key as a string_view (for higher speed, consider raw_key).
    * We deliberately use a more cumbersome name (unescaped_key) to force users
    * to think twice about using it.
-   * 
+   *
    * This consumes the key: once you have called unescaped_key(), you cannot
    * call it again nor can you call key().
    */

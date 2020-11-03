@@ -15,7 +15,7 @@ namespace simdjson {
  *
  * Minify the input string assuming that it represents a JSON string, does not parse or validate.
  * This function is much faster than parsing a JSON string and then writing a minified version of it.
- * However, it does not validate the input. It will merely return an error in simple cases (e.g., if 
+ * However, it does not validate the input. It will merely return an error in simple cases (e.g., if
  * there is a string that was never terminated).
  *
  *

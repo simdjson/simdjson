@@ -10,7 +10,7 @@
 #else // no __has_include
 // Please insure that linux headers have been installed.
 #include <asm/unistd.h>       // for __NR_perf_event_open
-#endif 
+#endif
 #include <linux/perf_event.h> // for perf event constants
 #include <sys/ioctl.h>        // for ioctl
 #include <unistd.h>           // for syscall

@@ -29,7 +29,7 @@ static std::string build_json_array(size_t N) {
   myss << std::endl;
   myss << "]" << std::endl;
   std::string answer = myss.str();
-  std::cout << "Creating a source file spanning " << (answer.size() + 512) / 1024 << " KB " << std::endl;  
+  std::cout << "Creating a source file spanning " << (answer.size() + 512) / 1024 << " KB " << std::endl;
   return answer;
 }
 
