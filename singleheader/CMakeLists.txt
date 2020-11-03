@@ -22,15 +22,16 @@ find_program(BASH bash)
 
 # Under Windows, exectuting a bash script works, except that you cannot generally
 # do bash C:/path to my script. You need a  "mounted" path: /mnt/c/path
+find_package(Python3 COMPONENTS Interpreter)
 
-if (BASH AND (NOT WIN32) AND SIMDJSON_BASH)
+if (Python3_Interpreter_FOUND AND (NOT WIN32))
   add_custom_command(
     OUTPUT ${SINGLEHEADER_FILES}
     COMMAND ${CMAKE_COMMAND} -E env
       AMALGAMATE_SOURCE_PATH=${PROJECT_SOURCE_DIR}/src
       AMALGAMATE_INPUT_PATH=${PROJECT_SOURCE_DIR}/include
       AMALGAMATE_OUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}
-      ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.sh
+      ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.py
       #
       # This is the best way I could find to make amalgamation trigger whenever source files or
       # header files change: since the "simdjson" library has to get rebuilt when that happens, we
@@ -42,7 +43,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH)
       # It sucks that we have to build the actual library to make it happen, but it's better than\
       # nothing!
       #
-      DEPENDS amalgamate.sh simdjson
+      DEPENDS amalgamate.py simdjson
   )
 
   ##
@@ -74,7 +75,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH)
 
 else()
 
-  # We do not have bash, so we use existing amalgamated files instead of generating them ...
+  # We do not have python3, so we use existing amalgamated files instead of generating them ...
   # (Do not do this if the source and destination are the same!)
   if (NOT (${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR}))
     add_custom_command(

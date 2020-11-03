@@ -67,7 +67,7 @@ Other important files and directories:
 * **.circleci:** Definitions for Circle CI.
 * **.github/workflows:** Definitions for GitHub Actions (CI).
 * **singleheader:** Contains generated `simdjson.h` and `simdjson.cpp` that we release. The files `singleheader/simdjson.h` and `singleheader/simdjson.cpp` should never be edited by hand.
-* **singleheader/amalgamate.sh:** Generates `singleheader/simdjson.h` and `singleheader/simdjson.cpp` for release (bash script).
+* **singleheader/amalgamate.py:** Generates `singleheader/simdjson.h` and `singleheader/simdjson.cpp` for release (python script).
 * **benchmark:** This is where we do benchmarking. Benchmarking is core to every change we make; the
   cardinal rule is don't regress performance without knowing exactly why, and what you're trading
   for it. Many of our benchmarks are microbenchmarks. We are effectively doing controlled scientific experiments for the purpose of understanding what affects our performance. So we simplify as much as possible. We try to avoid irrelevant factors such as page faults, interrupts, unnnecessary system calls. We recommend checking the performance as follows:
@@ -169,12 +169,13 @@ systematically regenerated on releases. To ensure you have the latest code, you 
 mkdir build
 cd build
 cmake ..
+cmake --build . # needed, because currently dependencies do not work fully for the amalgamate target
 cmake --build . --target amalgamate
 ```
 
-You need to have a working bash on your system.
+You need to have python3 installed on your system.
 
-The amalgamator script is `amalgamate.sh` generates singleheader/simdjson.h by
+The amalgamator script `amalgamate.py` generates singleheader/simdjson.h by
 reading through include/simdjson.h, copy/pasting each header file into the amalgamated file at the
 point it gets included (but only once per header). singleheader/simdjson.cpp is generated from
 src/simdjson.cpp the same way, except files under generic/ may be included and copy/pasted multiple

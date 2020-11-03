@@ -164,7 +164,7 @@ print("modified "+doxyfile+", a backup was made")
 
 
 
-cp = subprocess.run(["bash", "amalgamate.sh"], stdout=subprocess.DEVNULL, cwd=maindir+ os.sep + "singleheader")  # doesn't capture output
+cp = subprocess.run(["python3", "amalgamate.py"], stdout=subprocess.DEVNULL, cwd=maindir+ os.sep + "singleheader")  # doesn't capture output
 if(cp.returncode != 0):
     print("Failed to run amalgamate")
 

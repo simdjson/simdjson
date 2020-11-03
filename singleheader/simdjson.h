@@ -1,4 +1,4 @@
-/* auto-generated on Sun Nov  1 11:09:32 CET 2020. Do not edit! */
+/* auto-generated on 2020-11-03 06:07:17 +0100. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -142,11 +142,13 @@
 #endif // defined(__x86_64__) || defined(_M_AMD64)
 
 #ifdef SIMDJSON_IS_32BITS
+#ifndef SIMDJSON_NO_PORTABILITY_WARNING
 #pragma message("The simdjson library is designed \
 for 64-bit processors and it seems that you are not \
 compiling for a known 64-bit platform. All fast kernels \
 will be disabled and performance may be poor. Please \
 use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
+#endif // SIMDJSON_NO_PORTABILITY_WARNING
 #endif // SIMDJSON_IS_32BITS
 
 // this is almost standard?
@@ -2000,7 +2002,7 @@ namespace std {
 
 
 #endif // SIMDJSON_COMMON_DEFS_H
-/* end file include/simdjson/nonstd/string_view.hpp */
+/* end file include/simdjson/common_defs.h */
 
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_UNDESIRED_WARNINGS
@@ -2492,7 +2494,7 @@ simdjson_warn_unused error_code minify(const char *buf, size_t len, char *dst, s
 } // namespace simdjson
 
 #endif // SIMDJSON_MINIFY_H
-/* end file include/simdjson/padded_string.h */
+/* end file include/simdjson/minify.h */
 /* begin file include/simdjson/implementation.h */
 #ifndef SIMDJSON_IMPLEMENTATION_H
 #define SIMDJSON_IMPLEMENTATION_H
@@ -3118,7 +3120,7 @@ extern SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation> activ
 } // namespace simdjson
 
 #endif // SIMDJSON_IMPLEMENTATION_H
-/* end file include/simdjson/internal/isadetection.h */
+/* end file include/simdjson/implementation.h */
 /* begin file include/simdjson/dom/array.h */
 #ifndef SIMDJSON_DOM_ARRAY_H
 #define SIMDJSON_DOM_ARRAY_H
@@ -3205,7 +3207,7 @@ public:
 } // namespace simdjson
 
 #endif // SIMDJSON_INTERNAL_TAPE_REF_H
-/* end file include/simdjson/internal/tape_type.h */
+/* end file include/simdjson/internal/tape_ref.h */
 
 namespace simdjson {
 
@@ -3373,7 +3375,7 @@ inline constexpr bool enable_view<simdjson::simdjson_result<simdjson::dom::array
 #endif // defined(__cpp_lib_ranges)
 
 #endif // SIMDJSON_DOM_ARRAY_H
-/* end file include/simdjson/internal/tape_type.h */
+/* end file include/simdjson/dom/array.h */
 /* begin file include/simdjson/dom/document_stream.h */
 #ifndef SIMDJSON_DOCUMENT_STREAM_H
 #define SIMDJSON_DOCUMENT_STREAM_H
@@ -3970,7 +3972,7 @@ private:
 } // namespace simdjson
 
 #endif // SIMDJSON_DOM_PARSER_H
-/* end file include/simdjson/dom/document.h */
+/* end file include/simdjson/dom/parser.h */
 #ifdef SIMDJSON_THREADS_ENABLED
 #include <thread>
 #include <mutex>
@@ -4257,7 +4259,7 @@ public:
 } // namespace simdjson
 
 #endif // SIMDJSON_DOCUMENT_STREAM_H
-/* end file include/simdjson/dom/document.h */
+/* end file include/simdjson/dom/document_stream.h */
 /* begin file include/simdjson/dom/element.h */
 #ifndef SIMDJSON_DOM_ELEMENT_H
 #define SIMDJSON_DOM_ELEMENT_H
@@ -5452,7 +5454,7 @@ dom::parser build_parsed_json(const char *buf) noexcept = delete;
 } // namespace simdjson
 
 #endif // SIMDJSON_DOM_JSONPARSER_H
-/* end file include/simdjson/jsonioutil.h */
+/* end file include/simdjson/dom/jsonparser.h */
 /* begin file include/simdjson/dom/parsedjson_iterator.h */
 // TODO Remove this -- deprecated API and files
 
@@ -5790,7 +5792,7 @@ public:
 #endif // SIMDJSON_DISABLE_DEPRECATED_API
 
 #endif // SIMDJSON_DOM_PARSEDJSON_ITERATOR_H
-/* end file include/simdjson/internal/jsonformatutils.h */
+/* end file include/simdjson/dom/parsedjson_iterator.h */
 
 // Inline functions
 /* begin file include/simdjson/dom/array-inl.h */
@@ -6383,7 +6385,7 @@ static_assert(std::ranges::sized_range<simdjson::simdjson_result<simdjson::dom::
 #endif // defined(__cpp_lib_ranges)
 
 #endif // SIMDJSON_INLINE_ARRAY_H
-/* end file include/simdjson/dom/element-inl.h */
+/* end file include/simdjson/dom/array-inl.h */
 /* begin file include/simdjson/dom/document_stream-inl.h */
 #ifndef SIMDJSON_INLINE_DOCUMENT_STREAM_H
 #define SIMDJSON_INLINE_DOCUMENT_STREAM_H
@@ -9806,7 +9808,7 @@ simdjson_unused simdjson_warn_unused simdjson_really_inline error_code parse_str
 /* end file include/simdjson/generic/stringparsing.h */
 
 #endif // SIMDJSON_ARM64_STRINGPARSING_H
-/* end file include/simdjson/generic/stringparsing.h */
+/* end file include/simdjson/arm64/stringparsing.h */
 /* begin file include/simdjson/arm64/numberparsing.h */
 #ifndef SIMDJSON_ARM64_NUMBERPARSING_H
 #define SIMDJSON_ARM64_NUMBERPARSING_H
@@ -10567,10 +10569,11 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
     if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
 
     exponent += exp_neg ? 0-exp : exp;
-    overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
   }
 
   if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
 
   //
   // Assemble (or slow-parse) the float
@@ -10594,7 +10597,7 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
 /* end file include/simdjson/generic/numberparsing.h */
 
 #endif // SIMDJSON_ARM64_NUMBERPARSING_H
-/* end file include/simdjson/generic/numberparsing.h */
+/* end file include/simdjson/arm64/numberparsing.h */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h */
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -12576,7 +12579,7 @@ public:
 
 } // namespace simdjson
 /* end file include/simdjson/generic/ondemand/parser.h */
-/* end file include/simdjson/generic/ondemand/parser.h */
+/* end file include/simdjson/generic/ondemand.h */
 
 // Inline definitions
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h */
@@ -14575,7 +14578,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser
 
 } // namespace simdjson
 /* end file include/simdjson/generic/ondemand/parser-inl.h */
-/* end file include/simdjson/generic/ondemand/parser-inl.h */
+/* end file include/simdjson/generic/ondemand-inl.h */
 /* begin file include/simdjson/arm64/end.h */
 #undef SIMDJSON_IMPLEMENTATION
 /* end file include/simdjson/arm64/end.h */
@@ -14583,7 +14586,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser
 #endif // SIMDJSON_IMPLEMENTATION_ARM64
 
 #endif // SIMDJSON_ARM64_H
-/* end file include/simdjson/arm64/end.h */
+/* end file include/simdjson/arm64.h */
 /* begin file include/simdjson/haswell.h */
 #ifndef SIMDJSON_HASWELL_H
 #define SIMDJSON_HASWELL_H
@@ -15618,7 +15621,7 @@ simdjson_unused simdjson_warn_unused simdjson_really_inline error_code parse_str
 /* end file include/simdjson/generic/stringparsing.h */
 
 #endif // SIMDJSON_HASWELL_STRINGPARSING_H
-/* end file include/simdjson/generic/stringparsing.h */
+/* end file include/simdjson/haswell/stringparsing.h */
 /* begin file include/simdjson/haswell/numberparsing.h */
 #ifndef SIMDJSON_HASWELL_NUMBERPARSING_H
 #define SIMDJSON_HASWELL_NUMBERPARSING_H
@@ -16387,10 +16390,11 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
     if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
 
     exponent += exp_neg ? 0-exp : exp;
-    overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
   }
 
   if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
 
   //
   // Assemble (or slow-parse) the float
@@ -16414,7 +16418,7 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
 /* end file include/simdjson/generic/numberparsing.h */
 
 #endif // SIMDJSON_HASWELL_NUMBERPARSING_H
-/* end file include/simdjson/generic/numberparsing.h */
+/* end file include/simdjson/haswell/numberparsing.h */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h */
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -18396,7 +18400,7 @@ public:
 
 } // namespace simdjson
 /* end file include/simdjson/generic/ondemand/parser.h */
-/* end file include/simdjson/generic/ondemand/parser.h */
+/* end file include/simdjson/generic/ondemand.h */
 
 // Inline definitions
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h */
@@ -20395,7 +20399,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser
 
 } // namespace simdjson
 /* end file include/simdjson/generic/ondemand/parser-inl.h */
-/* end file include/simdjson/generic/ondemand/parser-inl.h */
+/* end file include/simdjson/generic/ondemand-inl.h */
 
 /* begin file include/simdjson/haswell/end.h */
 SIMDJSON_UNTARGET_REGION
@@ -20404,7 +20408,7 @@ SIMDJSON_UNTARGET_REGION
 
 #endif // SIMDJSON_IMPLEMENTATION_HASWELL
 #endif // SIMDJSON_HASWELL_COMMON_H
-/* end file include/simdjson/haswell/end.h */
+/* end file include/simdjson/haswell.h */
 /* begin file include/simdjson/westmere.h */
 #ifndef SIMDJSON_WESTMERE_H
 #define SIMDJSON_WESTMERE_H
@@ -21391,7 +21395,7 @@ simdjson_unused simdjson_warn_unused simdjson_really_inline error_code parse_str
 /* end file include/simdjson/generic/stringparsing.h */
 
 #endif // SIMDJSON_WESTMERE_STRINGPARSING_H
-/* end file include/simdjson/generic/stringparsing.h */
+/* end file include/simdjson/westmere/stringparsing.h */
 /* begin file include/simdjson/westmere/numberparsing.h */
 #ifndef SIMDJSON_WESTMERE_NUMBERPARSING_H
 #define SIMDJSON_WESTMERE_NUMBERPARSING_H
@@ -22160,10 +22164,11 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
     if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
 
     exponent += exp_neg ? 0-exp : exp;
-    overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
   }
 
   if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
 
   //
   // Assemble (or slow-parse) the float
@@ -22187,7 +22192,7 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
 /* end file include/simdjson/generic/numberparsing.h */
 
 #endif //  SIMDJSON_WESTMERE_NUMBERPARSING_H
-/* end file include/simdjson/generic/numberparsing.h */
+/* end file include/simdjson/westmere/numberparsing.h */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h */
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -24169,7 +24174,7 @@ public:
 
 } // namespace simdjson
 /* end file include/simdjson/generic/ondemand/parser.h */
-/* end file include/simdjson/generic/ondemand/parser.h */
+/* end file include/simdjson/generic/ondemand.h */
 
 // Inline definitions
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h */
@@ -26168,7 +26173,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser
 
 } // namespace simdjson
 /* end file include/simdjson/generic/ondemand/parser-inl.h */
-/* end file include/simdjson/generic/ondemand/parser-inl.h */
+/* end file include/simdjson/generic/ondemand-inl.h */
 
 /* begin file include/simdjson/westmere/end.h */
 SIMDJSON_UNTARGET_REGION
@@ -26177,7 +26182,7 @@ SIMDJSON_UNTARGET_REGION
 
 #endif // SIMDJSON_IMPLEMENTATION_WESTMERE
 #endif // SIMDJSON_WESTMERE_COMMON_H
-/* end file include/simdjson/westmere/end.h */
+/* end file include/simdjson/westmere.h */
 /* begin file include/simdjson/ppc64.h */
 #ifndef SIMDJSON_PPC64_H
 #define SIMDJSON_PPC64_H
@@ -27309,7 +27314,7 @@ simdjson_unused simdjson_warn_unused simdjson_really_inline error_code parse_str
 /* end file include/simdjson/generic/stringparsing.h */
 
 #endif // SIMDJSON_PPC64_STRINGPARSING_H
-/* end file include/simdjson/generic/stringparsing.h */
+/* end file include/simdjson/ppc64/stringparsing.h */
 /* begin file include/simdjson/ppc64/numberparsing.h */
 #ifndef SIMDJSON_PPC64_NUMBERPARSING_H
 #define SIMDJSON_PPC64_NUMBERPARSING_H
@@ -28076,10 +28081,11 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
     if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
 
     exponent += exp_neg ? 0-exp : exp;
-    overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
   }
 
   if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
 
   //
   // Assemble (or slow-parse) the float
@@ -28103,7 +28109,7 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
 /* end file include/simdjson/generic/numberparsing.h */
 
 #endif // SIMDJSON_PPC64_NUMBERPARSING_H
-/* end file include/simdjson/generic/numberparsing.h */
+/* end file include/simdjson/ppc64/numberparsing.h */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h */
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -30085,7 +30091,7 @@ public:
 
 } // namespace simdjson
 /* end file include/simdjson/generic/ondemand/parser.h */
-/* end file include/simdjson/generic/ondemand/parser.h */
+/* end file include/simdjson/generic/ondemand.h */
 
 // Inline definitions
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h */
@@ -32084,7 +32090,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser
 
 } // namespace simdjson
 /* end file include/simdjson/generic/ondemand/parser-inl.h */
-/* end file include/simdjson/generic/ondemand/parser-inl.h */
+/* end file include/simdjson/generic/ondemand-inl.h */
 /* begin file include/simdjson/ppc64/end.h */
 #undef SIMDJSON_IMPLEMENTATION
 /* end file include/simdjson/ppc64/end.h */
@@ -32092,7 +32098,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser
 #endif // SIMDJSON_IMPLEMENTATION_PPC64
 
 #endif // SIMDJSON_PPC64_H
-/* end file include/simdjson/ppc64/end.h */
+/* end file include/simdjson/ppc64.h */
 /* begin file include/simdjson/fallback.h */
 #ifndef SIMDJSON_FALLBACK_H
 #define SIMDJSON_FALLBACK_H
@@ -32640,7 +32646,7 @@ simdjson_unused simdjson_warn_unused simdjson_really_inline error_code parse_str
 /* end file include/simdjson/generic/stringparsing.h */
 
 #endif // SIMDJSON_FALLBACK_STRINGPARSING_H
-/* end file include/simdjson/generic/stringparsing.h */
+/* end file include/simdjson/fallback/stringparsing.h */
 /* begin file include/simdjson/fallback/numberparsing.h */
 #ifndef SIMDJSON_FALLBACK_NUMBERPARSING_H
 #define SIMDJSON_FALLBACK_NUMBERPARSING_H
@@ -33408,10 +33414,11 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
     if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
 
     exponent += exp_neg ? 0-exp : exp;
-    overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
   }
 
   if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
 
   //
   // Assemble (or slow-parse) the float
@@ -33435,7 +33442,7 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
 /* end file include/simdjson/generic/numberparsing.h */
 
 #endif // SIMDJSON_FALLBACK_NUMBERPARSING_H
-/* end file include/simdjson/generic/numberparsing.h */
+/* end file include/simdjson/fallback/numberparsing.h */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h */
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -35417,7 +35424,7 @@ public:
 
 } // namespace simdjson
 /* end file include/simdjson/generic/ondemand/parser.h */
-/* end file include/simdjson/generic/ondemand/parser.h */
+/* end file include/simdjson/generic/ondemand.h */
 
 // Inline definitions
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h */
@@ -37416,7 +37423,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser
 
 } // namespace simdjson
 /* end file include/simdjson/generic/ondemand/parser-inl.h */
-/* end file include/simdjson/generic/ondemand/parser-inl.h */
+/* end file include/simdjson/generic/ondemand-inl.h */
 
 /* begin file include/simdjson/fallback/end.h */
 #undef SIMDJSON_IMPLEMENTATION
@@ -37424,7 +37431,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser
 
 #endif // SIMDJSON_IMPLEMENTATION_FALLBACK
 #endif // SIMDJSON_FALLBACK_H
-/* end file include/simdjson/fallback/end.h */
+/* end file include/simdjson/fallback.h */
 /* begin file include/simdjson/builtin.h */
 #ifndef SIMDJSON_BUILTIN_H
 #define SIMDJSON_BUILTIN_H
@@ -37473,4 +37480,4 @@ namespace simdjson {
 SIMDJSON_POP_DISABLE_WARNINGS
 
 #endif // SIMDJSON_H
-/* end file include/simdjson/builtin.h */
+/* end file include/simdjson.h */
