@@ -8,6 +8,7 @@ import os.path
 import subprocess
 import os
 import re
+import shutil
 
 SCRIPTPATH = os.path.dirname(os.path.abspath(sys.argv[0]))
 PROJECTPATH = os.path.dirname(SCRIPTPATH)
@@ -128,6 +129,9 @@ for c in ALLCFILES:
 
 amal_c.close()
 
+# copy the README and DEMOCPP
+shutil.copy2(os.path.join(SCRIPTPATH,"amalgamate_demo.cpp"),AMALGAMATE_OUTPUT_PATH)
+shutil.copy2(os.path.join(SCRIPTPATH,"README.md"),AMALGAMATE_OUTPUT_PATH)
 
 print("Done with all files generation.")
 
