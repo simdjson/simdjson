@@ -130,8 +130,9 @@ for c in ALLCFILES:
 amal_c.close()
 
 # copy the README and DEMOCPP
-shutil.copy2(os.path.join(SCRIPTPATH,"amalgamate_demo.cpp"),AMALGAMATE_OUTPUT_PATH)
-shutil.copy2(os.path.join(SCRIPTPATH,"README.md"),AMALGAMATE_OUTPUT_PATH)
+if SCRIPTPATH != AMALGAMATE_OUTPUT_PATH:
+  shutil.copy2(os.path.join(SCRIPTPATH,"amalgamate_demo.cpp"),AMALGAMATE_OUTPUT_PATH)
+  shutil.copy2(os.path.join(SCRIPTPATH,"README.md"),AMALGAMATE_OUTPUT_PATH)
 
 print("Done with all files generation.")
 
