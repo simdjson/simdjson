@@ -169,6 +169,7 @@ systematically regenerated on releases. To ensure you have the latest code, you 
 mkdir build
 cd build
 cmake ..
+cmake --build . # may be needed, because of cmake dependencies not working fully for the amalgamate target
 cmake --build . --target amalgamate
 ```
 
