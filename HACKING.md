@@ -172,9 +172,9 @@ cmake ..
 cmake --build . --target amalgamate
 ```
 
-You need to have a working bash on your system.
+You need to have python3 installed on your system.
 
-The amalgamator script is `amalgamate.sh` generates singleheader/simdjson.h by
+The amalgamator script `amalgamate.py` generates singleheader/simdjson.h by
 reading through include/simdjson.h, copy/pasting each header file into the amalgamated file at the
 point it gets included (but only once per header). singleheader/simdjson.cpp is generated from
 src/simdjson.cpp the same way, except files under generic/ may be included and copy/pasted multiple
