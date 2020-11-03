@@ -24,7 +24,7 @@ find_program(BASH bash)
 # do bash C:/path to my script. You need a  "mounted" path: /mnt/c/path
 find_package(Python3 COMPONENTS Interpreter)
 
-if (Python3 AND (NOT WIN32))
+if (Python3_Interpreter_FOUND AND (NOT WIN32))
   add_custom_command(
     OUTPUT ${SINGLEHEADER_FILES}
     COMMAND ${CMAKE_COMMAND} -E env
