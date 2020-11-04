@@ -914,8 +914,10 @@ format. Returns an iterator pointing past-the-end of the decimal representation.
 */
 char *to_chars(char *first, const char *last, double value) {
   static_cast<void>(last); // maybe unused - fix warning
-  // Use signbit(value) instead of (value < 0) since signbit works for -0.
-  if (std::signbit(value)) {
+  // Next line would be better but it mysteriously fail under legacy/old libc++ libraries.
+  // See https://github.com/simdjson/simdjson/issues/1286
+  // if (std::signbit(value)) {
+  if ((value < 0) || (value == -0)) {
     value = -value;
     *first++ = '-';
   }

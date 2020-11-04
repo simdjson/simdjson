@@ -293,7 +293,10 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
   // We do not accept infinite values.
-  if (!std::isfinite(*outDouble)) {
+  if ((*outDouble > 1.7976931348623157E+308) || (*outDouble < -1.7976931348623157E+308)) {
+  // Next line would be better but it mysteriously fail under legacy/old libc++ libraries.
+  // See https://github.com/simdjson/simdjson/issues/1286
+  //if (!std::isfinite(*outDouble)) {
     return false;
   }
   return true;
