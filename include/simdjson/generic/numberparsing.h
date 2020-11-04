@@ -292,8 +292,9 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 // one digit.
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
-  // We do not accept infinite values.
-  if (!std::isfinite(*outDouble)) {
+  // We do not accept infinite values. Yes, there is a std::isfinite function, but
+  // it appears to be broken in legacy libc++.
+  if ((*outDouble > 0x1.fffffffffffffp+1023) || (*outDouble < -0x1.fffffffffffffp+1023)) {
     return false;
   }
   return true;
