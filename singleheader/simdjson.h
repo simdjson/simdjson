@@ -1,4 +1,4 @@
-/* auto-generated on Fri 23 Oct 2020 09:30:48 EDT. Do not edit! */
+/* auto-generated on Tue  3 Nov 2020 22:14:23 EST. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -2009,7 +2009,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 0.6.0
+#define SIMDJSON_VERSION 0.6.1
 
 namespace simdjson {
 enum {
@@ -2024,7 +2024,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 0
+  SIMDJSON_VERSION_REVISION = 1
 };
 } // namespace simdjson
 
@@ -10076,8 +10076,9 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 // one digit.
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
-  // We do not accept infinite values.
-  if (!std::isfinite(*outDouble)) {
+  // We do not accept infinite values. Yes, there is a std::isfinite function, but
+  // it appears to be broken in legacy libc++.
+  if ((*outDouble > 1.7976931348623157e308) || (*outDouble < -1.7976931348623157e308)) {
     return false;
   }
   return true;
@@ -15896,8 +15897,9 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 // one digit.
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
-  // We do not accept infinite values.
-  if (!std::isfinite(*outDouble)) {
+  // We do not accept infinite values. Yes, there is a std::isfinite function, but
+  // it appears to be broken in legacy libc++.
+  if ((*outDouble > 1.7976931348623157e308) || (*outDouble < -1.7976931348623157e308)) {
     return false;
   }
   return true;
@@ -21669,8 +21671,9 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 // one digit.
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
-  // We do not accept infinite values.
-  if (!std::isfinite(*outDouble)) {
+  // We do not accept infinite values. Yes, there is a std::isfinite function, but
+  // it appears to be broken in legacy libc++.
+  if ((*outDouble > 1.7976931348623157e308) || (*outDouble < -1.7976931348623157e308)) {
     return false;
   }
   return true;
@@ -27001,8 +27004,9 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 // one digit.
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
-  // We do not accept infinite values.
-  if (!std::isfinite(*outDouble)) {
+  // We do not accept infinite values. Yes, there is a std::isfinite function, but
+  // it appears to be broken in legacy libc++.
+  if ((*outDouble > 1.7976931348623157e308) || (*outDouble < -1.7976931348623157e308)) {
     return false;
   }
   return true;

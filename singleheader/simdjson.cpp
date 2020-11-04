@@ -1,4 +1,4 @@
-/* auto-generated on Fri 23 Oct 2020 09:30:48 EDT. Do not edit! */
+/* auto-generated on Tue  3 Nov 2020 22:14:23 EST. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -922,8 +922,13 @@ format. Returns an iterator pointing past-the-end of the decimal representation.
 */
 char *to_chars(char *first, const char *last, double value) {
   static_cast<void>(last); // maybe unused - fix warning
-  // Use signbit(value) instead of (value < 0) since signbit works for -0.
-  if (std::signbit(value)) {
+  // It would be better to use signbit(value) instead of (value < 0) since signbit works for -0.
+  //if(std::signbit(value)) {
+  //  value = -value;
+  //  *first++ = '-';
+  //}
+  // However, under older libc++, std::signbit causes build errors, so falling back:
+  if((value < 0) || (value == -0)){
     value = -value;
     *first++ = '-';
   }
