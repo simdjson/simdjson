@@ -6,6 +6,11 @@ task:
 
   env:
     ASSUME_ALWAYS_YES: YES
+    simdjson_DEPENDENCY_CACHE_DIR: $HOME/.dep_cache
+  dep_cache:
+    folder: $HOME/.dep_cache
+    reupload_on_changes: false
+    fingerprint_script: cmake -E sha512sum dependencies/CMakeLists.txt
   setup_script:
     - pkg update -f
     - pkg install bash
