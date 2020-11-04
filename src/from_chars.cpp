@@ -1,4 +1,3 @@
-#include <cmath>
 #include <limits>
 namespace simdjson {
 namespace internal {

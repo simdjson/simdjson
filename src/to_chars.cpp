@@ -1,4 +1,3 @@
-#include <cmath>
 #include <cstring>
 #include <cstdint>
 #include <array>
@@ -914,8 +913,7 @@ format. Returns an iterator pointing past-the-end of the decimal representation.
 */
 char *to_chars(char *first, const char *last, double value) {
   static_cast<void>(last); // maybe unused - fix warning
-  // Use signbit(value) instead of (value < 0) since signbit works for -0.
-  if (std::signbit(value)) {
+  if (value <= -0) {
     value = -value;
     *first++ = '-';
   }
