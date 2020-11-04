@@ -73,14 +73,19 @@ if ((Git_FOUND) AND SIMDJSON_GIT AND (SIMDJSON_IS_UNDER_GIT))
       add_library(boostjson boost.json/src/src.cpp)
       target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
       target_include_directories(boostjson PUBLIC boost.json/include)
-    endif(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    endif()
 
     initialize_submodule(yyjson)
     add_library(yyjson yyjson/src/yyjson.c)
     target_include_directories(yyjson PUBLIC yyjson/src)
 
     add_library(competition-core INTERFACE)
-    target_link_libraries(competition-core INTERFACE competition-json competition-rapidjson competition-sajson competition-cJSON competition-jsmn boostjson yyjson)
+    # Boost JSON is not compatible with some clang/libc++ configurations.
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+      target_link_libraries(competition-core INTERFACE competition-json competition-rapidjson competition-sajson competition-cJSON competition-jsmn yyjson)
+    else()
+      target_link_libraries(competition-core INTERFACE competition-json competition-rapidjson competition-sajson competition-cJSON competition-jsmn boostjson yyjson)
+    endif()
 
     add_library(competition-all INTERFACE)
     target_link_libraries(competition-all INTERFACE competition-core competition-jsoncppdist competition-json11 competition-fastjson competition-gason competition-ujson4c)
