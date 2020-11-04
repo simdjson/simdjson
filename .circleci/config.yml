@@ -61,6 +61,19 @@ executors:
 
 # Reusable test commands (and initializer for clang 6)
 commands:
+  dependency_restore:
+    steps:
+      - restore_cache:
+          keys:
+            - {{ checksum "dependencies/CMakeLists.txt" }}
+
+  dependency_cache:
+    steps:
+      - save_cache:
+          key: {{ checksum "dependencies/CMakeLists.txt" }}
+          paths:
+            - dependencies/.cache
+
   install_cmake:
     steps:
       - run: apt-get update -qq
@@ -74,7 +87,9 @@ commands:
   cmake_build_cache:
     steps:
       - cmake_prep
+      - dependency_restore
       - run: cmake $CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination -B build . 
+      - dependency_cache # dependencies are produced in the configure step
 
   cmake_build:
     steps:
