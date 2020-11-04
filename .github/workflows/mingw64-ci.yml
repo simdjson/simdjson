@@ -26,6 +26,12 @@ jobs:
           path: |
             C:\ProgramData\scoop
           key: scoop64 # static key: should be good forever
+
+      - uses: actions/cache@v2
+        with:
+          path: dependencies/.cache
+          key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
+
       - name: Setup Windows # This should almost never run if the cache works.
         if: steps.cache.outputs.cache-hit != 'true'
         shell: powershell
