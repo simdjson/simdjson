@@ -1,5 +1,4 @@
 #include "simdjson/internal/numberparsing_tables.h"
-#include <cmath>
 #include <limits>
 
 namespace simdjson {
