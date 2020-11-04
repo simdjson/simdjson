@@ -40,21 +40,23 @@ using json = nlohmann::json;
 
 #ifdef ALLPARSER
 
-#include "fastjson.cpp"
-#include "fastjson_dom.cpp"
-#include "gason.cpp"
+#include "fastjson/core.h"
+#include "fastjson/dom.h"
+#include "fastjson/fastjson.h"
 
-#include "json11.cpp"
-extern "C" {
-#include "cJSON.c"
+#include "gason.h"
+
+#include "json11.hpp"
+
 #include "cJSON.h"
-#include "jsmn.c"
+
 #include "jsmn.h"
+
 #include "ujdecode.h"
-#include "ultrajsondec.c"
+extern "C" {
+#include "ultrajson.h"
 }
 
-#include "jsoncpp.cpp"
 #include "json/json.h"
 
 #endif
