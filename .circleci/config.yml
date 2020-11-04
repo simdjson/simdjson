@@ -65,12 +65,12 @@ commands:
     steps:
       - restore_cache:
           keys:
-            - {{ checksum "dependencies/CMakeLists.txt" }}
+            - cmake-cache-{{ checksum "dependencies/CMakeLists.txt" }}
 
   dependency_cache:
     steps:
       - save_cache:
-          key: {{ checksum "dependencies/CMakeLists.txt" }}
+          key: cmake-cache-{{ checksum "dependencies/CMakeLists.txt" }}
           paths:
             - dependencies/.cache
 
