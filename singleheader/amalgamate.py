@@ -10,6 +10,10 @@ import os
 import re
 import shutil
 
+if sys.version_info < (3, 0):
+    sys.stdout.write("Sorry, requires Python 3.x or better\n")
+    sys.exit(1)
+
 SCRIPTPATH = os.path.dirname(os.path.abspath(sys.argv[0]))
 PROJECTPATH = os.path.dirname(SCRIPTPATH)
 
