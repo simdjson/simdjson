@@ -1,106 +1,107 @@
-# Initializes a git submodule if it hasn't been initialized before
+include(import.cmake)
 
+option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
+option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON)
 
-find_package(Git QUIET) # We want the library to build even if git is missing
-if ((Git_FOUND) AND SIMDJSON_GIT AND (SIMDJSON_IS_UNDER_GIT))
-  message(STATUS "Git is available.")
-  # Does NOT attempt to update or otherwise modify git submodules that are already initialized.
-  function(initialize_submodule DIRECTORY)
-    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${DIRECTORY}/.git)
-      message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}/${DIRECTORY}/.git does not exist. Initializing ${DIRECTORY} submodule ...")
-      execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init ${CMAKE_CURRENT_SOURCE_DIR}/${DIRECTORY}
-                      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                      RESULT_VARIABLE GIT_EXIT_CODE)
-      if(NOT GIT_EXIT_CODE EQUAL "0")
-        message(FATAL_ERROR "${GIT_EXECUTABLE} submodule update --init dependencies/${DIRECTORY} failed with exit code ${GIT_EXIT_CODE}, please checkout submodules")
-      endif()
-    endif()
-  endfunction(initialize_submodule)
+if(SIMDJSON_GOOGLE_BENCHMARKS)
+  set_off(BENCHMARK_ENABLE_TESTING)
+  set_off(BENCHMARK_ENABLE_INSTALL)
 
-  if (SIMDJSON_GOOGLE_BENCHMARKS)
-    message (STATUS "'SIMDJSON_GOOGLE_BENCHMARKS' is requested, configuring..." )
-    option(BENCHMARK_ENABLE_TESTING OFF)
-    set(BENCHMARK_ENABLE_TESTING OFF)
-    option(BENCHMARK_ENABLE_INSTALL OFF)
-    set(BENCHMARK_ENABLE_INSTALL OFF)
-    initialize_submodule(benchmark)
-    add_subdirectory(benchmark)
-  endif()
-
-  if (SIMDJSON_COMPETITION)
-    initialize_submodule(cJSON)
-    add_library(competition-cJSON INTERFACE)
-    target_include_directories(competition-cJSON INTERFACE cJSON)
-
-    initialize_submodule(fastjson)
-    add_library(competition-fastjson INTERFACE)
-    target_include_directories(competition-fastjson INTERFACE fastjson/src fastjson/include)
-
-    initialize_submodule(gason)
-    add_library(competition-gason INTERFACE)
-    target_include_directories(competition-gason INTERFACE gason/src)
-
-    initialize_submodule(jsmn)
-    add_library(competition-jsmn INTERFACE)
-    target_include_directories(competition-jsmn INTERFACE jsmn)
-
-    initialize_submodule(json)
-    add_library(competition-json INTERFACE)
-    target_include_directories(competition-json INTERFACE json/single_include)
-
-    initialize_submodule(json11)
-    add_library(competition-json11 INTERFACE)
-    target_include_directories(competition-json11 INTERFACE json11)
-
-    add_library(competition-jsoncppdist INTERFACE)
-    target_include_directories(competition-jsoncppdist INTERFACE jsoncppdist)
-
-    initialize_submodule(rapidjson)
-    add_library(competition-rapidjson INTERFACE)
-    target_include_directories(competition-rapidjson INTERFACE rapidjson/include)
-
-    initialize_submodule(sajson)
-    add_library(competition-sajson INTERFACE)
-    target_include_directories(competition-sajson INTERFACE sajson/include)
-
-    initialize_submodule(ujson4c)
-    add_library(competition-ujson4c ujson4c/src/ujdecode.c)
-    target_include_directories(competition-ujson4c PUBLIC ujson4c/3rdparty ujson4c/src)
-
-    # Boost JSON is not compatible with some clang/libc++ configurations.
-    if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-      initialize_submodule(boost.json)
-      add_library(boostjson boost.json/src/src.cpp)
-      target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
-      target_include_directories(boostjson PUBLIC boost.json/include)
-    endif()
-
-    initialize_submodule(yyjson)
-    add_library(yyjson yyjson/src/yyjson.c)
-    target_include_directories(yyjson PUBLIC yyjson/src)
-
-    add_library(competition-core INTERFACE)
-    # Boost JSON is not compatible with some clang/libc++ configurations.
-    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-      target_link_libraries(competition-core INTERFACE competition-json competition-rapidjson competition-sajson competition-cJSON competition-jsmn yyjson)
-    else()
-      target_link_libraries(competition-core INTERFACE competition-json competition-rapidjson competition-sajson competition-cJSON competition-jsmn boostjson yyjson)
-    endif()
-
-    add_library(competition-all INTERFACE)
-    target_link_libraries(competition-all INTERFACE competition-core competition-jsoncppdist competition-json11 competition-fastjson competition-gason competition-ujson4c)
-  endif()
-
-  initialize_submodule(cxxopts)
-  message(STATUS "We acquired cxxopts and we are adding it as a library and target.")
-  add_library(cxxopts INTERFACE)
-  target_include_directories(cxxopts INTERFACE cxxopts/include)
-else()
-  message(STATUS "Git is unavailable.")
-  if(SIMDJSON_COMPETITION)
-    message (STATUS "'SIMDJSON_COMPETITION' is requested, but we cannot download the remote repositories." )
-  endif()
-  if(SIMDJSON_GOOGLE_BENCHMARKS)
-    message (STATUS "'SIMDJSON_GOOGLE_BENCHMARKS' is requested, but we cannot download the remote repositories." )
-  endif()
+  import_dependency(google_benchmarks google/benchmark 8982e1e)
+  add_dependency(google_benchmarks)
 endif()
+
+# This prevents variables declared with set() from unnecessarily escaping and
+# should not be called more than once
+function(competition_scope_)
+  # Boost JSON is not compatible with some clang/libc++ configurations.
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    import_dependency(boostjson CPPAlliance/json a0983f7)
+    add_library(boostjson STATIC "${boostjson_SOURCE_DIR}/src/src.cpp")
+    target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
+    target_include_directories(boostjson SYSTEM PUBLIC
+            "${boostjson_SOURCE_DIR}/include")
+  endif()
+
+  import_dependency(cjson DaveGamble/cJSON c69134d)
+  add_library(cjson STATIC "${cjson_SOURCE_DIR}/cJSON.c")
+  target_include_directories(cjson SYSTEM PUBLIC "${cjson_SOURCE_DIR}")
+
+  import_dependency(fastjson mikeando/fastjson 485f994)
+  add_library(fastjson STATIC
+          "${fastjson_SOURCE_DIR}/src/fastjson.cpp"
+          "${fastjson_SOURCE_DIR}/src/fastjson2.cpp"
+          "${fastjson_SOURCE_DIR}/src/fastjson_dom.cpp")
+  target_include_directories(fastjson SYSTEM PUBLIC
+          "${fastjson_SOURCE_DIR}/include")
+
+  import_dependency(gason vivkin/gason 7aee524)
+  add_library(gason STATIC "${gason_SOURCE_DIR}/src/gason.cpp")
+  target_include_directories(gason SYSTEM PUBLIC "${gason_SOURCE_DIR}/src")
+
+  import_dependency(jsmn zserge/jsmn 18e9fe4)
+  add_library(jsmn STATIC "${jsmn_SOURCE_DIR}/jsmn.c")
+  target_include_directories(jsmn SYSTEM PUBLIC "${jsmn_SOURCE_DIR}")
+
+  message(STATUS "Importing json (nlohmann/json@v3.9.1)")
+  set(nlohmann_json_SOURCE_DIR "${dep_root}/json")
+  if(NOT EXISTS "${nlohmann_json_SOURCE_DIR}")
+    file(DOWNLOAD
+            "https://github.com/nlohmann/json/releases/download/v3.9.1/json.hpp"
+            "${nlohmann_json_SOURCE_DIR}/nlohmann/json.hpp")
+  endif()
+  add_library(nlohmann_json INTERFACE)
+  target_include_directories(nlohmann_json SYSTEM INTERFACE "${nlohmann_json_SOURCE_DIR}")
+
+  import_dependency(json11 dropbox/json11 ec4e452)
+  add_library(json11 STATIC "${json11_SOURCE_DIR}/json11.cpp")
+  target_include_directories(json11 SYSTEM PUBLIC "${json11_SOURCE_DIR}")
+
+  set(jsoncpp_SOURCE_DIR "${simdjson_SOURCE_DIR}/dependencies/jsoncppdist")
+  add_library(jsoncpp STATIC "${jsoncpp_SOURCE_DIR}/jsoncpp.cpp")
+  target_include_directories(jsoncpp SYSTEM PUBLIC "${jsoncpp_SOURCE_DIR}")
+
+  import_dependency(rapidjson Tencent/rapidjson b32cd94)
+  add_library(rapidjson INTERFACE)
+  target_compile_definitions(rapidjson INTERFACE RAPIDJSON_HAS_STDSTRING)
+  target_include_directories(rapidjson SYSTEM INTERFACE
+          "${rapidjson_SOURCE_DIR}/include")
+
+  import_dependency(sajson chadaustin/sajson 2dcfd35)
+  add_library(sajson INTERFACE)
+  target_compile_definitions(sajson INTERFACE SAJSON_UNSORTED_OBJECT_KEYS)
+  target_include_directories(sajson SYSTEM INTERFACE
+          "${sajson_SOURCE_DIR}/include")
+
+  import_dependency(ujson4c esnme/ujson4c e14f3fd)
+  add_library(ujson4c STATIC
+          "${ujson4c_SOURCE_DIR}/src/ujdecode.c"
+          "${ujson4c_SOURCE_DIR}/3rdparty/ultrajsondec.c")
+  target_include_directories(ujson4c SYSTEM PUBLIC
+          "${ujson4c_SOURCE_DIR}/src"
+          "${ujson4c_SOURCE_DIR}/3rdparty")
+
+  import_dependency(yyjson ibireme/yyjson aa33ec5)
+  add_library(yyjson STATIC "${yyjson_SOURCE_DIR}/src/yyjson.c")
+  target_include_directories(yyjson SYSTEM PUBLIC "${yyjson_SOURCE_DIR}/src")
+
+  add_library(competition-core INTERFACE)
+  target_link_libraries(competition-core INTERFACE nlohmann_json rapidjson sajson cjson jsmn yyjson)
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_link_libraries(competition-core INTERFACE boostjson)
+  endif()
+
+  add_library(competition-all INTERFACE)
+  target_link_libraries(competition-all INTERFACE competition-core jsoncpp json11 fastjson gason ujson4c)
+endfunction()
+
+if(SIMDJSON_COMPETITION)
+  competition_scope_()
+endif()
+
+set_off(CXXOPTS_BUILD_EXAMPLES)
+set_off(CXXOPTS_BUILD_TESTS)
+set_off(CXXOPTS_ENABLE_INSTALL)
+
+import_dependency(cxxopts jarro2783/cxxopts 794c975)
+add_dependency(cxxopts)

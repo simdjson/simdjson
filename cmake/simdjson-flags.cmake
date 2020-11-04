@@ -9,14 +9,6 @@ else()
   message (STATUS "By default, we just build the library.")
 endif()
 
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
-  set(SIMDJSON_IS_UNDER_GIT ON CACHE BOOL  "Whether cmake is under git control")
-  message( STATUS "The simdjson repository appears to be under git." )
-else()
-  set(SIMDJSON_IS_UNDER_GIT OFF CACHE BOOL  "Whether cmake is under git control")
-  message( STATUS "The simdjson repository does not appear to be under git." )
-endif()
-
 #
 # Flags used by exes and by the simdjson library (project-wide flags)
 #
@@ -49,12 +41,6 @@ if(MSVC)
 else()
   option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
   option(SIMDJSON_USE_LIBCPP "Use the libc++ library" OFF)
-endif()
-option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
-
-option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON)
-if(SIMDJSON_COMPETITION)
-  message(STATUS "Using SIMDJSON_GOOGLE_BENCHMARKS")
 endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
@@ -184,8 +170,6 @@ if(SIMDJSON_ONDEMAND_SAFETY_RAILS)
 endif(SIMDJSON_ONDEMAND_SAFETY_RAILS)
 
 option(SIMDJSON_BASH "Allow usage of bash within CMake" ON)
-
-option(SIMDJSON_GIT "Allow usage of git within CMake" ON)
 
 option(SIMDJSON_EXCEPTIONS "Enable simdjson's exception-throwing interface" ON)
 if(NOT SIMDJSON_EXCEPTIONS)

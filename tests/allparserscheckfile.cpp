@@ -6,24 +6,30 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 
 // #define RAPIDJSON_SSE2 // bad
 // #define RAPIDJSON_SSE42 // bad
-#include "fastjson.cpp"
-#include "fastjson_dom.cpp"
-#include "gason.cpp"
-#include "json11.cpp"
+#include "fastjson/core.h"
+#include "fastjson/dom.h"
+#include "fastjson/fastjson.h"
+
+#include "gason.h"
+
+#include "json11.hpp"
+
 #include "rapidjson/document.h"
 #include "rapidjson/reader.h" // you have to check in the submodule
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
+
 #include "sajson.h"
-extern "C" {
-#include "cJSON.c"
+
 #include "cJSON.h"
-#include "jsmn.c"
+
 #include "jsmn.h"
+
 #include "ujdecode.h"
-#include "ultrajsondec.c"
+extern "C" {
+#include "ultrajson.h"
 }
-#include "jsoncpp.cpp"
+
 #include "json/json.h"
 
 SIMDJSON_POP_DISABLE_WARNINGS
