@@ -1,4 +1,4 @@
-/* auto-generated on 2020-11-03 21:40:10 +0100. Do not edit! */
+/* auto-generated on 2020-11-04 09:26:58 -0500. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -6,7 +6,6 @@ SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 
 /* begin file src/to_chars.cpp */
-#include <cmath>
 #include <cstring>
 #include <cstdint>
 #include <array>
@@ -922,8 +921,7 @@ format. Returns an iterator pointing past-the-end of the decimal representation.
 */
 char *to_chars(char *first, const char *last, double value) {
   static_cast<void>(last); // maybe unused - fix warning
-  // Use signbit(value) instead of (value < 0) since signbit works for -0.
-  if (std::signbit(value)) {
+  if (value <= -0) {
     value = -value;
     *first++ = '-';
   }
@@ -954,7 +952,6 @@ char *to_chars(char *first, const char *last, double value) {
 } // namespace simdjson
 /* end file src/to_chars.cpp */
 /* begin file src/from_chars.cpp */
-#include <cmath>
 #include <limits>
 namespace simdjson {
 namespace internal {

@@ -1,4 +1,4 @@
-/* auto-generated on 2020-11-03 21:40:10 +0100. Do not edit! */
+/* auto-generated on 2020-11-04 09:26:58 -0500. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -9834,7 +9834,6 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
 #define SWAR_NUMBER_PARSING
 
 /* begin file include/simdjson/generic/numberparsing.h */
-#include <cmath>
 #include <limits>
 
 namespace simdjson {
@@ -10128,7 +10127,10 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
   // We do not accept infinite values.
-  if (!std::isfinite(*outDouble)) {
+  if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  // Next line would be better but it mysteriously fail under legacy/old libc++ libraries.
+  // See https://github.com/simdjson/simdjson/issues/1286
+  //if (!std::isfinite(*outDouble)) {
     return false;
   }
   return true;
@@ -15655,7 +15657,6 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
 #define SWAR_NUMBER_PARSING
 
 /* begin file include/simdjson/generic/numberparsing.h */
-#include <cmath>
 #include <limits>
 
 namespace simdjson {
@@ -15949,7 +15950,10 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
   // We do not accept infinite values.
-  if (!std::isfinite(*outDouble)) {
+  if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  // Next line would be better but it mysteriously fail under legacy/old libc++ libraries.
+  // See https://github.com/simdjson/simdjson/issues/1286
+  //if (!std::isfinite(*outDouble)) {
     return false;
   }
   return true;
@@ -21429,7 +21433,6 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
 #define SWAR_NUMBER_PARSING
 
 /* begin file include/simdjson/generic/numberparsing.h */
-#include <cmath>
 #include <limits>
 
 namespace simdjson {
@@ -21723,7 +21726,10 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
   // We do not accept infinite values.
-  if (!std::isfinite(*outDouble)) {
+  if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  // Next line would be better but it mysteriously fail under legacy/old libc++ libraries.
+  // See https://github.com/simdjson/simdjson/issues/1286
+  //if (!std::isfinite(*outDouble)) {
     return false;
   }
   return true;
@@ -27346,7 +27352,6 @@ parse_eight_digits_unrolled(const uint8_t *chars) {
 #define SWAR_NUMBER_PARSING
 
 /* begin file include/simdjson/generic/numberparsing.h */
-#include <cmath>
 #include <limits>
 
 namespace simdjson {
@@ -27640,7 +27645,10 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
   // We do not accept infinite values.
-  if (!std::isfinite(*outDouble)) {
+  if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  // Next line would be better but it mysteriously fail under legacy/old libc++ libraries.
+  // See https://github.com/simdjson/simdjson/issues/1286
+  //if (!std::isfinite(*outDouble)) {
     return false;
   }
   return true;
@@ -32679,7 +32687,6 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
 
 #define SWAR_NUMBER_PARSING
 /* begin file include/simdjson/generic/numberparsing.h */
-#include <cmath>
 #include <limits>
 
 namespace simdjson {
@@ -32973,7 +32980,10 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
   // We do not accept infinite values.
-  if (!std::isfinite(*outDouble)) {
+  if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  // Next line would be better but it mysteriously fail under legacy/old libc++ libraries.
+  // See https://github.com/simdjson/simdjson/issues/1286
+  //if (!std::isfinite(*outDouble)) {
     return false;
   }
   return true;
