@@ -1,4 +1,4 @@
-/* auto-generated on 2020-11-04 09:26:58 -0500. Do not edit! */
+/* auto-generated on 2020-11-04 09:28:38 -0500. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -10126,11 +10126,20 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 // one digit.
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
-  // We do not accept infinite values.
-  if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  // We do not accept infinite values. Detecting finite values in a portable manner is ridiculously hard.
+  //
+  // Next line would be nice but if fails under Visual Studio with error C2589: '(': illegal token on right side of '::'
+  // despite the fact that we have '#include <limits>' above.
+  // if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  //
   // Next line would be better but it mysteriously fail under legacy/old libc++ libraries.
   // See https://github.com/simdjson/simdjson/issues/1286
   //if (!std::isfinite(*outDouble)) {
+  //
+  // So we use the following that ought to work under all systems.
+  // (Note that I also tried hexadecimal floats but it failed under some systems too.)
+  //
+  if ((*outDouble > 1.7976931348623157E+308) || (*outDouble < -1.7976931348623157E+308)) {
     return false;
   }
   return true;
@@ -15949,11 +15958,20 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 // one digit.
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
-  // We do not accept infinite values.
-  if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  // We do not accept infinite values. Detecting finite values in a portable manner is ridiculously hard.
+  //
+  // Next line would be nice but if fails under Visual Studio with error C2589: '(': illegal token on right side of '::'
+  // despite the fact that we have '#include <limits>' above.
+  // if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  //
   // Next line would be better but it mysteriously fail under legacy/old libc++ libraries.
   // See https://github.com/simdjson/simdjson/issues/1286
   //if (!std::isfinite(*outDouble)) {
+  //
+  // So we use the following that ought to work under all systems.
+  // (Note that I also tried hexadecimal floats but it failed under some systems too.)
+  //
+  if ((*outDouble > 1.7976931348623157E+308) || (*outDouble < -1.7976931348623157E+308)) {
     return false;
   }
   return true;
@@ -21725,11 +21743,20 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 // one digit.
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
-  // We do not accept infinite values.
-  if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  // We do not accept infinite values. Detecting finite values in a portable manner is ridiculously hard.
+  //
+  // Next line would be nice but if fails under Visual Studio with error C2589: '(': illegal token on right side of '::'
+  // despite the fact that we have '#include <limits>' above.
+  // if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  //
   // Next line would be better but it mysteriously fail under legacy/old libc++ libraries.
   // See https://github.com/simdjson/simdjson/issues/1286
   //if (!std::isfinite(*outDouble)) {
+  //
+  // So we use the following that ought to work under all systems.
+  // (Note that I also tried hexadecimal floats but it failed under some systems too.)
+  //
+  if ((*outDouble > 1.7976931348623157E+308) || (*outDouble < -1.7976931348623157E+308)) {
     return false;
   }
   return true;
@@ -27644,11 +27671,20 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 // one digit.
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
-  // We do not accept infinite values.
-  if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  // We do not accept infinite values. Detecting finite values in a portable manner is ridiculously hard.
+  //
+  // Next line would be nice but if fails under Visual Studio with error C2589: '(': illegal token on right side of '::'
+  // despite the fact that we have '#include <limits>' above.
+  // if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  //
   // Next line would be better but it mysteriously fail under legacy/old libc++ libraries.
   // See https://github.com/simdjson/simdjson/issues/1286
   //if (!std::isfinite(*outDouble)) {
+  //
+  // So we use the following that ought to work under all systems.
+  // (Note that I also tried hexadecimal floats but it failed under some systems too.)
+  //
+  if ((*outDouble > 1.7976931348623157E+308) || (*outDouble < -1.7976931348623157E+308)) {
     return false;
   }
   return true;
@@ -32979,11 +33015,20 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 // one digit.
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
-  // We do not accept infinite values.
-  if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  // We do not accept infinite values. Detecting finite values in a portable manner is ridiculously hard.
+  //
+  // Next line would be nice but if fails under Visual Studio with error C2589: '(': illegal token on right side of '::'
+  // despite the fact that we have '#include <limits>' above.
+  // if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
+  //
   // Next line would be better but it mysteriously fail under legacy/old libc++ libraries.
   // See https://github.com/simdjson/simdjson/issues/1286
   //if (!std::isfinite(*outDouble)) {
+  //
+  // So we use the following that ought to work under all systems.
+  // (Note that I also tried hexadecimal floats but it failed under some systems too.)
+  //
+  if ((*outDouble > 1.7976931348623157E+308) || (*outDouble < -1.7976931348623157E+308)) {
     return false;
   }
   return true;
