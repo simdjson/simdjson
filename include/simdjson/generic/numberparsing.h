@@ -297,7 +297,7 @@ static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   // despite the fact that we have '#include <limits>' above.
   // if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
   //
-  // Next line would be better but it mysteriously fail under legacy/old libc++ libraries.
+  // Next line would be better but it mysteriously fails under legacy/old libc++ libraries.
   // See https://github.com/simdjson/simdjson/issues/1286
   //if (!std::isfinite(*outDouble)) {
   //
