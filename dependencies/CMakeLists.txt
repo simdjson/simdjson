@@ -67,10 +67,13 @@ if ((Git_FOUND) AND SIMDJSON_GIT AND (SIMDJSON_IS_UNDER_GIT))
     add_library(competition-ujson4c ujson4c/src/ujdecode.c)
     target_include_directories(competition-ujson4c PUBLIC ujson4c/3rdparty ujson4c/src)
 
-    initialize_submodule(boost.json)
-    add_library(boostjson boost.json/src/src.cpp)
-    target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
-    target_include_directories(boostjson PUBLIC boost.json/include)
+    # Boost JSON is not compatible with some clang/libc++ configurations.
+    if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+      initialize_submodule(boost.json)
+      add_library(boostjson boost.json/src/src.cpp)
+      target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
+      target_include_directories(boostjson PUBLIC boost.json/include)
+    endif(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 
     initialize_submodule(yyjson)
     add_library(yyjson yyjson/src/yyjson.c)
