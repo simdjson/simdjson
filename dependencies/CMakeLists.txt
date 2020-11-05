@@ -15,13 +15,13 @@ endif()
 # should not be called more than once
 function(competition_scope_)
   # Boost JSON is not compatible with some clang/libc++ configurations.
-  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    import_dependency(boostjson CPPAlliance/json a0983f7)
+  #if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    import_dependency(boostjson boostorg/json ee8d72d8502b409b5561200299cad30ccdb91415)
     add_library(boostjson STATIC "${boostjson_SOURCE_DIR}/src/src.cpp")
     target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
     target_include_directories(boostjson SYSTEM PUBLIC
             "${boostjson_SOURCE_DIR}/include")
-  endif()
+  #endif()
 
   import_dependency(cjson DaveGamble/cJSON c69134d)
   add_library(cjson STATIC "${cjson_SOURCE_DIR}/cJSON.c")
