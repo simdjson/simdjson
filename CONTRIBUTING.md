@@ -42,6 +42,7 @@ We have few hard rules, but we have some:
 - Calls to `abort()` are forbidden in the core library. This follows from the [Writing R Extensions](https://cran.r-project.org/doc/manuals/R-exts.html) manual which states that "Under no circumstances should your compiled code ever call abort or exit".
 - All source code files (.h, .cpp) must be ASCII.
 - All C macros introduced in public headers need to be prefixed with either `SIMDJSON_` or `simdjson_`.
+- We avoid trailing white space characters within lines. That is, your lines of code should not terminate with unnecessary spaces. Generally, please avoid making unnecessary changes to white-space characters when contributing code.
 
 Tools, tests and benchmarks are not held to these same strict rules.
 
