@@ -10,7 +10,7 @@ task:
   dep_cache:
     folder: $HOME/.dep_cache
     reupload_on_changes: false
-    fingerprint_script: cmake -E sha512sum dependencies/CMakeLists.txt
+    fingerprint_script: cat dependencies/CMakeLists.txt
   setup_script:
     - pkg update -f
     - pkg install bash
