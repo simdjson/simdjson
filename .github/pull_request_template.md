@@ -1,8 +1,6 @@
 
 
-Our tests check whether you have introduced trailing white space. If such a test fails, please check the "artifacts button" above, which if you click it gives a link to a downloadable file to help you identify the issue. One can also run scripts/remove_trailing_whitespace.sh locally if you have a bash shell.
-
-In this case, I think you just needed to merge master into the branch since this branch probably started before I un-whitespaced master.
+Our tests check whether you have introduced trailing white space. If such a test fails, please check the "artifacts button" above, which if you click it gives a link to a downloadable file to help you identify the issue. You can also run scripts/remove_trailing_whitespace.sh locally if you have a bash shell and the sed command available on your system.
 
 If you plan to contribute to simdjson, please read our
 
