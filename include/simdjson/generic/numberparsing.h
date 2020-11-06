@@ -291,23 +291,17 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 // one digit.
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars((const char *)ptr);
-  // We do not accept infinite values. Detecting finite values in a portable manner is ridiculously hard.
+  // We do not accept infinite values.
+
+  // Detecting finite values in a portable manner is ridiculously hard, ideally
+  // we would want to do:
+  // return !std::isfinite(*outDouble);
+  // but that mysteriously fails under legacy/old libc++ libraries, see
+  // https://github.com/simdjson/simdjson/issues/1286
   //
-  // Next line would be nice but if fails under Visual Studio with error C2589: '(': illegal token on right side of '::'
-  // despite the fact that we have '#include <limits>' above.
-  // if ((*outDouble > std::numeric_limits<double>::max()) || (*outDouble < std::numeric_limits<double>::lowest())) {
-  //
-  // Next line would be better but it mysteriously fails under legacy/old libc++ libraries.
-  // See https://github.com/simdjson/simdjson/issues/1286
-  //if (!std::isfinite(*outDouble)) {
-  //
-  // So we use the following that ought to work under all systems.
-  // (Note that I also tried hexadecimal floats but it failed under some systems too.)
-  //
-  if ((*outDouble > 1.7976931348623157E+308) || (*outDouble < -1.7976931348623157E+308)) {
-    return false;
-  }
-  return true;
+  // Therefore, fall back to this solution (the extra parens are there
+  // to handle that max may be a macro on windows).
+  return !(*outDouble > (std::numeric_limits<double>::max)() || *outDouble < std::numeric_limits<double>::lowest());
 }
 
 // check quickly whether the next 8 chars are made of digits
