@@ -83,10 +83,7 @@ function(competition_scope_)
   target_include_directories(yyjson SYSTEM PUBLIC "${yyjson_SOURCE_DIR}/src")
 
   add_library(competition-core INTERFACE)
-  target_link_libraries(competition-core INTERFACE nlohmann_json rapidjson sajson cjson jsmn yyjson)
-  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_link_libraries(competition-core INTERFACE boostjson)
-  endif()
+  target_link_libraries(competition-core INTERFACE boostjson nlohmann_json rapidjson sajson cjson jsmn yyjson)
 
   add_library(competition-all INTERFACE)
   target_link_libraries(competition-all INTERFACE competition-core jsoncpp json11 fastjson gason ujson4c)
