@@ -1,13 +1,18 @@
 language: cpp
+
 dist: bionic
+
 arch:
   - ppc64le
+
 cache:
   directories:
     - $HOME/.dep_cache
+
 env:
   global:
     - simdjson_DEPENDENCY_CACHE_DIR=$HOME/.dep_cache
+
 matrix:
   include:
     - os: linux
@@ -156,13 +161,11 @@ before_install:
   - eval "${COMPILER}"
 
 install:
-  - if [[ "${TRAVIS_CPU_ARCH}" == "ppc64le" ]]; then
-      sudo apt-get install libuv1 rhash libstdc++6;
-      wget https://anaconda.org/conda-forge/cmake/3.17.0/download/linux-ppc64le/cmake-3.17.0-hfb1cb51_0.tar.bz2;
-      mkdir $HOME/cmake;
-      tar -xjf cmake-3.17.0-hfb1cb51_0.tar.bz2 -C $HOME/cmake;
-      export PATH=$HOME/cmake/bin:$PATH;
-    fi
+  - wget -q -O - "https://raw.githubusercontent.com/simdjson/debian-ppa/master/key.gpg" | sudo apt-key add -
+  - sudo apt-add-repository "deb https://raw.githubusercontent.com/simdjson/debian-ppa/master simdjson main"
+  - sudo apt-get -qq update
+  - sudo apt-get purge cmake cmake-data
+  - sudo apt-get -t simdjson -y install cmake
   - export CMAKE_CXX_FLAGS="-maltivec -mcpu=power9 -mtune=power9"
   - export CMAKE_C_FLAGS="${CMAKE_CXX_FLAGS}"
   - export CMAKE_FLAGS="-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -DSIMDJSON_IMPLEMENTATION=ppc64;fallback";
