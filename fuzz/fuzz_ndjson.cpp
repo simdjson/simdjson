@@ -14,9 +14,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 #if SIMDJSON_EXCEPTIONS
   try {
 #endif
-  simdjson::dom::document_stream docs = parser.parse_many(json,batch_size);
+    simdjson::dom::document_stream docs;
+    if(parser.parse_many(json,batch_size).get(docs)) {
+      return 0;
+    }
+
   size_t bool_count=0;
-  for (simdjson::dom::element doc : docs) {
+  for (auto doc : docs) {
     bool_count+=doc.is_bool();
   }
 #if SIMDJSON_EXCEPTIONS
