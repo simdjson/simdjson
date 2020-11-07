@@ -47,7 +47,7 @@ include(FetchContent)
 FetchContent_Declare(
   simdjson
   GIT_REPOSITORY https://github.com/simdjson/simdjson.git
-  GIT_TAG  v0.4.7
+  GIT_TAG  v0.6.1
   GIT_SHALLOW TRUE)
 
 set(SIMDJSON_JUST_LIBRARY ON CACHE INTERNAL "")
@@ -56,7 +56,7 @@ set(SIMDJSON_BUILD_STATIC ON CACHE INTERNAL "")
 FetchContent_MakeAvailable(simdjson)
 ```
 
-You should replace `GIT_TAG  v0.5.0` by the version you need. If you omit `GIT_TAG  v0.5.0`, you will work from the main branch of simdjson: we recommend that if you are working on production code,
+You should replace `GIT_TAG  v0.6.1` by the version you need. If you omit `GIT_TAG  v0.6.1`, you will work from the main branch of simdjson: we recommend that if you are working on production code,
 
 Elsewhere in your project, you can  declare dependencies on simdjson with lines such as these:
 
