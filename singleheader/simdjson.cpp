@@ -1,4 +1,4 @@
-/* auto-generated on 2020-11-04 10:36:56 -0500. Do not edit! */
+/* auto-generated on 2020-11-08 07:54:47 +0100. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -2649,11 +2649,12 @@ const implementation * builtin_implementation() {
 #if SIMDJSON_IMPLEMENTATION_ARM64
 /* begin file src/arm64/implementation.cpp */
 /* begin file include/simdjson/arm64/begin.h */
-#define SIMDJSON_IMPLEMENTATION arm64
+// redefining SIMDJSON_IMPLEMENTATION to "arm64"
+// #define SIMDJSON_IMPLEMENTATION arm64
 /* end file include/simdjson/arm64/begin.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 
 simdjson_warn_unused error_code implementation::create_dom_parser_implementation(
   size_t capacity,
@@ -2667,23 +2668,24 @@ simdjson_warn_unused error_code implementation::create_dom_parser_implementation
   return SUCCESS;
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 
 /* begin file include/simdjson/arm64/end.h */
-#undef SIMDJSON_IMPLEMENTATION
+#undef arm64
 /* end file include/simdjson/arm64/end.h */
 /* end file src/arm64/implementation.cpp */
 /* begin file src/arm64/dom_parser_implementation.cpp */
 /* begin file include/simdjson/arm64/begin.h */
-#define SIMDJSON_IMPLEMENTATION arm64
+// redefining SIMDJSON_IMPLEMENTATION to "arm64"
+// #define SIMDJSON_IMPLEMENTATION arm64
 /* end file include/simdjson/arm64/begin.h */
 
 //
 // Stage 1
 //
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 
 using namespace simd;
@@ -2777,12 +2779,12 @@ simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 
 /* begin file src/generic/stage1/utf8_lookup4_algorithm.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 namespace utf8_validation {
 
@@ -2964,7 +2966,7 @@ using namespace simd;
 using utf8_validation::utf8_checker;
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 /* end file src/generic/stage1/utf8_lookup4_algorithm.h */
 /* begin file src/generic/stage1/json_structural_indexer.h */
@@ -2975,7 +2977,7 @@ using utf8_validation::utf8_checker;
 
 /* begin file src/generic/stage1/buf_block_reader.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 
 // Walks through a buffer in block-sized increments, loading the last part with spaces
@@ -3064,12 +3066,12 @@ simdjson_really_inline void buf_block_reader<STEP_SIZE>::advance() {
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 /* end file src/generic/stage1/buf_block_reader.h */
 /* begin file src/generic/stage1/json_string_scanner.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 namespace stage1 {
 
@@ -3211,12 +3213,12 @@ simdjson_really_inline error_code json_string_scanner::finish(bool streaming) {
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 /* end file src/generic/stage1/json_string_scanner.h */
 /* begin file src/generic/stage1/json_scanner.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 namespace stage1 {
 
@@ -3361,7 +3363,7 @@ simdjson_really_inline error_code json_scanner::finish(bool streaming) {
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 /* end file src/generic/stage1/json_scanner.h */
 /* begin file src/generic/stage1/json_minifier.h */
@@ -3371,7 +3373,7 @@ simdjson_really_inline error_code json_scanner::finish(bool streaming) {
 // "simdjson/stage1.h" (this simplifies amalgation)
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 namespace stage1 {
 
@@ -3457,12 +3459,12 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 /* end file src/generic/stage1/json_minifier.h */
 /* begin file src/generic/stage1/find_next_document_index.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 
 /**
@@ -3532,12 +3534,12 @@ simdjson_really_inline uint32_t find_next_document_index(dom_parser_implementati
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 /* end file src/generic/stage1/find_next_document_index.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 namespace stage1 {
 
@@ -3755,12 +3757,12 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 /* end file src/generic/stage1/json_structural_indexer.h */
 /* begin file src/generic/stage1/utf8_validator.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 namespace stage1 {
 
@@ -3791,7 +3793,7 @@ bool generic_validate_utf8(const char * input, size_t length) {
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 /* end file src/generic/stage1/utf8_validator.h */
 
@@ -3805,7 +3807,7 @@ bool generic_validate_utf8(const char * input, size_t length) {
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 namespace logger {
 
@@ -3888,12 +3890,12 @@ namespace logger {
 
 } // namespace logger
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 /* end file src/generic/stage2/logger.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 namespace stage2 {
 
@@ -4205,12 +4207,12 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::visit_prim
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 /* end file src/generic/stage2/json_iterator.h */
 /* begin file src/generic/stage2/tape_writer.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 namespace stage2 {
 
@@ -4312,12 +4314,12 @@ simdjson_really_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val,
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 /* end file src/generic/stage2/tape_writer.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 namespace stage2 {
 
@@ -4595,7 +4597,7 @@ simdjson_really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 /* end file src/generic/stage2/tape_builder.h */
 
@@ -4603,7 +4605,7 @@ simdjson_really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 // Implementation-specific overrides
 //
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 namespace stage1 {
 
@@ -4645,22 +4647,23 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   return stage2(_doc);
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 
 /* begin file include/simdjson/arm64/end.h */
-#undef SIMDJSON_IMPLEMENTATION
+#undef arm64
 /* end file include/simdjson/arm64/end.h */
 /* end file src/arm64/dom_parser_implementation.cpp */
 #endif
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
 /* begin file src/fallback/implementation.cpp */
 /* begin file include/simdjson/fallback/begin.h */
-#define SIMDJSON_IMPLEMENTATION fallback
+// redefining SIMDJSON_IMPLEMENTATION to "fallback"
+// #define SIMDJSON_IMPLEMENTATION fallback
 /* end file include/simdjson/fallback/begin.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 
 simdjson_warn_unused error_code implementation::create_dom_parser_implementation(
   size_t capacity,
@@ -4674,16 +4677,17 @@ simdjson_warn_unused error_code implementation::create_dom_parser_implementation
   return SUCCESS;
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 
 /* begin file include/simdjson/fallback/end.h */
-#undef SIMDJSON_IMPLEMENTATION
+#undef fallback
 /* end file include/simdjson/fallback/end.h */
 /* end file src/fallback/implementation.cpp */
 /* begin file src/fallback/dom_parser_implementation.cpp */
 /* begin file include/simdjson/fallback/begin.h */
-#define SIMDJSON_IMPLEMENTATION fallback
+// redefining SIMDJSON_IMPLEMENTATION to "fallback"
+// #define SIMDJSON_IMPLEMENTATION fallback
 /* end file include/simdjson/fallback/begin.h */
 
 //
@@ -4691,7 +4695,7 @@ simdjson_warn_unused error_code implementation::create_dom_parser_implementation
 //
 /* begin file src/generic/stage1/find_next_document_index.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 namespace {
 
 /**
@@ -4761,12 +4765,12 @@ simdjson_really_inline uint32_t find_next_document_index(dom_parser_implementati
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 /* end file src/generic/stage1/find_next_document_index.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 namespace {
 namespace stage1 {
 
@@ -5066,7 +5070,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
   return true;
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 
 //
@@ -5078,7 +5082,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 namespace {
 namespace logger {
 
@@ -5161,12 +5165,12 @@ namespace logger {
 
 } // namespace logger
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 /* end file src/generic/stage2/logger.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 namespace {
 namespace stage2 {
 
@@ -5478,12 +5482,12 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::visit_prim
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 /* end file src/generic/stage2/json_iterator.h */
 /* begin file src/generic/stage2/tape_writer.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 namespace {
 namespace stage2 {
 
@@ -5585,12 +5589,12 @@ simdjson_really_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val,
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 /* end file src/generic/stage2/tape_writer.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 namespace {
 namespace stage2 {
 
@@ -5868,12 +5872,12 @@ simdjson_really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 /* end file src/generic/stage2/tape_builder.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 
 simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<false>(*this, _doc);
@@ -5889,23 +5893,24 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   return stage2(_doc);
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 
 /* begin file include/simdjson/fallback/end.h */
-#undef SIMDJSON_IMPLEMENTATION
+#undef fallback
 /* end file include/simdjson/fallback/end.h */
 /* end file src/fallback/dom_parser_implementation.cpp */
 #endif
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 /* begin file src/haswell/implementation.cpp */
 /* begin file include/simdjson/haswell/begin.h */
-#define SIMDJSON_IMPLEMENTATION haswell
+// redefining SIMDJSON_IMPLEMENTATION to "haswell"
+// #define SIMDJSON_IMPLEMENTATION haswell
 SIMDJSON_TARGET_HASWELL
 /* end file include/simdjson/haswell/begin.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 
 simdjson_warn_unused error_code implementation::create_dom_parser_implementation(
   size_t capacity,
@@ -5919,18 +5924,19 @@ simdjson_warn_unused error_code implementation::create_dom_parser_implementation
   return SUCCESS;
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 
 /* begin file include/simdjson/haswell/end.h */
 SIMDJSON_UNTARGET_REGION
-#undef SIMDJSON_IMPLEMENTATION
+#undef haswell
 /* end file include/simdjson/haswell/end.h */
 
 /* end file src/haswell/implementation.cpp */
 /* begin file src/haswell/dom_parser_implementation.cpp */
 /* begin file include/simdjson/haswell/begin.h */
-#define SIMDJSON_IMPLEMENTATION haswell
+// redefining SIMDJSON_IMPLEMENTATION to "haswell"
+// #define SIMDJSON_IMPLEMENTATION haswell
 SIMDJSON_TARGET_HASWELL
 /* end file include/simdjson/haswell/begin.h */
 
@@ -5939,7 +5945,7 @@ SIMDJSON_TARGET_HASWELL
 //
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 
 using namespace simd;
@@ -6036,12 +6042,12 @@ simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 
 /* begin file src/generic/stage1/utf8_lookup4_algorithm.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 namespace utf8_validation {
 
@@ -6223,7 +6229,7 @@ using namespace simd;
 using utf8_validation::utf8_checker;
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 /* end file src/generic/stage1/utf8_lookup4_algorithm.h */
 /* begin file src/generic/stage1/json_structural_indexer.h */
@@ -6234,7 +6240,7 @@ using utf8_validation::utf8_checker;
 
 /* begin file src/generic/stage1/buf_block_reader.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 
 // Walks through a buffer in block-sized increments, loading the last part with spaces
@@ -6323,12 +6329,12 @@ simdjson_really_inline void buf_block_reader<STEP_SIZE>::advance() {
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 /* end file src/generic/stage1/buf_block_reader.h */
 /* begin file src/generic/stage1/json_string_scanner.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 namespace stage1 {
 
@@ -6470,12 +6476,12 @@ simdjson_really_inline error_code json_string_scanner::finish(bool streaming) {
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 /* end file src/generic/stage1/json_string_scanner.h */
 /* begin file src/generic/stage1/json_scanner.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 namespace stage1 {
 
@@ -6620,7 +6626,7 @@ simdjson_really_inline error_code json_scanner::finish(bool streaming) {
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 /* end file src/generic/stage1/json_scanner.h */
 /* begin file src/generic/stage1/json_minifier.h */
@@ -6630,7 +6636,7 @@ simdjson_really_inline error_code json_scanner::finish(bool streaming) {
 // "simdjson/stage1.h" (this simplifies amalgation)
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 namespace stage1 {
 
@@ -6716,12 +6722,12 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 /* end file src/generic/stage1/json_minifier.h */
 /* begin file src/generic/stage1/find_next_document_index.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 
 /**
@@ -6791,12 +6797,12 @@ simdjson_really_inline uint32_t find_next_document_index(dom_parser_implementati
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 /* end file src/generic/stage1/find_next_document_index.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 namespace stage1 {
 
@@ -7014,12 +7020,12 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 /* end file src/generic/stage1/json_structural_indexer.h */
 /* begin file src/generic/stage1/utf8_validator.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 namespace stage1 {
 
@@ -7050,7 +7056,7 @@ bool generic_validate_utf8(const char * input, size_t length) {
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 /* end file src/generic/stage1/utf8_validator.h */
 
@@ -7063,7 +7069,7 @@ bool generic_validate_utf8(const char * input, size_t length) {
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 namespace logger {
 
@@ -7146,12 +7152,12 @@ namespace logger {
 
 } // namespace logger
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 /* end file src/generic/stage2/logger.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 namespace stage2 {
 
@@ -7463,12 +7469,12 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::visit_prim
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 /* end file src/generic/stage2/json_iterator.h */
 /* begin file src/generic/stage2/tape_writer.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 namespace stage2 {
 
@@ -7570,12 +7576,12 @@ simdjson_really_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val,
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 /* end file src/generic/stage2/tape_writer.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 namespace stage2 {
 
@@ -7853,7 +7859,7 @@ simdjson_really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 /* end file src/generic/stage2/tape_builder.h */
 
@@ -7861,7 +7867,7 @@ simdjson_really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 // Implementation-specific overrides
 //
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 namespace stage1 {
 
@@ -7901,23 +7907,24 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   return stage2(_doc);
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 
 /* begin file include/simdjson/haswell/end.h */
 SIMDJSON_UNTARGET_REGION
-#undef SIMDJSON_IMPLEMENTATION
+#undef haswell
 /* end file include/simdjson/haswell/end.h */
 /* end file src/haswell/dom_parser_implementation.cpp */
 #endif
 #if SIMDJSON_IMPLEMENTATION_PPC64
 /* begin file src/ppc64/implementation.cpp */
 /* begin file include/simdjson/ppc64/begin.h */
-#define SIMDJSON_IMPLEMENTATION ppc64
+// redefining SIMDJSON_IMPLEMENTATION to "ppc64"
+// #define SIMDJSON_IMPLEMENTATION ppc64
 /* end file include/simdjson/ppc64/begin.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 
 simdjson_warn_unused error_code implementation::create_dom_parser_implementation(
   size_t capacity,
@@ -7931,23 +7938,24 @@ simdjson_warn_unused error_code implementation::create_dom_parser_implementation
   return SUCCESS;
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 
 /* begin file include/simdjson/ppc64/end.h */
-#undef SIMDJSON_IMPLEMENTATION
+#undef ppc64
 /* end file include/simdjson/ppc64/end.h */
 /* end file src/ppc64/implementation.cpp */
 /* begin file src/ppc64/dom_parser_implementation.cpp */
 /* begin file include/simdjson/ppc64/begin.h */
-#define SIMDJSON_IMPLEMENTATION ppc64
+// redefining SIMDJSON_IMPLEMENTATION to "ppc64"
+// #define SIMDJSON_IMPLEMENTATION ppc64
 /* end file include/simdjson/ppc64/begin.h */
 
 //
 // Stage 1
 //
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 
 using namespace simd;
@@ -8011,12 +8019,12 @@ simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 
 /* begin file src/generic/stage1/utf8_lookup4_algorithm.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 namespace utf8_validation {
 
@@ -8198,7 +8206,7 @@ using namespace simd;
 using utf8_validation::utf8_checker;
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 /* end file src/generic/stage1/utf8_lookup4_algorithm.h */
 /* begin file src/generic/stage1/json_structural_indexer.h */
@@ -8209,7 +8217,7 @@ using utf8_validation::utf8_checker;
 
 /* begin file src/generic/stage1/buf_block_reader.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 
 // Walks through a buffer in block-sized increments, loading the last part with spaces
@@ -8298,12 +8306,12 @@ simdjson_really_inline void buf_block_reader<STEP_SIZE>::advance() {
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 /* end file src/generic/stage1/buf_block_reader.h */
 /* begin file src/generic/stage1/json_string_scanner.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 namespace stage1 {
 
@@ -8445,12 +8453,12 @@ simdjson_really_inline error_code json_string_scanner::finish(bool streaming) {
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 /* end file src/generic/stage1/json_string_scanner.h */
 /* begin file src/generic/stage1/json_scanner.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 namespace stage1 {
 
@@ -8595,7 +8603,7 @@ simdjson_really_inline error_code json_scanner::finish(bool streaming) {
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 /* end file src/generic/stage1/json_scanner.h */
 /* begin file src/generic/stage1/json_minifier.h */
@@ -8605,7 +8613,7 @@ simdjson_really_inline error_code json_scanner::finish(bool streaming) {
 // "simdjson/stage1.h" (this simplifies amalgation)
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 namespace stage1 {
 
@@ -8691,12 +8699,12 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 /* end file src/generic/stage1/json_minifier.h */
 /* begin file src/generic/stage1/find_next_document_index.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 
 /**
@@ -8766,12 +8774,12 @@ simdjson_really_inline uint32_t find_next_document_index(dom_parser_implementati
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 /* end file src/generic/stage1/find_next_document_index.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 namespace stage1 {
 
@@ -8989,12 +8997,12 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 /* end file src/generic/stage1/json_structural_indexer.h */
 /* begin file src/generic/stage1/utf8_validator.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 namespace stage1 {
 
@@ -9025,7 +9033,7 @@ bool generic_validate_utf8(const char * input, size_t length) {
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 /* end file src/generic/stage1/utf8_validator.h */
 
@@ -9039,7 +9047,7 @@ bool generic_validate_utf8(const char * input, size_t length) {
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 namespace logger {
 
@@ -9122,12 +9130,12 @@ namespace logger {
 
 } // namespace logger
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 /* end file src/generic/stage2/logger.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 namespace stage2 {
 
@@ -9439,12 +9447,12 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::visit_prim
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 /* end file src/generic/stage2/json_iterator.h */
 /* begin file src/generic/stage2/tape_writer.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 namespace stage2 {
 
@@ -9546,12 +9554,12 @@ simdjson_really_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val,
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 /* end file src/generic/stage2/tape_writer.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 namespace stage2 {
 
@@ -9829,7 +9837,7 @@ simdjson_really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 /* end file src/generic/stage2/tape_builder.h */
 
@@ -9837,7 +9845,7 @@ simdjson_really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 // Implementation-specific overrides
 //
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 namespace stage1 {
 
@@ -9879,23 +9887,24 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   return stage2(_doc);
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 
 /* begin file include/simdjson/ppc64/end.h */
-#undef SIMDJSON_IMPLEMENTATION
+#undef ppc64
 /* end file include/simdjson/ppc64/end.h */
 /* end file src/ppc64/dom_parser_implementation.cpp */
 #endif
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
 /* begin file src/westmere/implementation.cpp */
 /* begin file include/simdjson/westmere/begin.h */
-#define SIMDJSON_IMPLEMENTATION westmere
+// redefining SIMDJSON_IMPLEMENTATION to "westmere"
+// #define SIMDJSON_IMPLEMENTATION westmere
 SIMDJSON_TARGET_WESTMERE
 /* end file include/simdjson/westmere/begin.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 
 simdjson_warn_unused error_code implementation::create_dom_parser_implementation(
   size_t capacity,
@@ -9909,17 +9918,18 @@ simdjson_warn_unused error_code implementation::create_dom_parser_implementation
   return SUCCESS;
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 
 /* begin file include/simdjson/westmere/end.h */
 SIMDJSON_UNTARGET_REGION
-#undef SIMDJSON_IMPLEMENTATION
+#undef westmere
 /* end file include/simdjson/westmere/end.h */
 /* end file src/westmere/implementation.cpp */
 /* begin file src/westmere/dom_parser_implementation.cpp */
 /* begin file include/simdjson/westmere/begin.h */
-#define SIMDJSON_IMPLEMENTATION westmere
+// redefining SIMDJSON_IMPLEMENTATION to "westmere"
+// #define SIMDJSON_IMPLEMENTATION westmere
 SIMDJSON_TARGET_WESTMERE
 /* end file include/simdjson/westmere/begin.h */
 
@@ -9928,7 +9938,7 @@ SIMDJSON_TARGET_WESTMERE
 //
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 
 using namespace simd;
@@ -10023,12 +10033,12 @@ simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 
 /* begin file src/generic/stage1/utf8_lookup4_algorithm.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 namespace utf8_validation {
 
@@ -10210,7 +10220,7 @@ using namespace simd;
 using utf8_validation::utf8_checker;
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 /* end file src/generic/stage1/utf8_lookup4_algorithm.h */
 /* begin file src/generic/stage1/json_structural_indexer.h */
@@ -10221,7 +10231,7 @@ using utf8_validation::utf8_checker;
 
 /* begin file src/generic/stage1/buf_block_reader.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 
 // Walks through a buffer in block-sized increments, loading the last part with spaces
@@ -10310,12 +10320,12 @@ simdjson_really_inline void buf_block_reader<STEP_SIZE>::advance() {
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 /* end file src/generic/stage1/buf_block_reader.h */
 /* begin file src/generic/stage1/json_string_scanner.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 namespace stage1 {
 
@@ -10457,12 +10467,12 @@ simdjson_really_inline error_code json_string_scanner::finish(bool streaming) {
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 /* end file src/generic/stage1/json_string_scanner.h */
 /* begin file src/generic/stage1/json_scanner.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 namespace stage1 {
 
@@ -10607,7 +10617,7 @@ simdjson_really_inline error_code json_scanner::finish(bool streaming) {
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 /* end file src/generic/stage1/json_scanner.h */
 /* begin file src/generic/stage1/json_minifier.h */
@@ -10617,7 +10627,7 @@ simdjson_really_inline error_code json_scanner::finish(bool streaming) {
 // "simdjson/stage1.h" (this simplifies amalgation)
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 namespace stage1 {
 
@@ -10703,12 +10713,12 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 /* end file src/generic/stage1/json_minifier.h */
 /* begin file src/generic/stage1/find_next_document_index.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 
 /**
@@ -10778,12 +10788,12 @@ simdjson_really_inline uint32_t find_next_document_index(dom_parser_implementati
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 /* end file src/generic/stage1/find_next_document_index.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 namespace stage1 {
 
@@ -11001,12 +11011,12 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 /* end file src/generic/stage1/json_structural_indexer.h */
 /* begin file src/generic/stage1/utf8_validator.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 namespace stage1 {
 
@@ -11037,7 +11047,7 @@ bool generic_validate_utf8(const char * input, size_t length) {
 
 } // namespace stage1
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 /* end file src/generic/stage1/utf8_validator.h */
 
@@ -11050,7 +11060,7 @@ bool generic_validate_utf8(const char * input, size_t length) {
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 namespace logger {
 
@@ -11133,12 +11143,12 @@ namespace logger {
 
 } // namespace logger
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 /* end file src/generic/stage2/logger.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 namespace stage2 {
 
@@ -11450,12 +11460,12 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::visit_prim
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 /* end file src/generic/stage2/json_iterator.h */
 /* begin file src/generic/stage2/tape_writer.h */
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 namespace stage2 {
 
@@ -11557,12 +11567,12 @@ simdjson_really_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val,
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 /* end file src/generic/stage2/tape_writer.h */
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 namespace stage2 {
 
@@ -11840,7 +11850,7 @@ simdjson_really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 
 } // namespace stage2
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 /* end file src/generic/stage2/tape_builder.h */
 
@@ -11849,7 +11859,7 @@ simdjson_really_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 //
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 namespace stage1 {
 
@@ -11889,12 +11899,12 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   return stage2(_doc);
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 
 /* begin file include/simdjson/westmere/end.h */
 SIMDJSON_UNTARGET_REGION
-#undef SIMDJSON_IMPLEMENTATION
+#undef westmere
 /* end file include/simdjson/westmere/end.h */
 /* end file src/westmere/dom_parser_implementation.cpp */
 #endif

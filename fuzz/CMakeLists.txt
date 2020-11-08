@@ -1,7 +1,16 @@
 option(ENABLE_FUZZING "enable building the fuzzers" ON)
 
-if(ENABLE_FUZZING)
 
+
+if(ENABLE_FUZZING)
+    option(FUZZERS_USE_AMALGAMATED_SOURCE "fuzzer should use the amalgamated source" OFF)
+
+    if(FUZZERS_USE_AMALGAMATED_SOURCE)
+    #use the single header version, so it is easier to follow the source in the IDE
+    add_library(simdjson-amalgamized STATIC ../singleheader/simdjson.cpp ../singleheader/simdjson.h)
+    target_include_directories(simdjson-amalgamized PUBLIC ../singleheader/)
+    target_link_libraries(simdjson-amalgamized INTERFACE simdjson-internal-flags)
+endif()
   # First attempt at a fuzzer, using libFuzzer.
   #
   # compile like this:
@@ -31,11 +40,13 @@ if(ENABLE_FUZZING)
   # Fuzzer build flags and libraries
   add_library(simdjson-fuzzer INTERFACE)
   if (SIMDJSON_FUZZ_LINKMAIN)
-    target_link_libraries(simdjson-fuzzer INTERFACE simdjson-source)
     target_sources(simdjson-fuzzer INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/main.cpp)
-  else ()
-    target_link_libraries(simdjson-fuzzer INTERFACE simdjson)
   endif ()
+  if (FUZZERS_USE_AMALGAMATED_SOURCE)
+      target_link_libraries(simdjson-fuzzer INTERFACE simdjson-amalgamized)
+  else()
+      target_link_libraries(simdjson-fuzzer INTERFACE simdjson-source)
+  endif()
   target_link_libraries(simdjson-fuzzer INTERFACE simdjson-internal-flags)
   target_link_libraries(simdjson-fuzzer INTERFACE ${SIMDJSON_FUZZ_LDFLAGS})
 
