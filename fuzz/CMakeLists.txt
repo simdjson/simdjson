@@ -7,7 +7,7 @@ if(ENABLE_FUZZING)
 
     if(FUZZERS_USE_AMALGAMATED_SOURCE)
     #use the single header version, so it is easier to follow the source in the IDE
-    add_library(simdjson-amalgamized STATIC ../singleheader/simdjson.cpp)
+    add_library(simdjson-amalgamized STATIC ../singleheader/simdjson.cpp ../singleheader/simdjson.h)
     target_include_directories(simdjson-amalgamized PUBLIC ../singleheader/)
     target_link_libraries(simdjson-amalgamized INTERFACE simdjson-internal-flags)
 endif()
