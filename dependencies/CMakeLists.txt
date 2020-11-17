@@ -14,13 +14,15 @@ endif()
 # This prevents variables declared with set() from unnecessarily escaping and
 # should not be called more than once
 function(competition_scope_)
-  # Boost JSON is not compatible with some clang/libc++ configurations.
-  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    import_dependency(boostjson CPPAlliance/json a0983f7)
-    add_library(boostjson STATIC "${boostjson_SOURCE_DIR}/src/src.cpp")
-    target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
-    target_include_directories(boostjson SYSTEM PUBLIC
-            "${boostjson_SOURCE_DIR}/include")
+  # boost json in standalone mode requires C++17 string_view
+  include(CheckCXXSourceCompiles)
+  check_cxx_source_compiles("#include <string_view>\n#if __cpp_lib_string_view < 201606\n#error no string view support\n#endif\nint main(){}" USE_BOOST_JSON)
+  if(USE_BOOST_JSON)
+  import_dependency(boostjson boostorg/json ee8d72d8502b409b5561200299cad30ccdb91415)
+  add_library(boostjson STATIC "${boostjson_SOURCE_DIR}/src/src.cpp")
+  target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
+  target_include_directories(boostjson SYSTEM PUBLIC
+          "${boostjson_SOURCE_DIR}/include")
   endif()
 
   import_dependency(cjson DaveGamble/cJSON c69134d)
@@ -87,8 +89,9 @@ function(competition_scope_)
 
   add_library(competition-core INTERFACE)
   target_link_libraries(competition-core INTERFACE nlohmann_json rapidjson sajson cjson jsmn yyjson)
-  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_link_libraries(competition-core INTERFACE boostjson)
+  if(USE_BOOST_JSON)
+     target_compile_definitions(boostjson INTERFACE HAS_BOOST_JSON)
+     target_link_libraries(competition-core INTERFACE boostjson)
   endif()
 
   add_library(competition-all INTERFACE)

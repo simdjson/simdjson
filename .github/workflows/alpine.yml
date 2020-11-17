@@ -1,7 +1,13 @@
 name: Alpine Linux
-'on':
-  - push
-  - pull_request
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
 jobs:
   ubuntu-build:
     runs-on: ubuntu-latest

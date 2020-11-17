@@ -183,6 +183,27 @@ steps:
     - ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
 ---
 kind: pipeline
+name: cpp20-clang11-libcpp
+platform: { os: linux, arch: amd64 }
+steps:
+- name: Build and Test
+  image: pauldreik/llvm-11
+  user: root
+  environment:
+    CC: clang-11
+    CXX: clang++-11
+    CMAKE_FLAGS: -GNinja
+    BUILD_FLAGS:
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CXXFLAGS: -std=c++20 -stdlib=libc++
+  commands:
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS
+---
+kind: pipeline
 name: arm64-gcc8
 platform: { os: linux, arch: arm64 }
 steps:

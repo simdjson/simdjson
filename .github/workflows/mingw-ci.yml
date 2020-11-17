@@ -1,6 +1,12 @@
 name: MinGW32-CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 
 # Important: scoop will either install 32-bit GCC or 64-bit GCC, not both.
 

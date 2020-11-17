@@ -27,13 +27,7 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-#if defined(__clang__)
-// Under some clang/libc++ configurations, boost json fails
-// to build.
-#define DISABLE_BOOST_JSON
-#endif
-
-#ifndef DISABLE_BOOST_JSON
+#ifdef HAS_BOOST_JSON
 #include <boost/json/parser.hpp>
 #include <boost/json/monotonic_resource.hpp>
 #endif
@@ -185,7 +179,7 @@ bool bench(const char *filename, bool verbose, bool just_data,
             std::memcpy(buffer, p.data(), p.size()) &&
                 (buffer[p.size()] = '\0'),
             repeat, volume, !just_data);
-#ifndef DISABLE_BOOST_JSON
+#ifdef HAS_BOOST_JSON
   {
     const boost::json::string_view sv(p.data(), p.size());
     boost::json::parser p;
