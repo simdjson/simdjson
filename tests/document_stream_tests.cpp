@@ -69,6 +69,22 @@ namespace document_stream_tests {
     }
     return true;
   }
+
+  bool test_naked_iterators() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto json = R"([1,23]  {"key":"value}  )"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS( parser.parse_many(json).get(stream) );
+    size_t count = 0;
+    // We do not touch the document, intentionally.
+    for(auto i = stream.begin(); i != stream.end(); ++i) {
+      if(count > 10) { break; }
+      count++;
+    }
+    return count == 2;
+  }
+
   bool single_document() {
     std::cout << "Running " << __func__ << std::endl;
     simdjson::dom::parser parser;
@@ -310,7 +326,8 @@ namespace document_stream_tests {
   }
 
   bool run() {
-    return test_current_index()  &&
+    return test_naked_iterators() &&
+           test_current_index()  &&
            single_document() &&
 #if SIMDJSON_EXCEPTIONS
            single_document_exceptions() &&
