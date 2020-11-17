@@ -43,6 +43,7 @@ ALLCHEADERS = ["simdjson.h"]
 
 found_includes = []
 
+current_implementation=''
 
 def doinclude(fid, file, line):
     p = os.path.join(AMALGAMATE_INCLUDE_PATH, file)
@@ -75,12 +76,15 @@ def doinclude(fid, file, line):
 
 
 def dofile(fid, prepath, filename):
+    global current_implementation
     # print(f"// dofile: invoked with prepath={prepath}, filename={filename}",file=fid)
     file = os.path.join(prepath, filename)
     RELFILE = os.path.relpath(file, PROJECTPATH)
     # Last lines are always ignored. Files should end by an empty lines.
     print(f"/* begin file {RELFILE} */", file=fid)
     includepattern = re.compile('^#include "(.*)"')
+    redefines_simdjson_implementation = re.compile('^#define SIMDJSON_IMPLEMENTATION (.*)')
+    uses_simdjson_implementation = re.compile('SIMDJSON_IMPLEMENTATION([^_a-zA-Z0-9]|$)')
     with open(file, 'r') as fid2:
         for line in fid2:
             line = line.rstrip('\n')
@@ -97,8 +101,14 @@ def dofile(fid, prepath, filename):
                 # we explicitly include simdjson headers, one time each (unless they are generic, in which case multiple times is fine)
                 doinclude(fid, includedfile, line)
             else:
-                # Otherwise we simply copy the line
-                print(line, file=fid)
+                # does it contain a redefinition of SIMDJSON_IMPLEMENTATION ?
+                s=redefines_simdjson_implementation.search(line)
+                if s:
+                    current_implementation=s.group(1)
+                    print(f"// redefining SIMDJSON_IMPLEMENTATION to \"{current_implementation}\"\n// {line}", file=fid)
+                else:
+                    # copy the line, with SIMDJSON_IMPLEMENTATION replace to what it is currently defined to
+                    print(uses_simdjson_implementation.sub(current_implementation+"\\1",line), file=fid)
     print(f"/* end file {RELFILE} */", file=fid)
 
 
