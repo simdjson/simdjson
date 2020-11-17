@@ -105,6 +105,14 @@ struct FuzzData {
     return {};
   }
 
+  // consumes the rest of the data as a string view
+  std::string_view remainder_as_stringview() {
+    std::string_view ret{chardata(),Size};
+    Data+=Size;
+    Size=0;
+    return ret;
+  }
+
   // split the remainder of the data into string views,
   std::vector<std::string_view> splitIntoStrings() {
     std::vector<std::string_view> ret;
