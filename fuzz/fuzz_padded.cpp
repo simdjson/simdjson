@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <fstream>
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
   FuzzData fd(Data,Size);
@@ -35,7 +36,18 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     simdjson::padded_string p(s1);
  simdjson_unused auto sv=   static_cast<std::string_view>(p);
   }break;
-
+case 5: {
+    //load from file.
+    const std::string filename="/dev/shm/fuzz_padded.tmp";
+    {
+    std::ofstream file(filename);
+    assert(file);
+    const long ssize=static_cast<long>(fd.Size);
+    file.write(fd.chardata(),ssize);
+    assert(file.tellp()==ssize);
+    }
+    simdjson_unused auto data=simdjson::padded_string::load(filename);
+  }break;
    default:
     ;
   }
