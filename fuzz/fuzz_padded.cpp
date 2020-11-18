@@ -21,7 +21,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     simdjson_unused simdjson::padded_string p2(s2);
     p1=std::move(p2);
   }break;
-  default:
+  case 2: {
+    // swap
+    simdjson_unused simdjson::padded_string p1(s1);
+    simdjson_unused simdjson::padded_string p2(s2);
+    p1.swap(p2);
+  }break;
+   default:
     ;
   }
   return  0;
