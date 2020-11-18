@@ -27,6 +27,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     simdjson_unused simdjson::padded_string p2(s2);
     p1.swap(p2);
   }break;
+  case 3: {
+    simdjson_unused simdjson::padded_string p(s1);
+    p.data();
+  }break;
+  case 4: {
+    simdjson::padded_string p(s1);
+ simdjson_unused auto sv=   static_cast<std::string_view>(p);
+  }break;
+
    default:
     ;
   }
