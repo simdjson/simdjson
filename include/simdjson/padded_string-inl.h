@@ -24,6 +24,13 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
     // overflow
     return nullptr;
   }
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+  // avoid getting out of memory
+  if (totalpaddedlength>(1UL<<20)) {
+    return nullptr;
+  }
+#endif
+
   char *padded_buffer = new (std::nothrow) char[totalpaddedlength];
   if (padded_buffer == nullptr) {
     return nullptr;
