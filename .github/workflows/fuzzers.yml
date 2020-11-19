@@ -15,9 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # fuzzers that change behaviour with SIMDJSON_FORCE_IMPLEMENTATION
-      defaultimplfuzzers: atpointer dump dump_raw_tape element minify padded parser print_json
+      defaultimplfuzzers: atpointer dump dump_raw_tape element minify parser print_json
       # fuzzers that loop over the implementations themselves, or don't need to switch.
-      implfuzzers: implementations minifyimpl ondemand utf8
+      implfuzzers: implementations minifyimpl ondemand padded utf8
       implementations: haswell westmere fallback
       UBSAN_OPTIONS: halt_on_error=1
       MAXLEN: -max_len=4000
