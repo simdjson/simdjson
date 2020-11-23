@@ -354,9 +354,12 @@ When you use the code this way, it is your responsibility to check for error bef
 result: if there is an error, the result value will not be valid and using it will caused undefined
 behavior.
 
-We can write a "quick start" example where we attempt to parse a file and access some data, without triggering exceptions:
 
-```
+We can write a "quick start" example where we attempt to parse a file and access some data, without triggering exceptions. It loads the file, selects value
+corresponding to key "search_metadata" which expected to be an object, and then
+it selects the key "count" within that object.
+
+```C++
 #include "simdjson.h"
 
 int main(void) {
@@ -372,6 +375,28 @@ int main(void) {
     return EXIT_FAILURE;
   }
   std::cout << res << " results." << std::endl;
+}
+```
+
+The following is a similar example where one first accesses
+an array matching the "statuses" key. The result is expected to be
+an array. One select the first value in the array. The result
+is expected to be an object. One then selects the vallue corresponding
+to the key "id". We expec the value to be a non-negative integer.
+
+```
+#include "simdjson.h"
+
+int main(void) {
+  simdjson::dom::parser parser;
+  simdjson::dom::element tweets;
+  auto error = parser.load("twitter.json").get(tweets);
+  if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  uint64_t identifier;
+  error = tweets["statuses"].at(0)["id"].get(identifier);
+  if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  std::cout << identifier << std::endl;
+  return EXIT_SUCCESS;
 }
 ```
 
