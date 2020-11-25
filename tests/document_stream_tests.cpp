@@ -72,7 +72,7 @@ namespace document_stream_tests {
 
   bool test_naked_iterators() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([1,23]  {"key":"value}  )"_padded;
+    auto json = R"([1,23] "lone string" {"key":"unfinished value}  )"_padded;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS( parser.parse_many(json).get(stream) );
@@ -82,7 +82,7 @@ namespace document_stream_tests {
       if(count > 10) { break; }
       count++;
     }
-    return count == 2;
+    return count == 1;
   }
 
   bool single_document() {

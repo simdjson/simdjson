@@ -124,7 +124,7 @@ simdjson_really_inline simdjson_result<element> document_stream::iterator::opera
 simdjson_really_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {
   stream.next();
   // If that was the last document, we're finished.
-  if (stream.error == EMPTY) { finished = true; }
+  if (stream.error) { finished = true; }
   return *this;
 }
 
