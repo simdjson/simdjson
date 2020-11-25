@@ -355,8 +355,25 @@ result: if there is an error, the result value will not be valid and using it wi
 behavior.
 
 
-We can write a "quick start" example where we attempt to parse a file and access some data, without triggering exceptions. It loads the file, selects value
-corresponding to key "search_metadata" which expected to be an object, and then
+
+We can write a "quick start" example where we attempt to parse the following JSON file and access some data, without triggering exceptions:
+```JavaScript
+{
+  "statuses": [
+    {
+      "id": 505874924095815700
+    },
+    {
+      "id": 505874922023837700
+    }
+  ],
+  "search_metadata": {
+    "count": 100
+  }
+}
+```
+
+Our program loads the file, selects value corresponding to key "search_metadata" which expected to be an object, and then
 it selects the key "count" within that object.
 
 ```C++
@@ -364,7 +381,6 @@ it selects the key "count" within that object.
 
 int main(void) {
   simdjson::dom::parser parser;
-
   simdjson::dom::element tweets;
   auto error = parser.load("twitter.json").get(tweets);
   if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
@@ -378,11 +394,15 @@ int main(void) {
 }
 ```
 
-The following is a similar example where one first accesses
-an array matching the "statuses" key. The result is expected to be
-an array. One select the first value in the array. The result
-is expected to be an object. One then selects the vallue corresponding
-to the key "id". We expec the value to be a non-negative integer.
+
+The following is a similar example where one wants to get the id of the first tweet without
+triggering exceptions. To do this, we use `["statuses"].at(0)["id"]`. We break that expression down:
+
+- Get the list of tweets (the `"statuses"` key of the document) using `["statuses"]`). The result is expected to be an array.
+- Get the first tweet using `.at(0)`. The result is expected to be an object.
+- Get the id of the tweet using ["id"]. We expect the value to be a non-negative integer.
+
+Observe how we use the `at` method when querying an index into an array, and not the bracket operator.
 
 ```
 #include "simdjson.h"
@@ -530,6 +550,21 @@ dom::element doc = parser.parse(json); // Throws an exception if there was an er
 
 When used this way, a `simdjson_error` exception will be thrown if an error occurs, preventing the
 program from continuing if there was an error.
+
+
+
+If one is willing to trigger exceptions, it is possible to write simpler code:
+
+```
+#include "simdjson.h"
+
+int main(void) {
+  simdjson::dom::parser parser;
+  simdjson::dom::element tweets = parser.load("twitter.json");
+  std::cout << "ID: " << tweets["statuses"].at(0)["id"] << std::endl;
+  return EXIT_SUCCESS;
+}
+```
 
 Tree Walking and JSON Element Types
 -----------------------------------
