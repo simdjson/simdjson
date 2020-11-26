@@ -21,6 +21,11 @@ class element;
 
 /** The default batch size for parser.parse_many() and parser.load_many() */
 static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
+/**
+ * Some adversary might try to set the batch size to 0 or 1, which might cause problems.
+ * We set a minimum of 1KB.
+ */
+static constexpr size_t MINIMAL_BATCH_SIZE = 1024;
 
 /**
  * A persistent document parser.
@@ -249,7 +254,10 @@ public:
    * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
    *                   spot is cache-related: small enough to fit in cache, yet big enough to
    *                   parse as many documents as possible in one tight loop.
-   *                   Defaults to 1MB (as simdjson::dom::DEFAULT_BATCH_SIZE), which has been a reasonable sweet spot in our tests.
+   *                   Defaults to 1MB (as simdjson::dom::DEFAULT_BATCH_SIZE), which has been a reasonable sweet
+   *                   spot in our tests.
+   *                   If you set the batch_size to a value smaller than simdjson::dom::MINIMAL_BATCH_SIZE
+   *                   (currently 1024B), it will be replaced by simdjson::dom::MINIMAL_BATCH_SIZE.
    * @return The stream, or an error. An empty input will yield 0 documents rather than an EMPTY error. Errors:
    *         - IO_ERROR if there was an error opening or reading the file.
    *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails.
