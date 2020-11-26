@@ -23,7 +23,8 @@ class element;
 static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
 /**
  * Some adversary might try to set the batch size to 0 or 1, which might cause problems.
- * We set a minimum of 1KB.
+ * We set a minimum of 32B since anything else is highly likely to be an error. In practice,
+ * most users will want a much larger batch size.
  */
 static constexpr size_t MINIMAL_BATCH_SIZE = 32;
 
