@@ -122,9 +122,12 @@ simdjson_really_inline simdjson_result<element> document_stream::iterator::opera
 }
 
 simdjson_really_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {
+  // The next line is to guard us against a user that would not call "operator*()" first.
+  if (stream.error) { finished = true; return *this; }
+  // At this point, we know that we are not in an error condition, so we can proceed.
   stream.next();
   // If that was the last document, we're finished.
-  if (stream.error) { finished = true; }
+  if (stream.error == EMPTY) { finished = true; }
   return *this;
 }
 
