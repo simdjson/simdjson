@@ -91,6 +91,16 @@ namespace document_stream_tests {
     return !error;
   }
 
+  bool issue1308() {
+    std::cout << "Running " << __func__ << std::endl;
+    simdjson::dom::parser parser;
+    simdjson::padded_string input = decode_base64("bcdtW0E=");
+    print_hex(input);
+    simdjson::dom::document_stream stream;
+    auto error = parser.parse_many(input).get(stream);
+    return !error;
+  }
+
   bool issue1309() {
     std::cout << "Running " << __func__ << std::endl;
     simdjson::dom::parser parser;
@@ -402,6 +412,7 @@ namespace document_stream_tests {
 
   bool run() {
     return issue1307() &&
+           issue1308() &&
            issue1309() &&
            issue1310() &&
            issue1311() &&
