@@ -135,10 +135,16 @@ namespace document_stream_tests {
 
   bool small_window() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"({"error":[],"result":{"token":"xxx"}}{"error":[],"result":{"token":"xxx"}})"_padded;
+    char input[2049];
+    input[0] = '[';
+    for(size_t i = 1; i < 1024; i++) {
+      input[2*i+1]= '1';
+      input[2*i+2]= i < 1023 ? ',' : ']';
+    }
+    auto json = simdjson::padded_string(input,2049);
     simdjson::dom::parser parser;
     size_t count = 0;
-    size_t window_size = 10; // deliberately too small
+    size_t window_size = 1024; // deliberately too small
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS( parser.parse_many(json, window_size).get(stream) );
     for (auto doc : stream) {
@@ -158,11 +164,17 @@ namespace document_stream_tests {
 #ifdef SIMDJSON_THREADS_ENABLED
   bool threaded_disabled() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"({"error":[],"result":{"token":"xxx"}}{"error":[],"result":{"token":"xxx"}})"_padded;
+    char input[2049];
+    input[0] = '[';
+    for(size_t i = 1; i < 1024; i++) {
+      input[2*i+1]= '1';
+      input[2*i+2]= i < 1023 ? ',' : ']';
+    }
+    auto json = simdjson::padded_string(input,2049);
     simdjson::dom::parser parser;
     parser.threaded = false;
     size_t count = 0;
-    size_t window_size = 10; // deliberately too small
+    size_t window_size = 1024; // deliberately too small
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS( parser.parse_many(json, window_size).get(stream) );
     for (auto doc : stream) {
