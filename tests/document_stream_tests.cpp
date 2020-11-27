@@ -88,11 +88,14 @@ namespace document_stream_tests {
     for(size_t window = 0; window <= 100; window++) {
       simdjson::dom::parser parser;
       simdjson::dom::document_stream stream;
-      auto error = parser.parse_many(input, window).get(stream);
-      if(!error) {
-        std::cout << "Expected an error but got " << error << std::endl;
-        std::cout << "Window = " << window << std::endl;
-        return false;
+      ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+      for(auto doc: stream) {
+        auto error = doc.error();
+        if(!error) {
+          std::cout << "Expected an error but got " << error << std::endl;
+          std::cout << "Window = " << window << std::endl;
+          return false;
+        }
       }
     }
     return true;
@@ -105,11 +108,14 @@ namespace document_stream_tests {
     for(size_t window = 0; window <= 100; window++) {
       simdjson::dom::parser parser;
       simdjson::dom::document_stream stream;
-      auto error = parser.parse_many(input, window).get(stream);
-      if(!error) {
-        std::cout << "Expected an error but got " << error << std::endl;
-        std::cout << "Window = " << window << std::endl;
-        return false;
+      ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+      for(auto doc: stream) {
+        auto error = doc.error();
+        if(!error) {
+          std::cout << "Expected an error but got " << error << std::endl;
+          std::cout << "Window = " << window << std::endl;
+          return false;
+        }
       }
     }
     return true;
@@ -122,11 +128,14 @@ namespace document_stream_tests {
     for(size_t window = 0; window <= 100; window++) {
       simdjson::dom::parser parser;
       simdjson::dom::document_stream stream;
-      auto error = parser.parse_many(input, window).get(stream);
-      if(!error) {
-        std::cout << "Expected an error but got " << error << std::endl;
-        std::cout << "Window = " << window << std::endl;
-        return false;
+      ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+      for(auto doc: stream) {
+        auto error = doc.error();
+        if(!error) {
+          std::cout << "Expected an error but got " << error << std::endl;
+          std::cout << "Window = " << window << std::endl;
+          return false;
+        }
       }
     }
     return true;
@@ -139,12 +148,16 @@ namespace document_stream_tests {
     for(size_t window = 0; window <= 100; window++) {
       simdjson::dom::parser parser;
       simdjson::dom::document_stream stream;
-      auto error = parser.parse_many(input, window).get(stream);
-      if(!error) {
-        std::cout << "Expected an error but got " << error << std::endl;
-        std::cout << "Window = " << window << std::endl;
-        return false;
+      ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+      for(auto doc: stream) {
+        auto error = doc.error();
+        if(!error) {
+          std::cout << "Expected an error but got " << error << std::endl;
+          std::cout << "Window = " << window << std::endl;
+          return false;
+        }
       }
+
     }
     return true;
   }
@@ -156,11 +169,14 @@ namespace document_stream_tests {
     for(size_t window = 0; window <= 100; window++) {
       simdjson::dom::parser parser;
       simdjson::dom::document_stream stream;
-      auto error = parser.parse_many(input).get(stream);
-      if(!error) {
-        std::cout << "Expected an error but got " << error << std::endl;
-        std::cout << "Window = " << window << std::endl;
-        return false;
+      ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+      for(auto doc: stream) {
+        auto error = doc.error();
+        if(!error) {
+          std::cout << "Expected an error but got " << error << std::endl;
+          std::cout << "Window = " << window << std::endl;
+          return false;
+        }
       }
     }
     return true;
