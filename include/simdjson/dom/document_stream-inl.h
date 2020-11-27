@@ -73,7 +73,7 @@ simdjson_really_inline document_stream::document_stream(
   : parser{&_parser},
     buf{_buf},
     len{_len},
-    batch_size{_batch_size},
+    batch_size{_batch_size <= MINIMAL_BATCH_SIZE ? MINIMAL_BATCH_SIZE : _batch_size},
     error{SUCCESS}
 #ifdef SIMDJSON_THREADS_ENABLED
     , use_thread(_parser.threaded) // we need to make a copy because _parser.threaded can change

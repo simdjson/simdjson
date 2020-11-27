@@ -83,6 +83,7 @@ inline simdjson_result<document_stream> parser::load_many(const std::string &pat
   size_t len;
   auto _error = read_file(path).get(len);
   if (_error) { return _error; }
+  if(batch_size < MINIMAL_BATCH_SIZE) { batch_size = MINIMAL_BATCH_SIZE; }
   return document_stream(*this, (const uint8_t*)loaded_bytes.get(), len, batch_size);
 }
 
@@ -112,6 +113,7 @@ simdjson_really_inline simdjson_result<element> parser::parse(const padded_strin
 }
 
 inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+  if(batch_size < MINIMAL_BATCH_SIZE) { batch_size = MINIMAL_BATCH_SIZE; }
   return document_stream(*this, buf, len, batch_size);
 }
 inline simdjson_result<document_stream> parser::parse_many(const char *buf, size_t len, size_t batch_size) noexcept {
