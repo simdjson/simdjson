@@ -5,6 +5,56 @@
 #include "simdjson.h"
 #include "test_macros.h"
 
+void print_hex(const simdjson::padded_string& s) {
+  printf("hex  : ");
+  for(size_t i = 0; i < s.size(); i++) { printf("%02X ", uint8_t(s.data()[i])); }
+  printf("\n");
+  printf("ascii: ");
+  for(size_t i = 0; i < s.size(); i++) {
+    auto v = uint8_t(s.data()[i]);
+    if((v <= 32) || (v >= 127)) {
+      printf(" __");
+    } else {
+      printf("%c__", v);
+    }
+  }
+  printf("\n");
+}
+
+int char_to_byte(char character) {
+  if (('A' <= character && character <= 'Z')) {
+    return (character - 'A');
+  } else if (('a' <= character && character <= 'z')) {
+    return 26 + (character - 'a');
+  } else if (('0' <= character && character <= '9')) {
+    return 52 + (character - '0');
+  } else if (character == '+') {
+    return 62;
+  } else if (character == '/') {
+    return 63;
+  } else if (character == '=') {
+    return 0;
+  }
+  return -1;
+}
+
+std::string decode_base64(const std::string &src) {
+  std::vector<uint8_t> answer;
+  for (size_t i = 0; i < src.size(); i += 4) {
+    int three_bytes = char_to_byte(src[i]) << 18 |
+                      char_to_byte(src[i + 1]) << 12 |
+                      char_to_byte(src[i + 2]) << 6 | char_to_byte(src[i + 3]);
+    if (three_bytes < 0) {
+      std::cerr << "invalid base64" << std::endl;
+      abort();
+    }
+    answer.push_back(uint8_t((three_bytes & 0x00FF0000) >> 16));
+    answer.push_back(uint8_t((three_bytes & 0x0000FF00) >> 8));
+    answer.push_back(uint8_t(three_bytes & 0x000000FF));
+  }
+  return std::string(answer.begin(), answer.end());
+}
+
 
 std::string trim(const std::string s) {
 	auto start = s.begin();
@@ -30,6 +80,108 @@ namespace document_stream_tests {
       simdjson::padded_string str("{}",2);
       simdjson::dom::document_stream s1 = parse_many_stream_return(parser, str);
   }
+
+  bool issue1307() {
+    std::cout << "Running " << __func__ << std::endl;
+    const simdjson::padded_string input = decode_base64("AgAMACA=");
+    print_hex(input);
+    for(size_t window = 0; window <= 100; window++) {
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+      for(auto doc: stream) {
+        auto error = doc.error();
+        if(!error) {
+          std::cout << "Expected an error but got " << error << std::endl;
+          std::cout << "Window = " << window << std::endl;
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  bool issue1308() {
+    std::cout << "Running " << __func__ << std::endl;
+    const simdjson::padded_string input = decode_base64("bcdtW0E=");
+    print_hex(input);
+    for(size_t window = 0; window <= 100; window++) {
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+      for(auto doc: stream) {
+        auto error = doc.error();
+        if(!error) {
+          std::cout << "Expected an error but got " << error << std::endl;
+          std::cout << "Window = " << window << std::endl;
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  bool issue1309() {
+    std::cout << "Running " << __func__ << std::endl;
+    const simdjson::padded_string input = decode_base64("CQA5OAo5CgoKCiIiXyIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiXyIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiLb29vb29vb29vb29vb29vz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz29vb29vb29vbIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiYiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiI=");
+    print_hex(input);
+    for(size_t window = 0; window <= 100; window++) {
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+      for(auto doc: stream) {
+        auto error = doc.error();
+        if(!error) {
+          std::cout << "Expected an error but got " << error << std::endl;
+          std::cout << "Window = " << window << std::endl;
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  bool issue1310() {
+    std::cout << "Running " << __func__ << std::endl;
+    const simdjson::padded_string input = decode_base64("AwA5ICIg");
+    print_hex(input);
+    for(size_t window = 0; window <= 100; window++) {
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+      for(auto doc: stream) {
+        auto error = doc.error();
+        if(!error) {
+          std::cout << "Expected an error but got " << error << std::endl;
+          std::cout << "Window = " << window << std::endl;
+          return false;
+        }
+      }
+
+    }
+    return true;
+  }
+
+  bool issue1311() {
+    std::cout << "Running " << __func__ << std::endl;
+    const simdjson::padded_string input = decode_base64("NSMwW1swDPw=");
+    print_hex(input);
+    for(size_t window = 0; window <= 100; window++) {
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+      for(auto doc: stream) {
+        auto error = doc.error();
+        if(!error) {
+          std::cout << "Expected an error but got " << error << std::endl;
+          std::cout << "Window = " << window << std::endl;
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   bool test_current_index() {
     std::cout << "Running " << __func__ << std::endl;
     std::string base1("1         ");// one JSON!
@@ -338,12 +490,17 @@ namespace document_stream_tests {
   }
 
   bool run() {
-    return test_naked_iterators() &&
+    return issue1307() &&
+           issue1308() &&
+           issue1309() &&
+           issue1310() &&
+           issue1311() &&
+           test_naked_iterators() &&
            test_current_index()  &&
            single_document() &&
 #if SIMDJSON_EXCEPTIONS
-           single_document_exceptions() &&
            issue1133() &&
+           single_document_exceptions() &&
 #endif
 #ifdef SIMDJSON_THREADS_ENABLED
            threaded_disabled() &&

@@ -161,7 +161,6 @@ simdjson_really_inline bool document_stream::iterator::operator!=(const document
 
 inline void document_stream::start() noexcept {
   if (error) { return; }
-
   error = parser->ensure_capacity(batch_size);
   if (error) { return; }
 
