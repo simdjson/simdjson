@@ -116,18 +116,39 @@ simdjson_really_inline document_stream::iterator::iterator(document_stream& _str
 }
 
 simdjson_really_inline simdjson_result<element> document_stream::iterator::operator*() noexcept {
-  // Once we have yielded any errors, we're finished.
-  if (stream.error) { finished = true; return stream.error; }
+  // Note that in case of error, we do not yet mark
+  // the iterator as "finished": this detection is done
+  // in the operator++ function since it is possible
+  // to call operator++ repeatedly while omitting
+  // calls to operator*.
+  if (stream.error) { return stream.error; }
   return stream.parser->doc.root();
 }
 
 simdjson_really_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {
-  // The next line is to guard us against a user that would not call "operator*()" first.
-  if (stream.error) { finished = true; return *this; }
-  // At this point, we know that we are not in an error condition, so we can proceed.
+  // If there is an error, then we want the iterator
+  // to be finished, no matter what. (E.g., we do not
+  // keep generating documents with errors, or go beyond
+  // a document with errors.)
+  //
+  // Users do not have to call "operator*()" when they use operator++,
+  // so we need to end the stream in the operator++ function.
+  //
+  // Note that setting finished = true is essential otherwise
+  // we would enter an infinite loop.
+  if (stream.error) { finished = true; }
+  // Note that stream.error() is guarded against error conditions
+  // (it will immediately return if stream.error casts to false).
+  // In effect, this next function does nothing when (stream.error)
+  // is true (hence the risk of an infinite loop).
   stream.next();
   // If that was the last document, we're finished.
+  // It is the only type of error we do not want to appear
+  // in operator*.
   if (stream.error == EMPTY) { finished = true; }
+  // If we had any other kind of error (not EMPTY) then we want
+  // to pass it along to the operator* and we cannot mark the result
+  // as "finished" just yet.
   return *this;
 }
 
@@ -171,6 +192,7 @@ simdjson_really_inline std::string_view document_stream::iterator::source() cons
 
 
 inline void document_stream::next() noexcept {
+  // We always enter at once once in an error condition.
   if (error) { return; }
 
   // Load the next document from the batch
