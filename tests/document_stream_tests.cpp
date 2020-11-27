@@ -5,7 +5,7 @@
 #include "simdjson.h"
 #include "test_macros.h"
 
-void print_hex(simdjson::padded_string& s) {
+void print_hex(const simdjson::padded_string& s) {
   printf("hex  : ");
   for(size_t i = 0; i < s.size(); i++) { printf("%02X ", uint8_t(s.data()[i])); }
   printf("\n");
@@ -83,52 +83,87 @@ namespace document_stream_tests {
 
   bool issue1307() {
     std::cout << "Running " << __func__ << std::endl;
-    simdjson::dom::parser parser;
-    simdjson::padded_string input = decode_base64("AgAMACA=");
+    const simdjson::padded_string input = decode_base64("AgAMACA=");
     print_hex(input);
-    simdjson::dom::document_stream stream;
-    auto error = parser.parse_many(input).get(stream);
-    return !error;
+    for(size_t window = 0; window <= 100; window++) {
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      auto error = parser.parse_many(input, window).get(stream);
+      if(!error) {
+        std::cout << "Expected an error but got " << error << std::endl;
+        std::cout << "Window = " << window << std::endl;
+        return false;
+      }
+    }
+    return true;
   }
 
   bool issue1308() {
     std::cout << "Running " << __func__ << std::endl;
-    simdjson::dom::parser parser;
-    simdjson::padded_string input = decode_base64("bcdtW0E=");
+    const simdjson::padded_string input = decode_base64("bcdtW0E=");
     print_hex(input);
-    simdjson::dom::document_stream stream;
-    auto error = parser.parse_many(input).get(stream);
-    return !error;
+    for(size_t window = 0; window <= 100; window++) {
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      auto error = parser.parse_many(input, window).get(stream);
+      if(!error) {
+        std::cout << "Expected an error but got " << error << std::endl;
+        std::cout << "Window = " << window << std::endl;
+        return false;
+      }
+    }
+    return true;
   }
 
   bool issue1309() {
     std::cout << "Running " << __func__ << std::endl;
-    simdjson::dom::parser parser;
-    simdjson::padded_string input = decode_base64("CQA5OAo5CgoKCiIiXyIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiXyIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiLb29vb29vb29vb29vb29vz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz29vb29vb29vbIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiYiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiI=");
+    const simdjson::padded_string input = decode_base64("CQA5OAo5CgoKCiIiXyIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiXyIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiLb29vb29vb29vb29vb29vz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz29vb29vb29vbIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiYiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiI=");
     print_hex(input);
-    simdjson::dom::document_stream stream;
-    auto error = parser.parse_many(input).get(stream);
-    return !error;
+    for(size_t window = 0; window <= 100; window++) {
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      auto error = parser.parse_many(input, window).get(stream);
+      if(!error) {
+        std::cout << "Expected an error but got " << error << std::endl;
+        std::cout << "Window = " << window << std::endl;  
+        return false;
+      }
+    }
+    return true;
   }
 
   bool issue1310() {
     std::cout << "Running " << __func__ << std::endl;
-    simdjson::dom::parser parser;
-    simdjson::padded_string input = decode_base64("AwA5ICIg");
+    const simdjson::padded_string input = decode_base64("AwA5ICIg");
     print_hex(input);
-    simdjson::dom::document_stream stream;
-    auto error = parser.parse_many(input).get(stream);
-    return !error;
+    for(size_t window = 0; window <= 100; window++) {
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      auto error = parser.parse_many(input, window).get(stream);
+      if(!error) {
+        std::cout << "Expected an error but got " << error << std::endl;
+        std::cout << "Window = " << window << std::endl;  
+        return false; 
+      }       
+    }
+    return true;  
   }
 
   bool issue1311() {
     std::cout << "Running " << __func__ << std::endl;
-    simdjson::dom::parser parser;
-    simdjson::padded_string input = decode_base64("NSMwW1swDPw=");
+    const simdjson::padded_string input = decode_base64("NSMwW1swDPw=");
     print_hex(input);
-    simdjson::dom::document_stream stream;
-    auto error = parser.parse_many(input).get(stream);
-    return !error;
+    for(size_t window = 0; window <= 100; window++) {
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      auto error = parser.parse_many(input).get(stream);
+      if(!error) {
+        std::cout << "Expected an error but got " << error << std::endl;
+        std::cout << "Window = " << window << std::endl;  
+        return false; 
+      }       
+    }
+    return true;  
   }
 
   bool test_current_index() {
