@@ -99,6 +99,9 @@ simdjson_really_inline document_stream::document_stream() noexcept
 }
 
 simdjson_really_inline document_stream::~document_stream() noexcept {
+#ifdef SIMDJSON_THREADS_ENABLED
+  worker.reset();
+#endif
 }
 
 simdjson_really_inline document_stream::iterator document_stream::begin() noexcept {
