@@ -125,7 +125,7 @@ namespace document_stream_tests {
       auto error = parser.parse_many(input, window).get(stream);
       if(!error) {
         std::cout << "Expected an error but got " << error << std::endl;
-        std::cout << "Window = " << window << std::endl;  
+        std::cout << "Window = " << window << std::endl;
         return false;
       }
     }
@@ -142,11 +142,11 @@ namespace document_stream_tests {
       auto error = parser.parse_many(input, window).get(stream);
       if(!error) {
         std::cout << "Expected an error but got " << error << std::endl;
-        std::cout << "Window = " << window << std::endl;  
-        return false; 
-      }       
+        std::cout << "Window = " << window << std::endl;
+        return false;
+      }
     }
-    return true;  
+    return true;
   }
 
   bool issue1311() {
@@ -159,11 +159,11 @@ namespace document_stream_tests {
       auto error = parser.parse_many(input).get(stream);
       if(!error) {
         std::cout << "Expected an error but got " << error << std::endl;
-        std::cout << "Window = " << window << std::endl;  
-        return false; 
-      }       
+        std::cout << "Window = " << window << std::endl;
+        return false;
+      }
     }
-    return true;  
+    return true;
   }
 
   bool test_current_index() {
