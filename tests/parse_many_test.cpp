@@ -73,7 +73,6 @@ bool validate(const char *dirname) {
             auto error = simdjson::padded_string::load(fullpath).get(json);
             if (!error) {
                 simdjson::dom::parser parser;
-
                 ++how_many;
                 simdjson::dom::document_stream docs;
                 error = parser.parse_many(json).get(docs);

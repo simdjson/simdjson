@@ -26,9 +26,9 @@ public:
   // MUST ONLY BE CALLED ONCE PER ITERATION.
   simdjson_really_inline simdjson_result<field> operator*() noexcept;
   // Assumes it's being compared with the end. true if depth < iter->depth.
-  simdjson_really_inline bool operator==(const object_iterator &) noexcept;
+  simdjson_really_inline bool operator==(const object_iterator &) const noexcept;
   // Assumes it's being compared with the end. true if depth >= iter->depth.
-  simdjson_really_inline bool operator!=(const object_iterator &) noexcept;
+  simdjson_really_inline bool operator!=(const object_iterator &) const noexcept;
   // Checks for ']' and ','
   simdjson_really_inline object_iterator &operator++() noexcept;
 private:
@@ -61,9 +61,9 @@ public:
   // Reads key and value, yielding them to the user.
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field> operator*() noexcept; // MUST ONLY BE CALLED ONCE PER ITERATION.
   // Assumes it's being compared with the end. true if depth < iter->depth.
-  simdjson_really_inline bool operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &) noexcept;
+  simdjson_really_inline bool operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &) const noexcept;
   // Assumes it's being compared with the end. true if depth >= iter->depth.
-  simdjson_really_inline bool operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &) noexcept;
+  simdjson_really_inline bool operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &) const noexcept;
   // Checks for ']' and ','
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &operator++() noexcept;
 };
