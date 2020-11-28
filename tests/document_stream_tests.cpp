@@ -143,23 +143,29 @@ namespace document_stream_tests {
 
   bool issue1310() {
     std::cout << "Running " << __func__ << std::endl;
-    const simdjson::padded_string input = decode_base64("AwA5ICIg");
+    const simdjson::padded_string input = decode_base64("ICBbIDMsMV0gIiIiIiIiIiAgICAgICAgICAgICAgICAg");
     print_hex(input);
+    size_t error_count=0;
+    size_t no_error_count=0;
     for(size_t window = 0; window <= 100; window++) {
       simdjson::dom::parser parser;
       simdjson::dom::document_stream stream;
       ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
       for(auto doc: stream) {
-        auto error = doc.error();
-        if(!error) {
-          std::cout << "Expected an error but got " << error << std::endl;
-          std::cout << "Window = " << window << std::endl;
-          return false;
+        if(doc.error()) {
+          error_count++;
+        } else {
+          no_error_count++;
         }
       }
-
     }
-    return true;
+    // the same document should be error or not an error, independent of the
+    // window size. Exactly one of them should be zero.
+    if(error_count) {
+      return no_error_count==0;
+    } else {
+      return error_count==0;
+    }
   }
 
   bool issue1311() {
