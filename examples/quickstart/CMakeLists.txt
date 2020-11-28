@@ -57,4 +57,9 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   add_quickstart_test(quickstart_noexceptions quickstart_noexceptions.cpp "" true)
   add_quickstart_test(quickstart_noexceptions11 quickstart_noexceptions.cpp c++11 true)
   set_property( TEST quickstart_noexceptions APPEND PROPERTY LABELS acceptance compile )
+
+  add_quickstart_test(quickstart2_noexceptions quickstart2_noexceptions.cpp "" true)
+  add_quickstart_test(quickstart2_noexceptions11 quickstart2_noexceptions.cpp c++11 true)
+  set_property( TEST quickstart2_noexceptions APPEND PROPERTY LABELS acceptance compile )
+
 endif()
