@@ -214,22 +214,26 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
   parser.next_structural_index = 0;
+  // a valid JSON file cannot have zero structural indexes - we should have found something
+  if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
+    return EMPTY;
+  }
   if (simdjson_unlikely(parser.structural_indexes[parser.n_structural_indexes - 1] > len)) {
     return UNEXPECTED_ERROR;
   }
   if (partial) {
     // If we have an unclosed string, then the last structural
     // will be the quote and we want to make sure to omit it.
-    if(have_unclosed_string) { parser.n_structural_indexes--; }
+    if(have_unclosed_string) {
+      parser.n_structural_indexes--;
+      // a valid JSON file cannot have zero structural indexes - we should have found something
+      if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return CAPACITY; }
+    }
     auto new_structural_indexes = find_next_document_index(parser);
     if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
       return CAPACITY; // If the buffer is partial but the document is incomplete, it's too big to parse.
     }
     parser.n_structural_indexes = new_structural_indexes;
-  }
-  // a valid JSON file cannot have zero structural indexes - we should have found something
-  if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
-    return EMPTY;
   }
   checker.check_eof();
   return checker.errors();

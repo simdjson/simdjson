@@ -147,6 +147,7 @@ simdjson_really_inline error_code scan() {
         break;
     }
   }
+  if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return EMPTY; }
   *next_structural_index = len;
   // We pad beyond.
   // https://github.com/simdjson/simdjson/issues/906
@@ -155,16 +156,16 @@ simdjson_really_inline error_code scan() {
   parser.n_structural_indexes = uint32_t(next_structural_index - parser.structural_indexes.get());
   parser.next_structural_index = 0;
   if (partial) {
-    if(unclosed_string) { parser.n_structural_indexes--; }
+    if(unclosed_string) {
+      parser.n_structural_indexes--;
+      if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return CAPACITY; }
+    }
     auto new_structural_indexes = find_next_document_index(parser);
     if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
       return CAPACITY; // If the buffer is partial but the document is incomplete, it's too big to parse.
     }
     parser.n_structural_indexes = new_structural_indexes;
   } else if(unclosed_string) { error = UNCLOSED_STRING; }
-  if (simdjson_unlikely(parser.n_structural_indexes == 0)) {
-    return EMPTY;
-  }
   return error;
 }
 
