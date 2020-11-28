@@ -131,7 +131,39 @@ namespace document_stream_tests {
     }
     return count == 1;
   }
-#endif
+#endif 
+  bool simple_example() {
+    std::cout << "Running " << __func__ << std::endl;
+    // The last JSON document is
+    // intentionally truncated.
+    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
+    simdjson::dom::parser parser;
+    size_t count = 0;
+    simdjson::dom::document_stream stream;
+    // We use a window of json.size() though any large value would do.
+    ASSERT_SUCCESS( parser.parse_many(json, json.size()).get(stream) );
+    auto i = stream.begin();
+    for(; i != stream.end(); ++i) {
+        auto doc = *i;
+        if(!doc.error()) {
+          std::cout << "got full document at " << i.current_index() << std::endl;
+          count++;
+        }
+    }
+    if(count != 3) {
+      std::cerr << "Expected to get three full documents " << std::endl;
+      return false;
+    }
+    size_t index = i.current_index();
+    if(index != 38) {
+      std::cerr << "Expected to stop after the three full documents " << std::endl;
+      std::cerr << "index = " << index << std::endl;
+      return false;
+    }
+    return true;
+  }
+
+
   bool truncated_window() {
     std::cout << "Running " << __func__ << std::endl;
     // The last JSON document is
@@ -170,7 +202,6 @@ namespace document_stream_tests {
     // JSON as invalid and refuse to even start parsing.
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} "intentionally unclosed string  )"_padded;
     simdjson::dom::parser parser;
-    size_t count = 0;
     simdjson::dom::document_stream stream;
     // We use a window of json.size() though any large value would do.
     ASSERT_SUCCESS( parser.parse_many(json,json.size()).get(stream) );
@@ -180,22 +211,13 @@ namespace document_stream_tests {
         auto doc = *i;
         if(!doc.error()) {
           std::cout << "got full document at " << i.current_index() << std::endl;
-          count++;
+          return false;
+        } else {
+          std::cout << doc.error() << std::endl;
+          return (doc.error() == simdjson::UNCLOSED_STRING);
         }
     }
-    if(count != 2) {
-      std::cerr << "Expected to get two full documents " << std::endl;
-      std::cerr << "got " << count << std::endl;
-
-      return false;
-    }
-    size_t index = i.current_index();
-    if(index != 29) {
-      std::cerr << "Expected to stop after the two full documents " << std::endl;
-      std::cerr << "index = " << index << std::endl;
-      return false;
-    }
-    return true;
+    return false;
   }
   bool small_window() {
     std::cout << "Running " << __func__ << std::endl;
@@ -374,7 +396,8 @@ namespace document_stream_tests {
   }
 
   bool run() {
-    return truncated_window() &&
+    return simple_example() &&
+           truncated_window() &&
            truncated_window_unclosed_string() &&
            test_current_index()  &&
            single_document() &&
