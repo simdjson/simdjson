@@ -41,7 +41,7 @@ public:
    *
    * @return true if there are no more elements in the JSON array.
    */
-  simdjson_really_inline bool operator==(const array_iterator<T> &) noexcept;
+  simdjson_really_inline bool operator==(const array_iterator<T> &) const noexcept;
   /**
    * Check if there are more elements in the JSON array.
    *
@@ -49,7 +49,7 @@ public:
    *
    * @return true if there are more elements in the JSON array.
    */
-  simdjson_really_inline bool operator!=(const array_iterator<T> &) noexcept;
+  simdjson_really_inline bool operator!=(const array_iterator<T> &) const noexcept;
   /**
    * Move to the next element.
    *
@@ -91,8 +91,8 @@ public:
   //
 
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator*() noexcept; // MUST ONLY BE CALLED ONCE PER ITERATION.
-  simdjson_really_inline bool operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<T>> &) noexcept;
-  simdjson_really_inline bool operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<T>> &) noexcept;
+  simdjson_really_inline bool operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<T>> &) const noexcept;
+  simdjson_really_inline bool operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<T>> &) const noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<T>> &operator++() noexcept;
 };
 

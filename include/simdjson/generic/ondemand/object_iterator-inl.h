@@ -17,10 +17,10 @@ simdjson_really_inline simdjson_result<field> object_iterator::operator*() noexc
   if (result.error()) { iter->release(); }
   return result;
 }
-simdjson_really_inline bool object_iterator::operator==(const object_iterator &other) noexcept {
+simdjson_really_inline bool object_iterator::operator==(const object_iterator &other) const noexcept {
   return !(*this != other);
 }
-simdjson_really_inline bool object_iterator::operator!=(const object_iterator &) noexcept {
+simdjson_really_inline bool object_iterator::operator!=(const object_iterator &) const noexcept {
   return iter->is_alive();
 }
 simdjson_really_inline object_iterator &object_iterator::operator++() noexcept {
@@ -55,12 +55,12 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>
   return *first;
 }
 // Assumes it's being compared with the end. true if depth < iter->depth.
-simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &other) noexcept {
+simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &other) const noexcept {
   if (error()) { return true; }
   return first == other.first;
 }
 // Assumes it's being compared with the end. true if depth >= iter->depth.
-simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &other) noexcept {
+simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &other) const noexcept {
   if (error()) { return false; }
   return first != other.first;
 }
