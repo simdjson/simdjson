@@ -19,11 +19,11 @@ simdjson_really_inline simdjson_result<value> array_iterator<T>::operator*() noe
   return value::start(iter->borrow_iterator());
 }
 template<typename T>
-simdjson_really_inline bool array_iterator<T>::operator==(const array_iterator<T> &other) noexcept {
+simdjson_really_inline bool array_iterator<T>::operator==(const array_iterator<T> &other) const noexcept {
   return !(*this != other);
 }
 template<typename T>
-simdjson_really_inline bool array_iterator<T>::operator!=(const array_iterator<T> &) noexcept {
+simdjson_really_inline bool array_iterator<T>::operator!=(const array_iterator<T> &) const noexcept {
   return iter->is_iterator_alive();
 }
 template<typename T>
@@ -62,12 +62,12 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
   return *this->first;
 }
 template<typename T>
-simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<T>>::operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<T>> &other) noexcept {
+simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<T>>::operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<T>> &other) const noexcept {
   if (this->error()) { return true; }
   return this->first == other.first;
 }
 template<typename T>
-simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<T>>::operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<T>> &other) noexcept {
+simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<T>>::operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<T>> &other) const noexcept {
   if (this->error()) { return false; }
   return this->first != other.first;
 }
