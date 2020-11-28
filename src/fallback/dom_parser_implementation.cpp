@@ -147,13 +147,13 @@ simdjson_really_inline error_code scan() {
         break;
     }
   }
-  if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return EMPTY; }
   *next_structural_index = len;
   // We pad beyond.
   // https://github.com/simdjson/simdjson/issues/906
   next_structural_index[1] = len;
   next_structural_index[2] = 0;
   parser.n_structural_indexes = uint32_t(next_structural_index - parser.structural_indexes.get());
+  if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return EMPTY; }
   parser.next_structural_index = 0;
   if (partial) {
     if(unclosed_string) {
