@@ -65,6 +65,11 @@ inline padded_string::padded_string(const std::string & str_ ) noexcept
 // note: do pass std::string_view arguments by value
 inline padded_string::padded_string(std::string_view sv_) noexcept
     : viable_size(sv_.size()), data_ptr(internal::allocate_padded_buffer(sv_.size())) {
+  if(simdjson_unlikely(!data_ptr)) {
+    //allocation failed or zero size
+    viable_size=0;
+    return;
+  }
   if (sv_.size()) {
     std::memcpy(data_ptr, sv_.data(), sv_.size());
   }
