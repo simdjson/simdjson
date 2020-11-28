@@ -59,6 +59,7 @@ if(ENABLE_FUZZING)
   implement_fuzzer(fuzz_minifyimpl)      # minify *without* parsing, plus compare implementations
   implement_fuzzer(fuzz_ndjson)          # the ndjson api
   implement_fuzzer(fuzz_ondemand)
+  implement_fuzzer(fuzz_padded)
   implement_fuzzer(fuzz_parser)
   implement_fuzzer(fuzz_print_json)
   implement_fuzzer(fuzz_utf8)            # utf8 verification, compares across implementations

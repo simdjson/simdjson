@@ -24,6 +24,7 @@ fi
 set -u
 
 # common options
+CXX_CLAGS_COMMON=-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 COMMON="-GNinja -DCMAKE_CXX_COMPILER=clang++$CLANGSUFFIX -DCMAKE_C_COMPILER=clang$CLANGSUFFIX -DSIMDJSON_BUILD_STATIC=Off -DENABLE_FUZZING=On -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DISABLE_DEPRECATED_API=On"
 
 # A replay build, as plain as it gets. For use with valgrind/gdb.
@@ -63,7 +64,7 @@ variant=sanitizers-O3
 	cd build-$variant
 	cmake .. \
 	      $COMMON \
-	      -DCMAKE_CXX_FLAGS="-O3 -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined" \
+	      -DCMAKE_CXX_FLAGS="-O3 -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined $CXX_CLAGS_COMMON" \
 	      -DCMAKE_C_FLAGS="-O3 -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined" \
 	      -DCMAKE_BUILD_TYPE=Debug \
 	      -DSIMDJSON_FUZZ_LINKMAIN=Off \
@@ -81,7 +82,7 @@ variant=sanitizers-O0
 	cd build-$variant
 	cmake .. \
 	      $COMMON \
-	      -DCMAKE_CXX_FLAGS="-O0 -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined" \
+	      -DCMAKE_CXX_FLAGS="-O0 -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined $CXX_CLAGS_COMMON" \
 	      -DCMAKE_C_FLAGS="-O0 -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined" \
 	      -DCMAKE_BUILD_TYPE=Debug \
 	      -DSIMDJSON_FUZZ_LINKMAIN=Off \
@@ -101,7 +102,7 @@ variant=fast
 
 	cmake .. \
 	      $COMMON \
-	      -DCMAKE_CXX_FLAGS="-fsanitize=fuzzer-no-link" \
+	      -DCMAKE_CXX_FLAGS="-fsanitize=fuzzer-no-link $CXX_CLAGS_COMMON" \
 	      -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link" \
 	      -DCMAKE_BUILD_TYPE=Release \
 	      -DSIMDJSON_FUZZ_LINKMAIN=Off \
