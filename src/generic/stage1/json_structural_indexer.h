@@ -214,10 +214,6 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
   parser.next_structural_index = 0;
-  // a valid JSON file cannot have zero structural indexes - we should have found something
-  if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
-    return EMPTY;
-  }
   if (simdjson_unlikely(parser.structural_indexes[parser.n_structural_indexes - 1] > len)) {
     return UNEXPECTED_ERROR;
   }
@@ -230,6 +226,10 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
       return CAPACITY; // If the buffer is partial but the document is incomplete, it's too big to parse.
     }
     parser.n_structural_indexes = new_structural_indexes;
+  }
+  // a valid JSON file cannot have zero structural indexes - we should have found something
+  if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
+    return EMPTY;
   }
   checker.check_eof();
   return checker.errors();
