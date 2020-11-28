@@ -131,7 +131,7 @@ namespace document_stream_tests {
     }
     return count == 1;
   }
-#endif 
+#endif
   bool simple_example() {
     std::cout << "Running " << __func__ << std::endl;
     // The last JSON document is

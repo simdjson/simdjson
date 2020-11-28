@@ -199,7 +199,7 @@ got full document at 9
 got full document at 29
 ```
 
-The last call to `i.current_index()` return the byte index 38, which is just beyond 
+The last call to `i.current_index()` return the byte index 38, which is just beyond
 the last document.
 
 Incomplete streams
@@ -208,7 +208,7 @@ Incomplete streams
 Some users may need to work with truncated streams while tracking their location in the stream.
 The same code, with the `current_index()` will work. However, the last block (by default 1MB)
 terminates with an unclosed string, then no JSON document within this last block will validate.
-In particular, it means that if your input string is `[1,2,3]  {"1":1,"2":3,"4":4} [1,2` then 
+In particular, it means that if your input string is `[1,2,3]  {"1":1,"2":3,"4":4} [1,2` then
 no JSON document will be successfully parsed. The error `simdjson::UNCLOSED_STRING` will be
 given (even with the first JSON document). It is then your responsability to terminate the input
 maybe by appending the missing data at the end of the truncated string, or by copying the truncated
