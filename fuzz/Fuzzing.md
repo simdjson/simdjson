@@ -83,3 +83,18 @@ build-sanitizers/fuzz/fuzz_parser my_testcase.json
 ```
 In case this does not reproduce the bug, you may want to proceed with reproducing using the oss-fuzz tools. See the instructions [here](https://google.github.io/oss-fuzz/advanced-topics/reproducing/).
 
+# Minimizing and cleansing crashes
+If a crashing case is found, it is useful to minimize it and cleanse it (replace irrelevant bytes with spaces).
+
+```shell
+build-sanitizers-O0/fuzz/fuzz_ndjson out/ndjson
+# ...crashes and writes the crash-... file
+# minimize it:
+build-sanitizers-O0/fuzz/fuzz_ndjson crash-xxxxxxx -minimize_crash=1 -exact_artifact_path=minimized_crash -max_total_time=100
+
+# replace irrelevant parts with space:
+build-sanitizers-O0/fuzz/fuzz_ndjson minimized_crash -cleanse_crash=1 -exact_artifact_path=cleansed_crash
+
+# use/share cleansed_crash
+
+```
