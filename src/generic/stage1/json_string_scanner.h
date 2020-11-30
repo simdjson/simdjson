@@ -37,7 +37,8 @@ struct json_string_block {
 class json_string_scanner {
 public:
   simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
-  simdjson_really_inline error_code finish(bool streaming);
+  // Returns either UNCLOSED_STRING or SUCCESS
+  simdjson_really_inline error_code finish();
 
 private:
   // Intended to be defined by the implementation
@@ -132,8 +133,8 @@ simdjson_really_inline json_string_block json_string_scanner::next(const simd::s
   };
 }
 
-simdjson_really_inline error_code json_string_scanner::finish(bool streaming) {
-  if (prev_in_string and (not streaming)) {
+simdjson_really_inline error_code json_string_scanner::finish() {
+  if (prev_in_string) {
     return UNCLOSED_STRING;
   }
   return SUCCESS;

@@ -91,7 +91,8 @@ simdjson_really_inline void validate_utf8_character() {
   idx += 4;
 }
 
-simdjson_really_inline void validate_string() {
+// Returns true if the string is unclosed.
+simdjson_really_inline bool validate_string() {
   idx++; // skip first quote
   while (idx < len && buf[idx] != '"') {
     if (buf[idx] == '\\') {
@@ -103,7 +104,8 @@ simdjson_really_inline void validate_string() {
       idx++;
     }
   }
-  if (idx >= len && !partial) { error = UNCLOSED_STRING; }
+  if (idx >= len) { return true; }
+  return false;
 }
 
 simdjson_really_inline bool is_whitespace_or_operator(uint8_t c) {
@@ -120,12 +122,13 @@ simdjson_really_inline bool is_whitespace_or_operator(uint8_t c) {
 // Parse the entire input in STEP_SIZE-byte chunks.
 //
 simdjson_really_inline error_code scan() {
+  bool unclosed_string = false;
   for (;idx<len;idx++) {
     switch (buf[idx]) {
       // String
       case '"':
         add_structural();
-        validate_string();
+        unclosed_string |= validate_string();
         break;
       // Operator
       case '{': case '}': case '[': case ']': case ',': case ':':
@@ -150,20 +153,19 @@ simdjson_really_inline error_code scan() {
   next_structural_index[1] = len;
   next_structural_index[2] = 0;
   parser.n_structural_indexes = uint32_t(next_structural_index - parser.structural_indexes.get());
+  if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return EMPTY; }
   parser.next_structural_index = 0;
-
-  if (simdjson_unlikely(parser.n_structural_indexes == 0)) {
-    return EMPTY;
-  }
-
   if (partial) {
+    if(unclosed_string) {
+      parser.n_structural_indexes--;
+      if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return CAPACITY; }
+    }
     auto new_structural_indexes = find_next_document_index(parser);
     if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
       return CAPACITY; // If the buffer is partial but the document is incomplete, it's too big to parse.
     }
     parser.n_structural_indexes = new_structural_indexes;
-  }
-
+  } else if(unclosed_string) { error = UNCLOSED_STRING; }
   return error;
 }
 

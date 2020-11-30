@@ -143,21 +143,33 @@ namespace document_stream_tests {
 
   bool issue1310() {
     std::cout << "Running " << __func__ << std::endl;
-    const simdjson::padded_string input = decode_base64("AwA5ICIg");
+    // hex  : 20 20 5B 20 33 2C 31 5D 20 22 22 22 22 22 22 22 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20
+    // ascii:  __ __[__ __3__,__1__]__ __"__"__"__"__"__"__"__ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __
+    // We have four full documents followed by an unclosed string.
+    const simdjson::padded_string input = decode_base64("ICBbIDMsMV0gIiIiIiIiIiAgICAgICAgICAgICAgICAg");
     print_hex(input);
     for(size_t window = 0; window <= 100; window++) {
       simdjson::dom::parser parser;
       simdjson::dom::document_stream stream;
       ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+      size_t count{0};
       for(auto doc: stream) {
         auto error = doc.error();
-        if(!error) {
-          std::cout << "Expected an error but got " << error << std::endl;
-          std::cout << "Window = " << window << std::endl;
-          return false;
+        count++;
+        if(count <= 4) {
+          if(window < input.size() && error) {
+            std::cout << "Expected no error but got " << error << std::endl;
+            std::cout << "Window = " << window << std::endl;
+            return false;
+          }
+        } else {
+          if(!error) {
+            std::cout << "Expected an error but got " << error << std::endl;
+            std::cout << "Window = " << window << std::endl;
+            return false;
+          }
         }
       }
-
     }
     return true;
   }
