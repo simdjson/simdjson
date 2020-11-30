@@ -6,6 +6,7 @@ namespace SIMDJSON_IMPLEMENTATION {
  * Designed for maximum speed and a lower memory profile.
  */
 namespace ondemand {
+    using depth_t = int32_t;
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
@@ -14,6 +15,7 @@ namespace ondemand {
 #include "simdjson/generic/ondemand/raw_json_string.h"
 #include "simdjson/generic/ondemand/token_iterator.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
+#include "simdjson/generic/ondemand/value_iterator.h"
 #include "simdjson/generic/ondemand/array_iterator.h"
 #include "simdjson/generic/ondemand/object_iterator.h"
 #include "simdjson/generic/ondemand/array.h"

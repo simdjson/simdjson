@@ -10,20 +10,20 @@ simdjson_really_inline field::field(raw_json_string key, ondemand::value &&value
 {
 }
 
-simdjson_really_inline simdjson_result<field> field::start(json_iterator_ref &parent_iter) noexcept {
+simdjson_really_inline simdjson_result<field> field::start(value_iterator &parent_iter) noexcept {
   raw_json_string key;
-  SIMDJSON_TRY( parent_iter->field_key().get(key) );
-  SIMDJSON_TRY( parent_iter->field_value() );
-  return field::start(parent_iter.borrow(), key);
+  SIMDJSON_TRY( parent_iter.field_key().get(key) );
+  SIMDJSON_TRY( parent_iter.field_value() );
+  return field::start(parent_iter, key);
 }
 
-simdjson_really_inline simdjson_result<field> field::start(json_iterator_ref &&iter, raw_json_string key) noexcept {
-    return field(key, value::start(std::forward<json_iterator_ref>(iter)));
+simdjson_really_inline simdjson_result<field> field::start(const value_iterator &parent_iter, raw_json_string key) noexcept {
+    return field(key, parent_iter.child());
 }
 
 simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> field::unescaped_key() noexcept {
   SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
-  simdjson_result<std::string_view> answer = first.unescape(second.get_iterator());
+  simdjson_result<std::string_view> answer = first.unescape(second.iter.string_buf_loc());
   first.consume();
   return answer;
 }

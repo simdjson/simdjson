@@ -33,9 +33,9 @@ protected:
    * @param doc The document containing the object. The iterator must be just after the opening `{`.
    * @param error If this is not SUCCESS, creates an error chained object.
    */
-  static simdjson_really_inline simdjson_result<object> start(json_iterator_ref &&iter) noexcept;
-  static simdjson_really_inline simdjson_result<object> start(const uint8_t *json, json_iterator_ref &&iter) noexcept;
-  static simdjson_really_inline object started(json_iterator_ref &&iter) noexcept;
+  static simdjson_really_inline simdjson_result<object> start(value_iterator &iter) noexcept;
+  static simdjson_really_inline simdjson_result<object> try_start(value_iterator &iter) noexcept;
+  static simdjson_really_inline object started(value_iterator &iter) noexcept;
 
   /**
    * Internal object creation. Call object::begin(doc) instead of this.
@@ -43,24 +43,11 @@ protected:
    * @param doc The document containing the object. doc->depth must already be incremented to
    *            reflect the object's depth. The iterator must be just after the opening `{`.
    */
-  simdjson_really_inline object(json_iterator_ref &&_iter) noexcept;
+  simdjson_really_inline object(const value_iterator &_iter) noexcept;
 
-  simdjson_really_inline error_code find_field(const std::string_view key) noexcept;
+  simdjson_warn_unused simdjson_really_inline error_code find_field_raw(const std::string_view key) noexcept;
 
-  /**
-   * Document containing the primary iterator.
-   *
-   * PERF NOTE: expected to be elided in favor of the parent document: this is set when the object
-   * is first used, and never changes afterwards.
-   */
-  json_iterator_ref iter{};
-  /**
-   * Whether we are at the start.
-   *
-   * PERF NOTE: this should be elided into inline control flow: it is only used for the first []
-   * or * call, and SSA optimizers commonly do first-iteration loop optimization.
-   */
-  bool at_start{};
+  object_iterator iter{};
 
   friend class value;
   friend class document;

@@ -16,11 +16,10 @@ public:
    * Exists so you can declare a variable and later assign to it before use.
    */
   simdjson_really_inline token_iterator() noexcept = default;
-
   simdjson_really_inline token_iterator(token_iterator &&other) noexcept = default;
   simdjson_really_inline token_iterator &operator=(token_iterator &&other) noexcept = default;
-  simdjson_really_inline token_iterator(const token_iterator &other) noexcept = delete;
-  simdjson_really_inline token_iterator &operator=(const token_iterator &other) noexcept = delete;
+  simdjson_really_inline token_iterator(const token_iterator &other) noexcept = default;
+  simdjson_really_inline token_iterator &operator=(const token_iterator &other) noexcept = default;
 
   /**
    * Get the JSON text for a given token (relative).
@@ -76,6 +75,9 @@ protected:
 
   const uint8_t *buf{};
   const uint32_t *index{};
+
+  friend class json_iterator;
+  friend simdjson_really_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
 };
 
 } // namespace ondemand

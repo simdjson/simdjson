@@ -31,9 +31,31 @@ public:
   simdjson_really_inline bool operator!=(const object_iterator &) const noexcept;
   // Checks for ']' and ','
   simdjson_really_inline object_iterator &operator++() noexcept;
+
+  /**
+   * Find the field with the given key. May be used in place of ++.
+   */
+  simdjson_warn_unused simdjson_really_inline error_code find_field_raw(const std::string_view key) noexcept;
+
 private:
-  json_iterator_ref *iter{};
-  simdjson_really_inline object_iterator(json_iterator_ref &iter) noexcept;
+  /**
+   * The underlying JSON iterator.
+   *
+   * PERF NOTE: expected to be elided in favor of the parent document: this is set when the object
+   * is first used, and never changes afterwards.
+   */
+  value_iterator iter{};
+  /**
+   * Whether we are at the start.
+   *
+   * PERF NOTE: this should be elided into inline control flow: it is only used for the first []
+   * or * call, and SSA optimizers commonly do first-iteration loop optimization.
+   * 
+   * SAFETY: this is not safe; the object_iterator can be copied freely, so the state CAN be lost.
+   */
+  bool at_start{};
+  
+  simdjson_really_inline object_iterator(const value_iterator &iter) noexcept;
   friend struct simdjson_result<object_iterator>;
   friend class object;
 };

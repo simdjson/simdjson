@@ -1274,8 +1274,11 @@ namespace error_tests {
       V actual;
       auto actual_error = elem.get(actual);
       if (count >= N) {
+        if (count >= (N+N2)) {
+          std::cerr << "FAIL: Extra error reported: " << actual_error << std::endl;
+          return false;
+        }
         ASSERT_ERROR(actual_error, expected_error[count - N]);
-        ASSERT(count < (N+N2), "Extra error reported");
       } else {
         ASSERT_SUCCESS(actual_error);
         ASSERT_EQUAL(actual, expected[count]);
@@ -1320,8 +1323,8 @@ namespace error_tests {
     TEST_START();
     ONDEMAND_SUBTEST("missing comma", "[1 1]",  assert_iterate(doc, { int64_t(1) }, { TAPE_ERROR }));
     ONDEMAND_SUBTEST("extra comma  ", "[1,,1]", assert_iterate(doc, { int64_t(1) }, { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("extra comma  ", "[,]",    assert_iterate(doc,                 { NUMBER_ERROR }));
-    ONDEMAND_SUBTEST("extra comma  ", "[,,]",   assert_iterate(doc,                 { NUMBER_ERROR, NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("extra comma  ", "[,]",    assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("extra comma  ", "[,,]",   assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
     TEST_SUCCEED();
   }
   bool top_level_array_iterate_unclosed_error() {
@@ -1330,7 +1333,7 @@ namespace error_tests {
     ONDEMAND_SUBTEST("unclosed     ", "[1 ",    assert_iterate(doc, { int64_t(1) }, { TAPE_ERROR }));
     // TODO These pass the user values that may run past the end of the buffer if they aren't careful
     // In particular, if the padding is decorated with the wrong values, we could cause overrun!
-    ONDEMAND_SUBTEST("unclosed extra comma", "[,,", assert_iterate(doc,                 { NUMBER_ERROR, NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed extra comma", "[,,", assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
     ONDEMAND_SUBTEST("unclosed     ", "[1,",    assert_iterate(doc, { int64_t(1) }, { NUMBER_ERROR, TAPE_ERROR }));
     ONDEMAND_SUBTEST("unclosed     ", "[1",     assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
     ONDEMAND_SUBTEST("unclosed     ", "[",      assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
@@ -1341,15 +1344,15 @@ namespace error_tests {
     TEST_START();
     ONDEMAND_SUBTEST("missing comma", R"({ "a": [1 1] })",  assert_iterate(doc["a"], { int64_t(1) }, { TAPE_ERROR }));
     ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [1,,1] })", assert_iterate(doc["a"], { int64_t(1) }, { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [1,,] })",  assert_iterate(doc["a"], { int64_t(1) }, { NUMBER_ERROR }));
-    ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [,] })",    assert_iterate(doc["a"],                 { NUMBER_ERROR }));
-    ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [,,] })",   assert_iterate(doc["a"],                 { NUMBER_ERROR, NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [1,,] })",  assert_iterate(doc["a"], { int64_t(1) }, { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [,] })",    assert_iterate(doc["a"],                 { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [,,] })",   assert_iterate(doc["a"],                 { NUMBER_ERROR, TAPE_ERROR }));
     TEST_SUCCEED();
   }
   bool array_iterate_unclosed_error() {
     TEST_START();
     ONDEMAND_SUBTEST("unclosed extra comma", R"({ "a": [,)", assert_iterate(doc["a"],                 { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("unclosed extra comma", R"({ "a": [,,)", assert_iterate(doc["a"],                 { NUMBER_ERROR, NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed extra comma", R"({ "a": [,,)", assert_iterate(doc["a"],                 { NUMBER_ERROR, TAPE_ERROR }));
     ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [1 )",     assert_iterate(doc["a"], { int64_t(1) }, { TAPE_ERROR }));
     // TODO These pass the user values that may run past the end of the buffer if they aren't careful
     // In particular, if the padding is decorated with the wrong values, we could cause overrun!
@@ -1537,12 +1540,12 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Running basic tests." << std::endl;
   if (
-      // parse_api_tests::run() &&
-      // dom_api_tests::run() &&
-      // twitter_tests::run() &&
-      // number_tests::run() &&
-      // ordering_tests::run() &&
-      // key_string_tests::run() &&
+      parse_api_tests::run() &&
+      dom_api_tests::run() &&
+      twitter_tests::run() &&
+      number_tests::run() &&
+      ordering_tests::run() &&
+      key_string_tests::run() &&
       active_tests::run() &&
       error_tests::run() &&
       true
