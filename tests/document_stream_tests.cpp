@@ -81,6 +81,76 @@ namespace document_stream_tests {
       simdjson::dom::document_stream s1 = parse_many_stream_return(parser, str);
   }
 
+  bool stress_data_race() {
+    std::cout << "Running " << __func__ << std::endl;
+    // Correct JSON.
+    const simdjson::padded_string input = R"([1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+    // This will spin up and tear down 1000 worker threads.
+    for(size_t i = 0; i < 1; i++) {
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
+      for(auto doc: stream) {
+          auto error = doc.error();
+          if(error) {
+            std::cout << "Expected no error but got " << error << std::endl;
+            return false;
+          }
+      }
+    }
+    return true;
+  }
+
+  bool stress_data_race_with_error() {
+    std::cout << "Running " << __func__ << std::endl;
+    // Intentionally broken
+    const simdjson::padded_string input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+    // This will spin up and tear down 1000 worker threads.
+    for(size_t i = 0; i < 1; i++) {
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
+      size_t count = 0;
+      for(auto doc: stream) {
+          auto error = doc.error();
+          if(count <= 2) {
+            if(error) {
+              std::cout << "Expected no error but got " << error << std::endl;
+              return false;
+            }
+          } else {
+            if(!error) {
+              std::cout << "Expected an error but got " << error << std::endl;
+              return false;
+            }
+            break;
+          }
+          count++;
+      }
+    }
+    return true;
+  }
+
+  bool test_leading_spaces() {
+    std::cout << "Running " << __func__ << std::endl;
+    const simdjson::padded_string input = R"(                                        [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+    size_t count = 0;
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
+    count = 0;
+    for(auto doc: stream) {
+          auto error = doc.error();
+          if(error) {
+            std::cout << "Expected no error but got " << error << std::endl;
+            return false;
+          }
+          count++;
+    }
+    return count == 15;
+  }
+
+
   bool issue1307() {
     std::cout << "Running " << __func__ << std::endl;
     const simdjson::padded_string input = decode_base64("AgAMACA=");
@@ -588,7 +658,10 @@ namespace document_stream_tests {
   }
 
   bool run() {
-    return simple_example() &&
+    return stress_data_race() &&
+           stress_data_race_with_error() &&
+           test_leading_spaces() &&
+           simple_example() &&
            truncated_window() &&
            truncated_window_unclosed_string() &&
            issue1307() &&
