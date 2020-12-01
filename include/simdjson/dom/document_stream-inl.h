@@ -24,7 +24,7 @@ inline void stage1_worker::start_thread() {
     return; // This should never happen but we never want to create more than one thread.
   }
   thread = std::thread([this]{
-      while(can_work) {
+      while(true) {
         std::unique_lock<std::mutex> thread_lock(locking_mutex);
         cond_var.wait(thread_lock, [this]{return has_work || !can_work;});
         if(!can_work) {
