@@ -13,6 +13,8 @@ Contents
 - [Support](#support)
 - [API](#api)
 - [Use cases](#use-cases)
+- [Tracking your position](#tracking-your-position)
+- [Incomplete streams](#incomplete-streams)
 
 Motivation
 -----------
@@ -158,3 +160,58 @@ From [jsonlines.org](http://jsonlines.org/examples/):
     ```
     JSON Lines' biggest strength is in handling lots of similar nested data structures. One .jsonl file is easier to
     work with than a directory full of XML files.
+
+
+Tracking your position
+-----------
+
+Some users would like to know where the document they parsed is in the input array of bytes.
+It is possible to do so by accessing directly the iterator and calling its `current_index()`
+method which reports the location (in bytes) of the current document in the input stream.
+
+Let us illustrate the idea with code:
+
+
+```C++
+    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS( parser.parse_many(json).get(stream) );
+    auto i = stream.begin();
+    for(; i != stream.end(); ++i) {
+        auto doc = *i;
+        if(!doc.error()) {
+          std::cout << "got full document at " << i.current_index() << std::endl;
+        }
+    }
+    size_t index = i.current_index();
+    if(index != 38) {
+      std::cerr << "Expected to stop after the three full documents " << std::endl;
+      std::cerr << "index = " << index << std::endl;
+      return false;
+    }
+```
+
+This code will print:
+```
+got full document at 0
+got full document at 9
+got full document at 29
+```
+
+The last call to `i.current_index()` return the byte index 38, which is just beyond
+the last document.
+
+Incomplete streams
+-----------
+
+Some users may need to work with truncated streams while tracking their location in the stream.
+The same code, with the `current_index()` will work. However, the last block (by default 1MB)
+terminates with an unclosed string, then no JSON document within this last block will validate.
+In particular, it means that if your input string is `[1,2,3]  {"1":1,"2":3,"4":4} [1,2` then
+no JSON document will be successfully parsed. The error `simdjson::UNCLOSED_STRING` will be
+given (even with the first JSON document). It is then your responsability to terminate the input
+maybe by appending the missing data at the end of the truncated string, or by copying the truncated
+data before the continuing input.
+
+
