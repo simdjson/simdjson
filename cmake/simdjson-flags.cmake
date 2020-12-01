@@ -27,6 +27,15 @@ if(SIMDJSON_SANITIZE)
   endif()
 endif()
 
+if(SIMDJSON_SANITIZE_THREADS)
+  target_compile_options(simdjson-flags INTERFACE -fsanitize=thread -fsanitize=undefined -fno-sanitize-recover=all)
+  target_link_libraries(simdjson-flags INTERFACE -fsanitize=thread -fsanitize=undefined -fno-sanitize-recover=all)
+
+  # Ubuntu bug for GCC 5.0+ (safe for all versions)
+  if (CMAKE_COMPILER_IS_GNUCC)
+    target_link_libraries(simdjson-flags INTERFACE -fuse-ld=gold)
+  endif()
+endif()
 
 if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "No build type selected, default to Release")

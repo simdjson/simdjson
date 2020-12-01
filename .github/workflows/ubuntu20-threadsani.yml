@@ -1,0 +1,27 @@
+name: Ubuntu 20.04 CI (GCC 9) with Thread Sanitizer
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  ubuntu-build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: dependencies/.cache
+          key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
+      - name: Use cmake
+        run: |
+          mkdir build &&
+          cd build &&
+          cmake  -DSIMDJSON_SANITIZE_THREADS=ON ..  &&
+          cmake --build . --target document_stream_tests --target parse_many_test  &&
+          ctest --output-on-failure  -R parse_many_test  &&
+          ctest --output-on-failure  -R document_stream_tests
