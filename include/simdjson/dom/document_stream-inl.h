@@ -46,6 +46,7 @@ inline void stage1_worker::start_thread() {
         this->has_work = false;
         // The condition variable call should be moved after thread_lock.unlock() for performance
         // reasons but thread sanitizers may report it as a data race if we do.
+        // See https://stackoverflow.com/questions/35775501/c-should-condition-variable-be-notified-under-lock
         cond_var.notify_one(); // will notify "finish"
         thread_lock.unlock();
       }
@@ -74,6 +75,7 @@ inline void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_
   has_work = true;
   // The condition variable call should be moved after thread_lock.unlock() for performance
   // reasons but thread sanitizers may report it as a data race if we do.
+  // See https://stackoverflow.com/questions/35775501/c-should-condition-variable-be-notified-under-lock
   cond_var.notify_one(); // will notify the thread lock that we have work
   lock.unlock();
 }
