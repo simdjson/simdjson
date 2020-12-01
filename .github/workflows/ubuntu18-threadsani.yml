@@ -1,4 +1,4 @@
-name: Ubuntu 18.04 CI (GCC 7)
+name: Ubuntu 18.04 CI (GCC 7) with Thread Sanitizer
 
 on:
   push:

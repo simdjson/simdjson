@@ -1,4 +1,4 @@
-name: Ubuntu 20.04 CI (GCC 9)
+name: Ubuntu 20.04 CI (GCC 9) with Thread Sanitizer
 
 on:
   push:
@@ -24,4 +24,4 @@ jobs:
           cmake  -DSIMDJSON_SANITIZE_THREADS=ON ..  &&
           cmake --build . --target document_stream_tests --target parse_many_test  &&
           ctest --output-on-failure  -R parse_many_test  &&
-          ctest --output-on-failure  -R document_stream_tests 
+          ctest --output-on-failure  -R document_stream_tests
