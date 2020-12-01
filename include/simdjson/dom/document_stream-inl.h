@@ -10,7 +10,7 @@ namespace dom {
 
 #ifdef SIMDJSON_THREADS_ENABLED
 inline void stage1_worker::finish() {
-  // After calling "run" someone would call finish() to wait 
+  // After calling "run" someone would call finish() to wait
   // for the end of the processing.
   // This function will wait until either the thread has done
   // the processing or, else, the destructor has been called.
@@ -35,7 +35,7 @@ inline void stage1_worker::start_thread() {
         std::unique_lock<std::mutex> thread_lock(locking_mutex);
         // We wait for either "run" or "stop_thread" to be called.
         cond_var.wait(thread_lock, [this]{return has_work || !can_work;});
-        // If, for some reason, the stop_thread() method was called (i.e., the 
+        // If, for some reason, the stop_thread() method was called (i.e., the
         // destructor of stage1_worker is called, then we want to immediately destroy
         // the thread (and not do any more processing).
         if(!can_work) {
