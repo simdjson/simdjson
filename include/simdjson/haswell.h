@@ -15,7 +15,9 @@
 #ifndef SIMDJSON_IMPLEMENTATION_HASWELL
 #define SIMDJSON_IMPLEMENTATION_HASWELL (SIMDJSON_IS_X86_64)
 #endif
-#define SIMDJSON_CAN_ALWAYS_RUN_HASWELL ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__))
+// To see why  (__BMI__) && (__PCLMUL__) && (__LZCNT__) are not part of this next line, see
+// https://github.com/simdjson/simdjson/issues/1247
+#define SIMDJSON_CAN_ALWAYS_RUN_HASWELL ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__))
 
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 
