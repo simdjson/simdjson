@@ -10,11 +10,18 @@ namespace dom {
 
 #ifdef SIMDJSON_THREADS_ENABLED
 inline void stage1_worker::finish() {
+  // After calling "run" someone would call finish() to wait
+  // for the end of the processing.
+  // This function will wait until either the thread has done
+  // the processing or, else, the destructor has been called.
   std::unique_lock<std::mutex> lock(locking_mutex);
   cond_var.wait(lock, [this]{return has_work == false;});
 }
 
 inline stage1_worker::~stage1_worker() {
+  // The thread may never outlive the stage1_worker instance
+  // and will always be stopped/joined before the stage1_worker
+  // instance is gone.
   stop_thread();
 }
 
@@ -26,15 +33,22 @@ inline void stage1_worker::start_thread() {
   thread = std::thread([this]{
       while(true) {
         std::unique_lock<std::mutex> thread_lock(locking_mutex);
+        // We wait for either "run" or "stop_thread" to be called.
         cond_var.wait(thread_lock, [this]{return has_work || !can_work;});
+        // If, for some reason, the stop_thread() method was called (i.e., the
+        // destructor of stage1_worker is called, then we want to immediately destroy
+        // the thread (and not do any more processing).
         if(!can_work) {
           break;
         }
         this->owner->stage1_thread_error = this->owner->run_stage1(*this->stage1_thread_parser,
               this->_next_batch_start);
         this->has_work = false;
-        thread_lock.unlock();
+        // The condition variable call should be moved after thread_lock.unlock() for performance
+        // reasons but thread sanitizers may report it as a data race if we do.
+        // See https://stackoverflow.com/questions/35775501/c-should-condition-variable-be-notified-under-lock
         cond_var.notify_one(); // will notify "finish"
+        thread_lock.unlock();
       }
     }
   );
@@ -46,8 +60,8 @@ inline void stage1_worker::stop_thread() {
   // We have to make sure that all locks can be released.
   can_work = false;
   has_work = false;
-  lock.unlock();
   cond_var.notify_all();
+  lock.unlock();
   if(thread.joinable()) {
     thread.join();
   }
@@ -59,8 +73,11 @@ inline void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_
   _next_batch_start = next_batch_start;
   stage1_thread_parser = stage1;
   has_work = true;
+  // The condition variable call should be moved after thread_lock.unlock() for performance
+  // reasons but thread sanitizers may report it as a data race if we do.
+  // See https://stackoverflow.com/questions/35775501/c-should-condition-variable-be-notified-under-lock
+  cond_var.notify_one(); // will notify the thread lock that we have work
   lock.unlock();
-  cond_var.notify_one();// will notify the thread lock
 }
 #endif
 
@@ -167,8 +184,13 @@ inline void document_stream::start() noexcept {
   // Always run the first stage 1 parse immediately
   batch_start = 0;
   error = run_stage1(*parser, batch_start);
+  if(error == EMPTY) {
+    // In exceptional cases, we may start with an empty block
+    batch_start = next_batch_start();
+    if (batch_start >= len) { return; }
+    error = run_stage1(*parser, batch_start);
+  }
   if (error) { return; }
-
 #ifdef SIMDJSON_THREADS_ENABLED
   if (use_thread && next_batch_start() < len) {
     // Kick off the first thread if needed

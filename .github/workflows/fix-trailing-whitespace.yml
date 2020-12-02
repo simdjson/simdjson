@@ -15,6 +15,7 @@ jobs:
           set -eu
           scripts/remove_trailing_whitespace.sh
           git diff >whitespace.patch
+          cat whitespace.patch
           if [ $(wc -c <whitespace.patch) -ne 0 ] ; then
              echo " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "
              echo "You have trailing whitespace, please download the artifact"
