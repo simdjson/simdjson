@@ -9,16 +9,18 @@ on:
 jobs:
   armv7_job:
     # The host should always be Linux
-    runs-on: ubuntu-18.04
-    name: Build on ubuntu-18.04 ppc64le
+    runs-on: ubuntu-20.04
+    name: Build on ubuntu-20.04 ppc64le
     steps:
       - uses: actions/checkout@v2.1.0
       - uses: uraimo/run-on-arch-action@v2.0.5
         name: Run commands
         id: runcmd
+        env:
+          DEBIAN_FRONTEND: noninteractive
         with:
           arch: ppc64le
-          distro: ubuntu18.04
+          distro: ubuntu20.04
 
           # Not required, but speeds up builds by storing container images in
           # a GitHub package registry.
@@ -28,6 +30,13 @@ jobs:
           run: |
             uname -a
             echo ::set-output name=uname::$(uname -a)
+            apt-get -qq update
+            apt-get install -q -y clang cmake git wget zip ninja-build
+            wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
+            tar xf corpus.tar && rm corpus.tar
+            fuzz/build_like_ossfuzz.sh
+            mkdir -p common_out
+            for fuzzer in build/fuzz/fuzz_* ; do echo $fuzzer;$fuzzer common_out out/* -max_total_time=40; done
 
       - name: Get the output
         # Echo the `uname` output parameter from the `runcmd` step
