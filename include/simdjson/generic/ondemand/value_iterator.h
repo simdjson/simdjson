@@ -11,7 +11,7 @@ class parser;
 
 /**
  * Iterates through a single JSON value at a particular depth.
- * 
+ *
  * Does not keep track of the type of value: provides methods for objects, arrays and scalars and expects
  * the caller to call the right ones.
  *
@@ -37,16 +37,11 @@ public:
   simdjson_really_inline void start_document() noexcept;
 
   /**
-   * Skips a non-iterated JSON value, whether it is a scalar, array or object.
-   * 
+   * Skips a non-iterated or partially-iterated JSON value, whether it is a scalar, array or object.
+   *
    * Optimized for scalars.
    */
   simdjson_warn_unused simdjson_really_inline error_code skip_child() noexcept;
-
-  /**
-   * Skips a possibly-partially-iterated JSON value, whether it is a scalar, array or object.
-   */
-  simdjson_warn_unused simdjson_really_inline error_code finish_child() noexcept;
 
   /**
    * Tell whether the iterator is at the EOF mark
@@ -75,10 +70,10 @@ public:
 
   /**
    * @addtogroup object Object iteration
-   * 
+   *
    * Methods to iterate and find object fields. These methods generally *assume* the value is
    * actually an object; the caller is responsible for keeping track of that fact.
-   * 
+   *
    * @{
    */
 
@@ -131,9 +126,9 @@ public:
    * Find the next field with the given key.
    *
    * Assumes you have called next_field() or otherwise matched the previous value.
-   * 
+   *
    * This means the iterator must be sitting at the next key:
-   * 
+   *
    * ```
    * { "a": 1, "b": 2 }
    *           ^
@@ -149,9 +144,9 @@ public:
    * Find the next field with the given key, *without* unescaping.
    *
    * Assumes you have called next_field() or otherwise matched the previous value.
-   * 
+   *
    * This means the iterator must be sitting at the next key:
-   * 
+   *
    * ```
    * { "a": 1, "b": 2 }
    *           ^

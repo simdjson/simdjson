@@ -50,11 +50,11 @@ private:
    *
    * PERF NOTE: this should be elided into inline control flow: it is only used for the first []
    * or * call, and SSA optimizers commonly do first-iteration loop optimization.
-   * 
+   *
    * SAFETY: this is not safe; the object_iterator can be copied freely, so the state CAN be lost.
    */
   bool at_start{};
-  
+
   simdjson_really_inline object_iterator(const value_iterator &iter) noexcept;
   friend struct simdjson_result<object_iterator>;
   friend class object;

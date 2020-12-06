@@ -149,7 +149,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> va
 simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::try_get_raw_json_string() noexcept {
   SIMDJSON_ASSUME( _json_iter->depth() == depth() && depth() > 0 );
 
-  logger::log_value(*_json_iter, "string", "");
+  logger::log_value(*_json_iter, "string", "", 0);
   auto json = _json_iter->peek();
   if (*json != '"') { logger::log_error(*_json_iter, "Not a string"); return INCORRECT_TYPE; }
   _json_iter->advance();
@@ -159,7 +159,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> val
 simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::require_raw_json_string() noexcept {
   SIMDJSON_ASSUME( _json_iter->depth() == depth() && depth() > 0 );
 
-  logger::log_value(*_json_iter, "string", "");
+  logger::log_value(*_json_iter, "string", "", 0);
   auto json = _json_iter->advance();
   if (*json != '"') { logger::log_error(*_json_iter, "Not a string"); return INCORRECT_TYPE; }
   _json_iter->ascend_to(depth()-1);
@@ -168,7 +168,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> val
 simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::try_get_uint64() noexcept {
   SIMDJSON_ASSUME( _json_iter->depth() == depth() && depth() > 1 );
 
-  logger::log_value(*_json_iter, "uint64", "");
+  logger::log_value(*_json_iter, "uint64", "", 0);
   uint64_t result;
   SIMDJSON_TRY( numberparsing::parse_unsigned(_json_iter->peek()).get(result) );
   _json_iter->advance();
@@ -178,14 +178,14 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iter
 simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::require_uint64() noexcept {
   SIMDJSON_ASSUME( _json_iter->depth() == depth() && depth() > 1 );
 
-  logger::log_value(*_json_iter, "uint64", "");
+  logger::log_value(*_json_iter, "uint64", "", 0);
   _json_iter->ascend_to(depth()-1);
   return numberparsing::parse_unsigned(_json_iter->advance());
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::try_get_int64() noexcept {
   SIMDJSON_ASSUME( _json_iter->depth() == depth() && depth() > 1 );
 
-  logger::log_value(*_json_iter, "int64", "");
+  logger::log_value(*_json_iter, "int64", "", 0);
   int64_t result;
   SIMDJSON_TRY( numberparsing::parse_integer(_json_iter->peek()).get(result) );
   _json_iter->advance();
@@ -195,14 +195,14 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_itera
 simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::require_int64() noexcept {
   SIMDJSON_ASSUME( _json_iter->depth() == depth() && depth() > 1 );
 
-  logger::log_value(*_json_iter, "int64", "");
+  logger::log_value(*_json_iter, "int64", "", 0);
   _json_iter->ascend_to(depth()-1);
   return numberparsing::parse_integer(_json_iter->advance());
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::try_get_double() noexcept {
   SIMDJSON_ASSUME( _json_iter->depth() == depth() && depth() > 1 );
 
-  logger::log_value(*_json_iter, "double", "");
+  logger::log_value(*_json_iter, "double", "", 0);
   double result;
   SIMDJSON_TRY( numberparsing::parse_double(_json_iter->peek()).get(result) );
   _json_iter->advance();
@@ -212,7 +212,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterat
 simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::require_double() noexcept {
   SIMDJSON_ASSUME( _json_iter->depth() == depth() && depth() > 1 );
 
-  logger::log_value(*_json_iter, "double", "");
+  logger::log_value(*_json_iter, "double", "", 0);
   _json_iter->ascend_to(depth()-1);
   return numberparsing::parse_double(_json_iter->advance());
 }
@@ -270,7 +270,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iter
 
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { logger::log_error(*_json_iter, "Root number more than 20 characters"); return NUMBER_ERROR; }
-  logger::log_value(*_json_iter, "uint64", "");
+  logger::log_value(*_json_iter, "uint64", "", 0);
   auto result = numberparsing::parse_unsigned(tmpbuf);
   if (result.error()) { logger::log_error(*_json_iter, "Error parsing unsigned integer"); }
   return result;
@@ -294,7 +294,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_itera
 
   uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { logger::log_error(*_json_iter, "Root number more than 20 characters"); return NUMBER_ERROR; }
-  logger::log_value(*_json_iter, "int64", "");
+  logger::log_value(*_json_iter, "int64", "", 0);
   auto result = numberparsing::parse_integer(tmpbuf);
   if (result.error()) { logger::log_error(*_json_iter, "Error parsing integer"); }
   return result;
@@ -319,7 +319,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterat
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/, 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest number: -0.<fraction>e-308.
   uint8_t tmpbuf[1074+8+1];
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { logger::log_error(*_json_iter, "Root number more than 1082 characters"); return NUMBER_ERROR; }
-  logger::log_value(*_json_iter, "double", "");
+  logger::log_value(*_json_iter, "double", "", 0);
   auto result = numberparsing::parse_double(tmpbuf);
   if (result.error()) { logger::log_error(*_json_iter, "Error parsing double"); }
   return result;
@@ -382,9 +382,6 @@ simdjson_really_inline bool value_iterator::require_root_null() noexcept {
 
 simdjson_warn_unused simdjson_really_inline error_code value_iterator::skip_child() noexcept {
   return _json_iter->skip_child(depth());
-}
-simdjson_warn_unused simdjson_really_inline error_code value_iterator::finish_child() noexcept {
-  return _json_iter->finish_child(depth());
 }
 simdjson_really_inline value_iterator value_iterator::child() const noexcept {
   SIMDJSON_ASSUME( _json_iter->depth() == depth()+1 );

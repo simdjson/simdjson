@@ -26,15 +26,15 @@ public:
 
   /**
    * Look up a field by name on an object.
-   * 
+   *
    * Important notes:
-   * 
+   *
    * * **Raw Keys:** The lookup will be done against the *raw* key, and will not unescape keys.
    *   e.g. `object["a"]` will match `{ "a": 1 }`, but will *not* match `{ "\u0061": 1 }`.
    * * **Order Sensitive:** Each field lookup will only move forward in the object. In particular,
    *   the following code reads z, then y, then x, and thus will not retrieve x or y if fed the
    *   JSON `{ "x": 1, "y": 2, "z": 3 }`:
-   * 
+   *
    *   ```c++
    *   simdjson::builtin::ondemand::parser parser;
    *   auto obj = parser.parse(R"( { "x": 1, "y": 2, "z": 3 } )"_padded);
@@ -42,7 +42,7 @@ public:
    *   double y = obj["y"];
    *   double x = obj["x"];
    *   ```
-   * 
+   *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
    */

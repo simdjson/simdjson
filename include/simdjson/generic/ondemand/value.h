@@ -252,14 +252,14 @@ public:
 
   /**
    * Look up a field by name on an object.
-   * 
+   *
    * Important notes:
-   * 
+   *
    * * **Raw Keys:** The lookup will be done against the *raw* key, and will not unescape keys.
    *   e.g. `object["a"]` will match `{ "a": 1 }`, but will *not* match `{ "\u0061": 1 }`.
    * * **Once Only:** You may only look up a single field on a value. To look up multiple fields,
    *   you must cast to object or call `.get_object()`.
-   * 
+   *
    * @param key The key to look up.
    * @returns The value of the field, NO_SUCH_FIELD if the field is not in the object, or
    *          INCORRECT_TYPE if the JSON value is not an array.
@@ -372,14 +372,14 @@ public:
 
   /**
    * Look up a field by name on an object.
-   * 
+   *
    * Important notes:
-   * 
+   *
    * * **Raw Keys:** The lookup will be done against the *raw* key, and will not unescape keys.
    *   e.g. `object["a"]` will match `{ "a": 1 }`, but will *not* match `{ "\u0061": 1 }`.
    * * **Once Only:** You may only look up a single field on a value. To look up multiple fields,
    *   you must cast to object or call `.get_object()`.
-   * 
+   *
    * @param key The key to look up.
    * @returns The value of the field, NO_SUCH_FIELD if the field is not in the object, or
    *          INCORRECT_TYPE if the JSON value is not an array.

@@ -32,7 +32,7 @@ simdjson_really_inline object_iterator &object_iterator::operator++() noexcept {
   if (!iter.is_open()) { return *this; } // Iterator will be released if there is an error
 
   simdjson_unused error_code error;
-  if ((error = iter.finish_child() )) { return *this; }
+  if ((error = iter.skip_child() )) { return *this; }
 
   simdjson_unused bool has_value;
   if ((error = iter.has_next_field().get(has_value) )) { return *this; };
@@ -90,7 +90,7 @@ simdjson_warn_unused simdjson_really_inline error_code object_iterator::find_fie
     at_start = false;
     has_value = true;
   } else {
-    if ((error = iter.finish_child() )) { iter.abandon(); return error; }
+    if ((error = iter.skip_child() )) { iter.abandon(); return error; }
     if ((error = iter.has_next_field().get(has_value) )) { iter.abandon(); return error; }
   }
   while (has_value) {

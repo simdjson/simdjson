@@ -30,39 +30,56 @@ simdjson_really_inline json_iterator::json_iterator(ondemand::parser *_parser) n
 }
 
 simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child(depth_t parent_depth) noexcept {
-  SIMDJSON_ASSUME(depth() == parent_depth+1);
+  if (depth() <= parent_depth) { return SUCCESS; }
 
   switch (*advance()) {
-    case '[': case '{':
-      logger::log_start_value(*this, "skip");
-      return finish_child(parent_depth);
-    default:
-      logger::log_value(*this, "skip");
-      ascend_to(parent_depth);
-      return SUCCESS;
-  }
-}
+    // TODO consider whether matching braces is a requirement: if non-matching braces indicates
+    // *missing* braces, then future lookups are not in the object/arrays they think they are,
+    // violating the rule "validate enough structure that the user can be confident they are
+    // looking at the right values."
+    // PERF TODO we can eliminate the switch here with a lookup of how much to add to depth
 
-simdjson_warn_unused simdjson_really_inline error_code json_iterator::finish_child(depth_t parent_depth) noexcept {
-  if (depth() <= parent_depth) { return SUCCESS; }
-  // The loop breaks only when depth()-- happens.
+    // For the first open array/object in a value, we've already incremented depth, so keep it the same
+    // We never stop at colon, but if we did, it wouldn't affect depth
+    case '[': case '{': case ':':
+      logger::log_start_value(*this, "skip");
+      break;
+    // If there is a comma, we have just finished a value in an array/object, and need to get back in
+    case ',':
+      logger::log_value(*this, "skip");
+      break;
+    // ] or } means we just finished a value and need to jump out of the array/object
+    case ']': case '}':
+      logger::log_end_value(*this, "skip");
+      _depth--;
+      if (depth() <= parent_depth) { return SUCCESS; }
+      break;
+    // Anything else must be a scalar value
+    default:
+      // For the first scalar, we will have incremented depth already, so we decrement it here.
+      logger::log_value(*this, "skip");
+      _depth--;
+      if (depth() <= parent_depth) { return SUCCESS; }
+      break;
+  }
+
+  // Now that we've considered the first value, we only increment/decrement for arrays/objects
   auto end = &parser->dom_parser.structural_indexes[parser->dom_parser.n_structural_indexes];
   while (token.index <= end) {
-    uint8_t ch = *advance();
-    switch (ch) {
+    switch (*advance()) {
+      case '[': case '{':
+        logger::log_start_value(*this, "skip");
+        _depth++;
+        break;
       // TODO consider whether matching braces is a requirement: if non-matching braces indicates
       // *missing* braces, then future lookups are not in the object/arrays they think they are,
       // violating the rule "validate enough structure that the user can be confident they are
       // looking at the right values."
+      // PERF TODO we can eliminate the switch here with a lookup of how much to add to depth
       case ']': case '}':
         logger::log_end_value(*this, "skip");
         _depth--;
         if (depth() <= parent_depth) { return SUCCESS; }
-        break;
-      // PERF TODO does it skip the depth() check when we don't decrement depth()?
-      case '[': case '{':
-        logger::log_start_value(*this, "skip");
-        _depth++;
         break;
       default:
         logger::log_value(*this, "skip", "");

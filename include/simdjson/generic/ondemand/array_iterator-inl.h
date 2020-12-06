@@ -21,7 +21,7 @@ simdjson_really_inline array_iterator &array_iterator::operator++() noexcept {
   // PERF NOTE this is a safety rail ... users should exit loops as soon as they receive an error, so we'll never get here.
   // However, it does not seem to make a perf difference, so we add it out of an abundance of caution.
   if ((error = iter.error()) ) { return *this; }
-  if ((error = iter.finish_child() )) { return *this; }
+  if ((error = iter.skip_child() )) { return *this; }
   if ((error = iter.has_next_element().error() )) { return *this; }
   return *this;
 }

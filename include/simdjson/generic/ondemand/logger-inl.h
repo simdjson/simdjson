@@ -56,8 +56,21 @@ simdjson_really_inline void log_headers() noexcept {
   log_depth = 0;
   if (LOG_ENABLED) {
     printf("\n");
-    printf("| %-*s | %-*s | %-*s | %-*s | Detail |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", LOG_SMALL_BUFFER_LEN, "Next", 5, "Next#");
-    printf("|%.*s|%.*s|%.*s|%.*s|--------|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, LOG_SMALL_BUFFER_LEN+2, DASHES, 5+2, DASHES);
+    printf("| %-*s ", LOG_EVENT_LEN,        "Event");
+    printf("| %-*s ", LOG_BUFFER_LEN,       "Buffer");
+    printf("| %-*s ", LOG_SMALL_BUFFER_LEN, "Next");
+    // printf("| %-*s ", 5,                    "Next#");
+    printf("| %-*s ", 5,                    "Depth");
+    printf("| Detail ");
+    printf("|\n");
+
+    printf("|%.*s", LOG_EVENT_LEN+2, DASHES);
+    printf("|%.*s", LOG_BUFFER_LEN+2, DASHES);
+    printf("|%.*s", LOG_SMALL_BUFFER_LEN+2, DASHES);
+    // printf("|%.*s", 5+2, DASHES);
+    printf("|%.*s", 5+2, DASHES);
+    printf("|--------");
+    printf("|\n");
     fflush(stdout);
   }
 }
@@ -86,7 +99,8 @@ simdjson_really_inline void log_line(const json_iterator &iter, const char *titl
       }
       printf(" ");
     }
-    printf("| %5u ", iter.token.peek_index(delta+1));
+    // printf("| %5u ", iter.token.peek_index(delta+1));
+    printf("| %5u ", iter.depth());
     printf("| %.*s ", int(detail.size()), detail.data());
     printf("|\n");
     fflush(stdout);

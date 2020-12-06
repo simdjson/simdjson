@@ -37,7 +37,7 @@ protected:
   error_code error{SUCCESS};
   /**
    * Depth of the current token in the JSON.
-   * 
+   *
    * - 0 = finished with document
    * - 1 = document root value (could be [ or {, not yet known)
    * - 2 = , or } inside root array/object
@@ -56,11 +56,6 @@ public:
    * Skips a JSON value, whether it is a scalar, array or object.
    */
   simdjson_warn_unused simdjson_really_inline error_code skip_child(depth_t parent_depth) noexcept;
-
-  /**
-   * Finishes iteration of a child in an object or array.
-   */
-  simdjson_warn_unused simdjson_really_inline error_code finish_child(depth_t parent_depth) noexcept;
 
   /**
    * Tell whether the iterator is still at the start
@@ -113,18 +108,18 @@ public:
 
   /**
    * Ascend one level.
-   * 
+   *
    * Validates that the depth - 1 == parent_depth.
-   * 
+   *
    * @param parent_depth the expected parent depth.
    */
   simdjson_really_inline void ascend_to(depth_t parent_depth) noexcept;
 
   /**
    * Descend one level.
-   * 
+   *
    * Validates that the new depth == child_depth.
-   * 
+   *
    * @param child_depth the expected child depth.
    */
   simdjson_really_inline void descend_to(depth_t parent_depth) noexcept;
