@@ -42,8 +42,8 @@ jobs:
                   -DSIMDJSON_FUZZ_LDFLAGS=-lFuzzer" \
                   -DCMAKE_CXX_FLAGS="-fsanitize=fuzzer-no-link -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION=" \
                   -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link" \
-	          -DCMAKE_BUILD_TYPE=Release \
-	          -DSIMDJSON_FUZZ_LINKMAIN=Off
+                  -DCMAKE_BUILD_TYPE=Release \
+                  -DSIMDJSON_FUZZ_LINKMAIN=Off
             cd ..
             builddir=build
             cmake --build $builddir
