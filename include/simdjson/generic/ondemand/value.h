@@ -250,6 +250,28 @@ public:
    */
   simdjson_really_inline simdjson_result<array_iterator> end() & noexcept;
 
+  /**
+   * Look up a field by name on an object.
+   * 
+   * Important notes:
+   * 
+   * * **Raw Keys:** The lookup will be done against the *raw* key, and will not unescape keys.
+   *   e.g. `object["a"]` will match `{ "a": 1 }`, but will *not* match `{ "\u0061": 1 }`.
+   * * **Once Only:** You may only look up a single field on a value. To look up multiple fields,
+   *   you must cast to object or call `.get_object()`.
+   * 
+   * @param key The key to look up.
+   * @returns The value of the field, NO_SUCH_FIELD if the field is not in the object, or
+   *          INCORRECT_TYPE if the JSON value is not an array.
+   */
+  simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept;
+  /** @overload simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept; */
+  simdjson_really_inline simdjson_result<value> operator[](std::string_view key) && noexcept;
+  /** @overload simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept; */
+  simdjson_really_inline simdjson_result<value> operator[](const char *key) & noexcept;
+  /** @overload simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept; */
+  simdjson_really_inline simdjson_result<value> operator[](const char *key) && noexcept;
+
 protected:
   /**
    * Create a value.
@@ -347,6 +369,28 @@ public:
 
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() & noexcept;
+
+  /**
+   * Look up a field by name on an object.
+   * 
+   * Important notes:
+   * 
+   * * **Raw Keys:** The lookup will be done against the *raw* key, and will not unescape keys.
+   *   e.g. `object["a"]` will match `{ "a": 1 }`, but will *not* match `{ "\u0061": 1 }`.
+   * * **Once Only:** You may only look up a single field on a value. To look up multiple fields,
+   *   you must cast to object or call `.get_object()`.
+   * 
+   * @param key The key to look up.
+   * @returns The value of the field, NO_SUCH_FIELD if the field is not in the object, or
+   *          INCORRECT_TYPE if the JSON value is not an array.
+   */
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
+  /** @overload simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept; */
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) && noexcept;
+  /** @overload simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept; */
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) & noexcept;
+  /** @overload simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept; */
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) && noexcept;
 };
 
 } // namespace simdjson

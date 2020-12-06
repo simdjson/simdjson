@@ -208,23 +208,20 @@ public:
 
   /**
    * Look up a field by name on an object.
-   *
-   * This method may only be called once on a given value. If you want to look up multiple fields,
-   * you must first get the object using value.get_object() or object(value).
-   *
+   * 
+   * Important notes:
+   * 
+   * * **Raw Keys:** The lookup will be done against the *raw* key, and will not unescape keys.
+   *   e.g. `object["a"]` will match `{ "a": 1 }`, but will *not* match `{ "\u0061": 1 }`.
+   * * **Once Only:** You may only look up a single field on a document. To look up multiple fields,
+   *   use `.get_object()` or cast to `object`.
+   * 
    * @param key The key to look up.
-   * @returns INCORRECT_TYPE If the JSON value is not an array.
+   * @returns The value of the field, NO_SUCH_FIELD if the field is not in the object, or
+   *          INCORRECT_TYPE if the JSON value is not an array.
    */
   simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept;
-  /**
-   * Look up a field by name on an object.
-   *
-   * This method may only be called once on a given value. If you want to look up multiple fields,
-   * you must first get the object using value.get_object() or object(value).
-   *
-   * @param key The key to look up.
-   * @returns INCORRECT_TYPE If the JSON value is not an array.
-   */
+  /** @overload simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept; */
   simdjson_really_inline simdjson_result<value> operator[](const char *key) & noexcept;
 
 protected:

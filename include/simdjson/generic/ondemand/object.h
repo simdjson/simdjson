@@ -23,26 +23,37 @@ public:
 
   simdjson_really_inline object_iterator begin() noexcept;
   simdjson_really_inline object_iterator end() noexcept;
-  simdjson_really_inline simdjson_result<value> operator[](const std::string_view key) & noexcept;
-  simdjson_really_inline simdjson_result<value> operator[](const std::string_view key) && noexcept;
+
+  /**
+   * Look up a field by name on an object.
+   * 
+   * Important notes:
+   * 
+   * * **Raw Keys:** The lookup will be done against the *raw* key, and will not unescape keys.
+   *   e.g. `object["a"]` will match `{ "a": 1 }`, but will *not* match `{ "\u0061": 1 }`.
+   * * **Order Sensitive:** Each field lookup will only move forward in the object. In particular,
+   *   the following code reads z, then y, then x, and thus will not retrieve x or y if fed the
+   *   JSON `{ "x": 1, "y": 2, "z": 3 }`:
+   * 
+   *   ```c++
+   *   simdjson::builtin::ondemand::parser parser;
+   *   auto obj = parser.parse(R"( { "x": 1, "y": 2, "z": 3 } )"_padded);
+   *   double z = obj["z"];
+   *   double y = obj["y"];
+   *   double x = obj["x"];
+   *   ```
+   * 
+   * @param key The key to look up.
+   * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
+   */
+  simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept;
+  /** @overload simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept; */
+  simdjson_really_inline simdjson_result<value> operator[](std::string_view key) && noexcept;
 
 protected:
-  /**
-   * Begin object iteration.
-   *
-   * @param doc The document containing the object. The iterator must be just after the opening `{`.
-   * @param error If this is not SUCCESS, creates an error chained object.
-   */
   static simdjson_really_inline simdjson_result<object> start(value_iterator &iter) noexcept;
   static simdjson_really_inline simdjson_result<object> try_start(value_iterator &iter) noexcept;
   static simdjson_really_inline object started(value_iterator &iter) noexcept;
-
-  /**
-   * Internal object creation. Call object::begin(doc) instead of this.
-   *
-   * @param doc The document containing the object. doc->depth must already be incremented to
-   *            reflect the object's depth. The iterator must be just after the opening `{`.
-   */
   simdjson_really_inline object(const value_iterator &_iter) noexcept;
 
   simdjson_warn_unused simdjson_really_inline error_code find_field_raw(const std::string_view key) noexcept;

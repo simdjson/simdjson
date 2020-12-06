@@ -655,6 +655,44 @@ namespace dom_api_tests {
     TEST_SUCCEED();
   }
 
+  bool nested_object_index() {
+    TEST_START();
+    auto json = R"({ "x": { "y": { "z": 2 } } }})"_padded;
+    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+      ASSERT_EQUAL( doc_result["x"]["y"]["z"].get_uint64().first, 2 );
+      return true;
+    }));
+    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::document doc;
+      ASSERT_SUCCESS( std::move(doc_result).get(doc) );
+      ASSERT_EQUAL( doc["x"]["y"]["z"].get_uint64().first, 2 );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<ondemand::object> object = doc_result.get_object();
+      ASSERT_EQUAL( object["x"]["y"]["z"].get_uint64().first, 2 );
+      return true;
+    }));
+    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      ASSERT_EQUAL( object["x"]["y"]["z"].get_uint64().first, 2 );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<ondemand::value> x = doc_result["x"];
+      ASSERT_EQUAL( x["y"]["z"].get_uint64().first, 2 );
+      return true;
+    }));
+    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::value x;
+      ASSERT_SUCCESS( doc_result["x"].get(x) );
+      ASSERT_EQUAL( x["y"]["z"].get_uint64().first, 2 );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
 #if SIMDJSON_EXCEPTIONS
 
   bool iterate_object_exception() {
@@ -776,6 +814,15 @@ namespace dom_api_tests {
     }));
     TEST_SUCCEED();
   }
+  bool nested_object_index_exception() {
+    TEST_START();
+    auto json = R"({ "x": { "y": { "z": 2 } } }})"_padded;
+    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+      ASSERT_EQUAL( uint64_t(doc_result["x"]["y"]["z"]), 2 );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
 
 #endif
 
@@ -790,6 +837,7 @@ namespace dom_api_tests {
            boolean_values() &&
            null_value() &&
            object_index() &&
+           nested_object_index() &&
 #if SIMDJSON_EXCEPTIONS
            iterate_object_exception() &&
            iterate_array_exception() &&
@@ -797,6 +845,7 @@ namespace dom_api_tests {
            numeric_values_exception() &&
            boolean_values_exception() &&
            object_index_exception() &&
+           nested_object_index_exception() &&
 #endif
            true;
   }
@@ -887,9 +936,8 @@ namespace twitter_tests {
     padded_string json;
     ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
     ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
-      auto metadata = doc_result["search_metadata"].get_object();
       uint64_t count;
-      ASSERT_SUCCESS( metadata["count"].get(count) );
+      ASSERT_SUCCESS( doc_result["search_metadata"]["count"].get(count) );
       ASSERT_EQUAL( count, 100 );
       return true;
     }));
@@ -905,11 +953,7 @@ namespace twitter_tests {
     for (ondemand::object tweet : doc["statuses"]) {
       uint64_t         id            = tweet["id"];
       std::string_view text          = tweet["text"];
-      std::string_view screen_name;
-      {
-        ondemand::object user        = tweet["user"];
-        screen_name                  = user["screen_name"];
-      }
+      std::string_view screen_name   = tweet["user"]["screen_name"];
       uint64_t         retweets      = tweet["retweet_count"];
       uint64_t         favorites     = tweet["favorite_count"];
       (void) id;

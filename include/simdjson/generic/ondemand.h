@@ -6,6 +6,7 @@ namespace SIMDJSON_IMPLEMENTATION {
  * Designed for maximum speed and a lower memory profile.
  */
 namespace ondemand {
+    /** Represents the depth of a JSON value (number of nested arrays/objects). */
     using depth_t = int32_t;
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

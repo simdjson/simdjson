@@ -35,25 +35,13 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
   auto doc = parser.iterate(json);
   for (ondemand::object tweet : doc["statuses"]) {
       // We believe that all statuses have a matching
-      // user, and we are willing to throw when they do not:
-      //
-      // You might think that you do not need the braces, but
-      // you do, otherwise you will get the wrong answer. That is
-      // because you can only have one active object or array
-      // at a time.
-      {
-        ondemand::object user = tweet["user"];
-        int64_t id = user["id"];
-        ids.push_back(id);
-      }
+      // user, and we are willing to throw when they do not.
+      ids.push_back(tweet["user"]["id"]);
       // Not all tweets have a "retweeted_status", but when they do
       // we want to go and find the user within.
       auto retweet = tweet["retweeted_status"];
       if(!retweet.error()) {
-          ondemand::object retweet_content = retweet;
-          ondemand::object reuser = retweet_content["user"];
-          int64_t rid = reuser["id"];
-          ids.push_back(rid);
+          ids.push_back(retweet["user"]["id"]);
       }
   }
   remove_duplicates(ids);
