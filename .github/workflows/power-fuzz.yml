@@ -20,7 +20,7 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         with:
           arch: ppc64le
-          distro: ubuntu20.04
+          distro: buster
 
           # Not required, but speeds up builds by storing container images in
           # a GitHub package registry.
@@ -31,8 +31,8 @@ jobs:
             uname -a
             echo ::set-output name=uname::$(uname -a)
             apt-get -qq update
-            apt-get install -q -y clang-10 libfuzzer-10-dev cmake git wget zip ninja-build
-            CLANGSUFFIX="-10" fuzz/quick_check.sh
+            apt-get install -q -y clang-7 libfuzzer-7-dev cmake git wget zip ninja-build
+            CLANGSUFFIX="-7" fuzz/quick_check.sh
 
       - name: Get the output
         # Echo the `uname` output parameter from the `runcmd` step
