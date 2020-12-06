@@ -22,5 +22,8 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "distinctuserid/ondemand.h"
 #include "distinctuserid/dom.h"
 
+#include "find_tweet/ondemand.h"
+#include "find_tweet/dom.h"
+
 
 BENCHMARK_MAIN();
