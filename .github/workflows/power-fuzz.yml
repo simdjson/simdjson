@@ -39,7 +39,7 @@ jobs:
                   -DSIMDJSON_COMPETITION=OFF \
                   -DSIMDJSON_GOOGLE_BENCHMARKS=OFF \
                   -DSIMDJSON_DISABLE_DEPRECATED_API=On \
-                  -DSIMDJSON_FUZZ_LDFLAGS=-lFuzzer" \
+                  -DSIMDJSON_FUZZ_LDFLAGS=-lFuzzer \
                   -DCMAKE_CXX_FLAGS="-fsanitize=fuzzer-no-link -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION=" \
                   -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link" \
                   -DCMAKE_BUILD_TYPE=Release \
@@ -60,5 +60,3 @@ jobs:
                echo "*************************************************************************"
             done
             echo "all is good, no errors found in any of these fuzzers: $fuzzernames"
-
-
