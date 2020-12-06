@@ -35,9 +35,9 @@ if(ENABLE_FUZZING)
     target_sources(simdjson-fuzzer INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/main.cpp)
   else ()
     target_link_libraries(simdjson-fuzzer INTERFACE simdjson)
+    target_link_libraries(simdjson-fuzzer INTERFACE ${SIMDJSON_FUZZ_LDFLAGS})
   endif ()
   target_link_libraries(simdjson-fuzzer INTERFACE simdjson-internal-flags)
-  target_link_libraries(simdjson-fuzzer INTERFACE ${SIMDJSON_FUZZ_LDFLAGS})
 
   # Define the fuzzers
   add_custom_target(all_fuzzers)

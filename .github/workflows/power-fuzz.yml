@@ -18,6 +18,7 @@ jobs:
         id: runcmd
         env:
           DEBIAN_FRONTEND: noninteractive
+          CLANGSUFFIX: -10
         with:
           arch: ppc64le
           distro: ubuntu20.04
@@ -31,12 +32,8 @@ jobs:
             uname -a
             echo ::set-output name=uname::$(uname -a)
             apt-get -qq update
-            apt-get install -q -y clang cmake git wget zip ninja-build
-            wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
-            tar xf corpus.tar && rm corpus.tar
-            fuzz/build_like_ossfuzz.sh
-            mkdir -p common_out
-            for fuzzer in build/fuzz/fuzz_* ; do echo $fuzzer;$fuzzer common_out out/* -max_total_time=40; done
+            apt-get install -q -y clang${CLANGSUFFIX} libfuzzer${CLANGSUFFIX}-dev cmake git wget zip ninja-build
+            fuzz/quick_check.sh
 
       - name: Get the output
         # Echo the `uname` output parameter from the `runcmd` step
