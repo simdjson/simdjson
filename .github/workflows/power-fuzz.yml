@@ -18,7 +18,6 @@ jobs:
         id: runcmd
         env:
           DEBIAN_FRONTEND: noninteractive
-          CLANGSUFFIX: -10
         with:
           arch: ppc64le
           distro: ubuntu20.04
@@ -33,7 +32,7 @@ jobs:
             echo ::set-output name=uname::$(uname -a)
             apt-get -qq update
             apt-get install -q -y clang-10 libfuzzer-10-dev cmake git wget zip ninja-build
-            fuzz/quick_check.sh
+            CLANGSUFFIX="-10" fuzz/quick_check.sh
 
       - name: Get the output
         # Echo the `uname` output parameter from the `runcmd` step
