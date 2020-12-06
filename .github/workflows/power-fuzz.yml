@@ -26,16 +26,39 @@ jobs:
           # a GitHub package registry.
           githubToken: ${{ github.token }}
 
-          # Set an output parameter `uname` for use in subsequent steps
           run: |
-            uname -a
-            echo ::set-output name=uname::$(uname -a)
+            export CLANGSUFFIX="-7"
             apt-get -qq update
             apt-get install -q -y clang-7 libfuzzer-7-dev cmake git wget zip ninja-build
-            CLANGSUFFIX="-7" fuzz/quick_check.sh
+            mkdir -p build ; cd build
+            cmake .. -GNinja \
+                  -DCMAKE_CXX_COMPILER=clang++$CLANGSUFFIX \
+                  -DCMAKE_C_COMPILER=clang$CLANGSUFFIX \
+                  -DSIMDJSON_BUILD_STATIC=Off \
+                  -DENABLE_FUZZING=On \
+                  -DSIMDJSON_COMPETITION=OFF \
+                  -DSIMDJSON_GOOGLE_BENCHMARKS=OFF \
+                  -DSIMDJSON_DISABLE_DEPRECATED_API=On \
+                  -DSIMDJSON_FUZZ_LDFLAGS=-lFuzzer" \
+                  -DCMAKE_CXX_FLAGS="-fsanitize=fuzzer-no-link -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION=" \
+                  -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link" \
+	          -DCMAKE_BUILD_TYPE=Release \
+	          -DSIMDJSON_FUZZ_LINKMAIN=Off
+            cd ..
+            builddir=build
+            cmake --build $builddir
+            wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
+            tar xf corpus.tar && rm corpus.tar
+            fuzzernames=$(cmake --build $builddir --target print_all_fuzzernames |tail -n1)
+            for fuzzer in $fuzzernames ; do
+               exe=$builddir/fuzz/$fuzzer
+               shortname=$(echo $fuzzer |cut -f2- -d_)
+               echo found fuzzer $shortname with executable $exe
+               mkdir -p out/$shortname
+               others=$(find out -type d -not -name $shortname -not -name out -not -name cmin)
+               $exe -max_total_time=20  -max_len=4000 out/$shortname $others
+               echo "*************************************************************************"
+            done
+            echo "all is good, no errors found in any of these fuzzers: $fuzzernames"
 
-      - name: Get the output
-        # Echo the `uname` output parameter from the `runcmd` step
-        run: |
-          echo "The uname output was ${{ steps.runcmd.outputs.uname }}"
 
