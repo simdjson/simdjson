@@ -35,7 +35,7 @@ testfuzzer=testfuzzer.cpp
 if clang++$CLANGSUFFIX -o testfuzzer $testfuzzer -fsanitize=fuzzer && ./testfuzzer -runs=1 >/dev/null 2>&1 ; then
    echo "will use -fsanitize=fuzzer to link libFuzzer"
    SIMDJSON_FUZZ_LDFLAGS="-fsanitize=fuzzer"
-elif clang++$CLANGSUFFIX -o testfuzzer $testfuzzer -fsanitize=fuzzer -lFuzzer  && ./testfuzzer -runs=1 >/dev/null 2>&1 ; then
+elif clang++$CLANGSUFFIX -o testfuzzer $testfuzzer -fsanitize=fuzzer-no-link -lFuzzer  && ./testfuzzer -runs=1 >/dev/null 2>&1 ; then
    echo "will use -lFuzzer to link libFuzzer"
    SIMDJSON_FUZZ_LDFLAGS="-lFuzzer"
 else
