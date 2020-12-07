@@ -18,10 +18,6 @@ public:
    * Exists so you can declare a variable and later assign to it before use.
    */
   simdjson_really_inline array() noexcept = default;
-  simdjson_really_inline array(array &&other) noexcept = default;
-  simdjson_really_inline array &operator=(array &&other) noexcept = default;
-  array(const array &) = delete;
-  array &operator=(const array &) = delete;
 
   /**
    * Begin array iteration.
@@ -96,10 +92,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> : public SIMDJS
 public:
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::array &&value) noexcept; ///< @private
   simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
-
   simdjson_really_inline simdjson_result() noexcept = default;
-  simdjson_really_inline simdjson_result(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> &&a) noexcept = default;
-  simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() noexcept;

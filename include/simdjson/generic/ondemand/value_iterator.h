@@ -26,10 +26,6 @@ protected:
 
 public:
   simdjson_really_inline value_iterator() noexcept = default;
-  simdjson_really_inline value_iterator(value_iterator &&other) noexcept = default;
-  simdjson_really_inline value_iterator &operator=(value_iterator &&other) noexcept = default;
-  simdjson_really_inline value_iterator(const value_iterator &other) noexcept = default;
-  simdjson_really_inline value_iterator &operator=(const value_iterator &other) noexcept = default;
 
   /**
    * Denote that we're starting a document.
@@ -276,10 +272,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value_iterator> : publ
 public:
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::value_iterator &&value) noexcept; ///< @private
   simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
-
   simdjson_really_inline simdjson_result() noexcept = default;
-  simdjson_really_inline simdjson_result(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value_iterator> &&a) noexcept = default;
-  simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 };
 
 } // namespace simdjson

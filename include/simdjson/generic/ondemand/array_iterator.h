@@ -75,10 +75,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> : publ
 public:
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::array_iterator &&value) noexcept; ///< @private
   simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
-
   simdjson_really_inline simdjson_result() noexcept = default;
-  simdjson_really_inline simdjson_result(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &&a) noexcept = default;
-  simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 
   //
   // Iterator interface

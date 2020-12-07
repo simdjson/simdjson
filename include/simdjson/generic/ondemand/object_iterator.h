@@ -15,9 +15,6 @@ public:
    */
   simdjson_really_inline object_iterator() noexcept = default;
 
-  simdjson_really_inline object_iterator(const object_iterator &o) noexcept = default;
-  simdjson_really_inline object_iterator &operator=(const object_iterator &o) noexcept = default;
-
   //
   // Iterator interface
   //
@@ -71,10 +68,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> : pub
 public:
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::object_iterator &&value) noexcept; ///< @private
   simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
-
   simdjson_really_inline simdjson_result() noexcept = default;
-  simdjson_really_inline simdjson_result(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &&a) noexcept = default;
-  simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 
   //
   // Iterator interface

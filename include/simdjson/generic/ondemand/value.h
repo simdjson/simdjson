@@ -22,12 +22,6 @@ public:
    */
   simdjson_really_inline value() noexcept = default;
 
-  simdjson_really_inline value(value &&other) noexcept = default;
-  simdjson_really_inline value &operator=(value && other) noexcept = default;
-  simdjson_really_inline value(const value &) noexcept = default;
-  simdjson_really_inline value &operator=(const value &) noexcept = default;
-  simdjson_really_inline ~value() noexcept = default;
-
   /**
    * Get this value as the given type.
    *
@@ -310,10 +304,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> : public SIMDJS
 public:
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::value &&value) noexcept; ///< @private
   simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
-
   simdjson_really_inline simdjson_result() noexcept = default;
-  simdjson_really_inline simdjson_result(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> &&a) noexcept = default;
-  simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> get_array() && noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> get_array() & noexcept;
