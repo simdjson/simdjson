@@ -9,7 +9,7 @@ simdjson_really_inline document::document(ondemand::json_iterator &&_iter) noexc
 }
 
 simdjson_really_inline void document::assert_at_start() const noexcept {
-  SIMDJSON_ASSUME(iter.at_start());
+  iter.assert_at_start();
 }
 simdjson_really_inline document document::start(json_iterator &&iter) noexcept {
   return document(std::forward<json_iterator>(iter));

@@ -63,6 +63,11 @@ public:
   simdjson_really_inline bool at_start() const noexcept;
 
   /**
+   * Assert if the iterator is not at the start
+   */
+  simdjson_really_inline void assert_at_start() const noexcept;
+
+  /**
    * Tell whether the iterator is at the EOF mark
    */
   simdjson_really_inline bool at_eof() const noexcept;

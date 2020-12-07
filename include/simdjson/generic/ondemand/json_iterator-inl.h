@@ -91,7 +91,15 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child
 }
 
 simdjson_really_inline bool json_iterator::at_start() const noexcept {
-  return token.index == parser->dom_parser.structural_indexes.get();
+  return token.index == &parser->dom_parser.structural_indexes[0];
+}
+
+simdjson_really_inline void json_iterator::assert_at_start() const noexcept {
+  SIMDJSON_ASSUME( _depth == 1 );
+  // Visual Studio Clang treats unique_ptr.get() as "side effecting."
+#ifndef SIMDJSON_CLANG_VISUAL_STUDIO
+  SIMDJSON_ASSUME( token.index == parser->dom_parser.structural_indexes.get() );
+#endif
 }
 
 simdjson_really_inline bool json_iterator::at_eof() const noexcept {
@@ -120,12 +128,12 @@ simdjson_really_inline uint32_t json_iterator::peek_length(int32_t delta) const 
 }
 
 simdjson_really_inline void json_iterator::ascend_to(depth_t parent_depth) noexcept {
-  SIMDJSON_ASSUME(depth() == parent_depth + 1);
+  SIMDJSON_ASSUME(_depth == parent_depth + 1);
   _depth = parent_depth;
 }
 
 simdjson_really_inline void json_iterator::descend_to(depth_t child_depth) noexcept {
-  SIMDJSON_ASSUME(depth() == child_depth - 1);
+  SIMDJSON_ASSUME(_depth == child_depth - 1);
   _depth = child_depth;
 }
 
