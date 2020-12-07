@@ -971,7 +971,7 @@ namespace dom_api_tests {
       int count = 0;
       for (simdjson_result<ondemand::value> val_result : doc_result) {
         ondemand::value val;
-        ASSERT_SUCCESS( std::move(val_result).get(val) );
+        ASSERT_SUCCESS( val_result.get(val) );
         T actual;
         ASSERT_SUCCESS( val.get(actual) );
         ASSERT_EQUAL(expected, actual);
@@ -1026,7 +1026,7 @@ namespace dom_api_tests {
       int count = 0;
       for (auto value_result : doc_result) {
         ondemand::value value;
-        ASSERT_SUCCESS( std::move(value_result).get(value) );
+        ASSERT_SUCCESS( value_result.get(value) );
         ASSERT_EQUAL( value.is_null(), true );
         count++;
       }
@@ -1398,13 +1398,8 @@ namespace twitter_tests {
     ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
       // Print users with a default profile.
       set<string_view> default_users;
-      ondemand::array tweets;
-      ASSERT_SUCCESS( doc_result["statuses"].get(tweets) );
-      for (auto tweet_value : tweets) {
-        auto tweet = tweet_value.get_object();
-
-        ondemand::object user;
-        ASSERT_SUCCESS( tweet["user"].get(user) );
+      for (auto tweet : doc_result["statuses"]) {
+        auto user = tweet["user"].get_object();
 
         // We have to get the screen name before default_profile because it appears first
         std::string_view screen_name;
@@ -1429,17 +1424,11 @@ namespace twitter_tests {
     ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
       // Print image names and sizes
       set<pair<uint64_t, uint64_t>> image_sizes;
-      ondemand::array tweets;
-      ASSERT_SUCCESS( doc_result["statuses"].get(tweets) );
-      for (auto tweet_value : tweets) {
-        auto tweet = tweet_value.get_object();
-        auto entities = tweet["entities"].get_object();
-        ondemand::array media;
-        if (entities["media"].get(media) == SUCCESS) {
-          for (auto image_value : media) {
-            auto image = image_value.get_object();
-            auto sizes = image["sizes"].get_object();
-            for (auto size : sizes) {
+      for (auto tweet : doc_result["statuses"]) {
+        auto media = tweet["entities"]["media"];
+        if (!media.error()) {
+          for (auto image : media) {
+            for (auto size : image["sizes"].get_object()) {
               auto size_value = size.value().get_object();
               uint64_t width, height;
               ASSERT_SUCCESS( size_value["w"].get(width) );
@@ -1462,9 +1451,7 @@ namespace twitter_tests {
     padded_string json;
     ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
     ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
-      auto metadata = doc_result["search_metadata"].get_object();
-      uint64_t count;
-      ASSERT_SUCCESS( metadata["count"].get(count) );
+      uint64_t count = doc_result["search_metadata"]["count"];
       ASSERT_EQUAL( count, 100 );
       return true;
     }));
@@ -1477,8 +1464,7 @@ namespace twitter_tests {
     ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
       // Print users with a default profile.
       set<string_view> default_users;
-      auto tweets = doc_result["statuses"];
-      for (ondemand::object tweet : tweets) {
+      for (auto tweet : doc_result["statuses"]) {
         ondemand::object user = tweet["user"];
 
         // We have to get the screen name before default_profile because it appears first
@@ -1499,10 +1485,9 @@ namespace twitter_tests {
     ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
       // Print image names and sizes
       set<pair<uint64_t, uint64_t>> image_sizes;
-      for (ondemand::object tweet : doc_result["statuses"]) {
-        ondemand::object entities = tweet["entities"];
-        auto media = entities["media"];
-        if (media.error() == SUCCESS) {
+      for (auto tweet : doc_result["statuses"]) {
+        auto media = tweet["entities"]["media"];
+        if (!media.error()) {
           for (ondemand::object image : media) {
             /**
              * Fun fact: id and id_str can differ:
@@ -1512,12 +1497,11 @@ namespace twitter_tests {
              * 505866668485386241 cannot be represented as a double.
              * (not our fault)
              */
-            uint64_t id_val = image["id"].get_uint64();
-            std::cout << "id = " <<id_val << std::endl;
-            auto id_string = std::string_view(image["id_str"]);
+            uint64_t id_val = image["id"];
+            std::cout << "id = " << id_val << std::endl;
+            std::string_view id_string = image["id_str"];
             std::cout << "id_string = " << id_string << std::endl;
-            auto sizes = image["sizes"].get_object();
-            for (auto size : sizes) {
+            for (auto size : image["sizes"].get_object()) {
               /**
                * We want to know the key that describes the size.
                */
@@ -1526,7 +1510,7 @@ namespace twitter_tests {
               ondemand::object size_value = size.value();
               int64_t width = size_value["w"];
               int64_t height = size_value["h"];
-              std::cout <<  width << " x " << height << std::endl;
+              std::cout << width << " x " << height << std::endl;
               image_sizes.insert(make_pair(width, height));
             }
           }
