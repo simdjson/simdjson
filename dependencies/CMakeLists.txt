@@ -23,13 +23,21 @@ endif()
 function(competition_scope_)
   # boost json in standalone mode requires C++17 string_view
   include(CheckCXXSourceCompiles)
-  check_cxx_source_compiles("#include <string_view>\n#if __cpp_lib_string_view < 201606\n#error no string view support\n#endif\nint main(){}" USE_BOOST_JSON)
+  check_cxx_source_compiles([[
+#include <string_view>
+
+#if __cpp_lib_string_view < 201606
+#  error no string view support
+#endif
+
+int main() {}
+]] USE_BOOST_JSON)
   if(USE_BOOST_JSON)
-  import_dependency(boostjson boostorg/json ee8d72d8502b409b5561200299cad30ccdb91415)
-  add_library(boostjson STATIC "${boostjson_SOURCE_DIR}/src/src.cpp")
-  target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
-  target_include_directories(boostjson SYSTEM PUBLIC
-          "${boostjson_SOURCE_DIR}/include")
+    import_dependency(boostjson boostorg/json ee8d72d)
+    add_library(boostjson STATIC "${boostjson_SOURCE_DIR}/src/src.cpp")
+    target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
+    target_include_directories(boostjson SYSTEM PUBLIC
+            "${boostjson_SOURCE_DIR}/include")
   endif()
 
   import_dependency(cjson DaveGamble/cJSON c69134d)
