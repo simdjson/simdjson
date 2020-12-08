@@ -1,7 +1,14 @@
+include(CMakeDependentOption)
 include(import.cmake)
 
-option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
-option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON)
+option(SIMDJSON_ALLOW_DOWNLOADS
+        "Allow dependencies to be downloaded during configure time"
+        ON)
+
+cmake_dependent_option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON
+        SIMDJSON_ALLOW_DOWNLOADS OFF)
+cmake_dependent_option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON
+        SIMDJSON_ALLOW_DOWNLOADS OFF)
 
 if(SIMDJSON_GOOGLE_BENCHMARKS)
   set_off(BENCHMARK_ENABLE_TESTING)
@@ -102,9 +109,14 @@ if(SIMDJSON_COMPETITION)
   competition_scope_()
 endif()
 
-set_off(CXXOPTS_BUILD_EXAMPLES)
-set_off(CXXOPTS_BUILD_TESTS)
-set_off(CXXOPTS_ENABLE_INSTALL)
+cmake_dependent_option(SIMDJSON_CXXOPTS "Download cxxopts (necessary for tools)" ON
+        SIMDJSON_ALLOW_DOWNLOADS OFF)
 
-import_dependency(cxxopts jarro2783/cxxopts 794c975)
-add_dependency(cxxopts)
+if(SIMDJSON_CXXOPTS)
+  set_off(CXXOPTS_BUILD_EXAMPLES)
+  set_off(CXXOPTS_BUILD_TESTS)
+  set_off(CXXOPTS_ENABLE_INSTALL)
+
+  import_dependency(cxxopts jarro2783/cxxopts 794c975)
+  add_dependency(cxxopts)
+endif()
