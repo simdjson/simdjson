@@ -26,16 +26,15 @@ private:
   ondemand::parser parser{};
   std::vector<tweet> tweets{};
 
-  simdjson_really_inline uint64_t nullable_int(ondemand::value && value) {
+  simdjson_really_inline uint64_t nullable_int(ondemand::value value) {
     if (value.is_null()) { return 0; }
-    return std::move(value);
+    return value;
   }
 
-  simdjson_really_inline twitter_user read_user(ondemand::object && user) {
-    // Move user into a local object so it gets destroyed (and moves the iterator)
-    ondemand::object u = std::move(user);
-    return { u["id"], u["screen_name"] };
+  simdjson_really_inline twitter_user read_user(ondemand::object user) {
+    return { user["id"], user["screen_name"] };
   }
+
   static inline bool displayed_implementation = false;
 };
 

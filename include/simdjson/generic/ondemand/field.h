@@ -20,11 +20,6 @@ public:
    */
   simdjson_really_inline field() noexcept;
 
-  simdjson_really_inline field(field &&other) noexcept = default;
-  simdjson_really_inline field &operator=(field &&other) noexcept = default;
-  simdjson_really_inline field(const field &other) noexcept = delete;
-  simdjson_really_inline field &operator=(const field &other) noexcept = delete;
-
   /**
    * Get the key as a string_view (for higher speed, consider raw_key).
    * We deliberately use a more cumbersome name (unescaped_key) to force users
@@ -50,8 +45,8 @@ public:
 
 protected:
   simdjson_really_inline field(raw_json_string key, ondemand::value &&value) noexcept;
-  static simdjson_really_inline simdjson_result<field> start(json_iterator_ref &iter) noexcept;
-  static simdjson_really_inline simdjson_result<field> start(json_iterator_ref &&iter, raw_json_string key) noexcept;
+  static simdjson_really_inline simdjson_result<field> start(value_iterator &parent_iter) noexcept;
+  static simdjson_really_inline simdjson_result<field> start(const value_iterator &parent_iter, raw_json_string key) noexcept;
   friend struct simdjson_result<field>;
   friend class object_iterator;
 };
@@ -67,10 +62,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field> : public SIMDJS
 public:
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::field &&value) noexcept; ///< @private
   simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
-
   simdjson_really_inline simdjson_result() noexcept = default;
-  simdjson_really_inline simdjson_result(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field> &&a) noexcept = default;
-  simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 
   simdjson_really_inline simdjson_result<std::string_view> unescaped_key() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> key() noexcept;

@@ -10,16 +10,9 @@
 // Interface
 //
 
-namespace distinct_user_id {
-template<typename T> static void DistinctUserID(benchmark::State &state);
-
-bool equals(const char *s1, const char *s2) { return strcmp(s1, s2) == 0; }
-
-void remove_duplicates(std::vector<int64_t> &v) {
-  std::sort(v.begin(), v.end());
-  auto last = std::unique(v.begin(), v.end());
-  v.erase(last, v.end());
-}
+namespace find_tweet {
+template<typename T> static void FindTweet(benchmark::State &state);
+const uint64_t TWEET_ID = 505874901689851900;
 } // namespace
 
 //
@@ -29,11 +22,11 @@ void remove_duplicates(std::vector<int64_t> &v) {
 #include "dom.h"
 
 
-namespace distinct_user_id {
+namespace find_tweet {
 
 using namespace simdjson;
 
-template<typename T> static void DistinctUserID(benchmark::State &state) {
+template<typename T> static void FindTweet(benchmark::State &state) {
   //
   // Load the JSON file
   //
@@ -49,4 +42,4 @@ template<typename T> static void DistinctUserID(benchmark::State &state) {
   JsonBenchmark<T, Dom>(state, json);
 }
 
-} // namespace distinct_user_id
+} // namespace find_tweet

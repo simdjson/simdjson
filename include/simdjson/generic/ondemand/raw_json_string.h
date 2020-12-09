@@ -32,9 +32,6 @@ public:
    */
   simdjson_really_inline raw_json_string() noexcept = default;
 
-  simdjson_really_inline raw_json_string(const raw_json_string &other) noexcept = default;
-  simdjson_really_inline raw_json_string &operator=(const raw_json_string &other) noexcept = default;
-
   /**
    * Create a new invalid raw_json_string pointed at the given location in the JSON.
    *

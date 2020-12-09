@@ -2,6 +2,7 @@
 #include "simdjson/generic/ondemand/raw_json_string-inl.h"
 #include "simdjson/generic/ondemand/token_iterator-inl.h"
 #include "simdjson/generic/ondemand/json_iterator-inl.h"
+#include "simdjson/generic/ondemand/value_iterator-inl.h"
 #include "simdjson/generic/ondemand/array_iterator-inl.h"
 #include "simdjson/generic/ondemand/object_iterator-inl.h"
 #include "simdjson/generic/ondemand/array-inl.h"

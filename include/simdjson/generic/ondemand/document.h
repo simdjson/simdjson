@@ -9,7 +9,7 @@ class array;
 class object;
 class value;
 class raw_json_string;
-template<typename T> class array_iterator;
+class array_iterator;
 
 /**
  * A JSON document iteration.
@@ -31,10 +31,6 @@ public:
   simdjson_really_inline document() noexcept = default;
   simdjson_really_inline document(const document &other) = delete;
   simdjson_really_inline document &operator=(const document &other) = delete;
-  /**
-   * Finishes logging (if logging is enabled).
-   */
-  simdjson_really_inline ~document() noexcept;
 
   /**
    * Cast this JSON value to an array.
@@ -202,67 +198,50 @@ public:
    *
    * Part of the std::iterable interface.
    */
-  simdjson_really_inline simdjson_result<array_iterator<document>> begin() & noexcept;
+  simdjson_really_inline simdjson_result<array_iterator> begin() & noexcept;
   /**
    * Sentinel representing the end of the array.
    *
    * Part of the std::iterable interface.
    */
-  simdjson_really_inline simdjson_result<array_iterator<document>> end() & noexcept;
+  simdjson_really_inline simdjson_result<array_iterator> end() & noexcept;
 
   /**
    * Look up a field by name on an object.
    *
-   * This method may only be called once on a given value. If you want to look up multiple fields,
-   * you must first get the object using value.get_object() or object(value).
+   * Important notes:
+   *
+   * * **Raw Keys:** The lookup will be done against the *raw* key, and will not unescape keys.
+   *   e.g. `object["a"]` will match `{ "a": 1 }`, but will *not* match `{ "\u0061": 1 }`.
+   * * **Once Only:** You may only look up a single field on a document. To look up multiple fields,
+   *   use `.get_object()` or cast to `object`.
    *
    * @param key The key to look up.
-   * @returns INCORRECT_TYPE If the JSON value is not an array.
+   * @returns The value of the field, NO_SUCH_FIELD if the field is not in the object, or
+   *          INCORRECT_TYPE if the JSON value is not an array.
    */
   simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept;
-  /**
-   * Look up a field by name on an object.
-   *
-   * This method may only be called once on a given value. If you want to look up multiple fields,
-   * you must first get the object using value.get_object() or object(value).
-   *
-   * @param key The key to look up.
-   * @returns INCORRECT_TYPE If the JSON value is not an array.
-   */
+  /** @overload simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept; */
   simdjson_really_inline simdjson_result<value> operator[](const char *key) & noexcept;
 
 protected:
-  simdjson_really_inline document(ondemand::json_iterator &&iter, const uint8_t *json) noexcept;
+  simdjson_really_inline document(ondemand::json_iterator &&iter) noexcept;
   simdjson_really_inline const uint8_t *text(uint32_t idx) const noexcept;
 
   simdjson_really_inline value as_value() noexcept;
+  simdjson_really_inline value_iterator as_value_iterator() noexcept;
   static simdjson_really_inline document start(ondemand::json_iterator &&iter) noexcept;
-  /**
-   * Set json to null if the result is successful.
-   *
-   * Convenience function for value-getters.
-   */
-  template<typename T>
-  simdjson_result<T> consume_if_success(simdjson_result<T> &&result) noexcept;
 
   simdjson_really_inline void assert_at_start() const noexcept;
-
-  //
-  // For array_iterator
-  //
-  simdjson_really_inline json_iterator &get_iterator() noexcept;
-  simdjson_really_inline json_iterator_ref borrow_iterator() noexcept;
-  simdjson_really_inline bool is_iterator_alive() const noexcept;
-  simdjson_really_inline void iteration_finished() noexcept;
 
   //
   // Fields
   //
   json_iterator iter{}; ///< Current position in the document
-  const uint8_t *json{}; ///< JSON for the value in the document (nullptr if value has been consumed)
+  static constexpr depth_t DOCUMENT_DEPTH = 0; ///< document depth is always 0
 
   friend struct simdjson_result<document>;
-  friend class array_iterator<document>;
+  friend class array_iterator;
   friend class value;
   friend class ondemand::parser;
   friend class object;
@@ -314,8 +293,8 @@ public:
   simdjson_really_inline operator bool() noexcept(false);
 #endif
 
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<SIMDJSON_IMPLEMENTATION::ondemand::document>> begin() & noexcept;
-  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator<SIMDJSON_IMPLEMENTATION::ondemand::document>> end() & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) & noexcept;
 };
