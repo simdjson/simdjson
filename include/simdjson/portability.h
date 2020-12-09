@@ -117,7 +117,7 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 #endif
 
 // Is threading enabled?
-#if defined(BOOST_HAS_THREADS) || defined(_REENTRANT) || defined(_MT)
+#if defined(_REENTRANT) || defined(_MT)
 #ifndef SIMDJSON_THREADS_ENABLED
 #define SIMDJSON_THREADS_ENABLED
 #endif
