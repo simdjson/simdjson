@@ -232,7 +232,7 @@ protected:
   simdjson_really_inline value_iterator as_value_iterator() noexcept;
   static simdjson_really_inline document start(ondemand::json_iterator &&iter) noexcept;
 
-  simdjson_really_inline void assert_at_start() const noexcept;
+  simdjson_really_inline void assert_at_root() const noexcept;
 
   //
   // Fields

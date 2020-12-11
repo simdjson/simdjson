@@ -23,6 +23,8 @@ protected:
   json_iterator *_json_iter{};
   /** The depth of this value */
   depth_t _depth{};
+  /** The starting token index for this value */
+  const uint32_t *_start_index{};
 
 public:
   simdjson_really_inline value_iterator() noexcept = default;
@@ -246,7 +248,7 @@ public:
   /** @} */
 
 protected:
-  simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth) noexcept;
+  simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth, const uint32_t *start_index) noexcept;
   simdjson_really_inline bool is_null(const uint8_t *json) const noexcept;
   simdjson_really_inline simdjson_result<bool> parse_bool(const uint8_t *json) const noexcept;
   simdjson_really_inline bool is_root_null(const uint8_t *json, uint32_t max_len) const noexcept;
@@ -254,6 +256,12 @@ protected:
   simdjson_really_inline simdjson_result<uint64_t> parse_root_uint64(const uint8_t *json, uint32_t max_len) const noexcept;
   simdjson_really_inline simdjson_result<int64_t> parse_root_int64(const uint8_t *json, uint32_t max_len) const noexcept;
   simdjson_really_inline simdjson_result<double> parse_root_double(const uint8_t *json, uint32_t max_len) const noexcept;
+
+  simdjson_really_inline void assert_at_start() const noexcept;
+  simdjson_really_inline void assert_at_root() const noexcept; 
+  simdjson_really_inline void assert_at_child() const noexcept;
+  simdjson_really_inline void assert_at_next() const noexcept; 
+  simdjson_really_inline void assert_at_non_root_start() const noexcept; 
 
   friend class document;
   friend class object;

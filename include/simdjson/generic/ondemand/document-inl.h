@@ -8,8 +8,8 @@ simdjson_really_inline document::document(ondemand::json_iterator &&_iter) noexc
   logger::log_start_value(iter, "document");
 }
 
-simdjson_really_inline void document::assert_at_start() const noexcept {
-  iter.assert_at_start();
+simdjson_really_inline void document::assert_at_root() const noexcept {
+  iter.assert_at_root();
 }
 simdjson_really_inline document document::start(json_iterator &&iter) noexcept {
   return document(std::forward<json_iterator>(iter));
@@ -19,8 +19,8 @@ simdjson_really_inline value document::as_value() noexcept {
   return as_value_iterator();
 }
 simdjson_really_inline value_iterator document::as_value_iterator() noexcept {
-  assert_at_start();
-  return value_iterator(&iter, 1);
+  assert_at_root();
+  return value_iterator(&iter, 1, iter.token.checkpoint());
 }
 
 simdjson_really_inline simdjson_result<array> document::get_array() & noexcept {
@@ -30,15 +30,12 @@ simdjson_really_inline simdjson_result<object> document::get_object() & noexcept
   return as_value().get_object();
 }
 simdjson_really_inline simdjson_result<uint64_t> document::get_uint64() noexcept {
-  assert_at_start();
   return as_value_iterator().require_root_uint64();
 }
 simdjson_really_inline simdjson_result<int64_t> document::get_int64() noexcept {
-  assert_at_start();
   return as_value_iterator().require_root_int64();
 }
 simdjson_really_inline simdjson_result<double> document::get_double() noexcept {
-  assert_at_start();
   return as_value_iterator().require_root_double();
 }
 simdjson_really_inline simdjson_result<std::string_view> document::get_string() & noexcept {
@@ -48,11 +45,9 @@ simdjson_really_inline simdjson_result<raw_json_string> document::get_raw_json_s
   return as_value().get_raw_json_string();
 }
 simdjson_really_inline simdjson_result<bool> document::get_bool() noexcept {
-  assert_at_start();
   return as_value_iterator().require_root_bool();
 }
 simdjson_really_inline bool document::is_null() noexcept {
-  assert_at_start();
   return as_value_iterator().is_root_null();
 }
 

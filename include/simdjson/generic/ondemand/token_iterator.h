@@ -49,6 +49,11 @@ public:
    */
   simdjson_really_inline const uint8_t *advance() noexcept;
 
+  /**
+   * Save the current index to be restored later.
+   */
+  simdjson_really_inline const uint32_t *checkpoint() const noexcept;
+
   // NOTE: we don't support a full C++ iterator interface, because we expect people to make
   // different calls to advance the iterator based on *their own* state.
 
@@ -77,6 +82,7 @@ protected:
   const uint32_t *index{};
 
   friend class json_iterator;
+  friend class value_iterator;
   friend simdjson_really_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
 };
 

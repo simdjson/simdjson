@@ -90,11 +90,11 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child
   return report_error(TAPE_ERROR, "not enough close braces");
 }
 
-simdjson_really_inline bool json_iterator::at_start() const noexcept {
-  return token.index == &parser->dom_parser.structural_indexes[0];
+simdjson_really_inline bool json_iterator::at_root() const noexcept {
+  return token.index == parser->dom_parser.structural_indexes.get();
 }
 
-simdjson_really_inline void json_iterator::assert_at_start() const noexcept {
+simdjson_really_inline void json_iterator::assert_at_root() const noexcept {
   SIMDJSON_ASSUME( _depth == 1 );
   // Visual Studio Clang treats unique_ptr.get() as "side effecting."
 #ifndef SIMDJSON_CLANG_VISUAL_STUDIO
