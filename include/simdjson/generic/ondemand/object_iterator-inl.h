@@ -6,9 +6,9 @@ namespace ondemand {
 // object_iterator
 //
 
-simdjson_really_inline object_iterator::object_iterator(const value_iterator &_iter) noexcept
+simdjson_really_inline object_iterator::object_iterator(const value_iterator &_iter, bool _at_start) noexcept
   : iter{_iter},
-    at_start{true}
+    at_start{_at_start}
 {}
 
 simdjson_really_inline simdjson_result<field> object_iterator::operator*() noexcept {

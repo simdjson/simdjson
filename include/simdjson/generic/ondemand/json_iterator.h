@@ -63,6 +63,11 @@ public:
   simdjson_really_inline bool at_root() const noexcept;
 
   /**
+   * Get the root value iterator
+   */
+  simdjson_really_inline const uint32_t *root_checkpoint() const noexcept;
+
+  /**
    * Assert if the iterator is not at the start
    */
   simdjson_really_inline void assert_at_root() const noexcept;
@@ -184,8 +189,6 @@ public:
   simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
 
   simdjson_really_inline simdjson_result() noexcept = default;
-  simdjson_really_inline simdjson_result(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_iterator> &&a) noexcept = default;
-  simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 };
 
 } // namespace simdjson

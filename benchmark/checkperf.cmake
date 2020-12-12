@@ -89,7 +89,7 @@ if (Git_FOUND AND (GIT_VERSION_STRING VERSION_GREATER  "2.1.4") AND (NOT CMAKE_G
     # COMMAND ECHO $<TARGET_FILE:perfdiff> \"$<TARGET_FILE:parse> -t ${SIMDJSON_CHECKPERF_ARGS}\" \"${CHECKPERF_PARSE} -t ${SIMDJSON_CHECKPERF_ARGS}\" }
     COMMAND $<TARGET_FILE:perfdiff> $<TARGET_FILE:parse> ${CHECKPERF_PARSE} -H -t ${SIMDJSON_CHECKPERF_ARGS}
   )
-  set_property(TEST checkperf APPEND PROPERTY LABELS per_implementation)
+  set_property(TEST checkperf APPEND PROPERTY LABELS per_implementation explicitonly)
   set_property(TEST checkperf APPEND PROPERTY DEPENDS parse perfdiff ${SIMDJSON_USER_CMAKECACHE})
   set_property(TEST checkperf PROPERTY RUN_SERIAL TRUE)
 else()

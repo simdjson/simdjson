@@ -23,7 +23,11 @@ protected:
   json_iterator *_json_iter{};
   /** The depth of this value */
   depth_t _depth{};
-  /** The starting token index for this value */
+  /**
+   * The starting token index for this value
+   *
+   * PERF NOTE: this is a safety check; we expect this to be elided in release builds.
+   */
   const uint32_t *_start_index{};
 
 public:

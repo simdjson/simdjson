@@ -51,4 +51,4 @@ jobs:
           cd build
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT=ON ..
           cmake --build . --verbose
-          ctest -j4 --output-on-failure -E checkperf
+          ctest -j4 --output-on-failure -LE explicitonly

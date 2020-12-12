@@ -52,7 +52,7 @@ private:
    */
   bool at_start{};
 
-  simdjson_really_inline object_iterator(const value_iterator &iter) noexcept;
+  simdjson_really_inline object_iterator(const value_iterator &iter, bool at_start = true) noexcept;
   friend struct simdjson_result<object_iterator>;
   friend class object;
 };

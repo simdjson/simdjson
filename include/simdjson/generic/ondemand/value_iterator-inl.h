@@ -80,7 +80,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::field_key() noexcept {
-  logger::log_event(*this, "hi");
   assert_at_child();
 
   const uint8_t *key = _json_iter->advance();

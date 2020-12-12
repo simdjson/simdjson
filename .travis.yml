@@ -176,7 +176,7 @@ install:
   - if [[ "${STATIC}" == "on" ]]; then
       export CMAKE_FLAGS="${CMAKE_FLAGS} -DSIMDJSON_BUILD_STATIC=ON";
     fi
-  - export CTEST_FLAGS="-j4 --output-on-failure -E checkperf"
+  - export CTEST_FLAGS="-j4 --output-on-failure -LE explicitonly"
 
 script:
   - mkdir build

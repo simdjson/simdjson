@@ -91,7 +91,11 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child
 }
 
 simdjson_really_inline bool json_iterator::at_root() const noexcept {
-  return token.index == parser->dom_parser.structural_indexes.get();
+  return token.checkpoint() == root_checkpoint();
+}
+
+simdjson_really_inline const uint32_t *json_iterator::root_checkpoint() const noexcept {
+  return parser->dom_parser.structural_indexes.get();
 }
 
 simdjson_really_inline void json_iterator::assert_at_root() const noexcept {

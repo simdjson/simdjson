@@ -71,9 +71,12 @@ simdjson_really_inline object object::started(value_iterator &iter) noexcept {
   simdjson_unused bool has_value = iter.started_object();
   return iter;
 }
+simdjson_really_inline object object::resume(const value_iterator &iter) noexcept {
+  return { iter, false };
+}
 
-simdjson_really_inline object::object(const value_iterator &_iter) noexcept
-  : iter{_iter}
+simdjson_really_inline object::object(const value_iterator &_iter, bool _at_start) noexcept
+  : iter{_iter, _at_start}    
 {
 }
 
