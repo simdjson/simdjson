@@ -50,11 +50,11 @@ protected:
   static simdjson_really_inline simdjson_result<object> try_start(value_iterator &iter) noexcept;
   static simdjson_really_inline object started(value_iterator &iter) noexcept;
   static simdjson_really_inline object resume(const value_iterator &iter) noexcept;
-  simdjson_really_inline object(const value_iterator &iter, bool at_start = true) noexcept;
+  simdjson_really_inline object(const value_iterator &iter) noexcept;
 
   simdjson_warn_unused simdjson_really_inline error_code find_field_raw(const std::string_view key) noexcept;
 
-  object_iterator iter{};
+  value_iterator iter{};
 
   friend class value;
   friend class document;

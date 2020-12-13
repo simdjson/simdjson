@@ -51,31 +51,38 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   }
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_field_raw(const char *key) noexcept {
-  // We assume we are sitting at a key: at "key": <value>
-  assert_at_child();
+/**
+ * Find the field with the given key. May be used in place of ++.
+ */
+simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_field_raw(const std::string_view key) noexcept {
+  if (!is_open()) { return false; }
 
-  bool has_next;
-  do {
+  // Unless this is the first field, we need to advance past the , and check for }
+  error_code error;
+  bool has_value;
+  if (at_first_field()) {
+    has_value = true;
+  } else {
+    if ((error = skip_child() )) { abandon(); return error; }
+    if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
+  }
+  while (has_value) {
     // Get the key
     raw_json_string actual_key;
-    SIMDJSON_TRY( require_raw_json_string().get(actual_key) );
-    if (*_json_iter->advance() != ':') { return _json_iter->report_error(TAPE_ERROR, "Missing colon in object field"); }
+    if ((error = field_key().get(actual_key) )) { abandon(); return error; };
+    if ((error = field_value() )) { abandon(); return error; }
 
-    // Check if the key matches, and return if so
+    // Check if it matches
     if (actual_key == key) {
-      logger::log_event(*_json_iter, "match", key);
+      logger::log_event(*this, "match", key, -2);
       return true;
     }
+    logger::log_event(*this, "no match", key, -2);
+    SIMDJSON_TRY( skip_child() ); // Skip the value entirely
+    if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
+  }
 
-    // Skip the value so we can look at the next key
-    logger::log_event(*_json_iter, "non-match", key);
-    SIMDJSON_TRY( skip_child() );
-
-    // Check whether the next token is , or }
-    SIMDJSON_TRY( has_next_field().get(has_next) );
-  } while (has_next);
-  logger::log_event(*_json_iter, "no matches", key);
+  // If the loop ended, we're out of fields to look at.
   return false;
 }
 
@@ -380,6 +387,11 @@ simdjson_really_inline value_iterator value_iterator::child() const noexcept {
 
 simdjson_really_inline bool value_iterator::is_open() const noexcept {
   return _json_iter->depth() >= depth();
+}
+
+simdjson_really_inline bool value_iterator::at_first_field() const noexcept {
+  SIMDJSON_ASSUME( _json_iter->token.index > _start_index );
+  return _json_iter->token.index == _start_index + 1;
 }
 
 simdjson_really_inline void value_iterator::abandon() noexcept {

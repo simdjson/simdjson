@@ -43,18 +43,18 @@ namespace ondemand {
 //   In this state, iter.depth < depth, at_start == false, and error == SUCCESS.
 //
 
-simdjson_warn_unused simdjson_really_inline error_code object::find_field_raw(const std::string_view key) noexcept {
-  return iter.find_field_raw(key);
-}
-
 simdjson_really_inline simdjson_result<value> object::operator[](const std::string_view key) & noexcept {
-  SIMDJSON_TRY( find_field_raw(key) );
-  return value(iter.iter.child());
+  bool has_value;
+  SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
+  if (!has_value) { return NO_SUCH_FIELD; }
+  return value(iter.child());
 }
 
 simdjson_really_inline simdjson_result<value> object::operator[](const std::string_view key) && noexcept {
-  SIMDJSON_TRY( find_field_raw(key) );
-  return value(iter.iter.child());
+  bool has_value;
+  SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
+  if (!has_value) { return NO_SUCH_FIELD; }
+  return value(iter.child());
 }
 
 simdjson_really_inline simdjson_result<object> object::start(value_iterator &iter) noexcept {
@@ -72,16 +72,17 @@ simdjson_really_inline object object::started(value_iterator &iter) noexcept {
   return iter;
 }
 simdjson_really_inline object object::resume(const value_iterator &iter) noexcept {
-  return { iter, false };
+  return iter;
 }
 
-simdjson_really_inline object::object(const value_iterator &_iter, bool _at_start) noexcept
-  : iter{_iter, _at_start}    
+simdjson_really_inline object::object(const value_iterator &_iter) noexcept
+  : iter{_iter}
 {
 }
 
 simdjson_really_inline object_iterator object::begin() noexcept {
-  SIMDJSON_ASSUME( iter.at_start || iter.iter._json_iter->_depth < iter.iter._depth );
+  // Expanded version of SIMDJSON_ASSUME( iter.at_field_start() || !iter.is_open() )
+  SIMDJSON_ASSUME( (iter._json_iter->token.index == iter._start_index + 1) || (iter._json_iter->_depth < iter._depth) );
   return iter;
 }
 simdjson_really_inline object_iterator object::end() noexcept {

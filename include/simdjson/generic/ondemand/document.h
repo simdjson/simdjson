@@ -20,17 +20,16 @@ class array_iterator;
  */
 class document {
 public:
-  simdjson_really_inline document(document &&other) noexcept = default;
-  simdjson_really_inline document &operator=(document &&other) noexcept = default;
-
   /**
    * Create a new invalid document.
    *
    * Exists so you can declare a variable and later assign to it before use.
    */
   simdjson_really_inline document() noexcept = default;
-  simdjson_really_inline document(const document &other) = delete;
-  simdjson_really_inline document &operator=(const document &other) = delete;
+  simdjson_really_inline document(const document &other) noexcept = delete;
+  simdjson_really_inline document(document &&other) noexcept = default;
+  simdjson_really_inline document &operator=(const document &other) noexcept = delete;
+  simdjson_really_inline document &operator=(document &&other) noexcept = default;
 
   /**
    * Cast this JSON value to an array.

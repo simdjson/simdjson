@@ -30,7 +30,7 @@ struct implementation_simdjson_result_base {
   /**
    * Create a new empty result with error = UNINITIALIZED.
    */
-  simdjson_really_inline implementation_simdjson_result_base() noexcept;
+  simdjson_really_inline implementation_simdjson_result_base() noexcept = default;
 
   /**
    * Create a new error result.
@@ -46,11 +46,6 @@ struct implementation_simdjson_result_base {
    * Create a new result with both things (use if you don't want to branch when creating the result).
    */
   simdjson_really_inline implementation_simdjson_result_base(T &&value, error_code error) noexcept;
-
-  /**
-   * Create a new empty result with error = UNINITIALIZED.
-   */
-  simdjson_really_inline ~implementation_simdjson_result_base() noexcept;
 
   /**
    * Move the value and the error to the provided variables.
@@ -104,8 +99,8 @@ struct implementation_simdjson_result_base {
 
 #endif // SIMDJSON_EXCEPTIONS
 
-  T first;
-  error_code second;
+  T first{};
+  error_code second{UNINITIALIZED};
 }; // struct implementation_simdjson_result_base
 
 } // namespace SIMDJSON_IMPLEMENTATION

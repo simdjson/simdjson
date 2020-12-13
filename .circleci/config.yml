@@ -105,13 +105,12 @@ commands:
           ctest $CTEST_FLAGS -L acceptance &&
           ctest $CTEST_FLAGS -LE acceptance -LE explicitonly
 
-  cmake_test:
+  cmake_assert_test:
     steps:
       - run: |
           cd build &&
           tools/json2json -h &&
-          ctest $CTEST_FLAGS -L assert  &&
-          ctest $CTEST_FLAGS -LE acceptance -LE explicitonly
+          ctest $CTEST_FLAGS -L assert
 
   cmake_test_all:
     steps:
@@ -155,12 +154,12 @@ jobs:
   assert-gcc10:
     description: Build the library with asserts on, install it and run tests
     executor: gcc10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DCXX_CMAKE_FLAGS_RELEASE=-O3 }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DCMAKE_CXX_FLAGS_RELEASE=-O3 }
     steps: [ cmake_test, cmake_assert_test ]
   assert-clang10:
     description: Build just the library, install it and do a basic test
     executor: clang10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DCXX_CMAKE_FLAGS_RELEASE=-O3 }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DCMAKE_CXX_FLAGS_RELEASE=-O3 }
     steps: [ cmake_test, cmake_assert_test ]
   gcc10-perftest:
     description: Build and run performance tests on GCC 10 and AVX 2 with a cmake static build, this test performance regression

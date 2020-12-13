@@ -6,9 +6,8 @@ namespace ondemand {
 // object_iterator
 //
 
-simdjson_really_inline object_iterator::object_iterator(const value_iterator &_iter, bool _at_start) noexcept
-  : iter{_iter},
-    at_start{_at_start}
+simdjson_really_inline object_iterator::object_iterator(const value_iterator &_iter) noexcept
+  : iter{_iter}
 {}
 
 simdjson_really_inline simdjson_result<field> object_iterator::operator*() noexcept {
@@ -79,39 +78,6 @@ simdjson_really_inline object_iterator &object_iterator::operator++() noexcept {
 // - Finished: When we have reached a }, we are finished. We signal this by decrementing depth.
 //   In this state, iter.depth < depth, at_start == false, and error == SUCCESS.
 //
-
-simdjson_warn_unused simdjson_really_inline error_code object_iterator::find_field_raw(const std::string_view key) noexcept {
-  if (!iter.is_open()) { return NO_SUCH_FIELD; }
-
-  // Unless this is the first field, we need to advance past the , and check for }
-  error_code error;
-  bool has_value;
-  if (at_start) {
-    at_start = false;
-    has_value = true;
-  } else {
-    if ((error = iter.skip_child() )) { iter.abandon(); return error; }
-    if ((error = iter.has_next_field().get(has_value) )) { iter.abandon(); return error; }
-  }
-  while (has_value) {
-    // Get the key
-    raw_json_string actual_key;
-    if ((error = iter.field_key().get(actual_key) )) { iter.abandon(); return error; };
-    if ((error = iter.field_value() )) { iter.abandon(); return error; }
-
-    // Check if it matches
-    if (actual_key == key) {
-      logger::log_event(iter, "match", key, -2);
-      return SUCCESS;
-    }
-    logger::log_event(iter, "no match", key, -2);
-    SIMDJSON_TRY( iter.skip_child() ); // Skip the value entirely
-    if ((error = iter.has_next_field().get(has_value) )) { iter.abandon(); return error; }
-  }
-
-  // If the loop ended, we're out of fields to look at.
-  return NO_SUCH_FIELD;
-}
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

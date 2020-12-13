@@ -56,6 +56,11 @@ public:
   simdjson_really_inline bool is_open() const noexcept;
 
   /**
+   * Tell whether the value is at an object's first field (just after the {).
+   */
+  simdjson_really_inline bool at_first_field() const noexcept;
+
+  /**
    * Abandon all iteration.
    */
   simdjson_really_inline void abandon() noexcept;
@@ -158,7 +163,7 @@ public:
    * unescape it. This works well for typical ASCII and UTF-8 keys (almost all of them), but may
    * fail to match some keys with escapes (\u, \n, etc.).
    */
-  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> find_field_raw(const char *key) noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> find_field_raw(const std::string_view key) noexcept;
 
   /** @} */
 
@@ -262,10 +267,10 @@ protected:
   simdjson_really_inline simdjson_result<double> parse_root_double(const uint8_t *json, uint32_t max_len) const noexcept;
 
   simdjson_really_inline void assert_at_start() const noexcept;
-  simdjson_really_inline void assert_at_root() const noexcept; 
+  simdjson_really_inline void assert_at_root() const noexcept;
   simdjson_really_inline void assert_at_child() const noexcept;
-  simdjson_really_inline void assert_at_next() const noexcept; 
-  simdjson_really_inline void assert_at_non_root_start() const noexcept; 
+  simdjson_really_inline void assert_at_next() const noexcept;
+  simdjson_really_inline void assert_at_non_root_start() const noexcept;
 
   friend class document;
   friend class object;

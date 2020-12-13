@@ -5,13 +5,6 @@ namespace SIMDJSON_IMPLEMENTATION {
 // internal::implementation_simdjson_result_base<T> inline implementation
 //
 
-/**
- * Create a new empty result with error = UNINITIALIZED.
- */
-template<typename T>
-simdjson_really_inline implementation_simdjson_result_base<T>::~implementation_simdjson_result_base() noexcept {
-}
-
 template<typename T>
 simdjson_really_inline void implementation_simdjson_result_base<T>::tie(T &value, error_code &error) && noexcept {
   // on the clang compiler that comes with current macOS (Apple clang version 11.0.0),
@@ -70,9 +63,6 @@ simdjson_really_inline implementation_simdjson_result_base<T>::implementation_si
 template<typename T>
 simdjson_really_inline implementation_simdjson_result_base<T>::implementation_simdjson_result_base(T &&value) noexcept
     : implementation_simdjson_result_base(std::forward<T>(value), SUCCESS) {}
-template<typename T>
-simdjson_really_inline implementation_simdjson_result_base<T>::implementation_simdjson_result_base() noexcept
-    : implementation_simdjson_result_base(T{}, UNINITIALIZED) {}
 
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
