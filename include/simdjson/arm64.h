@@ -6,7 +6,11 @@
 #endif
 
 #include "simdjson/portability.h"
-
+// Default Haswell to on if this is x86-64. Even if we're not compiled for it, it could be selected
+// at runtime.
+#ifndef SIMDJSON_IMPLEMENTATION_ARM64
+#define SIMDJSON_IMPLEMENTATION_ARM64 (SIMDJSON_IS_ARM64)
+#endif
 #include "simdjson/internal/isadetection.h"
 #include "simdjson/internal/jsoncharutils_tables.h"
 #include "simdjson/internal/numberparsing_tables.h"

@@ -7,6 +7,10 @@
 
 #include "simdjson/portability.h"
 
+#ifndef SIMDJSON_IMPLEMENTATION_PPC64
+#define SIMDJSON_IMPLEMENTATION_PPC64 (SIMDJSON_IS_PPC64)
+#endif
+
 #include "simdjson/internal/isadetection.h"
 #include "simdjson/internal/jsoncharutils_tables.h"
 #include "simdjson/internal/numberparsing_tables.h"
