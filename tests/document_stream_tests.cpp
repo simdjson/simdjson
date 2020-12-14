@@ -497,7 +497,6 @@ namespace document_stream_tests {
     return true;
   }
 
-#ifdef SIMDJSON_THREADS_ENABLED
   bool threaded_disabled() {
     std::cout << "Running " << __func__ << std::endl;
     char input[2049];
@@ -508,7 +507,6 @@ namespace document_stream_tests {
     }
     auto json = simdjson::padded_string(input,2049);
     simdjson::dom::parser parser;
-    parser.threaded = false;
     size_t count = 0;
     size_t window_size = 1024; // deliberately too small
     simdjson::dom::document_stream stream;
@@ -521,12 +519,11 @@ namespace document_stream_tests {
       count++;
     }
     if(count == 2) {
-      std::cerr << "Expected a capacity error " << std::endl;
+      std::cerr << "Expected a single document " << std::endl;
       return false;
     }
     return true;
   }
-#endif
 
   bool large_window() {
     std::cout << "Running " << __func__ << std::endl;
