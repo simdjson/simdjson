@@ -1,4 +1,4 @@
-/* auto-generated on 2020-12-03 13:16:45 -0500. Do not edit! */
+/* auto-generated on 2020-12-13 20:01:10 -0500. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -2015,7 +2015,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 0.7.0
+#define SIMDJSON_VERSION 0.7.1
 
 namespace simdjson {
 enum {
@@ -2030,7 +2030,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 0
+  SIMDJSON_VERSION_REVISION = 1
 };
 } // namespace simdjson
 
@@ -8788,6 +8788,11 @@ extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
 #error "arm64.h must be included before fallback.h"
 #endif
 
+
+#ifndef SIMDJSON_IMPLEMENTATION_ARM64
+#define SIMDJSON_IMPLEMENTATION_ARM64 (SIMDJSON_IS_ARM64)
+#endif
+#define SIMDJSON_CAN_ALWAYS_RUN_ARM64 SIMDJSON_IMPLEMENTATION_ARM64 && SIMDJSON_IS_ARM64
 
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
@@ -26310,6 +26315,11 @@ SIMDJSON_UNTARGET_REGION
 #error "ppc64.h must be included before fallback.h"
 #endif
 
+
+#ifndef SIMDJSON_IMPLEMENTATION_PPC64
+#define SIMDJSON_IMPLEMENTATION_PPC64 (SIMDJSON_IS_PPC64)
+#endif
+#define SIMDJSON_CAN_ALWAYS_RUN_PPC64 SIMDJSON_IMPLEMENTATION_PPC64 && SIMDJSON_IS_PPC64
 
 
 #if SIMDJSON_IMPLEMENTATION_PPC64
