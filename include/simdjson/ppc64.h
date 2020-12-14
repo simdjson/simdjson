@@ -9,8 +9,8 @@
 
 #ifndef SIMDJSON_IMPLEMENTATION_PPC64
 #define SIMDJSON_IMPLEMENTATION_PPC64 (SIMDJSON_IS_PPC64)
-#define SIMDJSON_CAN_ALWAYS_RUN_PPC64 (SIMDJSON_IS_PPC64)
 #endif
+#define SIMDJSON_CAN_ALWAYS_RUN_PPC64 SIMDJSON_IMPLEMENTATION_PPC64 && SIMDJSON_IS_PPC64
 
 #include "simdjson/internal/isadetection.h"
 #include "simdjson/internal/jsoncharutils_tables.h"
