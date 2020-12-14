@@ -507,7 +507,6 @@ namespace document_stream_tests {
     }
     auto json = simdjson::padded_string(input,2049);
     simdjson::dom::parser parser;
-    parser.threaded = false;
     size_t count = 0;
     size_t window_size = 1024; // deliberately too small
     simdjson::dom::document_stream stream;
