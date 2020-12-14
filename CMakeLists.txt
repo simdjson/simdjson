@@ -7,10 +7,10 @@ project(simdjson
 
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 7)
-set(PROJECT_VERSION_PATCH 0)
-set(SIMDJSON_SEMANTIC_VERSION "0.7.0" CACHE STRING "simdjson semantic version")
-set(SIMDJSON_LIB_VERSION "5.0.0" CACHE STRING "simdjson library version")
-set(SIMDJSON_LIB_SOVERSION "5" CACHE STRING "simdjson library soversion")
+set(PROJECT_VERSION_PATCH 1)
+set(SIMDJSON_SEMANTIC_VERSION "0.7.1" CACHE STRING "simdjson semantic version")
+set(SIMDJSON_LIB_VERSION "6.0.0" CACHE STRING "simdjson library version")
+set(SIMDJSON_LIB_SOVERSION "6" CACHE STRING "simdjson library soversion")
 set(SIMDJSON_GITHUB_REPOSITORY https://github.com/simdjson/simdjson)
 
 include(GNUInstallDirs)
