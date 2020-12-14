@@ -1,7 +1,14 @@
+include(CMakeDependentOption)
 include(import.cmake)
 
-option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
-option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON)
+option(SIMDJSON_ALLOW_DOWNLOADS
+        "Allow dependencies to be downloaded during configure time"
+        ON)
+
+cmake_dependent_option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON
+        SIMDJSON_ALLOW_DOWNLOADS OFF)
+cmake_dependent_option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON
+        SIMDJSON_ALLOW_DOWNLOADS OFF)
 
 if(SIMDJSON_GOOGLE_BENCHMARKS)
   set_off(BENCHMARK_ENABLE_TESTING)
@@ -16,13 +23,21 @@ endif()
 function(competition_scope_)
   # boost json in standalone mode requires C++17 string_view
   include(CheckCXXSourceCompiles)
-  check_cxx_source_compiles("#include <string_view>\n#if __cpp_lib_string_view < 201606\n#error no string view support\n#endif\nint main(){}" USE_BOOST_JSON)
+  check_cxx_source_compiles([[
+#include <string_view>
+
+#if __cpp_lib_string_view < 201606
+#  error no string view support
+#endif
+
+int main() {}
+]] USE_BOOST_JSON)
   if(USE_BOOST_JSON)
-  import_dependency(boostjson boostorg/json ee8d72d8502b409b5561200299cad30ccdb91415)
-  add_library(boostjson STATIC "${boostjson_SOURCE_DIR}/src/src.cpp")
-  target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
-  target_include_directories(boostjson SYSTEM PUBLIC
-          "${boostjson_SOURCE_DIR}/include")
+    import_dependency(boostjson boostorg/json ee8d72d)
+    add_library(boostjson STATIC "${boostjson_SOURCE_DIR}/src/src.cpp")
+    target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
+    target_include_directories(boostjson SYSTEM PUBLIC
+            "${boostjson_SOURCE_DIR}/include")
   endif()
 
   import_dependency(cjson DaveGamble/cJSON c69134d)
@@ -102,9 +117,14 @@ if(SIMDJSON_COMPETITION)
   competition_scope_()
 endif()
 
-set_off(CXXOPTS_BUILD_EXAMPLES)
-set_off(CXXOPTS_BUILD_TESTS)
-set_off(CXXOPTS_ENABLE_INSTALL)
+cmake_dependent_option(SIMDJSON_CXXOPTS "Download cxxopts (necessary for tools)" ON
+        SIMDJSON_ALLOW_DOWNLOADS OFF)
 
-import_dependency(cxxopts jarro2783/cxxopts 794c975)
-add_dependency(cxxopts)
+if(SIMDJSON_CXXOPTS)
+  set_off(CXXOPTS_BUILD_EXAMPLES)
+  set_off(CXXOPTS_BUILD_TESTS)
+  set_off(CXXOPTS_ENABLE_INSTALL)
+
+  import_dependency(cxxopts jarro2783/cxxopts 794c975)
+  add_dependency(cxxopts)
+endif()
