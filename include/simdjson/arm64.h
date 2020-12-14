@@ -9,6 +9,7 @@
 
 #ifndef SIMDJSON_IMPLEMENTATION_ARM64
 #define SIMDJSON_IMPLEMENTATION_ARM64 (SIMDJSON_IS_ARM64)
+#define SIMDJSON_CAN_ALWAYS_RUN_ARM64 (SIMDJSON_IS_ARM64)
 #endif
 
 #include "simdjson/internal/isadetection.h"
