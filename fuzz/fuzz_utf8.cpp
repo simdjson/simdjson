@@ -45,6 +45,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
             const bool current=utf8verify(e);
             std::cerr<<e->name()<<" returns "<<current<<std::endl;
         }
+        std::cerr << "Offending input: \"";
+        for(size_t i = 0; i < Size; i++) {
+            std::cerr << "\\x" << std::hex << std::setw(2) << std::setfill('0')  << uint32_t(Data[i]);
+        }
+        std::cerr << "\"" <<std::endl;
+
         std::abort();
     }
 
