@@ -9,7 +9,7 @@ steps:
     CXX: g++
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf 
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly 
   commands:
     - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
     - apt-get install -y g++ cmake gcc git
@@ -30,7 +30,7 @@ steps:
     CXX: clang++-6.0
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf 
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly 
   commands:
     - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
     - apt-get install -y clang++-6.0 cmake git
@@ -51,7 +51,7 @@ steps:
     CXX: g++
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
     - apt-get update -qq
@@ -78,7 +78,7 @@ steps:
     CXX: clang++-6.0
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - mkdir build
     - cd build
@@ -101,7 +101,7 @@ steps:
     CXX: g++
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
     - apt-get update -qq
@@ -124,7 +124,7 @@ steps:
     CXX: clang++-9
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - mkdir build
     - cd build
@@ -143,7 +143,7 @@ steps:
     CXX: g++
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
     - apt-get update -qq
@@ -170,7 +170,7 @@ steps:
     CXX: clang++-9
     CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - mkdir build
     - cd build
@@ -194,7 +194,7 @@ steps:
     CXX: clang++-11
     CMAKE_FLAGS: -GNinja
     BUILD_FLAGS:
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
     CXXFLAGS: -std=c++20 -stdlib=libc++
   commands:
     - mkdir build
@@ -214,7 +214,7 @@ steps:
     CXX: g++
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=arm64;fallback
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
     - apt-get update -qq
@@ -239,7 +239,7 @@ steps:
     CXX: clang++-6.0
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure  -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure  -LE explicitonly
   commands:
     - apt-get -qq update
     - apt-get -t buster-backports install -y cmake
@@ -261,7 +261,7 @@ steps:
     CXX: g++
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
     - apt-get update -qq
@@ -283,7 +283,7 @@ steps:
     CXX: clang++-6.0
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - apt-get -qq update
     - apt-get -t buster-backports install -y cmake
@@ -303,7 +303,7 @@ steps:
   environment:
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=arm64;fallback
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
     CC: gcc
     CXX: g++
   commands:
@@ -331,7 +331,7 @@ steps:
     CXX: clang++-6.0
     CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_IMPLEMENTATION=arm64;fallback
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - apt-get -qq update
     - apt-get -t buster-backports install -y cmake
@@ -357,7 +357,7 @@ steps:
     CXX: clang++-9
     BUILD_FLAGS: -- -j 4
     CMAKE_FLAGS: -GNinja -DSIMDJSON_BUILD_STATIC=ON
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
     CXXFLAGS: -stdlib=libc++
   commands:
     - mkdir build
@@ -378,7 +378,7 @@ steps:
     CXX: clang++-9
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
     CXXFLAGS: -stdlib=libc++
   commands:
     - mkdir build
@@ -399,7 +399,7 @@ steps:
     CXX: clang++-7
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
     CXXFLAGS: -stdlib=libc++
   commands:
     - mkdir build
@@ -419,7 +419,7 @@ steps:
     CXX: g++
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_EXCEPTIONS=OFF
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
     - apt-get update -qq

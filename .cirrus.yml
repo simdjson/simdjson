@@ -23,4 +23,4 @@ task:
     - make
   test_script:
     - cd build
-    - ctest --output-on-failure -E checkperf
+    - ctest --output-on-failure -LE explicitonly

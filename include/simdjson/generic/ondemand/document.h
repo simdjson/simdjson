@@ -20,17 +20,16 @@ class array_iterator;
  */
 class document {
 public:
-  simdjson_really_inline document(document &&other) noexcept = default;
-  simdjson_really_inline document &operator=(document &&other) noexcept = default;
-
   /**
    * Create a new invalid document.
    *
    * Exists so you can declare a variable and later assign to it before use.
    */
   simdjson_really_inline document() noexcept = default;
-  simdjson_really_inline document(const document &other) = delete;
-  simdjson_really_inline document &operator=(const document &other) = delete;
+  simdjson_really_inline document(const document &other) noexcept = delete;
+  simdjson_really_inline document(document &&other) noexcept = default;
+  simdjson_really_inline document &operator=(const document &other) noexcept = delete;
+  simdjson_really_inline document &operator=(document &&other) noexcept = default;
 
   /**
    * Cast this JSON value to an array.
@@ -230,9 +229,8 @@ protected:
 
   simdjson_really_inline value as_value() noexcept;
   simdjson_really_inline value_iterator as_value_iterator() noexcept;
+  simdjson_really_inline value_iterator as_non_root_value_iterator() noexcept;
   static simdjson_really_inline document start(ondemand::json_iterator &&iter) noexcept;
-
-  simdjson_really_inline void assert_at_start() const noexcept;
 
   //
   // Fields
@@ -261,10 +259,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> : public SIM
 public:
   simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::document &&value) noexcept; ///< @private
   simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
-
   simdjson_really_inline simdjson_result() noexcept = default;
-  simdjson_really_inline simdjson_result(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> &&a) noexcept = default;
-  simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> get_array() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> get_object() & noexcept;

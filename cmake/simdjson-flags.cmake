@@ -72,24 +72,24 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 option(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING "Under Visual Studio, add Zi to the compile flag and DEBUG to the link file to add debugging information to the release build for easier profiling inside tools like VTune" OFF)
 if(MSVC)
-if("${MSVC_TOOLSET_VERSION}" STREQUAL "140")
-  # Visual Studio 2015 issues warnings and we tolerate it,  cmake -G"Visual Studio 14" ..
-  target_compile_options(simdjson-internal-flags INTERFACE /W0 /sdl)
-else()
-  # Recent version of Visual Studio expected (2017, 2019...). Prior versions are unsupported.
-  target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl /w34714) # https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4714?view=vs-2019
-endif()
-if(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING)
-  target_link_options(simdjson-flags  INTERFACE    /DEBUG )
-  target_compile_options(simdjson-flags INTERFACE  /Zi)
-endif()
-else()
+  if("${MSVC_TOOLSET_VERSION}" STREQUAL "140")
+    # Visual Studio 2015 issues warnings and we tolerate it,  cmake -G"Visual Studio 14" ..
+    target_compile_options(simdjson-internal-flags INTERFACE /W0 /sdl)
+  else()
+    # Recent version of Visual Studio expected (2017, 2019...). Prior versions are unsupported.
+    target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl /w34714) # https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4714?view=vs-2019
+  endif()
+  if(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING)
+    target_link_options(simdjson-flags  INTERFACE    /DEBUG )
+    target_compile_options(simdjson-flags INTERFACE  /Zi)
+  endif(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING)
+else(MSVC)
   if(NOT WIN32)
     target_compile_options(simdjson-internal-flags INTERFACE -fPIC)
   endif()
   target_compile_options(simdjson-internal-flags INTERFACE -Werror -Wall -Wextra -Weffc++)
   target_compile_options(simdjson-internal-flags INTERFACE -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion)
-endif()
+endif(MSVC)
 
 #
 # Optional flags
@@ -231,6 +231,10 @@ endif(SIMDJSON_USE_LIBCPP)
 if(${CMAKE_C_COMPILER_ID} MATCHES "Intel") # icc / icpc
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-intel")
 endif()
+
+include (CheckSymbolExists)
+CHECK_SYMBOL_EXISTS(fork unistd.h HAVE_POSIX_FORK)
+CHECK_SYMBOL_EXISTS(wait sys/wait.h HAVE_POSIX_WAIT)
 
 install(TARGETS simdjson-flags EXPORT simdjson-config)
 install(TARGETS simdjson-internal-flags EXPORT simdjson-config)

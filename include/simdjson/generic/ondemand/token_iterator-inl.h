@@ -39,6 +39,10 @@ simdjson_really_inline bool token_iterator::operator<=(const token_iterator &oth
   return index <= other.index;
 }
 
+simdjson_really_inline const uint32_t *token_iterator::checkpoint() const noexcept {
+  return index;
+}
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

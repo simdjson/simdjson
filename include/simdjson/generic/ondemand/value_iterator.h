@@ -23,6 +23,12 @@ protected:
   json_iterator *_json_iter{};
   /** The depth of this value */
   depth_t _depth{};
+  /**
+   * The starting token index for this value
+   *
+   * PERF NOTE: this is a safety check; we expect this to be elided in release builds.
+   */
+  const uint32_t *_start_index{};
 
 public:
   simdjson_really_inline value_iterator() noexcept = default;
@@ -48,6 +54,11 @@ public:
    * Tell whether the value is open--if the value has not been used, or the array/object is still open.
    */
   simdjson_really_inline bool is_open() const noexcept;
+
+  /**
+   * Tell whether the value is at an object's first field (just after the {).
+   */
+  simdjson_really_inline bool at_first_field() const noexcept;
 
   /**
    * Abandon all iteration.
@@ -152,7 +163,7 @@ public:
    * unescape it. This works well for typical ASCII and UTF-8 keys (almost all of them), but may
    * fail to match some keys with escapes (\u, \n, etc.).
    */
-  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> find_field_raw(const char *key) noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> find_field_raw(const std::string_view key) noexcept;
 
   /** @} */
 
@@ -246,7 +257,7 @@ public:
   /** @} */
 
 protected:
-  simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth) noexcept;
+  simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth, const uint32_t *start_index) noexcept;
   simdjson_really_inline bool is_null(const uint8_t *json) const noexcept;
   simdjson_really_inline simdjson_result<bool> parse_bool(const uint8_t *json) const noexcept;
   simdjson_really_inline bool is_root_null(const uint8_t *json, uint32_t max_len) const noexcept;
@@ -254,6 +265,12 @@ protected:
   simdjson_really_inline simdjson_result<uint64_t> parse_root_uint64(const uint8_t *json, uint32_t max_len) const noexcept;
   simdjson_really_inline simdjson_result<int64_t> parse_root_int64(const uint8_t *json, uint32_t max_len) const noexcept;
   simdjson_really_inline simdjson_result<double> parse_root_double(const uint8_t *json, uint32_t max_len) const noexcept;
+
+  simdjson_really_inline void assert_at_start() const noexcept;
+  simdjson_really_inline void assert_at_root() const noexcept;
+  simdjson_really_inline void assert_at_child() const noexcept;
+  simdjson_really_inline void assert_at_next() const noexcept;
+  simdjson_really_inline void assert_at_non_root_start() const noexcept;
 
   friend class document;
   friend class object;
