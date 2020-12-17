@@ -31,6 +31,6 @@ jobs:
         buildWithCMakeArgs: --config Release  
         
     - name: 'Run CTest'
-      run: ctest -C Release  -E checkperf  --output-on-failure 
+      run: ctest -C Release  -LE explicitonly  --output-on-failure 
       working-directory: "${{ github.workspace }}/../../_temp/windows"
   

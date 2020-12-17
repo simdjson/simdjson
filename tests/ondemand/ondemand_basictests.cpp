@@ -887,6 +887,116 @@ namespace dom_api_tests {
 
       return true;
     }));
+
+    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+      ASSERT_SUCCESS( doc_result["scalar_ignore"] );
+      std::cout << "  - After ignoring empty scalar ..." << std::endl;
+
+      ASSERT_SUCCESS( doc_result["empty_array_ignore"] );
+      std::cout << "  - After ignoring empty array ..." << std::endl;
+
+      ASSERT_SUCCESS( doc_result["empty_object_ignore"] );
+      std::cout << "  - After ignoring empty doc_result ..." << std::endl;
+
+      // Break after using first value in child object
+      {
+        auto value = doc_result["object_break"];
+        for (auto [ child_field, error ] : value.get_object()) {
+          ASSERT_SUCCESS(error);
+          ASSERT_EQUAL(child_field.key(), "x");
+          uint64_t x;
+          ASSERT_SUCCESS( child_field.value().get(x) );
+          ASSERT_EQUAL(x, 3);
+          break; // Break after the first value
+        }
+        std::cout << "  - After using first value in child object ..." << std::endl;
+      }
+
+      // Break without using first value in child object
+      {
+        auto value = doc_result["object_break_unused"];
+        for (auto [ child_field, error ] : value.get_object()) {
+          ASSERT_SUCCESS(error);
+          ASSERT_EQUAL(child_field.key(), "x");
+          break;
+        }
+        std::cout << "  - After reaching (but not using) first value in child object ..." << std::endl;
+      }
+
+      // Only look up one field in child object
+      {
+        auto value = doc_result["object_index"];
+
+        uint64_t x;
+        ASSERT_SUCCESS( value["x"].get(x) );
+        ASSERT_EQUAL( x, 5 );
+        std::cout << "  - After looking up one field in child object ..." << std::endl;
+      }
+
+      // Only look up one field in child object, but don't use it
+      {
+        auto value = doc_result["object_index_unused"];
+
+        ASSERT_SUCCESS( value["x"] );
+        std::cout << "  - After looking up (but not using) one field in child object ..." << std::endl;
+      }
+
+      // Break after first value in child array
+      {
+        auto value = doc_result["array_break"];
+
+        for (auto child_value : value) {
+          uint64_t x;
+          ASSERT_SUCCESS( child_value.get(x) );
+          ASSERT_EQUAL( x, 7 );
+          break;
+        }
+        std::cout << "  - After using first value in child array ..." << std::endl;
+      }
+
+      // Break without using first value in child array
+      {
+        auto value = doc_result["array_break_unused"];
+
+        for (auto child_value : value) {
+          ASSERT_SUCCESS(child_value);
+          break;
+        }
+        std::cout << "  - After reaching (but not using) first value in child array ..." << std::endl;
+      }
+
+      // Break out of multiple child loops
+      {
+        auto value = doc_result["quadruple_nested_break"];
+        for (auto child1 : value.get_object()) {
+          for (auto child2 : child1.value().get_array()) {
+            for (auto child3 : child2.get_object()) {
+              for (auto child4 : child3.value().get_array()) {
+                uint64_t x;
+                ASSERT_SUCCESS( child4.get(x) );
+                ASSERT_EQUAL( x, 9 );
+                break;
+              }
+              break;
+            }
+            break;
+          }
+          break;
+        }
+        std::cout << "  - After breaking out of quadruply-nested arrays and objects ..." << std::endl;
+      }
+
+      // Test the actual value
+      {
+        auto value = doc_result["actual_value"];
+        uint64_t actual_value;
+        ASSERT_SUCCESS( value.get(actual_value) );
+        ASSERT_EQUAL( actual_value, 10 );
+      }
+
+      return true;
+    }));
+
     return true;
   }
 
@@ -1061,17 +1171,35 @@ namespace dom_api_tests {
       return true;
     }));
     SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
-      ASSERT_EQUAL( doc_result.get_object()["a"].get_uint64().first, 1 );
+      simdjson_result<ondemand::object> object;
+      object = doc_result.get_object();
+
+      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
+      ASSERT_EQUAL( object["b"].get_uint64().first, 2 );
+      ASSERT_EQUAL( object["c/d"].get_uint64().first, 3 );
+
+      ASSERT_ERROR( object["a"], NO_SUCH_FIELD );
+      ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
       return true;
     }));
     SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
       ASSERT_EQUAL( doc["a"].get_uint64().first, 1 );
+      ASSERT_EQUAL( doc["b"].get_uint64().first, 2 );
+      ASSERT_EQUAL( doc["c/d"].get_uint64().first, 3 );
+
+      ASSERT_ERROR( doc["a"], NO_SUCH_FIELD );
+      ASSERT_ERROR( doc["d"], NO_SUCH_FIELD );
       return true;
     }));
     SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
       ASSERT_EQUAL( doc_result["a"].get_uint64().first, 1 );
+      ASSERT_EQUAL( doc_result["b"].get_uint64().first, 2 );
+      ASSERT_EQUAL( doc_result["c/d"].get_uint64().first, 3 );
+
+      ASSERT_ERROR( doc_result["a"], NO_SUCH_FIELD );
+      ASSERT_ERROR( doc_result["d"], NO_SUCH_FIELD );
       return true;
     }));
     TEST_SUCCEED();

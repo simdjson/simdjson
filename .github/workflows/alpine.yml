@@ -34,4 +34,4 @@ jobs:
           ./alpine.sh cmake --build build_for_alpine
       - name: test
         run: |
-          ./alpine.sh bash -c "cd build_for_alpine && ctest  -E checkperf"
+          ./alpine.sh bash -c "cd build_for_alpine && ctest  -LE explicitonly"

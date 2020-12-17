@@ -41,7 +41,7 @@
 #
 # Next you can test it as follows:
 #
-# docker run -it -v $(pwd):/project:Z   simdjson sh -c "cd dockerbuild && ctest . --output-on-failure -E checkperf"
+# docker run -it -v $(pwd):/project:Z   simdjson sh -c "cd dockerbuild && ctest . --output-on-failure -LE explicitonly"
 #
 # The run the complete tests requires you to have built all of simdjson.
 #
