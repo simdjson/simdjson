@@ -49,7 +49,8 @@ simdjson_really_inline json_character_block json_character_block::classify(const
 }
 
 simdjson_really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
-  return input.reduce_or().saturating_sub(0b10000000u).bits_not_set_anywhere();
+  // careful: 0x80 is not ascii.
+  return input.reduce_or().saturating_sub(0b01111111u).bits_not_set_anywhere();
 }
 
 simdjson_unused simdjson_really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
