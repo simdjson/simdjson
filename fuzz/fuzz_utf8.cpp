@@ -28,6 +28,7 @@ extern "C" int VerboseTestOneInput(const uint8_t *Data, size_t Size) {
         }
         std::cout<<std::endl;
     }
+    return 0;
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
