@@ -15,10 +15,10 @@
 extern "C" int VerboseTestOneInput(const uint8_t *Data, size_t Size) {
     static const auto supported_implementations=get_runtime_supported_implementations();
     for(size_t i = 0; i <= Size; i++) {
-        std::cout<<"size: "<<i<<std::endl;
+        std::cout<<"size: "<<std::dec<<std::setw(8)<<i<<std::endl;
         std::cout<<"Input: \"";
         for(size_t j = 0; j < i; j++) {
-            std::cout<<"\\x"<<std::hex<<std::setw(2)<<std::setfill('0')<<uint32_t(Data[i]);
+            std::cout<<"\\x"<<std::hex<<std::setw(2)<<std::setfill('0')<<uint32_t(Data[j]);
         }
         std::cout<<"\""<<std::endl;
         for(const auto& e: supported_implementations) {
