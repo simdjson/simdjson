@@ -132,11 +132,13 @@ simdjson_really_inline uint32_t json_iterator::peek_length(int32_t delta) const 
 }
 
 simdjson_really_inline void json_iterator::ascend_to(depth_t parent_depth) noexcept {
+  SIMDJSON_ASSUME(parent_depth >= 0 && parent_depth < INT32_MAX - 1);
   SIMDJSON_ASSUME(_depth == parent_depth + 1);
   _depth = parent_depth;
 }
 
 simdjson_really_inline void json_iterator::descend_to(depth_t child_depth) noexcept {
+  SIMDJSON_ASSUME(child_depth >= 1 && child_depth < INT32_MAX);
   SIMDJSON_ASSUME(_depth == child_depth - 1);
   _depth = child_depth;
 }

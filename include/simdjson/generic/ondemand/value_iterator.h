@@ -51,6 +51,11 @@ public:
   simdjson_really_inline bool at_eof() const noexcept;
 
   /**
+   * Tell whether the iterator is at the start of the value
+   */
+  simdjson_really_inline bool at_start() const noexcept;
+
+  /**
    * Tell whether the value is open--if the value has not been used, or the array/object is still open.
    */
   simdjson_really_inline bool is_open() const noexcept;
@@ -148,7 +153,8 @@ public:
   simdjson_warn_unused simdjson_really_inline error_code find_field(const std::string_view key) noexcept;
 
   /**
-   * Find the next field with the given key, *without* unescaping.
+   * Find the next field with the given key, *without* unescaping. This assumes object order: it
+   * will not find the field if it was already passed when looking for some *other* field.
    *
    * Assumes you have called next_field() or otherwise matched the previous value.
    *
@@ -164,6 +170,26 @@ public:
    * fail to match some keys with escapes (\u, \n, etc.).
    */
   simdjson_warn_unused simdjson_really_inline simdjson_result<bool> find_field_raw(const std::string_view key) noexcept;
+
+  /**
+   * Find the field with the given key without regard to order, and *without* unescaping.
+   *
+   * This is an unordered object lookup: if the field is not found initially, it will cycle around and scan from the beginning.
+   *
+   * Assumes you have called next_field() or otherwise matched the previous value.
+   *
+   * This means the iterator must be sitting at the next key:
+   *
+   * ```
+   * { "a": 1, "b": 2 }
+   *           ^
+   * ```
+   *
+   * Key is *raw JSON,* meaning it will be matched against the verbatim JSON without attempting to
+   * unescape it. This works well for typical ASCII and UTF-8 keys (almost all of them), but may
+   * fail to match some keys with escapes (\u, \n, etc.).
+   */
+  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> find_field_unordered_raw(const std::string_view key) noexcept;
 
   /** @} */
 

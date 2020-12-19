@@ -1202,6 +1202,175 @@ namespace dom_api_tests {
       ASSERT_ERROR( doc_result["d"], NO_SUCH_FIELD );
       return true;
     }));
+
+    json = R"({ "outer": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
+    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::value object;
+      ASSERT_SUCCESS( doc_result["outer"].get(object) );
+      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
+      ASSERT_EQUAL( object["b"].get_uint64().first, 2 );
+      ASSERT_EQUAL( object["c/d"].get_uint64().first, 3 );
+
+      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
+      ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
+      return true;
+    }));
+    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<ondemand::value> object = doc_result["outer"];
+      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
+      ASSERT_EQUAL( object["b"].get_uint64().first, 2 );
+      ASSERT_EQUAL( object["c/d"].get_uint64().first, 3 );
+
+      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
+      ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+  bool object_find_field_unordered() {
+    TEST_START();
+    auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
+    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( object.find_field_unordered("b").get_uint64().first, 2 );
+      ASSERT_EQUAL( object.find_field_unordered("c/d").get_uint64().first, 3 );
+
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_ERROR( object.find_field_unordered("d"), NO_SUCH_FIELD );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<ondemand::object> object;
+      object = doc_result.get_object();
+
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( object.find_field_unordered("b").get_uint64().first, 2 );
+      ASSERT_EQUAL( object.find_field_unordered("c/d").get_uint64().first, 3 );
+
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_ERROR( object.find_field_unordered("d"), NO_SUCH_FIELD );
+      return true;
+    }));
+    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::document doc;
+      ASSERT_SUCCESS( std::move(doc_result).get(doc) );
+      ASSERT_EQUAL( doc.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( doc.find_field_unordered("b").get_uint64().first, 2 );
+      ASSERT_EQUAL( doc.find_field_unordered("c/d").get_uint64().first, 3 );
+
+      ASSERT_EQUAL( doc.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_ERROR( doc.find_field_unordered("d"), NO_SUCH_FIELD );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+      ASSERT_EQUAL( doc_result.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( doc_result.find_field_unordered("b").get_uint64().first, 2 );
+      ASSERT_EQUAL( doc_result.find_field_unordered("c/d").get_uint64().first, 3 );
+
+      ASSERT_EQUAL( doc_result.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_ERROR( doc_result.find_field_unordered("d"), NO_SUCH_FIELD );
+      return true;
+    }));
+
+    json = R"({ "outer": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
+    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::value object;
+      ASSERT_SUCCESS( doc_result.find_field_unordered("outer").get(object) );
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( object.find_field_unordered("b").get_uint64().first, 2 );
+      ASSERT_EQUAL( object.find_field_unordered("c/d").get_uint64().first, 3 );
+
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_ERROR( object.find_field_unordered("d"), NO_SUCH_FIELD );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<ondemand::value> object = doc_result.find_field_unordered("outer");
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( object.find_field_unordered("b").get_uint64().first, 2 );
+      ASSERT_EQUAL( object.find_field_unordered("c/d").get_uint64().first, 3 );
+
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_ERROR( object.find_field_unordered("d"), NO_SUCH_FIELD );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+  bool object_find_field() {
+    TEST_START();
+    auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
+    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+
+      ASSERT_EQUAL( object.find_field("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( object.find_field("b").get_uint64().first, 2 );
+      ASSERT_EQUAL( object.find_field("c/d").get_uint64().first, 3 );
+
+      ASSERT_ERROR( object.find_field("a"), NO_SUCH_FIELD );
+      ASSERT_ERROR( object.find_field("d"), NO_SUCH_FIELD );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<ondemand::object> object;
+      object = doc_result.get_object();
+
+      ASSERT_EQUAL( object.find_field("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( object.find_field("b").get_uint64().first, 2 );
+      ASSERT_EQUAL( object.find_field("c/d").get_uint64().first, 3 );
+
+      ASSERT_ERROR( object.find_field("a"), NO_SUCH_FIELD );
+      ASSERT_ERROR( object.find_field("d"), NO_SUCH_FIELD );
+      return true;
+    }));
+    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::document doc;
+      ASSERT_SUCCESS( std::move(doc_result).get(doc) );
+      ASSERT_EQUAL( doc.find_field("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( doc.find_field("b").get_uint64().first, 2 );
+      ASSERT_EQUAL( doc.find_field("c/d").get_uint64().first, 3 );
+
+      ASSERT_ERROR( doc.find_field("a"), NO_SUCH_FIELD );
+      ASSERT_ERROR( doc.find_field("d"), NO_SUCH_FIELD );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+      ASSERT_EQUAL( doc_result.find_field("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( doc_result.find_field("b").get_uint64().first, 2 );
+      ASSERT_EQUAL( doc_result.find_field("c/d").get_uint64().first, 3 );
+
+      ASSERT_ERROR( doc_result.find_field("a"), NO_SUCH_FIELD );
+      ASSERT_ERROR( doc_result.find_field("d"), NO_SUCH_FIELD );
+      return true;
+    }));
+
+    json = R"({ "outer": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
+    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::value object;
+      ASSERT_SUCCESS( doc_result.find_field("outer").get(object) );
+      ASSERT_EQUAL( object.find_field("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( object.find_field("b").get_uint64().first, 2 );
+      ASSERT_EQUAL( object.find_field("c/d").get_uint64().first, 3 );
+
+      ASSERT_ERROR( object.find_field("a"), NO_SUCH_FIELD );
+      ASSERT_ERROR( object.find_field("d"), NO_SUCH_FIELD );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<ondemand::value> object = doc_result.find_field("outer");
+      ASSERT_EQUAL( object.find_field("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( object.find_field("b").get_uint64().first, 2 );
+      ASSERT_EQUAL( object.find_field("c/d").get_uint64().first, 3 );
+
+      ASSERT_ERROR( object.find_field("a"), NO_SUCH_FIELD );
+      ASSERT_ERROR( object.find_field("d"), NO_SUCH_FIELD );
+      return true;
+    }));
     TEST_SUCCEED();
   }
 
@@ -1387,6 +1556,8 @@ namespace dom_api_tests {
            boolean_values() &&
            null_value() &&
            object_index() &&
+           object_find_field_unordered() &&
+           object_find_field() &&
            nested_object_index() &&
            iterate_object_partial_children() &&
            iterate_array_partial_children() &&
@@ -1413,7 +1584,7 @@ namespace ordering_tests {
 
   auto json = "{\"coordinates\":[{\"x\":1.1,\"y\":2.2,\"z\":3.3}]}"_padded;
 
-  bool in_order() {
+  bool in_order_object_index() {
     TEST_START();
     ondemand::parser parser{};
     auto doc = parser.iterate(json);
@@ -1428,7 +1599,37 @@ namespace ordering_tests {
     return (x == 1.1) && (y == 2.2) && (z == 3.3);
   }
 
-  bool out_of_order() {
+  bool in_order_object_find_field_unordered() {
+    TEST_START();
+    ondemand::parser parser{};
+    auto doc = parser.iterate(json);
+    double x{0};
+    double y{0};
+    double z{0};
+    for (ondemand::object point_object : doc["coordinates"]) {
+      x += double(point_object.find_field_unordered("x"));
+      y += double(point_object.find_field_unordered("y"));
+      z += double(point_object.find_field_unordered("z"));
+    }
+    return (x == 1.1) && (y == 2.2) && (z == 3.3);
+  }
+
+  bool in_order_object_find_field() {
+    TEST_START();
+    ondemand::parser parser{};
+    auto doc = parser.iterate(json);
+    double x{0};
+    double y{0};
+    double z{0};
+    for (ondemand::object point_object : doc["coordinates"]) {
+      x += double(point_object.find_field("x"));
+      y += double(point_object.find_field("y"));
+      z += double(point_object.find_field("z"));
+    }
+    return (x == 1.1) && (y == 2.2) && (z == 3.3);
+  }
+
+  bool out_of_order_object_index() {
     TEST_START();
     ondemand::parser parser{};
     auto doc = parser.iterate(json);
@@ -1443,7 +1644,37 @@ namespace ordering_tests {
     return (x == 1.1) && (y == 2.2) && (z == 3.3);
   }
 
-  bool foreach_lookup() {
+  bool out_of_order_object_find_field_unordered() {
+    TEST_START();
+    ondemand::parser parser{};
+    auto doc = parser.iterate(json);
+    double x{0};
+    double y{0};
+    double z{0};
+    for (ondemand::object point_object : doc["coordinates"]) {
+      z += double(point_object.find_field_unordered("z"));
+      x += double(point_object.find_field_unordered("x"));
+      y += double(point_object.find_field_unordered("y"));
+    }
+    return (x == 1.1) && (y == 2.2) && (z == 3.3);
+  }
+
+  bool out_of_order_object_find_field() {
+    TEST_START();
+    ondemand::parser parser{};
+    auto doc = parser.iterate(json);
+    double x{0};
+    double y{0};
+    double z{0};
+    for (ondemand::object point_object : doc["coordinates"]) {
+      z += double(point_object.find_field("z"));
+      ASSERT_ERROR( point_object.find_field("x"), NO_SUCH_FIELD );
+      ASSERT_ERROR( point_object.find_field("y"), NO_SUCH_FIELD );
+    }
+    return (x == 0) && (y == 0) && (z == 3.3);
+  }
+
+  bool foreach_object_field_lookup() {
     TEST_START();
     ondemand::parser parser{};
     auto doc = parser.iterate(json);
@@ -1464,9 +1695,13 @@ namespace ordering_tests {
   bool run() {
     return
 #if SIMDJSON_EXCEPTIONS
-           in_order() &&
-           out_of_order() &&
-           foreach_lookup() &&
+           in_order_object_index() &&
+           in_order_object_find_field_unordered() &&
+           in_order_object_find_field() &&
+           out_of_order_object_index() &&
+           out_of_order_object_find_field_unordered() &&
+           out_of_order_object_find_field() &&
+           foreach_object_field_lookup() &&
 #endif
            true;
   }

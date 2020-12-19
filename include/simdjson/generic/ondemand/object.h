@@ -20,29 +20,54 @@ public:
   simdjson_really_inline object_iterator end() noexcept;
 
   /**
-   * Look up a field by name on an object.
+   * Look up a field by name on an object (order-sensitive).
    *
-   * Important notes:
+   * The following code reads z, then y, then x, and thus will not retrieve x or y if fed the
+   * JSON `{ "x": 1, "y": 2, "z": 3 }`:
    *
-   * * **Raw Keys:** The lookup will be done against the *raw* key, and will not unescape keys.
-   *   e.g. `object["a"]` will match `{ "a": 1 }`, but will *not* match `{ "\u0061": 1 }`.
-   * * **Order Sensitive:** Each field lookup will only move forward in the object. In particular,
-   *   the following code reads z, then y, then x, and thus will not retrieve x or y if fed the
-   *   JSON `{ "x": 1, "y": 2, "z": 3 }`:
+   * ```c++
+   * simdjson::builtin::ondemand::parser parser;
+   * auto obj = parser.parse(R"( { "x": 1, "y": 2, "z": 3 } )"_padded);
+   * double z = obj.find_field("z");
+   * double y = obj.find_field("y");
+   * double x = obj.find_field("x");
+   * ```
    *
-   *   ```c++
-   *   simdjson::builtin::ondemand::parser parser;
-   *   auto obj = parser.parse(R"( { "x": 1, "y": 2, "z": 3 } )"_padded);
-   *   double z = obj["z"];
-   *   double y = obj["y"];
-   *   double x = obj["x"];
-   *   ```
+   * **Raw Keys:** The lookup will be done against the *raw* key, and will not unescape keys.
+   * e.g. `object["a"]` will match `{ "a": 1 }`, but will *not* match `{ "\u0061": 1 }`.
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
    */
+  simdjson_really_inline simdjson_result<value> find_field(std::string_view key) & noexcept;
+  /** @overload simdjson_really_inline simdjson_result<value> find_field(std::string_view key) & noexcept; */
+  simdjson_really_inline simdjson_result<value> find_field(std::string_view key) && noexcept;
+
+  /**
+   * Look up a field by name on an object, without regard to key order.
+   *
+   * **Performance Notes:** This is a bit less performant than find_field(), though its effect varies
+   * and often appears negligible. It starts out normally, starting out at the last field; but if
+   * the field is not found, it scans from the beginning of the object to see if it missed it. That
+   * missing case has a non-cache-friendly bump and lots of extra scanning, especially if the object
+   * in question is large. The fact that the extra code is there also bumps the executable size.
+   *
+   * It is the default, however, because it would be highly surprising (and hard to debug) if the
+   * default behavior failed to look up a field just because it was in the wrong order--and many
+   * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
+   *
+   * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
+   * field wasn't there when they aren't).
+   *
+   * @param key The key to look up.
+   * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
+   */
+  simdjson_really_inline simdjson_result<value> find_field_unordered(std::string_view key) & noexcept;
+  /** @overload simdjson_really_inline simdjson_result<value> find_field_unordered(std::string_view key) & noexcept; */
+  simdjson_really_inline simdjson_result<value> find_field_unordered(std::string_view key) && noexcept;
+  /** @overload simdjson_really_inline simdjson_result<value> find_field_unordered(std::string_view key) & noexcept; */
   simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept;
-  /** @overload simdjson_really_inline simdjson_result<value> operator[](std::string_view key) & noexcept; */
+  /** @overload simdjson_really_inline simdjson_result<value> find_field_unordered(std::string_view key) & noexcept; */
   simdjson_really_inline simdjson_result<value> operator[](std::string_view key) && noexcept;
 
 protected:
@@ -76,6 +101,10 @@ public:
 
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> begin() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> end() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field(std::string_view key) & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field(std::string_view key) && noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) && noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) && noexcept;
 };
