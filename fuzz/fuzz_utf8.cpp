@@ -12,6 +12,24 @@
 #include <cstdlib>
 #include "supported_implementations.h"
 
+extern "C" int VerboseTestOneInput(const uint8_t *Data, size_t Size) {
+    static const auto supported_implementations=get_runtime_supported_implementations();
+    for(size_t i = 0; i <= Size; i++) {
+        std::cout<<"size: "<<std::dec<<std::setw(8)<<i<<std::endl;
+        std::cout<<"Input: \"";
+        for(size_t j = 0; j < i; j++) {
+            std::cout<<"\\x"<<std::hex<<std::setw(2)<<std::setfill('0')<<uint32_t(Data[j]);
+        }
+        std::cout<<"\""<<std::endl;
+        for(const auto& e: supported_implementations) {
+            if(!e->supported_by_runtime_system()) { continue; }
+            const bool current=e->validate_utf8((const char*)Data,i);
+            std::cout<<e->name()<<" returns "<<current<<std::endl;
+        }
+        std::cout<<std::endl;
+    }
+    return 0;
+}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
@@ -50,6 +68,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
             std::cerr << "\\x" << std::hex << std::setw(2) << std::setfill('0')  << uint32_t(Data[i]);
         }
         std::cerr << "\"" <<std::endl;
+
+        VerboseTestOneInput(Data, Size);
 
         std::abort();
     }
