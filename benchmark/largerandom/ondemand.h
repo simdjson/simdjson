@@ -25,7 +25,7 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
 
   auto doc = parser.iterate(json);
   for (ondemand::object coord : doc) {
-    container.emplace_back(my_point{coord["x"], coord["y"], coord["z"]});
+    container.emplace_back(my_point{coord.find_field("x"), coord.find_field("y"), coord.find_field("z")});
   }
 
   return true;
@@ -54,9 +54,9 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
 
   auto doc = parser.iterate(json);
   for (ondemand::object coord : doc.get_array()) {
-    sum.x += double(coord["x"]);
-    sum.y += double(coord["y"]);
-    sum.z += double(coord["z"]);
+    sum.x += double(coord.find_field("x"));
+    sum.y += double(coord.find_field("y"));
+    sum.z += double(coord.find_field("z"));
     count++;
   }
 

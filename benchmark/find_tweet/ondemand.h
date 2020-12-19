@@ -33,9 +33,9 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
   text = "";
   // Walk the document, parsing as we go
   auto doc = parser.iterate(json);
-  for (ondemand::object tweet : doc["statuses"]) {
-      if (uint64_t(tweet["id"]) == TWEET_ID) {
-        text = tweet["text"];
+  for (ondemand::object tweet : doc.find_field("statuses")) {
+      if (uint64_t(tweet.find_field("id")) == TWEET_ID) {
+        text = tweet.find_field("text");
         return true;
       }
   }

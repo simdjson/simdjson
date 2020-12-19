@@ -18,7 +18,7 @@ simdjson_really_inline simdjson_result<value> object::operator[](const std::stri
   return find_field_unordered(key);
 }
 simdjson_really_inline simdjson_result<value> object::operator[](const std::string_view key) && noexcept {
-  return find_field_unordered(key);
+  return std::forward<object>(*this).find_field_unordered(key);
 }
 simdjson_really_inline simdjson_result<value> object::find_field(const std::string_view key) & noexcept {
   bool has_value;
