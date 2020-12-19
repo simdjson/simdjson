@@ -54,6 +54,11 @@ public:
    */
   simdjson_really_inline const uint32_t *checkpoint() const noexcept;
 
+  /**
+   * Reset to a previously saved index.
+   */
+  simdjson_really_inline void restore_checkpoint(const uint32_t *target_checkpoint) noexcept;
+
   // NOTE: we don't support a full C++ iterator interface, because we expect people to make
   // different calls to advance the iterator based on *their own* state.
 

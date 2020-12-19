@@ -1166,7 +1166,7 @@ namespace dom_api_tests {
       ASSERT_EQUAL( object["b"].get_uint64().first, 2 );
       ASSERT_EQUAL( object["c/d"].get_uint64().first, 3 );
 
-      ASSERT_ERROR( object["a"], NO_SUCH_FIELD );
+      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
       ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
       return true;
     }));
@@ -1178,7 +1178,7 @@ namespace dom_api_tests {
       ASSERT_EQUAL( object["b"].get_uint64().first, 2 );
       ASSERT_EQUAL( object["c/d"].get_uint64().first, 3 );
 
-      ASSERT_ERROR( object["a"], NO_SUCH_FIELD );
+      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
       ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
       return true;
     }));
@@ -1189,7 +1189,7 @@ namespace dom_api_tests {
       ASSERT_EQUAL( doc["b"].get_uint64().first, 2 );
       ASSERT_EQUAL( doc["c/d"].get_uint64().first, 3 );
 
-      ASSERT_ERROR( doc["a"], NO_SUCH_FIELD );
+      ASSERT_EQUAL( doc["a"].get_uint64().first, 1 );
       ASSERT_ERROR( doc["d"], NO_SUCH_FIELD );
       return true;
     }));
@@ -1198,7 +1198,7 @@ namespace dom_api_tests {
       ASSERT_EQUAL( doc_result["b"].get_uint64().first, 2 );
       ASSERT_EQUAL( doc_result["c/d"].get_uint64().first, 3 );
 
-      ASSERT_ERROR( doc_result["a"], NO_SUCH_FIELD );
+      ASSERT_EQUAL( doc_result["a"].get_uint64().first, 1 );
       ASSERT_ERROR( doc_result["d"], NO_SUCH_FIELD );
       return true;
     }));
@@ -1437,19 +1437,13 @@ namespace ordering_tests {
     double z{0};
     for (ondemand::object point_object : doc["coordinates"]) {
       z += double(point_object["z"]);
-      try {
-        x += double(point_object["x"]);
-        return false;
-      } catch(simdjson_error&) {}
-      try {
-        y += double(point_object["y"]);
-        return false;
-      } catch(simdjson_error&) {}
+      x += double(point_object["x"]);
+      y += double(point_object["y"]);
     }
-    return (x == 0) && (y == 0) && (z == 3.3);
+    return (x == 1.1) && (y == 2.2) && (z == 3.3);
   }
 
-  bool robust_order() {
+  bool foreach_lookup() {
     TEST_START();
     ondemand::parser parser{};
     auto doc = parser.iterate(json);
@@ -1472,7 +1466,7 @@ namespace ordering_tests {
 #if SIMDJSON_EXCEPTIONS
            in_order() &&
            out_of_order() &&
-           robust_order() &&
+           foreach_lookup() &&
 #endif
            true;
   }

@@ -156,6 +156,14 @@ simdjson_really_inline error_code json_iterator::report_error(error_code _error,
   return error;
 }
 
+simdjson_really_inline const uint32_t *json_iterator::checkpoint() const noexcept {
+  return token.checkpoint();
+}
+simdjson_really_inline void json_iterator::restore_checkpoint(const uint32_t *target_checkpoint) noexcept {
+  token.restore_checkpoint(target_checkpoint);
+}
+
+
 simdjson_really_inline error_code json_iterator::optional_error(error_code _error, const char *message) noexcept {
   SIMDJSON_ASSUME(_error == INCORRECT_TYPE || _error == NO_SUCH_FIELD);
   logger::log_error(*this, message);
