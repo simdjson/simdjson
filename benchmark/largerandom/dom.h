@@ -32,38 +32,6 @@ simdjson_really_inline bool Dom::Run(const padded_string &json) {
 
 BENCHMARK_TEMPLATE(LargeRandom, Dom);
 
-namespace sum {
-
-class Dom {
-public:
-  simdjson_really_inline bool Run(const padded_string &json);
-
-  simdjson_really_inline my_point &Result() { return sum; }
-  simdjson_really_inline size_t ItemCount() { return count; }
-
-private:
-  dom::parser parser{};
-  my_point sum{};
-  size_t count{};
-};
-
-simdjson_really_inline bool Dom::Run(const padded_string &json) {
-  sum = { 0, 0, 0 };
-  count = 0;
-
-  for (auto coord : parser.parse(json)) {
-    sum.x += double(coord["x"]);
-    sum.y += double(coord["y"]);
-    sum.z += double(coord["z"]);
-    count++;
-  }
-
-  return true;
-}
-
-BENCHMARK_TEMPLATE(LargeRandomSum, Dom);
-
-} // namespace sum
 } // namespace largerandom
 
 #endif // SIMDJSON_EXCEPTIONS

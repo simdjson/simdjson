@@ -8,9 +8,6 @@
 
 namespace largerandom {
 template<typename T> static void LargeRandom(benchmark::State &state);
-namespace sum {
-template<typename T> static void LargeRandomSum(benchmark::State &state);
-}
 
 using namespace simdjson;
 
@@ -59,22 +56,21 @@ simdjson_unused static std::ostream &operator<<(std::ostream &o, const my_point 
 //
 #include <vector>
 #include "event_counter.h"
+#ifndef BENCHMARK_NO_DOM
 #include "dom.h"
+#endif
 #include "json_benchmark.h"
 
 namespace largerandom {
 
 template<typename T> static void LargeRandom(benchmark::State &state) {
+#ifdef BENCHMARK_NO_DOM
+  JsonBenchmark<T, T>(state, get_built_json_array());
+#else
   JsonBenchmark<T, Dom>(state, get_built_json_array());
+#endif
 }
 
-namespace sum {
-
-template<typename T> static void LargeRandomSum(benchmark::State &state) {
-  JsonBenchmark<T, Dom>(state, get_built_json_array());
-}
-
-}
 } // namespace largerandom
 
 #endif // SIMDJSON_EXCEPTIONS

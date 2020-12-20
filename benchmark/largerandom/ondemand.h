@@ -33,39 +33,6 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
 
 BENCHMARK_TEMPLATE(LargeRandom, OnDemand);
 
-
-namespace sum {
-
-class OnDemand {
-public:
-  simdjson_really_inline bool Run(const padded_string &json);
-  simdjson_really_inline my_point &Result() { return sum; }
-  simdjson_really_inline size_t ItemCount() { return count; }
-
-private:
-  ondemand::parser parser{};
-  my_point sum{};
-  size_t count{};
-};
-
-simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
-  sum = {0,0,0};
-  count = 0;
-
-  auto doc = parser.iterate(json);
-  for (ondemand::object coord : doc.get_array()) {
-    sum.x += double(coord.find_field("x"));
-    sum.y += double(coord.find_field("y"));
-    sum.z += double(coord.find_field("z"));
-    count++;
-  }
-
-  return true;
-}
-
-BENCHMARK_TEMPLATE(LargeRandomSum, OnDemand);
-
-} // namespace sum
 } // namespace largerandom
 
 #endif // SIMDJSON_EXCEPTIONS
