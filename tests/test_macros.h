@@ -101,5 +101,4 @@ simdjson_really_inline bool assert_true(bool value, const char *operation = "res
 #define TEST_FAIL(MESSAGE)              do { std::cerr << "FAIL: " << (MESSAGE) << std::endl; return false; } while (0);
 #define TEST_SUCCEED()                  do { return true; } while (0);
 
-
 #endif // TEST_MACROS_H
