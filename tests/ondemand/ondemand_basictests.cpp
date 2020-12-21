@@ -1215,7 +1215,7 @@ namespace dom_api_tests {
       ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
       return true;
     }));
-    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
+    SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::value> object = doc_result["outer"];
       ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
       ASSERT_EQUAL( object["b"].get_uint64().first, 2 );
@@ -1690,7 +1690,7 @@ namespace ordering_tests {
     }
     return (x == 1.1) && (y == 2.2) && (z == 3.3);
   }
-#endif
+#endif // SIMDJSON_EXCEPTIONS
 
   bool run() {
     return
@@ -1725,6 +1725,7 @@ namespace twitter_tests {
     }));
     TEST_SUCCEED();
   }
+
 #if SIMDJSON_EXCEPTIONS
   bool twitter_example() {
     TEST_START();
@@ -1746,7 +1747,7 @@ namespace twitter_tests {
     }
     TEST_SUCCEED();
   }
-#endif
+#endif // SIMDJSON_EXCEPTIONS
 
   bool twitter_default_profile() {
     TEST_START();
@@ -1785,11 +1786,21 @@ namespace twitter_tests {
         auto media = tweet["entities"]["media"];
         if (!media.error()) {
           for (auto image : media) {
+            uint64_t id_val;
+            std::string_view id_string;
+            ASSERT_SUCCESS( image["id"].get(id_val) );
+            ASSERT_SUCCESS( image["id_str"].get(id_string) );
+            std::cout << "id = " << id_val << std::endl;
+            std::cout << "id_string = " << id_string << std::endl;
+
             for (auto size : image["sizes"].get_object()) {
-              auto size_value = size.value().get_object();
+              std::string_view size_key;
+              ASSERT_SUCCESS( size.unescaped_key().get(size_key) );
+              std::cout << "Type of image size = " << size_key << std::endl;
+
               uint64_t width, height;
-              ASSERT_SUCCESS( size_value["w"].get(width) );
-              ASSERT_SUCCESS( size_value["h"].get(height) );
+              ASSERT_SUCCESS( size.value()["w"].get(width) );
+              ASSERT_SUCCESS( size.value()["h"].get(height) );
               image_sizes.insert(make_pair(width, height));
             }
           }
@@ -1836,6 +1847,14 @@ namespace twitter_tests {
     TEST_SUCCEED();
   }
 
+  /*
+   * Fun fact: id and id_str can differ:
+   * 505866668485386240 and 505866668485386241.
+   * Presumably, it is because doubles are used
+   * at some point in the process and the number
+   * 505866668485386241 cannot be represented as a double.
+   * (not our fault)
+   */
   bool twitter_image_sizes_exception() {
     TEST_START();
     padded_string json = padded_string::load(TWITTER_JSON);
@@ -1845,30 +1864,13 @@ namespace twitter_tests {
       for (auto tweet : doc_result["statuses"]) {
         auto media = tweet["entities"]["media"];
         if (!media.error()) {
-          for (ondemand::object image : media) {
-            /**
-             * Fun fact: id and id_str can differ:
-             * 505866668485386240 and 505866668485386241.
-             * Presumably, it is because doubles are used
-             * at some point in the process and the number
-             * 505866668485386241 cannot be represented as a double.
-             * (not our fault)
-             */
-            uint64_t id_val = image["id"];
-            std::cout << "id = " << id_val << std::endl;
-            std::string_view id_string = image["id_str"];
-            std::cout << "id_string = " << id_string << std::endl;
+          for (auto image : media) {
+            std::cout << "id = " << uint64_t(image["id"]) << std::endl;
+            std::cout << "id_string = " << std::string_view(image["id_str"]) << std::endl;
             for (auto size : image["sizes"].get_object()) {
-              /**
-               * We want to know the key that describes the size.
-               */
-              std::string_view raw_size_key_v = size.unescaped_key();
-              std::cout << "Type of image size = " << raw_size_key_v << std::endl;
-              ondemand::object size_value = size.value();
-              int64_t width = size_value["w"];
-              int64_t height = size_value["h"];
-              std::cout << width << " x " << height << std::endl;
-              image_sizes.insert(make_pair(width, height));
+              std::cout << "Type of image size = " << std::string_view(size.unescaped_key()) << std::endl;
+              // NOTE: the uint64_t is required so that each value is actually parsed before the pair is created
+              image_sizes.insert(make_pair<uint64_t,uint64_t>(size.value()["w"], size.value()["h"]));
             }
           }
         }
@@ -1879,7 +1881,7 @@ namespace twitter_tests {
     TEST_SUCCEED();
   }
 
-#endif
+#endif // SIMDJSON_EXCEPTIONS
 
   bool run() {
     return

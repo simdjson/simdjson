@@ -29,6 +29,11 @@ simdjson_really_inline json_iterator::json_iterator(ondemand::parser *_parser) n
   logger::log_headers();
 }
 
+// GCC 7 warns when the first line of this function is inlined away into oblivion due to the caller
+// relating depth and parent_depth, which is a desired effect. The warning does not show up if the
+// skip_child() function is not marked inline).
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child(depth_t parent_depth) noexcept {
   if (depth() <= parent_depth) { return SUCCESS; }
 
@@ -89,6 +94,8 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child
 
   return report_error(TAPE_ERROR, "not enough close braces");
 }
+
+SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_really_inline bool json_iterator::at_root() const noexcept {
   return token.checkpoint() == root_checkpoint();
