@@ -1,0 +1,54 @@
+name: MSYS2-CLANG-CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  windows-mingw:
+    name: ${{ matrix.msystem }}
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - msystem: "MINGW64"
+            install: mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-clang
+            type: Release
+          - msystem: "MINGW32"
+            install: mingw-w64-i686-cmake mingw-w64-i686-ninja mingw-w64-i686-clang
+            type: Release
+          - msystem: "MINGW64"
+            install: mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-clang
+            type: Debug
+          - msystem: "MINGW32"
+            install: mingw-w64-i686-cmake mingw-w64-i686-ninja mingw-w64-i686-clang
+            type: Debug
+    env:
+      CMAKE_GENERATOR: Ninja
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: dependencies/.cache
+          key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
+      - uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          msystem: ${{ matrix.msystem }}
+          install: ${{ matrix.install }}
+      - name: Build and Test
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT=ON ..
+          cmake --build . --verbose
+          ctest -j4 --output-on-failure -LE explicitonly
