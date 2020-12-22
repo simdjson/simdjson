@@ -19,21 +19,21 @@ target_compile_definitions(stringparsingcheck PRIVATE NOMINMAX)
 
 # All remaining tests link with simdjson proper
 link_libraries(simdjson)
-add_cpp_test(random_string_number_tests LABELS dom acceptance per_implementation no_mingw)
+add_cpp_test(random_string_number_tests LABELS dom acceptance per_implementation)
 add_cpp_test(basictests                 LABELS dom acceptance per_implementation)
-add_cpp_test(document_stream_tests      LABELS dom acceptance per_implementation no_mingw)
-add_cpp_test(document_tests             LABELS dom acceptance per_implementation no_mingw)
+add_cpp_test(document_stream_tests      LABELS dom acceptance per_implementation)
+add_cpp_test(document_tests             LABELS dom acceptance per_implementation)
 add_cpp_test(errortests                 LABELS dom acceptance per_implementation)
-add_cpp_test(extracting_values_example  LABELS dom acceptance per_implementation no_mingw)
+add_cpp_test(extracting_values_example  LABELS dom acceptance per_implementation)
 add_cpp_test(integer_tests              LABELS dom acceptance per_implementation)
 add_cpp_test(jsoncheck                  LABELS dom acceptance per_implementation)
-add_cpp_test(minefieldcheck             LABELS dom acceptance per_implementation no_mingw)
+add_cpp_test(minefieldcheck             LABELS dom acceptance per_implementation)
 add_cpp_test(parse_many_test            LABELS dom acceptance per_implementation)
 add_cpp_test(pointercheck               LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
-add_cpp_test(unicode_tests              LABELS dom acceptance per_implementation no_mingw)
+add_cpp_test(unicode_tests              LABELS dom acceptance per_implementation)
 
-add_cpp_test(minify_tests        LABELS other acceptance per_implementation no_mingw)
-add_cpp_test(padded_string_tests LABELS other acceptance                    no_mingw)
+add_cpp_test(minify_tests        LABELS other acceptance per_implementation)
+add_cpp_test(padded_string_tests LABELS other acceptance                   )
 
 find_program(BASH bash)
 
@@ -78,7 +78,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
   add_cpp_test(checkimplementation LABELS other per_implementation)
 
   add_test(NAME json2json COMMAND $<TARGET_FILE:json2json> ${EXAMPLE_JSON})
-  set_property(TEST json2json APPEND PROPERTY LABELS acceptance per_implementation no_mingw)
+  set_property(TEST json2json APPEND PROPERTY LABELS acceptance per_implementation)
 
   #
   # SIMDJSON_FORCE_IMPLEMENTATION tests: run json2json with SIMDJSON
@@ -109,18 +109,18 @@ endif()
 # Don't add the tests if we're on VS2017 or older; they don't succeed.
 if(NOT (MSVC AND MSVC_VERSION LESS 1920))
   if(SIMDJSON_EXCEPTIONS)
-    add_cpp_test(readme_examples COMPILE_ONLY LABELS acceptance no_mingw)
-    add_cpp_test(readme_examples11 COMPILE_ONLY LABELS acceptance no_mingw SOURCES readme_examples.cpp)
+    add_cpp_test(readme_examples COMPILE_ONLY LABELS acceptance)
+    add_cpp_test(readme_examples11 COMPILE_ONLY LABELS acceptance SOURCES readme_examples.cpp)
     set_target_properties(readme_examples11 PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
   endif()
 
-  add_cpp_test(readme_examples_noexceptions COMPILE_ONLY LABELS acceptance no_mingw)
+  add_cpp_test(readme_examples_noexceptions COMPILE_ONLY LABELS acceptance)
 
-  add_cpp_test(readme_examples_noexceptions11 COMPILE_ONLY LABELS acceptance no_mingw SOURCES readme_examples_noexceptions.cpp)
+  add_cpp_test(readme_examples_noexceptions11 COMPILE_ONLY LABELS acceptance SOURCES readme_examples_noexceptions.cpp)
   set_target_properties(readme_examples_noexceptions11 PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 
   # Compile tests that *should fail*
-  add_cpp_test(readme_examples_will_fail_with_exceptions_off WILL_FAIL COMPILE_ONLY LABELS acceptance no_mingw SOURCES readme_examples.cpp)
+  add_cpp_test(readme_examples_will_fail_with_exceptions_off WILL_FAIL COMPILE_ONLY LABELS acceptance SOURCES readme_examples.cpp)
   target_compile_definitions(readme_examples_will_fail_with_exceptions_off PRIVATE SIMDJSON_EXCEPTIONS=0)
 endif()
 
