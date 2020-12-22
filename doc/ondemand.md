@@ -17,9 +17,9 @@ To achieve ease of use, we mimicked the *form* of a traditional DOM API: you can
 arrays, look up fields in objects, and extract native values like `double`, `uint64_t`, `string` and `bool`.
 
 To achieve performance, we introduced some key limitations that make the DOM API *streaming*:
-array/object iteration cannot be restarted, and fields must be looked up in order, and string/number
-values can only be parsed once. If these limitations are acceptable to you, the On Demand API could
-help you write maintainable applications with a computation efficiency that is difficult to surpass.
+array/object iteration cannot be restarted, and string/number values can only be parsed once. If
+these limitations are acceptable to you, the On Demand API could help you write maintainable
+applications with a computation efficiency that is difficult to surpass.
 
 A code example illustrates our API from a programmer's point of view:
 
@@ -714,9 +714,9 @@ We expect that the On Demand approach has many of the performance benefits of th
 
 ### Limitations of the On Demand Approach
 
-The On Demand approach has  some limitations:
+The On Demand approach has some limitations:
 
-* Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX).
+* Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX). (The one exception to this is field lookup, which is more *performant* when the order of lookups matches the order of fields in the document, but which will still work with out-of-order fields, with a performance hit.)
 * The On Demand approach is less safe than DOM: we only validate the components of the JSON document that are used and it is possible to begin ingesting an invalid document only to find out later that the document is invalid. Are you fine ingesting a large JSON document that starts with well formed JSON but ends with invalid JSON content?
 
 There are currently additional technical limitations which we expect to resolve in future releases of the simdjson library:
@@ -724,16 +724,6 @@ There are currently additional technical limitations which we expect to resolve 
 * The simdjson library offers runtime dispatching which allows you to compile one binary and have it run at full speed on different processors, taking advantage of the specific features of the processor. The On Demand API does not have runtime dispatch support at this time. To benefit from the On Demand API, you must compile your code for a specific processor. E.g., if your processor supports AVX2 instructions, you should compile your binary executable with AVX2 instruction support (by using your compiler's commands). If you are sufficiently technically proficient, you can implement runtime dispatching within your application, by compiling your On Demand code for different processors.
 * There is an initial phase which scans the entire document quickly, irrespective of the size of the document. We plan to break this phase into distinct steps for large files in a future release as we have done with other components of our API (e.g., `parse_many`).
 * The On Demand API does not support JSON Pointer. This capability is currently limited to our core API.
-* You should be mindful that the though your software might write the keys in a consistent manner, the [JSON specification](https://www.rfc-editor.org/rfc/rfc8259.txt) states that "JSON parsing libraries have been observed to differ as to whether or not they make the ordering of object members visible". The On Demand API will help the programmer handle unexpected JSON dialects by throwing an exception when the unexpected occurs, but the programmer is responsible for handling such cases: e.g., by rejecting the JSON input that does not follow the expected JSON dialect. We intend to help users who wish to use the On Demand API but require support for order-insensitive semantics, but in our current implementation support for out-of-order keys (if needed) must be provided by the programmer. Currently, one might proceed in the following manner as a fallback measure if keys can appear in any order:
-```C++
-    for (ondemand::object my_object : doc["mykey"]) {
-      for (auto field : my_object) {
-        if      (field.key() == "key_value1") { process1(field.value()); }
-        else if (field.key() == "key_value2") { process2(field.value()); }
-        else if (field.key() == "key_value3") { process3(field.value()); }
-      }
-    }
-```
 
 ### Applicability of the On Demand Approach
 
