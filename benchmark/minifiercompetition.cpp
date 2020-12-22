@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
             simdjson::SUCCESS, memcpy(buffer, mini_buffer, p.size()), repeat, volume,
             !just_data);
 
-  free(buffer);
+  delete [] buffer;
   free(ast_buffer);
-  free(mini_buffer);
+  delete [] mini_buffer;
 }
