@@ -9,19 +9,16 @@ using namespace simdjson;
 using namespace simdjson::builtin;
 
 // This ensures the compiler can't rearrange them into the proper order (which causes it to work!)
-simdjson_never_inline int check_point(simdjson_result<ondemand::value> xval, simdjson_result<ondemand::value> yval) {
+simdjson_never_inline bool check_point(simdjson_result<ondemand::value> xval, simdjson_result<ondemand::value> yval) {
   // Verify the expected release behavior
-  error_code error;
-  uint64_t x = 0;
-  if ((error = xval.get(x))) { std::cerr << "error getting x: " << error << std::endl; }
-  else if (x != 2) { std::cerr << "expected x to (wrongly) be 2, was " << x << std::endl; }
-  uint64_t y = 0;
-  if ((error = yval.get(y))) { std::cerr << "error getting y: " << error << std::endl; }
-  else if (y != 3) { std::cerr << "expected y to (wrongly) be 3, was " << y << std::endl; }
-  return 0;
+  uint64_t x, y;
+  if (!xval.get(x)) { return false; }
+  if (!yval.get(y)) { return false; }
+  std::cout << x << "," << y << std::endl;
+  return true;
 }
 
-int test_check_point() {
+bool test_check_point() {
   auto json = R"(
     {
       "x": 1,
@@ -32,10 +29,34 @@ int test_check_point() {
   return check_point(doc["x"], doc["y"]);
 }
 
-bool fork_failed_with_assert() {
-  int status = 0;
-  wait(&status);
-  return WIFSIGNALED(status);
+// Run a test function in a fork and check whether it exited with an assert signal
+template<typename F>
+bool assert_test(const F& f) {
+  pid_t pid = fork();
+  if (pid == -1) {
+    std::cerr << "fork failed" << std::endl;
+    exit(1);
+  }
+
+  if (!pid) {
+    //
+    // This code runs in the fork (so we run the test function)
+    //
+    bool succeeded = f();
+    exit(succeeded ? 0 : 1);
+  }
+
+  //
+  // This code runs in the original executable (so we wait for the fork and check the exit code)
+  //
+  int exit_code = 0;
+  if (waitpid(pid, &exit_code, 0) == pid_t(-1)) {
+    std::cerr << "waitpid failed: " << std::string_view(strerror(errno)) << std::endl;
+    exit(1);
+  }
+
+  // Test passes if the child exited with an assert signal
+  return WIFSIGNALED(exit_code);
 }
 
 int main(void) {
@@ -45,12 +66,9 @@ int main(void) {
   // test to have passed.
   // From https://stackoverflow.com/a/33694733
 
-  pid_t pid = fork();
-  if (pid == -1) { std::cerr << "fork failed" << std::endl; return 1; }
-  if (pid) {
-    // Parent - wait child and interpret its result
-    return fork_failed_with_assert() ? 0 : 1;
-  } else {
-    test_check_point();
-  }
+  bool succeeded = true;
+#ifndef NDEBUG
+  succeeded |= assert_test(test_check_point);
+#endif
+  return succeeded ? 0 : 1;
 }
