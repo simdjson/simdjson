@@ -13,7 +13,7 @@ add_cpp_test(ondemand_parse_api_tests   LABELS ondemand acceptance per_implement
 add_cpp_test(ondemand_twitter_tests     LABELS ondemand acceptance per_implementation)
 
 if(HAVE_POSIX_FORK AND HAVE_POSIX_WAIT) # assert tests use fork and wait, which aren't on MSVC
-  add_cpp_test(ondemand_assert_out_of_order_values LABELS assert per_implementation explicitonly ondemand)
+  add_cpp_test(ondemand_assert_out_of_order_values DEBUG_ONLY LABELS assert per_implementation explicitonly ondemand)
 endif()
 
 # Copy the simdjson dll into the tests directory
