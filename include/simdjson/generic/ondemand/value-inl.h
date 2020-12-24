@@ -6,6 +6,13 @@ simdjson_really_inline value::value(const value_iterator &_iter) noexcept
   : iter{_iter}
 {
 }
+simdjson_really_inline value value::start(const value_iterator &iter) noexcept {
+  return iter;
+}
+simdjson_really_inline value value::resume(const value_iterator &iter) noexcept {
+  return iter;
+}
+
 simdjson_really_inline simdjson_result<array> value::get_array() && noexcept {
   return array::start(iter);
 }
@@ -18,6 +25,21 @@ simdjson_really_inline simdjson_result<object> value::get_object() && noexcept {
 simdjson_really_inline simdjson_result<object> value::get_object() & noexcept {
   return object::try_start(iter);
 }
+simdjson_really_inline simdjson_result<object> value::start_or_resume_object() & noexcept {
+  if (iter.at_start()) {
+    return get_object();
+  } else {
+    return object::resume(iter);
+  }
+}
+simdjson_really_inline simdjson_result<object> value::start_or_resume_object() && noexcept {
+  if (iter.at_start()) {
+    return get_object();
+  } else {
+    return object::resume(iter);
+  }
+}
+
 simdjson_really_inline simdjson_result<raw_json_string> value::get_raw_json_string() && noexcept {
   return iter.require_raw_json_string();
 }
@@ -145,17 +167,43 @@ simdjson_really_inline simdjson_result<array_iterator> value::end() & noexcept {
   return {};
 }
 
+simdjson_really_inline simdjson_result<value> value::find_field(std::string_view key) & noexcept {
+  return start_or_resume_object().find_field(key);
+}
+simdjson_really_inline simdjson_result<value> value::find_field(std::string_view key) && noexcept {
+  return std::forward<value>(*this).start_or_resume_object().find_field(key);
+}
+simdjson_really_inline simdjson_result<value> value::find_field(const char *key) & noexcept {
+  return start_or_resume_object().find_field(key);
+}
+simdjson_really_inline simdjson_result<value> value::find_field(const char *key) && noexcept {
+  return std::forward<value>(*this).start_or_resume_object().find_field(key);
+}
+
+simdjson_really_inline simdjson_result<value> value::find_field_unordered(std::string_view key) & noexcept {
+  return start_or_resume_object().find_field_unordered(key);
+}
+simdjson_really_inline simdjson_result<value> value::find_field_unordered(std::string_view key) && noexcept {
+  return std::forward<value>(*this).start_or_resume_object().find_field_unordered(key);
+}
+simdjson_really_inline simdjson_result<value> value::find_field_unordered(const char *key) & noexcept {
+  return start_or_resume_object().find_field_unordered(key);
+}
+simdjson_really_inline simdjson_result<value> value::find_field_unordered(const char *key) && noexcept {
+  return std::forward<value>(*this).start_or_resume_object().find_field_unordered(key);
+}
+
 simdjson_really_inline simdjson_result<value> value::operator[](std::string_view key) & noexcept {
-  return get_object()[key];
+  return start_or_resume_object()[key];
 }
 simdjson_really_inline simdjson_result<value> value::operator[](std::string_view key) && noexcept {
-  return std::forward<value>(*this).get_object()[key];
+  return std::forward<value>(*this).start_or_resume_object()[key];
 }
 simdjson_really_inline simdjson_result<value> value::operator[](const char *key) & noexcept {
-  return get_object()[key];
+  return start_or_resume_object()[key];
 }
 simdjson_really_inline simdjson_result<value> value::operator[](const char *key) && noexcept {
-  return std::forward<value>(*this).get_object()[key];
+  return std::forward<value>(*this).start_or_resume_object()[key];
 }
 
 } // namespace ondemand
@@ -186,6 +234,40 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::end() & noexcept {
   if (error()) { return error(); }
   return {};
+}
+
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::find_field(std::string_view key) & noexcept {
+  if (error()) { return error(); }
+  return first.find_field(key);
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::find_field(std::string_view key) && noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).find_field(key);
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::find_field(const char *key) & noexcept {
+  if (error()) { return error(); }
+  return first.find_field(key);
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::find_field(const char *key) && noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).find_field(key);
+}
+
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::find_field_unordered(std::string_view key) & noexcept {
+  if (error()) { return error(); }
+  return first.find_field_unordered(key);
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::find_field_unordered(std::string_view key) && noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).find_field_unordered(key);
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::find_field_unordered(const char *key) & noexcept {
+  if (error()) { return error(); }
+  return first.find_field_unordered(key);
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::find_field_unordered(const char *key) && noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).find_field_unordered(key);
 }
 
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator[](std::string_view key) & noexcept {

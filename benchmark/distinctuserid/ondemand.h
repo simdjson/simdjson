@@ -33,15 +33,15 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
   ids.clear();
   // Walk the document, parsing as we go
   auto doc = parser.iterate(json);
-  for (ondemand::object tweet : doc["statuses"]) {
+  for (ondemand::object tweet : doc.find_field("statuses")) {
       // We believe that all statuses have a matching
       // user, and we are willing to throw when they do not.
-      ids.push_back(tweet["user"]["id"]);
+      ids.push_back(tweet.find_field("user").find_field("id"));
       // Not all tweets have a "retweeted_status", but when they do
       // we want to go and find the user within.
-      auto retweet = tweet["retweeted_status"];
+      auto retweet = tweet.find_field("retweeted_status");
       if(!retweet.error()) {
-          ids.push_back(retweet["user"]["id"]);
+          ids.push_back(retweet.find_field("user").find_field("id"));
       }
   }
   remove_duplicates(ids);

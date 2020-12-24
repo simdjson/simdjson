@@ -51,35 +51,189 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   }
 }
 
-/**
- * Find the field with the given key. May be used in place of ++.
- */
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_field_raw(const std::string_view key) noexcept {
-  if (!is_open()) { return false; }
-
-  // Unless this is the first field, we need to advance past the , and check for }
   error_code error;
   bool has_value;
+
+  //
+  // Initially, the object can be in one of a few different places:
+  //
+  // 1. The start of the object, at the first field:
+  //
+  //    ```
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //      ^ (depth 2, index 1)
+  //    ```
+  //
+  // 2. When a previous search did not yield a value or the object is empty:
+  //
+  //    ```
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                                     ^ (depth 0)
+  //    { }
+  //        ^ (depth 0, index 2)
+  //    ```
+  //
+  if (!is_open()) { return false; }
   if (at_first_field()) {
     has_value = true;
+
+  // 3. When a previous search found a field or an iterator yielded a value:
+  //
+  //    ```
+  //    // When a field was not fully consumed (or not even touched at all)
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //           ^ (depth 2)
+  //    // When a field was fully consumed
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                   ^ (depth 1)
+  //    // When the last field was fully consumed
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                                   ^ (depth 1)
+  //    ```
+  //
   } else {
     if ((error = skip_child() )) { abandon(); return error; }
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
   }
   while (has_value) {
-    // Get the key
+    // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
     if ((error = field_value() )) { abandon(); return error; }
 
-    // Check if it matches
+    // If it matches, stop and return
     if (actual_key == key) {
       logger::log_event(*this, "match", key, -2);
       return true;
     }
+
+    // No match: skip the value and see if , or } is next
     logger::log_event(*this, "no match", key, -2);
     SIMDJSON_TRY( skip_child() ); // Skip the value entirely
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
+  }
+
+  // If the loop ended, we're out of fields to look at.
+  return false;
+}
+
+simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_field_unordered_raw(const std::string_view key) noexcept {
+  error_code error;
+  bool has_value;
+
+  //
+  // Initially, the object can be in one of a few different places:
+  //
+  // 1. The start of the object, at the first field:
+  //
+  //    ```
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //      ^ (depth 2, index 1)
+  //    ```
+  //
+  if (at_first_field()) {
+    // If we're at the beginning of the object, we definitely have a field
+    has_value = true;
+
+  // 2. When a previous search did not yield a value or the object is empty:
+  //
+  //    ```
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                                     ^ (depth 0)
+  //    { }
+  //        ^ (depth 0, index 2)
+  //    ```
+  //
+  } else if (!is_open()) {
+    has_value = false;
+
+  // 3. When a previous search found a field or an iterator yielded a value:
+  //
+  //    ```
+  //    // When a field was not fully consumed (or not even touched at all)
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //           ^ (depth 2)
+  //    // When a field was fully consumed
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                   ^ (depth 1)
+  //    // When the last field was fully consumed
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                                   ^ (depth 1)
+  //    ```
+  //
+  } else {
+    // Finish the previous value and see if , or } is next
+    if ((error = skip_child() )) { abandon(); return error; }
+    if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
+  }
+
+  // After initial processing, we will be in one of two states:
+  //
+  // ```
+  // // At the beginning of a field
+  // { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //   ^ (depth 1)
+  // { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                  ^ (depth 1)
+  // // At the end of the object
+  // { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                                  ^ (depth 0)
+  // ```
+  //
+
+  // First, we scan from that point to the end.
+  // If we don't find a match, we loop back around, and scan from the beginning to that point.
+  const uint32_t *search_start = _json_iter->checkpoint();
+
+  // Next, we find a match starting from the current position.
+  while (has_value) {
+    SIMDJSON_ASSUME( _json_iter->_depth == _depth + 1 ); // We must be at the start of a field
+
+    // Get the key and colon, stopping at the value.
+    raw_json_string actual_key;
+    if ((error = field_key().get(actual_key) )) { abandon(); return error; };
+    if ((error = field_value() )) { abandon(); return error; }
+
+    // If it matches, stop and return
+    if (actual_key == key) {
+      logger::log_event(*this, "match", key, -2);
+      return true;
+    }
+
+    // No match: skip the value and see if , or } is next
+    logger::log_event(*this, "no match", key, -2);
+    SIMDJSON_TRY( skip_child() );
+    if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
+  }
+
+  // If we reach the end without finding a match, search the rest of the fields starting at the
+  // beginning of the object.
+  // (We have already run through the object before, so we've already validated its structure. We
+  // don't check errors in this bit.)
+  _json_iter->restore_checkpoint(_start_index + 1);
+  _json_iter->descend_to(_depth);
+
+  has_value = started_object();
+  while (_json_iter->checkpoint() < search_start) {
+    SIMDJSON_ASSUME(has_value); // we should reach search_start before ever reaching the end of the object
+    SIMDJSON_ASSUME( _json_iter->_depth == _depth + 1 ); // We must be at the start of a field
+
+    // Get the key and colon, stopping at the value.
+    raw_json_string actual_key;
+    error = field_key().get(actual_key); SIMDJSON_ASSUME(!error);
+    error = field_value(); SIMDJSON_ASSUME(!error);
+
+    // If it matches, stop and return
+    if (actual_key == key) {
+      logger::log_event(*this, "match", key, -2);
+      return true;
+    }
+
+    // No match: skip the value and see if , or } is next
+    logger::log_event(*this, "no match", key, -2);
+    SIMDJSON_TRY( skip_child() );
+    error = has_next_field().get(has_value); SIMDJSON_ASSUME(!error);
   }
 
   // If the loop ended, we're out of fields to look at.
@@ -387,6 +541,14 @@ simdjson_really_inline value_iterator value_iterator::child() const noexcept {
 
 simdjson_really_inline bool value_iterator::is_open() const noexcept {
   return _json_iter->depth() >= depth();
+}
+
+simdjson_really_inline bool value_iterator::at_eof() const noexcept {
+  return _json_iter->at_eof();
+}
+
+simdjson_really_inline bool value_iterator::at_start() const noexcept {
+  return _json_iter->token.index == _start_index;
 }
 
 simdjson_really_inline bool value_iterator::at_first_field() const noexcept {

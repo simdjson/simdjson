@@ -163,6 +163,9 @@ public:
   template<int N> simdjson_warn_unused simdjson_really_inline bool peek_to_buffer(uint8_t (&tmpbuf)[N]) noexcept;
   template<int N> simdjson_warn_unused simdjson_really_inline bool advance_to_buffer(uint8_t (&tmpbuf)[N]) noexcept;
 
+  simdjson_really_inline const uint32_t *checkpoint() const noexcept;
+  simdjson_really_inline void restore_checkpoint(const uint32_t *target_checkpoint) noexcept;
+
 protected:
   simdjson_really_inline json_iterator(ondemand::parser *parser) noexcept;
 

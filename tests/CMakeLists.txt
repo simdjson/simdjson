@@ -1,44 +1,9 @@
-# Helper so we don't have to repeat ourselves so much
-# Usage: add_cpp_test(testname [COMPILE_ONLY] [SOURCES a.cpp b.cpp ...] [LABELS acceptance per_implementation ...])
-# SOURCES defaults to testname.cpp if not specified.
-function(add_cpp_test TEST_NAME)
-  # Parse arguments
-  cmake_parse_arguments(PARSE_ARGV 1 ARGS "COMPILE_ONLY;WILL_FAIL" "" "SOURCES;LABELS")
-  if (NOT ARGS_SOURCES)
-    list(APPEND ARGS_SOURCES ${TEST_NAME}.cpp)
-  endif()
-  if (COMPILE_ONLY)
-    list(APPEND ${ARGS_LABELS} compile)
-  endif()
-
-  # Add executable
-  add_executable(${TEST_NAME} ${ARGS_SOURCES})
-
-  # Add test
-  if (ARGS_COMPILE_ONLY)
-    add_test(
-      NAME ${TEST_NAME}
-      COMMAND ${CMAKE_COMMAND} --build . --target ${TEST_NAME} --config $<CONFIGURATION>
-      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    )
-    set_target_properties(${TEST_NAME} PROPERTIES EXCLUDE_FROM_ALL TRUE EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-  else()
-    add_test(${TEST_NAME} ${TEST_NAME})
-  endif()
-
-  if (ARGS_LABELS)
-    set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS ${ARGS_LABELS})
-  endif()
-
-  if (ARGS_WILL_FAIL)
-    set_property(TEST ${TEST_NAME} PROPERTY WILL_FAIL TRUE)
-  endif()
-endfunction()
-
 # Most tests need test data, and many need windows headers.
 link_libraries(simdjson-internal-flags test-data simdjson-windows-headers)
-
 include(${PROJECT_SOURCE_DIR}/cmake/add_cpp_test.cmake)
+
+# add_cpp_tests will add dependencies to this
+add_custom_target(all_tests)
 
 add_subdirectory(ondemand)
 
@@ -54,20 +19,21 @@ target_compile_definitions(stringparsingcheck PRIVATE NOMINMAX)
 
 # All remaining tests link with simdjson proper
 link_libraries(simdjson)
-add_cpp_test(random_string_number_tests LABELS acceptance per_implementation)
-add_cpp_test(basictests LABELS acceptance per_implementation)
-add_cpp_test(minify_tests LABELS acceptance per_implementation)
-add_cpp_test(document_stream_tests LABELS acceptance per_implementation)
-add_cpp_test(document_tests LABELS acceptance per_implementation)
-add_cpp_test(errortests LABELS acceptance per_implementation)
-add_cpp_test(integer_tests LABELS acceptance per_implementation)
-add_cpp_test(jsoncheck LABELS acceptance per_implementation)
-add_cpp_test(minefieldcheck LABELS acceptance per_implementation)
-add_cpp_test(parse_many_test LABELS acceptance per_implementation)
-add_cpp_test(pointercheck LABELS acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
-add_cpp_test(extracting_values_example LABELS acceptance per_implementation)
-add_cpp_test(unicode_tests LABELS acceptance per_implementation)
-add_cpp_test(padded_string_tests)
+add_cpp_test(random_string_number_tests LABELS dom acceptance per_implementation)
+add_cpp_test(basictests                 LABELS dom acceptance per_implementation)
+add_cpp_test(document_stream_tests      LABELS dom acceptance per_implementation)
+add_cpp_test(document_tests             LABELS dom acceptance per_implementation)
+add_cpp_test(errortests                 LABELS dom acceptance per_implementation)
+add_cpp_test(extracting_values_example  LABELS dom acceptance per_implementation)
+add_cpp_test(integer_tests              LABELS dom acceptance per_implementation)
+add_cpp_test(jsoncheck                  LABELS dom acceptance per_implementation)
+add_cpp_test(minefieldcheck             LABELS dom acceptance per_implementation)
+add_cpp_test(parse_many_test            LABELS dom acceptance per_implementation)
+add_cpp_test(pointercheck               LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
+add_cpp_test(unicode_tests              LABELS dom acceptance per_implementation)
+
+add_cpp_test(minify_tests        LABELS other acceptance per_implementation)
+add_cpp_test(padded_string_tests LABELS other acceptance                   )
 
 find_program(BASH bash)
 
@@ -94,11 +60,13 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
   if ((SIMDJSON_COMPETITION) AND (!SIMDJSON_SANITIZE))
     # It looks like RapidJSON does not pass the sanitizer under some conditions (Clang 10)
     add_executable(allparserscheckfile allparserscheckfile.cpp)
+    add_dependencies(competition_tests allparserscheckfile)
+    add_dependencies(per_implementation_tests allparserscheckfile)
     target_link_libraries(allparserscheckfile PRIVATE competition-all)
 
     add_test(issue150 ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/issue150.sh)
     set_property(TEST issue150 APPEND PROPERTY DEPENDS allparserscheckfile)
-    set_property(TEST issue150 APPEND PROPERTY LABELS per_implementation)
+    set_property(TEST issue150 APPEND PROPERTY LABELS per_implementation competition)
   endif()
 
   #
@@ -107,7 +75,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
 
   # This tests validates that the implementation is what we think it is if we get passed
   # SIMDJSON_FORCE_IMPLEMENTATION, so we know we're testing what we think we're testing
-  add_cpp_test(checkimplementation LABELS per_implementation)
+  add_cpp_test(checkimplementation LABELS other per_implementation)
 
   add_test(NAME json2json COMMAND $<TARGET_FILE:json2json> ${EXAMPLE_JSON})
   set_property(TEST json2json APPEND PROPERTY LABELS acceptance per_implementation)

@@ -32,7 +32,7 @@ private:
   }
 
   simdjson_really_inline twitter_user read_user(ondemand::object user) {
-    return { user["id"], user["screen_name"] };
+    return { user.find_field("id"), user.find_field("screen_name") };
   }
 
   static inline bool displayed_implementation = false;
@@ -43,15 +43,15 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
 
   // Walk the document, parsing the tweets as we go
   auto doc = parser.iterate(json);
-  for (ondemand::object tweet : doc["statuses"]) {
+  for (ondemand::object tweet : doc.find_field("statuses")) {
     tweets.emplace_back(partial_tweets::tweet{
-      tweet["created_at"],
-      tweet["id"],
-      tweet["text"],
-      nullable_int(tweet["in_reply_to_status_id"]),
-      read_user(tweet["user"]),
-      tweet["retweet_count"],
-      tweet["favorite_count"]
+      tweet.find_field("created_at"),
+      tweet.find_field("id"),
+      tweet.find_field("text"),
+      nullable_int(tweet.find_field("in_reply_to_status_id")),
+      read_user(tweet.find_field("user")),
+      tweet.find_field("retweet_count"),
+      tweet.find_field("favorite_count")
     });
   }
   return true;

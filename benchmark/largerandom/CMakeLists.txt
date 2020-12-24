@@ -1,0 +1,5 @@
+if (TARGET benchmark::benchmark)
+  link_libraries(benchmark::benchmark)
+  add_executable(bench_ondemand_largerandom bench_ondemand_largerandom.cpp)
+  add_executable(bench_ondemand_unordered_largerandom bench_ondemand_unordered_largerandom.cpp)
+endif()

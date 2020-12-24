@@ -29,6 +29,11 @@ simdjson_really_inline json_iterator::json_iterator(ondemand::parser *_parser) n
   logger::log_headers();
 }
 
+// GCC 7 warns when the first line of this function is inlined away into oblivion due to the caller
+// relating depth and parent_depth, which is a desired effect. The warning does not show up if the
+// skip_child() function is not marked inline).
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child(depth_t parent_depth) noexcept {
   if (depth() <= parent_depth) { return SUCCESS; }
 
@@ -90,6 +95,8 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child
   return report_error(TAPE_ERROR, "not enough close braces");
 }
 
+SIMDJSON_POP_DISABLE_WARNINGS
+
 simdjson_really_inline bool json_iterator::at_root() const noexcept {
   return token.checkpoint() == root_checkpoint();
 }
@@ -132,11 +139,13 @@ simdjson_really_inline uint32_t json_iterator::peek_length(int32_t delta) const 
 }
 
 simdjson_really_inline void json_iterator::ascend_to(depth_t parent_depth) noexcept {
+  SIMDJSON_ASSUME(parent_depth >= 0 && parent_depth < INT32_MAX - 1);
   SIMDJSON_ASSUME(_depth == parent_depth + 1);
   _depth = parent_depth;
 }
 
 simdjson_really_inline void json_iterator::descend_to(depth_t child_depth) noexcept {
+  SIMDJSON_ASSUME(child_depth >= 1 && child_depth < INT32_MAX);
   SIMDJSON_ASSUME(_depth == child_depth - 1);
   _depth = child_depth;
 }
@@ -155,6 +164,14 @@ simdjson_really_inline error_code json_iterator::report_error(error_code _error,
   error = _error;
   return error;
 }
+
+simdjson_really_inline const uint32_t *json_iterator::checkpoint() const noexcept {
+  return token.checkpoint();
+}
+simdjson_really_inline void json_iterator::restore_checkpoint(const uint32_t *target_checkpoint) noexcept {
+  token.restore_checkpoint(target_checkpoint);
+}
+
 
 simdjson_really_inline error_code json_iterator::optional_error(error_code _error, const char *message) noexcept {
   SIMDJSON_ASSUME(_error == INCORRECT_TYPE || _error == NO_SUCH_FIELD);

@@ -7,30 +7,31 @@
 namespace largerandom {
 
 using namespace simdjson;
+using namespace simdjson::builtin;
 
-class Dom {
+class OnDemandUnordered {
 public:
   simdjson_really_inline bool Run(const padded_string &json);
-
   simdjson_really_inline const std::vector<my_point> &Result() { return container; }
   simdjson_really_inline size_t ItemCount() { return container.size(); }
 
 private:
-  dom::parser parser{};
+  ondemand::parser parser{};
   std::vector<my_point> container{};
 };
 
-simdjson_really_inline bool Dom::Run(const padded_string &json) {
+simdjson_really_inline bool OnDemandUnordered::Run(const padded_string &json) {
   container.clear();
 
-  for (auto point : parser.parse(json)) {
-    container.emplace_back(my_point{point["x"], point["y"], point["z"]});
+  auto doc = parser.iterate(json);
+  for (ondemand::object coord : doc) {
+    container.emplace_back(my_point{coord["x"], coord["y"], coord["z"]});
   }
 
   return true;
 }
 
-BENCHMARK_TEMPLATE(LargeRandom, Dom);
+BENCHMARK_TEMPLATE(LargeRandom, OnDemandUnordered);
 
 } // namespace largerandom
 

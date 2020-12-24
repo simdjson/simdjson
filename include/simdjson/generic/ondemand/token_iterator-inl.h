@@ -43,6 +43,10 @@ simdjson_really_inline const uint32_t *token_iterator::checkpoint() const noexce
   return index;
 }
 
+simdjson_really_inline void token_iterator::restore_checkpoint(const uint32_t *target_checkpoint) noexcept {
+  index = target_checkpoint;
+}
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

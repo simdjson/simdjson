@@ -12,6 +12,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "partial_tweets/dom.h"
 
 #include "largerandom/ondemand.h"
+#include "largerandom/ondemand_unordered.h"
 // #include "largerandom/iter.h"
 #include "largerandom/dom.h"
 

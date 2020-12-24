@@ -1,5 +1,3 @@
-include(${PROJECT_SOURCE_DIR}/cmake/add_cpp_test.cmake)
-
 #
 # Amalgamation
 #
@@ -116,6 +114,8 @@ target_link_libraries(simdjson-singleheader-source INTERFACE simdjson-singlehead
 # add_dependencies(simdjson-singleheader-source amalgamate) <=== NO NO NO
 #
 #
+
+include(${PROJECT_SOURCE_DIR}/cmake/add_compile_only_test.cmake)
 
 #
 # Test the generated simdjson.cpp/simdjson.h using the generated amalgamate_demo.cpp
