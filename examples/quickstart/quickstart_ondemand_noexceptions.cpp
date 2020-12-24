@@ -1,11 +1,13 @@
 #include "simdjson.h"
+using namespace simdjson;
+using namespace simdjson::builtin;
 int main(void) {
-    simdjson::padded_string json;
-    auto error = simdjson::padded_string::load("twitter.json").get(json);
+    padded_string json;
+    auto error = padded_string::load("twitter.json").get(json);
     if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
 
-    simdjson::builtin::ondemand::parser parser;
-    simdjson::builtin::ondemand::document tweets;
+    ondemand::parser parser;
+    ondemand::document tweets;
     error = parser.iterate(json).get(tweets);
     if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
 

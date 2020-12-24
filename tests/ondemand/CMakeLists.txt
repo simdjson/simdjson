@@ -10,6 +10,7 @@ add_cpp_test(ondemand_key_string_tests  LABELS ondemand acceptance per_implement
 add_cpp_test(ondemand_number_tests      LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_ordering_tests    LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_parse_api_tests   LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_readme_examples   LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_twitter_tests     LABELS ondemand acceptance per_implementation)
 
 if(HAVE_POSIX_FORK AND HAVE_POSIX_WAIT) # assert tests use fork and wait, which aren't on MSVC
