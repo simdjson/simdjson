@@ -1,4 +1,4 @@
-name: VS16-CI
+name: VS16-NoExcept-CI
 
 on:
   push:
