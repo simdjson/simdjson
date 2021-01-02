@@ -1,6 +1,7 @@
 # All remaining tests link with simdjson proper
 link_libraries(simdjson)
 include_directories(..)
+add_subdirectory(compilation_failure_tests)
 
 add_cpp_test(ondemand_active_tests      LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_compilation_tests LABELS ondemand acceptance per_implementation)
