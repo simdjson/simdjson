@@ -1,7 +1,5 @@
 #pragma once
 
-#if SIMDJSON_EXCEPTIONS
-
 //
 // Interface
 //
@@ -72,5 +70,3 @@ template<typename T> static void LargeRandom(benchmark::State &state) {
 }
 
 } // namespace largerandom
-
-#endif // SIMDJSON_EXCEPTIONS

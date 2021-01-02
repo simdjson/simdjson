@@ -30,6 +30,10 @@ SIMDJSON_POP_DISABLE_WARNINGS
 // // yyjson
 #ifdef SIMDJSON_COMPETITION_YYJSON
 #include "partial_tweets/yyjson.h"
+#include "largerandom/yyjson.h"
+#include "kostya/yyjson.h"
+#include "distinctuserid/yyjson.h"
+#include "find_tweet/yyjson.h"
 #endif
 
 
