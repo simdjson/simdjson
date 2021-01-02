@@ -1,23 +1,69 @@
 #pragma once
 
+template<typename T>
+static bool DiffResults(benchmark::State &state, const T &result, const T &reference);
+
+template<typename T>
+struct ResultDiffer {
+  static bool Diff(benchmark::State &state, const T &result, const T &reference) {
+    if (result != reference) {
+      std::stringstream str;
+      str << "result incorrect: " << result << " ... reference: " << reference;
+      state.SkipWithError(str.str().data());
+      return false;
+    }
+    return true;
+  }
+};
+
+template<typename T>
+struct ResultDiffer<std::vector<T>> {
+  static bool Diff(benchmark::State &state, const std::vector<T> &result, const std::vector<T> &reference) {
+    auto result_iter = result.begin();
+    auto reference_iter = reference.begin();
+    while (result_iter != result.end() && reference_iter != reference.end()) {
+      if (!DiffResults(state, *result_iter, *reference_iter)) { return false; }
+      result_iter++;
+      reference_iter++;
+    }
+    if (result_iter != result.end()) {
+      std::stringstream str;
+      str << "extra results (got " << result.size() << ", expected " << reference.size() << "): first extra element: " << *result_iter;
+      state.SkipWithError(str.str().data());
+      return false;
+    } else if (reference_iter != reference.end()) {
+      std::stringstream str;
+      str << "missing results (got " << result.size() << ", expected " << reference.size() << "): first missing element: " << *reference_iter;
+      state.SkipWithError(str.str().data());
+      return false;
+    }
+    return true;
+  }
+};
+
+template<typename T>
+static bool DiffResults(benchmark::State &state, const T &result, const T &reference) {
+  return ResultDiffer<T>::Diff(state, result, reference);
+}
+
 template<typename B, typename R> static void JsonBenchmark(benchmark::State &state, const simdjson::padded_string &json) {
   event_collector collector(true);
   event_aggregate events;
 
   // Warmup and equality check (make sure the data is right!)
   B bench;
-  if (!bench.Run(json)) { state.SkipWithError("warmup tweet reading failed"); return; }
+  if (!bench.Run(json)) { state.SkipWithError("warmup document reading failed"); return; }
   {
     R reference;
-    if (!reference.Run(json)) { state.SkipWithError("reference tweet reading failed"); return; }
-    if (bench.Result() != reference.Result()) { state.SkipWithError("results are not the same"); return; }
+    if (!reference.Run(json)) { state.SkipWithError("reference document reading failed"); return; }
+    if (!DiffResults(state, bench.Result(), reference.Result())) { return; }
   }
 
   // Run the benchmark
   for (simdjson_unused auto _ : state) {
     collector.start();
 
-    if (!bench.Run(json)) { state.SkipWithError("tweet reading failed"); return; }
+    if (!bench.Run(json)) { state.SkipWithError("document reading failed"); return; }
 
     events << collector.end();
   }
