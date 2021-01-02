@@ -10,56 +10,29 @@
 # to do but that is not trivial.
 #
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  # TODO run amalgamate first!
-  function(add_quickstart_test TEST_NAME SOURCE_FILE)
-    # Second argument is C++ standard name
-    if (MSVC)
-      if (ARGV2)
-        set(QUICKSTART_FLAGS /std:${ARGV2})
-      else()
-        set(QUICKSTART_FLAGS /WX)
-      endif()
-      set(QUICKSTART_INCLUDE /I${PROJECT_SOURCE_DIR}/include /I${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/src/simdjson.cpp)
-    else()
-      if (ARGV2)
-        set(QUICKSTART_FLAGS -Werror -std=${ARGV2})
-      else()
-        set(QUICKSTART_FLAGS -Werror)
-      endif()
-      set(QUICKSTART_INCLUDE -I${PROJECT_SOURCE_DIR}/include -I${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/src/simdjson.cpp)
-    endif()
+  include(add_quickstart_test.cmake)
 
-    # Third argument tells whether to compile with -fno-exceptions
-    if (ARGV3)
-      if (NOT MSVC)
-        set(QUICKSTART_FLAGS ${QUICKSTART_FLAGS} -fno-exceptions)
-      endif()
-    endif()
-
-    add_test(
-      NAME ${TEST_NAME}
-      COMMAND ${CMAKE_CXX_COMPILER} ${QUICKSTART_FLAGS} -I${PROJECT_SOURCE_DIR}/include -I${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/src/simdjson.cpp ${SOURCE_FILE}
-      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/examples/quickstart
-    )
-    set_property(
-      TEST ${TEST_NAME}
-      APPEND PROPERTY DEPENDS simdjson-source ${PROJECT_SOURCE_DIR}/examples/quickstart/${SOURCE_FILE}
-    )
-  endfunction(add_quickstart_test)
-
+  # DOM Quick Start
   if (SIMDJSON_EXCEPTIONS)
-    add_quickstart_test(quickstart quickstart.cpp)
-    add_quickstart_test(quickstart11 quickstart.cpp c++11)
-    add_quickstart_test(quickstart14 quickstart.cpp c++14)
-    set_property( TEST quickstart quickstart11 APPEND PROPERTY LABELS acceptance compiletests no_mingw)
+    add_quickstart_test(quickstart   quickstart.cpp LABELS acceptance)
+    add_quickstart_test(quickstart11 quickstart.cpp CXX_STANDARD c++11 LABELS acceptance)
+    add_quickstart_test(quickstart14 quickstart.cpp CXX_STANDARD c++14)
   endif()
 
-  add_quickstart_test(quickstart_noexceptions quickstart_noexceptions.cpp "" true)
-  add_quickstart_test(quickstart_noexceptions11 quickstart_noexceptions.cpp c++11 true)
-  set_property( TEST quickstart_noexceptions APPEND PROPERTY LABELS acceptance compile no_mingw)
+  add_quickstart_test(quickstart_noexceptions   quickstart_noexceptions.cpp NO_EXCEPTIONS LABELS acceptance)
+  add_quickstart_test(quickstart_noexceptions11 quickstart_noexceptions.cpp NO_EXCEPTIONS CXX_STANDARD c++11)
 
-  add_quickstart_test(quickstart2_noexceptions quickstart2_noexceptions.cpp "" true)
-  add_quickstart_test(quickstart2_noexceptions11 quickstart2_noexceptions.cpp c++11 true)
-  set_property( TEST quickstart2_noexceptions APPEND PROPERTY LABELS acceptance compile no_mingw)
+  add_quickstart_test(quickstart2_noexceptions   quickstart2_noexceptions.cpp NO_EXCEPTIONS LABELS acceptance)
+  add_quickstart_test(quickstart2_noexceptions11 quickstart2_noexceptions.cpp NO_EXCEPTIONS CXX_STANDARD c++11)
+
+  # On Demand Quick Start
+  if (SIMDJSON_EXCEPTIONS)
+    add_quickstart_test(quickstart_ondemand   quickstart_ondemand.cpp LABELS quickstart_ondemand acceptance)
+    add_quickstart_test(quickstart_ondemand11 quickstart_ondemand.cpp CXX_STANDARD c++11 LABELS quickstart_ondemand acceptance)
+    add_quickstart_test(quickstart_ondemand14 quickstart_ondemand.cpp CXX_STANDARD c++14 LABELS quickstart_ondemand)
+  endif()
+
+  add_quickstart_test(quickstart_ondemand_noexceptions   quickstart_ondemand_noexceptions.cpp NO_EXCEPTIONS LABELS quickstart_ondemand acceptance)
+  add_quickstart_test(quickstart_ondemand_noexceptions11 quickstart_ondemand_noexceptions.cpp NO_EXCEPTIONS CXX_STANDARD c++11 LABELS quickstart_ondemand)
 
 endif()
