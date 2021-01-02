@@ -38,11 +38,13 @@ int main() {}
     target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
     target_include_directories(boostjson SYSTEM PUBLIC
             "${boostjson_SOURCE_DIR}/include")
+    target_compile_definitions(boostjson INTERFACE SIMDJSON_COMPETITION_BOOSTJSON)
   endif()
 
   import_dependency(cjson DaveGamble/cJSON c69134d)
   add_library(cjson STATIC "${cjson_SOURCE_DIR}/cJSON.c")
   target_include_directories(cjson SYSTEM PUBLIC "${cjson_SOURCE_DIR}")
+  target_compile_definitions(cjson INTERFACE SIMDJSON_COMPETITION_CJSON)
 
   import_dependency(fastjson mikeando/fastjson 485f994)
   add_library(fastjson STATIC
@@ -51,14 +53,17 @@ int main() {}
           "${fastjson_SOURCE_DIR}/src/fastjson_dom.cpp")
   target_include_directories(fastjson SYSTEM PUBLIC
           "${fastjson_SOURCE_DIR}/include")
+  target_compile_definitions(fastjson INTERFACE SIMDJSON_COMPETITION_FASTJSON)
 
   import_dependency(gason vivkin/gason 7aee524)
   add_library(gason STATIC "${gason_SOURCE_DIR}/src/gason.cpp")
   target_include_directories(gason SYSTEM PUBLIC "${gason_SOURCE_DIR}/src")
+  target_compile_definitions(gason INTERFACE SIMDJSON_COMPETITION_GASON)
 
   import_dependency(jsmn zserge/jsmn 18e9fe4)
   add_library(jsmn STATIC "${jsmn_SOURCE_DIR}/jsmn.c")
   target_include_directories(jsmn SYSTEM PUBLIC "${jsmn_SOURCE_DIR}")
+  target_compile_definitions(jsmn INTERFACE SIMDJSON_COMPETITION_JSMN)
 
   message(STATUS "Importing json (nlohmann/json@v3.9.1)")
   set(nlohmann_json_SOURCE_DIR "${dep_root}/json")
@@ -69,26 +74,31 @@ int main() {}
   endif()
   add_library(nlohmann_json INTERFACE)
   target_include_directories(nlohmann_json SYSTEM INTERFACE "${nlohmann_json_SOURCE_DIR}")
+  target_compile_definitions(nlohmann_json INTERFACE SIMDJSON_COMPETITION_NLOHMANN_JSON)
 
   import_dependency(json11 dropbox/json11 ec4e452)
   add_library(json11 STATIC "${json11_SOURCE_DIR}/json11.cpp")
   target_include_directories(json11 SYSTEM PUBLIC "${json11_SOURCE_DIR}")
+  target_compile_definitions(json11 INTERFACE SIMDJSON_COMPETITION_JSON11)
 
   set(jsoncpp_SOURCE_DIR "${simdjson_SOURCE_DIR}/dependencies/jsoncppdist")
   add_library(jsoncpp STATIC "${jsoncpp_SOURCE_DIR}/jsoncpp.cpp")
   target_include_directories(jsoncpp SYSTEM PUBLIC "${jsoncpp_SOURCE_DIR}")
+  target_compile_definitions(jsoncpp INTERFACE SIMDJSON_COMPETITION_JSONCPP)
 
   import_dependency(rapidjson Tencent/rapidjson b32cd94)
   add_library(rapidjson INTERFACE)
   target_compile_definitions(rapidjson INTERFACE RAPIDJSON_HAS_STDSTRING)
   target_include_directories(rapidjson SYSTEM INTERFACE
           "${rapidjson_SOURCE_DIR}/include")
+  target_compile_definitions(rapidjson INTERFACE SIMDJSON_COMPETITION_RAPIDJSON)
 
   import_dependency(sajson chadaustin/sajson 2dcfd35)
   add_library(sajson INTERFACE)
   target_compile_definitions(sajson INTERFACE SAJSON_UNSORTED_OBJECT_KEYS)
   target_include_directories(sajson SYSTEM INTERFACE
           "${sajson_SOURCE_DIR}/include")
+  target_compile_definitions(sajson INTERFACE SIMDJSON_COMPETITION_SAJSON)
 
   import_dependency(ujson4c esnme/ujson4c e14f3fd)
   add_library(ujson4c STATIC
@@ -97,13 +107,16 @@ int main() {}
   target_include_directories(ujson4c SYSTEM PUBLIC
           "${ujson4c_SOURCE_DIR}/src"
           "${ujson4c_SOURCE_DIR}/3rdparty")
+  target_compile_definitions(ujson4c INTERFACE SIMDJSON_COMPETITION_UJSON4C)
 
   import_dependency(yyjson ibireme/yyjson aa33ec5)
   add_library(yyjson STATIC "${yyjson_SOURCE_DIR}/src/yyjson.c")
   target_include_directories(yyjson SYSTEM PUBLIC "${yyjson_SOURCE_DIR}/src")
+  target_compile_definitions(yyjson INTERFACE SIMDJSON_COMPETITION_YYJSON)
 
   add_library(competition-core INTERFACE)
   target_link_libraries(competition-core INTERFACE nlohmann_json rapidjson sajson cjson jsmn yyjson)
+
   if(USE_BOOST_JSON)
      target_compile_definitions(boostjson INTERFACE HAS_BOOST_JSON)
      target_link_libraries(competition-core INTERFACE boostjson)
