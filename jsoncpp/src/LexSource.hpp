@@ -24,7 +24,7 @@ class LexSource {
             uint32_t word;
         } m_buf;
         */
-            
+
         unsigned long long m_position;
     public:
         static const int8_t IOError = -3;
@@ -33,11 +33,11 @@ class LexSource {
         LexSource(LexSource& rhs) = delete;
         LexSource(LexSource&& rhs) = delete;
         LexSource& operator=(LexSource& rhs) = delete;
-        
+
         const int8_t Initial = -5;
         bool advanceImpl() {
             int16_t ch;
-            
+
             /* I'm keeping this in for now so I can try to make it simd later
             int e=0;
             char* sz=decodeUtf8Padded4(m_buf.bytes,m_current,e);
@@ -82,13 +82,13 @@ class LexSource {
             }
             m_current = i;
             m_state = 0;
-            
+
             ++m_position;
-            if(m_current<128) {    
+            if(m_current<128) {
                 return -1<m_state;
             }
-            
-           
+
+
             if (0xf0 == (0xf8 & m_current)) {
                 // 4 byte utf8 codepoint
                 m_current = (0x07 & m_current) << 18;
@@ -142,7 +142,7 @@ class LexSource {
                 m_current |= 0x3f & ch;
                 ++m_position;
                 return true;
-            //}      
+            //}
         }
         // Keeping this here for when I add simd support
         // buf is the buffer to convert (must be length multiple of 4), c is the output codepoint, and e holds any error
@@ -164,12 +164,12 @@ class LexSource {
             // Compute the pointer to the next character early so that the next
             // iteration can start working on the next character. Neither Clang
             // nor GCC figure out this reordering on their own.
-            
+
             unsigned char *next = s + len + !len;
 
             // Assume a four-byte character and load four bytes. Unused bits are
             // shifted out.
-            
+
             c  = (uint32_t)(s[0] & masks[len]) << 18;
             c |= (uint32_t)(s[1] & 0x3f) << 12;
             c |= (uint32_t)(s[2] & 0x3f) <<  6;
@@ -193,7 +193,7 @@ class LexSource {
         static const int8_t EndOfInput=-1;
         static const int8_t Closed=-2;
         virtual int16_t read()=0;
-        
+
         virtual bool skipToAny(const char* characters7bit,unsigned long long& position,int16_t& match,int8_t& error) {
             error = 0;
             const char *sz;
@@ -214,30 +214,30 @@ class LexSource {
                     match=*sz;
                     return true;
                 }
-            
+
             }
             error = match;
             return false;
         }
         virtual bool appendCapture(char ch)=0;
         void clearError() {m_state = 0;}
-        
+
     public:
         LexSource()  {
             reset();
         }
-        
+
         virtual char* captureBuffer()=0;
         virtual size_t captureCapacity()  const=0;
         virtual size_t captureSize() const=0 ;
         virtual void clearCapture()=0;
-        
+
         virtual void reset() {
             m_state = Initial;
             m_position = 0;
             m_current = 0;
         }
-       
+
         char skipToAny(const char* characters7bit) {
             int16_t match;
             unsigned long long int pos=m_position;
@@ -253,7 +253,7 @@ class LexSource {
             m_position=pos;
             return match;
         }
-      
+
         inline bool advance() {
             /*if (EndOfInput == m_state || IOError==m_state) {
                 m_current = 0;
@@ -287,7 +287,7 @@ class LexSource {
                 for(int i=0;i<4 && -1<(ch=(int8_t)read());++i) {
                     m_buf.bytes[i]=(char)ch;
                 }
-  
+
                 m_state=(int8_t)ch;
                 */
                 return advanceImpl();
@@ -304,7 +304,7 @@ class LexSource {
         bool capture(int32_t codepoint) {
             size_t n = captureCapacity()-captureSize();
             if(n<4) {
-                m_state = OutOfMemoryError; 
+                m_state = OutOfMemoryError;
                 return false;
             }
             if (0 == ((int32_t)0xffffff80 & codepoint)) {
@@ -324,7 +324,7 @@ class LexSource {
                     m_state = OutOfMemoryError;
                     return false;
                 }*/
-                appendCapture(0xc0 | (char)(codepoint >> 6));                
+                appendCapture(0xc0 | (char)(codepoint >> 6));
                 appendCapture(0x80 | (char)(codepoint & 0x3f));
                 return true;
             }
@@ -339,7 +339,7 @@ class LexSource {
                 appendCapture(0x80 | (char)((codepoint >> 6) & 0x3f));
                 appendCapture(0x80 | (char)(codepoint & 0x3f));
                 return true;
-            } 
+            }
             // if (0 == ((int)0xffe00000 & chr)) {
             // 4-byte/21-bit utf8 code point
             // (0b11110xxx 0b10xxxxxx 0b10xxxxxx 0b10xxxxxx)
@@ -362,14 +362,14 @@ template<size_t TCapacity> class StaticLexSource : virtual public LexSource {
     // only certain platforms support
     // certain C++ features =(
 #if !defined ARDUINO && !defined ESP8266
-    // to safely capture a complete utf8 encoded Unicode codepoint 
+    // to safely capture a complete utf8 encoded Unicode codepoint
     // plus the null terminator we need at least 5 bytes
     static_assert(TCapacity>4,"Capacity must be 5 bytes or greater");
 #endif
-  
+
     char m_capture[TCapacity];
     size_t m_captureSize;
-    
+
 protected:
     bool appendCapture(char ch) final {
         char*sz = m_capture+(m_captureSize++);
@@ -378,7 +378,7 @@ protected:
         return true;
     }
 public:
-    
+
     void reset() final{
         LexSource::reset();
         m_captureSize=0;
@@ -402,10 +402,10 @@ class FileLexSource : public virtual LexSource {
     FileLexSource(FileLexSource& rhs)=delete;
     FileLexSource(FileLexSource&& rhs)=delete;
     FileLexSource& operator=(FileLexSource& rhs)=delete;
-    
+
 protected:
     int16_t read() final {
-        if(!m_pfile)   
+        if(!m_pfile)
             return LexSource::Closed;
         int16_t result = fgetc(m_pfile);
         if(-1==result)
@@ -425,7 +425,7 @@ public:
             return false;
         reset();
         return true;
-    }   
+    }
     bool attach(FILE* pfile) {
         if(nullptr==pfile)
             return false;
@@ -446,7 +446,7 @@ public:
             fclose(m_pfile);
             m_pfile = nullptr;
         }
-    } 
+    }
 };
 #endif
 class SZLexSource : public virtual LexSource {
@@ -454,10 +454,10 @@ class SZLexSource : public virtual LexSource {
     SZLexSource(SZLexSource& rhs)=delete;
     SZLexSource(SZLexSource&& rhs)=delete;
     SZLexSource& operator=(SZLexSource& rhs)=delete;
-    
+
 protected:
     int16_t read() final {
-        if(nullptr==m_sz)   
+        if(nullptr==m_sz)
             return LexSource::Closed;
         if(0==(*m_sz))
             return LexSource::EndOfInput;
@@ -471,7 +471,7 @@ protected:
             match = 0;
             error=Closed;
             return false;
-        } 
+        }
 
         const char*sz=strpbrk(m_sz-1, characters7bit);
         if(nullptr==sz) {
@@ -482,7 +482,7 @@ protected:
             error = EndOfInput;
             return false;
         }
-        
+
         match = *sz;
         position += (sz - m_sz)+1;
         m_sz = sz+1;
@@ -493,7 +493,7 @@ protected:
 public:
     SZLexSource() {
         m_sz = nullptr;
-    }   
+    }
     ~SZLexSource() override {}
     bool attach(const char* sz) {
         if(nullptr==sz)
@@ -509,7 +509,7 @@ public:
             return false;
         m_sz = nullptr;
         return true;
-    } 
+    }
 };
 #if defined ARDUINO
 template<size_t TCapacity> class ArduinoLexSource : public StaticLexSource<TCapacity>, public virtual LexSource {

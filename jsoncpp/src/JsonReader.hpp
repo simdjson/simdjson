@@ -43,7 +43,7 @@ const char JSON_ERROR_INVALID_VALUE_MSG[] PROGMEM = "Invalid value";
 #define JSON_ERROR_FIELD_TOO_LONG 16
 const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field names cannot be streamed.";
 #define JSON_ERROR(x) error(JSON_ERROR_ ## x,JSON_ERROR_ ## x ## _MSG)
-    
+
     class JsonReader {
     public:
         // the initial node
@@ -78,7 +78,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
         // this type is a real number (floating point)
         static const int8_t Real = 2;
         // this type is an integer (not part of the JSON spec)
-        static const int8_t Integer = 3; 
+        static const int8_t Integer = 3;
         // this type is a boolean
         static const int8_t Boolean = 4;
 
@@ -88,7 +88,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
         static const int8_t Siblings = 1;
         // this axis retrieves descendant fields
         static const int8_t Descendants = 2;
-        
+
     private:
         int8_t m_state ;
         int8_t m_valueType ;
@@ -195,7 +195,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                                 return false;
                             }
                             memcpy(sz,value(),c);
-                            
+
                             while(read() && m_state!=EndValuePart) {
                                 c=strlen(value());
                                 sz2 =(char*)pool.alloc(c);
@@ -267,7 +267,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                         m_state = Field;
                     }
                     break;
-                case Field: 
+                case Field:
                     // we have no structure with which to return a field
                     JSON_ERROR(FIELD_NOT_SUPPORTED);
                     return false;
@@ -288,14 +288,14 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                         //printf("After pool used: %d\r\n",(int)pool.used());
                     }
                     if(!skipFinalRead) {
-                        if(EndArray==m_state && !read()) 
+                        if(EndArray==m_state && !read())
                             return false;
                     } else {
                         if(!skipIfComma())
                             return false;
                     }
                     break;
-                case EndArray: 
+                case EndArray:
                 case EndObject:
                     // we have no data to return
                     JSON_ERROR(NO_DATA);
@@ -330,10 +330,10 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                         if(nullptr==fn || false==(parseSubtreeImpl(pool,pje)) || !e.addFieldPooled(pool,fn,pje)) {
                             JSON_ERROR(OUT_OF_MEMORY);
                             return false;
-                        }	
+                        }
                     }
                     if(!skipFinalRead) {
-                        if(EndObject==m_state && !read()) 
+                        if(EndObject==m_state && !read())
                             if(EndDocument!=m_state)
                                 return false;
                     } else {
@@ -370,7 +370,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     if(!read())
                         return false;
                     return extractImpl(pool,extraction,false);
-                
+
                 case JsonReader::Array:
                     if(extraction.pindices==nullptr) {
                         // we're not on an array extraction.
@@ -407,16 +407,16 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                                 if(!skipToEndArray()) {
                                     return false;
                                 }
-                                break;  
-                            }    
+                                break;
+                            }
                         } else {
                             if(!skipObjectOrArrayOrValuePart())
                                 return false;
                             if(!skipIfComma())
                                 return false;
-                            ++idx;    
+                            ++idx;
                         }
-                        
+
                     }
                     if(m_state!=EndArray)
                         return false;
@@ -439,15 +439,15 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                             extraction.palloced = (const void**)pool.alloc(extraction.count*sizeof(char*));
                             if(nullptr==extraction.palloced) {
                                 JSON_ERROR(OUT_OF_MEMORY);
-                                return false;    
+                                return false;
                             }
                         }
                         // copy fresh field string pointers for scanMatchFields()
                         memcpy(extraction.palloced,extraction.pfields,extraction.count*sizeof(char*));
-                        
+
                         matched = scanMatchFields((const char**)extraction.palloced,extraction.count);
-                        // free what we just used since we can't later. it's just better to 
-                        // use the pool temporarily like this, since we can't call unalloc() after 
+                        // free what we just used since we can't later. it's just better to
+                        // use the pool temporarily like this, since we can't call unalloc() after
                         // this pointer gets "stale" (meaning another alloc() happens since)
                         pool.unalloc(extraction.count*sizeof(char*));
                         extraction.palloced = nullptr;
@@ -470,17 +470,17 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                                 if(!this->skipToEndObject()) {
                                     return false;
                                 }
-                                break;  
-                            }   
+                                break;
+                            }
                         }/* else {
-                            if(m_lc.position()==646) 
+                            if(m_lc.position()==646)
                                 asm("int $3");
                         } */
                     }
                     if(m_state!=EndObject)
                         return false;
                     depth=m_objectDepth;
-                    skipIfComma();                    
+                    skipIfComma();
                     return !hasError() ;//&& ((subcall || depth>m_objectDepth) || read());
             }
             return false;
@@ -557,11 +557,11 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     m_state = Field;
                     if(match && 0==(*sz))
                         return !hasError();
-                } 
+                }
             } else {
                 // nothing to be done if it fails - i/o error or badly formed document
                 // can't recover our cursor
-                
+
                 if(!JsonUtility::skipStringPart(m_lc,true)) {
                     if(m_lc.hasError()) {
                         error(m_lc);
@@ -603,7 +603,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
             int32_t ch;
             if('\"'!=m_lc.current()) {
                 JSON_ERROR(UNEXPECTED_VALUE);
-                return -1;  
+                return -1;
             }
             if (!m_lc.advance()) {
                 if(m_lc.hasError()) {
@@ -626,7 +626,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     m_state = Error;
                     return -1;
                 }
-                  
+
                 int32_t cpcmp;
                 for(size_t i = 0;i<fieldCount;++i) {
                     const char *sz = fields[i];
@@ -706,7 +706,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     error(m_lc);
                     return false;
                 }
-                if(m_lc.current()==':') { 
+                if(m_lc.current()==':') {
                     if(!m_lc.advance()) {
                         if(m_lc.hasError()) {
                             error(m_lc);
@@ -724,7 +724,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                         return -1;
                     if(!skipCommaOrEndObjectOrEndArray())
                         return -1;
-                    if(EndObject!=m_state)    
+                    if(EndObject!=m_state)
                         m_state = Field;
                     return -1;
                 }
@@ -734,7 +734,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
         bool scanMatchSiblings(const char* field) {
             while(true) {
                 bool matched = scanMatchField(field);
-                if(hasError()) 
+                if(hasError())
                     return false;
                 if(matched) {
                     return true;
@@ -762,7 +762,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     }
                     if(!m_lc.more()) {
                         JSON_ERROR(UNTERMINATED_ARRAY);
-                        m_state = Error; // unrecoverable            
+                        m_state = Error; // unrecoverable
                         return false;
                     }
                     if(!JsonUtility::skipWhiteSpace(m_lc)) {
@@ -771,7 +771,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     }
                     m_state = Array;
                     return true;
-                    
+
                 case '{':
                     if(!m_lc.advance()) {
                         error(m_lc);
@@ -782,8 +782,8 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                         return false;
                     }
                     if(m_lc.eof()) {
-                        JSON_ERROR(UNTERMINATED_OBJECT); 
-                        m_state = Error; // unrecoverable           
+                        JSON_ERROR(UNTERMINATED_OBJECT);
+                        m_state = Error; // unrecoverable
                         return false;
                     }
                     if(!JsonUtility::skipWhiteSpace(m_lc)) {
@@ -807,9 +807,9 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     m_valueType=Integer;
                     m_lexState.flags.state=0;
                     m_lc.clearCapture();
-            
+
                     while(JsonUtility::lexNumber(m_lc,m_lexState));
-                    
+
                     if(lex::LexSource::OutOfMemoryError==m_lc.error())  {
                         m_state = ValuePart;
                         return true;
@@ -844,7 +844,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                             m_valueType = Integer;
                         }
                         return true;
-                    } 
+                    }
                     //recoverValue();
                     if(hasError())
                         return false;
@@ -871,7 +871,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     if(0!=m_lexState.flags.accept && !m_lc.hasError() && (']'==(cp=m_lc.current())||'}'==cp||','==cp||m_lc.eof())) {
                         m_state = Value;
                         return true;
-                    } 
+                    }
                     recoverValue();
                     JSON_ERROR(INVALID_VALUE);
                     return false;
@@ -897,7 +897,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                         error(m_lc);
                         return false;
                     }
-                    
+
                     if('\"'!=m_lc.current()) {
                         JSON_ERROR(UNTERMINATED_STRING);
                         return false;
@@ -923,7 +923,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                         if(!JsonUtility::skipWhiteSpace(m_lc)) {
                             error(m_lc);
                             return false;
-                        }   
+                        }
                         if(!allowFields) {
                             JSON_ERROR(UNEXPECTED_FIELD);
                             m_state = Error; // TODO: we can recover this but I haven't written the code for it
@@ -944,24 +944,24 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
             int32_t cp;
             switch(m_valueType) {
                 case String:
-                    
+
                     m_lc.clearCapture();
                     if(m_lexState.flags.accept==1) {
                         m_state = EndValuePart;
                         return true;
                     }
                     while(m_lc.captureCapacity()-m_lc.captureSize()>=4 && JsonUtility::undecorate(m_lc,cp,true));
-                   
+
                     if(m_lc.captureCapacity()-m_lc.captureSize()<4)
                         return true;
-                    
+
                     if(m_lc.hasError()) {
                         if(lex::LexSource::OutOfMemoryError==m_lc.error())
                             return true;
                         error(m_lc);
                         return false;
                     }
-                    
+
                     if('\"'!=m_lc.current()) {
                         JSON_ERROR(UNTERMINATED_STRING);
                         return false;
@@ -984,7 +984,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     }
                     if(0==m_lc.captureSize())
                         m_state = EndValuePart;
-                    
+
                     return true;
                 case Real:
                 case Integer:
@@ -1021,10 +1021,10 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                             m_valueType = Integer;
                         }
                         return true;
-                    } 
+                    }
                     recoverValue();
                     JSON_ERROR(INVALID_VALUE);
-                    return false;    
+                    return false;
                 case Null:
                 case Boolean:
                     m_lc.clearCapture();
@@ -1047,10 +1047,10 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     if(0!=m_lexState.flags.accept && !m_lc.hasError() && (']'==(cp=m_lc.current())||'}'==cp||','==cp||m_lc.eof())) {
                         m_state = EndValuePart;
                         return true;
-                    } 
+                    }
                     recoverValue();
                     JSON_ERROR(INVALID_VALUE);
-                    return false;    
+                    return false;
             }
             JSON_ERROR(INVALID_VALUE);
             // recover the cursor
@@ -1069,7 +1069,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                 case ']':
                     return readEndArray();
 
-                case '}':                            
+                case '}':
                     return readEndObject();
 
             }
@@ -1078,7 +1078,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
             return readAnyOpen(true);
         }
         bool skipCommaOrEndObjectOrEndArray() {
-            if(!m_lc.more()) 
+            if(!m_lc.more())
                 return false;
             switch(m_lc.current()) {
                 case ',':
@@ -1210,7 +1210,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                         JSON_ERROR(FIELD_TOO_LONG);
                         return false;
                     }
-                    
+
                     return true;
             }
             return false;
@@ -1230,7 +1230,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     }
                     m_state = EndArray;
                     return true;
-                
+
                 default:
                     if(!readAnyOpen(false))
                         return false;
@@ -1260,7 +1260,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     m_state = Value;
                     return true;
             }
-        }   
+        }
         bool skipObjectOrArrayOrValuePart() {
             if(!m_lc.more()) return false;
             switch(m_lc.current()) {
@@ -1283,7 +1283,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                         return false;
                     }
                     if(!skipArrayPart())
-                        return false;        
+                        return false;
                     break;
                 case '{':
                     if(!m_lc.advance()) {
@@ -1304,7 +1304,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                         return false;
                     }
                     if(!skipObjectPart())
-                        return false;        
+                        return false;
                     break;
                 default:
                     if(!skipValuePart())
@@ -1329,7 +1329,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                 m_state=Error; // unrecoverable
                 return false;
             }
-            
+
             if(!JsonUtility::skipStringPart(m_lc,true)) {
                 if(m_lc.hasError()) {
                     error(m_lc);
@@ -1360,7 +1360,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                         if(!skipString())
                             return false;
                         break;
-                    
+
                     case '{':
                         ++m_objectDepth;
                         ++depth;
@@ -1374,7 +1374,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                             return false;
                         }
                     break;
-                    
+
                     case ']':
                         --depth;
                         if (!m_lc.advance()) {
@@ -1399,7 +1399,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                             return false;
                         }
                         break;
-                    
+
                     case '}':
                         --depth;
                         --m_objectDepth;
@@ -1424,13 +1424,13 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                                 return false;
                             }
                         }
-                        
+
                         break;
                 }
 
                 ch=m_lc.skipToAny("\"{}[]");
             }
-           
+
             if(m_lc.hasError()) {
                 error(m_lc);
                 return false;
@@ -1452,7 +1452,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                         break;
 
                     case '{':
-                        
+
                         if (!m_lc.advance()) {
                             if(m_lc.hasError()) {
                                 error(m_lc);
@@ -1463,11 +1463,11 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                             return false;
                         }
                         ++m_objectDepth;
-                        
+
                         ++depth;
                         break;
                     case '}':
-                        
+
                         if (!m_lc.advance()) {
                             if(m_lc.hasError()) {
                                 error(m_lc);
@@ -1478,7 +1478,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                             return false;
                         }
                         --m_objectDepth;
-                        
+
                         --depth;
                         break;
 
@@ -1495,7 +1495,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                         ++depth;
                         break;
 
-                    
+
                     case ']':
                         if(!m_lc.advance()) {
                             if(m_lc.hasError()) {
@@ -1512,14 +1512,14 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                             m_state=(m_lc.eof())?EndDocument:EndArray;
                             return true;
                         }
-                        
+
                     break;
-                    
-                   
+
+
                 }
                 ch = m_lc.skipToAny("\"{}[]");
             }
-           
+
             return false;
         }
         JsonReader()=delete;
@@ -1530,7 +1530,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
     public:
         // constructs an instance
         JsonReader(lex::LexSource& source) : m_state(Initial),m_valueType(Undefined),m_lastError(0), m_lc(source),m_objectDepth(0) {
-        
+
         }
         // destroys an instance
         ~JsonReader() {
@@ -1572,7 +1572,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
             switch(m_state) {
                 case Initial:
                     m_objectDepth=0;
-                    
+
                     if(!JsonUtility::skipWhiteSpace(m_lc)) {
                         error(m_lc);
                         return false;
@@ -1597,11 +1597,11 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     if(!readFieldOrEndObject())
                         return false;
                     break;
-                
+
                 case Field:
                     // handle field special by not breaking (doesn't change anything in current code)
                     return readAnyOpen(false);
-                
+
                 case EndObject:
                     if(!readAny())
                         return false;
@@ -1644,7 +1644,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     m_state = EndDocument;
                     return false;
                 }
-                
+
                 if (read() && Error!=nodeType())
                     return skipSubtree();
                 return false;
@@ -1656,11 +1656,11 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                 return true;
             case JsonReader::Field: // field
                 // we're doing this here to avoid loading values
-                // if we just call read() to advance, the field's 
+                // if we just call read() to advance, the field's
                 // value will be loaded. This is undesirable if
                 // we don't care about the field because it uses
                 // lexcontext space
-                // instead we're advancing manually. We start right 
+                // instead we're advancing manually. We start right
                 // after the field's ':' delimiter
                 if(!skipObjectOrArrayOrValuePart())
                     return false;
@@ -1739,7 +1739,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                         if(hasError())
                             return false;
                         break;
-                } 
+                }
                 return false;
             break;
             case Descendants:
@@ -1751,7 +1751,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                     if(!read())
                         return false;
                 }
-            
+
                 if(0==(*pdepth))
                     *pdepth=1;
                 // fall through
@@ -1817,7 +1817,7 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                                     m_state = Field;
                                     if(match && !(*sz))
                                         return !hasError();
-                                } 
+                                }
                             } else if(!JsonUtility::skipStringPart(m_lc,true)) {
                                 if(m_lc.hasError()) {
                                     error(m_lc);
@@ -1902,14 +1902,14 @@ const char JSON_ERROR_FIELD_TOO_LONG_MSG[] PROGMEM = "Field name too long. Field
                                 }
                             }
                             break;
-                       
+
                         }
                     }
                     return false;
                 default:
                     JSON_ERROR(INVALID_ARGUMENT);
                     return false;
-                
+
             }
             return false;
         }

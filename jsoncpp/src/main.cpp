@@ -95,7 +95,7 @@ void scratch()
     JsonExtractor showExtractors[]{showNameExtractor, createdByArrayIndexExtractor};
     JsonExtractor showExtractor(showFields, 2, showExtractors);
 
-    // Arduino framework uses its own API for 
+    // Arduino framework uses its own API for
     // accessing files and such
 #ifdef ARDUINO
     ArduinoLexSource<256> fls;
@@ -1200,8 +1200,8 @@ extern "C"
     //spi_get_freq_limit().
 void app_main()
 {
-    
-    
+
+
     sdmmc_host_t host = SDSPI_HOST_VSPI();
     sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEVKIT();
 

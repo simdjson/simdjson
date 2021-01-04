@@ -84,9 +84,9 @@ namespace mem {
         // indicates how many bytes are currently used
         size_t used() const override {return m_next-m_heap;}
         StaticMemoryPool() : m_next(m_heap) {}
-    
+
     };
-    
+
     // represents a memory pool whose maximum capacity is determined at runtime
     class DynamicMemoryPool : public MemoryPool {
         // the actual buffer
@@ -114,7 +114,7 @@ namespace mem {
             m_capacity = capacity;
             if(nullptr==m_heap)
                 m_capacity=0;
-            
+
         }
         // allocates the specified number of bytes
         // returns nullptr if there's not enough free

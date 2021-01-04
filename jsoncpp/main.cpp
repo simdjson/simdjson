@@ -118,7 +118,7 @@ int main(int cargs, char** argsv) {
     stop = getus();
     double time2 = (stop-start)/(1000.0);
     std::cout <<"JSON(C++) took " << time2 << " ms to find " << str2 <<std::endl;
-    
+
     start = getus();
     json = padded_string::load("bulk.json");
     show = parser.iterate(json);
@@ -135,7 +135,7 @@ int main(int cargs, char** argsv) {
     stop = getus();
     time2 = (stop-start)/(1000.0);
     std::cout <<"JSON(C++) took " << time2 << " ms to extract episode data" << std::endl;
-    
+
     start = getus();
     json = padded_string::load("bulk.json");
     show = parser.iterate(json);
@@ -145,7 +145,7 @@ int main(int cargs, char** argsv) {
     time1 = (stop-start)/(1000.0);
     //std::cout <<"simdjson took " << time1 << " ms to read all ids" <<std::endl;
     std::cout << "simdjson read all ids not yet implemented. time is for parsing only";
-    
+
     start = getus();
     mmls.open("./bulk.json");
     readAllIds(mmls);
@@ -153,7 +153,7 @@ int main(int cargs, char** argsv) {
     stop = getus();
     time2 = (stop-start)/(1000.0);
     std::cout <<"JSON(C++) took " << time2 << " ms to read all ids" << std::endl;
- 
+
     return 0;
 
 }

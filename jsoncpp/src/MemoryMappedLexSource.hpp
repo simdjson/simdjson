@@ -12,17 +12,17 @@ class MemoryMappedLexSource : public virtual LexSource {
     MemoryMappedLexSource(MemoryMappedLexSource& rhs)=delete;
     MemoryMappedLexSource(MemoryMappedLexSource&& rhs)=delete;
     MemoryMappedLexSource& operator=(MemoryMappedLexSource& rhs)=delete;
-    
+
 protected:
     int16_t read() final {
-        if(nullptr==m_start)   
+        if(nullptr==m_start)
             return LexSource::Closed;
         if((size_t)(m_cur-m_start)>=m_mapped.size())
             return LexSource::EndOfInput;
         char ch=*(m_cur++);
         return (unsigned char)ch;
     }
-    
+
     bool skipToAny(const char* characters7bit,unsigned long long int& position,int16_t& match,int8_t& error) final {
         if(!m_mapped.open()) {
             error = Closed;
@@ -42,19 +42,19 @@ protected:
             error = EndOfInput;
             return false;
         }
-        
+
         match = *sz;
         m_cur = sz+1;
         position = m_cur - m_start;
         return true;
     }
-    
+
 public:
     MemoryMappedLexSource() :m_cur(nullptr),m_start(nullptr) {
-       
+
     }
     ~MemoryMappedLexSource() override {}
-    
+
     bool open(const char* filename) {
         if(nullptr!=m_start)
             return false;
@@ -63,14 +63,14 @@ public:
         reset();
         m_cur = m_start = m_mapped.data();
         return true;
-    }   
-    
+    }
+
     void close() {
         if(m_mapped.open()) {
             m_mapped.close();
             m_cur = m_start = nullptr;
         }
-    } 
+    }
 };
 template<size_t TCapacity> class StaticMemoryMappedLexSource : public StaticLexSource<TCapacity>, public virtual MemoryMappedLexSource {
 

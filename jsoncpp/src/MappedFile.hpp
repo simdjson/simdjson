@@ -64,7 +64,7 @@ class MappedFile
 private:
 	size_t m_size;
 	char *m_pdata;
-	
+
 		/*!
 	* Maps the specified file into memory.
 	* \param path the path of the file being mapped
@@ -171,7 +171,7 @@ public:
 	 * \exception IOException the file couldn't be opened
 	 */
 	MappedFile()  : m_size(), m_pdata() {
-		
+
 	}
 	bool open(const char* path) {
 		if(nullptr!=m_pdata)
@@ -190,16 +190,16 @@ public:
 	 * Unmaps the file and releases all memory.
 	 */
 	~MappedFile() {
-		
+
 	}
 	inline bool open() {
-		return nullptr!=m_pdata;	
+		return nullptr!=m_pdata;
 	}
 	/*!
 	 * Get the size of the file in memory.
 	 */
 	inline size_t size() const { return m_size; }
-	
+
 	inline const char* data() {return m_pdata;}
 };
 }

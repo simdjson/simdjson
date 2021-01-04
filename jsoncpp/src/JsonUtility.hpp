@@ -75,14 +75,14 @@ namespace json {
                 return false;
             }
             codepoint|=fromHexChar((char)ls.current());
-            
+
             if (0 == codepoint) {
                 codepoint = '?';
-            } 
+            }
             ls.advance();
             return true;
         }
-        
+
         static const char* decodeUtf8(const char* sz, int32_t& codepoint) {
             char ch = *sz;
             codepoint=0;
@@ -148,7 +148,7 @@ namespace json {
                 return false;
             if('\"'==ls.current())
                 return false; // empty string
-            
+
             if(ls.current()>0x7F) {
                 if(capture) {
                     if(!ls.capture(ls.current()))
@@ -159,7 +159,7 @@ namespace json {
                 ls.advance();
                 return true;
             }
-            
+
             switch((char)(ls.current() & 0x7f)) {
                 case '\\':
                     if(!ls.advance()) {
@@ -169,7 +169,7 @@ namespace json {
                     switch(ls.current()) {
                         case '\\':
                         case '\"':
-                        case '/':    
+                        case '/':
                             codepoint = ls.current();
                             if(capture && !ls.capture(codepoint)) {
                                 // ERROR out of memory
@@ -217,7 +217,7 @@ namespace json {
                             }
                             ls.advance();
                             return true;
-                        
+
                         case 'u':
                             if (!ls.advance()) {
                                 // ERROR unterminated string
@@ -227,8 +227,8 @@ namespace json {
                                 // ERROR invalid unicode sequence
                                 return false;
                             }
-                            
-                            //U+D800 to U+DBFF is high surrogate. 
+
+                            //U+D800 to U+DBFF is high surrogate.
                             if(codepoint>0xD7FF && codepoint<0xDC00) {
                                 // look for the second escape;
                                 if('\\'!=ls.current() || !ls.advance()) {
@@ -243,13 +243,13 @@ namespace json {
                                 if(!decodeUnicodeEscape(ls,cp2)) {
                                     // ERROR invalid unicode sequence
                                     return false;
-                                }   
+                                }
                                 codepoint=(codepoint << 10) + cp2 - 0x35fdc00;
                                 ls.advance();
 
                             }
                             if(capture&&!ls.capture(codepoint)) {
-                                // ERROR out of memory 
+                                // ERROR out of memory
                                 return false;
                             }
                             return true;
@@ -269,16 +269,16 @@ namespace json {
             }
             return false;
         }
-        
+
         inline static bool skipWhiteSpace(lex::LexSource& ls) {
-            static const char ws[]= {0,0,0,0,0,0,0,0,0,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};    
+            static const char ws[]= {0,0,0,0,0,0,0,0,0,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
             int32_t cp = ls.current();
             if(-1<cp && cp<33 && 1==ws[cp]) {
                 while(ls.advance() && (-1<(cp=ls.current()) && cp<33 && 1==ws[cp]));
             }
             return !ls.hasError();
         }
-        
+
         static bool skipStringPart(lex::LexSource& ls, bool skipFinalQuote = true)
         {
             if(!ls.ensureStarted())
@@ -314,14 +314,14 @@ namespace json {
                 return true;
             }
             return false;
-            
+
         }
-        
+
         static bool lexNumber(lex::LexSource& ls,JsonLexState& st) {
             int32_t cp;
             if(!ls.ensureStarted())
                 return false; // error
-            
+
             switch(st.flags.state) {
                 case 0:
                     st.flags.accept=0;
@@ -356,7 +356,7 @@ namespace json {
                             st.flags.state = 2;
                             return true;
                         }
-                        if (((cp >= '1') 
+                        if (((cp >= '1')
                                     && (cp <= '9'))) {
                             if(!ls.capture(cp)) {
                                 return false;
@@ -391,7 +391,7 @@ namespace json {
                             st.flags.state = 2;
                             return true;
                         }
-                        if (((cp >= '1') 
+                        if (((cp >= '1')
                                     && (cp <= '9'))) {
                             if(!ls.capture(cp)) {
                                 return false;
@@ -412,7 +412,7 @@ namespace json {
                     goto error;
                 case 2:
                     if(ls.more()) {
-                        if ((((cp=ls.current())== 'E') 
+                        if ((((cp=ls.current())== 'E')
                                     || (cp == 'e'))) {
                             if(!ls.capture(cp)) {
                                 return false;
@@ -443,7 +443,7 @@ namespace json {
                     return false;
                 case 3:
                     if(ls.more()) {
-                        if ((((cp=ls.current()) >= '0') 
+                        if ((((cp=ls.current()) >= '0')
                                     && (cp <= '9'))) {
                             if(!ls.capture(cp)) {
                                 return false;
@@ -466,7 +466,7 @@ namespace json {
                     goto error;
                 case 4:
                     if(ls.more()) {
-                        if ((((cp=ls.current())== 'E') 
+                        if ((((cp=ls.current())== 'E')
                                     || (cp == 'e'))) {
                             if(!ls.capture(cp)) {
                                 return false;
@@ -478,7 +478,7 @@ namespace json {
                             st.flags.state = 5;
                             return true;
                         }
-                        if (((cp >= '0') 
+                        if (((cp >= '0')
                                     && (cp <= '9'))) {
                             if(!ls.capture(cp)) {
                                 return false;
@@ -502,7 +502,7 @@ namespace json {
                     return false; // orig
                 case 5:
                     if(ls.more()) {
-                        if ((((cp=ls.current()) == '+') 
+                        if ((((cp=ls.current()) == '+')
                                     || (cp == '-'))) {
                             if('-'==cp)
                                 st.flags.fracPart = 3; // indicates neg exponent
@@ -516,7 +516,7 @@ namespace json {
                             st.flags.state = 6;
                             return true;
                         }
-                        if (((cp >= '0') 
+                        if (((cp >= '0')
                                     && (cp <= '9'))) {
                             if(!ls.capture(cp)) {
                                 return false;
@@ -537,7 +537,7 @@ namespace json {
                     goto error;
                 case 6:
                     if(ls.more()) {
-                        if ((((cp=ls.current()) >= '0') 
+                        if ((((cp=ls.current()) >= '0')
                                     && (cp <= '9'))) {
                             if(!ls.capture(cp)) {
                                 return false;
@@ -558,7 +558,7 @@ namespace json {
                     goto error;
                 case 7:
                     if(ls.more()) {
-                        if ((((cp=ls.current()) >= '0') 
+                        if ((((cp=ls.current()) >= '0')
                                     && (cp <= '9'))) {
                             if(!ls.capture(cp)) {
                                 return false;
@@ -571,7 +571,7 @@ namespace json {
                             if(!ls.advance()) {
                                 if(ls.hasError())
                                     return false;
-                                
+
                             }
                             st.flags.state = 7;
                             return true;
@@ -581,7 +581,7 @@ namespace json {
                     return false; // orig
                 case 8:
                     if(ls.more()) {
-                        if ((((cp=ls.current())== 'E') 
+                        if ((((cp=ls.current())== 'E')
                                     || (cp == 'e'))) {
                             if(!ls.capture(cp)) {
                                 return false;
@@ -594,7 +594,7 @@ namespace json {
                             st.flags.state = 5;
                             return true;
                         }
-                        if (((cp >= '0') 
+                        if (((cp >= '0')
                                     && (cp <= '9'))) {
                             if(!ls.capture(cp)) {
                                 return false;
@@ -655,7 +655,7 @@ namespace json {
                             return true;
                         }
                         if ((cp=ls.current()) == 't') {
-                            if(!ls.capture(cp)) 
+                            if(!ls.capture(cp))
                                 return false;
                             if(!ls.advance()) {
                                 if(ls.hasError())
@@ -665,7 +665,7 @@ namespace json {
                             return true;
                         }
                         if ((cp=ls.current()) == 'f') {
-                            if(!ls.capture(cp)) 
+                            if(!ls.capture(cp))
                                 return false;
                             if(!ls.advance()) {
                                 if(ls.hasError())
@@ -679,7 +679,7 @@ namespace json {
                 case 1:
                     if(ls.more()) {
                         if ((cp=ls.current()) == 'u') {
-                            if(!ls.capture(cp)) 
+                            if(!ls.capture(cp))
                                 return false;
                             if(!ls.advance()) {
                                 if(ls.hasError())
@@ -693,7 +693,7 @@ namespace json {
                 case 2:
                     if(ls.more()) {
                         if ((cp=ls.current()) == 'l') {
-                            if(!ls.capture(cp)) 
+                            if(!ls.capture(cp))
                                 return false;
                             if(!ls.advance()) {
                                 if(ls.hasError())
@@ -707,7 +707,7 @@ namespace json {
                 case 3:
                     if(ls.more()) {
                         if ((cp=ls.current()) == 'l') {
-                            if(!ls.capture(cp)) 
+                            if(!ls.capture(cp))
                                 return false;
                             if(!ls.advance()) {
                                 if(ls.hasError())
@@ -724,7 +724,7 @@ namespace json {
                 case 5:
                     if(ls.more()) {
                         if ((cp=ls.current()) == 'r') {
-                            if(!ls.capture(cp)) 
+                            if(!ls.capture(cp))
                                 return false;
                             if(!ls.advance()) {
                                 if(ls.hasError())
@@ -738,7 +738,7 @@ namespace json {
                 case 6:
                     if(ls.more()) {
                         if ((cp=ls.current()) == 'u') {
-                            if(!ls.capture(cp)) 
+                            if(!ls.capture(cp))
                                 return false;
                             if(!ls.advance()) {
                                 if(ls.hasError())
@@ -752,7 +752,7 @@ namespace json {
                 case 7:
                     if(ls.more()) {
                         if ((cp=ls.current()) == 'e') {
-                            if(!ls.capture(cp)) 
+                            if(!ls.capture(cp))
                                 return false;
                             if(!ls.advance()) {
                                 if(ls.hasError())
@@ -769,7 +769,7 @@ namespace json {
                 case 9:
                     if(ls.more()) {
                         if ((cp=ls.current()) == 'a') {
-                            if(!ls.capture(cp)) 
+                            if(!ls.capture(cp))
                                 return false;
                             if(!ls.advance()) {
                                 if(ls.hasError())
@@ -783,7 +783,7 @@ namespace json {
                 case 10:
                     if(ls.more()) {
                         if ((cp=ls.current()) == 'l') {
-                            if(!ls.capture(cp)) 
+                            if(!ls.capture(cp))
                                 return false;
                             if(!ls.advance()) {
                                 if(ls.hasError())
@@ -797,7 +797,7 @@ namespace json {
                 case 11:
                     if(ls.more()) {
                         if ((cp=ls.current()) == 's') {
-                            if(!ls.capture(cp)) 
+                            if(!ls.capture(cp))
                                 return false;
                             if(!ls.advance()) {
                                 if(ls.hasError())
@@ -811,7 +811,7 @@ namespace json {
                 case 12:
                     if(ls.more()) {
                         if ((cp=ls.current()) == 'e') {
-                            if(!ls.capture(cp)) 
+                            if(!ls.capture(cp))
                                 return false;
                             if(!ls.advance()) {
                                 if(ls.hasError())
@@ -823,7 +823,7 @@ namespace json {
                     }
                     goto error;
                 case 13:
-                    st.flags.accept=3; 
+                    st.flags.accept=3;
                     return false;
             }
         error:
@@ -833,6 +833,6 @@ namespace json {
                     }*/
             return false;
 
-        } 
+        }
     };
 }

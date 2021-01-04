@@ -67,7 +67,7 @@ namespace json {
         const void** palloced;
         JsonElement* presult;
         JsonExtractor* pchildren;
-        
+
         JsonExtractor(JsonElement* presult) {
             this->pfields = nullptr;
             this->pindices = nullptr;
@@ -266,7 +266,7 @@ namespace json {
                                 first = false;
                             else {
                                 sznew=(char*)pool.alloc(JSON_LITERAL_COMMA_LEN);
-                                if(nullptr==sznew) 
+                                if(nullptr==sznew)
                                     return false;
                                 STRNCPYP(sznew,JSON_LITERAL_COMMA,JSON_LITERAL_COMMA_LEN);
                             }
@@ -293,16 +293,16 @@ namespace json {
                                 first = false;
                             else {
                                 sznew=(char*)pool.alloc(JSON_LITERAL_COMMA_LEN);
-                                if(nullptr==sznew) 
+                                if(nullptr==sznew)
                                     return false;
                                 STRNCPYP(sznew,JSON_LITERAL_COMMA,JSON_LITERAL_COMMA_LEN);
                             }
                             JsonElement t;
                             t.string(pcurrent->name);
-                            if(!t.writeToString(pool)) 
+                            if(!t.writeToString(pool))
                                 return false;
                             sznew=(char*)pool.alloc(JSON_LITERAL_COLON_LEN);
-                            if(nullptr==sznew) 
+                            if(nullptr==sznew)
                                 return false;
                             STRNCPYP(sznew,JSON_LITERAL_COLON,JSON_LITERAL_COLON_LEN);
                             if(!pcurrent->pvalue->writeToString(pool))
@@ -420,7 +420,7 @@ namespace json {
             }
         }
         int8_t type() const { return m_type; }
-        std::nullptr_t null() const { return nullptr; } 
+        std::nullptr_t null() const { return nullptr; }
         void null(std::nullptr_t value) { m_type = Null;}
         double real() const { return (Integer==m_type||Real==m_type)?m_real:NAN;}
         void real(double value) { m_type=Real; m_real = value; }
@@ -472,7 +472,7 @@ namespace json {
                 return false;
             JsonFieldEntry *pfe = m_pobject;
             if(pfe) {
-                while(pfe->pnext) 
+                while(pfe->pnext)
                     pfe=pfe->pnext;
                 pfe->pnext = (JsonFieldEntry*)pool.alloc(sizeof(JsonFieldEntry));
                 if(!pfe->pnext)
@@ -496,7 +496,7 @@ namespace json {
                 return false;
             JsonFieldEntry *pfe = m_pobject;
             if(pfe) {
-                while(pfe->pnext) 
+                while(pfe->pnext)
                     pfe=pfe->pnext;
                 pfe->pnext = (JsonFieldEntry*)pool.alloc(sizeof(JsonFieldEntry));
                 if(!pfe->pnext)
@@ -572,7 +572,7 @@ namespace json {
                 return false;
             JsonArrayEntry *pae = m_parray;
             if(pae) {
-                while(pae->pnext) 
+                while(pae->pnext)
                     pae=pae->pnext;
                 pae->pnext = (JsonArrayEntry*)pool.alloc(sizeof(JsonArrayEntry));
                 if(!pae->pnext)
@@ -621,7 +621,7 @@ namespace json {
             e.string(value);
             return addItem(pool,e);
         }
-        
+
         bool addItem(MemoryPool& pool, const double value) {
             // only works for arrays
             // call setArray() first
@@ -643,8 +643,8 @@ namespace json {
             e.boolean(value);
             return addItem(pool,e);
         }
-        
+
     };
-    
+
 }
 #endif
