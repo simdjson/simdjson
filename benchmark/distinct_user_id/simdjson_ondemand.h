@@ -22,7 +22,7 @@ public:
       // Not all tweets have a "retweeted_status", but when they do
       // we want to go and find the user within.
       auto retweet = tweet.find_field("retweeted_status");
-      if(!retweet.error()) {
+      if (!retweet.error()) {
         ids.push_back(retweet.find_field("user").find_field("id"));
       }
     }

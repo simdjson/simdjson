@@ -7,8 +7,6 @@
 namespace partial_tweets {
 
 class yyjson {
-  dom::parser parser{};
-
   simdjson_really_inline std::string_view get_string_view(yyjson_val *obj, std::string_view key) {
     auto val = yyjson_obj_getn(obj, key.data(), key.length());
     if (!yyjson_is_str(val)) { throw "field is not uint64 or null!"; }

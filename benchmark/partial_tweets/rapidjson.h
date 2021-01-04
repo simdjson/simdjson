@@ -1,0 +1,70 @@
+#pragma once
+
+#ifdef SIMDJSON_COMPETITION_RAPIDJSON
+
+#include "partial_tweets.h"
+
+namespace partial_tweets {
+
+using namespace rapidjson;
+
+template<int F>
+class rapidjson_base {
+  Document doc{};
+
+  simdjson_really_inline std::string_view get_string_view(Value &object, std::string_view key) {
+    // TODO use version that supports passing string length?
+    auto field = object.FindMember(key.data());
+    if (field == object.MemberEnd()) { throw "Missing object field"; }
+    if (!field->value.IsString()) { throw "Field is not a string"; }
+    return { field->value.GetString(), field->value.GetStringLength() };
+  }
+  simdjson_really_inline uint64_t get_uint64(Value &object, std::string_view key) {
+    auto field = object.FindMember(key.data());
+    if (field == object.MemberEnd()) { throw "Missing object field"; }
+    if (!field->value.IsUint64()) { throw "Field is not uint64"; }
+    return field->value.GetUint64();
+  }
+  simdjson_really_inline uint64_t get_nullable_uint64(Value &object, std::string_view key) {
+    auto field = object.FindMember(key.data());
+    if (field == object.MemberEnd()) { throw "Missing nullable uint64 field"; }
+    if (field->value.IsNull()) { return 0; }
+    if (!field->value.IsUint64()) { throw "Field is not nullable uint64"; }
+    return field->value.GetUint64();
+  }
+  simdjson_really_inline partial_tweets::twitter_user get_user(Value &object, std::string_view key) {
+    auto field = object.FindMember(key.data());
+    if (field == object.MemberEnd()) { throw "Missing user field"; }
+    if (!field->value.IsObject()) { throw "User field is not an object"; }
+    return { get_uint64(field->value, "id"), get_string_view(field->value, "screen_name") };
+  }
+
+public:
+  bool run(const padded_string &json, std::vector<tweet> &tweets) {
+    auto &root = doc.Parse<F>(json.data());
+    if (root.HasParseError() || !root.IsObject()) { return false; }
+    auto statuses = root.FindMember("statuses");
+    if (statuses == root.MemberEnd() || !statuses->value.IsArray()) { return false; }
+    for (auto &tweet : statuses->value.GetArray()) {
+      if (!tweet.IsObject()) { return false; }
+      tweets.emplace_back(partial_tweets::tweet{
+        get_string_view(tweet, "created_at"),
+        get_uint64     (tweet, "id"),
+        get_string_view(tweet, "text"),
+        get_nullable_uint64     (tweet, "in_reply_to_status_id"),
+        get_user       (tweet, "user"),
+        get_uint64     (tweet, "retweet_count"),
+        get_uint64     (tweet, "favorite_count")
+      });
+    }
+
+    return true;
+  }
+};
+
+class rapidjson : public rapidjson_base<kParseValidateEncodingFlag> {};
+ BENCHMARK_TEMPLATE(partial_tweets, rapidjson);
+
+} // namespace partial_tweets
+
+#endif // SIMDJSON_COMPETITION_RAPIDJSON

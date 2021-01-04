@@ -43,6 +43,10 @@ public:
   bool diff(benchmark::State &state, runner<R> &reference) {
     return diff_results(state, points, reference.points);
   }
+
+  size_t items_per_iteration() {
+    return points.size();
+  }
 };
 
 static std::string build_json_array(size_t N) {

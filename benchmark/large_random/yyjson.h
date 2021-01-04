@@ -7,8 +7,6 @@
 namespace large_random {
 
 class yyjson {
-  ondemand::parser parser{};
-
   simdjson_really_inline double get_double(yyjson_val *obj, std::string_view key) {
     yyjson_val *val = yyjson_obj_getn(obj, key.data(), key.length());
     if (!val){ throw "missing point field!"; }
