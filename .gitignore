@@ -97,3 +97,7 @@ objs
 # Generated docs
 /doc/api
 *.orig
+jsoncpp/main
+jsoncpp/bulk.json
+jsoncpp/json/src/sdkconfig
+jsoncpp/json/src/sdkconfig.h

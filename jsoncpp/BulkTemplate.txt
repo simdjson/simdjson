@@ -1,0 +1,123 @@
+BEGIN SNIP=================
+A template I used to generate the 20MB bulk.json:
+https://www.json-generator.com/
+I had to kind of abuse the app to get that much data out of it.
+END SNIP===================
+
+{
+  "backdrop_path": "/lgTB0XOd4UFixecZgwWrsR69AxY.jpg",
+  "created_by": [
+      {
+        "id": 1233032,
+        "credit_id": "525749f819c29531db09b231",
+        "name": "Matt Nix",
+        "profile_path": "/qvfbD7kc7nU3RklhFZDx9owIyrY.jpg"
+      }
+    ],
+  "episode_run_time": [
+      45
+    ],
+  "first_air_date": "2007-06-28",
+  "genres": [
+      {
+        "id": 10759,
+        "name": "Action & Adventure"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      }
+    ],
+  "homepage": "http://usanetwork.com/burnnotice",
+  "id": 2919,
+  "in_production": false,
+  "languages": [
+      "en"
+    ],
+  "last_air_date": "2013-09-12",
+  "last_episode_to_air": {
+      "air_date": "2013-09-12",
+      "episode_number": 13,
+      "id": 224759,
+      "name": "Reckoning",
+      "overview": "Series Finale. Michael must regain the trust of those closest to him in order to finish what he started.",
+      "production_code": null,
+      "season_number": 7,
+      "show_id": 2919,
+      "still_path": "/lGdhFXEi29e2HeXMzgA9bvvIIJU.jpg",
+      "vote_average": 0,
+      "vote_count": 0
+    },
+  "name": "Burn Notice",
+  "next_episode_to_air": null,
+  "networks": [
+      {
+        "name": "USA Network",
+        "id": 30,
+        "logo_path": "/g1e0H0Ka97IG5SyInMXdJkHGKiH.png",
+        "origin_country": "US"
+      }
+    ],
+  "number_of_episodes": 111,
+  "number_of_seasons": 7,
+  "origin_country": [
+      "US"
+    ],
+  "original_language": "en",
+  "original_name": "Burn Notice",
+  "overview": "A formerly blacklisted spy uses his unique skills and training to help people in desperate situations.",
+  "popularity": 12.174,
+  "poster_path": "/A9EmzNtwfEnXYdMTgGKcL4kiZm2.jpg",
+  "production_companies": [
+      '{{repeat(2)}}',
+      {
+        "id": '{{integer(1000,9999)}}',
+        "logo_path": null,
+        "name": '{{lorem(2,"words")}}',
+        "origin_country": ""
+      }
+    ],
+  "seasons": [
+    '{{repeat(20)}}',
+      {
+        "_id": '{{objectId()}}',
+        "air_date": '{{date(new Date(2014, 0, 1), new Date(), "YYYY-MM-dd")}}',
+        "episodes": [
+          '{{repeat(1000)}}',
+          {
+              "air_date": '{{date(new Date(2014, 0, 1), new Date(), "YYYY-MM-ddThh:mm:ss Z")}}',
+              "episode_number": '{{index()+1}}',
+              "id": '{{integer(1000,9999)}}',
+              "name": '{{lorem(1, "words")}}',
+              "overview": '{{lorem(1, "paragraphs")}}',
+              "production_code": null,
+              "season_number": null,
+              "show_id": 2919,
+              "still_path": null,
+              "vote_average": '{{floating(0,100,1)}}',
+              "vote_count": '{{integer(0,10000)}}',
+              "crew": [
+                '{{repeat(1)}}',
+                  {
+                    "id": '{{integer(1000,9999)}}',
+                    "credit_id": '{{objectId()}}',
+                    "name": '{{firstName()}} {{surname()}}',
+                    "department": '{{lorem(1, "words")}}',
+                    "job": '{{lorem(1, "words")}}',
+                    "profile_path": null
+                  }
+                ],
+              "guest_stars": []
+            }
+          ],
+        "name": '{{lorem(1, "words")}}',
+        "overview": '{{lorem(1, "paragraphs")}}',
+        "poster_path": null,
+        "season_number": '{{index()}}'
+      }
+    ],
+  "status": "Canceled",
+  "type": "Scripted",
+  "vote_average": 7.3,
+  "vote_count": 172
+}
