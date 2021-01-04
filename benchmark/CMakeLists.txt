@@ -1,13 +1,5 @@
 include_directories( . linux )
 link_libraries(simdjson-windows-headers test-data)
-
-# bench_sax links against the source
-if (TARGET benchmark::benchmark)
-  add_executable(bench_sax bench_sax.cpp)
-  target_link_libraries(bench_sax PRIVATE simdjson-internal-flags simdjson-include-source benchmark::benchmark)
-endif (TARGET benchmark::benchmark)
-
-# Everything else links against simdjson proper
 link_libraries(simdjson simdjson-flags)
 
 add_executable(benchfeatures benchfeatures.cpp)
@@ -44,10 +36,14 @@ endif()
 
 if (TARGET benchmark::benchmark)
   link_libraries(benchmark::benchmark)
-  add_subdirectory(largerandom)
   add_executable(bench_parse_call bench_parse_call.cpp)
   add_executable(bench_dom_api bench_dom_api.cpp)
-  add_executable(bench_ondemand bench_ondemand.cpp)
+  if (SIMDJSON_EXCEPTIONS)
+    add_executable(bench_ondemand bench_ondemand.cpp)
+    if (TARGET yyjson)
+      target_link_libraries(bench_ondemand PRIVATE yyjson)
+    endif (TARGET yyjson)
+  endif (SIMDJSON_EXCEPTIONS)
 endif()
 
 include(checkperf.cmake)

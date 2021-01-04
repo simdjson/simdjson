@@ -1,0 +1,41 @@
+#pragma once
+
+#include "json_benchmark/runner_base.h"
+#include "simdjson.h"
+
+namespace json_benchmark {
+
+template<typename I>
+struct file_runner : public runner_base<I> {
+protected:
+  simdjson::padded_string json{};
+
+  bool load_json(benchmark::State &state, const char *file) {
+    simdjson::error_code error;
+    if ((error = simdjson::padded_string::load(file).get(json))) {
+      std::stringstream err;
+      err << "error loading " << file << ": " << error;
+      state.SkipWithError(err.str().data());
+      return false;
+    }
+    return true;
+  }
+
+public:
+  /** Get the total number of bytes processed in each iteration. Used for metrics like bytes/second. */
+  size_t bytes_per_iteration() {
+    return json.size();
+  }
+
+  /** Get the total number of documents processed in each iteration. Used for metrics like documents/second. */
+  size_t documents_per_iteration() {
+    return 1;
+  }
+
+  /** Get the total number of items processed in each iteration. Used for metrics like items/second. */
+  size_t items_per_iteration() {
+    return 1;
+  }
+};
+
+} // namespace json_benchmark
