@@ -20,14 +20,19 @@ public:
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);
     if (!doc) { return false; }
     yyjson_val *root = yyjson_doc_get_root(doc);
+    if (!yyjson_is_obj(root)) { return false; }
     yyjson_val *statuses = yyjson_obj_get(root, "statuses");
+    if (!yyjson_is_arr(statuses)) { return "Statuses is not an array!"; }
 
     size_t tweet_idx, tweets_max;
     yyjson_val *tweet;
     yyjson_arr_foreach(statuses, tweet_idx, tweets_max, tweet) {
+      if (!yyjson_is_obj(tweet)) { return false; }
       auto id = yyjson_obj_get(tweet, "id");
+      if (!yyjson_is_uint(id)) { return false; }
       if (yyjson_get_uint(id) == find_id) {
         auto _text = yyjson_obj_get(tweet, "text");
+        if (yyjson_is_str(id)) { return false; }
         text = yyjson_get_str(_text);
         return true;
       }
