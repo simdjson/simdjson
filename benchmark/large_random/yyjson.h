@@ -1,17 +1,13 @@
 #pragma once
 
-#include "largerandom.h"
+#ifdef SIMDJSON_COMPETITION_YYJSON
 
-namespace largerandom {
+#include "large_random.h"
 
-class Yyjson {
-public:
-  simdjson_really_inline const std::vector<my_point> &Result() { return container; }
-  simdjson_really_inline size_t ItemCount() { return container.size(); }
+namespace large_random {
 
-private:
+class yyjson {
   ondemand::parser parser{};
-  std::vector<my_point> container{};
 
   simdjson_really_inline double get_double(yyjson_val *obj, std::string_view key) {
     yyjson_val *val = yyjson_obj_getn(obj, key.data(), key.length());
@@ -19,9 +15,7 @@ private:
   }
 
 public:
-  simdjson_really_inline bool Run(const padded_string &json) {
-    container.clear();
-
+  bool run(const simdjson::padded_string &json, std::vector<point> &points) {
     // Walk the document, parsing the tweets as we go
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);
     if (!doc) { return false; }
@@ -30,12 +24,14 @@ public:
     size_t idx, max;
     yyjson_val *coord;
     yyjson_arr_foreach(coords, idx, max, coord) {
-      container.emplace_back(my_point{get_double(coord, "x"), get_double(coord, "y"), get_double(coord, "z")});
+      points.emplace_back(point{get_double(coord, "x"), get_double(coord, "y"), get_double(coord, "z")});
     }
     return true;
   }
 };
 
-BENCHMARK_TEMPLATE(LargeRandom, Yyjson);
+BENCHMARK_TEMPLATE(large_random, yyjson);
 
-} // namespace kostya
+} // namespace large_random
+
+#endif // SIMDJSON_COMPETITION_YYJSON

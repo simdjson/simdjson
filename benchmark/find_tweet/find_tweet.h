@@ -1,45 +1,38 @@
 
 #pragma once
-#include <vector>
-#include <cstdint>
-#include "event_counter.h"
-#include "json_benchmark.h"
 
-
-//
-// Interface
-//
-
-namespace find_tweet {
-template<typename T> static void FindTweet(benchmark::State &state);
-const uint64_t TWEET_ID = 505874901689851900;
-} // namespace
-
-//
-// Implementation
-//
-
-#include "dom.h"
-
+#include "json_benchmark/file_runner.h"
 
 namespace find_tweet {
 
-using namespace simdjson;
+template<typename I>
+struct runner : public json_benchmark::file_runner<I> {
+  std::string_view text;
 
-template<typename T> static void FindTweet(benchmark::State &state) {
-  //
-  // Load the JSON file
-  //
-  constexpr const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
-  error_code error;
-  padded_string json;
-  if ((error = padded_string::load(TWITTER_JSON).get(json))) {
-    std::cerr << error << std::endl;
-    state.SkipWithError("error loading");
-    return;
+public:
+  bool setup(benchmark::State &state) {
+    return this->load_json(state, json_benchmark::TWITTER_JSON);
   }
 
-  JsonBenchmark<T, Dom>(state, json);
+  bool before_run(benchmark::State &state) {
+    text = "";
+    return true;
+  }
+
+  bool run(benchmark::State &) {
+    return this->implementation.run(this->json, 505874901689851900ULL, text);
+  }
+
+  template<typename R>
+  bool diff(benchmark::State &state, runner<R> &reference) {
+    return diff_results(state, text, reference.text);
+  }
+};
+
+struct simdjson_dom;
+
+template<typename I> simdjson_really_inline static void find_tweet(benchmark::State &state) {
+  json_benchmark::run_json_benchmark<runner<I>, runner<simdjson_dom>>(state);
 }
 
 } // namespace find_tweet

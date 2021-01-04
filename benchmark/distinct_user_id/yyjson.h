@@ -1,21 +1,14 @@
 #pragma once
 
-#include "distinctuserid.h"
+#ifdef SIMDJSON_COMPETITION_YYJSON
+
+#include "distinct_user_id.h"
 
 namespace distinct_user_id {
 
-class Yyjson {
+class yyjson {
 public:
-  simdjson_really_inline const std::vector<int64_t> &Result() { return ids; }
-  simdjson_really_inline size_t ItemCount() { return ids.size(); }
-
-private:
-  std::vector<int64_t> ids{};
-
-public:
-  simdjson_really_inline bool Run(const padded_string &json) {
-    ids.clear();
-
+  bool run(const simdjson::padded_string &json, std::vector<uint64_t> &ids) {
     // Walk the document, parsing the tweets as we go
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);
     if (!doc) { return false; }
@@ -38,12 +31,14 @@ public:
         ids.push_back(yyjson_get_sint(id));
       }
     }
-    remove_duplicates(ids);
+
     return true;
   }
 
 };
 
-BENCHMARK_TEMPLATE(DistinctUserID, Yyjson);
+BENCHMARK_TEMPLATE(distinct_user_id, yyjson);
 
-} // namespace partial_tweets
+} // namespace distinct_user_id
+
+#endif // SIMDJSON_COMPETITION_YYJSON
