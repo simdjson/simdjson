@@ -31,14 +31,14 @@ struct rapidjson_base {
   }
 };
 
-struct rapidjson : public rapidjson_base {
+struct rapidjson : rapidjson_base {
   bool run(simdjson::padded_string &json, uint64_t find_id, std::string_view &result) {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), find_id, result);
   }
 };
 BENCHMARK_TEMPLATE(find_tweet, rapidjson)->UseManualTime();
 
-struct rapidjson_insitu : public rapidjson_base {
+struct rapidjson_insitu : rapidjson_base {
   bool run(simdjson::padded_string &json, uint64_t find_id, std::string_view &result) {
     return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), find_id, result);
   }

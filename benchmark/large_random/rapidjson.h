@@ -30,21 +30,21 @@ struct rapidjson_base {
   }
 };
 
-struct rapidjson : public rapidjson_base {
+struct rapidjson : rapidjson_base {
   bool run(simdjson::padded_string &json, std::vector<point> &result) {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), result);
   }
 };
 BENCHMARK_TEMPLATE(large_random, rapidjson)->UseManualTime();
 
-struct rapidjson_lossless : public rapidjson_base {
+struct rapidjson_lossless : rapidjson_base {
   bool run(simdjson::padded_string &json, std::vector<point> &result) {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag | kParseFullPrecisionFlag>(json.data()), result);
   }
 };
 BENCHMARK_TEMPLATE(large_random, rapidjson_lossless)->UseManualTime();
 
-struct rapidjson_insitu : public rapidjson_base {
+struct rapidjson_insitu : rapidjson_base {
   bool run(simdjson::padded_string &json, std::vector<point> &result) {
     return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), result);
   }
