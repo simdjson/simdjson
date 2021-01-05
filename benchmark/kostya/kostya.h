@@ -30,7 +30,6 @@ template<typename I>
 struct runner : public json_benchmark::const_json_runner<I> {
   std::vector<point> points;
 
-public:
   runner() : json_benchmark::const_json_runner<I>(get_built_json_array()) {}
 
   bool before_run(benchmark::State &state) {

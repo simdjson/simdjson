@@ -7,7 +7,6 @@ namespace json_benchmark {
 
 template<typename I>
 struct file_runner : public runner_base<I> {
-protected:
   simdjson::padded_string json{};
 
   bool load_json(benchmark::State &state, const char *file) {
@@ -21,7 +20,6 @@ protected:
     return true;
   }
 
-public:
   /** Get the total number of bytes processed in each iteration. Used for metrics like bytes/second. */
   size_t bytes_per_iteration() {
     return json.size();

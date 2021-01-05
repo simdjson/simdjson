@@ -11,7 +11,7 @@ using namespace simdjson::builtin;
 
 struct simdjson_ondemand {
   ondemand::parser parser{};
-public:
+
   bool run(const simdjson::padded_string &json, std::vector<uint64_t> &ids) {
     // Walk the document, parsing as we go
     auto doc = parser.iterate(json);

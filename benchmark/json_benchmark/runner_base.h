@@ -11,7 +11,6 @@ namespace json_benchmark {
 //
 template<typename I>
 struct runner_base {
-public:
   /** Run once, before all iterations. */
   simdjson_warn_unused bool setup(benchmark::State &) { return true; }
 
@@ -35,7 +34,6 @@ public:
   /** Get the total number of items processed in each iteration. Used for metrics like items/second. */
   size_t items_per_iteration();
 
-protected:
   I implementation{};
 };
 

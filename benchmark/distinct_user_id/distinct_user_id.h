@@ -10,7 +10,6 @@ template<typename I>
 struct runner : public json_benchmark::file_runner<I> {
   std::vector<uint64_t> ids{};
 
-public:
   bool setup(benchmark::State &state) {
     return this->load_json(state, json_benchmark::TWITTER_JSON);
   }
