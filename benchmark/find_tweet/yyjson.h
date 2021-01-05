@@ -33,7 +33,7 @@ struct yyjson {
   }
 };
 
-BENCHMARK_TEMPLATE(find_tweet, yyjson);
+BENCHMARK_TEMPLATE(find_tweet, yyjson)->UseManualTime();
 
 } // namespace find_tweet
 

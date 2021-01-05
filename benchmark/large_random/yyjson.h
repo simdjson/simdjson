@@ -41,7 +41,7 @@ struct yyjson {
   }
 };
 
-BENCHMARK_TEMPLATE(large_random, yyjson);
+BENCHMARK_TEMPLATE(large_random, yyjson)->UseManualTime();
 
 } // namespace large_random
 

@@ -21,7 +21,7 @@ struct simdjson_ondemand {
   }
 };
 
-BENCHMARK_TEMPLATE(large_random, simdjson_ondemand);
+BENCHMARK_TEMPLATE(large_random, simdjson_ondemand)->UseManualTime();
 
 } // namespace large_random
 

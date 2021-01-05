@@ -25,7 +25,7 @@ struct simdjson_ondemand {
   }
 };
 
-BENCHMARK_TEMPLATE(find_tweet, simdjson_ondemand);
+BENCHMARK_TEMPLATE(find_tweet, simdjson_ondemand)->UseManualTime();
 
 } // namespace find_tweet
 

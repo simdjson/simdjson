@@ -19,7 +19,7 @@ struct simdjson_dom {
   }
 };
 
-BENCHMARK_TEMPLATE(large_random, simdjson_dom);
+BENCHMARK_TEMPLATE(large_random, simdjson_dom)->UseManualTime();
 
 } // namespace large_random
 

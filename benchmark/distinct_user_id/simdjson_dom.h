@@ -29,7 +29,7 @@ struct simdjson_dom {
   }
 };
 
-BENCHMARK_TEMPLATE(distinct_user_id, simdjson_dom);
+BENCHMARK_TEMPLATE(distinct_user_id, simdjson_dom)->UseManualTime();
 
 } // namespace distinct_user_id
 

@@ -24,7 +24,7 @@ struct simdjson_dom {
   }
 };
 
-BENCHMARK_TEMPLATE(find_tweet, simdjson_dom);
+BENCHMARK_TEMPLATE(find_tweet, simdjson_dom)->UseManualTime();
 
 } // namespace find_tweet
 

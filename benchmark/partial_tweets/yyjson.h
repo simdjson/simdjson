@@ -59,7 +59,7 @@ struct yyjson {
   }
 };
 
-BENCHMARK_TEMPLATE(partial_tweets, yyjson);
+BENCHMARK_TEMPLATE(partial_tweets, yyjson)->UseManualTime();
 
 } // namespace partial_tweets
 

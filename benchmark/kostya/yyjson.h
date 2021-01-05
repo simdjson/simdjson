@@ -44,7 +44,7 @@ struct yyjson {
 
 };
 
-BENCHMARK_TEMPLATE(kostya, yyjson);
+BENCHMARK_TEMPLATE(kostya, yyjson)->UseManualTime();
 
 } // namespace kostya
 

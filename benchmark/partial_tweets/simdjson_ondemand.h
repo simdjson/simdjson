@@ -40,7 +40,7 @@ struct simdjson_ondemand {
   }
 };
 
-BENCHMARK_TEMPLATE(partial_tweets, simdjson_ondemand);
+BENCHMARK_TEMPLATE(partial_tweets, simdjson_ondemand)->UseManualTime();
 
 } // namespace partial_tweets
 

@@ -19,7 +19,7 @@ struct simdjson_dom {
   }
 };
 
-BENCHMARK_TEMPLATE(kostya, simdjson_dom);
+BENCHMARK_TEMPLATE(kostya, simdjson_dom)->UseManualTime();
 
 } // namespace kostya
 

@@ -37,7 +37,9 @@ template<typename B, typename R> static void run_json_benchmark(benchmark::State
     if (!bench.before_run(state)) { state.SkipWithError("before_run failed"); };
     collector.start();
     if (!bench.run(state)) { state.SkipWithError("run failed"); return; }
-    events << collector.end();
+    auto event = collector.end();
+    events << event;
+    state.SetIterationTime(event.elapsed_sec());
     if (!bench.after_run(state)) { state.SkipWithError("after_run failed"); return; };
   }
 

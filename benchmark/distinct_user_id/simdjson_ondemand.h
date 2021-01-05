@@ -31,7 +31,7 @@ struct simdjson_ondemand {
   }
 };
 
-BENCHMARK_TEMPLATE(distinct_user_id, simdjson_ondemand);
+BENCHMARK_TEMPLATE(distinct_user_id, simdjson_ondemand)->UseManualTime();
 
 } // namespace distinct_user_id
 

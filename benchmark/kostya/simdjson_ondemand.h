@@ -21,7 +21,7 @@ struct simdjson_ondemand {
   }
 };
 
-BENCHMARK_TEMPLATE(kostya, simdjson_ondemand);
+BENCHMARK_TEMPLATE(kostya, simdjson_ondemand)->UseManualTime();
 
 } // namespace kostya
 

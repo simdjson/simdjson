@@ -38,14 +38,14 @@ struct rapidjson : public rapidjson_base {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), points);
   }
 };
-BENCHMARK_TEMPLATE(kostya, rapidjson);
+BENCHMARK_TEMPLATE(kostya, rapidjson)->UseManualTime();
 
 struct rapidjson_lossless : public rapidjson_base {
   bool run(const padded_string &json, std::vector<point> &points) {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag | kParseFullPrecisionFlag>(json.data()), points);
   }
 };
-BENCHMARK_TEMPLATE(kostya, rapidjson_lossless);
+BENCHMARK_TEMPLATE(kostya, rapidjson_lossless)->UseManualTime();
 
 struct rapidjson_insitu : public rapidjson_base {
   bool run(const padded_string &json, std::vector<point> &points) {
@@ -53,7 +53,7 @@ struct rapidjson_insitu : public rapidjson_base {
     return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json_copy.data()), points);
   }
 };
-BENCHMARK_TEMPLATE(kostya, rapidjson_insitu);
+BENCHMARK_TEMPLATE(kostya, rapidjson_insitu)->UseManualTime();
 
 } // namespace kostya
 

@@ -34,7 +34,7 @@ struct simdjson_dom {
   }
 };
 
-BENCHMARK_TEMPLATE(partial_tweets, simdjson_dom);
+BENCHMARK_TEMPLATE(partial_tweets, simdjson_dom)->UseManualTime();
 
 } // namespace partial_tweets
 

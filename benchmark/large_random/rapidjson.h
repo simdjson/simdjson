@@ -35,14 +35,14 @@ struct rapidjson : public rapidjson_base {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), points);
   }
 };
-BENCHMARK_TEMPLATE(large_random, rapidjson);
+BENCHMARK_TEMPLATE(large_random, rapidjson)->UseManualTime();
 
 struct rapidjson_lossless : public rapidjson_base {
   bool run(const simdjson::padded_string &json, std::vector<point> &points) {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag | kParseFullPrecisionFlag>(json.data()), points);
   }
 };
-BENCHMARK_TEMPLATE(large_random, rapidjson_lossless);
+BENCHMARK_TEMPLATE(large_random, rapidjson_lossless)->UseManualTime();
 
 struct rapidjson_insitu : public rapidjson_base {
   bool run(const simdjson::padded_string &json, std::vector<point> &points) {
@@ -50,7 +50,7 @@ struct rapidjson_insitu : public rapidjson_base {
     return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json_copy.data()), points);
   }
 };
-BENCHMARK_TEMPLATE(large_random, rapidjson_insitu);
+BENCHMARK_TEMPLATE(large_random, rapidjson_insitu)->UseManualTime();
 
 
 } // namespace large_random

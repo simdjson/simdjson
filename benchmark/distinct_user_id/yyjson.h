@@ -43,7 +43,7 @@ struct yyjson {
 
 };
 
-BENCHMARK_TEMPLATE(distinct_user_id, yyjson);
+BENCHMARK_TEMPLATE(distinct_user_id, yyjson)->UseManualTime();
 
 } // namespace distinct_user_id
 
