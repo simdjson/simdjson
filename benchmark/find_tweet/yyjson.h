@@ -6,8 +6,7 @@
 
 namespace find_tweet {
 
-class yyjson {
-public:
+struct yyjson {
   bool run(const simdjson::padded_string &json, uint64_t find_id, std::string_view &text) {
     // Walk the document, parsing the tweets as we go
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);

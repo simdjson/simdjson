@@ -8,7 +8,7 @@ namespace distinct_user_id {
 
 using namespace simdjson;
 
-class simdjson_dom {
+struct simdjson_dom {
   dom::parser parser{};
 
 public:

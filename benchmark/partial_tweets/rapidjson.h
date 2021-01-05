@@ -8,8 +8,7 @@ namespace partial_tweets {
 
 using namespace rapidjson;
 
-template<int F>
-class rapidjson_base {
+struct rapidjson_base {
   Document doc{};
 
   simdjson_really_inline std::string_view get_string_view(Value &object, std::string_view key) {
@@ -39,9 +38,7 @@ class rapidjson_base {
     return { get_uint64(field->value, "id"), get_string_view(field->value, "screen_name") };
   }
 
-public:
-  bool run(const padded_string &json, std::vector<tweet> &tweets) {
-    auto &root = doc.Parse<F>(json.data());
+  bool run(Document &root, std::vector<tweet> &tweets) {
     if (root.HasParseError() || !root.IsObject()) { return false; }
     auto statuses = root.FindMember("statuses");
     if (statuses == root.MemberEnd() || !statuses->value.IsArray()) { return false; }
@@ -62,8 +59,13 @@ public:
   }
 };
 
-class rapidjson : public rapidjson_base<kParseValidateEncodingFlag> {};
- BENCHMARK_TEMPLATE(partial_tweets, rapidjson);
+struct rapidjson : public rapidjson_base {
+  bool run(const padded_string &json, std::vector<tweet> &tweets) {
+    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), tweets);
+  }
+};
+
+BENCHMARK_TEMPLATE(partial_tweets, rapidjson);
 
 } // namespace partial_tweets
 

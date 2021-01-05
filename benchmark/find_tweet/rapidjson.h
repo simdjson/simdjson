@@ -8,13 +8,10 @@ namespace find_tweet {
 
 using namespace rapidjson;
 
-template<int F>
-class rapidjson_base {
+struct rapidjson_base {
   Document doc{};
 
-public:
-  bool run(const padded_string &json, uint64_t find_id, std::string_view &text) {
-    auto &root = doc.Parse<F>(json.data());
+  bool run(Document &root, uint64_t find_id, std::string_view &text) {
     if (root.HasParseError() || !root.IsObject()) { return false; }
     auto statuses = root.FindMember("statuses");
     if (statuses == root.MemberEnd() || !statuses->value.IsArray()) { return false; }
@@ -34,7 +31,11 @@ public:
   }
 };
 
-class rapidjson : public rapidjson_base<kParseValidateEncodingFlag> {};
+struct rapidjson : public rapidjson_base {
+  bool run(const padded_string &json, uint64_t find_id, std::string_view &text) {
+    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), find_id, text);
+  }
+};
 BENCHMARK_TEMPLATE(find_tweet, rapidjson);
 
 } // namespace partial_tweets

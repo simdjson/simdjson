@@ -6,7 +6,7 @@
 
 namespace partial_tweets {
 
-class yyjson {
+struct yyjson {
   simdjson_really_inline std::string_view get_string_view(yyjson_val *obj, std::string_view key) {
     auto val = yyjson_obj_getn(obj, key.data(), key.length());
     if (!yyjson_is_str(val)) { throw "field is not uint64 or null!"; }
@@ -30,7 +30,6 @@ class yyjson {
     return { get_uint64(user, "id"), get_string_view(user, "screen_name") };
   }
 
-public:
   bool run(const padded_string &json, std::vector<tweet> &tweets) {
     // Walk the document, parsing the tweets as we go
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);

@@ -8,13 +8,10 @@ namespace distinct_user_id {
 
 using namespace rapidjson;
 
-template<int F>
-class rapidjson_base {
+struct rapidjson_base {
   Document doc{};
 
-public:
-  bool run(const padded_string &json, std::vector<uint64_t> &ids) {
-    auto &root = doc.Parse<F>(json.data());
+  bool run(Document &root, std::vector<uint64_t> &ids) {
     if (root.HasParseError() || !root.IsObject()) { return false; }
     auto statuses = root.FindMember("statuses");
     if (statuses == root.MemberEnd() || !statuses->value.IsArray()) { return false; }
@@ -41,7 +38,12 @@ public:
   }
 };
 
-class rapidjson : public rapidjson_base<kParseValidateEncodingFlag> {};
+struct rapidjson : public rapidjson_base {
+  bool run(const padded_string &json, std::vector<uint64_t> &ids) {
+    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), ids);
+  }
+};
+
 BENCHMARK_TEMPLATE(distinct_user_id, rapidjson);
 
 } // namespace partial_tweets

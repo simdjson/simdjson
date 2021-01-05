@@ -9,7 +9,7 @@ namespace distinct_user_id {
 using namespace simdjson;
 using namespace simdjson::builtin;
 
-class simdjson_ondemand {
+struct simdjson_ondemand {
   ondemand::parser parser{};
 public:
   bool run(const simdjson::padded_string &json, std::vector<uint64_t> &ids) {

@@ -6,7 +6,7 @@
 
 namespace large_random {
 
-class yyjson {
+struct yyjson {
   simdjson_really_inline double get_double(yyjson_val *obj, std::string_view key) {
     yyjson_val *val = yyjson_obj_getn(obj, key.data(), key.length());
     if (!val) { throw "missing point field!"; }
@@ -24,7 +24,6 @@ class yyjson {
     }
   }
 
-public:
   bool run(const simdjson::padded_string &json, std::vector<point> &points) {
     // Walk the document, parsing the tweets as we go
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);

@@ -8,8 +8,7 @@ namespace large_random {
 
 using namespace rapidjson;
 
-template<int F>
-class rapidjson_base {
+struct rapidjson_base {
   Document doc;
 
   simdjson_really_inline double get_double(Value &object, std::string_view key) {
@@ -19,9 +18,7 @@ class rapidjson_base {
     return field->value.GetDouble();
   }
 
-public:
-  bool run(const simdjson::padded_string &json, std::vector<point> &points) {
-    auto &coords = doc.Parse<F>(json.data());
+  bool run(Document &coords, std::vector<point> &points) {
     if (coords.HasParseError()) { return false; }
     if (!coords.IsArray()) { return false; }
     for (auto &coord : coords.GetArray()) {
@@ -33,8 +30,18 @@ public:
   }
 };
 
-class rapidjson : public rapidjson_base<kParseValidateEncodingFlag> {};
-class rapidjson_lossless : public rapidjson_base<kParseValidateEncodingFlag | kParseFullPrecisionFlag> {};
+struct rapidjson : public rapidjson_base {
+  bool run(const simdjson::padded_string &json, std::vector<point> &points) {
+    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), points);
+  }
+};
+
+struct rapidjson_lossless : public rapidjson_base {
+  bool run(const simdjson::padded_string &json, std::vector<point> &points) {
+    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag | kParseFullPrecisionFlag>(json.data()), points);
+  }
+};
+
 BENCHMARK_TEMPLATE(large_random, rapidjson);
 BENCHMARK_TEMPLATE(large_random, rapidjson_lossless);
 

@@ -8,9 +8,9 @@ namespace large_random {
 
 using namespace simdjson;
 
-class simdjson_dom {
+struct simdjson_dom {
   dom::parser parser{};
-public:
+
   bool run(const simdjson::padded_string &json, std::vector<point> &points) {
     for (auto point : parser.parse(json)) {
       points.emplace_back(large_random::point{point["x"], point["y"], point["z"]});
