@@ -16,10 +16,10 @@ struct simdjson_dom {
     return element;
   }
 
-  bool run(simdjson::padded_string &json, std::vector<tweet> &tweets) {
+  bool run(simdjson::padded_string &json, std::vector<tweet> &result) {
     for (dom::element tweet : parser.parse(json)["statuses"]) {
       auto user = tweet["user"];
-      tweets.emplace_back(partial_tweets::tweet{
+      result.emplace_back(partial_tweets::tweet{
         tweet["created_at"],
         tweet["id"],
         tweet["text"],

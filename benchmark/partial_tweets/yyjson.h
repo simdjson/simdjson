@@ -30,7 +30,7 @@ struct yyjson {
     return { get_uint64(user, "id"), get_string_view(user, "screen_name") };
   }
 
-  bool run(simdjson::padded_string &json, std::vector<tweet> &tweets) {
+  bool run(simdjson::padded_string &json, std::vector<tweet> &result) {
     // Walk the document, parsing the tweets as we go
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);
     if (!doc) { return false; }
@@ -44,7 +44,7 @@ struct yyjson {
     yyjson_arr_foreach(statuses, tweet_idx, tweets_max, tweet) {
       if (!yyjson_is_obj(tweet)) { return false; }
       // TODO these can't actually handle errors
-      tweets.emplace_back(partial_tweets::tweet{
+      result.emplace_back(partial_tweets::tweet{
         get_string_view(tweet, "created_at"),
         get_uint64     (tweet, "id"),
         get_string_view(tweet, "text"),

@@ -18,7 +18,7 @@ struct rapidjson_base {
     return field->value.GetDouble();
   }
 
-  bool run(Document &root, std::vector<point> &points) {
+  bool run(Document &root, std::vector<point> &result) {
     if (root.HasParseError()) { return false; }
     if (!root.IsObject()) { return false; }
     auto coords = root.FindMember("coordinates");
@@ -26,7 +26,7 @@ struct rapidjson_base {
     if (!coords->value.IsArray()) { return false; }
     for (auto &coord : coords->value.GetArray()) {
       if (!coord.IsObject()) { return false; }
-      points.emplace_back(point{get_double(coord, "x"), get_double(coord, "y"), get_double(coord, "z")});
+      result.emplace_back(point{get_double(coord, "x"), get_double(coord, "y"), get_double(coord, "z")});
     }
 
     return true;
@@ -34,22 +34,22 @@ struct rapidjson_base {
 };
 
 struct rapidjson : public rapidjson_base {
-  bool run(simdjson::padded_string &json, std::vector<point> &points) {
-    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), points);
+  bool run(simdjson::padded_string &json, std::vector<point> &result) {
+    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), result);
   }
 };
 BENCHMARK_TEMPLATE(kostya, rapidjson)->UseManualTime();
 
 struct rapidjson_lossless : public rapidjson_base {
-  bool run(simdjson::padded_string &json, std::vector<point> &points) {
-    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag | kParseFullPrecisionFlag>(json.data()), points);
+  bool run(simdjson::padded_string &json, std::vector<point> &result) {
+    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag | kParseFullPrecisionFlag>(json.data()), result);
   }
 };
 BENCHMARK_TEMPLATE(kostya, rapidjson_lossless)->UseManualTime();
 
 struct rapidjson_insitu : public rapidjson_base {
-  bool run(simdjson::padded_string &json, std::vector<point> &points) {
-    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), points);
+  bool run(simdjson::padded_string &json, std::vector<point> &result) {
+    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), result);
   }
 };
 BENCHMARK_TEMPLATE(kostya, rapidjson_insitu)->UseManualTime();

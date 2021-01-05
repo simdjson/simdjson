@@ -9,7 +9,7 @@ namespace partial_tweets {
 
 template<typename I>
 struct runner : public json_benchmark::file_runner<I> {
-  std::vector<tweet> tweets{};
+  std::vector<tweet> result{};
 
   bool setup(benchmark::State &state) {
     return this->load_json(state, json_benchmark::TWITTER_JSON);
@@ -17,21 +17,21 @@ struct runner : public json_benchmark::file_runner<I> {
 
   bool before_run(benchmark::State &state) {
     if (!json_benchmark::file_runner<I>::before_run(state)) { return false; }
-    tweets.clear();
+    result.clear();
     return true;
   }
 
   bool run(benchmark::State &) {
-    return this->implementation.run(this->json, tweets);
+    return this->implementation.run(this->json, result);
   }
 
   template<typename R>
   bool diff(benchmark::State &state, runner<R> &reference) {
-    return diff_results(state, tweets, reference.tweets);
+    return diff_results(state, result, reference.result);
   }
 
   size_t items_per_iteration() {
-    return tweets.size();
+    return result.size();
   }
 };
 

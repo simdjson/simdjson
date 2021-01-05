@@ -11,7 +11,7 @@ using namespace rapidjson;
 struct rapidjson_base {
   Document doc{};
 
-  bool run(Document &root, std::vector<uint64_t> &ids) {
+  bool run(Document &root, std::vector<uint64_t> &result) {
     if (root.HasParseError()) { printf("parse error\n"); return false; }
     if (!root.IsObject()) { printf("root is not an object\n"); return false; }
     auto statuses = root.FindMember("statuses");
@@ -22,7 +22,7 @@ struct rapidjson_base {
       if (user == tweet.MemberEnd() || !user->value.IsObject()) { printf("user is not an object\n"); return false; }
       auto id = user->value.FindMember("id");
       if (id == user->value.MemberEnd() || !id->value.IsUint64()) { printf("id is not an int\n"); return false; }
-      ids.push_back(id->value.GetUint64());
+      result.push_back(id->value.GetUint64());
 
       auto retweet = tweet.FindMember("retweeted_status");
       if (retweet != tweet.MemberEnd()) {
@@ -31,7 +31,7 @@ struct rapidjson_base {
         if (user == retweet->value.MemberEnd() || !user->value.IsObject()) { printf("rewtweet.user is not an object\n"); return false; }
         id = user->value.FindMember("id");
         if (id == user->value.MemberEnd() || !id->value.IsUint64()) { printf("retweet.id is not an int\n"); return false; }
-        ids.push_back(id->value.GetUint64());
+        result.push_back(id->value.GetUint64());
       }
     }
 
@@ -40,15 +40,15 @@ struct rapidjson_base {
 };
 
 struct rapidjson : public rapidjson_base {
-  bool run(simdjson::padded_string &json, std::vector<uint64_t> &ids) {
-    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), ids);
+  bool run(simdjson::padded_string &json, std::vector<uint64_t> &result) {
+    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), result);
   }
 };
 BENCHMARK_TEMPLATE(distinct_user_id, rapidjson)->UseManualTime();
 
 struct rapidjson_insitu : public rapidjson_base {
-  bool run(simdjson::padded_string &json, std::vector<uint64_t> &ids) {
-    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), ids);
+  bool run(simdjson::padded_string &json, std::vector<uint64_t> &result) {
+    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), result);
   }
 };
 BENCHMARK_TEMPLATE(distinct_user_id, rapidjson_insitu)->UseManualTime();

@@ -7,7 +7,7 @@
 namespace distinct_user_id {
 
 struct yyjson {
-  bool run(simdjson::padded_string &json, std::vector<uint64_t> &ids) {
+  bool run(simdjson::padded_string &json, std::vector<uint64_t> &result) {
     // Walk the document, parsing the tweets as we go
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);
     if (!doc) { return false; }
@@ -23,7 +23,7 @@ struct yyjson {
       if (!yyjson_is_obj(user)) { return false; }
       auto id = yyjson_obj_get(user, "id");
       if (!yyjson_is_uint(id)) { return false; }
-      ids.push_back(yyjson_get_uint(id));
+      result.push_back(yyjson_get_uint(id));
 
       // Not all tweets have a "retweeted_status", but when they do
       // we want to go and find the user within.
@@ -34,7 +34,7 @@ struct yyjson {
         if (!yyjson_is_obj(user)) { return false; }
         id = yyjson_obj_get(user, "id");
         if (!yyjson_is_uint(id)) { return false; }
-        ids.push_back(yyjson_get_sint(id));
+        result.push_back(yyjson_get_sint(id));
       }
     }
 

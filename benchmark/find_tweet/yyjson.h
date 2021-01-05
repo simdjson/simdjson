@@ -7,7 +7,7 @@
 namespace find_tweet {
 
 struct yyjson {
-  bool run(simdjson::padded_string &json, uint64_t find_id, std::string_view &text) {
+  bool run(simdjson::padded_string &json, uint64_t find_id, std::string_view &result) {
     // Walk the document, parsing the tweets as we go
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);
     if (!doc) { return false; }
@@ -23,9 +23,9 @@ struct yyjson {
       auto id = yyjson_obj_get(tweet, "id");
       if (!yyjson_is_uint(id)) { return false; }
       if (yyjson_get_uint(id) == find_id) {
-        auto _text = yyjson_obj_get(tweet, "text");
+        auto text = yyjson_obj_get(tweet, "text");
         if (yyjson_is_str(id)) { return false; }
-        text = yyjson_get_str(_text);
+        result = yyjson_get_str(text);
         return true;
       }
     }

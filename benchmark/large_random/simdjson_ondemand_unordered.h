@@ -12,10 +12,10 @@ using namespace simdjson::builtin;
 struct simdjson_ondemand_unordered {
   ondemand::parser parser{};
 
-  bool run(simdjson::padded_string &json, std::vector<point> &points) {
+  bool run(simdjson::padded_string &json, std::vector<point> &result) {
     auto doc = parser.iterate(json);
     for (ondemand::object coord : doc) {
-      points.emplace_back(large_random::point{coord["x"], coord["y"], coord["z"]});
+      result.emplace_back(large_random::point{coord["x"], coord["y"], coord["z"]});
     }
     return true;
   }

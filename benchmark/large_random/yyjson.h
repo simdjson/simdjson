@@ -24,7 +24,7 @@ struct yyjson {
     }
   }
 
-  bool run(simdjson::padded_string &json, std::vector<point> &points) {
+  bool run(simdjson::padded_string &json, std::vector<point> &result) {
     // Walk the document, parsing the tweets as we go
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);
     if (!doc) { return false; }
@@ -35,7 +35,7 @@ struct yyjson {
     yyjson_val *coord;
     yyjson_arr_foreach(coords, idx, max, coord) {
       if (!yyjson_is_obj(coord)) { return false; }
-      points.emplace_back(point{get_double(coord, "x"), get_double(coord, "y"), get_double(coord, "z")});
+      result.emplace_back(point{get_double(coord, "x"), get_double(coord, "y"), get_double(coord, "z")});
     }
     return true;
   }
