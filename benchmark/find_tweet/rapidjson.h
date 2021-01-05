@@ -38,6 +38,14 @@ struct rapidjson : public rapidjson_base {
 };
 BENCHMARK_TEMPLATE(find_tweet, rapidjson);
 
+struct rapidjson_insitu : public rapidjson_base {
+  bool run(const padded_string &json, uint64_t find_id, std::string_view &text) {
+    padded_string json_copy{json.data(), json.size()};
+    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json_copy.data()), find_id, text);
+  }
+};
+BENCHMARK_TEMPLATE(find_tweet, rapidjson_insitu);
+
 } // namespace partial_tweets
 
 #endif // SIMDJSON_COMPETITION_RAPIDJSON

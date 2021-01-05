@@ -43,8 +43,15 @@ struct rapidjson : public rapidjson_base {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), ids);
   }
 };
-
 BENCHMARK_TEMPLATE(distinct_user_id, rapidjson);
+
+struct rapidjson_insitu : public rapidjson_base {
+  bool run(const padded_string &json, std::vector<uint64_t> &ids) {
+    padded_string json_copy{json.data(), json.size()};
+    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json_copy.data()), ids);
+  }
+};
+BENCHMARK_TEMPLATE(distinct_user_id, rapidjson_insitu);
 
 } // namespace partial_tweets
 
