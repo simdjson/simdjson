@@ -9,9 +9,9 @@ namespace large_random {
 using namespace simdjson;
 using namespace simdjson::builtin;
 
-class simdjson_ondemand_unordered {
+struct simdjson_ondemand_unordered {
   ondemand::parser parser{};
-public:
+
   bool run(const simdjson::padded_string &json, std::vector<point> &points) {
     auto doc = parser.iterate(json);
     for (ondemand::object coord : doc) {

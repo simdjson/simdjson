@@ -9,7 +9,7 @@ namespace partial_tweets {
 using namespace simdjson;
 using namespace simdjson::builtin;
 
-class simdjson_ondemand {
+struct simdjson_ondemand {
   ondemand::parser parser{};
 
   simdjson_really_inline uint64_t nullable_int(ondemand::value value) {
@@ -21,7 +21,6 @@ class simdjson_ondemand {
     return { user.find_field("id"), user.find_field("screen_name") };
   }
 
-public:
   bool run(const padded_string &json, std::vector<tweet> &tweets) {
     // Walk the document, parsing the tweets as we go
     auto doc = parser.iterate(json);

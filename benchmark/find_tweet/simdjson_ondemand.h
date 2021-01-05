@@ -9,9 +9,9 @@ namespace find_tweet {
 using namespace simdjson;
 using namespace simdjson::builtin;
 
-class simdjson_ondemand {
+struct simdjson_ondemand {
   ondemand::parser parser{};
-public:
+
   bool run(const simdjson::padded_string &json, uint64_t find_id, std::string_view &text) {
     // Walk the document, parsing as we go
     auto doc = parser.iterate(json);

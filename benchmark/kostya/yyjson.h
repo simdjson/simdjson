@@ -6,10 +6,10 @@
 
 namespace kostya {
 
-class yyjson {
+struct yyjson {
   simdjson_really_inline double get_double(yyjson_val *obj, std::string_view key) {
     yyjson_val *val = yyjson_obj_getn(obj, key.data(), key.length());
-    if (!val){ throw "missing point field!"; }
+    if (!val) { throw "missing point field!"; }
     if (yyjson_get_type(val) != YYJSON_TYPE_NUM) { throw "Number is not a type!"; }
 
     switch (yyjson_get_subtype(val)) {
@@ -24,14 +24,13 @@ class yyjson {
     }
   }
 
-public:
   bool run(const simdjson::padded_string &json, std::vector<point> &points) {
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);
     if (!doc) { return false; }
     yyjson_val *root = yyjson_doc_get_root(doc);
     if (!yyjson_is_obj(root)) { return false; }
     yyjson_val *coords = yyjson_obj_get(root, "coordinates");
-    if (!yyjson_is_obj(coords)) { return false; }
+    if (!yyjson_is_arr(coords)) { return false; }
 
     size_t idx, max;
     yyjson_val *coord;

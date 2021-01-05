@@ -9,7 +9,6 @@ template<typename I>
 struct runner : public json_benchmark::file_runner<I> {
   std::string_view text;
 
-public:
   bool setup(benchmark::State &state) {
     return this->load_json(state, json_benchmark::TWITTER_JSON);
   }

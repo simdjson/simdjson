@@ -27,7 +27,6 @@ template<typename I>
 struct runner : public json_benchmark::const_json_runner<I> {
   std::vector<point> points;
 
-public:
   runner() : json_benchmark::const_json_runner<I>(get_built_json_array()) {}
 
   bool before_run(benchmark::State &state) {
@@ -42,6 +41,10 @@ public:
   template<typename R>
   bool diff(benchmark::State &state, runner<R> &reference) {
     return diff_results(state, points, reference.points);
+  }
+
+  size_t items_per_iteration() {
+    return points.size();
   }
 };
 

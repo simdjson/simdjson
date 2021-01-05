@@ -8,9 +8,9 @@ namespace find_tweet {
 
 using namespace simdjson;
 
-class simdjson_dom {
+struct simdjson_dom {
   dom::parser parser{};
-public:
+
   bool run(const simdjson::padded_string &json, uint64_t find_id, std::string_view &text) {
     text = "";
     auto doc = parser.parse(json);

@@ -6,8 +6,7 @@
 
 namespace distinct_user_id {
 
-class yyjson {
-public:
+struct yyjson {
   bool run(const simdjson::padded_string &json, std::vector<uint64_t> &ids) {
     // Walk the document, parsing the tweets as we go
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);

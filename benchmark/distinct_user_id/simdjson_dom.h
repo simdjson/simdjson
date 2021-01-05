@@ -8,10 +8,9 @@ namespace distinct_user_id {
 
 using namespace simdjson;
 
-class simdjson_dom {
+struct simdjson_dom {
   dom::parser parser{};
 
-public:
   bool run(const simdjson::padded_string &json, std::vector<uint64_t> &ids) {
     // Walk the document, parsing as we go
     auto doc = parser.parse(json);
@@ -22,7 +21,7 @@ public:
       // Not all tweets have a "retweeted_status", but when they do
       // we want to go and find the user within.
       auto retweet = tweet["retweeted_status"];
-      if(retweet.error() != NO_SUCH_FIELD) {
+      if (retweet.error() != NO_SUCH_FIELD) {
         ids.push_back(retweet["user"]["id"]);
       }
     }
