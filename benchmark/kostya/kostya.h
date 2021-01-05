@@ -2,7 +2,7 @@
 
 #if SIMDJSON_EXCEPTIONS
 
-#include "json_benchmark/const_json_runner.h"
+#include "json_benchmark/string_runner.h"
 #include <vector>
 #include <random>
 
@@ -27,12 +27,13 @@ simdjson_unused static std::ostream &operator<<(std::ostream &o, const point &p)
 }
 
 template<typename I>
-struct runner : public json_benchmark::const_json_runner<I> {
+struct runner : public json_benchmark::string_runner<I> {
   std::vector<point> points;
 
-  runner() : json_benchmark::const_json_runner<I>(get_built_json_array()) {}
+  runner() : json_benchmark::string_runner<I>(get_built_json_array()) {}
 
   bool before_run(benchmark::State &state) {
+    if (!json_benchmark::string_runner<I>::before_run(state)) { return false; }
     points.clear();
     return true;
   }

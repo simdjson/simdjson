@@ -15,6 +15,7 @@ struct runner : public json_benchmark::file_runner<I> {
   }
 
   bool before_run(benchmark::State &state) {
+    if (!json_benchmark::file_runner<I>::before_run(state)) { return false; }
     ids.clear();
     return true;
   }
@@ -24,6 +25,7 @@ struct runner : public json_benchmark::file_runner<I> {
   }
 
   bool after_run(benchmark::State &state) {
+    if (!json_benchmark::file_runner<I>::after_run(state)) { return false; }
     std::sort(ids.begin(), ids.end());
     auto last = std::unique(ids.begin(), ids.end());
     ids.erase(last, ids.end());

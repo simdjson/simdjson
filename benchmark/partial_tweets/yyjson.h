@@ -30,7 +30,7 @@ struct yyjson {
     return { get_uint64(user, "id"), get_string_view(user, "screen_name") };
   }
 
-  bool run(const padded_string &json, std::vector<tweet> &tweets) {
+  bool run(simdjson::padded_string &json, std::vector<tweet> &tweets) {
     // Walk the document, parsing the tweets as we go
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);
     if (!doc) { return false; }

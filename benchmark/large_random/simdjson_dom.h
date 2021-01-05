@@ -11,7 +11,7 @@ using namespace simdjson;
 struct simdjson_dom {
   dom::parser parser{};
 
-  bool run(const simdjson::padded_string &json, std::vector<point> &points) {
+  bool run(simdjson::padded_string &json, std::vector<point> &points) {
     for (auto point : parser.parse(json)) {
       points.emplace_back(large_random::point{point["x"], point["y"], point["z"]});
     }

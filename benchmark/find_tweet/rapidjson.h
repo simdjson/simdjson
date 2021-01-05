@@ -32,16 +32,15 @@ struct rapidjson_base {
 };
 
 struct rapidjson : public rapidjson_base {
-  bool run(const padded_string &json, uint64_t find_id, std::string_view &text) {
+  bool run(simdjson::padded_string &json, uint64_t find_id, std::string_view &text) {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), find_id, text);
   }
 };
 BENCHMARK_TEMPLATE(find_tweet, rapidjson)->UseManualTime();
 
 struct rapidjson_insitu : public rapidjson_base {
-  bool run(const padded_string &json, uint64_t find_id, std::string_view &text) {
-    padded_string json_copy{json.data(), json.size()};
-    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json_copy.data()), find_id, text);
+  bool run(simdjson::padded_string &json, uint64_t find_id, std::string_view &text) {
+    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), find_id, text);
   }
 };
 BENCHMARK_TEMPLATE(find_tweet, rapidjson_insitu)->UseManualTime();

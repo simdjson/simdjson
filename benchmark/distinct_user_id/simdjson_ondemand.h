@@ -12,7 +12,7 @@ using namespace simdjson::builtin;
 struct simdjson_ondemand {
   ondemand::parser parser{};
 
-  bool run(const simdjson::padded_string &json, std::vector<uint64_t> &ids) {
+  bool run(simdjson::padded_string &json, std::vector<uint64_t> &ids) {
     // Walk the document, parsing as we go
     auto doc = parser.iterate(json);
     for (ondemand::object tweet : doc.find_field("statuses")) {

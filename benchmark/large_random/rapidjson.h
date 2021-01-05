@@ -31,23 +31,22 @@ struct rapidjson_base {
 };
 
 struct rapidjson : public rapidjson_base {
-  bool run(const simdjson::padded_string &json, std::vector<point> &points) {
+  bool run(simdjson::padded_string &json, std::vector<point> &points) {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), points);
   }
 };
 BENCHMARK_TEMPLATE(large_random, rapidjson)->UseManualTime();
 
 struct rapidjson_lossless : public rapidjson_base {
-  bool run(const simdjson::padded_string &json, std::vector<point> &points) {
+  bool run(simdjson::padded_string &json, std::vector<point> &points) {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag | kParseFullPrecisionFlag>(json.data()), points);
   }
 };
 BENCHMARK_TEMPLATE(large_random, rapidjson_lossless)->UseManualTime();
 
 struct rapidjson_insitu : public rapidjson_base {
-  bool run(const simdjson::padded_string &json, std::vector<point> &points) {
-    padded_string json_copy{json.data(), json.size()};
-    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json_copy.data()), points);
+  bool run(simdjson::padded_string &json, std::vector<point> &points) {
+    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), points);
   }
 };
 BENCHMARK_TEMPLATE(large_random, rapidjson_insitu)->UseManualTime();

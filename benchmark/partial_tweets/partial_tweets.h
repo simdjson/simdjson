@@ -16,6 +16,7 @@ struct runner : public json_benchmark::file_runner<I> {
   }
 
   bool before_run(benchmark::State &state) {
+    if (!json_benchmark::file_runner<I>::before_run(state)) { return false; }
     tweets.clear();
     return true;
   }

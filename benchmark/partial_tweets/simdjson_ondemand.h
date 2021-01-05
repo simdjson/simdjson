@@ -21,7 +21,7 @@ struct simdjson_ondemand {
     return { user.find_field("id"), user.find_field("screen_name") };
   }
 
-  bool run(const padded_string &json, std::vector<tweet> &tweets) {
+  bool run(simdjson::padded_string &json, std::vector<tweet> &tweets) {
     // Walk the document, parsing the tweets as we go
     auto doc = parser.iterate(json);
     for (ondemand::object tweet : doc.find_field("statuses")) {

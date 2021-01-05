@@ -24,7 +24,7 @@ struct yyjson {
     }
   }
 
-  bool run(const simdjson::padded_string &json, std::vector<point> &points) {
+  bool run(simdjson::padded_string &json, std::vector<point> &points) {
     // Walk the document, parsing the tweets as we go
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);
     if (!doc) { return false; }

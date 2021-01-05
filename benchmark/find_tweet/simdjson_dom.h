@@ -11,7 +11,7 @@ using namespace simdjson;
 struct simdjson_dom {
   dom::parser parser{};
 
-  bool run(const simdjson::padded_string &json, uint64_t find_id, std::string_view &text) {
+  bool run(simdjson::padded_string &json, uint64_t find_id, std::string_view &text) {
     text = "";
     auto doc = parser.parse(json);
     for (auto tweet : doc["statuses"]) {

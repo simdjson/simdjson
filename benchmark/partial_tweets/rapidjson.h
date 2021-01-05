@@ -60,19 +60,18 @@ struct rapidjson_base {
 };
 
 struct rapidjson : public rapidjson_base {
-  bool run(const padded_string &json, std::vector<tweet> &tweets) {
+  bool run(simdjson::padded_string &json, std::vector<tweet> &tweets) {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), tweets);
   }
 };
 BENCHMARK_TEMPLATE(partial_tweets, rapidjson)->UseManualTime();
 
-// TODO this fails!
-// struct rapidjson_insitu : public rapidjson_base {
-//   bool run(simdjson::padded_string &json, std::vector<tweet> &tweets) {
-//     return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), tweets);
-//   }
-// };
-// BENCHMARK_TEMPLATE(partial_tweets, rapidjson_insitu)->UseManualTime();
+struct rapidjson_insitu : public rapidjson_base {
+  bool run(simdjson::padded_string &json, std::vector<tweet> &tweets) {
+    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), tweets);
+  }
+};
+BENCHMARK_TEMPLATE(partial_tweets, rapidjson_insitu)->UseManualTime();
 
 } // namespace partial_tweets
 
