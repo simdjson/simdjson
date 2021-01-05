@@ -11,7 +11,7 @@ using namespace rapidjson;
 struct rapidjson_base {
   Document doc{};
 
-  bool run(Document &root, uint64_t find_id, std::string_view &text) {
+  bool run(Document &root, uint64_t find_id, std::string_view &result) {
     if (root.HasParseError() || !root.IsObject()) { return false; }
     auto statuses = root.FindMember("statuses");
     if (statuses == root.MemberEnd() || !statuses->value.IsArray()) { return false; }
@@ -20,9 +20,9 @@ struct rapidjson_base {
       auto id = tweet.FindMember("id");
       if (id == tweet.MemberEnd() || !id->value.IsUint64()) { return false; }
       if (id->value.GetUint64() == find_id) {
-        auto _text = tweet.FindMember("text");
-        if (_text == tweet.MemberEnd() || !_text->value.IsString()) { return false; }
-        text = { _text->value.GetString(), _text->value.GetStringLength() };
+        auto text = tweet.FindMember("text");
+        if (text == tweet.MemberEnd() || !text->value.IsString()) { return false; }
+        result = { text->value.GetString(), text->value.GetStringLength() };
         return true;
       }
     }
@@ -31,20 +31,19 @@ struct rapidjson_base {
   }
 };
 
-struct rapidjson : public rapidjson_base {
-  bool run(const padded_string &json, uint64_t find_id, std::string_view &text) {
-    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), find_id, text);
+struct rapidjson : rapidjson_base {
+  bool run(simdjson::padded_string &json, uint64_t find_id, std::string_view &result) {
+    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), find_id, result);
   }
 };
-BENCHMARK_TEMPLATE(find_tweet, rapidjson);
+BENCHMARK_TEMPLATE(find_tweet, rapidjson)->UseManualTime();
 
-struct rapidjson_insitu : public rapidjson_base {
-  bool run(const padded_string &json, uint64_t find_id, std::string_view &text) {
-    padded_string json_copy{json.data(), json.size()};
-    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json_copy.data()), find_id, text);
+struct rapidjson_insitu : rapidjson_base {
+  bool run(simdjson::padded_string &json, uint64_t find_id, std::string_view &result) {
+    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), find_id, result);
   }
 };
-BENCHMARK_TEMPLATE(find_tweet, rapidjson_insitu);
+BENCHMARK_TEMPLATE(find_tweet, rapidjson_insitu)->UseManualTime();
 
 } // namespace partial_tweets
 

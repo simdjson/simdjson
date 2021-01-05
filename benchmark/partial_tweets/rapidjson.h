@@ -38,13 +38,13 @@ struct rapidjson_base {
     return { get_uint64(field->value, "id"), get_string_view(field->value, "screen_name") };
   }
 
-  bool run(Document &root, std::vector<tweet> &tweets) {
+  bool run(Document &root, std::vector<tweet> &result) {
     if (root.HasParseError() || !root.IsObject()) { return false; }
     auto statuses = root.FindMember("statuses");
     if (statuses == root.MemberEnd() || !statuses->value.IsArray()) { return false; }
     for (auto &tweet : statuses->value.GetArray()) {
       if (!tweet.IsObject()) { return false; }
-      tweets.emplace_back(partial_tweets::tweet{
+      result.emplace_back(partial_tweets::tweet{
         get_string_view(tweet, "created_at"),
         get_uint64     (tweet, "id"),
         get_string_view(tweet, "text"),
@@ -59,21 +59,19 @@ struct rapidjson_base {
   }
 };
 
-struct rapidjson : public rapidjson_base {
-  bool run(const padded_string &json, std::vector<tweet> &tweets) {
-    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), tweets);
+struct rapidjson : rapidjson_base {
+  bool run(simdjson::padded_string &json, std::vector<tweet> &result) {
+    return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), result);
   }
 };
-BENCHMARK_TEMPLATE(partial_tweets, rapidjson);
+BENCHMARK_TEMPLATE(partial_tweets, rapidjson)->UseManualTime();
 
-// TODO this fails!
-// struct rapidjson_insitu : public rapidjson_base {
-//   bool run(const padded_string &json, std::vector<tweet> &tweets) {
-//     padded_string json_copy{json.data(), json.size()};
-//     return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json_copy.data()), tweets);
-//   }
-// };
-// BENCHMARK_TEMPLATE(partial_tweets, rapidjson_insitu);
+struct rapidjson_insitu : rapidjson_base {
+  bool run(simdjson::padded_string &json, std::vector<tweet> &result) {
+    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), result);
+  }
+};
+BENCHMARK_TEMPLATE(partial_tweets, rapidjson_insitu)->UseManualTime();
 
 } // namespace partial_tweets
 

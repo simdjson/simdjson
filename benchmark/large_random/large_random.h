@@ -1,6 +1,6 @@
 #pragma once
 
-#include "json_benchmark/const_json_runner.h"
+#include "json_benchmark/string_runner.h"
 #include <random>
 
 namespace large_random {
@@ -24,27 +24,28 @@ simdjson_unused static std::ostream &operator<<(std::ostream &o, const point &p)
 }
 
 template<typename I>
-struct runner : public json_benchmark::const_json_runner<I> {
-  std::vector<point> points;
+struct runner : public json_benchmark::string_runner<I> {
+  std::vector<point> result;
 
-  runner() : json_benchmark::const_json_runner<I>(get_built_json_array()) {}
+  runner() : json_benchmark::string_runner<I>(get_built_json_array()) {}
 
   bool before_run(benchmark::State &state) {
-    points.clear();
+    if (!json_benchmark::string_runner<I>::before_run(state)) { return false; }
+    result.clear();
     return true;
   }
 
   bool run(benchmark::State &) {
-    return this->implementation.run(this->json, points);
+    return this->implementation.run(this->json, result);
   }
 
   template<typename R>
   bool diff(benchmark::State &state, runner<R> &reference) {
-    return diff_results(state, points, reference.points);
+    return diff_results(state, result, reference.result);
   }
 
   size_t items_per_iteration() {
-    return points.size();
+    return result.size();
   }
 };
 

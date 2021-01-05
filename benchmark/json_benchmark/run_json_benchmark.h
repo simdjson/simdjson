@@ -24,11 +24,15 @@ template<typename B, typename R> static void run_json_benchmark(benchmark::State
   // Warmup and equality check (make sure the data is right!)
   B bench;
   if (!bench.setup(state)) { return; }
+  if (!bench.before_run(state)) { state.SkipWithError("warmup document before_run failed"); return; }
   if (!bench.run(state)) { state.SkipWithError("warmup document reading failed"); return; }
+  if (!bench.after_run(state)) { state.SkipWithError("warmup document after_run failed"); return; }
   {
     R reference;
     if (!reference.setup(state)) { return; }
+    if (!reference.before_run(state)) { state.SkipWithError("reference before_run failed"); };
     if (!reference.run(state)) { state.SkipWithError("reference document reading failed"); return; }
+    if (!reference.after_run(state)) { state.SkipWithError("reference before_run failed"); };
     if (!bench.diff(state, reference)) { return; }
   }
 
@@ -37,7 +41,9 @@ template<typename B, typename R> static void run_json_benchmark(benchmark::State
     if (!bench.before_run(state)) { state.SkipWithError("before_run failed"); };
     collector.start();
     if (!bench.run(state)) { state.SkipWithError("run failed"); return; }
-    events << collector.end();
+    auto event = collector.end();
+    events << event;
+    state.SetIterationTime(event.elapsed_sec());
     if (!bench.after_run(state)) { state.SkipWithError("after_run failed"); return; };
   }
 

@@ -7,24 +7,25 @@ namespace find_tweet {
 
 template<typename I>
 struct runner : public json_benchmark::file_runner<I> {
-  std::string_view text;
+  std::string_view result;
 
   bool setup(benchmark::State &state) {
     return this->load_json(state, json_benchmark::TWITTER_JSON);
   }
 
   bool before_run(benchmark::State &state) {
-    text = "";
+    if (!json_benchmark::file_runner<I>::before_run(state)) { return false; }
+    result = "";
     return true;
   }
 
   bool run(benchmark::State &) {
-    return this->implementation.run(this->json, 505874901689851900ULL, text);
+    return this->implementation.run(this->json, 505874901689851900ULL, result);
   }
 
   template<typename R>
   bool diff(benchmark::State &state, runner<R> &reference) {
-    return diff_results(state, text, reference.text);
+    return diff_results(state, result, reference.result);
   }
 };
 

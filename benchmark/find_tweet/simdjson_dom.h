@@ -11,12 +11,12 @@ using namespace simdjson;
 struct simdjson_dom {
   dom::parser parser{};
 
-  bool run(const simdjson::padded_string &json, uint64_t find_id, std::string_view &text) {
-    text = "";
+  bool run(simdjson::padded_string &json, uint64_t find_id, std::string_view &result) {
+    result = "";
     auto doc = parser.parse(json);
     for (auto tweet : doc["statuses"]) {
       if (uint64_t(tweet["id"]) == find_id) {
-        text = tweet["text"];
+        result = tweet["text"];
         return true;
       }
     }
@@ -24,7 +24,7 @@ struct simdjson_dom {
   }
 };
 
-BENCHMARK_TEMPLATE(find_tweet, simdjson_dom);
+BENCHMARK_TEMPLATE(find_tweet, simdjson_dom)->UseManualTime();
 
 } // namespace find_tweet
 

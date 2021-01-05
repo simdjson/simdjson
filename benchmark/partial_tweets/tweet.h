@@ -25,7 +25,7 @@ namespace partial_tweets {
 struct tweet {
   std::string_view created_at{};
   uint64_t id{};
-  std::string_view text{};
+  std::string_view result{};
   uint64_t in_reply_to_status_id{};
   twitter_user user{};
   uint64_t retweet_count{};
@@ -33,7 +33,7 @@ struct tweet {
   simdjson_really_inline bool operator==(const tweet &other) const {
     return created_at == other.created_at &&
            id == other.id &&
-           text == other.text &&
+           result == other.result &&
            in_reply_to_status_id == other.in_reply_to_status_id &&
            user == other.user &&
            retweet_count == other.retweet_count &&
@@ -45,7 +45,7 @@ struct tweet {
 simdjson_unused static std::ostream &operator<<(std::ostream &o, const tweet &t) {
   o << "created_at: " << t.created_at << std::endl;
   o << "id: " << t.id << std::endl;
-  o << "text: " << t.text << std::endl;
+  o << "result: " << t.result << std::endl;
   o << "in_reply_to_status_id: " << t.in_reply_to_status_id << std::endl;
   o << "user.id: " << t.user.id << std::endl;
   o << "user.screen_name: " << t.user.screen_name << std::endl;

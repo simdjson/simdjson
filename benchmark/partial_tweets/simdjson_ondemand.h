@@ -21,11 +21,11 @@ struct simdjson_ondemand {
     return { user.find_field("id"), user.find_field("screen_name") };
   }
 
-  bool run(const padded_string &json, std::vector<tweet> &tweets) {
+  bool run(simdjson::padded_string &json, std::vector<tweet> &result) {
     // Walk the document, parsing the tweets as we go
     auto doc = parser.iterate(json);
     for (ondemand::object tweet : doc.find_field("statuses")) {
-      tweets.emplace_back(partial_tweets::tweet{
+      result.emplace_back(partial_tweets::tweet{
         tweet.find_field("created_at"),
         tweet.find_field("id"),
         tweet.find_field("text"),
@@ -40,7 +40,7 @@ struct simdjson_ondemand {
   }
 };
 
-BENCHMARK_TEMPLATE(partial_tweets, simdjson_ondemand);
+BENCHMARK_TEMPLATE(partial_tweets, simdjson_ondemand)->UseManualTime();
 
 } // namespace partial_tweets
 
