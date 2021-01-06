@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <sstream>
+#include <limits>
 
 template<typename T>
 static bool diff_results(benchmark::State &state, const T &result, const T &reference);
@@ -18,6 +19,24 @@ struct result_differ {
     return true;
   }
 };
+
+template<>
+bool result_differ<double>::diff(benchmark::State &state, const double &result, const double &reference) {
+    if (result != reference) {
+      std::stringstream str;
+      // We print it out using full precision.
+      auto prior_precision = str.precision(std::numeric_limits<double>::max_digits10);
+      str << "result incorrect: " << result << " ... reference: " << reference;
+      str.precision(prior_precision); // reset to prior state
+      str << std::hexfloat; // If there are floats, we want to see them in hexadecimal form!
+      str << "result incorrect (hexadecimal notation): " << result << " ... reference: " << reference;
+      str << std::defaultfloat; // reset to prior state
+      state.SkipWithError(str.str().data());
+      return false;
+    }
+    return true;
+}
+
 
 template<typename T>
 struct result_differ<std::vector<T>> {
