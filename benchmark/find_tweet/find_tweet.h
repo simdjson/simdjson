@@ -20,7 +20,7 @@ struct runner : public json_benchmark::file_runner<I> {
   }
 
   bool run(benchmark::State &) {
-    return this->implementation.run(this->json, 505874901689851900ULL, result);
+    return this->implementation.run(this->json, 505874901689851904ULL, result);
   }
 
   template<typename R>
