@@ -21,8 +21,7 @@ struct result_differ {
 };
 
 template<>
-struct result_differ {
-  static bool diff(benchmark::State &state, const double &result, const double &reference) {
+bool result_differ<double>::diff(benchmark::State &state, const double &result, const double &reference) {
     if (result != reference) {
       std::stringstream str;
       // We print it out using full precision.
@@ -36,8 +35,7 @@ struct result_differ {
       return false;
     }
     return true;
-  }
-};
+}
 
 
 template<typename T>
