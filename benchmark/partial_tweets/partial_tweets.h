@@ -27,7 +27,7 @@ struct runner : public json_benchmark::file_runner<I> {
 
   template<typename R>
   bool diff(benchmark::State &state, runner<R> &reference) {
-    return diff_results(state, result, reference.result);
+    return json_benchmark::diff_results(state, result, reference.result);
   }
 
   size_t items_per_iteration() {

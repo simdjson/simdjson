@@ -1,7 +1,5 @@
 #pragma once
 
-#if SIMDJSON_EXCEPTIONS
-
 #include "json_benchmark/string_runner.h"
 #include <vector>
 #include <random>
@@ -14,12 +12,6 @@ struct point {
   double x;
   double y;
   double z;
-  simdjson_really_inline bool operator==(const point &other) const {
-    return x == other.x && y == other.y && z == other.z;
-  }
-  simdjson_really_inline bool operator!=(const point &other) const {
-    return !(*this == other);
-  }
 };
 
 simdjson_unused static std::ostream &operator<<(std::ostream &o, const point &p) {
@@ -44,7 +36,7 @@ struct runner : public json_benchmark::string_runner<I> {
 
   template<typename R>
   bool diff(benchmark::State &state, runner<R> &reference) {
-    return diff_results(state, result, reference.result);
+    return json_benchmark::diff_results(state, result, reference.result);
   }
 
   size_t items_per_iteration() {
@@ -100,4 +92,11 @@ template<typename I> simdjson_really_inline static void kostya(benchmark::State 
 
 } // namespace kostya
 
-#endif // SIMDJSON_EXCEPTIONS
+namespace json_benchmark {
+  template<>
+  bool result_differ<kostya::point>::diff(benchmark::State &state, const kostya::point &result, const kostya::point &reference) {
+    return diff_results(state, result.x, reference.x)
+        && diff_results(state, result.y, reference.y)
+        && diff_results(state, result.z, reference.z);
+  }
+}

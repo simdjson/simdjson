@@ -4,6 +4,8 @@
 #include <sstream>
 #include <limits>
 
+namespace json_benchmark {
+
 template<typename T>
 static bool diff_results(benchmark::State &state, const T &result, const T &reference);
 
@@ -25,12 +27,11 @@ bool result_differ<double>::diff(benchmark::State &state, const double &result, 
     if (result != reference) {
       std::stringstream str;
       // We print it out using full precision.
-      auto prior_precision = str.precision(std::numeric_limits<double>::max_digits10);
-      str << "result incorrect: " << result << " ... reference: " << reference;
-      str.precision(prior_precision); // reset to prior state
-      str << std::hexfloat; // If there are floats, we want to see them in hexadecimal form!
-      str << "result incorrect (hexadecimal notation): " << result << " ... reference: " << reference;
-      str << std::defaultfloat; // reset to prior state
+      constexpr auto precision = std::numeric_limits<double>::max_digits10;
+      str << std::setprecision(precision);
+      str << "incorrect double result: " << std::endl;
+      str << "   result: " << std::left << std::setw(precision+2) << result    << " (hexfloat " << std::hexfloat << result    << ")" << std::defaultfloat << std::endl;
+      str << "reference: " << std::left << std::setw(precision+2) << reference << " (hexfloat " << std::hexfloat << reference << ")" << std::defaultfloat << std::endl;
       state.SkipWithError(str.str().data());
       return false;
     }
@@ -68,3 +69,4 @@ static bool diff_results(benchmark::State &state, const T &result, const T &refe
   return result_differ<T>::diff(state, result, reference);
 }
 
+} // namespace json_benchmark
