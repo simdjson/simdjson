@@ -7,7 +7,7 @@ namespace find_tweet {
 
 template<typename I>
 struct runner : public json_benchmark::file_runner<I> {
-  std::string_view result;
+  typename I::StringType result;
 
   bool setup(benchmark::State &state) {
     return this->load_json(state, json_benchmark::TWITTER_JSON);

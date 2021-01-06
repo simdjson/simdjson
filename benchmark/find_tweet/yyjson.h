@@ -7,6 +7,8 @@
 namespace find_tweet {
 
 struct yyjson_base {
+  using StringType=std::string_view;
+
   bool run(yyjson_doc *doc, uint64_t find_id, std::string_view &result) {
     if (!doc) { return false; }
     yyjson_val *root = yyjson_doc_get_root(doc);

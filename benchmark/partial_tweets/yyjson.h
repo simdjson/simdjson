@@ -7,6 +7,8 @@
 namespace partial_tweets {
 
 struct yyjson_base {
+  using StringType=std::string_view;
+
   simdjson_really_inline std::string_view get_string_view(yyjson_val *obj, std::string_view key) {
     auto val = yyjson_obj_getn(obj, key.data(), key.length());
     if (!yyjson_is_str(val)) { throw "field is not uint64 or null!"; }
@@ -24,13 +26,13 @@ struct yyjson_base {
     if (type != YYJSON_TYPE_NUM && type != YYJSON_TYPE_NULL ) { throw "field is not uint64 or null!"; }
     return yyjson_get_uint(val);
   }
-  simdjson_really_inline partial_tweets::twitter_user get_user(yyjson_val *obj, std::string_view key) {
+  simdjson_really_inline partial_tweets::twitter_user<std::string_view> get_user(yyjson_val *obj, std::string_view key) {
     auto user = yyjson_obj_getn(obj, key.data(), key.length());
     if (!yyjson_is_obj(user)) { throw "missing twitter user field!"; }
     return { get_uint64(user, "id"), get_string_view(user, "screen_name") };
   }
 
-  bool run(yyjson_doc *doc, std::vector<tweet> &result) {
+  bool run(yyjson_doc *doc, std::vector<tweet<std::string_view>> &result) {
     if (!doc) { return false; }
     yyjson_val *root = yyjson_doc_get_root(doc);
     if (!yyjson_is_obj(root)) { return false; }
@@ -43,7 +45,7 @@ struct yyjson_base {
     yyjson_arr_foreach(statuses, tweet_idx, tweets_max, tweet) {
       if (!yyjson_is_obj(tweet)) { return false; }
       // TODO these can't actually handle errors
-      result.emplace_back(partial_tweets::tweet{
+      result.emplace_back(partial_tweets::tweet<std::string_view>{
         get_string_view(tweet, "created_at"),
         get_uint64     (tweet, "id"),
         get_string_view(tweet, "text"),
@@ -59,14 +61,14 @@ struct yyjson_base {
 };
 
 struct yyjson : yyjson_base {
-  bool run(simdjson::padded_string &json, std::vector<tweet> &result) {
+  bool run(simdjson::padded_string &json, std::vector<tweet<std::string_view>> &result) {
     return yyjson_base::run(yyjson_read(json.data(), json.size(), 0), result);
   }
 };
 BENCHMARK_TEMPLATE(partial_tweets, yyjson)->UseManualTime();
 
 struct yyjson_insitu : yyjson_base {
-  bool run(simdjson::padded_string &json, std::vector<tweet> &result) {
+  bool run(simdjson::padded_string &json, std::vector<tweet<std::string_view>> &result) {
     return yyjson_base::run(yyjson_read_opts(json.data(), json.size(), YYJSON_READ_INSITU, 0, 0), result);
   }
 };

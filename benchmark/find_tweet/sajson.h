@@ -7,6 +7,8 @@
 namespace find_tweet {
 
 struct sajson {
+  using StringType=std::string_view;
+
   size_t ast_buffer_size{0};
   size_t *ast_buffer{nullptr};
   simdjson_really_inline std::string_view get_string_view(const ::sajson::value &obj, std::string_view key) {

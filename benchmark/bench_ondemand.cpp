@@ -17,6 +17,10 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 #include "sajson.h"
 #endif
 
+#ifdef SIMDJSON_COMPETITION_NLOHMANN_JSON
+#include <nlohmann/json.hpp>
+#endif
+
 // This has to be last, for reasons I don't yet understand
 #include <benchmark/benchmark.h>
 
@@ -27,6 +31,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "partial_tweets/yyjson.h"
 #include "partial_tweets/sajson.h"
 #include "partial_tweets/rapidjson.h"
+#include "partial_tweets/nlohmann_json.h"
 
 #include "large_random/simdjson_dom.h"
 #include "large_random/simdjson_ondemand.h"
@@ -34,23 +39,27 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "large_random/yyjson.h"
 #include "large_random/sajson.h"
 #include "large_random/rapidjson.h"
+#include "large_random/nlohmann_json.h"
 
 #include "kostya/simdjson_dom.h"
 #include "kostya/simdjson_ondemand.h"
 #include "kostya/yyjson.h"
 #include "kostya/sajson.h"
 #include "kostya/rapidjson.h"
+#include "kostya/nlohmann_json.h"
 
 #include "distinct_user_id/simdjson_dom.h"
 #include "distinct_user_id/simdjson_ondemand.h"
 #include "distinct_user_id/yyjson.h"
 #include "distinct_user_id/sajson.h"
 #include "distinct_user_id/rapidjson.h"
+#include "distinct_user_id/nlohmann_json.h"
 
 #include "find_tweet/simdjson_dom.h"
 #include "find_tweet/simdjson_ondemand.h"
 #include "find_tweet/yyjson.h"
 #include "find_tweet/sajson.h"
 #include "find_tweet/rapidjson.h"
+#include "find_tweet/nlohmann_json.h"
 
 BENCHMARK_MAIN();

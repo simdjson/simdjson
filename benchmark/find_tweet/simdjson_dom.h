@@ -9,6 +9,8 @@ namespace find_tweet {
 using namespace simdjson;
 
 struct simdjson_dom {
+  using StringType=std::string_view;
+
   dom::parser parser{};
 
   bool run(simdjson::padded_string &json, uint64_t find_id, std::string_view &result) {

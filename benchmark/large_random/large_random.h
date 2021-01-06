@@ -77,7 +77,7 @@ template<typename T> static void large_random(benchmark::State &state) {
 
 namespace json_benchmark {
   template<>
-  bool result_differ<large_random::point>::diff(benchmark::State &state, const large_random::point &result, const large_random::point &reference) {
+  bool result_differ<large_random::point, large_random::point>::diff(benchmark::State &state, const large_random::point &result, const large_random::point &reference) {
     return diff_results(state, result.x, reference.x)
         && diff_results(state, result.y, reference.y)
         && diff_results(state, result.z, reference.z);

@@ -7,6 +7,8 @@
 namespace partial_tweets {
 
 struct sajson {
+  using StringType=std::string_view;
+
   size_t ast_buffer_size{0};
   size_t *ast_buffer{nullptr};
   simdjson_really_inline std::string_view get_string_view(const ::sajson::value &obj, std::string_view key) {
@@ -46,13 +48,13 @@ struct sajson {
     if (endptr != &str[val.get_string_length()]) { throw "field is a string, but not an integer string"; }
     return result;
   }
-  simdjson_really_inline partial_tweets::twitter_user get_user(const ::sajson::value &obj, std::string_view key) {
+  simdjson_really_inline partial_tweets::twitter_user<std::string_view> get_user(const ::sajson::value &obj, std::string_view key) {
     auto user = obj.get_value_of_key({key.data(), key.length()});
     if (user.get_type() != ::sajson::TYPE_OBJECT) { throw "user is not an object"; }
     return { get_str_uint64(user, "id_str"), get_string_view(user, "screen_name") };
   }
 
-  bool run(simdjson::padded_string &json, std::vector<tweet> &result) {
+  bool run(simdjson::padded_string &json, std::vector<tweet<std::string_view>> &result) {
     if (!ast_buffer) {
       ast_buffer_size = json.size();
       ast_buffer = (size_t *)std::malloc(ast_buffer_size * sizeof(size_t));
@@ -71,7 +73,7 @@ struct sajson {
     for (size_t i=0; i<statuses.get_length(); i++) {
       auto tweet = statuses.get_array_element(i);
       if (tweet.get_type() != ::sajson::TYPE_OBJECT) { return false; }
-      result.emplace_back(partial_tweets::tweet{
+      result.emplace_back(partial_tweets::tweet<std::string_view>{
         get_string_view(tweet, "created_at"),
         get_str_uint64 (tweet, "id_str"),
         get_string_view(tweet, "text"),

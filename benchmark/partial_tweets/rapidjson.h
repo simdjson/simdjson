@@ -9,6 +9,8 @@ namespace partial_tweets {
 using namespace rapidjson;
 
 struct rapidjson_base {
+  using StringType=std::string_view;
+
   Document doc{};
 
   simdjson_really_inline std::string_view get_string_view(Value &object, std::string_view key) {
@@ -31,20 +33,20 @@ struct rapidjson_base {
     if (!field->value.IsUint64()) { throw "Field is not nullable uint64"; }
     return field->value.GetUint64();
   }
-  simdjson_really_inline partial_tweets::twitter_user get_user(Value &object, std::string_view key) {
+  simdjson_really_inline partial_tweets::twitter_user<std::string_view> get_user(Value &object, std::string_view key) {
     auto field = object.FindMember(key.data());
     if (field == object.MemberEnd()) { throw "Missing user field"; }
     if (!field->value.IsObject()) { throw "User field is not an object"; }
     return { get_uint64(field->value, "id"), get_string_view(field->value, "screen_name") };
   }
 
-  bool run(Document &root, std::vector<tweet> &result) {
+  bool run(Document &root, std::vector<tweet<std::string_view>> &result) {
     if (root.HasParseError() || !root.IsObject()) { return false; }
     auto statuses = root.FindMember("statuses");
     if (statuses == root.MemberEnd() || !statuses->value.IsArray()) { return false; }
     for (auto &tweet : statuses->value.GetArray()) {
       if (!tweet.IsObject()) { return false; }
-      result.emplace_back(partial_tweets::tweet{
+      result.emplace_back(partial_tweets::tweet<std::string_view>{
         get_string_view(tweet, "created_at"),
         get_uint64     (tweet, "id"),
         get_string_view(tweet, "text"),
@@ -60,14 +62,14 @@ struct rapidjson_base {
 };
 
 struct rapidjson : rapidjson_base {
-  bool run(simdjson::padded_string &json, std::vector<tweet> &result) {
+  bool run(simdjson::padded_string &json, std::vector<tweet<std::string_view>> &result) {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), result);
   }
 };
 BENCHMARK_TEMPLATE(partial_tweets, rapidjson)->UseManualTime();
 
 struct rapidjson_insitu : rapidjson_base {
-  bool run(simdjson::padded_string &json, std::vector<tweet> &result) {
+  bool run(simdjson::padded_string &json, std::vector<tweet<std::string_view>> &result) {
     return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), result);
   }
 };

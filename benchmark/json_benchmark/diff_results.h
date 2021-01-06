@@ -6,12 +6,12 @@
 
 namespace json_benchmark {
 
-template<typename T>
-static bool diff_results(benchmark::State &state, const T &result, const T &reference);
+template<typename T, typename U>
+static bool diff_results(benchmark::State &state, const T &result, const U &reference);
 
-template<typename T>
+template<typename T, typename U>
 struct result_differ {
-  static bool diff(benchmark::State &state, const T &result, const T &reference) {
+  static bool diff(benchmark::State &state, const T &result, const U &reference) {
     if (result != reference) {
       std::stringstream str;
       str << "result incorrect: " << result << " ... reference: " << reference;
@@ -23,7 +23,7 @@ struct result_differ {
 };
 
 template<>
-bool result_differ<double>::diff(benchmark::State &state, const double &result, const double &reference) {
+bool result_differ<double, double>::diff(benchmark::State &state, const double &result, const double &reference) {
     if (result != reference) {
       std::stringstream str;
       // We print it out using full precision.
@@ -39,9 +39,9 @@ bool result_differ<double>::diff(benchmark::State &state, const double &result, 
 }
 
 
-template<typename T>
-struct result_differ<std::vector<T>> {
-  static bool diff(benchmark::State &state, const std::vector<T> &result, const std::vector<T> &reference) {
+template<typename T, typename U>
+struct result_differ<std::vector<T>, std::vector<U>> {
+  static bool diff(benchmark::State &state, const std::vector<T> &result, const std::vector<U> &reference) {
     auto result_iter = result.begin();
     auto reference_iter = reference.begin();
     while (result_iter != result.end() && reference_iter != reference.end()) {
@@ -64,9 +64,9 @@ struct result_differ<std::vector<T>> {
   }
 };
 
-template<typename T>
-static bool diff_results(benchmark::State &state, const T &result, const T &reference) {
-  return result_differ<T>::diff(state, result, reference);
+template<typename T, typename U>
+static bool diff_results(benchmark::State &state, const T &result, const U &reference) {
+  return result_differ<T, U>::diff(state, result, reference);
 }
 
 } // namespace json_benchmark
