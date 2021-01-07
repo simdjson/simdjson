@@ -104,7 +104,8 @@ public:
   simdjson_warn_unused simdjson_result<json_iterator> iterate_raw(const padded_string &json) & noexcept;
 
 private:
-  dom_parser_implementation dom_parser{};
+  /** @private [for benchmarking access] The implementation to use */
+  std::unique_ptr<internal::dom_parser_implementation> dom_parser{};
   size_t _capacity{0};
   size_t _max_depth{0};
   std::unique_ptr<uint8_t[]> string_buf{};
