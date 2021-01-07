@@ -7,16 +7,18 @@
 
 namespace partial_tweets {
 
+using namespace json_benchmark;
+
 template<typename I>
-struct runner : public json_benchmark::file_runner<I> {
+struct runner : public file_runner<I> {
   std::vector<tweet<typename I::StringType>> result{};
 
   bool setup(benchmark::State &state) {
-    return this->load_json(state, json_benchmark::TWITTER_JSON);
+    return this->load_json(state, TWITTER_JSON);
   }
 
   bool before_run(benchmark::State &state) {
-    if (!json_benchmark::file_runner<I>::before_run(state)) { return false; }
+    if (!file_runner<I>::before_run(state)) { return false; }
     result.clear();
     return true;
   }
@@ -27,7 +29,7 @@ struct runner : public json_benchmark::file_runner<I> {
 
   template<typename R>
   bool diff(benchmark::State &state, runner<R> &reference) {
-    return json_benchmark::diff_results(state, result, reference.result);
+    return diff_results(state, result, reference.result, diff_flags::NONE);
   }
 
   size_t items_per_iteration() {
@@ -38,7 +40,7 @@ struct runner : public json_benchmark::file_runner<I> {
 struct simdjson_dom;
 
 template<typename I> simdjson_really_inline static void partial_tweets(benchmark::State &state) {
-  json_benchmark::run_json_benchmark<runner<I>, runner<simdjson_dom>>(state);
+  run_json_benchmark<runner<I>, runner<simdjson_dom>>(state);
 }
 
 } // namespace partial_tweets

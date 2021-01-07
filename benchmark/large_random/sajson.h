@@ -7,6 +7,8 @@
 namespace large_random {
 
 struct sajson {
+  static constexpr diff_flags DiffFlags = diff_flags::IMPRECISE_FLOATS;
+
   size_t ast_buffer_size{0};
   size_t *ast_buffer{nullptr};
 
@@ -42,7 +44,7 @@ struct sajson {
     for (size_t i=0; i<points.get_length(); i++) {
       auto point = points.get_array_element(i);
       if (point.get_type() != TYPE_OBJECT) { return false; }
-      result.emplace_back(large_random::point{
+      result.emplace_back(json_benchmark::point{
         get_double(point, "x"),
         get_double(point, "y"),
         get_double(point, "z")

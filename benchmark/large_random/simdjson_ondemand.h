@@ -10,12 +10,14 @@ using namespace simdjson;
 using namespace simdjson::builtin;
 
 struct simdjson_ondemand {
+  static constexpr diff_flags DiffFlags = diff_flags::NONE;
+
   ondemand::parser parser{};
 
   bool run(simdjson::padded_string &json, std::vector<point> &result) {
     auto doc = parser.iterate(json);
     for (ondemand::object coord : doc) {
-      result.emplace_back(point{coord.find_field("x"), coord.find_field("y"), coord.find_field("z")});
+      result.emplace_back(json_benchmark::point{coord.find_field("x"), coord.find_field("y"), coord.find_field("z")});
     }
     return true;
   }
