@@ -31,11 +31,11 @@ add_cpp_test(minefieldcheck             LABELS dom acceptance per_implementation
 add_cpp_test(parse_many_test            LABELS dom acceptance per_implementation)
 add_cpp_test(pointercheck               LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
 add_cpp_test(unicode_tests              LABELS dom acceptance per_implementation)
+add_cpp_test(trivially_copyable_test    LABELS dom acceptance per_implementation)
 
 add_cpp_test(minify_tests        LABELS other acceptance per_implementation)
 add_cpp_test(padded_string_tests LABELS other acceptance                   )
 
-add_cpp_test(trivially_copyable_test    LABELS other acceptance            )
 
 find_program(BASH bash)
 
