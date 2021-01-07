@@ -35,6 +35,8 @@ add_cpp_test(unicode_tests              LABELS dom acceptance per_implementation
 add_cpp_test(minify_tests        LABELS other acceptance per_implementation)
 add_cpp_test(padded_string_tests LABELS other acceptance                   )
 
+add_cpp_test(trivially_copyable_test    LABELS other acceptance            )
+
 find_program(BASH bash)
 
 # Below we skip anything on Windows, not just visual studio, because running bash under Windows requires you to
