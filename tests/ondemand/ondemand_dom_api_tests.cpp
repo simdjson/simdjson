@@ -664,18 +664,28 @@ namespace dom_api_tests {
   }
 
   template<typename T>
-  bool test_scalar_value(const padded_string &json, const T &expected) {
+  bool test_scalar_value(const padded_string &json, const T &expected, bool test_twice=true) {
     std::cout << "- JSON: " << json << endl;
     SUBTEST( "simdjson_result<document>", test_ondemand_doc(json, [&](auto doc_result) {
       T actual;
       ASSERT_SUCCESS( doc_result.get(actual) );
       ASSERT_EQUAL( expected, actual );
+      // Test it twice (scalars can be retrieved more than once)
+      if (test_twice) {
+        ASSERT_SUCCESS( doc_result.get(actual) );
+        ASSERT_EQUAL( expected, actual );
+      }
       return true;
     }));
     SUBTEST( "document", test_ondemand_doc(json, [&](auto doc_result) {
       T actual;
       ASSERT_SUCCESS( doc_result.get(actual) );
       ASSERT_EQUAL( expected, actual );
+      // Test it twice (scalars can be retrieved more than once)
+      if (test_twice) {
+        ASSERT_SUCCESS( doc_result.get(actual) );
+        ASSERT_EQUAL( expected, actual );
+      }
       return true;
     }));
     padded_string array_json = std::string("[") + std::string(json) + "]";
@@ -686,6 +696,11 @@ namespace dom_api_tests {
         T actual;
         ASSERT_SUCCESS( val_result.get(actual) );
         ASSERT_EQUAL(expected, actual);
+        // Test it twice (scalars can be retrieved more than once)
+        if (test_twice) {
+          ASSERT_SUCCESS( val_result.get(actual) );
+          ASSERT_EQUAL(expected, actual);
+        }
         count++;
       }
       ASSERT_EQUAL(count, 1);
@@ -699,6 +714,11 @@ namespace dom_api_tests {
         T actual;
         ASSERT_SUCCESS( val.get(actual) );
         ASSERT_EQUAL(expected, actual);
+        // Test it twice (scalars can be retrieved more than once)
+        if (test_twice) {
+          ASSERT_SUCCESS( val.get(actual) );
+          ASSERT_EQUAL(expected, actual);
+        }
         count++;
       }
       ASSERT_EQUAL(count, 1);
@@ -706,9 +726,14 @@ namespace dom_api_tests {
     }));
     TEST_SUCCEED();
   }
+
   bool string_value() {
     TEST_START();
-    return test_scalar_value(R"("hi")"_padded, std::string_view("hi"));
+    // We can't retrieve a small string twice because it will blow out the string buffer
+    if (!test_scalar_value(R"("hi")"_padded, std::string_view("hi"), false)) { return false; }
+    // ... unless the document is big enough to have a big string buffer :)
+    if (!test_scalar_value(R"("hi"        )"_padded, std::string_view("hi"))) { return false; }
+    TEST_SUCCEED();
   }
 
   bool numeric_values() {

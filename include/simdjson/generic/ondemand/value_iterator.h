@@ -292,6 +292,15 @@ protected:
   simdjson_really_inline simdjson_result<int64_t> parse_root_int64(const uint8_t *json, uint32_t max_len) const noexcept;
   simdjson_really_inline simdjson_result<double> parse_root_double(const uint8_t *json, uint32_t max_len) const noexcept;
 
+  simdjson_really_inline const uint8_t *peek_scalar() const noexcept;
+  simdjson_really_inline uint32_t peek_scalar_length() const noexcept;
+  simdjson_really_inline const uint8_t *advance_scalar(const char *type) const noexcept;
+  simdjson_really_inline const uint8_t *advance_root_scalar(const char *type) const noexcept;
+  simdjson_really_inline const uint8_t *advance_non_root_scalar(const char *type) const noexcept;
+
+  simdjson_really_inline error_code incorrect_type_error(const char *message) const noexcept;
+
+  simdjson_really_inline bool is_at_start() const noexcept;
   simdjson_really_inline void assert_at_start() const noexcept;
   simdjson_really_inline void assert_at_root() const noexcept;
   simdjson_really_inline void assert_at_child() const noexcept;

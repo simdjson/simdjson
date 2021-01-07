@@ -90,6 +90,7 @@ protected:
   friend class value_iterator;
   friend class object;
   friend simdjson_really_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
+  friend simdjson_really_inline void logger::log_line(const json_iterator &iter, const uint32_t *index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
 };
 
 } // namespace ondemand
