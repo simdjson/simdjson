@@ -7,7 +7,6 @@
 namespace largerandom {
 
 using namespace simdjson;
-using namespace simdjson::builtin;
 using namespace simdjson::builtin::stage2;
 
 class Sax {

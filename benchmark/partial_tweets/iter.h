@@ -7,7 +7,6 @@
 namespace partial_tweets {
 
 using namespace simdjson;
-using namespace simdjson::builtin;
 
 class Iter {
 public:

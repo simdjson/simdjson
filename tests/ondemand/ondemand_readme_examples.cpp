@@ -3,7 +3,6 @@
 
 using namespace std;
 using namespace simdjson;
-using namespace simdjson::builtin;
 using error_code=simdjson::error_code;
 
 #if SIMDJSON_EXCEPTIONS

@@ -7,7 +7,6 @@
 namespace largerandom {
 
 using namespace simdjson;
-using namespace simdjson::builtin;
 
 class OnDemand {
 public:

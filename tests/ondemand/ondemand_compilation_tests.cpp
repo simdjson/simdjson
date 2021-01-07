@@ -3,7 +3,6 @@
 #include "test_ondemand.h"
 
 using namespace simdjson;
-using namespace simdjson::builtin;
 
 #if SIMDJSON_EXCEPTIONS
 

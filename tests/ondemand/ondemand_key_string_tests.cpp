@@ -2,7 +2,6 @@
 #include "test_ondemand.h"
 
 using namespace simdjson;
-using namespace simdjson::builtin;
 
 namespace key_string_tests {
 #if SIMDJSON_EXCEPTIONS

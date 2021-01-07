@@ -79,7 +79,6 @@ alpha right now. More information can be found in the [On Demand Guide](doc/onde
    ```c++
    #include "simdjson.h"
    using namespace simdjson;
-   using namespace simdjson::builtin; // for ondemand
    int main(void) {
       ondemand::parser parser;
       padded_string json = padded_string::load("twitter.json");

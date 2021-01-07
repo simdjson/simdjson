@@ -7,7 +7,6 @@
 namespace partial_tweets {
 
 using namespace simdjson;
-using namespace simdjson::builtin;
 using namespace simdjson::builtin::stage2;
 
 struct sax_tweet_reader_visitor {

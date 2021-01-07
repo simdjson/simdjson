@@ -2,7 +2,6 @@
 #include "test_ondemand.h"
 
 using namespace simdjson;
-using namespace simdjson::builtin;
 
 namespace parse_api_tests {
   using namespace std;

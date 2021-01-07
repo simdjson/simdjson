@@ -1,6 +1,5 @@
 #include "simdjson.h"
 using namespace simdjson;
-using namespace simdjson::builtin;
 int main(void) {
     padded_string json;
     auto error = padded_string::load("twitter.json").get(json);

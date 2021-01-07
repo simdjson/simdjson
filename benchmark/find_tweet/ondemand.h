@@ -7,7 +7,6 @@
 namespace find_tweet {
 
 using namespace simdjson;
-using namespace simdjson::builtin;
 
 
 class OnDemand {

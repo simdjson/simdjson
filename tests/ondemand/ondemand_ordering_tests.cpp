@@ -2,7 +2,6 @@
 #include "test_ondemand.h"
 
 using namespace simdjson;
-using namespace simdjson::builtin;
 
 namespace ordering_tests {
   using namespace std;

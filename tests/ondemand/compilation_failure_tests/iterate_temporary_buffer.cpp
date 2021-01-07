@@ -1,7 +1,7 @@
 #include <iostream>
 #include "simdjson.h"
 
-using namespace simdjson::builtin;
+using namespace simdjson;
 
 int main() {
     ondemand::parser parser;

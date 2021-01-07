@@ -37,7 +37,6 @@ into your project. Then include it in your project with:
 ```c++
 #include "simdjson.h"
 using namespace simdjson; // optional
-using namespace simdjson::builtin; // optional, for ondemand
 ```
 
 You can compile with:
