@@ -48,11 +48,12 @@ c++ -march=native myproject.cpp simdjson.cpp
 
 
 Note:
+- The `-march=native` is only needed under x64 systems (Intel/AMD).
 - CMake users who wish to pass the `-march=native` flag may modify the `CMAKE_CXX_FLAGS` flag:  e.g., `cmake  -DCMAKE_CXX_FLAGS="-march=haswell"  ...`.
 - Users on macOS and other platforms where compilers do not provide C++11 compliant by default
 should request it with the appropriate flag (e.g., `c++ -march=native -std=c++17 myproject.cpp simdjson.cpp`).
 
-### The native architecture flag
+### The native architecture flag (x64 systems)
 
 
 The On Demand API uses advanced architecture-specific code for many common processors to make JSON

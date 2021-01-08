@@ -740,7 +740,7 @@ Good applications for the On Demand API might be:
 * Both the generation and the consumption of JSON data is within your system. Your team controls both the software that produces the JSON and the software the parses it, your team knows and control the hardware. Thus you can fully test your system.
 * You are working with stable JSON APIs which have a consistent layout and JSON dialect.
 
-## Checking Your CPU Selection
+## Checking Your CPU Selection (x64 systems)
 
 Given that the On Demand API offer limited runtime dispatching, your code is compiled against a specific CPU target. You should
 verify that the code is compiled against the target you expect: `haswell` (AVX2 x64 processors), `westmere` (SSE4 x64 processors), `arm64` (64-bit ARM), `ppc64` (64-bit POWER), `fallback` (others). Under x64 processors, many programmers will want to target `haswell` whereas under ARM,
@@ -757,3 +757,5 @@ the `CMAKE_CXX_FLAGS` variable:
 cmake  -DCMAKE_CXX_FLAGS="-march=haswell" -B build_haswell
 cmake --build build_haswell
 ```
+
+If you are compiling on an ARM or POWER system, you do not need to be concerned with CPU selection.
