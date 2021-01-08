@@ -46,7 +46,9 @@ You can generally compile with:
 c++ -march=native myproject.cpp simdjson.cpp
 ```
 
+
 Note:
+- CMake users who wish to pass the `-march=native` flag may modify the `CMAKE_CXX_FLAGS` flag:  e.g., `cmake  -DCMAKE_CXX_FLAGS="-march=haswell"  ...`.
 - Users on macOS and other platforms where compilers do not provide C++11 compliant by default
 should request it with the appropriate flag (e.g., `c++ -march=native -std=c++17 myproject.cpp simdjson.cpp`).
 
