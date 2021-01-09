@@ -8,7 +8,11 @@
 add_library(simdjson-include-source INTERFACE)
 target_link_libraries(simdjson-include-source INTERFACE simdjson-headers)
 target_include_directories(simdjson-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-# Note that simdjson.cpp is *not* installed so installing simdjson-include-source is not good:
+# If a CMake user installs simdjson and then does...
+#   find_package(simdjson CONFIG REQUIRED)
+#   find_package(Threads REQUIRED)
+#   target_link_libraries(test PRIVATE simdjson-include-source)
+# It is not clear what it should do? Does the user get access to the src files?
 # install(TARGETS simdjson-include-source EXPORT simdjson-config)
 
 #
@@ -20,7 +24,13 @@ target_include_directories(simdjson-include-source INTERFACE $<BUILD_INTERFACE:$
 add_library(simdjson-source INTERFACE)
 target_sources(simdjson-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/simdjson.cpp)
 target_link_libraries(simdjson-source INTERFACE simdjson-include-source)
-# Note that simdjson.cpp is *not* installed so installing simdjson-include-source is not good:
+# Note that simdjson.cpp is *not* installed so installing simdjson-include-source is not great.
+# If a CMake user installs simdjson and then does...
+#   find_package(simdjson CONFIG REQUIRED)
+#   find_package(Threads REQUIRED)
+#   target_link_libraries(test PRIVATE simdjson-source)
+# It might fail with  Cannot find source file: simdjson.cpp
+# See issue https://github.com/simdjson/simdjson/issues/1383
 # install(TARGETS simdjson-source EXPORT simdjson-config)
 
 #
@@ -33,7 +43,15 @@ target_link_libraries(simdjson-source INTERFACE simdjson-include-source)
 
 if(SIMDJSON_BUILD_STATIC)
   MESSAGE( STATUS "Building a static library." )
-  add_library(simdjson STATIC "")
+  ###
+  # In the case of a static library, if you do "target_link_libraries(simdjson PRIVATE simdjson-source simdjson-internal-flags)"
+  # without also calling "install(TARGETS simdjson-source EXPORT simdjson-config)" you get an error
+  # to the effect that you are trying to install 'simdjson' which depends on 'simdjson-source' while
+  # not installing 'simdjson-source', so it fails. So we bypass entirely simdjson-source since we do
+  # not want to install them.
+  ####
+  add_library(simdjson STATIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/simdjson.cpp)
+  target_include_directories(simdjson PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 else()
   MESSAGE( STATUS "Building a dynamic library." )
   add_library(simdjson SHARED "")
@@ -42,9 +60,12 @@ else()
     MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." )
     set_target_properties(simdjson PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
   endif()
+  ###
+  # Somehow, for a dynamic library, the next line is entirely fine (but not for a static one).
+  ###
+  target_link_libraries(simdjson PRIVATE simdjson-source simdjson-internal-flags)
 endif()
 target_link_libraries(simdjson PUBLIC simdjson-headers simdjson-flags) # Only expose the headers, not sources
-target_link_libraries(simdjson PRIVATE simdjson-source simdjson-internal-flags)
 
 ##
 ## In systems like R, libraries must not use stderr or abort to be acceptable.
