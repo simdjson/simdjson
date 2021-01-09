@@ -202,7 +202,7 @@ if(SIMDJSON_ENABLE_THREADS)
   set(THREADS_PREFER_PTHREAD_FLAG TRUE)
   find_package(Threads REQUIRED)
   target_link_libraries(simdjson-flags INTERFACE Threads::Threads)
-  message (STATUS "The simdjson is compiled with thread. Users who install this library and then invoke it from CMake might need to call find_package(Threads REQUIRED) before calling target_link_libraries(myprogram PRIVATE simdjson::simdjson).")
+  message (STATUS "The simdjson is compiled with thread support. Users who install this library and then invoke it from CMake might need to call find_package(Threads REQUIRED) before calling target_link_libraries(myprogram PRIVATE simdjson::simdjson).")
   target_link_libraries(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT})
   target_compile_options(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT})
   target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_THREADS_ENABLED=1) # This will be set in the code automatically.
