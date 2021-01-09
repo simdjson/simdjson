@@ -6,6 +6,7 @@ namespace ondemand {
 
 class object;
 class parser;
+class json_iterator;
 
 /**
  * A string escaped per JSON rules, terminated with quote ("). They are used to represent

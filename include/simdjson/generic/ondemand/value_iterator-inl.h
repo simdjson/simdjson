@@ -2,7 +2,7 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
-simdjson_really_inline value_iterator::value_iterator(json_iterator *json_iter, depth_t depth, const uint32_t *start_index) noexcept
+simdjson_really_inline value_iterator::value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept
   : _json_iter{json_iter},
     _depth{depth},
     _start_index{start_index}
@@ -184,7 +184,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
   // First, we scan from that point to the end.
   // If we don't find a match, we loop back around, and scan from the beginning to that point.
-  const uint32_t *search_start = _json_iter->checkpoint();
+  token_position search_start = _json_iter->position();
 
   // Next, we find a match starting from the current position.
   while (has_value) {
@@ -211,11 +211,11 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   // beginning of the object.
   // (We have already run through the object before, so we've already validated its structure. We
   // don't check errors in this bit.)
-  _json_iter->restore_checkpoint(_start_index + 1);
+  _json_iter->set_position(_start_index + 1);
   _json_iter->descend_to(_depth);
 
   has_value = started_object();
-  while (_json_iter->checkpoint() < search_start) {
+  while (_json_iter->position() < search_start) {
     SIMDJSON_ASSUME(has_value); // we should reach search_start before ever reaching the end of the object
     SIMDJSON_ASSUME( _json_iter->_depth == _depth + 1 ); // We must be at the start of a field
 
@@ -463,9 +463,10 @@ simdjson_warn_unused simdjson_really_inline error_code value_iterator::skip_chil
 
   return _json_iter->skip_child(depth());
 }
+
 simdjson_really_inline value_iterator value_iterator::child() const noexcept {
   assert_at_child();
-  return { _json_iter, depth()+1, _json_iter->token.checkpoint() };
+  return { _json_iter, depth()+1, _json_iter->token.position() };
 }
 
 simdjson_really_inline bool value_iterator::is_open() const noexcept {
@@ -524,7 +525,7 @@ simdjson_really_inline const uint8_t *value_iterator::advance_scalar(const char 
 }
 simdjson_really_inline const uint8_t *value_iterator::advance_root_scalar(const char *type) const noexcept {
   logger::log_value(*_json_iter, _start_index, depth(), type);
-  if (is_at_start()) { return peek_scalar(); }
+  if (!is_at_start()) { return peek_scalar(); }
 
   assert_at_root();
   auto result = _json_iter->advance();
@@ -533,7 +534,7 @@ simdjson_really_inline const uint8_t *value_iterator::advance_root_scalar(const 
 }
 simdjson_really_inline const uint8_t *value_iterator::advance_non_root_scalar(const char *type) const noexcept {
   logger::log_value(*_json_iter, _start_index, depth(), type);
-  if (is_at_start()) { return peek_scalar(); }
+  if (!is_at_start()) { return peek_scalar(); }
 
   assert_at_non_root_start();
   auto result = _json_iter->advance();

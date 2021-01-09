@@ -24,7 +24,7 @@ simdjson_really_inline void log_event(const json_iterator &iter, const char *typ
 simdjson_really_inline void log_value(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
   log_line(iter, "", type, detail, delta, depth_delta);
 }
-simdjson_really_inline void log_value(const json_iterator &iter, const uint32_t *index, depth_t depth, const char *type, std::string_view detail) noexcept {
+simdjson_really_inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
   log_line(iter, index, depth, "", type, detail);
 }
 simdjson_really_inline void log_start_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
@@ -38,7 +38,7 @@ simdjson_really_inline void log_end_value(const json_iterator &iter, const char 
 simdjson_really_inline void log_error(const json_iterator &iter, const char *error, const char *detail, int delta, int depth_delta) noexcept {
   log_line(iter, "ERROR: ", error, detail, delta, depth_delta);
 }
-simdjson_really_inline void log_error(const json_iterator &iter, const uint32_t *index, depth_t depth, const char *error, const char *detail) noexcept {
+simdjson_really_inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail) noexcept {
   log_line(iter, index, depth, "ERROR: ", error, detail);
 }
 
@@ -84,7 +84,7 @@ simdjson_really_inline void log_headers() noexcept {
 simdjson_really_inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept {
   log_line(iter, iter.token.index+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail);
 }
-simdjson_really_inline void log_line(const json_iterator &iter, const uint32_t *index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept {
+simdjson_really_inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept {
   if (LOG_ENABLED) {
     const int indent = depth*2;
     const auto buf = iter.token.buf;

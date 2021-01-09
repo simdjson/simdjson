@@ -65,7 +65,7 @@ public:
   /**
    * Get the root value iterator
    */
-  simdjson_really_inline const uint32_t *root_checkpoint() const noexcept;
+  simdjson_really_inline token_position root_checkpoint() const noexcept;
 
   /**
    * Assert if the iterator is not at the start
@@ -93,10 +93,6 @@ public:
   simdjson_really_inline const uint8_t *advance() noexcept;
 
   /**
-   * Whether we are at the start of an object.
-   */
-
-  /**
    * Get the JSON text for a given token (relative).
    *
    * This is not null-terminated; it is a view into the JSON.
@@ -108,13 +104,32 @@ public:
    */
   simdjson_really_inline const uint8_t *peek(int32_t delta=0) const noexcept;
   /**
-   * Get the maximum length of the JSON text for a given token.
+   * Get the maximum length of the JSON text for the current token (or relative).
    *
    * The length will include any whitespace at the end of the token.
    *
    * @param delta The relative position of the token to retrieve. e.g. 0 = next token, -1 = prev token.
    */
   simdjson_really_inline uint32_t peek_length(int32_t delta=0) const noexcept;
+  /**
+   * Get the JSON text for a given token.
+   *
+   * This is not null-terminated; it is a view into the JSON.
+   *
+   * @param index The position of the token to retrieve.
+   *
+   * TODO consider a string_view, assuming the length will get stripped out by the optimizer when
+   * it isn't used ...
+   */
+  simdjson_really_inline const uint8_t *peek(token_position position) const noexcept;
+  /**
+   * Get the maximum length of the JSON text for the current token (or relative).
+   *
+   * The length will include any whitespace at the end of the token.
+   *
+   * @param index The position of the token to retrieve.
+   */
+  simdjson_really_inline uint32_t peek_length(token_position position) const noexcept;
 
   /**
    * Ascend one level.
@@ -163,8 +178,8 @@ public:
   template<int N> simdjson_warn_unused simdjson_really_inline bool peek_to_buffer(uint8_t (&tmpbuf)[N]) noexcept;
   template<int N> simdjson_warn_unused simdjson_really_inline bool advance_to_buffer(uint8_t (&tmpbuf)[N]) noexcept;
 
-  simdjson_really_inline const uint32_t *checkpoint() const noexcept;
-  simdjson_really_inline void restore_checkpoint(const uint32_t *target_checkpoint) noexcept;
+  simdjson_really_inline token_position position() const noexcept;
+  simdjson_really_inline void set_position(token_position target_checkpoint) noexcept;
 
 protected:
   simdjson_really_inline json_iterator(const uint8_t *buf, ondemand::parser *parser) noexcept;
@@ -177,7 +192,7 @@ protected:
   friend class parser;
   friend class value_iterator;
   friend simdjson_really_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_really_inline void logger::log_line(const json_iterator &iter, const uint32_t *index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  friend simdjson_really_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
 }; // json_iterator
 
 } // namespace ondemand

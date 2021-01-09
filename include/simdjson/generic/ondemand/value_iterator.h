@@ -28,7 +28,7 @@ protected:
    *
    * PERF NOTE: this is a safety check; we expect this to be elided in release builds.
    */
-  const uint32_t *_start_index{};
+  token_position _start_index{};
 
 public:
   simdjson_really_inline value_iterator() noexcept = default;
@@ -283,7 +283,7 @@ public:
   /** @} */
 
 protected:
-  simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth, const uint32_t *start_index) noexcept;
+  simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept;
   simdjson_really_inline bool is_null(const uint8_t *json) const noexcept;
   simdjson_really_inline simdjson_result<bool> parse_bool(const uint8_t *json) const noexcept;
   simdjson_really_inline bool is_root_null(const uint8_t *json, uint32_t max_len) const noexcept;
