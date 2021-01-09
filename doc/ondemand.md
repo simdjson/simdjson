@@ -43,40 +43,13 @@ using namespace simdjson::builtin; // optional, for On Demand
 You can generally compile with:
 
 ```
-c++ -march=native myproject.cpp simdjson.cpp
+c++ -O3 myproject.cpp simdjson.cpp
 ```
 
 
 Note:
-- The `-march=native` is only needed under x64 systems (Intel/AMD).
-- CMake users who wish to pass the `-march=native` flag may modify the `CMAKE_CXX_FLAGS` flag:  e.g., `cmake  -DCMAKE_CXX_FLAGS="-march=haswell"  ...`.
 - Users on macOS and other platforms where compilers do not provide C++11 compliant by default
 should request it with the appropriate flag (e.g., `c++ -march=native -std=c++17 myproject.cpp simdjson.cpp`).
-
-### The native architecture flag (x64 systems)
-
-
-The On Demand API uses advanced architecture-specific code for many common processors to make JSON
-preprocessing and string parsing faster. By default, however, most c++ compilers will compile to the
-least common denominator (since the program could theoretically be run anywhere). Since On Demand is
-inlined into your own code, it cannot use these advanced versions unless the compiler is told to
-target them. The `-march=native` flags says "target the current computer," which is a reasonable default for
-many applications which both compile and run on the same processor.
-The `-march=native` flag is unsupported and unnecessary on some platforms such as ARM (aarch64) but useful 
-for best performance on x64 (e.g., Intel) systems. 
-
-Passing `-march=native` to the compiler may make On Demand much faster by allowing it to use
-optimizations specific to your machine. You cannot do this, however, if you are compiling code
-that might be run on less advanced machines. That is, be mindful that when compiling with 
-the  `-march=native` flag, the resulting binary will run on the current system but may not 
-run on other systems (e.g., on an old processor).
-
-On some systems, the On Demand API provides some support for runtime dispatching when you do not compile 
-with  `-march=native`: that is, it will attempt to detect, at runtime, the instructions that your processor 
-supports and optimize the code accordingly. However, you may get better performance with the `-march=native` 
-flag on recent Intel and AMD systems.
-
-
 
 The Basics: Loading and Parsing JSON Documents
 ----------------------------------------------
@@ -130,8 +103,8 @@ The following show how to use the JSON when exceptions are enabled, but simdjson
 support for users who avoid exceptions. See [the simdjson DOM API's error handling documentation](basics.md#error-handling) for more.
 
 * **Extracting Values:** You can cast a JSON element to a native type:
-  `double(element)` or `double x = json_element`. This works for `double`, `uint64_t`, `int64_t`, `bool`,
-  `ondemand::object` and `ondemand::array`. At this point, the number, string or boolean will be parsed,
+  `double(element)` or `double x = json_element`. This works for double, uint64_t, int64_t, bool,
+  ondemand::object and ondemand::array. At this point, the number, string or boolean will be parsed,
   or the initial `[` or `{` will be verified. An exception is thrown if the cast is not possible.
 
   > IMPORTANT NOTE: values can only be parsed once. Since documents are *iterators*, once you have
