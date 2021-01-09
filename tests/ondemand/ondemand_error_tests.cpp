@@ -1,16 +1,3 @@
-#include <cinttypes>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <string>
-#include <vector>
-#include <cmath>
-#include <set>
-#include <sstream>
-#include <utility>
-#include <unistd.h>
-
 #include "simdjson.h"
 #include "test_ondemand.h"
 
@@ -23,7 +10,8 @@ namespace error_tests {
   bool empty_document_error() {
     TEST_START();
     ondemand::parser parser;
-    ASSERT_ERROR( parser.iterate(""_padded), EMPTY );
+    auto json = ""_padded;
+    ASSERT_ERROR( parser.iterate(json), EMPTY );
     TEST_SUCCEED();
   }
 

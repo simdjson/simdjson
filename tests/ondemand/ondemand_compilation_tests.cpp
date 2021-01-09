@@ -1,16 +1,4 @@
-#include <cinttypes>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <string>
-#include <vector>
-#include <cmath>
 #include <set>
-#include <sstream>
-#include <utility>
-#include <unistd.h>
-
 #include "simdjson.h"
 #include "test_ondemand.h"
 
@@ -26,16 +14,16 @@ void process3(int ) {}
 
 // Do not run this, it is only meant to compile
 void compilation_test_1() {
-    const padded_string bogus = ""_padded;
-    ondemand::parser parser;
-    auto doc = parser.iterate(bogus);
-    for (ondemand::object my_object : doc["mykey"]) {
-       for (auto field : my_object) {
-         if (field.key() == "key_value1") { process1(field.value()); }
-         else if (field.key() == "key_value2") { process2(field.value()); }
-         else if (field.key() == "key_value3") { process3(field.value()); }
-       }
-     }
+  const padded_string bogus = ""_padded;
+  ondemand::parser parser;
+  auto doc = parser.iterate(bogus);
+  for (ondemand::object my_object : doc["mykey"]) {
+      for (auto field : my_object) {
+        if (field.key() == "key_value1") { process1(field.value()); }
+        else if (field.key() == "key_value2") { process2(field.value()); }
+        else if (field.key() == "key_value3") { process3(field.value()); }
+      }
+    }
 }
 
 
