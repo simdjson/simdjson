@@ -141,7 +141,7 @@ install(TARGETS simdjson
 )
 
 install(EXPORT simdjson-config
-  FILE simdjson-config.cmake
+  FILE simdjson-targets.cmake
   NAMESPACE simdjson::
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/simdjson
 )

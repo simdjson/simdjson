@@ -1,0 +1,5 @@
+# Get the directory containing this file.
+get_filename_component(@PROJECT_NAME@_CURRENT_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+# Import targets.
+include("${@PROJECT_NAME@_CURRENT_CONFIG_DIR}/@PROJECT_NAME@-targets.cmake")

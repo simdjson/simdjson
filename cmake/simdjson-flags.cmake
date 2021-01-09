@@ -202,13 +202,6 @@ if(SIMDJSON_ENABLE_THREADS)
   set(THREADS_PREFER_PTHREAD_FLAG TRUE)
   find_package(Threads REQUIRED)
   target_link_libraries(simdjson-flags INTERFACE Threads::Threads)
-  ###
-  # Reasonably enough, if you compile simdjson with thread support, people
-  # who linked with the installed version will also need thread support. It
-  # would be really nice if CMake could automate it, but apparently it cannot.
-  ###
-  message (STATUS "The simdjson is compiled with thread support. Users who install this library and then invoke it from CMake might need to call find_package(Threads REQUIRED) before asking to link with the simdjson library, e.g., a line such as target_link_libraries(myprogram PRIVATE simdjson::simdjson) may need a prior line like find_package(Threads REQUIRED).")
-  message (STATUS "You may build simdjson without thread support using the SIMDJSON_ENABLE_THREADS option.")
   target_link_libraries(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT})
   target_compile_options(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT})
   target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_THREADS_ENABLED=1) # This will be set in the code automatically.
@@ -245,5 +238,5 @@ CHECK_SYMBOL_EXISTS(wait sys/wait.h HAVE_POSIX_WAIT)
 
 install(TARGETS simdjson-flags EXPORT simdjson-config)
 
-# Why on Earth would you try to install simdjson-internal-flags?
+# I do not think we want to export our internal flags!
 # install(TARGETS simdjson-internal-flags EXPORT simdjson-config)
