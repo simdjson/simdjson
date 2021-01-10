@@ -58,7 +58,7 @@ simdjson_really_inline object::object(const value_iterator &_iter) noexcept
 
 simdjson_really_inline object_iterator object::begin() noexcept {
   // Expanded version of SIMDJSON_ASSUME( iter.at_field_start() || !iter.is_open() )
-  SIMDJSON_ASSUME( (iter._json_iter->token.index == iter._start_index + 1) || (iter._json_iter->_depth < iter._depth) );
+  SIMDJSON_ASSUME( (iter._json_iter->token.index == iter._start_position + 1) || (iter._json_iter->_depth < iter._depth) );
   return iter;
 }
 simdjson_really_inline object_iterator object::end() noexcept {

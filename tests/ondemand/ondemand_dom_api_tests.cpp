@@ -688,42 +688,112 @@ namespace dom_api_tests {
       }
       return true;
     }));
-    padded_string array_json = std::string("[") + std::string(json) + "]";
-    std::cout << "- JSON: " << array_json << endl;
-    SUBTEST( "simdjson_result<ondemand::value>", test_ondemand_doc(array_json, [&](auto doc_result) {
-      int count = 0;
-      for (simdjson_result<ondemand::value> val_result : doc_result) {
+
+    {
+      padded_string whitespace_json = std::string(json) + " ";
+      std::cout << "- JSON: " << whitespace_json << endl;
+      SUBTEST( "simdjson_result<document>", test_ondemand_doc(whitespace_json, [&](auto doc_result) {
         T actual;
-        ASSERT_SUCCESS( val_result.get(actual) );
-        ASSERT_EQUAL(expected, actual);
+        ASSERT_SUCCESS( doc_result.get(actual) );
+        ASSERT_EQUAL( expected, actual );
         // Test it twice (scalars can be retrieved more than once)
         if (test_twice) {
+          ASSERT_SUCCESS( doc_result.get(actual) );
+          ASSERT_EQUAL( expected, actual );
+        }
+        return true;
+      }));
+      SUBTEST( "document", test_ondemand_doc(whitespace_json, [&](auto doc_result) {
+        T actual;
+        ASSERT_SUCCESS( doc_result.get(actual) );
+        ASSERT_EQUAL( expected, actual );
+        // Test it twice (scalars can be retrieved more than once)
+        if (test_twice) {
+          ASSERT_SUCCESS( doc_result.get(actual) );
+          ASSERT_EQUAL( expected, actual );
+        }
+        return true;
+      }));
+    }
+
+    {
+      padded_string array_json = std::string("[") + std::string(json) + "]";
+      std::cout << "- JSON: " << array_json << endl;
+      SUBTEST( "simdjson_result<value>", test_ondemand_doc(array_json, [&](auto doc_result) {
+        int count = 0;
+        for (simdjson_result<ondemand::value> val_result : doc_result) {
+          T actual;
           ASSERT_SUCCESS( val_result.get(actual) );
           ASSERT_EQUAL(expected, actual);
+          // Test it twice (scalars can be retrieved more than once)
+          if (test_twice) {
+            ASSERT_SUCCESS( val_result.get(actual) );
+            ASSERT_EQUAL(expected, actual);
+          }
+          count++;
         }
-        count++;
-      }
-      ASSERT_EQUAL(count, 1);
-      return true;
-    }));
-    SUBTEST( "ondemand::value", test_ondemand_doc(array_json, [&](auto doc_result) {
-      int count = 0;
-      for (simdjson_result<ondemand::value> val_result : doc_result) {
-        ondemand::value val;
-        ASSERT_SUCCESS( val_result.get(val) );
-        T actual;
-        ASSERT_SUCCESS( val.get(actual) );
-        ASSERT_EQUAL(expected, actual);
-        // Test it twice (scalars can be retrieved more than once)
-        if (test_twice) {
+        ASSERT_EQUAL(count, 1);
+        return true;
+      }));
+      SUBTEST( "value", test_ondemand_doc(array_json, [&](auto doc_result) {
+        int count = 0;
+        for (simdjson_result<ondemand::value> val_result : doc_result) {
+          ondemand::value val;
+          ASSERT_SUCCESS( val_result.get(val) );
+          T actual;
           ASSERT_SUCCESS( val.get(actual) );
           ASSERT_EQUAL(expected, actual);
+          // Test it twice (scalars can be retrieved more than once)
+          if (test_twice) {
+            ASSERT_SUCCESS( val.get(actual) );
+            ASSERT_EQUAL(expected, actual);
+          }
+          count++;
         }
-        count++;
-      }
-      ASSERT_EQUAL(count, 1);
-      return true;
-    }));
+        ASSERT_EQUAL(count, 1);
+        return true;
+      }));
+    }
+
+    {
+      padded_string whitespace_array_json = std::string("[") + std::string(json) + " ]";
+      std::cout << "- JSON: " << whitespace_array_json << endl;
+      SUBTEST( "simdjson_result<value>", test_ondemand_doc(whitespace_array_json, [&](auto doc_result) {
+        int count = 0;
+        for (simdjson_result<ondemand::value> val_result : doc_result) {
+          T actual;
+          ASSERT_SUCCESS( val_result.get(actual) );
+          ASSERT_EQUAL(expected, actual);
+          // Test it twice (scalars can be retrieved more than once)
+          if (test_twice) {
+            ASSERT_SUCCESS( val_result.get(actual) );
+            ASSERT_EQUAL(expected, actual);
+          }
+          count++;
+        }
+        ASSERT_EQUAL(count, 1);
+        return true;
+      }));
+      SUBTEST( "value", test_ondemand_doc(whitespace_array_json, [&](auto doc_result) {
+        int count = 0;
+        for (simdjson_result<ondemand::value> val_result : doc_result) {
+          ondemand::value val;
+          ASSERT_SUCCESS( val_result.get(val) );
+          T actual;
+          ASSERT_SUCCESS( val.get(actual) );
+          ASSERT_EQUAL(expected, actual);
+          // Test it twice (scalars can be retrieved more than once)
+          if (test_twice) {
+            ASSERT_SUCCESS( val.get(actual) );
+            ASSERT_EQUAL(expected, actual);
+          }
+          count++;
+        }
+        ASSERT_EQUAL(count, 1);
+        return true;
+      }));
+    }
+
     TEST_SUCCEED();
   }
 

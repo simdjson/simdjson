@@ -191,7 +191,7 @@ template<int N>
 simdjson_warn_unused simdjson_really_inline bool json_iterator::copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t (&tmpbuf)[N]) noexcept {
   // Truncate whitespace to fit the buffer.
   if (max_len > N-1) {
-    if (jsoncharutils::is_not_structural_or_whitespace(json[N])) { return false; }
+    if (jsoncharutils::is_not_structural_or_whitespace(json[N-1])) { return false; }
     max_len = N-1;
   }
 

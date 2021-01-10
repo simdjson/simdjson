@@ -5,7 +5,7 @@ namespace ondemand {
 simdjson_really_inline value_iterator::value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept
   : _json_iter{json_iter},
     _depth{depth},
-    _start_index{start_index}
+    _start_position{start_index}
 {
 }
 
@@ -211,7 +211,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   // beginning of the object.
   // (We have already run through the object before, so we've already validated its structure. We
   // don't check errors in this bit.)
-  _json_iter->set_position(_start_index + 1);
+  _json_iter->set_position(_start_position + 1);
   _json_iter->descend_to(_depth);
 
   has_value = started_object();
@@ -298,54 +298,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   }
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> value_iterator::try_get_string() noexcept {
-  return try_get_raw_json_string().unescape(_json_iter->string_buf_loc());
-}
-simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> value_iterator::require_string() noexcept {
-  return require_raw_json_string().unescape(_json_iter->string_buf_loc());
-}
-simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::try_get_raw_json_string() noexcept {
-  auto json = peek_scalar();
-  if (*json != '"') { return incorrect_type_error("Not a string"); }
-  advance_scalar("string");
-  return raw_json_string(json+1);
-}
-simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::require_raw_json_string() noexcept {
-  auto json = advance_scalar("string");
-  if (*json != '"') { return incorrect_type_error("Not a string"); }
-  return raw_json_string(json+1);
-}
-
-simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::try_get_uint64() noexcept {
-  uint64_t result;
-  SIMDJSON_TRY( numberparsing::parse_unsigned(peek_scalar()).get(result) );
-  advance_non_root_scalar("uint64");
-  return result;
-}
-simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::require_uint64() noexcept {
-  return numberparsing::parse_unsigned(advance_non_root_scalar("uint64"));
-}
-
-simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::try_get_int64() noexcept {
-  int64_t result;
-  SIMDJSON_TRY( numberparsing::parse_integer(peek_scalar()).get(result) );
-  advance_non_root_scalar("int64");
-  return result;
-}
-simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::require_int64() noexcept {
-  return numberparsing::parse_integer(advance_non_root_scalar("int64"));
-}
-
-simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::try_get_double() noexcept {
-  double result;
-  SIMDJSON_TRY( numberparsing::parse_double(peek_scalar()).get(result) );
-  advance_non_root_scalar("double");
-  return result;
-}
-simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::require_double() noexcept {
-  return numberparsing::parse_double(advance_non_root_scalar("double"));
-}
-
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::parse_bool(const uint8_t *json) const noexcept {
   auto not_true = atomparsing::str4ncmp(json, "true");
   auto not_false = atomparsing::str4ncmp(json, "fals") | (json[4] ^ 'e');
@@ -353,112 +305,80 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   if (error) { return incorrect_type_error("Not a boolean"); }
   return simdjson_result<bool>(!not_true);
 }
-simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::try_get_bool() noexcept {
-  bool result;
-  SIMDJSON_TRY( parse_bool(peek_scalar()).get(result) );
-  advance_non_root_scalar("bool");
-  return result;
+simdjson_really_inline bool value_iterator::parse_null(const uint8_t *json) const noexcept {
+  return !atomparsing::str4ncmp(json, "null") && jsoncharutils::is_structural_or_whitespace(json[4]);
 }
-simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::require_bool() noexcept {
+
+simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> value_iterator::get_string() noexcept {
+  return get_raw_json_string().unescape(_json_iter->string_buf_loc());
+}
+simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::get_raw_json_string() noexcept {
+  auto json = advance_scalar("string");
+  if (*json != '"') { return incorrect_type_error("Not a string"); }
+  return raw_json_string(json+1);
+}
+simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::get_uint64() noexcept {
+  return numberparsing::parse_unsigned(advance_non_root_scalar("uint64"));
+}
+simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::get_int64() noexcept {
+  return numberparsing::parse_integer(advance_non_root_scalar("int64"));
+}
+simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_double() noexcept {
+  return numberparsing::parse_double(advance_non_root_scalar("double"));
+}
+simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::get_bool() noexcept {
   return parse_bool(advance_non_root_scalar("bool"));
 }
-simdjson_really_inline bool value_iterator::is_null(const uint8_t *json) const noexcept {
-  return !atomparsing::str4ncmp(json, "null");
-}
 simdjson_really_inline bool value_iterator::is_null() noexcept {
-  if (is_null(peek_scalar())) {
-    advance_non_root_scalar("null");
-    return true;
-  }
-  return false;
-}
-simdjson_really_inline bool value_iterator::require_null() noexcept {
-  return is_null(advance_non_root_scalar("null"));
+  return parse_null(advance_non_root_scalar("null"));
 }
 
 constexpr const uint32_t MAX_INT_LENGTH = 1024;
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::parse_root_uint64(const uint8_t *json, uint32_t max_len) const noexcept {
+simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> value_iterator::get_root_string() noexcept {
+  return get_string();
+}
+simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::get_root_raw_json_string() noexcept {
+  return get_raw_json_string();
+}
+simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::get_root_uint64() noexcept {
+  auto max_len = peek_scalar_length();
+  auto json = advance_root_scalar("uint64");
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { logger::log_error(*_json_iter, _start_index, depth(), "Root number more than 20 characters"); return NUMBER_ERROR; }
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { logger::log_error(*_json_iter, _start_position, depth(), "Root number more than 20 characters"); return NUMBER_ERROR; }
   return numberparsing::parse_unsigned(tmpbuf);
 }
-simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::try_get_root_uint64() noexcept {
-  uint64_t result;
-  SIMDJSON_TRY( parse_root_uint64(peek_scalar(), peek_scalar_length()).get(result) );
-  advance_root_scalar("uint64");
-  return result;
-}
-simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::require_root_uint64() noexcept {
+simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::get_root_int64() noexcept {
   auto max_len = peek_scalar_length();
-  return parse_root_uint64(advance_root_scalar("uint64"), max_len);
-}
-
-simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::parse_root_int64(const uint8_t *json, uint32_t max_len) const noexcept {
+  auto json = advance_root_scalar("int64");
   uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { logger::log_error(*_json_iter, _start_index, depth(), "Root number more than 20 characters"); return NUMBER_ERROR; }
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { logger::log_error(*_json_iter, _start_position, depth(), "Root number more than 20 characters"); return NUMBER_ERROR; }
   return numberparsing::parse_integer(tmpbuf);
 }
-simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::try_get_root_int64() noexcept {
-  int64_t result;
-  SIMDJSON_TRY( parse_root_int64(peek_scalar(), peek_scalar_length()).get(result) );
-  advance_root_scalar("int64");
-  return result;
-}
-simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::require_root_int64() noexcept {
+simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_root_double() noexcept {
   auto max_len = peek_scalar_length();
-  return parse_root_int64(advance_root_scalar("int64"), max_len);
-}
-
-simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::parse_root_double(const uint8_t *json, uint32_t max_len) const noexcept {
+  auto json = advance_root_scalar("double");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/, 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest number: -0.<fraction>e-308.
   uint8_t tmpbuf[1074+8+1];
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { logger::log_error(*_json_iter, _start_index, depth(), "Root number more than 1082 characters"); return NUMBER_ERROR; }
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { logger::log_error(*_json_iter, _start_position, depth(), "Root number more than 1082 characters"); return NUMBER_ERROR; }
   return numberparsing::parse_double(tmpbuf);
 }
-simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::try_get_root_double() noexcept {
-  double result;
-  SIMDJSON_TRY( parse_root_double(peek_scalar(), peek_scalar_length()).get(result) );
-  advance_root_scalar("double");
-  return result;
-}
-simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::require_root_double() noexcept {
+simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::get_root_bool() noexcept {
   auto max_len = peek_scalar_length();
-  return parse_root_double(advance_root_scalar("double"), max_len);
-}
-
-simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::parse_root_bool(const uint8_t *json, uint32_t max_len) const noexcept {
+  auto json = advance_root_scalar("bool");
   uint8_t tmpbuf[5+1];
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { return incorrect_type_error("Not a boolean"); }
   return parse_bool(tmpbuf);
 }
-simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::try_get_root_bool() noexcept {
-  bool result;
-  SIMDJSON_TRY( parse_root_bool(peek_scalar(), peek_scalar_length()).get(result) );
-  advance_root_scalar("bool");
-  return result;
-}
-simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::require_root_bool() noexcept {
-  auto max_len = peek_scalar_length();
-  return parse_root_bool(advance_root_scalar("bool"), max_len);
-}
-simdjson_really_inline bool value_iterator::is_root_null(const uint8_t *json, uint32_t max_len) const noexcept {
-  uint8_t tmpbuf[4+1];
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { return false; }
-  return is_null(tmpbuf);
-}
 simdjson_really_inline bool value_iterator::is_root_null() noexcept {
-  if (!is_root_null(peek_scalar(), peek_scalar_length())) { return false; }
-  advance_root_scalar("null");
-  return true;
-}
-simdjson_really_inline bool value_iterator::require_root_null() noexcept {
   auto max_len = peek_scalar_length();
-  return is_root_null(advance_root_scalar("null"), max_len);
+  auto json = advance_root_scalar("null");
+  return max_len >= 4 && !atomparsing::str4ncmp(json, "null") &&
+         (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[5]));
 }
 
 simdjson_warn_unused simdjson_really_inline error_code value_iterator::skip_child() noexcept {
-  SIMDJSON_ASSUME( _json_iter->token.index > _start_index );
+  SIMDJSON_ASSUME( _json_iter->token.index > _start_position );
   SIMDJSON_ASSUME( _json_iter->_depth >= _depth );
 
   return _json_iter->skip_child(depth());
@@ -478,12 +398,12 @@ simdjson_really_inline bool value_iterator::at_eof() const noexcept {
 }
 
 simdjson_really_inline bool value_iterator::at_start() const noexcept {
-  return _json_iter->token.index == _start_index;
+  return _json_iter->token.index == _start_position;
 }
 
 simdjson_really_inline bool value_iterator::at_first_field() const noexcept {
-  SIMDJSON_ASSUME( _json_iter->token.index > _start_index );
-  return _json_iter->token.index == _start_index + 1;
+  SIMDJSON_ASSUME( _json_iter->token.index > _start_position );
+  return _json_iter->token.index == _start_position + 1;
 }
 
 simdjson_really_inline void value_iterator::abandon() noexcept {
@@ -508,23 +428,25 @@ simdjson_warn_unused simdjson_really_inline json_iterator &value_iterator::json_
 }
 
 simdjson_really_inline const uint8_t *value_iterator::peek_scalar() const noexcept {
-  return &_json_iter->token.buf[*_start_index];
+  return _json_iter->peek(_start_position);
 }
 simdjson_really_inline uint32_t value_iterator::peek_scalar_length() const noexcept {
-  return *(_start_index+1) - *_start_index;
+  return _json_iter->peek_length(_start_position);
 }
 
 simdjson_really_inline const uint8_t *value_iterator::advance_scalar(const char *type) const noexcept {
-  logger::log_value(*_json_iter, _start_index, depth(), type);
+  logger::log_value(*_json_iter, _start_position, depth(), type);
+  // If we're not at the position anymore, we don't want to advance the cursor.
   if (!is_at_start()) { return peek_scalar(); }
 
+  // Get the JSON and advance the cursor, decreasing depth to signify that we have retrieved the value.
   assert_at_start();
   auto result = _json_iter->advance();
   _json_iter->ascend_to(depth()-1);
   return result;
 }
 simdjson_really_inline const uint8_t *value_iterator::advance_root_scalar(const char *type) const noexcept {
-  logger::log_value(*_json_iter, _start_index, depth(), type);
+  logger::log_value(*_json_iter, _start_position, depth(), type);
   if (!is_at_start()) { return peek_scalar(); }
 
   assert_at_root();
@@ -533,7 +455,7 @@ simdjson_really_inline const uint8_t *value_iterator::advance_root_scalar(const 
   return result;
 }
 simdjson_really_inline const uint8_t *value_iterator::advance_non_root_scalar(const char *type) const noexcept {
-  logger::log_value(*_json_iter, _start_index, depth(), type);
+  logger::log_value(*_json_iter, _start_position, depth(), type);
   if (!is_at_start()) { return peek_scalar(); }
 
   assert_at_non_root_start();
@@ -543,28 +465,28 @@ simdjson_really_inline const uint8_t *value_iterator::advance_non_root_scalar(co
 }
 
 simdjson_really_inline error_code value_iterator::incorrect_type_error(const char *message) const noexcept {
-  logger::log_error(*_json_iter, _start_index, depth(), message);
+  logger::log_error(*_json_iter, _start_position, depth(), message);
   return INCORRECT_TYPE;
 }
 
 simdjson_really_inline bool value_iterator::is_at_start() const noexcept {
-  return _json_iter->token.index == _start_index;
+  return _json_iter->token.index == _start_position;
 }
 
 simdjson_really_inline void value_iterator::assert_at_start() const noexcept {
-  SIMDJSON_ASSUME( _json_iter->token.index == _start_index );
+  SIMDJSON_ASSUME( _json_iter->token.index == _start_position );
   SIMDJSON_ASSUME( _json_iter->_depth == _depth );
   SIMDJSON_ASSUME( _depth > 0 );
 }
 
 simdjson_really_inline void value_iterator::assert_at_next() const noexcept {
-  SIMDJSON_ASSUME( _json_iter->token.index > _start_index );
+  SIMDJSON_ASSUME( _json_iter->token.index > _start_position );
   SIMDJSON_ASSUME( _json_iter->_depth == _depth );
   SIMDJSON_ASSUME( _depth > 0 );
 }
 
 simdjson_really_inline void value_iterator::assert_at_child() const noexcept {
-  SIMDJSON_ASSUME( _json_iter->token.index > _start_index );
+  SIMDJSON_ASSUME( _json_iter->token.index > _start_position );
   SIMDJSON_ASSUME( _json_iter->_depth == _depth + 1 );
   SIMDJSON_ASSUME( _depth > 0 );
 }
