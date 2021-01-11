@@ -771,8 +771,7 @@ c++ -march=haswell -O3 myproject.cpp simdjson.cpp
 
 In these examples, the `-march=haswell` flags targets a haswell processor and the resulting binary will run on processors that support all features of the haswell processors.
 
-Instead of specifying a specific microarchitecture, you can let your compiler do the work. The `-march=native` flags says "target the current computer," which is a reasonable default for		
-many applications which both compile and run on the same processor.
+Instead of specifying a specific microarchitecture, you can let your compiler do the work. The `-march=native` flags says "target the current computer," which is a reasonable default for many applications which both compile and run on the same processor.
 
 Passing `-march=native` to the compiler may make On Demand faster by allowing it to use optimizations specific to your machine. You cannot do this, however, if you are compiling code	that might be run on less advanced machines. That is, be mindful that when compiling with the `-march=native` flag, the resulting binary will run on the current system but may not run on other systems (e.g., on an old processor).
 
