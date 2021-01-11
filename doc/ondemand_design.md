@@ -742,20 +742,38 @@ Good applications for the On Demand API might be:
 
 ## Checking Your CPU Selection (x64 systems)
 
-Given that the On Demand API offer limited runtime dispatching, your code is compiled against a specific CPU target. You should
-verify that the code is compiled against the target you expect: `haswell` (AVX2 x64 processors), `westmere` (SSE4 x64 processors), `arm64` (64-bit ARM), `ppc64` (64-bit POWER), `fallback` (others). Under x64 processors, many programmers will want to target `haswell` whereas under ARM,
-most programmers will want to target `arm64`. The `fallback` is probably only good for testing purposes, not for deployment.
+The On Demand API uses advanced architecture-specific code for many common processors to make JSON preprocessing and string parsing faster. By default, however, most c++ compilers will compile to the	least common denominator (since the program could theoretically be run anywhere). Since On Demand is inlined into your own code, it cannot always use these advanced versions unless the compiler is told to target them.
+
+On relevant systems, the On Demand API provides some support for runtime dispatching: that is, it will attempt to detect, at runtime, the instructions that your processor supports and optimize the code accordingly. However, it cannot always make full use of the features of your processor.
+
+Some users wish to run at the best possible speed. Under recent Intel and AMD processors, these users should take additional steps to verify that their code is well optimized.
+
+Given that the On Demand API offer limited runtime dispatching, it matters that your code is compiled against a specific CPU target. You should verify that the code is compiled against the target you expect. Thankfully, the simdjson library will tell you exactly what it detects as an implementation: `haswell` (AVX2 x64 processors), `westmere` (SSE4 x64 processors), `arm64` (64-bit ARM), `ppc64` (64-bit POWER), `fallback` (others). Under x64 processors, many programmers will want to target `haswell` whereas under ARM, most programmers will want to target `arm64` (and it should do so automatically). The `fallback` is probably only good for testing purposes, not for deployment.
 
 ```C++
   std::cout << simdjson::builtin_implementation()->name() << std::endl;
 ```
 
-If you are using CMake for your C++ project, then you can pass compilation flags to your compiler by using
-the `CMAKE_CXX_FLAGS` variable:
+If the `simdjson::builtin_implementation()->name()` call does not return the architecture you wish to target, you may need to pass flags to your compiler.
+
+If you are using CMake for your C++ project, then you can pass compilation flags to your compiler by using the `CMAKE_CXX_FLAGS` variable:
 
 ```
 cmake  -DCMAKE_CXX_FLAGS="-march=haswell" -B build_haswell
 cmake --build build_haswell
 ```
 
-If you are compiling on an ARM or POWER system, you do not need to be concerned with CPU selection.
+You can also pass the flags directly to your compiler when compiling 'by hand':
+
+````
+c++ -march=haswell -O3 myproject.cpp simdjson.cpp
+````
+
+In these examples, the `-march=haswell` flags targets a haswell processor and the resulting binary will run on processors that support all features of the haswell processors.
+
+Instead of specifying a specific microarchitecture, you can let your compiler do the work. The `-march=native` flags says "target the current computer," which is a reasonable default for		
+many applications which both compile and run on the same processor.
+
+Passing `-march=native` to the compiler may make On Demand faster by allowing it to use optimizations specific to your machine. You cannot do this, however, if you are compiling code	that might be run on less advanced machines. That is, be mindful that when compiling with the `-march=native` flag, the resulting binary will run on the current system but may not run on other systems (e.g., on an old processor).
+
+If you are compiling on an ARM or POWER system, you do not need to be concerned with CPU selection during compilation. The `-march=native` flag useful for best performance on x64 (e.g., Intel) systems but it is generally unsupported on some platforms such as ARM (aarch64) or POWER.
