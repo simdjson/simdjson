@@ -119,9 +119,9 @@ bool check_float(double result, const char *buf) {
     return false;
   }
   if (expected != result) {
-    fprintf(stderr, "parsed %.128e from \n", result);
-    fprintf(stderr, "       %.32s whereas strtod gives\n", buf);
-    fprintf(stderr, "       %.128e,", expected);
+    std::cerr << std::hexfloat << " parsed " << result << " from "
+              << buf << " whereas strtod gives " << expected << std::endl;
+    std::cerr << std::defaultfloat;
     return false;
   }
   return true;
