@@ -118,7 +118,16 @@ decimal parse_decimal(const char *&p) noexcept {
     }
     answer.decimal_point += (neg_exp ? -exp_number : exp_number);
   }
-  answer.decimal_point += answer.num_digits;
+  if(answer.num_digits > 0) {
+    const char *preverse = p - 1;
+    int32_t trailing_zeros = 0;
+    while ((*preverse == '0') || (*preverse == '.')) {
+      if(*preverse == '0') { trailing_zeros++; };
+      --preverse;
+    }
+    answer.decimal_point += int32_t(answer.num_digits);
+    answer.num_digits -= uint32_t(trailing_zeros);
+  }
   if(answer.num_digits > max_digits ) {
     answer.num_digits = max_digits;
     answer.truncated = true;
