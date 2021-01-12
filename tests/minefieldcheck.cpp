@@ -63,6 +63,7 @@ bool validate_minefield(const char *dirname) {
       auto error = simdjson::padded_string::load(fullpath).get(p);
       if (error) {
         std::cerr << "Could not load the file " << fullpath << std::endl;
+        free(fullpath);
         delete[] is_file_as_expected;
         return EXIT_FAILURE;
       }
