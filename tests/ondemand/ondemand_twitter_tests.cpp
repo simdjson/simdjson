@@ -1,16 +1,4 @@
-#include <cinttypes>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <string>
-#include <vector>
-#include <cmath>
 #include <set>
-#include <sstream>
-#include <utility>
-#include <unistd.h>
-
 #include "simdjson.h"
 #include "test_ondemand.h"
 

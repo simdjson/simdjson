@@ -3,11 +3,13 @@
 
 namespace partial_tweets {
 
+template<typename StringType=std::string_view>
 struct twitter_user {
   uint64_t id{};
-  std::string_view screen_name{};
+  StringType screen_name{};
 
-  bool operator==(const twitter_user &other) const {
+  template<typename OtherStringType>
+  bool operator==(const twitter_user<OtherStringType> &other) const {
     return id == other.id &&
            screen_name == other.screen_name;
   }

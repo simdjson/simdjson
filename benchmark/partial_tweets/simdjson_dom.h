@@ -9,6 +9,8 @@ namespace partial_tweets {
 using namespace simdjson;
 
 struct simdjson_dom {
+  using StringType=std::string_view;
+
   dom::parser parser{};
 
   simdjson_really_inline uint64_t nullable_int(dom::element element) {
@@ -16,10 +18,10 @@ struct simdjson_dom {
     return element;
   }
 
-  bool run(simdjson::padded_string &json, std::vector<tweet> &result) {
+  bool run(simdjson::padded_string &json, std::vector<tweet<std::string_view>> &result) {
     for (dom::element tweet : parser.parse(json)["statuses"]) {
       auto user = tweet["user"];
-      result.emplace_back(partial_tweets::tweet{
+      result.emplace_back(partial_tweets::tweet<std::string_view>{
         tweet["created_at"],
         tweet["id"],
         tweet["text"],

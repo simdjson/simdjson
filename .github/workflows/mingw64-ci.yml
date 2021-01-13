@@ -15,6 +15,9 @@ on:
 
 jobs:
   ci:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
     name: windows-gcc
     runs-on: windows-2016
 

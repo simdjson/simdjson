@@ -9,11 +9,13 @@ namespace kostya {
 using namespace simdjson;
 
 struct simdjson_dom {
+  static constexpr diff_flags DiffFlags = diff_flags::NONE;
+
   dom::parser parser{};
 
   bool run(simdjson::padded_string &json, std::vector<point> &result) {
     for (auto point : parser.parse(json)["coordinates"]) {
-      result.emplace_back(kostya::point{point["x"], point["y"], point["z"]});
+      result.emplace_back(json_benchmark::point{point["x"], point["y"], point["z"]});
     }
     return true;
   }

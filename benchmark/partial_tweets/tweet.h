@@ -22,15 +22,17 @@ namespace partial_tweets {
 //   ]
 // }
 
+template<typename StringType=std::string_view>
 struct tweet {
-  std::string_view created_at{};
+  StringType created_at{};
   uint64_t id{};
-  std::string_view result{};
+  StringType result{};
   uint64_t in_reply_to_status_id{};
-  twitter_user user{};
+  twitter_user<StringType> user{};
   uint64_t retweet_count{};
   uint64_t favorite_count{};
-  simdjson_really_inline bool operator==(const tweet &other) const {
+  template<typename OtherStringType>
+  simdjson_really_inline bool operator==(const tweet<OtherStringType> &other) const {
     return created_at == other.created_at &&
            id == other.id &&
            result == other.result &&
@@ -39,10 +41,12 @@ struct tweet {
            retweet_count == other.retweet_count &&
            favorite_count == other.favorite_count;
   }
-  simdjson_really_inline bool operator!=(const tweet &other) const { return !(*this == other); }
+  template<typename OtherStringType>
+  simdjson_really_inline bool operator!=(const tweet<OtherStringType> &other) const { return !(*this == other); }
 };
 
-simdjson_unused static std::ostream &operator<<(std::ostream &o, const tweet &t) {
+template<typename StringType>
+simdjson_unused static std::ostream &operator<<(std::ostream &o, const tweet<StringType> &t) {
   o << "created_at: " << t.created_at << std::endl;
   o << "id: " << t.id << std::endl;
   o << "result: " << t.result << std::endl;

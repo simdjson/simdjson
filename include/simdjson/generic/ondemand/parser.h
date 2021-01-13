@@ -63,6 +63,9 @@ public:
    *         - UNCLOSED_STRING if there is an unclosed string in the document.
    */
   simdjson_warn_unused simdjson_result<document> iterate(const padded_string &json) & noexcept;
+  simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string> &json) & noexcept;
+  simdjson_warn_unused simdjson_result<document> iterate(padded_string &&json) & noexcept = delete;
+  simdjson_warn_unused simdjson_result<document> iterate(const std::string_view &json) & noexcept = delete;
   simdjson_warn_unused simdjson_result<document> iterate(const std::string &json) & noexcept = delete;
   /**
    * @private
@@ -101,7 +104,8 @@ public:
   simdjson_warn_unused simdjson_result<json_iterator> iterate_raw(const padded_string &json) & noexcept;
 
 private:
-  dom_parser_implementation dom_parser{};
+  /** @private [for benchmarking access] The implementation to use */
+  std::unique_ptr<internal::dom_parser_implementation> dom_parser{};
   size_t _capacity{0};
   size_t _max_depth{0};
   std::unique_ptr<uint8_t[]> string_buf{};

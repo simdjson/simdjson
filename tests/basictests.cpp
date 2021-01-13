@@ -280,6 +280,12 @@ namespace number_tests {
     std::cout << std::dec;
     return true;
   }
+  bool truncated_borderline() {
+    std::cout << __func__ << std::endl;
+    std::string round_to_even = "9007199254740993.0";
+    for(size_t i = 0; i < 1000; i++) { round_to_even += "0"; }
+    return basic_test_64bit(round_to_even,9007199254740992);
+  }
 
   bool specific_tests() {
     std::cout << __func__ << std::endl;
@@ -299,7 +305,8 @@ namespace number_tests {
   }
 
   bool run() {
-    return specific_tests() &&
+    return truncated_borderline() &&
+           specific_tests() &&
            ground_truth() &&
            small_integers() &&
            powers_of_two() &&

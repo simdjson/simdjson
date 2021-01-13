@@ -10,6 +10,8 @@ using namespace simdjson;
 using namespace simdjson::builtin;
 
 struct simdjson_ondemand {
+  using StringType=std::string_view;
+
   ondemand::parser parser{};
 
   bool run(simdjson::padded_string &json, uint64_t find_id, std::string_view &result) {
