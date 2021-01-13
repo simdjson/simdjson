@@ -1,9 +1,9 @@
-# Get the directory containing this file.
-get_filename_component(@PROJECT_NAME@_CURRENT_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+@PACKAGE_INIT@
 
 include(CMakeFindDependencyMacro)
-set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-find_dependency(Threads)
-
+if(@SIMDJSON_ENABLE_THREADS@)
+    set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+    find_dependency(Threads)
+endif()
 # Import targets.
-include("${@PROJECT_NAME@_CURRENT_CONFIG_DIR}/@PROJECT_NAME@-targets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-targets.cmake")
