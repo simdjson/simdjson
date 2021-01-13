@@ -9,6 +9,8 @@ namespace find_tweet {
 using namespace rapidjson;
 
 struct rapidjson_base {
+  using StringType=std::string_view;
+
   Document doc{};
 
   bool run(Document &root, uint64_t find_id, std::string_view &result) {

@@ -7,6 +7,8 @@
 namespace large_random {
 
 struct yyjson_base {
+  static constexpr diff_flags DiffFlags = diff_flags::NONE;
+
   simdjson_really_inline double get_double(yyjson_val *obj, std::string_view key) {
     yyjson_val *val = yyjson_obj_getn(obj, key.data(), key.length());
     if (!val) { throw "missing point field!"; }
@@ -34,7 +36,7 @@ struct yyjson_base {
     yyjson_val *coord;
     yyjson_arr_foreach(coords, idx, max, coord) {
       if (!yyjson_is_obj(coord)) { return false; }
-      result.emplace_back(point{get_double(coord, "x"), get_double(coord, "y"), get_double(coord, "z")});
+      result.emplace_back(json_benchmark::point{get_double(coord, "x"), get_double(coord, "y"), get_double(coord, "z")});
     }
 
     return true;

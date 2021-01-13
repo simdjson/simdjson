@@ -9,6 +9,8 @@ namespace large_random {
 using namespace rapidjson;
 
 struct rapidjson_base {
+  static constexpr diff_flags DiffFlags = diff_flags::NONE;
+
   Document doc;
 
   simdjson_really_inline double get_double(Value &object, std::string_view key) {
@@ -23,7 +25,7 @@ struct rapidjson_base {
     if (!coords.IsArray()) { return false; }
     for (auto &coord : coords.GetArray()) {
       if (!coord.IsObject()) { return false; }
-      result.emplace_back(point{get_double(coord, "x"), get_double(coord, "y"), get_double(coord, "z")});
+      result.emplace_back(json_benchmark::point{get_double(coord, "x"), get_double(coord, "y"), get_double(coord, "z")});
     }
 
     return true;

@@ -1,39 +1,24 @@
 #pragma once
 
-#if SIMDJSON_EXCEPTIONS
-
 #include "json_benchmark/string_runner.h"
+#include "json_benchmark/point.h"
 #include <vector>
 #include <random>
 
 namespace kostya {
 
+using namespace json_benchmark;
+
 static const simdjson::padded_string &get_built_json_array();
 
-struct point {
-  double x;
-  double y;
-  double z;
-  simdjson_really_inline bool operator==(const point &other) const {
-    return x == other.x && y == other.y && z == other.z;
-  }
-  simdjson_really_inline bool operator!=(const point &other) const {
-    return !(*this == other);
-  }
-};
-
-simdjson_unused static std::ostream &operator<<(std::ostream &o, const point &p) {
-  return o << p.x << "," << p.y << "," << p.z << std::endl;
-}
-
 template<typename I>
-struct runner : public json_benchmark::string_runner<I> {
+struct runner : public string_runner<I> {
   std::vector<point> result;
 
-  runner() : json_benchmark::string_runner<I>(get_built_json_array()) {}
+  runner() : string_runner<I>(get_built_json_array()) {}
 
   bool before_run(benchmark::State &state) {
-    if (!json_benchmark::string_runner<I>::before_run(state)) { return false; }
+    if (!string_runner<I>::before_run(state)) { return false; }
     result.clear();
     return true;
   }
@@ -44,7 +29,7 @@ struct runner : public json_benchmark::string_runner<I> {
 
   template<typename R>
   bool diff(benchmark::State &state, runner<R> &reference) {
-    return diff_results(state, result, reference.result);
+    return diff_results(state, result, reference.result, I::DiffFlags);
   }
 
   size_t items_per_iteration() {
@@ -95,9 +80,7 @@ static const simdjson::padded_string &get_built_json_array() {
 struct simdjson_dom;
 
 template<typename I> simdjson_really_inline static void kostya(benchmark::State &state) {
-  json_benchmark::run_json_benchmark<runner<I>, runner<simdjson_dom>>(state);
+  run_json_benchmark<runner<I>, runner<simdjson_dom>>(state);
 }
 
 } // namespace kostya
-
-#endif // SIMDJSON_EXCEPTIONS

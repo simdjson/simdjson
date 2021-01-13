@@ -1,28 +1,24 @@
 #pragma once
 
-#if SIMDJSON_EXCEPTIONS
+#ifdef SIMDJSON_COMPETITION_NLOHMANN_JSON
 
 #include "large_random.h"
 
 namespace large_random {
 
-using namespace simdjson;
-
-struct simdjson_dom {
+struct nlohmann_json {
   static constexpr diff_flags DiffFlags = diff_flags::NONE;
 
-  dom::parser parser{};
-
   bool run(simdjson::padded_string &json, std::vector<point> &result) {
-    for (auto point : parser.parse(json)) {
+    for (auto point : nlohmann::json::parse(json.data(), json.data() + json.size())) {
       result.emplace_back(json_benchmark::point{point["x"], point["y"], point["z"]});
     }
     return true;
   }
 };
 
-BENCHMARK_TEMPLATE(large_random, simdjson_dom)->UseManualTime();
+BENCHMARK_TEMPLATE(large_random, nlohmann_json)->UseManualTime();
 
 } // namespace large_random
 
-#endif // SIMDJSON_EXCEPTIONS
+#endif // SIMDJSON_COMPETITION_NLOHMANN_JSON
