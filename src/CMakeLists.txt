@@ -50,7 +50,7 @@ if(SIMDJSON_BUILD_STATIC)
   # not installing 'simdjson-source', so it fails. So we bypass entirely simdjson-source since we do
   # not want to install them.
   ####
-  add_library(simdjson STATIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/simdjson.cpp)
+  add_library(simdjson STATIC simdjson.cpp)
   target_include_directories(simdjson PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 else()
   MESSAGE( STATUS "Building a dynamic library." )
