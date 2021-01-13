@@ -44,13 +44,12 @@ endif()
 install(FILES singleheader/simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 option(SIMDJSON_ENABLE_THREADS "Link with thread support" ON)
-if(SIMDJSON_ENABLE_THREADS)
-  configure_file("${PROJECT_SOURCE_DIR}/cmake/simdjson-config.cmake.in"
-	  "${PROJECT_BINARY_DIR}/simdjson-config.cmake" @ONLY)
-else(SIMDJSON_ENABLE_THREADS)
-  configure_file("${PROJECT_SOURCE_DIR}/cmake/simdjson-config.nothread.cmake.in"
-	  "${PROJECT_BINARY_DIR}/simdjson-config.cmake" @ONLY)
-endif(SIMDJSON_ENABLE_THREADS)
+include(CMakePackageConfigHelpers)
+configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/simdjson-config.cmake.in"
+      "${PROJECT_BINARY_DIR}/simdjson-config.cmake" 
+      INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/simdjson"
+      NO_SET_AND_CHECK_MACRO
+      NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 
 install(FILES "${PROJECT_BINARY_DIR}/simdjson-config.cmake"
 	DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/simdjson")
