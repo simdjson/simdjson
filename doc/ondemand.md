@@ -1,18 +1,18 @@
 On Demand Basics
 ================
 
-On Demand is a new, faster simdjson API with all the ease-of-use you're used to. While it provides a
-familiar DOM interface, under the hood it is anything but: it is parsing values *as you use them.*
-This means you don't waste time parsing JSON you don't use, and you don't pay the cost of generating
+On Demand is a new, faster simdjson API with all the ease-of-use you are used to. While it provides a
+familiar DOM interface, under the hood it is different: it is parsing values *as you use them.*
+With On Demand, you do not waste time parsing JSON you do not use, and you do not pay the cost of generating
 an intermediate DOM tree.
 
-An overview of what you need to know to use simdjson, with examples.
+We provide an overview of what you need to know to use the simdjson On Demand API, with examples.
 
-* [Including ondemand](#including-ondemand)
+* [Including ondemand](#including-on-demand)
 * [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents)
 * [Using the Parsed JSON](#using-the-parsed-json)
 
-ondemand supports the same JSON standards and C++ compilers as simdjson's older DOM API. Refer to the DOM docs for more information:
+The On Demand API supports the same JSON standards and C++ compilers as simdjson's DOM API. Refer to the DOM docs for more information:
 
 * [Requirements](basics.md##requirements)
 * [Using simdjson as a CMake dependency](#using-simdjson-as-a-cmake-dependency)
@@ -25,10 +25,10 @@ ondemand supports the same JSON standards and C++ compilers as simdjson's older 
 * [C++17 Support](basics.md#c17-support)
 * [Backwards Compatibility](basics.md#backwards-compatibility)
 
-For deeper information about the design and implementation of simdjson's ondemand API, refer to
+For deeper information about the design and implementation of the simdjson On Demand API, refer to
 the [design document](ondemand.md).
 
-Including ondemand
+Including On Demand
 ------------------
 
 To include simdjson, copy [simdjson.h](/singleheader/simdjson.h) and [simdjson.cpp](/singleheader/simdjson.cpp)
@@ -39,28 +39,16 @@ into your project. Then include it in your project with:
 using namespace simdjson; // optional
 ```
 
-You can compile with:
+You can generally compile with:
 
 ```
-c++ -march=native myproject.cpp simdjson.cpp
+c++ -O3 myproject.cpp simdjson.cpp
 ```
+
 
 Note:
 - Users on macOS and other platforms where compilers do not provide C++11 compliant by default
 should request it with the appropriate flag (e.g., `c++ -march=native -std=c++17 myproject.cpp simdjson.cpp`).
-
-### The native architecture flag
-
-Passing `-march=native` to the compiler makes On Demand much faster by allowing it to use
-optimizations specific to your machine. You cannot do this, however, if you are compiling code
-that might be run on less advanced machines.
-
-On Demand uses advanced architecture-specific code for many common processors to make JSON
-preprocessing and string parsing faster. By default, however, most c++ compilers will compile to the
-least common denominator (since the program could theoretically be run anywhere). Since On Demand is
-inlined into your own code, it cannot use these advanced versions unless the compiler is told to
-target them. -march=native says "target the current computer," which is a reasonable default for
-many applications which both compile and run on the same processor.
 
 The Basics: Loading and Parsing JSON Documents
 ----------------------------------------------
@@ -89,8 +77,8 @@ Documents Are Iterators
 A `document` is *not* a fully-parsed JSON value; rather, it is an **iterator** over the JSON text.
 This means that while you iterate an array, or search for a field in an object, it is actually
 walking through the original JSON text, merrily reading commas and colons and brackets to make sure
-you get where you're going. This is the key to On Demand's performance: since it's just an iterator,
-it lets you parse values as you use them. And particularly, it lets you *skip* values you don't want
+you get where you are going. This is the key to On Demand's performance: since it's just an iterator,
+it lets you parse values as you use them. And particularly, it lets you *skip* values you do not want
 to use.
 
 ### Parser, Document and JSON Scope
@@ -99,7 +87,7 @@ Because a document is an iterator over the JSON text, both the JSON text and the
 remain alive (in scope) while you are using it. Further, a `parser` may have at most
 one document open at a time, since it holds allocated memory used for the parsing.
 
-During the `iterate` call, the original JSON text is never modified--only read. After you're done
+During the `iterate` call, the original JSON text is never modified--only read. After you are done
 with the document, the source (whether file or string) can be safely discarded.
 
 For best performance, a `parser` instance should be reused over several files: otherwise you will
@@ -119,7 +107,7 @@ support for users who avoid exceptions. See [the simdjson DOM API's error handli
   or the initial `[` or `{` will be verified. An exception is thrown if the cast is not possible.
 
   > IMPORTANT NOTE: values can only be parsed once. Since documents are *iterators*, once you have
-  > parsed a value (such as by casting to double), you can't get at it again.
+  > parsed a value (such as by casting to double), you cannot get at it again.
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
   scan through the object looking for the field with the matching string.
 

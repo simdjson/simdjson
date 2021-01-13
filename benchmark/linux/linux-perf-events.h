@@ -28,7 +28,7 @@ template <int TYPE = PERF_TYPE_HARDWARE> class LinuxEvents {
   perf_event_attr attribs{};
   size_t num_events{};
   std::vector<uint64_t> temp_result_vec{};
-  std::vector<uint64_t> ids{};
+  std::vector<uint64_t> result{};
   bool quiet;
 
 public:
@@ -48,7 +48,7 @@ public:
 
     int group = -1; // no group
     num_events = config_vec.size();
-    ids.resize(config_vec.size());
+    result.resize(config_vec.size());
     uint32_t i = 0;
     for (auto config : config_vec) {
       attribs.config = config;
@@ -56,7 +56,7 @@ public:
       if (fd == -1) {
         report_error("perf_event_open");
       }
-      ioctl(fd, PERF_EVENT_IOC_ID, &ids[i++]);
+      ioctl(fd, PERF_EVENT_IOC_ID, &result[i++]);
       if (group == -1) {
         group = fd;
       }
@@ -90,7 +90,7 @@ public:
       }
     }
     // our actual results are in slots 1,3,5, ... of this structure
-    // we really should be checking our ids obtained earlier to be safe
+    // we really should be checking our result obtained earlier to be safe
     for (uint32_t i = 1; i < temp_result_vec.size(); i += 2) {
       results[i / 2] = temp_result_vec[i];
     }

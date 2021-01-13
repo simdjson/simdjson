@@ -11,7 +11,10 @@ on:
     - cron: 23 */8 * * *
 
 jobs:
-  build:    
+  build:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
     runs-on: ubuntu-latest
     env:
       # fuzzers that change behaviour with SIMDJSON_FORCE_IMPLEMENTATION

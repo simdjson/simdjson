@@ -1,41 +1,46 @@
+
 #pragma once
 
-//
-// Interface
-//
-
-namespace partial_tweets {
-template<typename T> static void PartialTweets(benchmark::State &state);
-} // namespace partial_tweets
-
-//
-// Implementation
-//
-
+#include "json_benchmark/file_runner.h"
 #include "tweet.h"
 #include <vector>
-#include "event_counter.h"
-#include "domnoexcept.h"
-#include "json_benchmark.h"
 
 namespace partial_tweets {
 
-using namespace simdjson;
+using namespace json_benchmark;
 
-template<typename T> static void PartialTweets(benchmark::State &state) {
-  //
-  // Load the JSON file
-  //
-  constexpr const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
-  error_code error;
-  padded_string json;
-  if ((error = padded_string::load(TWITTER_JSON).get(json))) {
-    std::cerr << error << std::endl;
-    state.SkipWithError("error loading");
-    return;
+template<typename I>
+struct runner : public file_runner<I> {
+  std::vector<tweet<typename I::StringType>> result{};
+
+  bool setup(benchmark::State &state) {
+    return this->load_json(state, TWITTER_JSON);
   }
 
-  JsonBenchmark<T, DomNoExcept>(state, json);
+  bool before_run(benchmark::State &state) {
+    if (!file_runner<I>::before_run(state)) { return false; }
+    result.clear();
+    return true;
+  }
+
+  bool run(benchmark::State &) {
+    return this->implementation.run(this->json, result);
+  }
+
+  template<typename R>
+  bool diff(benchmark::State &state, runner<R> &reference) {
+    return diff_results(state, result, reference.result, diff_flags::NONE);
+  }
+
+  size_t items_per_iteration() {
+    return result.size();
+  }
+};
+
+struct simdjson_dom;
+
+template<typename I> simdjson_really_inline static void partial_tweets(benchmark::State &state) {
+  run_json_benchmark<runner<I>, runner<simdjson_dom>>(state);
 }
 
 } // namespace partial_tweets

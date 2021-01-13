@@ -19,8 +19,8 @@ simdjson_really_inline json_iterator &json_iterator::operator=(json_iterator &&o
   return *this;
 }
 
-simdjson_really_inline json_iterator::json_iterator(ondemand::parser *_parser) noexcept
-  : token(_parser->dom_parser.buf, _parser->dom_parser.structural_indexes.get()),
+simdjson_really_inline json_iterator::json_iterator(const uint8_t *buf, ondemand::parser *_parser) noexcept
+  : token(buf, _parser->dom_parser->structural_indexes.get()),
     parser{_parser},
     _string_buf_loc{parser->string_buf.get()},
     _depth{1}
@@ -69,7 +69,7 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child
   }
 
   // Now that we've considered the first value, we only increment/decrement for arrays/objects
-  auto end = &parser->dom_parser.structural_indexes[parser->dom_parser.n_structural_indexes];
+  auto end = &parser->dom_parser->structural_indexes[parser->dom_parser->n_structural_indexes];
   while (token.index <= end) {
     switch (*advance()) {
       case '[': case '{':
@@ -102,19 +102,19 @@ simdjson_really_inline bool json_iterator::at_root() const noexcept {
 }
 
 simdjson_really_inline const uint32_t *json_iterator::root_checkpoint() const noexcept {
-  return parser->dom_parser.structural_indexes.get();
+  return parser->dom_parser->structural_indexes.get();
 }
 
 simdjson_really_inline void json_iterator::assert_at_root() const noexcept {
   SIMDJSON_ASSUME( _depth == 1 );
   // Visual Studio Clang treats unique_ptr.get() as "side effecting."
 #ifndef SIMDJSON_CLANG_VISUAL_STUDIO
-  SIMDJSON_ASSUME( token.index == parser->dom_parser.structural_indexes.get() );
+  SIMDJSON_ASSUME( token.index == parser->dom_parser->structural_indexes.get() );
 #endif
 }
 
 simdjson_really_inline bool json_iterator::at_eof() const noexcept {
-  return token.index == &parser->dom_parser.structural_indexes[parser->dom_parser.n_structural_indexes];
+  return token.index == &parser->dom_parser->structural_indexes[parser->dom_parser->n_structural_indexes];
 }
 
 simdjson_really_inline bool json_iterator::is_alive() const noexcept {

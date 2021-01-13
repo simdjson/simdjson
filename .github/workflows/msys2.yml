@@ -10,6 +10,9 @@ on:
 
 jobs:
   windows-mingw:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
     name: ${{ matrix.msystem }}
     runs-on: windows-latest
     defaults:

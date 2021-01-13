@@ -167,7 +167,7 @@ public:
   simdjson_really_inline void restore_checkpoint(const uint32_t *target_checkpoint) noexcept;
 
 protected:
-  simdjson_really_inline json_iterator(ondemand::parser *parser) noexcept;
+  simdjson_really_inline json_iterator(const uint8_t *buf, ondemand::parser *parser) noexcept;
 
   friend class document;
   friend class object;

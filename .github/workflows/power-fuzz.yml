@@ -8,6 +8,9 @@ on:
 
 jobs:
   armv7_job:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
     # The host should always be Linux
     runs-on: ubuntu-20.04
     name: Build on ubuntu-20.04 ppc64le
