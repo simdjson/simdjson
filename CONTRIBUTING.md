@@ -70,6 +70,8 @@ Pull requests are always invited. However, we ask that you follow these guidelin
 - Changes should be focused and minimal. You should change as few lines of code as possible. Please do not reformat or touch files needlessly.
 - New features must be accompanied of new tests, in general.
 - Your code should pass our continuous-integration tests. It is your responsability to ensure that your proposal pass the tests. We do not merge pull requests that would break our build.
+   - An exception to this would be changes to non-code files, such as documentation and assets, or trivial changes to code, such as comments, where it is encouraged to explicitly ask for skipping a CI run using the `[skip ci]` prefix in your Pull Request title **and** in the first line of the most recent commit in a push. Example for such a commit: `[skip ci] Fixed typo in power_of_ten's docs`
+   This benefits the project in such a way that the CI pipeline is not burdened by running jobs on changes that don't change any behavior in the code, which reduces wait times for other Pull Requests that do change behavior and require testing.
 
 If the benefits of your proposed code remain unclear, we may choose to discard your code: that is not an insult, we frequently discard our own code. We may also consider various alternatives and choose another path. Again, that is not an insult or a sign that you have wasted your time.
 
