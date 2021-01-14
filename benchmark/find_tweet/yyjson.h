@@ -14,7 +14,7 @@ struct yyjson_base {
     yyjson_val *root = yyjson_doc_get_root(doc);
     if (!yyjson_is_obj(root)) { return false; }
     yyjson_val *statuses = yyjson_obj_get(root, "statuses");
-    if (!yyjson_is_arr(statuses)) { return "Statuses is not an array!"; }
+    if (!yyjson_is_arr(statuses)) { return false; }
 
     // Walk the document, parsing the tweets as we go
     size_t tweet_idx, tweets_max;

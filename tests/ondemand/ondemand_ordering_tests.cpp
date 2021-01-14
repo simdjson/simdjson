@@ -108,8 +108,8 @@ namespace ordering_tests {
     double x{0};
     double y{0};
     double z{0};
-    for (ondemand::object point_object : doc["coordinates"]) {
-      for (auto field : point_object) {
+    for (auto point_object : doc["coordinates"]) {
+      for (auto field : point_object.get_object()) {
         if (field.key() == "z") { z += double(field.value()); }
         else if (field.key() == "x") { x += double(field.value()); }
         else if (field.key() == "y") { y += double(field.value()); }
@@ -117,6 +117,31 @@ namespace ordering_tests {
     }
     return (x == 1.1) && (y == 2.2) && (z == 3.3);
   }
+
+  bool use_values_out_of_order_after_array() {
+    TEST_START();
+    ondemand::parser parser{};
+    auto doc = parser.iterate(json);
+    simdjson_result<ondemand::value> x{}, y{}, z{};
+    for (auto point_object : doc["coordinates"]) {
+      x = point_object["x"];
+      y = point_object["y"];
+      z = point_object["z"];
+    }
+    return (double(x) == 1.1) && (double(z) == 3.3) && (double(y) == 2.2);
+  }
+
+  bool use_object_multiple_times_out_of_order() {
+    TEST_START();
+    ondemand::parser parser{};
+    auto json2 = "{\"coordinates\":{\"x\":1.1,\"y\":2.2,\"z\":3.3}}"_padded;
+    auto doc = parser.iterate(json2);
+    auto x = doc["coordinates"]["x"];
+    auto y = doc["coordinates"]["y"];
+    auto z = doc["coordinates"]["z"];
+    return (double(x) == 1.1) && (double(z) == 3.3) && (double(y) == 2.2);
+  }
+
 #endif // SIMDJSON_EXCEPTIONS
 
   bool run() {
@@ -129,6 +154,8 @@ namespace ordering_tests {
            out_of_order_object_find_field_unordered() &&
            out_of_order_object_find_field() &&
            foreach_object_field_lookup() &&
+           use_values_out_of_order_after_array() &&
+           use_object_multiple_times_out_of_order() &&
 #endif // SIMDJSON_EXCEPTIONS
            true;
   }

@@ -62,4 +62,11 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "find_tweet/rapidjson.h"
 #include "find_tweet/nlohmann_json.h"
 
+#include "top_tweet/simdjson_dom.h"
+#include "top_tweet/simdjson_ondemand.h"
+#include "top_tweet/yyjson.h"
+#include "top_tweet/sajson.h"
+#include "top_tweet/rapidjson.h"
+#include "top_tweet/nlohmann_json.h"
+
 BENCHMARK_MAIN();

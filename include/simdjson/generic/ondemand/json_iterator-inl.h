@@ -98,10 +98,10 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child
 SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_really_inline bool json_iterator::at_root() const noexcept {
-  return token.checkpoint() == root_checkpoint();
+  return token.position() == root_checkpoint();
 }
 
-simdjson_really_inline const uint32_t *json_iterator::root_checkpoint() const noexcept {
+simdjson_really_inline token_position json_iterator::root_checkpoint() const noexcept {
   return parser->dom_parser->structural_indexes.get();
 }
 
@@ -138,6 +138,14 @@ simdjson_really_inline uint32_t json_iterator::peek_length(int32_t delta) const 
   return token.peek_length(delta);
 }
 
+simdjson_really_inline const uint8_t *json_iterator::peek(token_position position) const noexcept {
+  return token.peek(position);
+}
+
+simdjson_really_inline uint32_t json_iterator::peek_length(token_position position) const noexcept {
+  return token.peek_length(position);
+}
+
 simdjson_really_inline void json_iterator::ascend_to(depth_t parent_depth) noexcept {
   SIMDJSON_ASSUME(parent_depth >= 0 && parent_depth < INT32_MAX - 1);
   SIMDJSON_ASSUME(_depth == parent_depth + 1);
@@ -165,11 +173,11 @@ simdjson_really_inline error_code json_iterator::report_error(error_code _error,
   return error;
 }
 
-simdjson_really_inline const uint32_t *json_iterator::checkpoint() const noexcept {
-  return token.checkpoint();
+simdjson_really_inline token_position json_iterator::position() const noexcept {
+  return token.position();
 }
-simdjson_really_inline void json_iterator::restore_checkpoint(const uint32_t *target_checkpoint) noexcept {
-  token.restore_checkpoint(target_checkpoint);
+simdjson_really_inline void json_iterator::set_position(token_position target_checkpoint) noexcept {
+  token.set_position(target_checkpoint);
 }
 
 
@@ -183,7 +191,7 @@ template<int N>
 simdjson_warn_unused simdjson_really_inline bool json_iterator::copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t (&tmpbuf)[N]) noexcept {
   // Truncate whitespace to fit the buffer.
   if (max_len > N-1) {
-    if (jsoncharutils::is_not_structural_or_whitespace(json[N])) { return false; }
+    if (jsoncharutils::is_not_structural_or_whitespace(json[N-1])) { return false; }
     max_len = N-1;
   }
 

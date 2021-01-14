@@ -28,7 +28,7 @@ protected:
    *
    * PERF NOTE: this is a safety check; we expect this to be elided in release builds.
    */
-  const uint32_t *_start_index{};
+  token_position _start_position{};
 
 public:
   simdjson_really_inline value_iterator() noexcept = default;
@@ -249,30 +249,20 @@ public:
    * @{
    */
 
-  simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> try_get_string() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> require_string() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> try_get_raw_json_string() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> require_raw_json_string() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> try_get_uint64() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> require_uint64() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> try_get_int64() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> require_int64() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<double> try_get_double() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<double> require_double() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> try_get_bool() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> require_bool() noexcept;
-  simdjson_really_inline bool require_null() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> get_uint64() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> get_int64() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<double> get_double() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_really_inline bool is_null() noexcept;
 
-  simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> try_get_root_uint64() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> require_root_uint64() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> try_get_root_int64() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> require_root_int64() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<double> try_get_root_double() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<double> require_root_double() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> try_get_root_bool() noexcept;
-  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> require_root_bool() noexcept;
-  simdjson_really_inline bool require_root_null() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> get_root_string() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> get_root_raw_json_string() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> get_root_uint64() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> get_root_int64() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<double> get_root_double() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> get_root_bool() noexcept;
   simdjson_really_inline bool is_root_null() noexcept;
 
   simdjson_really_inline error_code error() const noexcept;
@@ -283,15 +273,20 @@ public:
   /** @} */
 
 protected:
-  simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth, const uint32_t *start_index) noexcept;
-  simdjson_really_inline bool is_null(const uint8_t *json) const noexcept;
-  simdjson_really_inline simdjson_result<bool> parse_bool(const uint8_t *json) const noexcept;
-  simdjson_really_inline bool is_root_null(const uint8_t *json, uint32_t max_len) const noexcept;
-  simdjson_really_inline simdjson_result<bool> parse_root_bool(const uint8_t *json, uint32_t max_len) const noexcept;
-  simdjson_really_inline simdjson_result<uint64_t> parse_root_uint64(const uint8_t *json, uint32_t max_len) const noexcept;
-  simdjson_really_inline simdjson_result<int64_t> parse_root_int64(const uint8_t *json, uint32_t max_len) const noexcept;
-  simdjson_really_inline simdjson_result<double> parse_root_double(const uint8_t *json, uint32_t max_len) const noexcept;
+  simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept;
 
+  simdjson_really_inline bool parse_null(const uint8_t *json) const noexcept;
+  simdjson_really_inline simdjson_result<bool> parse_bool(const uint8_t *json) const noexcept;
+
+  simdjson_really_inline const uint8_t *peek_scalar() const noexcept;
+  simdjson_really_inline uint32_t peek_scalar_length() const noexcept;
+  simdjson_really_inline const uint8_t *advance_scalar(const char *type) const noexcept;
+  simdjson_really_inline const uint8_t *advance_root_scalar(const char *type) const noexcept;
+  simdjson_really_inline const uint8_t *advance_non_root_scalar(const char *type) const noexcept;
+
+  simdjson_really_inline error_code incorrect_type_error(const char *message) const noexcept;
+
+  simdjson_really_inline bool is_at_start() const noexcept;
   simdjson_really_inline void assert_at_start() const noexcept;
   simdjson_really_inline void assert_at_root() const noexcept;
   simdjson_really_inline void assert_at_child() const noexcept;

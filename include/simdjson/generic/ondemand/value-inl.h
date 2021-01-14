@@ -40,46 +40,25 @@ simdjson_really_inline simdjson_result<object> value::start_or_resume_object() &
   }
 }
 
-simdjson_really_inline simdjson_result<raw_json_string> value::get_raw_json_string() && noexcept {
-  return iter.require_raw_json_string();
+simdjson_really_inline simdjson_result<raw_json_string> value::get_raw_json_string() noexcept {
+  return iter.get_raw_json_string();
 }
-simdjson_really_inline simdjson_result<raw_json_string> value::get_raw_json_string() & noexcept {
-  return iter.try_get_raw_json_string();
+simdjson_really_inline simdjson_result<std::string_view> value::get_string() noexcept {
+  return iter.get_string();
 }
-simdjson_really_inline simdjson_result<std::string_view> value::get_string() && noexcept {
-  return iter.require_string();
+simdjson_really_inline simdjson_result<double> value::get_double() noexcept {
+  return iter.get_double();
 }
-simdjson_really_inline simdjson_result<std::string_view> value::get_string() & noexcept {
-  return iter.try_get_string();
+simdjson_really_inline simdjson_result<uint64_t> value::get_uint64() noexcept {
+  return iter.get_uint64();
 }
-simdjson_really_inline simdjson_result<double> value::get_double() && noexcept {
-  return iter.require_double();
+simdjson_really_inline simdjson_result<int64_t> value::get_int64() noexcept {
+  return iter.get_int64();
 }
-simdjson_really_inline simdjson_result<double> value::get_double() & noexcept {
-  return iter.try_get_double();
+simdjson_really_inline simdjson_result<bool> value::get_bool() noexcept {
+  return iter.get_bool();
 }
-simdjson_really_inline simdjson_result<uint64_t> value::get_uint64() && noexcept {
-  return iter.require_uint64();
-}
-simdjson_really_inline simdjson_result<uint64_t> value::get_uint64() & noexcept {
-  return iter.try_get_uint64();
-}
-simdjson_really_inline simdjson_result<int64_t> value::get_int64() && noexcept {
-  return iter.require_int64();
-}
-simdjson_really_inline simdjson_result<int64_t> value::get_int64() & noexcept {
-  return iter.try_get_int64();
-}
-simdjson_really_inline simdjson_result<bool> value::get_bool() && noexcept {
-  return iter.require_bool();
-}
-simdjson_really_inline simdjson_result<bool> value::get_bool() & noexcept {
-  return iter.try_get_bool();
-}
-simdjson_really_inline bool value::is_null() && noexcept {
-  return iter.require_null();
-}
-simdjson_really_inline bool value::is_null() & noexcept {
+simdjson_really_inline bool value::is_null() noexcept {
   return iter.is_null();
 }
 
@@ -122,41 +101,23 @@ simdjson_really_inline value::operator object() && noexcept(false) {
 simdjson_really_inline value::operator object() & noexcept(false) {
   return std::forward<value>(*this).get_object();
 }
-simdjson_really_inline value::operator uint64_t() && noexcept(false) {
-  return std::forward<value>(*this).get_uint64();
+simdjson_really_inline value::operator uint64_t() noexcept(false) {
+  return get_uint64();
 }
-simdjson_really_inline value::operator uint64_t() & noexcept(false) {
-  return std::forward<value>(*this).get_uint64();
+simdjson_really_inline value::operator int64_t() noexcept(false) {
+  return get_int64();
 }
-simdjson_really_inline value::operator int64_t() && noexcept(false) {
-  return std::forward<value>(*this).get_int64();
+simdjson_really_inline value::operator double() noexcept(false) {
+  return get_double();
 }
-simdjson_really_inline value::operator int64_t() & noexcept(false) {
-  return std::forward<value>(*this).get_int64();
+simdjson_really_inline value::operator std::string_view() noexcept(false) {
+  return get_string();
 }
-simdjson_really_inline value::operator double() && noexcept(false) {
-  return std::forward<value>(*this).get_double();
+simdjson_really_inline value::operator raw_json_string() noexcept(false) {
+  return get_raw_json_string();
 }
-simdjson_really_inline value::operator double() & noexcept(false) {
-  return std::forward<value>(*this).get_double();
-}
-simdjson_really_inline value::operator std::string_view() && noexcept(false) {
-  return std::forward<value>(*this).get_string();
-}
-simdjson_really_inline value::operator std::string_view() & noexcept(false) {
-  return std::forward<value>(*this).get_string();
-}
-simdjson_really_inline value::operator raw_json_string() && noexcept(false) {
-  return std::forward<value>(*this).get_raw_json_string();
-}
-simdjson_really_inline value::operator raw_json_string() & noexcept(false) {
-  return std::forward<value>(*this).get_raw_json_string();
-}
-simdjson_really_inline value::operator bool() && noexcept(false) {
-  return std::forward<value>(*this).get_bool();
-}
-simdjson_really_inline value::operator bool() & noexcept(false) {
-  return std::forward<value>(*this).get_bool();
+simdjson_really_inline value::operator bool() noexcept(false) {
+  return get_bool();
 }
 #endif
 
@@ -303,61 +264,33 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object
   if (error()) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).get_object();
 }
-simdjson_really_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_uint64() & noexcept {
+simdjson_really_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_uint64() noexcept {
   if (error()) { return error(); }
   return first.get_uint64();
 }
-simdjson_really_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_uint64() && noexcept {
-  if (error()) { return error(); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).get_uint64();
-}
-simdjson_really_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_int64() & noexcept {
+simdjson_really_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_int64() noexcept {
   if (error()) { return error(); }
   return first.get_int64();
 }
-simdjson_really_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_int64() && noexcept {
-  if (error()) { return error(); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).get_int64();
-}
-simdjson_really_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_double() & noexcept {
+simdjson_really_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_double() noexcept {
   if (error()) { return error(); }
   return first.get_double();
 }
-simdjson_really_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_double() && noexcept {
-  if (error()) { return error(); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).get_double();
-}
-simdjson_really_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_string() & noexcept {
+simdjson_really_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_string() noexcept {
   if (error()) { return error(); }
   return first.get_string();
 }
-simdjson_really_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_string() && noexcept {
-  if (error()) { return error(); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).get_string();
-}
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_raw_json_string() & noexcept {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_raw_json_string() noexcept {
   if (error()) { return error(); }
   return first.get_raw_json_string();
 }
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_raw_json_string() && noexcept {
-  if (error()) { return error(); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).get_raw_json_string();
-}
-simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_bool() & noexcept {
+simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_bool() noexcept {
   if (error()) { return error(); }
   return first.get_bool();
 }
-simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_bool() && noexcept {
-  if (error()) { return error(); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).get_bool();
-}
-simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::is_null() & noexcept {
+simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::is_null() noexcept {
   if (error()) { return false; }
   return first.is_null();
-}
-simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::is_null() && noexcept {
-  if (error()) { return false; }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first).is_null();
 }
 
 template<typename T> simdjson_really_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get() & noexcept {
@@ -413,53 +346,29 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
   if (error()) { throw simdjson_error(error()); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first);
 }
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator uint64_t() && noexcept(false) {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator uint64_t() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
 }
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator int64_t() && noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first);
-}
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator uint64_t() & noexcept(false) {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator int64_t() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
 }
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator double() && noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first);
-}
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator int64_t() & noexcept(false) {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator double() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
 }
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator std::string_view() && noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first);
-}
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator double() & noexcept(false) {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator std::string_view() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
 }
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string() && noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first);
-}
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator std::string_view() & noexcept(false) {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
 }
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator bool() && noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first);
-}
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string() & noexcept(false) {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator bool() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
-}
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator bool() & noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::value>(first);
 }
 #endif
 
