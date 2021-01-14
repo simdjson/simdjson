@@ -32,6 +32,10 @@ namespace simdjson {
    */
   namespace builtin = SIMDJSON_BUILTIN_IMPLEMENTATION;
   /**
+   * @overload simdjson::SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand
+   */
+  namespace ondemand = SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand;
+  /**
    * Function which returns a pointer to an implementation matching the "builtin" implementation.
    * The builtin implementation is the best statically linked simdjson implementation that can be used by the compiling
    * program. If you compile with g++ -march=haswell, this will return the haswell implementation.

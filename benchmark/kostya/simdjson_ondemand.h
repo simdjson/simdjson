@@ -7,7 +7,6 @@
 namespace kostya {
 
 using namespace simdjson;
-using namespace simdjson::builtin;
 
 struct simdjson_ondemand {
   static constexpr diff_flags DiffFlags = diff_flags::NONE;

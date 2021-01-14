@@ -212,7 +212,7 @@ public:
    * JSON `{ "x": 1, "y": 2, "z": 3 }`:
    *
    * ```c++
-   * simdjson::builtin::ondemand::parser parser;
+   * simdjson::ondemand::parser parser;
    * auto obj = parser.parse(R"( { "x": 1, "y": 2, "z": 3 } )"_padded);
    * double z = obj.find_field("z");
    * double y = obj.find_field("y");

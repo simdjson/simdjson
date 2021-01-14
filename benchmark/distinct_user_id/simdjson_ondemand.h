@@ -7,7 +7,6 @@
 namespace distinct_user_id {
 
 using namespace simdjson;
-using namespace simdjson::builtin;
 
 struct simdjson_ondemand {
   ondemand::parser parser{};

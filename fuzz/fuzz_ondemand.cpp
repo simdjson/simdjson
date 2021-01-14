@@ -16,7 +16,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 #if SIMDJSON_EXCEPTIONS
   try {
 #endif
-    simdjson::builtin::ondemand::parser parser;
+    simdjson::ondemand::parser parser;
     simdjson::padded_string padded(strings[0]);
     auto doc = parser.iterate(padded);
     if (doc.error()) {
