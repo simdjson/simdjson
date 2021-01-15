@@ -663,7 +663,7 @@ namespace dom_api_tests {
     int i = 0;
     for (auto [key, value] : object) {
       ASSERT_EQUAL( key, expected_key[i] );
-      ASSERT_EQUAL( value.get<uint64_t>().first, expected_value[i] );
+      ASSERT_EQUAL( value.get<uint64_t>().value_unsafe(), expected_value[i] );
       i++;
     }
     ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
@@ -748,18 +748,18 @@ namespace dom_api_tests {
     ASSERT_SUCCESS( parser.parse(json).get(array) );
 
     auto iter = array.begin();
-    ASSERT_EQUAL( (*iter).get<uint64_t>().first, 0 );
-    ASSERT_EQUAL( (*iter).get<int64_t>().first, 0 );
-    ASSERT_EQUAL( (*iter).get<double>().first, 0 );
+    ASSERT_EQUAL( (*iter).get<uint64_t>().value_unsafe(), 0 );
+    ASSERT_EQUAL( (*iter).get<int64_t>().value_unsafe(), 0 );
+    ASSERT_EQUAL( (*iter).get<double>().value_unsafe(), 0 );
     ++iter;
-    ASSERT_EQUAL( (*iter).get<uint64_t>().first, 1 );
-    ASSERT_EQUAL( (*iter).get<int64_t>().first, 1 );
-    ASSERT_EQUAL( (*iter).get<double>().first, 1 );
+    ASSERT_EQUAL( (*iter).get<uint64_t>().value_unsafe(), 1 );
+    ASSERT_EQUAL( (*iter).get<int64_t>().value_unsafe(), 1 );
+    ASSERT_EQUAL( (*iter).get<double>().value_unsafe(), 1 );
     ++iter;
-    ASSERT_EQUAL( (*iter).get<int64_t>().first, -1 );
-    ASSERT_EQUAL( (*iter).get<double>().first, -1 );
+    ASSERT_EQUAL( (*iter).get<int64_t>().value_unsafe(), -1 );
+    ASSERT_EQUAL( (*iter).get<double>().value_unsafe(), -1 );
     ++iter;
-    ASSERT_EQUAL( (*iter).get<double>().first, 1.1 );
+    ASSERT_EQUAL( (*iter).get<double>().value_unsafe(), 1.1 );
     return true;
   }
 
@@ -771,9 +771,9 @@ namespace dom_api_tests {
     ASSERT_SUCCESS( parser.parse(json).get(array) );
 
     auto val = array.begin();
-    ASSERT_EQUAL( (*val).get<bool>().first, true );
+    ASSERT_EQUAL( (*val).get<bool>().value_unsafe(), true );
     ++val;
-    ASSERT_EQUAL( (*val).get<bool>().first, false );
+    ASSERT_EQUAL( (*val).get<bool>().value_unsafe(), false );
     return true;
   }
 
@@ -795,13 +795,13 @@ namespace dom_api_tests {
     dom::parser parser;
     dom::object object;
     ASSERT_SUCCESS( parser.parse(json).get(object) );
-    ASSERT_EQUAL( object["a"].get<uint64_t>().first, 1 );
-    ASSERT_EQUAL( object["b"].get<uint64_t>().first, 2 );
-    ASSERT_EQUAL( object["c/d"].get<uint64_t>().first, 3 );
+    ASSERT_EQUAL( object["a"].get<uint64_t>().value_unsafe(), 1 );
+    ASSERT_EQUAL( object["b"].get<uint64_t>().value_unsafe(), 2 );
+    ASSERT_EQUAL( object["c/d"].get<uint64_t>().value_unsafe(), 3 );
     // Check all three again in backwards order, to ensure we can go backwards
-    ASSERT_EQUAL( object["c/d"].get<uint64_t>().first, 3 );
-    ASSERT_EQUAL( object["b"].get<uint64_t>().first, 2 );
-    ASSERT_EQUAL( object["a"].get<uint64_t>().first, 1 );
+    ASSERT_EQUAL( object["c/d"].get<uint64_t>().value_unsafe(), 3 );
+    ASSERT_EQUAL( object["b"].get<uint64_t>().value_unsafe(), 2 );
+    ASSERT_EQUAL( object["a"].get<uint64_t>().value_unsafe(), 1 );
 
     simdjson::error_code error;
     simdjson_unused element val;
@@ -825,20 +825,20 @@ namespace dom_api_tests {
     dom::parser parser;
     dom::element doc;
     ASSERT_SUCCESS( parser.parse(json).get(doc) );
-    ASSERT_EQUAL( doc["obj"]["a"].get<uint64_t>().first, 1);
+    ASSERT_EQUAL( doc["obj"]["a"].get<uint64_t>().value_unsafe(), 1);
 
     object obj;
     ASSERT_SUCCESS( doc.get(obj) );
-    ASSERT_EQUAL( obj["obj"]["a"].get<uint64_t>().first, 1);
+    ASSERT_EQUAL( obj["obj"]["a"].get<uint64_t>().value_unsafe(), 1);
 
     ASSERT_SUCCESS( obj["obj"].get(obj) );
-    ASSERT_EQUAL( obj["a"].get<uint64_t>().first, 1 );
-    ASSERT_EQUAL( obj["b"].get<uint64_t>().first, 2 );
-    ASSERT_EQUAL( obj["c/d"].get<uint64_t>().first, 3 );
+    ASSERT_EQUAL( obj["a"].get<uint64_t>().value_unsafe(), 1 );
+    ASSERT_EQUAL( obj["b"].get<uint64_t>().value_unsafe(), 2 );
+    ASSERT_EQUAL( obj["c/d"].get<uint64_t>().value_unsafe(), 3 );
     // Check all three again in backwards order, to ensure we can go backwards
-    ASSERT_EQUAL( obj["c/d"].get<uint64_t>().first, 3 );
-    ASSERT_EQUAL( obj["b"].get<uint64_t>().first, 2 );
-    ASSERT_EQUAL( obj["a"].get<uint64_t>().first, 1 );
+    ASSERT_EQUAL( obj["c/d"].get<uint64_t>().value_unsafe(), 3 );
+    ASSERT_EQUAL( obj["b"].get<uint64_t>().value_unsafe(), 2 );
+    ASSERT_EQUAL( obj["a"].get<uint64_t>().value_unsafe(), 1 );
 
     simdjson_unused element val;
     ASSERT_ERROR( doc["d"].get(val), NO_SUCH_FIELD);
@@ -1054,6 +1054,28 @@ namespace dom_api_tests {
     ASSERT_EQUAL( image_sizes.size(), 15 );
     return true;
   }
+#else
+  // https://github.com/simdjson/simdjson/issues/1243
+  bool unsafe_value_noexception() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"({ "foo": [1, 2, 3] })");
+    uint64_t expected_value[] = { 1, 2, 3 };
+    int i = 0;
+    auto elem = doc["foo"]; // Not sure what the expression was, this is just an example.
+    if (!elem.error() && elem.is_array()) {
+      for (auto child : elem.get_array().value_unsafe()) { // Not sure if this is what they were doing with it, but it's a good guess)
+         if(child.is_uint64()) {
+            ASSERT_EQUAL( child.as_uint64(), expected_value[i]);
+            i++;
+         } else {
+            return false;
+         }
+      }
+      rturn true;
+    } else {
+      return false;
+    }
+  }
 
 #endif
 
@@ -1086,6 +1108,8 @@ namespace dom_api_tests {
            twitter_count_exception() &&
            twitter_default_profile_exception() &&
            twitter_image_sizes_exception() &&
+#else
+           unsafe_value_noexception() &&
 #endif
            true;
   }
@@ -1129,7 +1153,7 @@ namespace type_tests {
     cast_tester<T> tester;
     std::cout << "  test_cast<" << typeid(T).name() << "> expecting " << expected << std::endl;
     // Grab the element out and check success
-    dom::element element = result.first;
+    dom::element element = result.value_unsafe();
 
     RUN_TEST( tester.test_get_t(element, expected) );
     RUN_TEST( tester.test_get_t(result, expected) );
@@ -1154,7 +1178,7 @@ namespace type_tests {
     cast_tester<T> tester;
     std::cout << "  test_cast<" << typeid(T).name() << ">" << std::endl;
     // Grab the element out and check success
-    dom::element element = result.first;
+    dom::element element = result.value_unsafe();
 
     RUN_TEST( tester.test_get_t(element) );
     RUN_TEST( tester.test_get_t(result) );
@@ -1180,7 +1204,7 @@ namespace type_tests {
   template<typename T>
   bool test_cast_error(simdjson_result<dom::element> result, simdjson::error_code expected_error) {
     std::cout << "  test_cast_error<" << typeid(T).name() << "> expecting error '" << expected_error << "'" << std::endl;
-    dom::element element = result.first;
+    dom::element element = result.value_unsafe();
 
     cast_tester<T> tester;
 
@@ -1202,7 +1226,7 @@ namespace type_tests {
 
   bool test_type(simdjson_result<dom::element> result, dom::element_type expected_type) {
     std::cout << "  test_type() expecting " << expected_type << std::endl;
-    dom::element element = result.first;
+    dom::element element = result.value_unsafe();
     dom::element_type actual_type;
     auto error = result.type().get(actual_type);
     ASSERT_SUCCESS(error);
@@ -1232,7 +1256,7 @@ namespace type_tests {
   bool test_is_null(simdjson_result<dom::element> result, bool expected_is_null) {
     std::cout << "  test_is_null() expecting " << expected_is_null << std::endl;
     // Grab the element out and check success
-    dom::element element = result.first;
+    dom::element element = result.value_unsafe();
     ASSERT_EQUAL(result.is_null(), expected_is_null);
 
     ASSERT_EQUAL(element.is_null(), expected_is_null);

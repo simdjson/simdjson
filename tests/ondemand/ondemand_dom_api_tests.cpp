@@ -18,7 +18,7 @@ namespace dom_api_tests {
       for (auto [ field, error ] : object) {
         ASSERT_SUCCESS(error);
         ASSERT_EQUAL( field.key(), expected_key[i]);
-        ASSERT_EQUAL( field.value().get_uint64().first, expected_value[i] );
+        ASSERT_EQUAL( field.value().get_uint64().value_unsafe(), expected_value[i] );
         i++;
       }
       ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
@@ -30,7 +30,7 @@ namespace dom_api_tests {
       for (auto [ field, error ] : object_result) {
         ASSERT_SUCCESS(error);
         ASSERT_EQUAL( field.key(), expected_key[i] );
-        ASSERT_EQUAL( field.value().get_uint64().first, expected_value[i] );
+        ASSERT_EQUAL( field.value().get_uint64().value_unsafe(), expected_value[i] );
         i++;
       }
       ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
@@ -870,11 +870,11 @@ namespace dom_api_tests {
       ondemand::object object;
       ASSERT_SUCCESS( doc_result.get(object) );
 
-      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
-      ASSERT_EQUAL( object["b"].get_uint64().first, 2 );
-      ASSERT_EQUAL( object["c/d"].get_uint64().first, 3 );
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object["c/d"].get_uint64().value_unsafe(), 3 );
 
-      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
       ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
       return true;
     }));
@@ -882,31 +882,31 @@ namespace dom_api_tests {
       simdjson_result<ondemand::object> object;
       object = doc_result.get_object();
 
-      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
-      ASSERT_EQUAL( object["b"].get_uint64().first, 2 );
-      ASSERT_EQUAL( object["c/d"].get_uint64().first, 3 );
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object["c/d"].get_uint64().value_unsafe(), 3 );
 
-      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
       ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
       return true;
     }));
     SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
-      ASSERT_EQUAL( doc["a"].get_uint64().first, 1 );
-      ASSERT_EQUAL( doc["b"].get_uint64().first, 2 );
-      ASSERT_EQUAL( doc["c/d"].get_uint64().first, 3 );
+      ASSERT_EQUAL( doc["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( doc["b"].get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( doc["c/d"].get_uint64().value_unsafe(), 3 );
 
-      ASSERT_EQUAL( doc["a"].get_uint64().first, 1 );
+      ASSERT_EQUAL( doc["a"].get_uint64().value_unsafe(), 1 );
       ASSERT_ERROR( doc["d"], NO_SUCH_FIELD );
       return true;
     }));
     SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
-      ASSERT_EQUAL( doc_result["a"].get_uint64().first, 1 );
-      ASSERT_EQUAL( doc_result["b"].get_uint64().first, 2 );
-      ASSERT_EQUAL( doc_result["c/d"].get_uint64().first, 3 );
+      ASSERT_EQUAL( doc_result["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( doc_result["b"].get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( doc_result["c/d"].get_uint64().value_unsafe(), 3 );
 
-      ASSERT_EQUAL( doc_result["a"].get_uint64().first, 1 );
+      ASSERT_EQUAL( doc_result["a"].get_uint64().value_unsafe(), 1 );
       ASSERT_ERROR( doc_result["d"], NO_SUCH_FIELD );
       return true;
     }));
@@ -915,21 +915,21 @@ namespace dom_api_tests {
     SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::value object;
       ASSERT_SUCCESS( doc_result["outer"].get(object) );
-      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
-      ASSERT_EQUAL( object["b"].get_uint64().first, 2 );
-      ASSERT_EQUAL( object["c/d"].get_uint64().first, 3 );
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object["c/d"].get_uint64().value_unsafe(), 3 );
 
-      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
       ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
       return true;
     }));
     SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::value> object = doc_result["outer"];
-      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
-      ASSERT_EQUAL( object["b"].get_uint64().first, 2 );
-      ASSERT_EQUAL( object["c/d"].get_uint64().first, 3 );
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object["c/d"].get_uint64().value_unsafe(), 3 );
 
-      ASSERT_EQUAL( object["a"].get_uint64().first, 1 );
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
       ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
       return true;
     }));
@@ -943,11 +943,11 @@ namespace dom_api_tests {
       ondemand::object object;
       ASSERT_SUCCESS( doc_result.get(object) );
 
-      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
-      ASSERT_EQUAL( object.find_field_unordered("b").get_uint64().first, 2 );
-      ASSERT_EQUAL( object.find_field_unordered("c/d").get_uint64().first, 3 );
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object.find_field_unordered("b").get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object.find_field_unordered("c/d").get_uint64().value_unsafe(), 3 );
 
-      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
       ASSERT_ERROR( object.find_field_unordered("d"), NO_SUCH_FIELD );
       return true;
     }));
@@ -955,31 +955,31 @@ namespace dom_api_tests {
       simdjson_result<ondemand::object> object;
       object = doc_result.get_object();
 
-      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
-      ASSERT_EQUAL( object.find_field_unordered("b").get_uint64().first, 2 );
-      ASSERT_EQUAL( object.find_field_unordered("c/d").get_uint64().first, 3 );
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object.find_field_unordered("b").get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object.find_field_unordered("c/d").get_uint64().value_unsafe(), 3 );
 
-      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
       ASSERT_ERROR( object.find_field_unordered("d"), NO_SUCH_FIELD );
       return true;
     }));
     SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
-      ASSERT_EQUAL( doc.find_field_unordered("a").get_uint64().first, 1 );
-      ASSERT_EQUAL( doc.find_field_unordered("b").get_uint64().first, 2 );
-      ASSERT_EQUAL( doc.find_field_unordered("c/d").get_uint64().first, 3 );
+      ASSERT_EQUAL( doc.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( doc.find_field_unordered("b").get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( doc.find_field_unordered("c/d").get_uint64().value_unsafe(), 3 );
 
-      ASSERT_EQUAL( doc.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( doc.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
       ASSERT_ERROR( doc.find_field_unordered("d"), NO_SUCH_FIELD );
       return true;
     }));
     SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
-      ASSERT_EQUAL( doc_result.find_field_unordered("a").get_uint64().first, 1 );
-      ASSERT_EQUAL( doc_result.find_field_unordered("b").get_uint64().first, 2 );
-      ASSERT_EQUAL( doc_result.find_field_unordered("c/d").get_uint64().first, 3 );
+      ASSERT_EQUAL( doc_result.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( doc_result.find_field_unordered("b").get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( doc_result.find_field_unordered("c/d").get_uint64().value_unsafe(), 3 );
 
-      ASSERT_EQUAL( doc_result.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( doc_result.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
       ASSERT_ERROR( doc_result.find_field_unordered("d"), NO_SUCH_FIELD );
       return true;
     }));
@@ -988,21 +988,21 @@ namespace dom_api_tests {
     SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::value object;
       ASSERT_SUCCESS( doc_result.find_field_unordered("outer").get(object) );
-      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
-      ASSERT_EQUAL( object.find_field_unordered("b").get_uint64().first, 2 );
-      ASSERT_EQUAL( object.find_field_unordered("c/d").get_uint64().first, 3 );
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object.find_field_unordered("b").get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object.find_field_unordered("c/d").get_uint64().value_unsafe(), 3 );
 
-      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
       ASSERT_ERROR( object.find_field_unordered("d"), NO_SUCH_FIELD );
       return true;
     }));
     SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::value> object = doc_result.find_field_unordered("outer");
-      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
-      ASSERT_EQUAL( object.find_field_unordered("b").get_uint64().first, 2 );
-      ASSERT_EQUAL( object.find_field_unordered("c/d").get_uint64().first, 3 );
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object.find_field_unordered("b").get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object.find_field_unordered("c/d").get_uint64().value_unsafe(), 3 );
 
-      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().first, 1 );
+      ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
       ASSERT_ERROR( object.find_field_unordered("d"), NO_SUCH_FIELD );
       return true;
     }));
@@ -1016,9 +1016,9 @@ namespace dom_api_tests {
       ondemand::object object;
       ASSERT_SUCCESS( doc_result.get(object) );
 
-      ASSERT_EQUAL( object.find_field("a").get_uint64().first, 1 );
-      ASSERT_EQUAL( object.find_field("b").get_uint64().first, 2 );
-      ASSERT_EQUAL( object.find_field("c/d").get_uint64().first, 3 );
+      ASSERT_EQUAL( object.find_field("a").get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object.find_field("b").get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object.find_field("c/d").get_uint64().value_unsafe(), 3 );
 
       ASSERT_ERROR( object.find_field("a"), NO_SUCH_FIELD );
       ASSERT_ERROR( object.find_field("d"), NO_SUCH_FIELD );
@@ -1028,9 +1028,9 @@ namespace dom_api_tests {
       simdjson_result<ondemand::object> object;
       object = doc_result.get_object();
 
-      ASSERT_EQUAL( object.find_field("a").get_uint64().first, 1 );
-      ASSERT_EQUAL( object.find_field("b").get_uint64().first, 2 );
-      ASSERT_EQUAL( object.find_field("c/d").get_uint64().first, 3 );
+      ASSERT_EQUAL( object.find_field("a").get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object.find_field("b").get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object.find_field("c/d").get_uint64().value_unsafe(), 3 );
 
       ASSERT_ERROR( object.find_field("a"), NO_SUCH_FIELD );
       ASSERT_ERROR( object.find_field("d"), NO_SUCH_FIELD );
@@ -1039,18 +1039,18 @@ namespace dom_api_tests {
     SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
-      ASSERT_EQUAL( doc.find_field("a").get_uint64().first, 1 );
-      ASSERT_EQUAL( doc.find_field("b").get_uint64().first, 2 );
-      ASSERT_EQUAL( doc.find_field("c/d").get_uint64().first, 3 );
+      ASSERT_EQUAL( doc.find_field("a").get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( doc.find_field("b").get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( doc.find_field("c/d").get_uint64().value_unsafe(), 3 );
 
       ASSERT_ERROR( doc.find_field("a"), NO_SUCH_FIELD );
       ASSERT_ERROR( doc.find_field("d"), NO_SUCH_FIELD );
       return true;
     }));
     SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
-      ASSERT_EQUAL( doc_result.find_field("a").get_uint64().first, 1 );
-      ASSERT_EQUAL( doc_result.find_field("b").get_uint64().first, 2 );
-      ASSERT_EQUAL( doc_result.find_field("c/d").get_uint64().first, 3 );
+      ASSERT_EQUAL( doc_result.find_field("a").get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( doc_result.find_field("b").get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( doc_result.find_field("c/d").get_uint64().value_unsafe(), 3 );
 
       ASSERT_ERROR( doc_result.find_field("a"), NO_SUCH_FIELD );
       ASSERT_ERROR( doc_result.find_field("d"), NO_SUCH_FIELD );
@@ -1061,9 +1061,9 @@ namespace dom_api_tests {
     SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::value object;
       ASSERT_SUCCESS( doc_result.find_field("outer").get(object) );
-      ASSERT_EQUAL( object.find_field("a").get_uint64().first, 1 );
-      ASSERT_EQUAL( object.find_field("b").get_uint64().first, 2 );
-      ASSERT_EQUAL( object.find_field("c/d").get_uint64().first, 3 );
+      ASSERT_EQUAL( object.find_field("a").get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object.find_field("b").get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object.find_field("c/d").get_uint64().value_unsafe(), 3 );
 
       ASSERT_ERROR( object.find_field("a"), NO_SUCH_FIELD );
       ASSERT_ERROR( object.find_field("d"), NO_SUCH_FIELD );
@@ -1071,9 +1071,9 @@ namespace dom_api_tests {
     }));
     SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::value> object = doc_result.find_field("outer");
-      ASSERT_EQUAL( object.find_field("a").get_uint64().first, 1 );
-      ASSERT_EQUAL( object.find_field("b").get_uint64().first, 2 );
-      ASSERT_EQUAL( object.find_field("c/d").get_uint64().first, 3 );
+      ASSERT_EQUAL( object.find_field("a").get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object.find_field("b").get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object.find_field("c/d").get_uint64().value_unsafe(), 3 );
 
       ASSERT_ERROR( object.find_field("a"), NO_SUCH_FIELD );
       ASSERT_ERROR( object.find_field("d"), NO_SUCH_FIELD );
@@ -1086,35 +1086,35 @@ namespace dom_api_tests {
     TEST_START();
     auto json = R"({ "x": { "y": { "z": 2 } } }})"_padded;
     SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
-      ASSERT_EQUAL( doc_result["x"]["y"]["z"].get_uint64().first, 2 );
+      ASSERT_EQUAL( doc_result["x"]["y"]["z"].get_uint64().value_unsafe(), 2 );
       return true;
     }));
     SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
-      ASSERT_EQUAL( doc["x"]["y"]["z"].get_uint64().first, 2 );
+      ASSERT_EQUAL( doc["x"]["y"]["z"].get_uint64().value_unsafe(), 2 );
       return true;
     }));
     SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::object> object = doc_result.get_object();
-      ASSERT_EQUAL( object["x"]["y"]["z"].get_uint64().first, 2 );
+      ASSERT_EQUAL( object["x"]["y"]["z"].get_uint64().value_unsafe(), 2 );
       return true;
     }));
     SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::object object;
       ASSERT_SUCCESS( doc_result.get(object) );
-      ASSERT_EQUAL( object["x"]["y"]["z"].get_uint64().first, 2 );
+      ASSERT_EQUAL( object["x"]["y"]["z"].get_uint64().value_unsafe(), 2 );
       return true;
     }));
     SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::value> x = doc_result["x"];
-      ASSERT_EQUAL( x["y"]["z"].get_uint64().first, 2 );
+      ASSERT_EQUAL( x["y"]["z"].get_uint64().value_unsafe(), 2 );
       return true;
     }));
     SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::value x;
       ASSERT_SUCCESS( doc_result["x"].get(x) );
-      ASSERT_EQUAL( x["y"]["z"].get_uint64().first, 2 );
+      ASSERT_EQUAL( x["y"]["z"].get_uint64().value_unsafe(), 2 );
       return true;
     }));
     TEST_SUCCEED();
