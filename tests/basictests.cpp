@@ -805,12 +805,13 @@ namespace dom_api_tests {
 
     simdjson::error_code error;
     simdjson_unused element val;
-#ifndef _LIBCPP_VERSION // should work everywhere but with libc++, must include the <ciso646> header.
-    std::tie(val,error) = object["d"];
-    ASSERT_ERROR( error, NO_SUCH_FIELD );
-    std::tie(std::ignore,error) = object["d"];
-    ASSERT_ERROR( error, NO_SUCH_FIELD );
-#endif
+// This is disabled, see https://github.com/simdjson/simdjson/issues/1243
+//#ifndef _LIBCPP_VERSION // should work everywhere but with libc++, must include the <ciso646> header.
+//    std::tie(val,error) = object["d"];
+//    ASSERT_ERROR( error, NO_SUCH_FIELD );
+//    std::tie(std::ignore,error) = object["d"];
+//    ASSERT_ERROR( error, NO_SUCH_FIELD );
+//#endif
     // tie(val, error) = object["d"]; fails with "no viable overloaded '='" on Apple clang version 11.0.0	    tie(val, error) = doc["d"];
     object["d"].tie(val, error);
     ASSERT_ERROR( error, NO_SUCH_FIELD );
