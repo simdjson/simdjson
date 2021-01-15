@@ -97,7 +97,7 @@ namespace internal {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct simdjson_result_base : protected std::pair<T, error_code> {
+struct simdjson_result_base : public std::pair<T, error_code> {
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
