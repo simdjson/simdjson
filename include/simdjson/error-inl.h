@@ -69,7 +69,7 @@ simdjson_really_inline error_code simdjson_result_base<T>::error() const noexcep
 #if SIMDJSON_EXCEPTIONS
 
 template<typename T>
-simdjson_really_inline T& simdjson_result_base<T>::value() & noexcept(false) {
+simdjson_really_inline const T& simdjson_result_base<T>::value() const& noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return this->first;
 }
@@ -86,7 +86,7 @@ simdjson_really_inline T&& simdjson_result_base<T>::take_value() && noexcept(fal
 }
 
 template<typename T>
-simdjson_really_inline simdjson_result_base<T>::operator T&() & noexcept(false) {
+simdjson_really_inline simdjson_result_base<T>::operator const T&() const& noexcept(false) {
   return value();
 }
 
@@ -134,7 +134,7 @@ simdjson_really_inline error_code simdjson_result<T>::error() const noexcept {
 #if SIMDJSON_EXCEPTIONS
 
 template<typename T>
-simdjson_really_inline T& simdjson_result<T>::value() & noexcept(false) {
+simdjson_really_inline const T& simdjson_result<T>::value() const& noexcept(false) {
   return internal::simdjson_result_base<T>::value();
 }
 
@@ -149,7 +149,7 @@ simdjson_really_inline T&& simdjson_result<T>::take_value() && noexcept(false) {
 }
 
 template<typename T>
-simdjson_really_inline simdjson_result<T>::operator T&() & noexcept(false) {
+simdjson_really_inline simdjson_result<T>::operator const T&() const& noexcept(false) {
   return value();
 }
 
