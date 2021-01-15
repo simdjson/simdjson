@@ -27,6 +27,7 @@
 #endif
 #endif
 
+
 const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
 #define SIMDJSON_SHOW_DEFINE(x) printf("%s=%s\n", #x, STRINGIFY(x))
 
@@ -795,6 +796,10 @@ namespace dom_api_tests {
     dom::parser parser;
     dom::object object;
     ASSERT_SUCCESS( parser.parse(json).get(object) );
+    // Next three lines are for https://github.com/simdjson/simdjson/issues/1341
+    auto node = object["a"];
+    auto mylambda = [](dom::element e) { return int64_t(e); };
+    ASSERT_EQUAL( mylambda(node), 1 );
     ASSERT_EQUAL( object["a"].get<uint64_t>().first, 1 );
     ASSERT_EQUAL( object["b"].get<uint64_t>().first, 2 );
     ASSERT_EQUAL( object["c/d"].get<uint64_t>().first, 3 );
