@@ -13,7 +13,7 @@ static void print_json(std::ostream& os, simdjson::dom::element element) {
   switch (element.type()) {
   case simdjson::dom::element_type::ARRAY:
     os << "[";
-    for (simdjson::dom::element child : element.get<simdjson::dom::array>().value_unsafe()) {
+    for (simdjson::dom::element child : element.get<simdjson::dom::array>()) {
       print_json(os, child);
       os << ",";
     }
@@ -21,26 +21,26 @@ static void print_json(std::ostream& os, simdjson::dom::element element) {
     break;
   case simdjson::dom::element_type::OBJECT:
     os << "{";
-    for (simdjson::dom::key_value_pair field : element.get<simdjson::dom::object>().value_unsafe()) {
+    for (simdjson::dom::key_value_pair field : element.get<simdjson::dom::object>()) {
       os << "\"" << field.key << "\": ";
       print_json(os, field.value);
     }
     os << "}";
     break;
   case simdjson::dom::element_type::INT64:
-    os << element.get<int64_t>().value_unsafe() << endl;
+    os << int64_t(element) << endl;
     break;
   case simdjson::dom::element_type::UINT64:
-    os << element.get<uint64_t>().value_unsafe() << endl;
+    os << uint64_t(element) << endl;
     break;
   case simdjson::dom::element_type::DOUBLE:
-    os << element.get<double>().value_unsafe() << endl;
+    os << double(element) << endl;
     break;
   case simdjson::dom::element_type::STRING:
-    os << element.get<std::string_view>().value_unsafe() << endl;
+    os << std::string_view(element) << endl;
     break;
   case simdjson::dom::element_type::BOOL:
-    os << element.get<bool>().value_unsafe() << endl;
+    os << bool(element) << endl;
     break;
   case simdjson::dom::element_type::NULL_VALUE:
     os << "null" << endl;
