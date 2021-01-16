@@ -1055,30 +1055,31 @@ namespace dom_api_tests {
     ASSERT_EQUAL( image_sizes.size(), 15 );
     return true;
   }
-#else
+
+#endif
   // https://github.com/simdjson/simdjson/issues/1243
-  bool unsafe_value_noexception() {
+  bool unsafe_value_noexception() noexcept {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "foo": [1, 2, 3] })");
+    dom::parser parser;
+    auto doc = parser.load(json);
     uint64_t expected_value[] = { 1, 2, 3 };
     int i = 0;
-    auto elem = doc["foo"]; // Not sure what the expression was, this is just an example.
+    auto elem = doc["foo"];
     if (!elem.error() && elem.is_array()) {
       for (auto child : elem.get_array().value_unsafe()) { // Not sure if this is what they were doing with it, but it's a good guess)
          if(child.is_uint64()) {
-            ASSERT_EQUAL( child.as_uint64(), expected_value[i]);
+            ASSERT_EQUAL( child.get_uint64().value_unsafe(), expected_value[i]);
             i++;
          } else {
             return false;
          }
       }
-      rturn true;
+      return true;
     } else {
       return false;
     }
   }
-
-#endif
 
   bool run() {
     return
@@ -1098,6 +1099,7 @@ namespace dom_api_tests {
            twitter_count() &&
            twitter_default_profile() &&
            twitter_image_sizes() &&
+           unsafe_value_noexception() &&
 #if SIMDJSON_EXCEPTIONS
            object_iterator_exception() &&
            array_iterator_exception() &&
@@ -1109,8 +1111,6 @@ namespace dom_api_tests {
            twitter_count_exception() &&
            twitter_default_profile_exception() &&
            twitter_image_sizes_exception() &&
-#else
-           unsafe_value_noexception() &&
 #endif
            true;
   }
