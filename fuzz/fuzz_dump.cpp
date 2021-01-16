@@ -10,7 +10,7 @@
 // example from doc/basics.md#tree-walking-and-json-element-types
 /***
  * Important: This function should compile without support for exceptions.
- */  
+ */
 static void print_json(std::ostream& os, simdjson::dom::element element) noexcept {
   const char endl='\n';
   switch (element.type()) {
