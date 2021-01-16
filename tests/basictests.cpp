@@ -1060,25 +1060,17 @@ namespace dom_api_tests {
   // https://github.com/simdjson/simdjson/issues/1243
   bool unsafe_value_noexception() noexcept {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"({ "foo": [1, 2, 3] })");
+    string json(R"({ "foo": [1, 2, 3, 17, 22] })");
+    uint64_t expected_values[] = { 1, 2, 3, 17, 22 };
+    uint64_t * expected_value = expected_values;
     dom::parser parser;
-    auto doc = parser.load(json);
-    uint64_t expected_value[] = { 1, 2, 3 };
-    int i = 0;
-    auto elem = doc["foo"];
-    if (!elem.error() && elem.is_array()) {
-      for (auto child : elem.get_array().value_unsafe()) { // Not sure if this is what they were doing with it, but it's a good guess)
-         if(child.is_uint64()) {
-            ASSERT_EQUAL( child.get_uint64().value_unsafe(), expected_value[i]);
-            i++;
-         } else {
-            return false;
-         }
-      }
-      return true;
-    } else {
-      return false;
+    auto elem = parser.parse(json)["foo"];
+    if (elem.error() || !elem.is_array()) { return false; }
+    for (auto child : elem.get_array().value_unsafe()) {
+      if(!child.is_uint64()) { return false; }
+      ASSERT_EQUAL( child.get_uint64().value_unsafe(), *expected_value++);
     }
+    return true;
   }
 
   bool run() {
