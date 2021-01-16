@@ -13,17 +13,23 @@ static void print_json(std::ostream& os, simdjson::dom::element element) {
   switch (element.type()) {
   case simdjson::dom::element_type::ARRAY:
     os << "[";
-    for (simdjson::dom::element child : element.get<simdjson::dom::array>()) {
-      print_json(os, child);
-      os << ",";
+    {
+      simdjson::dom::array array(element);
+      for (simdjson::dom::element child : array) {
+        print_json(os, child);
+        os << ",";
+      }
     }
     os << "]";
     break;
   case simdjson::dom::element_type::OBJECT:
     os << "{";
-    for (simdjson::dom::key_value_pair field : element.get<simdjson::dom::object>()) {
-      os << "\"" << field.key << "\": ";
-      print_json(os, field.value);
+    {
+      simdjson::dom::object object(element);
+      for (simdjson::dom::key_value_pair field : object) {
+        os << "\"" << field.key << "\": ";
+        print_json(os, field.value);
+      }
     }
     os << "}";
     break;
