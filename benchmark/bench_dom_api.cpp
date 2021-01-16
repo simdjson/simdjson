@@ -503,7 +503,7 @@ static void twitter_default_profile(State& state) {
     for (dom::object tweet : doc["statuses"]) {
       dom::object user = tweet["user"];
       if (user["default_profile"]) {
-        default_users.insert(user["screen_name"]);
+        default_users.emplace(user["screen_name"]);
       }
     }
     if (default_users.size() != 86) { return; }
@@ -523,7 +523,7 @@ static void twitter_image_sizes(State& state) {
       if (not (error = tweet["entities"]["media"].get(media))) {
         for (dom::object image : media) {
           for (auto size : image["sizes"].get<dom::object>()) {
-            image_sizes.insert({ size.value["w"], size.value["h"] });
+             image_sizes.emplace(size.value["w"], size.value["h"]);
           }
         }
       }
@@ -607,7 +607,7 @@ static void iterator_twitter_default_profile(State& state) {
 
             // default_users.insert(user["screen_name"]);
             if (!(iter.move_to_key("screen_name") && iter.is_string())) { return; }
-            default_users.insert(string_view(iter.get_string(), iter.get_string_length()));
+            default_users.emplace(iter.get_string(), iter.get_string_length());
           }
           if (!iter.up()) { return; } // back to user
         }
@@ -645,7 +645,7 @@ static void error_code_twitter_image_sizes(State& state) noexcept {
             uint64_t width, height;
             if ((error = size.value["w"].get(width))) { return; }
             if ((error = size.value["h"].get(height))) { return; }
-            image_sizes.insert({ width, height });
+            image_sizes.emplace(width, height);
           }
         }
       }
@@ -699,7 +699,7 @@ static void iterator_twitter_image_sizes(State& state) {
                     if (!(iter.move_to_key("h")) && !iter.is_integer()) { return; }
                     uint64_t height = iter.get_integer();
                     if (!iter.up()) { return; } // back to size
-                    image_sizes.insert({ width, height });
+                    image_sizes.emplace(width, height);
 
                   } while (iter.next()); // next size
                   if (!iter.up()) { return; } // back to sizes
