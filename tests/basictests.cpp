@@ -1061,14 +1061,15 @@ namespace dom_api_tests {
   bool unsafe_value_noexception() noexcept {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "foo": [1, 2, 3, 17, 22] })");
-    uint64_t expected_values[] = { 1, 2, 3, 17, 22 };
-    uint64_t * expected_value = expected_values;
+    std::vector<uint64_t> expected_values = { 1, 2, 3, 17, 22 };
+    size_t index{0};
     dom::parser parser;
     auto elem = parser.parse(json)["foo"];
     if (elem.error() || !elem.is_array()) { return false; }
     for (auto child : elem.get_array().value_unsafe()) {
       if(!child.is_uint64()) { return false; }
-      ASSERT_EQUAL( child.get_uint64().value_unsafe(), *expected_value++);
+      if(index >= expected_values.size()) { return false; }
+      ASSERT_EQUAL( child.get_uint64().value_unsafe(), expected_values[index++]);
     }
     return true;
   }
