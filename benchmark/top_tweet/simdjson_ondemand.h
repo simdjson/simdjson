@@ -7,7 +7,6 @@
 namespace top_tweet {
 
 using namespace simdjson;
-using namespace simdjson::builtin;
 
 struct simdjson_ondemand {
   using StringType=std::string_view;
