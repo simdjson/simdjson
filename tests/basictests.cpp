@@ -1066,7 +1066,9 @@ namespace dom_api_tests {
     dom::parser parser;
     auto elem = parser.parse(json)["foo"];
     if (elem.error() || !elem.is_array()) { return false; }
-    for (auto child : elem.get_array().value_unsafe()) {
+    auto myarray = elem.get_array().value_unsafe();
+    // for (auto child : elem.get_array().value_unsafe())  could be unsafe
+    for (auto child : myarray) {
       if(!child.is_uint64()) { return false; }
       if(index >= expected_values.size()) { return false; }
       ASSERT_EQUAL( child.get_uint64().value_unsafe(), expected_values[index++]);
