@@ -8,13 +8,16 @@
 #include "NullBuffer.h"
 
 // example from doc/basics.md#tree-walking-and-json-element-types
-static void print_json(std::ostream& os, simdjson::dom::element element) {
+/***
+ * Important: This function should compile without support for exceptions.
+ */  
+static void print_json(std::ostream& os, simdjson::dom::element element) noexcept {
   const char endl='\n';
   switch (element.type()) {
   case simdjson::dom::element_type::ARRAY:
     os << "[";
     {
-      simdjson::dom::array array(element);
+      simdjson::dom::array array = element.get<simdjson::dom::array>().value_unsafe();
       for (simdjson::dom::element child : array) {
         print_json(os, child);
         os << ",";
@@ -25,7 +28,7 @@ static void print_json(std::ostream& os, simdjson::dom::element element) {
   case simdjson::dom::element_type::OBJECT:
     os << "{";
     {
-      simdjson::dom::object object(element);
+      simdjson::dom::object object = element.get<simdjson::dom::object>().value_unsafe();
       for (simdjson::dom::key_value_pair field : object) {
         os << "\"" << field.key << "\": ";
         print_json(os, field.value);
@@ -34,19 +37,19 @@ static void print_json(std::ostream& os, simdjson::dom::element element) {
     os << "}";
     break;
   case simdjson::dom::element_type::INT64:
-    os << int64_t(element) << endl;
+    os << element.get_int64().value_unsafe() << endl;
     break;
   case simdjson::dom::element_type::UINT64:
-    os << uint64_t(element) << endl;
+    os << element.get_uint64().value_unsafe() << endl;
     break;
   case simdjson::dom::element_type::DOUBLE:
-    os << double(element) << endl;
+    os << element.get_double().value_unsafe() << endl;
     break;
   case simdjson::dom::element_type::STRING:
-    os << std::string_view(element) << endl;
+    os << element.get_string().value_unsafe() << endl;
     break;
   case simdjson::dom::element_type::BOOL:
-    os << bool(element) << endl;
+    os << element.get_bool().value_unsafe() << endl;
     break;
   case simdjson::dom::element_type::NULL_VALUE:
     os << "null" << endl;
