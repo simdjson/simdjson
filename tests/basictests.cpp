@@ -795,10 +795,12 @@ namespace dom_api_tests {
     dom::parser parser;
     dom::object object;
     ASSERT_SUCCESS( parser.parse(json).get(object) );
+#if SIMDJSON_EXCEPTIONS
     // Next three lines are for https://github.com/simdjson/simdjson/issues/1341
-    dom::element node = object["a"];
+    dom::element node = object["a"]; // might throw
     auto mylambda = [](dom::element e) { return int64_t(e); };
     ASSERT_EQUAL( mylambda(node), 1 );
+#endif
     ASSERT_EQUAL( object["a"].get<uint64_t>().first, 1 );
     ASSERT_EQUAL( object["b"].get<uint64_t>().first, 2 );
     ASSERT_EQUAL( object["c/d"].get<uint64_t>().first, 3 );
