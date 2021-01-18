@@ -25,11 +25,12 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   const char *filename = argv[1];
-  auto[p, err] = simdjson::padded_string::load(filename);
-  if (err) {
+  auto v = simdjson::padded_string::load(filename);
+  if (v.error()) {
     std::cerr << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }
+  const simdjson::padded_string& p = v.value_unsafe();
   if (test_baseline) {
     std::wclog << "Baseline: Getline + normal parse... " << std::endl;
     std::cout << "Gigabytes/second\t"

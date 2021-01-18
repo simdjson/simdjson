@@ -8,39 +8,48 @@
 #include "NullBuffer.h"
 
 // example from doc/basics.md#tree-walking-and-json-element-types
-static void print_json(std::ostream& os, simdjson::dom::element element) {
+/***
+ * Important: This function should compile without support for exceptions.
+ */
+static void print_json(std::ostream& os, simdjson::dom::element element) noexcept {
   const char endl='\n';
   switch (element.type()) {
   case simdjson::dom::element_type::ARRAY:
     os << "[";
-    for (simdjson::dom::element child : element.get<simdjson::dom::array>().first) {
-      print_json(os, child);
-      os << ",";
+    {
+      simdjson::dom::array array = element.get<simdjson::dom::array>().value_unsafe();
+      for (simdjson::dom::element child : array) {
+        print_json(os, child);
+        os << ",";
+      }
     }
     os << "]";
     break;
   case simdjson::dom::element_type::OBJECT:
     os << "{";
-    for (simdjson::dom::key_value_pair field : element.get<simdjson::dom::object>().first) {
-      os << "\"" << field.key << "\": ";
-      print_json(os, field.value);
+    {
+      simdjson::dom::object object = element.get<simdjson::dom::object>().value_unsafe();
+      for (simdjson::dom::key_value_pair field : object) {
+        os << "\"" << field.key << "\": ";
+        print_json(os, field.value);
+      }
     }
     os << "}";
     break;
   case simdjson::dom::element_type::INT64:
-    os << element.get<int64_t>().first << endl;
+    os << element.get_int64().value_unsafe() << endl;
     break;
   case simdjson::dom::element_type::UINT64:
-    os << element.get<uint64_t>().first << endl;
+    os << element.get_uint64().value_unsafe() << endl;
     break;
   case simdjson::dom::element_type::DOUBLE:
-    os << element.get<double>().first << endl;
+    os << element.get_double().value_unsafe() << endl;
     break;
   case simdjson::dom::element_type::STRING:
-    os << element.get<std::string_view>().first << endl;
+    os << element.get_string().value_unsafe() << endl;
     break;
   case simdjson::dom::element_type::BOOL:
-    os << element.get<bool>().first << endl;
+    os << element.get_bool().value_unsafe() << endl;
     break;
   case simdjson::dom::element_type::NULL_VALUE:
     os << "null" << endl;

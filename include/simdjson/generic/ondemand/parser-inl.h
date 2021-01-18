@@ -35,7 +35,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string> &result) & noexcept {
   // We don't presently have a way to temporarily get a const T& from a simdjson_result<T> without throwing an exception
   SIMDJSON_TRY( result.error() );
-  const padded_string &buf = result.first;
+  const padded_string &buf = result.value_unsafe();
   return iterate(buf);
 }
 

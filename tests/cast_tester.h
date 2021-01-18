@@ -89,14 +89,14 @@ template<typename T>
 bool cast_tester<T>::test_get_t(element element, T expected) {
   auto actual = element.get<T>();
   ASSERT_SUCCESS(actual.error());
-  return assert_equal(actual.first, expected);
+  return assert_equal(actual.value_unsafe(), expected);
 }
 
 template<typename T>
 bool cast_tester<T>::test_get_t(simdjson_result<element> element, T expected) {
   auto actual = element.get<T>();
   ASSERT_SUCCESS(actual.error());
-  return assert_equal(actual.first, expected);
+  return assert_equal(actual.value_unsafe(), expected);
 }
 
 template<typename T>
