@@ -202,8 +202,6 @@ if(SIMDJSON_ENABLE_THREADS)
   set(THREADS_PREFER_PTHREAD_FLAG TRUE)
   find_package(Threads REQUIRED)
   target_link_libraries(simdjson-flags INTERFACE Threads::Threads)
-  target_link_libraries(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT})
-  target_compile_options(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT})
   target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_THREADS_ENABLED=1) # This will be set in the code automatically.
 endif()
 
@@ -237,4 +235,6 @@ CHECK_SYMBOL_EXISTS(fork unistd.h HAVE_POSIX_FORK)
 CHECK_SYMBOL_EXISTS(wait sys/wait.h HAVE_POSIX_WAIT)
 
 install(TARGETS simdjson-flags EXPORT simdjson-config)
-install(TARGETS simdjson-internal-flags EXPORT simdjson-config)
+
+# I do not think we want to export our internal flags!
+# install(TARGETS simdjson-internal-flags EXPORT simdjson-config)
