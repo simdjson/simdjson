@@ -1,4 +1,4 @@
-/* auto-generated on 2021-01-14 17:33:49 -0500. Do not edit! */
+/* auto-generated on 2021-01-20 13:20:49 -0500. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -2017,7 +2017,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 0.7.0
+#define SIMDJSON_VERSION 0.8.0
 
 namespace simdjson {
 enum {
@@ -2028,7 +2028,7 @@ enum {
   /**
    * The minor version (major.MINOR.revision) of simdjson being used.
    */
-  SIMDJSON_VERSION_MINOR = 7,
+  SIMDJSON_VERSION_MINOR = 8,
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
@@ -2137,7 +2137,7 @@ namespace internal {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct simdjson_result_base : public std::pair<T, error_code> {
+struct simdjson_result_base : protected std::pair<T, error_code> {
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -2208,8 +2208,20 @@ struct simdjson_result_base : public std::pair<T, error_code> {
    * @throw simdjson_error if there was an error.
    */
   simdjson_really_inline operator T&&() && noexcept(false);
-
 #endif // SIMDJSON_EXCEPTIONS
+
+  /**
+   * Get the result value. This function is safe if and only
+   * the error() method returns a value that evoluates to false.
+   */
+  simdjson_really_inline const T& value_unsafe() const& noexcept;
+
+  /**
+   * Take the result value (move it). This function is safe if and only
+   * the error() method returns a value that evoluates to false.
+   */
+  simdjson_really_inline T&& value_unsafe() && noexcept;
+
 }; // struct simdjson_result_base
 
 } // namespace internal
@@ -2287,8 +2299,20 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    * @throw simdjson_error if there was an error.
    */
   simdjson_really_inline operator T&&() && noexcept(false);
-
 #endif // SIMDJSON_EXCEPTIONS
+
+  /**
+   * Get the result value. This function is safe if and only
+   * the error() method returns a value that evoluates to false.
+   */
+  simdjson_really_inline const T& value_unsafe() const& noexcept;
+
+  /**
+   * Take the result value (move it). This function is safe if and only
+   * the error() method returns a value that evoluates to false.
+   */
+  simdjson_really_inline T&& value_unsafe() && noexcept;
+
 }; // struct simdjson_result
 
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
@@ -6973,6 +6997,16 @@ simdjson_really_inline simdjson_result_base<T>::operator T&&() && noexcept(false
 #endif // SIMDJSON_EXCEPTIONS
 
 template<typename T>
+simdjson_really_inline const T& simdjson_result_base<T>::value_unsafe() const& noexcept {
+  return this->first;
+}
+
+template<typename T>
+simdjson_really_inline T&& simdjson_result_base<T>::value_unsafe() && noexcept {
+  return std::forward<T>(this->first);;
+}
+
+template<typename T>
 simdjson_really_inline simdjson_result_base<T>::simdjson_result_base(T &&value, error_code error) noexcept
     : std::pair<T, error_code>(std::forward<T>(value), error) {}
 template<typename T>
@@ -7029,6 +7063,16 @@ simdjson_really_inline simdjson_result<T>::operator T&&() && noexcept(false) {
 }
 
 #endif // SIMDJSON_EXCEPTIONS
+
+template<typename T>
+simdjson_really_inline const T& simdjson_result<T>::value_unsafe() const& noexcept {
+  return internal::simdjson_result_base<T>::value_unsafe();
+}
+
+template<typename T>
+simdjson_really_inline T&& simdjson_result<T>::value_unsafe() && noexcept {
+  return std::forward<internal::simdjson_result_base<T>>(*this).value_unsafe();
+}
 
 template<typename T>
 simdjson_really_inline simdjson_result<T>::simdjson_result(T &&value, error_code error) noexcept
@@ -15322,7 +15366,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string> &result) & noexcept {
   // We don't presently have a way to temporarily get a const T& from a simdjson_result<T> without throwing an exception
   SIMDJSON_TRY( result.error() );
-  const padded_string &buf = result.first;
+  const padded_string &buf = result.value_unsafe();
   return iterate(buf);
 }
 
@@ -21816,7 +21860,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string> &result) & noexcept {
   // We don't presently have a way to temporarily get a const T& from a simdjson_result<T> without throwing an exception
   SIMDJSON_TRY( result.error() );
-  const padded_string &buf = result.first;
+  const padded_string &buf = result.value_unsafe();
   return iterate(buf);
 }
 
@@ -28261,7 +28305,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string> &result) & noexcept {
   // We don't presently have a way to temporarily get a const T& from a simdjson_result<T> without throwing an exception
   SIMDJSON_TRY( result.error() );
-  const padded_string &buf = result.first;
+  const padded_string &buf = result.value_unsafe();
   return iterate(buf);
 }
 
@@ -34855,7 +34899,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string> &result) & noexcept {
   // We don't presently have a way to temporarily get a const T& from a simdjson_result<T> without throwing an exception
   SIMDJSON_TRY( result.error() );
-  const padded_string &buf = result.first;
+  const padded_string &buf = result.value_unsafe();
   return iterate(buf);
 }
 
@@ -40859,7 +40903,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string> &result) & noexcept {
   // We don't presently have a way to temporarily get a const T& from a simdjson_result<T> without throwing an exception
   SIMDJSON_TRY( result.error() );
-  const padded_string &buf = result.first;
+  const padded_string &buf = result.value_unsafe();
   return iterate(buf);
 }
 

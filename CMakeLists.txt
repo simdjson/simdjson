@@ -6,11 +6,11 @@ project(simdjson
 )
 
 set(PROJECT_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MINOR 7)
-set(PROJECT_VERSION_PATCH 1)
-set(SIMDJSON_SEMANTIC_VERSION "0.7.1" CACHE STRING "simdjson semantic version")
-set(SIMDJSON_LIB_VERSION "6.0.0" CACHE STRING "simdjson library version")
-set(SIMDJSON_LIB_SOVERSION "6" CACHE STRING "simdjson library soversion")
+set(PROJECT_VERSION_MINOR 8)
+set(PROJECT_VERSION_PATCH 0)
+set(SIMDJSON_SEMANTIC_VERSION "0.8.0" CACHE STRING "simdjson semantic version")
+set(SIMDJSON_LIB_VERSION "7.0.0" CACHE STRING "simdjson library version")
+set(SIMDJSON_LIB_SOVERSION "7" CACHE STRING "simdjson library soversion")
 set(SIMDJSON_GITHUB_REPOSITORY https://github.com/simdjson/simdjson)
 
 include(GNUInstallDirs)
@@ -46,7 +46,7 @@ install(FILES singleheader/simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 option(SIMDJSON_ENABLE_THREADS "Link with thread support" ON)
 include(CMakePackageConfigHelpers)
 configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/simdjson-config.cmake.in"
-      "${PROJECT_BINARY_DIR}/simdjson-config.cmake" 
+      "${PROJECT_BINARY_DIR}/simdjson-config.cmake"
       INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/simdjson"
       NO_SET_AND_CHECK_MACRO
       NO_CHECK_REQUIRED_COMPONENTS_MACRO)
