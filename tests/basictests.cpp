@@ -342,6 +342,7 @@ namespace parse_api_tests {
     }
     return true;
   }
+#if SIMDJSON_EXCEPTIONS
   // See https://github.com/simdjson/simdjson/issues/1332
   bool parser_moving_parser_and_recovering() {
     std::cout << "Running " << __func__ << std::endl;
@@ -351,8 +352,9 @@ namespace parse_api_tests {
     auto parser2 = std::move(parser);
     root = parser2.doc.root();
     std::cout << simdjson::to_string(root) << std::endl;
-    return simdjson::to_string(root) == "[1,2,3]";
+    return simdjson::to_string(root) == "[1,2,3]";// might throw
   }
+#endif
   bool parser_parse() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
@@ -523,8 +525,7 @@ namespace parse_api_tests {
 #endif
 
   bool run() {
-    return parser_moving_parser_and_recovering() &
-           parser_moving_parser() &&
+    return parser_moving_parser() &&
            parser_parse() &&
            parser_parse_many() &&
 #ifdef SIMDJSON_ENABLE_DEPRECATED_API
@@ -538,6 +539,7 @@ namespace parse_api_tests {
            parser_load_many_deprecated() &&
 #endif
 #if SIMDJSON_EXCEPTIONS
+           parser_moving_parser_and_recovering() &
            parser_parse_exception() &&
            parser_parse_many_exception() &&
            parser_load_exception() &&
