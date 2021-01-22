@@ -457,7 +457,21 @@ public:
   /** @private Use `parser.parse(...).error()` instead */
   error_code error{UNINITIALIZED};
 
-  /** @private Use `parser.parse(...).value()` instead */
+  /**
+   * @private Use `parser.parse(...).value()` instead
+   *
+   * In rare instances, a user might want to access the document
+   * directly. Indeed, after moving the parser instance, the
+   * parsed document and its element are invalidated. You can
+   * recover access like so:
+   *
+   *    auto parser = dom::parser{};
+   *    auto root = parser.parse(input);
+   *    auto parser2 = std::move(parser);
+   *    root = parser2.doc.root();
+   *
+   * Such usage should be limited to advanced users.
+   */
   document doc{};
 
   /** @private returns true if the document parsed was valid */

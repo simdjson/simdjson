@@ -342,6 +342,17 @@ namespace parse_api_tests {
     }
     return true;
   }
+  // See https://github.com/simdjson/simdjson/issues/1332
+  bool parser_moving_parser_and_recovering() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto input = "[1, 2, 3]"_padded;
+    auto parser = dom::parser{};
+    auto root = parser.parse(input);
+    auto parser2 = std::move(parser);
+    root = parser2.doc.root();
+    std::cout << simdjson::to_string(root) << std::endl;
+    return simdjson::to_string(root) == "[1,2,3]";
+  }
   bool parser_parse() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
@@ -512,7 +523,8 @@ namespace parse_api_tests {
 #endif
 
   bool run() {
-    return parser_moving_parser() &&
+    return parser_moving_parser_and_recovering() &
+           parser_moving_parser() &&
            parser_parse() &&
            parser_parse_many() &&
 #ifdef SIMDJSON_ENABLE_DEPRECATED_API
