@@ -84,7 +84,7 @@ inline simdjson_result<document_stream> parser::load_many(const std::string &pat
   auto _error = read_file(path).get(len);
   if (_error) { return _error; }
   if(batch_size < MINIMAL_BATCH_SIZE) { batch_size = MINIMAL_BATCH_SIZE; }
-  return document_stream(*this, (const uint8_t*)loaded_bytes.get(), len, batch_size);
+  return document_stream(*this, reinterpret_cast<const uint8_t*>(loaded_bytes.get()), len, batch_size);
 }
 
 inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
@@ -93,9 +93,9 @@ inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bo
   std::unique_ptr<uint8_t[]> tmp_buf;
 
   if (realloc_if_needed) {
-    tmp_buf.reset((uint8_t *)internal::allocate_padded_buffer(len));
+    tmp_buf.reset(reinterpret_cast<uint8_t *>( internal::allocate_padded_buffer(len) ));
     if (tmp_buf.get() == nullptr) { return MEMALLOC; }
-    std::memcpy((void *)tmp_buf.get(), buf, len);
+    std::memcpy(static_cast<void *>(tmp_buf.get()), buf, len);
   }
   _error = implementation->parse(realloc_if_needed ? tmp_buf.get() : buf, len, doc);
   if (_error) { return _error; }
@@ -103,7 +103,7 @@ inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bo
   return doc.root();
 }
 simdjson_really_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) & noexcept {
-  return parse((const uint8_t *)buf, len, realloc_if_needed);
+  return parse(reinterpret_cast<const uint8_t *>(buf), len, realloc_if_needed);
 }
 simdjson_really_inline simdjson_result<element> parser::parse(const std::string &s) & noexcept {
   return parse(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
@@ -117,7 +117,7 @@ inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, s
   return document_stream(*this, buf, len, batch_size);
 }
 inline simdjson_result<document_stream> parser::parse_many(const char *buf, size_t len, size_t batch_size) noexcept {
-  return parse_many((const uint8_t *)buf, len, batch_size);
+  return parse_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size);
 }
 inline simdjson_result<document_stream> parser::parse_many(const std::string &s, size_t batch_size) noexcept {
   return parse_many(s.data(), s.length(), batch_size);

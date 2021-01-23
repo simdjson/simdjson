@@ -134,7 +134,7 @@ inline simdjson_result<padded_string> padded_string::load(const std::string &fil
   }
 
   // Allocate the padded_string
-  size_t len = (size_t) llen;
+  size_t len = static_cast<size_t>(llen);
   padded_string s(len);
   if (s.data() == nullptr) {
     std::fclose(fp);

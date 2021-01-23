@@ -68,7 +68,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
       os << "string \"";
       std::memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
       os << internal::escape_json_string(std::string_view(
-        (const char *)(string_buf.get() + payload + sizeof(uint32_t)),
+        reinterpret_cast<const char *>(string_buf.get() + payload + sizeof(uint32_t)),
         string_length
       ));
       os << '"';

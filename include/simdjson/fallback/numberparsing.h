@@ -20,7 +20,7 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const char *c
   return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
 }
 static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
-  return parse_eight_digits_unrolled((const char *)chars);
+  return parse_eight_digits_unrolled(reinterpret_cast<const char *>(chars));
 }
 
 } // unnamed namespace

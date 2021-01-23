@@ -25,7 +25,7 @@ bool generic_validate_utf8(const uint8_t * input, size_t length) {
 }
 
 bool generic_validate_utf8(const char * input, size_t length) {
-    return generic_validate_utf8<utf8_checker>((const uint8_t *)input,length);
+    return generic_validate_utf8<utf8_checker>(reinterpret_cast<const uint8_t *>(input),length);
 }
 
 } // namespace stage1
