@@ -51,8 +51,7 @@ simdjson_really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint6
   *result = value1 + value2;
   return *result < value1;
 #else
-  return __builtin_uaddll_overflow(value1, value2,
-                                   (unsigned long long *)result);
+  return __builtin_uaddl_overflow(value1, value2, result);
 #endif
 }
 

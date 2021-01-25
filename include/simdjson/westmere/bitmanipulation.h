@@ -58,8 +58,7 @@ simdjson_really_inline bool add_overflow(uint64_t value1, uint64_t value2,
   return _addcarry_u64(0, value1, value2,
                        reinterpret_cast<unsigned __int64 *>(result));
 #else
-  return __builtin_uaddll_overflow(value1, value2,
-                                   (unsigned long long *)result);
+  return __builtin_uaddl_overflow(value1, value2, result);
 #endif
 }
 
