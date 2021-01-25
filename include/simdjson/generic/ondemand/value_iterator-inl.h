@@ -10,7 +10,9 @@ simdjson_really_inline value_iterator::value_iterator(json_iterator *json_iter, 
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::start_object() noexcept {
-  if (*advance_container_start("object") != '{') { return incorrect_type_error("Not an object"); }
+  const uint8_t *json;
+  SIMDJSON_TRY( advance_container_start("object", json) );
+  if (*json != '{') { return incorrect_type_error("Not an object"); }
   return started_object();
 }
 
@@ -248,7 +250,9 @@ simdjson_warn_unused simdjson_really_inline error_code value_iterator::field_val
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::start_array() noexcept {
-  if (*advance_container_start("array") != '[') { return incorrect_type_error("Not an array"); }
+  const uint8_t *json;
+  SIMDJSON_TRY( advance_container_start("array", json) );
+  if (*json != '[') { return incorrect_type_error("Not an array"); }
   return started_array();
 }
 
@@ -428,15 +432,20 @@ simdjson_really_inline const uint8_t *value_iterator::advance_start(const char *
   _json_iter->ascend_to(depth()-1);
   return result;
 }
-simdjson_really_inline const uint8_t *value_iterator::advance_container_start(const char *type) const noexcept {
-  // If we're not at the position anymore, we don't want to advance the cursor.
-  if (is_at_container_start()) { return peek_start(); }
-
+simdjson_really_inline error_code value_iterator::advance_container_start(const char *type, const uint8_t *&json) const noexcept {
   logger::log_start_value(*_json_iter, _start_position, depth(), type);
+
+  // If we're not at the position anymore, we don't want to advance the cursor.
+  if (!is_at_start()) {
+    if (!is_at_container_start()) { return OUT_OF_ORDER_ITERATION; }
+    json = peek_start();
+    return SUCCESS;
+  }
 
   // Get the JSON and advance the cursor, decreasing depth to signify that we have retrieved the value.
   assert_at_start();
-  return _json_iter->advance();
+  json = _json_iter->advance();
+  return SUCCESS;
 }
 simdjson_really_inline const uint8_t *value_iterator::advance_root_scalar(const char *type) const noexcept {
   logger::log_value(*_json_iter, _start_position, depth(), type);
