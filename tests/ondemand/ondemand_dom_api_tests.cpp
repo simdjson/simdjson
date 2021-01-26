@@ -47,6 +47,7 @@ namespace dom_api_tests {
     SUBTEST("ondemand::array", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::array array;
       ASSERT_SUCCESS( doc_result.get(array) );
+
       size_t i=0;
       for (auto value : array) {
         int64_t actual;

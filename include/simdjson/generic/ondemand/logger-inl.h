@@ -21,20 +21,28 @@ static simdjson_really_inline char printable_char(char c) {
 simdjson_really_inline void log_event(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
   log_line(iter, "", type, detail, delta, depth_delta);
 }
-simdjson_really_inline void log_value(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
-}
+
 simdjson_really_inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
   log_line(iter, index, depth, "", type, detail);
 }
+simdjson_really_inline void log_value(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
+  log_line(iter, "", type, detail, delta, depth_delta);
+}
+
+simdjson_really_inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
+  log_line(iter, index, depth, "+", type, detail);
+  if (LOG_ENABLED) { log_depth++; }
+}
 simdjson_really_inline void log_start_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
   log_line(iter, "+", type, "", delta, depth_delta);
-  log_depth++;
+  if (LOG_ENABLED) { log_depth++; }
 }
+
 simdjson_really_inline void log_end_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
-  log_depth--;
+  if (LOG_ENABLED) { log_depth--; }
   log_line(iter, "-", type, "", delta, depth_delta);
 }
+
 simdjson_really_inline void log_error(const json_iterator &iter, const char *error, const char *detail, int delta, int depth_delta) noexcept {
   log_line(iter, "ERROR: ", error, detail, delta, depth_delta);
 }
@@ -45,22 +53,26 @@ simdjson_really_inline void log_error(const json_iterator &iter, token_position 
 simdjson_really_inline void log_event(const value_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
   log_event(iter.json_iter(), type, detail, delta, depth_delta);
 }
+
 simdjson_really_inline void log_value(const value_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
   log_value(iter.json_iter(), type, detail, delta, depth_delta);
 }
+
 simdjson_really_inline void log_start_value(const value_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
   log_start_value(iter.json_iter(), type, delta, depth_delta);
 }
+
 simdjson_really_inline void log_end_value(const value_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
   log_end_value(iter.json_iter(), type, delta, depth_delta);
 }
+
 simdjson_really_inline void log_error(const value_iterator &iter, const char *error, const char *detail, int delta, int depth_delta) noexcept {
   log_error(iter.json_iter(), error, detail, delta, depth_delta);
 }
 
 simdjson_really_inline void log_headers() noexcept {
-  log_depth = 0;
   if (LOG_ENABLED) {
+    log_depth = 0;
     printf("\n");
     printf("| %-*s ", LOG_EVENT_LEN,        "Event");
     printf("| %-*s ", LOG_BUFFER_LEN,       "Buffer");
