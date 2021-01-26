@@ -608,7 +608,8 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   int digit_count = int(p - start_digits);
-  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return NUMBER_ERROR; }
+  if (digit_count == 0) { return INCORRECT_TYPE; }
+  if ('0' == *start_digits && digit_count > 1) { return NUMBER_ERROR; }
   if (!jsoncharutils::is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
 
   // The longest positive 64-bit number is 20 digits.
@@ -651,7 +652,8 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer(co
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   int digit_count = int(p - start_digits);
-  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return NUMBER_ERROR; }
+  if (digit_count == 0) { return INCORRECT_TYPE; }
+  if ('0' == *start_digits && digit_count > 1) { return NUMBER_ERROR; }
   if (!jsoncharutils::is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
 
   // The longest negative 64-bit number is 19 digits.
@@ -699,7 +701,8 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
   bool leading_zero = (i == 0);
   while (parse_digit(*p, i)) { p++; }
   // no integer digits, or 0123 (zero must be solo)
-  if ( p == src || (leading_zero && p != src+1)) { return NUMBER_ERROR; }
+  if ( p == src ) { return INCORRECT_TYPE; }
+  if ( (leading_zero && p != src+1)) { return NUMBER_ERROR; }
 
   //
   // Parse the decimal part.
