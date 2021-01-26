@@ -610,11 +610,13 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(
   int digit_count = int(p - start_digits);
   if (digit_count == 0) { return INCORRECT_TYPE; }
   if ('0' == *start_digits && digit_count > 1) { return NUMBER_ERROR; }
-  if (!jsoncharutils::is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+  if (!jsoncharutils::is_structural_or_whitespace(*p)) {
+    return (*p == '.' || *p == 'e' || *p == 'E') ? INCORRECT_TYPE : NUMBER_ERROR;
+  }
 
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
-  if (digit_count > 20) { return NUMBER_ERROR; }
+  if (digit_count > 20) { return INCORRECT_TYPE; }
   if (digit_count == 20) {
     // Positive overflow check:
     // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
@@ -628,7 +630,7 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(
     // - Therefore, if the number is positive and lower than that, it's overflow.
     // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
     //
-    if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+    if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INCORRECT_TYPE; }
   }
 
   return i;
@@ -654,17 +656,19 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer(co
   int digit_count = int(p - start_digits);
   if (digit_count == 0) { return INCORRECT_TYPE; }
   if ('0' == *start_digits && digit_count > 1) { return NUMBER_ERROR; }
-  if (!jsoncharutils::is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+  if (!jsoncharutils::is_structural_or_whitespace(*p)) {
+    return (*p == '.' || *p == 'e' || *p == 'E') ? INCORRECT_TYPE : NUMBER_ERROR;
+  }
 
   // The longest negative 64-bit number is 19 digits.
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
   int longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return NUMBER_ERROR; }
+  if (digit_count > longest_digit_count) { return INCORRECT_TYPE; }
   if (digit_count == longest_digit_count) {
-    if(negative) {
+    if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return NUMBER_ERROR; }
+      if (i > uint64_t(INT64_MAX)+1) { return INCORRECT_TYPE; }
       return ~i+1;
 
     // Positive overflow check:
@@ -679,7 +683,7 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer(co
     // - Therefore, if the number is positive and lower than that, it's overflow.
     // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
     //
-    } else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+    } else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INCORRECT_TYPE; }
   }
 
   return negative ? (~i+1) : i;
