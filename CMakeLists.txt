@@ -50,6 +50,8 @@ configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/simdjson-config.cmake
       INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/simdjson"
       NO_SET_AND_CHECK_MACRO
       NO_CHECK_REQUIRED_COMPONENTS_MACRO)
+install(FILES "${PROJECT_BINARY_DIR}/simdjson-config.cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/simdjson")
 
 #
 # Compile tools / tests / benchmarks
