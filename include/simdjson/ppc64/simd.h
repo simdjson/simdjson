@@ -42,17 +42,17 @@ template <typename Child> struct base {
     return vec_andc(this->value, (__m128i)other);
   }
   simdjson_really_inline Child &operator|=(const Child other) {
-    auto this_cast = (Child *)this;
+    auto this_cast = static_cast<Child*>(this);
     *this_cast = *this_cast | other;
     return *this_cast;
   }
   simdjson_really_inline Child &operator&=(const Child other) {
-    auto this_cast = (Child *)this;
+    auto this_cast = static_cast<Child*>(this);
     *this_cast = *this_cast & other;
     return *this_cast;
   }
   simdjson_really_inline Child &operator^=(const Child other) {
-    auto this_cast = (Child *)this;
+    auto this_cast = static_cast<Child*>(this);
     *this_cast = *this_cast ^ other;
     return *this_cast;
   }
@@ -131,7 +131,7 @@ template <typename T> struct base8_numeric : base8<T> {
   }
   static simdjson_really_inline simd8<T> zero() { return splat(0); }
   static simdjson_really_inline simd8<T> load(const T values[16]) {
-    return (__m128i)(vec_vsx_ld(0, (const uint8_t *)values));
+    return (__m128i)(vec_vsx_ld(0, reinterpret_cast<const uint8_t *>(values)));
   }
   // Repeat 16 values as many times as necessary (usually for lookup tables)
   static simdjson_really_inline simd8<T> repeat_16(T v0, T v1, T v2, T v3, T v4,
@@ -163,11 +163,11 @@ template <typename T> struct base8_numeric : base8<T> {
   }
   simdjson_really_inline simd8<T> &operator+=(const simd8<T> other) {
     *this = *this + other;
-    return *(simd8<T> *)this;
+    return *static_cast<simd8<T> *>(this);
   }
   simdjson_really_inline simd8<T> &operator-=(const simd8<T> other) {
     *this = *this - other;
-    return *(simd8<T> *)this;
+    return *static_cast<simd8<T> *>(this);
   }
 
   // Perform a lookup assuming the value is between 0 and 16 (undefined behavior
@@ -217,9 +217,9 @@ template <typename T> struct base8_numeric : base8<T> {
     // it fills in with the bytes from the second 8 bytes + some filling
     // at the end.
     __m128i compactmask =
-        vec_vsx_ld(0, (const uint8_t *)(pshufb_combine_table + pop1 * 8));
+        vec_vsx_ld(0, reinterpret_cast<const uint8_t *>(pshufb_combine_table + pop1 * 8));
     __m128i answer = vec_perm(pruned, (__m128i)vec_splats(0), compactmask);
-    vec_vsx_st(answer, 0, (__m128i *)(output));
+    vec_vsx_st(answer, 0, reinterpret_cast<__m128i *>(output));
   }
 
   template <typename L>
