@@ -115,9 +115,9 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     simdjson_really_inline simd8<T> operator^(const simd8<T> other) const { return veorq_u8(*this, other); }
     simdjson_really_inline simd8<T> bit_andnot(const simd8<T> other) const { return vbicq_u8(*this, other); }
     simdjson_really_inline simd8<T> operator~() const { return *this ^ 0xFFu; }
-    simdjson_really_inline simd8<T>& operator|=(const simd8<T> other) { auto this_cast = (simd8<T>*)this; *this_cast = *this_cast | other; return *this_cast; }
-    simdjson_really_inline simd8<T>& operator&=(const simd8<T> other) { auto this_cast = (simd8<T>*)this; *this_cast = *this_cast & other; return *this_cast; }
-    simdjson_really_inline simd8<T>& operator^=(const simd8<T> other) { auto this_cast = (simd8<T>*)this; *this_cast = *this_cast ^ other; return *this_cast; }
+    simdjson_really_inline simd8<T>& operator|=(const simd8<T> other) { auto this_cast = static_cast<simd8<T>*>(this); *this_cast = *this_cast | other; return *this_cast; }
+    simdjson_really_inline simd8<T>& operator&=(const simd8<T> other) { auto this_cast = static_cast<simd8<T>*>(this); *this_cast = *this_cast & other; return *this_cast; }
+    simdjson_really_inline simd8<T>& operator^=(const simd8<T> other) { auto this_cast = static_cast<simd8<T>*>(this); *this_cast = *this_cast ^ other; return *this_cast; }
 
     simdjson_really_inline Mask operator==(const simd8<T> other) const { return vceqq_u8(*this, other); }
 
@@ -284,9 +284,9 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
       // only the first pop1 bytes from the first 8 bytes, and then
       // it fills in with the bytes from the second 8 bytes + some filling
       // at the end.
-      uint8x16_t compactmask = vld1q_u8((const uint8_t *)(pshufb_combine_table + pop1 * 8));
+      uint8x16_t compactmask = vld1q_u8(reinterpret_cast<const uint8_t *>(pshufb_combine_table + pop1 * 8));
       uint8x16_t answer = vqtbl1q_u8(pruned, compactmask);
-      vst1q_u8((uint8_t*) output, answer);
+      vst1q_u8(reinterpret_cast<uint8_t*>(output), answer);
     }
 
     template<typename L>
