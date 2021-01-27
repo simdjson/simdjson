@@ -127,7 +127,7 @@ simdjson_unused simdjson_warn_unused simdjson_really_inline error_code parse_str
   if (*(src++) != '"') { return STRING_ERROR; }
   auto end = stringparsing::parse_string(src, current_string_buf_loc);
   if (!end) { return STRING_ERROR; }
-  s = std::string_view((const char *)current_string_buf_loc, end-current_string_buf_loc);
+  s = std::string_view(reinterpret_cast<const char *>(current_string_buf_loc), end-current_string_buf_loc);
   current_string_buf_loc = end;
   return SUCCESS;
 }
