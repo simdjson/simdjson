@@ -29,7 +29,7 @@ simdjson_really_inline double to_double(uint64_t mantissa, uint64_t real_exponen
     double d;
     mantissa &= ~(1ULL << 52);
     mantissa |= real_exponent << 52;
-    mantissa |= (((uint64_t)negative) << 63);
+    mantissa |= ((static_cast<uint64_t>(negative)) << 63);
     std::memcpy(&d, &mantissa, sizeof(d));
     return d;
 }
@@ -292,7 +292,7 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
 // The string parsing itself always succeeds. We know that there is at least
 // one digit.
 static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
-  *outDouble = simdjson::internal::from_chars((const char *)ptr);
+  *outDouble = simdjson::internal::from_chars(reinterpret_cast<const char *>(ptr));
   // We do not accept infinite values.
 
   // Detecting finite values in a portable manner is ridiculously hard, ideally

@@ -4,11 +4,11 @@ namespace ondemand {
 
 simdjson_really_inline raw_json_string::raw_json_string(const uint8_t * _buf) noexcept : buf{_buf} {}
 
-simdjson_really_inline const char * raw_json_string::raw() const noexcept { return (const char *)buf; }
+simdjson_really_inline const char * raw_json_string::raw() const noexcept { return reinterpret_cast<const char *>(buf); }
 simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(uint8_t *&dst) const noexcept {
   uint8_t *end = stringparsing::parse_string(buf, dst);
   if (!end) { return STRING_ERROR; }
-  std::string_view result((const char *)dst, end-dst);
+  std::string_view result(reinterpret_cast<const char *>(dst), end-dst);
   dst = end;
   return result;
 }

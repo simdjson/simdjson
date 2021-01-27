@@ -27,9 +27,9 @@ namespace simd {
     simdjson_really_inline Child operator&(const Child other) const { return _mm_and_si128(*this, other); }
     simdjson_really_inline Child operator^(const Child other) const { return _mm_xor_si128(*this, other); }
     simdjson_really_inline Child bit_andnot(const Child other) const { return _mm_andnot_si128(other, *this); }
-    simdjson_really_inline Child& operator|=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast | other; return *this_cast; }
-    simdjson_really_inline Child& operator&=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast & other; return *this_cast; }
-    simdjson_really_inline Child& operator^=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast ^ other; return *this_cast; }
+    simdjson_really_inline Child& operator|=(const Child other) { auto this_cast = static_cast<Child*>(this); *this_cast = *this_cast | other; return *this_cast; }
+    simdjson_really_inline Child& operator&=(const Child other) { auto this_cast = static_cast<Child*>(this); *this_cast = *this_cast & other; return *this_cast; }
+    simdjson_really_inline Child& operator^=(const Child other) { auto this_cast = static_cast<Child*>(this); *this_cast = *this_cast ^ other; return *this_cast; }
   };
 
   // Forward-declared so they can be used by splat and friends.
@@ -99,8 +99,8 @@ namespace simd {
     // Addition/subtraction are the same for signed and unsigned
     simdjson_really_inline simd8<T> operator+(const simd8<T> other) const { return _mm_add_epi8(*this, other); }
     simdjson_really_inline simd8<T> operator-(const simd8<T> other) const { return _mm_sub_epi8(*this, other); }
-    simdjson_really_inline simd8<T>& operator+=(const simd8<T> other) { *this = *this + other; return *(simd8<T>*)this; }
-    simdjson_really_inline simd8<T>& operator-=(const simd8<T> other) { *this = *this - other; return *(simd8<T>*)this; }
+    simdjson_really_inline simd8<T>& operator+=(const simd8<T> other) { *this = *this + other; return *static_cast<simd8<T>*>(this); }
+    simdjson_really_inline simd8<T>& operator-=(const simd8<T> other) { *this = *this - other; return *static_cast<simd8<T>*>(this); }
 
     // Perform a lookup assuming the value is between 0 and 16 (undefined behavior for out of range values)
     template<typename L>
@@ -141,9 +141,9 @@ namespace simd {
       // it fills in with the bytes from the second 8 bytes + some filling
       // at the end.
       __m128i compactmask =
-      _mm_loadu_si128((const __m128i *)(pshufb_combine_table + pop1 * 8));
+      _mm_loadu_si128(reinterpret_cast<const __m128i *>(pshufb_combine_table + pop1 * 8));
       __m128i answer = _mm_shuffle_epi8(pruned, compactmask);
-      _mm_storeu_si128(( __m128i *)(output), answer);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(output), answer);
     }
 
     template<typename L>

@@ -59,7 +59,7 @@ simdjson_really_inline bool add_overflow(uint64_t value1, uint64_t value2,
                        reinterpret_cast<unsigned __int64 *>(result));
 #else
   return __builtin_uaddll_overflow(value1, value2,
-                                   (unsigned long long *)result);
+                                   reinterpret_cast<unsigned long long *>(result));
 #endif
 }
 

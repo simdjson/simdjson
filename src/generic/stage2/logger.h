@@ -51,7 +51,7 @@ namespace logger {
       printf("| %*s%s%-*s ", log_depth*2, "", title_prefix, LOG_EVENT_LEN - log_depth*2 - int(strlen(title_prefix)), title);
       auto current_index = structurals.at_beginning() ? nullptr : structurals.next_structural-1;
       auto next_index = structurals.next_structural;
-      auto current = current_index ? &structurals.buf[*current_index] : (const uint8_t*)"                                                       ";
+      auto current = current_index ? &structurals.buf[*current_index] : reinterpret_cast<const uint8_t*>("                                                       ");
       auto next = &structurals.buf[*next_index];
       {
         // Print the next N characters in the buffer.
