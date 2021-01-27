@@ -59,6 +59,10 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //      ^ (depth 2, index 1)
   //    ```
   //
+  if (at_first_field()) {
+    has_value = true;
+
+  //
   // 2. When a previous search did not yield a value or the object is empty:
   //
   //    ```
@@ -68,15 +72,12 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //        ^ (depth 0, index 2)
   //    ```
   //
-  if (!is_open()) {
+  } else if (!is_open()) {
     // If we're past the end of the object, we're being iterated out of order.
     // Note: this isn't perfect detection. It's possible the user is inside some other object; if so,
     // this object iterator will blithely scan that object for fields.
     if (_json_iter->depth() < depth() - 1) { return OUT_OF_ORDER_ITERATION; }
-    return false;
-  }
-  if (at_first_field()) {
-    has_value = true;
+    has_value = false;
 
   // 3. When a previous search found a field or an iterator yielded a value:
   //
@@ -146,6 +147,10 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else if (!is_open()) {
+    // If we're past the end of the object, we're being iterated out of order.
+    // Note: this isn't perfect detection. It's possible the user is inside some other object; if so,
+    // this object iterator will blithely scan that object for fields.
+    if (_json_iter->depth() < depth() - 1) { return OUT_OF_ORDER_ITERATION; }
     has_value = false;
 
   // 3. When a previous search found a field or an iterator yielded a value:

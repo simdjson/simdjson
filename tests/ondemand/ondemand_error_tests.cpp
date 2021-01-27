@@ -562,10 +562,140 @@ namespace error_tests {
       ASSERT_EQUAL( val.is_null(), true );
       TEST_SUCCEED();
     }));
+    TEST_SUCCEED();
+  }
 
-    //
-    // Do it again for bool
-    //
+  bool out_of_order_array_iteration_error() {
+    TEST_START();
+    auto json = R"([ [ 1, 2 ] ])"_padded;
+    SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc) {
+      for (auto element : doc) {
+        for (auto subelement : element) { ASSERT_SUCCESS(subelement); }
+        ASSERT_ERROR( element.begin(), OUT_OF_ORDER_ITERATION );
+      }
+      return true;
+    }));
+    SUBTEST("value", test_ondemand_doc(json, [&](auto doc) {
+      for (auto element : doc) {
+        ondemand::value val;
+        ASSERT_SUCCESS( element.get(val) );
+        for (auto subelement : val) { ASSERT_SUCCESS(subelement); }
+        ASSERT_ERROR( val.begin(), OUT_OF_ORDER_ITERATION );
+      }
+      return true;
+    }));
+    SUBTEST("simdjson_result<array>", test_ondemand_doc(json, [&](auto doc) {
+      for (auto element : doc) {
+        auto arr = element.get_array();
+        for (auto subelement : arr) { ASSERT_SUCCESS(subelement); }
+        ASSERT_ERROR( arr.begin(), OUT_OF_ORDER_ITERATION );
+      }
+      return true;
+    }));
+    SUBTEST("array", test_ondemand_doc(json, [&](auto doc) {
+      for (auto element : doc) {
+        ondemand::array arr;
+        ASSERT_SUCCESS( element.get(arr) );
+        for (auto subelement : arr) { ASSERT_SUCCESS(subelement); }
+        ASSERT_ERROR( arr.begin(), OUT_OF_ORDER_ITERATION );
+      }
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+  bool out_of_order_object_iteration_error() {
+    TEST_START();
+    auto json = R"([ { "x": 1, "y": 2 } ])"_padded;
+    SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
+      for (auto element : doc) {
+        auto obj = element.get_object();
+        for (auto field : obj) { ASSERT_SUCCESS(field); }
+        ASSERT_ERROR( obj.begin(), OUT_OF_ORDER_ITERATION );
+      }
+      return true;
+    }));
+    SUBTEST("object", test_ondemand_doc(json, [&](auto doc) {
+      for (auto element : doc) {
+        ondemand::object obj;
+        ASSERT_SUCCESS( element.get(obj) );
+        for (auto field : obj) { ASSERT_SUCCESS(field); }
+        ASSERT_ERROR( obj.begin(), OUT_OF_ORDER_ITERATION );
+      }
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+  bool out_of_order_object_index_error() {
+    TEST_START();
+    auto json = R"([ { "x": 1, "y": 2 } ])"_padded;
+    SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
+      simdjson_result<ondemand::object> obj;
+      for (auto element : doc) {
+        obj = element.get_object();
+        for (auto field : obj) { ASSERT_SUCCESS(field); }
+      }
+      ASSERT_ERROR( obj["x"], OUT_OF_ORDER_ITERATION );
+      return true;
+    }));
+    SUBTEST("object", test_ondemand_doc(json, [&](auto doc) {
+      ondemand::object obj;
+      for (auto element : doc) {
+        ASSERT_SUCCESS( element.get(obj) );
+        for (auto field : obj) { ASSERT_SUCCESS(field); }
+      }
+      ASSERT_ERROR( obj["x"], OUT_OF_ORDER_ITERATION );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+  bool out_of_order_object_find_field_error() {
+    TEST_START();
+    auto json = R"([ { "x": 1, "y": 2 } ])"_padded;
+    SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
+      simdjson_result<ondemand::object> obj;
+      for (auto element : doc) {
+        obj = element.get_object();
+        for (auto field : obj) { ASSERT_SUCCESS(field); }
+      }
+      ASSERT_ERROR( obj.find_field("x"), OUT_OF_ORDER_ITERATION );
+      return true;
+    }));
+    SUBTEST("object", test_ondemand_doc(json, [&](auto doc) {
+      ondemand::object obj;
+      for (auto element : doc) {
+        ASSERT_SUCCESS( element.get(obj) );
+        for (auto field : obj) { ASSERT_SUCCESS(field); }
+      }
+      ASSERT_ERROR( obj.find_field("x"), OUT_OF_ORDER_ITERATION );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+  bool out_of_order_object_find_field_unordered_error() {
+    TEST_START();
+    auto json = R"([ { "x": 1, "y": 2 } ])"_padded;
+    SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
+      simdjson_result<ondemand::object> obj;
+      for (auto element : doc) {
+        obj = element.get_object();
+        for (auto field : obj) { ASSERT_SUCCESS(field); }
+      }
+      ASSERT_ERROR( obj.find_field_unordered("x"), OUT_OF_ORDER_ITERATION );
+      return true;
+    }));
+    SUBTEST("object", test_ondemand_doc(json, [&](auto doc) {
+      ondemand::object obj;
+      for (auto element : doc) {
+        ASSERT_SUCCESS( element.get(obj) );
+        for (auto field : obj) { ASSERT_SUCCESS(field); }
+      }
+      ASSERT_ERROR( obj.find_field_unordered("x"), OUT_OF_ORDER_ITERATION );
+      return true;
+    }));
     TEST_SUCCEED();
   }
 
@@ -588,6 +718,11 @@ namespace error_tests {
            object_lookup_miss_next_error() &&
            get_fail_then_succeed_bool() &&
            get_fail_then_succeed_null() &&
+           out_of_order_array_iteration_error() &&
+           out_of_order_object_iteration_error() &&
+           out_of_order_object_index_error() &&
+           out_of_order_object_find_field_error() &&
+           out_of_order_object_find_field_unordered_error() &&
            true;
   }
 }

@@ -24,13 +24,13 @@ public:
    *
    * Part of the std::iterable interface.
    */
-  simdjson_really_inline array_iterator begin() noexcept;
+  simdjson_really_inline simdjson_result<array_iterator> begin() noexcept;
   /**
    * Sentinel representing the end of the array.
    *
    * Part of the std::iterable interface.
    */
-  simdjson_really_inline array_iterator end() noexcept;
+  simdjson_really_inline simdjson_result<array_iterator> end() noexcept;
 
 protected:
   /**
