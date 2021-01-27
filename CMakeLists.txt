@@ -50,6 +50,13 @@ configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/simdjson-config.cmake
       INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/simdjson"
       NO_SET_AND_CHECK_MACRO
       NO_CHECK_REQUIRED_COMPONENTS_MACRO)
+write_basic_package_version_file(
+      "${PROJECT_BINARY_DIR}/simdjson-config-version.cmake"
+      VERSION ${SIMDJSON_SEMANTIC_VERSION}
+      COMPATIBILITY SameMinorVersion)
+install(FILES "${PROJECT_BINARY_DIR}/simdjson-config.cmake"
+              "${PROJECT_BINARY_DIR}/simdjson-config-version.cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/simdjson")
 
 #
 # Compile tools / tests / benchmarks
