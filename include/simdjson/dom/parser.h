@@ -460,17 +460,67 @@ public:
   /**
    * @private Use `parser.parse(...).value()` instead
    *
-   * In rare instances, a user might want to access the document
-   * directly. Indeed, after moving the parser instance, the
-   * parsed document and its element are invalidated. You can
-   * recover access like so:
+   * The library does not keep track of whether the `doc` instance
+   * points at a valid JSON document. Safe access to the content of
+   * the `doc` ressource is provided following a successful call to
+   * the `parse` function.
+   *
+   * Thus direct access to the `doc` instance is generally unsafe.
+   * The following is unsafe:
    *
    *    auto parser = dom::parser{};
-   *    auto root = parser.parse(input);
-   *    auto parser2 = std::move(parser);
-   *    root = parser2.doc.root();
+   *    auto doc = parser.doc.root();
+   *    // doc might be in an unsafe stage
    *
-   * Such usage should be limited to advanced users.
+   *
+   * In rare instances, a user might want to access the document
+   * directly. Indeed, after moving the parser instance, the
+   * parsed document and its element are invalidated. One can
+   * recover access if one knows that the last parse call was
+   * a success like so:
+   *
+   *    auto parser = dom::parser{};
+   *    dom::element doc;
+   *    auto error = parser.parse(json).get(doc);
+   *    if (error) {
+   *      cerr << error << endl;
+   *      // accessing parser.doc.root() is unsafe here.
+   *    } else {
+   *      // doc points at the document root
+   *      //
+   *      auto parser2 = std::move(parser); // doc is now invalid
+   *      doc = parser2.doc.root(); // doc is safe again
+   *    }
+   *
+   * One might also wrap the parser instance in the following
+   * manner:
+   *
+   *   struct moving_parser {
+   *     dom::parser parser{};
+   *     bool is_valid{false};
+   *     simdjson::error_code parse(const padded_string & input) {
+   *       auto answer = parser.parse(input).error();
+   *       is_valid = !answer;
+   *       return answer;
+   *     }
+   *     // result of get_root invalidated when moving_parser is moved,
+   *     // but the function can be called again after a move.
+   *     dom::element get_root() {
+   *       if(is_valid) { return parser.doc.root(); }
+   *       throw std::runtime_error("no document");
+   *     }
+   *   };
+   *
+   * You can use such a wrapper in the following manner:
+   *
+   *   auto input = "[1, 2, 3]"_padded;
+   *   moving_parser mp{};
+   *   mp.parse(input);// check the error here if needed
+   *   auto mp2 = std::move(mp);
+   *   auto root = mp2.get_root(); // might throw
+   *
+   * Such usage should be limited to advanced users. Most users should
+   * never directly access the doc attribute.
    */
   document doc{};
 

@@ -330,7 +330,6 @@ namespace parse_api_tests {
     typedef std::tuple<std::string, std::unique_ptr<parser>,element> simdjson_tuple;
     std::vector<simdjson_tuple> results;
     std::vector<std::string> my_data = {"[1,2,3]", "[1,2,3]", "[1,2,3]"};
-
     for (std::string s : my_data) {
       std::unique_ptr<dom::parser> parser(new dom::parser{});
       element root;
@@ -348,11 +347,38 @@ namespace parse_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     auto input = "[1, 2, 3]"_padded;
     auto parser = dom::parser{};
-    auto root = parser.parse(input);
+    dom::element root = parser.parse(input); // might throw
     auto parser2 = std::move(parser);
     root = parser2.doc.root();
     std::cout << simdjson::to_string(root) << std::endl;
-    return simdjson::to_string(root) == "[1,2,3]";// might throw
+    return simdjson::to_string(root) == "[1,2,3]";
+  }
+  // Some users want to parse the document and keep it for later.
+  // Such users can then keep track of the state of the parser's document.
+  struct moving_parser {
+    dom::parser parser{};
+    bool is_valid{false};
+    simdjson::error_code parse(const padded_string & input) {
+      auto answer = parser.parse(input).error();
+      is_valid = !answer;
+      return answer;
+    }
+    // result is invalidated when moving_parser is moved.
+    dom::element get_root() {
+      if(is_valid) { return parser.doc.root(); }
+      throw std::runtime_error("no document");
+    }
+  };
+  // Shows how to use moving_parser
+  bool parser_moving_parser_and_recovering_struct() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto input = "[1, 2, 3]"_padded;
+    moving_parser mp{};
+    mp.parse(input);// I could check the error here if I want
+    auto mp2 = std::move(mp);
+    auto root = mp2.get_root();// might throw if document was invalid
+    std::cout << simdjson::to_string(root) << std::endl;
+    return simdjson::to_string(root) == "[1,2,3]";
   }
 #endif
   bool parser_parse() {
@@ -525,7 +551,8 @@ namespace parse_api_tests {
 #endif
 
   bool run() {
-    return parser_moving_parser() &&
+    return parser_moving_parser_and_recovering_struct() &&
+           parser_moving_parser() &&
            parser_parse() &&
            parser_parse_many() &&
 #ifdef SIMDJSON_ENABLE_DEPRECATED_API
