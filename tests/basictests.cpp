@@ -551,8 +551,7 @@ namespace parse_api_tests {
 #endif
 
   bool run() {
-    return parser_moving_parser_and_recovering_struct() &&
-           parser_moving_parser() &&
+    return parser_moving_parser() &&
            parser_parse() &&
            parser_parse_many() &&
 #ifdef SIMDJSON_ENABLE_DEPRECATED_API
@@ -566,6 +565,7 @@ namespace parse_api_tests {
            parser_load_many_deprecated() &&
 #endif
 #if SIMDJSON_EXCEPTIONS
+           parser_moving_parser_and_recovering_struct() &&
            parser_moving_parser_and_recovering() &
            parser_parse_exception() &&
            parser_parse_many_exception() &&
