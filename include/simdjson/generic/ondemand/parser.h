@@ -110,7 +110,9 @@ private:
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<internal::dom_parser_implementation> implementation{};
   std::unique_ptr<uint8_t[]> string_buf{};
+#if SIMDJSON_API_USAGE_CHECKS
   std::unique_ptr<token_position[]> start_positions{};
+#endif
 
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
@@ -123,7 +125,6 @@ private:
   simdjson_warn_unused error_code allocate(size_t capacity, size_t max_depth=DEFAULT_MAX_DEPTH) noexcept;
 
   friend class json_iterator;
-  friend class value_iterator;
 };
 
 } // namespace ondemand

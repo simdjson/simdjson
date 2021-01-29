@@ -94,7 +94,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   } else {
     if ((error = skip_child() )) { abandon(); return error; }
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
-    // if (_json_iter->parser->start_positions[_depth] != _start_position) { return OUT_OF_ORDER_ITERATION; }
+#if SIMDJSON_API_USAGE_CHECKS
+    if (_json_iter->start_position(_depth) != _start_position) { return OUT_OF_ORDER_ITERATION; }
+#endif
   }
   while (has_value) {
     // Get the key and colon, stopping at the value.
@@ -170,7 +172,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // Finish the previous value and see if , or } is next
     if ((error = skip_child() )) { abandon(); return error; }
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
-    // if (_json_iter->parser->start_positions[_depth] != _start_position) { return OUT_OF_ORDER_ITERATION; }
+#if SIMDJSON_API_USAGE_CHECKS
+    if (_json_iter->start_position(_depth) != _start_position) { return OUT_OF_ORDER_ITERATION; }
+#endif
   }
 
   // After initial processing, we will be in one of two states:
