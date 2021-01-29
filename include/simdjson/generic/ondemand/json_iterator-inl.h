@@ -154,13 +154,10 @@ simdjson_really_inline void json_iterator::ascend_to(depth_t parent_depth) noexc
 }
 
 simdjson_really_inline void json_iterator::descend_to(depth_t child_depth) noexcept {
-  descend_to(child_depth, token.index);
-}
-simdjson_really_inline void json_iterator::descend_to(depth_t child_depth, token_position start_position) noexcept {
   SIMDJSON_ASSUME(child_depth >= 1 && child_depth < INT32_MAX);
   SIMDJSON_ASSUME(_depth == child_depth - 1);
   _depth = child_depth;
-  parser->start_positions[_depth] = start_position;
+  parser->start_positions[_depth] = token.index;
 }
 
 simdjson_really_inline depth_t json_iterator::depth() const noexcept {
@@ -181,11 +178,12 @@ simdjson_really_inline error_code json_iterator::report_error(error_code _error,
 simdjson_really_inline token_position json_iterator::position() const noexcept {
   return token.position();
 }
-simdjson_really_inline void json_iterator::set_position(token_position target_checkpoint) noexcept {
-  token.set_position(target_checkpoint);
-}
-simdjson_really_inline token_position json_iterator::nested_start_position(depth_t depth) const noexcept {
-  return parser->start_positions[depth];
+simdjson_really_inline void json_iterator::reenter_child(token_position position, depth_t child_depth) noexcept {
+  SIMDJSON_ASSUME(child_depth >= 1 && child_depth < INT32_MAX);
+  SIMDJSON_ASSUME(_depth == child_depth - 1);
+  SIMDJSON_ASSUME(position >= parser->start_positions[child_depth]);
+  token.set_position(position);
+  _depth = child_depth;
 }
 
 

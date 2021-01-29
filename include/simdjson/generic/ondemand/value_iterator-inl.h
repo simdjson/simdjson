@@ -24,7 +24,6 @@ simdjson_warn_unused simdjson_really_inline bool value_iterator::started_object(
     _json_iter->ascend_to(depth()-1);
     return false;
   }
-  _json_iter->descend_to(depth()+1); //, _start_position+3); // skip {"key":
   logger::log_start_value(*_json_iter, "object");
   return true;
 }
@@ -38,7 +37,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
       _json_iter->ascend_to(depth()-1);
       return false;
     case ',':
-      _json_iter->descend_to(depth()+1); //, _json_iter->token.index+2); // index+2 skips "key":
       return true;
     default:
       return _json_iter->report_error(TAPE_ERROR, "Missing comma between object fields");
@@ -94,9 +92,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else {
-    // if (_json_iter->nested_start_position(depth()) != _start_position+1) { return OUT_OF_ORDER_ITERATION; }
     if ((error = skip_child() )) { abandon(); return error; }
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
+    // if (_json_iter->parser->start_positions[_depth] != _start_position) { return OUT_OF_ORDER_ITERATION; }
   }
   while (has_value) {
     // Get the key and colon, stopping at the value.
@@ -169,10 +167,10 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else {
-    // if (_json_iter->nested_start_position(depth()) != _start_position) { return OUT_OF_ORDER_ITERATION; }
     // Finish the previous value and see if , or } is next
     if ((error = skip_child() )) { abandon(); return error; }
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
+    // if (_json_iter->parser->start_positions[_depth] != _start_position) { return OUT_OF_ORDER_ITERATION; }
   }
 
   // After initial processing, we will be in one of two states:
@@ -195,7 +193,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
   // Next, we find a match starting from the current position.
   while (has_value) {
-    SIMDJSON_ASSUME( _json_iter->_depth == _depth + 1 ); // We must be at the start of a field
+    SIMDJSON_ASSUME( _json_iter->_depth == _depth ); // We must be at the start of a field
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
@@ -218,13 +216,12 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   // beginning of the object.
   // (We have already run through the object before, so we've already validated its structure. We
   // don't check errors in this bit.)
-  _json_iter->set_position(_start_position + 1);
-  _json_iter->descend_to(depth()); // , _start_position);
+  _json_iter->reenter_child(_start_position + 1, _depth);
 
   has_value = started_object();
   while (_json_iter->position() < search_start) {
     SIMDJSON_ASSUME(has_value); // we should reach search_start before ever reaching the end of the object
-    SIMDJSON_ASSUME( _json_iter->_depth == _depth + 1 ); // We must be at the start of a field
+    SIMDJSON_ASSUME( _json_iter->_depth == _depth ); // We must be at the start of a field
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
@@ -248,7 +245,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::field_key() noexcept {
-  assert_at_child();
+  assert_at_next();
 
   const uint8_t *key = _json_iter->advance();
   if (*(key++) != '"') { return _json_iter->report_error(TAPE_ERROR, "Object key is not a string"); }
@@ -256,9 +253,10 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> val
 }
 
 simdjson_warn_unused simdjson_really_inline error_code value_iterator::field_value() noexcept {
-  assert_at_child();
+  assert_at_next();
 
   if (*_json_iter->advance() != ':') { return _json_iter->report_error(TAPE_ERROR, "Missing colon in object field"); }
+  _json_iter->descend_to(depth()+1);
   return SUCCESS;
 }
 
