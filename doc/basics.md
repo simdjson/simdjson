@@ -202,7 +202,7 @@ dom::parser parser;
 
 // Parse and iterate through an array of objects
 for (dom::object obj : parser.parse(abstract_json)) {
-    for(const auto& key_value : obj) {
+    for(const auto key_value : obj) {
       cout << "key: " << key_value.key << " : ";
       dom::object innerobj = key_value.value;
       cout << "a: " << double(innerobj["a"]) << ", ";
