@@ -593,7 +593,7 @@ simdjson_really_inline error_code parse_number(const uint8_t *const src, W &writ
   return SUCCESS;
 }
 
-// SAX functions
+// Inlineable functions
 namespace {
 // Parse any number from 0 to 18,446,744,073,709,551,615
 simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
