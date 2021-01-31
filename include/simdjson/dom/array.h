@@ -95,7 +95,7 @@ public:
    * to figure out the total size of an array (including its children,
    * recursively) if you know its structure ahead of time.
    **/
-  inline size_t slots() const noexcept;
+  inline size_t number_of_slots() const noexcept;
   /**
    * Get the value associated with the given JSON pointer.  We use the RFC 6901
    * https://tools.ietf.org/html/rfc6901 standard, interpreting the current node
