@@ -688,7 +688,7 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(
   //  return (*p == '.' || *p == 'e' || *p == 'E') ? INCORRECT_TYPE : NUMBER_ERROR;
   // }
   // as a single table lookup:
-  if(integer_string_finisher[*p] != SUCCESS) { return error_code(integer_string_finisher[*p]); }
+  if (integer_string_finisher[*p] != SUCCESS) { return error_code(integer_string_finisher[*p]); }
 
   if (digit_count == 20) {
     // Positive overflow check:
