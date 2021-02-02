@@ -521,7 +521,9 @@ namespace document_stream_tests {
         if (!doc.error()) {
           std::cerr << "Expected a capacity error but got: " << doc.error() << std::endl;
           std::cerr << "The input was: " << json << std::endl;
-          std::cerr << "We parsed the document: " << doc.value() << std::endl;
+          simdjson::dom::element this_document;
+          ASSERT_SUCCESS(doc.get(this_document));
+          std::cerr << "We parsed the document: " << this_document << std::endl;
           return false;
         }
         count++;
