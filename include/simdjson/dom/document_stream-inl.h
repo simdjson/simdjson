@@ -199,6 +199,10 @@ inline void document_stream::start() noexcept {
     // Kick off the first thread if needed
     error = stage1_thread_parser.ensure_capacity(batch_size);
     if (error) { return; }
+    if(stage1_thread_parser->doc.capacity() < batch_size) {
+      error = stage1_thread_parser->doc.allocate(batch_size);
+      if (error) { return; }
+    }
     worker->start_thread();
     start_stage1_thread();
     if (error) { return; }

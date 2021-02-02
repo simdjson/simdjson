@@ -123,7 +123,33 @@ simdjson_really_inline simdjson_result<element> parser::parse_into_document(docu
 
 
 inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
-  return parse_into_document(doc, buf, len, realloc_if_needed);
+  // It would be more elegant to call the following:
+  //
+  // return parse_into_document(doc, buf, len, realloc_if_needed);
+  //
+  // However, it seems to lead to a performance regression (maybe)? So
+  // hardocoding it: (deliberate code duplication!!!)
+  //
+  error_code _error = ensure_capacity(len);
+  if (_error) { return _error; }
+  // Important: we need to ensure that document has enough capacity.
+  if(doc.capacity() < len) {
+    // Note that we only ever *grow* the memory allocation of the document.
+    auto err = doc.allocate(len);
+    if (err) { return err; }
+  }
+  std::unique_ptr<uint8_t[]> tmp_buf;
+
+  if (realloc_if_needed) {
+    tmp_buf.reset(reinterpret_cast<uint8_t *>( internal::allocate_padded_buffer(len) ));
+    if (tmp_buf.get() == nullptr) { return MEMALLOC; }
+    std::memcpy(static_cast<void *>(tmp_buf.get()), buf, len);
+  }
+  _error = implementation->parse(realloc_if_needed ? tmp_buf.get() : buf, len, doc);
+
+  if (_error) { return _error; }
+
+  return doc.root();
 }
 
 simdjson_really_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) & noexcept {
