@@ -33,7 +33,6 @@ public:
 
   simdjson_warn_unused error_code parse(const uint8_t *buf, size_t len, dom::document &doc) noexcept final;
   simdjson_warn_unused error_code stage1(const uint8_t *buf, size_t len, bool partial) noexcept final;
-  simdjson_warn_unused error_code check_for_unclosed_array() noexcept;
   simdjson_warn_unused error_code stage2(dom::document &doc) noexcept final;
   simdjson_warn_unused error_code stage2_next(dom::document &doc) noexcept final;
   inline simdjson_warn_unused error_code set_capacity(size_t capacity) noexcept final;
