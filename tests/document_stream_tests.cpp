@@ -497,7 +497,7 @@ namespace document_stream_tests {
     return true;
   }
 
-  bool threaded_disabled() {
+  bool window_too_small_issue1370() {
     std::cout << "Running " << __func__ << std::endl;
     char input[2049];
     input[0] = '[';
@@ -506,22 +506,34 @@ namespace document_stream_tests {
       input[2*i+2]= i < 1023 ? ',' : ']';
     }
     auto json = simdjson::padded_string(input,2049);
-    simdjson::dom::parser parser;
-    size_t count = 0;
-    size_t window_size = 1024; // deliberately too small
-    simdjson::dom::document_stream stream;
-    ASSERT_SUCCESS( parser.parse_many(json, window_size).get(stream) );
-    for (auto doc : stream) {
-      if (!doc.error()) {
-          std::cerr << "Expected a capacity error " << doc.error() << std::endl;
+    // We are going to repeat this test 1000 times so
+    // that if there is an issue, we are more likely to
+    // trigger it systematically.
+    for(size_t trial = 0; trial < 1000; trial++) {
+      std::cout << ".";
+      std::cout.flush();
+      simdjson::dom::parser parser;
+      size_t count = 0;
+      size_t window_size = 1024; // deliberately too small
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS( parser.parse_many(json, window_size).get(stream) );
+      for (auto doc : stream) {
+        if (!doc.error()) {
+          std::cerr << "Expected a capacity error but got: " << doc.error() << std::endl;
+          std::cerr << "The input was: " << json << std::endl;
+          simdjson::dom::element this_document;
+          ASSERT_SUCCESS(doc.get(this_document));
+          std::cerr << "We parsed the document: " << this_document << std::endl;
           return false;
+        }
+        count++;
       }
-      count++;
+      if(count == 2) {
+        std::cerr << "Expected a single document " << std::endl;
+        return false;
+      }
     }
-    if(count == 2) {
-      std::cerr << "Expected a single document " << std::endl;
-      return false;
-    }
+    std::cout << std::endl;
     return true;
   }
 
@@ -673,9 +685,7 @@ namespace document_stream_tests {
            issue1133() &&
            single_document_exceptions() &&
 #endif
-#ifdef SIMDJSON_THREADS_ENABLED
-           threaded_disabled() &&
-#endif
+           window_too_small_issue1370() &&
            small_window() &&
            large_window() &&
            json_issue467() &&
