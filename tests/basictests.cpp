@@ -342,6 +342,73 @@ namespace parse_api_tests {
     }
     return true;
   }
+#if SIMDJSON_EXCEPTIONS
+  bool issue679() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto input = "[1, 2, 3]"_padded;
+    dom::document doc;
+    {
+      dom::parser parser;
+      element doc_root = parser.parse_into_document(doc, input);
+      if(simdjson::to_string(doc_root) != "[1,2,3]") { return false; }
+      // parser will go out of scope here.
+    }
+    if(simdjson::to_string(doc.root()) != "[1,2,3]") { return false; }
+    dom::parser parser; // new parser
+    element doc_root1 = parser.parse_into_document(doc, input);
+    if(simdjson::to_string(doc_root1) != "[1,2,3]") { return false; }
+    //... doc_root1 is a pointer inside doc
+    element doc_root2 = parser.parse_into_document(doc, input);
+    //... doc_root2 is a pointer inside doc
+    if(simdjson::to_string(doc_root2) != "[1,2,3]") { return false; }
+
+    // Here let us take moving the document:
+    dom::document docm = std::move(doc);
+    element doc_root3 = docm.root();
+    if(simdjson::to_string(doc_root3) != "[1,2,3]") { return false; }
+    return true;
+  }
+
+
+  //See https://github.com/simdjson/simdjson/issues/1332
+  bool parser_moving_parser_and_recovering() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto input = "[1, 2, 3]"_padded;
+    auto parser = dom::parser{};
+    dom::element root = parser.parse(input); // might throw
+    auto parser2 = std::move(parser);
+    root = parser2.doc.root();
+    std::cout << simdjson::to_string(root) << std::endl;
+    return simdjson::to_string(root) == "[1,2,3]";
+  }
+  // Some users want to parse the document and keep it for later.
+  // Such users can then keep track of the state of the parser's document.
+  struct moving_parser {
+    dom::parser parser{};
+    bool is_valid{false};
+    simdjson::error_code parse(const padded_string & input) {
+      auto answer = parser.parse(input).error();
+      is_valid = !answer;
+      return answer;
+    }
+    // result is invalidated when moving_parser is moved.
+    dom::element get_root() {
+      if(is_valid) { return parser.doc.root(); }
+      throw std::runtime_error("no document");
+    }
+  };
+  // Shows how to use moving_parser
+  bool parser_moving_parser_and_recovering_struct() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto input = "[1, 2, 3]"_padded;
+    moving_parser mp{};
+    mp.parse(input);// I could check the error here if I want
+    auto mp2 = std::move(mp);
+    auto root = mp2.get_root();// might throw if document was invalid
+    std::cout << simdjson::to_string(root) << std::endl;
+    return simdjson::to_string(root) == "[1,2,3]";
+  }
+#endif
   bool parser_parse() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
@@ -526,10 +593,13 @@ namespace parse_api_tests {
            parser_load_many_deprecated() &&
 #endif
 #if SIMDJSON_EXCEPTIONS
+           parser_moving_parser_and_recovering_struct() &&
+           parser_moving_parser_and_recovering() &&
            parser_parse_exception() &&
            parser_parse_many_exception() &&
            parser_load_exception() &&
            parser_load_many_exception() &&
+           issue679() &&
 #endif
            true;
   }

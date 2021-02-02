@@ -120,7 +120,7 @@ public:
    * Parse a JSON document and return a temporary reference to it.
    *
    *   dom::parser parser;
-   *   element doc = parser.parse(buf, len);
+   *   element doc_root = parser.parse(buf, len);
    *
    * The function eagerly parses the input: the input can be modified and discarded after
    * the `parser.parse(buf, len)` call has completed.
@@ -174,7 +174,7 @@ public:
    *            realloc_if_needed is true.
    * @param len The length of the JSON.
    * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
-   * @return The document, or an error:
+   * @return An element pointing at the root of the document, or an error:
    *         - MEMALLOC if realloc_if_needed is true or the parser does not have enough capacity,
    *           and memory allocation fails.
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
@@ -195,6 +195,65 @@ public:
 
   /** @private We do not want to allow implicit conversion from C string to std::string. */
   simdjson_really_inline simdjson_result<element> parse(const char *buf) noexcept = delete;
+
+  /**
+   * Parse a JSON document into a provide document instance and return a temporary reference to it.
+   * It is similar to the function `parse` except that instead of parsing into the internal
+   * `document` instance associated with the parser, it allows the user to provide a document
+   * instance.
+   *
+   *   dom::parser parser;
+   *   dom::document doc;
+   *   element doc_root = parser.parse_into_document(doc, buf, len);
+   *
+   * The function eagerly parses the input: the input can be modified and discarded after
+   * the `parser.parse(buf, len)` call has completed.
+   *
+   * ### IMPORTANT: Document Lifetime
+   *
+   * After the call to parse_into_document, the parser is no longer needed.
+   *
+   * The JSON document lives in the document instance: you must keep the document
+   * instance alive while you navigate through it (i.e., used the returned value from
+   * parse_into_document). You are encourage to reuse the document instance
+   * many times with new data to avoid reallocations:
+   *
+   *   dom::document doc;
+   *   element doc_root1 = parser.parse_into_document(doc, buf1, len);
+   *   //... doc_root1 is a pointer inside doc
+   *   element doc_root2 = parser.parse_into_document(doc, buf1, len);
+   *   //... doc_root2 is a pointer inside doc
+   *   // at this point doc_root1 is no longer safe
+   *
+   * Moving the document instance is safe, but it invalidates the element instances. After
+   * moving a document, you can recover safe access to the document root with its `root()` method.
+   *
+   * @param doc The document instance where the parsed data will be stored (on success).
+   * @param buf The JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes, unless
+   *            realloc_if_needed is true.
+   * @param len The length of the JSON.
+   * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
+   * @return An element pointing at the root of document, or an error:
+   *         - MEMALLOC if realloc_if_needed is true or the parser does not have enough capacity,
+   *           and memory allocation fails.
+   *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
+   *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
+   *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
+   */
+  inline simdjson_result<element> parse_into_document(document& doc, const uint8_t *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  inline simdjson_result<element> parse_into_document(document& doc, const uint8_t *buf, size_t len, bool realloc_if_needed = true) && =delete;
+  /** @overload parse_into_document(const uint8_t *buf, size_t len, bool realloc_if_needed) */
+  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const char *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const char *buf, size_t len, bool realloc_if_needed = true) && =delete;
+  /** @overload parse_into_document(const uint8_t *buf, size_t len, bool realloc_if_needed) */
+  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const std::string &s) & noexcept;
+  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const std::string &s) && =delete;
+  /** @overload parse_into_document(const uint8_t *buf, size_t len, bool realloc_if_needed) */
+  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const padded_string &s) & noexcept;
+  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const padded_string &s) && =delete;
+
+  /** @private We do not want to allow implicit conversion from C string to std::string. */
+  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const char *buf) noexcept = delete;
 
   /**
    * Load a file containing many JSON documents.
@@ -516,6 +575,8 @@ private:
   /**
    * Ensure we have enough capacity to handle at least desired_capacity bytes,
    * and auto-allocate if not.
+   *
+   * Important: the document instance must be allocated separately.
    */
   inline error_code ensure_capacity(size_t desired_capacity) noexcept;
 
