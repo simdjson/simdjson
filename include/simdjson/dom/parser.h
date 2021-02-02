@@ -32,6 +32,11 @@ static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
 static constexpr size_t MINIMAL_BATCH_SIZE = 32;
 
 /**
+ * It is wasteful to allocate memory for tiny documents (e.g., 4 bytes).
+ */
+static constexpr size_t MINIMAL_DOCUMENT_CAPACITY = 32;
+
+/**
  * A persistent document parser.
  *
  * The parser is designed to be reused, holding the internal buffers necessary to do parsing,

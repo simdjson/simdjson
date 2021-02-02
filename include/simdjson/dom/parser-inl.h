@@ -93,7 +93,6 @@ inline simdjson_result<element> parser::parse_into_document(document& provided_d
   error_code _error = ensure_capacity(provided_doc, len);
   if (_error) { return _error; }
   std::unique_ptr<uint8_t[]> tmp_buf;
-
   if (realloc_if_needed) {
     tmp_buf.reset(reinterpret_cast<uint8_t *>( internal::allocate_padded_buffer(len) ));
     if (tmp_buf.get() == nullptr) { return MEMALLOC; }
@@ -183,6 +182,9 @@ inline error_code parser::ensure_capacity_with_document(size_t desired_capacity)
 
 
 inline error_code parser::ensure_capacity(document& target_document, size_t desired_capacity) noexcept {
+  // 1. It is wasteful to allocate a document and a parser for document spanning less than MINIMAL_DOCUMENT_CAPACITY bytes.
+  // 2. If we allow desired_capacity then it is possible to exit this function with implementation == nullptr.
+  if(desired_capacity < MINIMAL_DOCUMENT_CAPACITY) { desired_capacity = MINIMAL_DOCUMENT_CAPACITY; }
   // If we don't have enough capacity, (try to) automatically bump it.
   // If the document need allocation, do it too.
   // Both in one if statement to minimize unlikely branching.
