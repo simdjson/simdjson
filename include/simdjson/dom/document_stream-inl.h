@@ -178,12 +178,8 @@ simdjson_really_inline bool document_stream::iterator::operator!=(const document
 
 inline void document_stream::start() noexcept {
   if (error) { return; }
-  error = parser->ensure_capacity(batch_size);
+  error = parser->ensure_capacity_with_document(batch_size);
   if (error) { return; }
-  if(parser->doc.capacity() < batch_size) {
-    error = parser->doc.allocate(batch_size);
-    if (error) { return; }
-  }
   // Always run the first stage 1 parse immediately
   batch_start = 0;
   error = run_stage1(*parser, batch_start);
@@ -197,12 +193,8 @@ inline void document_stream::start() noexcept {
 #ifdef SIMDJSON_THREADS_ENABLED
   if (use_thread && next_batch_start() < len) {
     // Kick off the first thread if needed
-    error = stage1_thread_parser.ensure_capacity(batch_size);
+    error = stage1_thread_parser.ensure_capacity_with_document(batch_size);
     if (error) { return; }
-    if(stage1_thread_parser.doc.capacity() < batch_size) {
-      error = stage1_thread_parser.doc.allocate(batch_size);
-      if (error) { return; }
-    }
     worker->start_thread();
     start_stage1_thread();
     if (error) { return; }
