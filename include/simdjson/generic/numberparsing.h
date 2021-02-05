@@ -423,7 +423,7 @@ simdjson_really_inline error_code parse_exponent(simdjson_unused const uint8_t *
   return SUCCESS;
 }
 
-simdjson_really_inline int significant_digits(const uint8_t * start_digits, int digit_count) {
+simdjson_really_inline size_t significant_digits(const uint8_t * start_digits, size_t digit_count) {
   // It is possible that the integer had an overflow.
   // We have to handle the case where we have 0.0000somenumber.
   const uint8_t *start = start_digits;
@@ -431,11 +431,11 @@ simdjson_really_inline int significant_digits(const uint8_t * start_digits, int 
     start++;
   }
   // we over-decrement by one when there is a '.'
-  return digit_count - int(start - start_digits);
+  return digit_count - size_t(start - start_digits);
 }
 
 template<typename W>
-simdjson_really_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
+simdjson_really_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
@@ -529,7 +529,8 @@ simdjson_really_inline error_code parse_number(const uint8_t *const src, W &writ
   while (parse_digit(*p, i)) { p++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
-  int digit_count = int(p - start_digits);
+  // Optimization note: size_t is expected to be unsigned.
+  size_t digit_count = size_t(p - start_digits);
   if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return INVALID_NUMBER(src); }
 
   //
@@ -549,23 +550,23 @@ simdjson_really_inline error_code parse_number(const uint8_t *const src, W &writ
     SIMDJSON_TRY( parse_exponent(src, p, exponent) );
   }
   if (is_float) {
-    const bool clean_end = jsoncharutils::is_structural_or_whitespace(*p);
+    const bool dirty_end = jsoncharutils::is_not_structural_or_whitespace(*p);
     SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
-    if (!clean_end) { return INVALID_NUMBER(src); }
+    if (dirty_end) { return INVALID_NUMBER(src); }
     return SUCCESS;
   }
 
   // The longest negative 64-bit number is 19 digits.
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
-  int longest_digit_count = negative ? 19 : 20;
+  size_t longest_digit_count = negative ? 19 : 20;
   if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
   if (digit_count == longest_digit_count) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
       if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
       WRITE_INTEGER(~i+1, src, writer);
-      if (!jsoncharutils::is_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+      if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
     // Positive overflow check:
     // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
@@ -588,16 +589,81 @@ simdjson_really_inline error_code parse_number(const uint8_t *const src, W &writ
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
   }
-  if (!jsoncharutils::is_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+  if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
   return SUCCESS;
 }
 
-// SAX functions
+// Inlineable functions
 namespace {
+
+// This table can be used to characterize the final character of an integer
+// string. For JSON structural character and allowable white space characters,
+// we return SUCCESS. For 'e', '.' and 'E', we return INCORRECT_TYPE. Otherwise
+// we return NUMBER_ERROR.
+// Optimization note: we could easily reduce the size of the table by half (to 128)
+// at the cost of an extra branch.
+// Optimization note: we want the values to use at most 8 bits (not, e.g., 32 bits):
+static_assert(error_code(uint8_t(NUMBER_ERROR))== NUMBER_ERROR, "bad NUMBER_ERROR cast");
+static_assert(error_code(uint8_t(SUCCESS))== SUCCESS, "bad NUMBER_ERROR cast");
+static_assert(error_code(uint8_t(INCORRECT_TYPE))== INCORRECT_TYPE, "bad NUMBER_ERROR cast");
+
+const uint8_t integer_string_finisher[256] = {
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, SUCCESS,
+    SUCCESS,      NUMBER_ERROR,   NUMBER_ERROR, SUCCESS,      NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   SUCCESS,      NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, SUCCESS,
+    NUMBER_ERROR, INCORRECT_TYPE, NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, SUCCESS,      NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, INCORRECT_TYPE,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, SUCCESS,        NUMBER_ERROR, SUCCESS,      NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, INCORRECT_TYPE, NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, SUCCESS,      NUMBER_ERROR,
+    SUCCESS,      NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR};
+
 // Parse any number from 0 to 18,446,744,073,709,551,615
 simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
   const uint8_t *p = src;
-
   //
   // Parse the integer part.
   //
@@ -607,13 +673,23 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(
   while (parse_digit(*p, i)) { p++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
-  int digit_count = int(p - start_digits);
-  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return NUMBER_ERROR; }
-  if (!jsoncharutils::is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
-
+  // Optimization note: size_t is expected to be unsigned.
+  size_t digit_count = size_t(p - start_digits);
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
-  if (digit_count > 20) { return NUMBER_ERROR; }
+  // Optimization note: the compiler can probably merge
+  // ((digit_count == 0) || (digit_count > 20))
+  // into a single  branch since digit_count is unsigned.
+  if ((digit_count == 0) || (digit_count > 20)) { return INCORRECT_TYPE; }
+  // Here digit_count > 0.
+  if (('0' == *start_digits) && (digit_count > 1)) { return NUMBER_ERROR; }
+  // We can do the following...
+  // if (!jsoncharutils::is_structural_or_whitespace(*p)) {
+  //  return (*p == '.' || *p == 'e' || *p == 'E') ? INCORRECT_TYPE : NUMBER_ERROR;
+  // }
+  // as a single table lookup:
+  if (integer_string_finisher[*p] != SUCCESS) { return error_code(integer_string_finisher[*p]); }
+
   if (digit_count == 20) {
     // Positive overflow check:
     // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
@@ -627,7 +703,7 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(
     // - Therefore, if the number is positive and lower than that, it's overflow.
     // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
     //
-    if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+    if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INCORRECT_TYPE; }
   }
 
   return i;
@@ -650,19 +726,28 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer(co
   while (parse_digit(*p, i)) { p++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
-  int digit_count = int(p - start_digits);
-  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return NUMBER_ERROR; }
-  if (!jsoncharutils::is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
-
+  // Optimization note: size_t is expected to be unsigned.
+  size_t digit_count = size_t(p - start_digits);
   // The longest negative 64-bit number is 19 digits.
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
-  int longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return NUMBER_ERROR; }
+  size_t longest_digit_count = negative ? 19 : 20;
+  // Optimization note: the compiler can probably merge
+  // ((digit_count == 0) || (digit_count > longest_digit_count))
+  // into a single  branch since digit_count is unsigned.
+  if ((digit_count == 0) || (digit_count > longest_digit_count)) { return INCORRECT_TYPE; }
+  // Here digit_count > 0.
+  if (('0' == *start_digits) && (digit_count > 1)) { return NUMBER_ERROR; }
+  // We can do the following...
+  // if (!jsoncharutils::is_structural_or_whitespace(*p)) {
+  //  return (*p == '.' || *p == 'e' || *p == 'E') ? INCORRECT_TYPE : NUMBER_ERROR;
+  // }
+  // as a single table lookup:
+  if(integer_string_finisher[*p] != SUCCESS) { return error_code(integer_string_finisher[*p]); }
   if (digit_count == longest_digit_count) {
-    if(negative) {
+    if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return NUMBER_ERROR; }
+      if (i > uint64_t(INT64_MAX)+1) { return INCORRECT_TYPE; }
       return ~i+1;
 
     // Positive overflow check:
@@ -677,7 +762,7 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer(co
     // - Therefore, if the number is positive and lower than that, it's overflow.
     // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
     //
-    } else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+    } else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INCORRECT_TYPE; }
   }
 
   return negative ? (~i+1) : i;
@@ -699,7 +784,8 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
   bool leading_zero = (i == 0);
   while (parse_digit(*p, i)) { p++; }
   // no integer digits, or 0123 (zero must be solo)
-  if ( p == src || (leading_zero && p != src+1)) { return NUMBER_ERROR; }
+  if ( p == src ) { return INCORRECT_TYPE; }
+  if ( (leading_zero && p != src+1)) { return NUMBER_ERROR; }
 
   //
   // Parse the decimal part.

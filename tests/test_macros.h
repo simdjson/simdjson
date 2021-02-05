@@ -48,7 +48,7 @@ template<typename T>
 simdjson_really_inline bool assert_success(const T &actual, const char *operation = "result") {
   simdjson::error_code error = to_error_code(actual);
   if (error) {
-    std::cerr << "FAIL: " << operation << " returned error: " << error << std::endl;
+    std::cerr << "FAIL: " << operation << " returned error: " << error << " (" << int(error) << ")" << std::endl;
     return false;
   }
   return true;

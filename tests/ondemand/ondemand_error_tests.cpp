@@ -39,9 +39,9 @@ namespace error_tests {
       TEST_START();
       TEST_CAST_ERROR("[]", object, INCORRECT_TYPE);
       TEST_CAST_ERROR("[]", bool, INCORRECT_TYPE);
-      TEST_CAST_ERROR("[]", int64, NUMBER_ERROR);
-      TEST_CAST_ERROR("[]", uint64, NUMBER_ERROR);
-      TEST_CAST_ERROR("[]", double, NUMBER_ERROR);
+      TEST_CAST_ERROR("[]", int64, INCORRECT_TYPE);
+      TEST_CAST_ERROR("[]", uint64, INCORRECT_TYPE);
+      TEST_CAST_ERROR("[]", double, INCORRECT_TYPE);
       TEST_CAST_ERROR("[]", string, INCORRECT_TYPE);
       TEST_CAST_ERROR("[]", raw_json_string, INCORRECT_TYPE);
       TEST_SUCCEED();
@@ -51,9 +51,9 @@ namespace error_tests {
       TEST_START();
       TEST_CAST_ERROR("{}", array, INCORRECT_TYPE);
       TEST_CAST_ERROR("{}", bool, INCORRECT_TYPE);
-      TEST_CAST_ERROR("{}", int64, NUMBER_ERROR);
-      TEST_CAST_ERROR("{}", uint64, NUMBER_ERROR);
-      TEST_CAST_ERROR("{}", double, NUMBER_ERROR);
+      TEST_CAST_ERROR("{}", int64, INCORRECT_TYPE);
+      TEST_CAST_ERROR("{}", uint64, INCORRECT_TYPE);
+      TEST_CAST_ERROR("{}", double, INCORRECT_TYPE);
       TEST_CAST_ERROR("{}", string, INCORRECT_TYPE);
       TEST_CAST_ERROR("{}", raw_json_string, INCORRECT_TYPE);
       TEST_SUCCEED();
@@ -63,9 +63,9 @@ namespace error_tests {
       TEST_START();
       TEST_CAST_ERROR("true", array, INCORRECT_TYPE);
       TEST_CAST_ERROR("true", object, INCORRECT_TYPE);
-      TEST_CAST_ERROR("true", int64, NUMBER_ERROR);
-      TEST_CAST_ERROR("true", uint64, NUMBER_ERROR);
-      TEST_CAST_ERROR("true", double, NUMBER_ERROR);
+      TEST_CAST_ERROR("true", int64, INCORRECT_TYPE);
+      TEST_CAST_ERROR("true", uint64, INCORRECT_TYPE);
+      TEST_CAST_ERROR("true", double, INCORRECT_TYPE);
       TEST_CAST_ERROR("true", string, INCORRECT_TYPE);
       TEST_CAST_ERROR("true", raw_json_string, INCORRECT_TYPE);
       TEST_SUCCEED();
@@ -75,9 +75,9 @@ namespace error_tests {
       TEST_START();
       TEST_CAST_ERROR("false", array, INCORRECT_TYPE);
       TEST_CAST_ERROR("false", object, INCORRECT_TYPE);
-      TEST_CAST_ERROR("false", int64, NUMBER_ERROR);
-      TEST_CAST_ERROR("false", uint64, NUMBER_ERROR);
-      TEST_CAST_ERROR("false", double, NUMBER_ERROR);
+      TEST_CAST_ERROR("false", int64, INCORRECT_TYPE);
+      TEST_CAST_ERROR("false", uint64, INCORRECT_TYPE);
+      TEST_CAST_ERROR("false", double, INCORRECT_TYPE);
       TEST_CAST_ERROR("false", string, INCORRECT_TYPE);
       TEST_CAST_ERROR("false", raw_json_string, INCORRECT_TYPE);
       TEST_SUCCEED();
@@ -87,9 +87,9 @@ namespace error_tests {
       TEST_START();
       TEST_CAST_ERROR("null", array, INCORRECT_TYPE);
       TEST_CAST_ERROR("null", object, INCORRECT_TYPE);
-      TEST_CAST_ERROR("null", int64, NUMBER_ERROR);
-      TEST_CAST_ERROR("null", uint64, NUMBER_ERROR);
-      TEST_CAST_ERROR("null", double, NUMBER_ERROR);
+      TEST_CAST_ERROR("null", int64, INCORRECT_TYPE);
+      TEST_CAST_ERROR("null", uint64, INCORRECT_TYPE);
+      TEST_CAST_ERROR("null", double, INCORRECT_TYPE);
       TEST_CAST_ERROR("null", string, INCORRECT_TYPE);
       TEST_CAST_ERROR("null", raw_json_string, INCORRECT_TYPE);
       TEST_SUCCEED();
@@ -110,7 +110,7 @@ namespace error_tests {
       TEST_CAST_ERROR("-1", array, INCORRECT_TYPE);
       TEST_CAST_ERROR("-1", object, INCORRECT_TYPE);
       TEST_CAST_ERROR("-1", bool, INCORRECT_TYPE);
-      TEST_CAST_ERROR("-1", uint64, NUMBER_ERROR);
+      TEST_CAST_ERROR("-1", uint64, INCORRECT_TYPE);
       TEST_CAST_ERROR("-1", string, INCORRECT_TYPE);
       TEST_CAST_ERROR("-1", raw_json_string, INCORRECT_TYPE);
       TEST_SUCCEED();
@@ -121,8 +121,8 @@ namespace error_tests {
       TEST_CAST_ERROR("1.1", array, INCORRECT_TYPE);
       TEST_CAST_ERROR("1.1", object, INCORRECT_TYPE);
       TEST_CAST_ERROR("1.1", bool, INCORRECT_TYPE);
-      TEST_CAST_ERROR("1.1", int64, NUMBER_ERROR);
-      TEST_CAST_ERROR("1.1", uint64, NUMBER_ERROR);
+      TEST_CAST_ERROR("1.1", int64, INCORRECT_TYPE);
+      TEST_CAST_ERROR("1.1", uint64, INCORRECT_TYPE);
       TEST_CAST_ERROR("1.1", string, INCORRECT_TYPE);
       TEST_CAST_ERROR("1.1", raw_json_string, INCORRECT_TYPE);
       TEST_SUCCEED();
@@ -133,8 +133,8 @@ namespace error_tests {
       TEST_CAST_ERROR("-9223372036854775809", array, INCORRECT_TYPE);
       TEST_CAST_ERROR("-9223372036854775809", object, INCORRECT_TYPE);
       TEST_CAST_ERROR("-9223372036854775809", bool, INCORRECT_TYPE);
-      TEST_CAST_ERROR("-9223372036854775809", int64, NUMBER_ERROR);
-      TEST_CAST_ERROR("-9223372036854775809", uint64, NUMBER_ERROR);
+      TEST_CAST_ERROR("-9223372036854775809", int64, INCORRECT_TYPE);
+      TEST_CAST_ERROR("-9223372036854775809", uint64, INCORRECT_TYPE);
       TEST_CAST_ERROR("-9223372036854775809", string, INCORRECT_TYPE);
       TEST_CAST_ERROR("-9223372036854775809", raw_json_string, INCORRECT_TYPE);
       TEST_SUCCEED();
@@ -146,7 +146,7 @@ namespace error_tests {
       TEST_CAST_ERROR("9223372036854775808", object, INCORRECT_TYPE);
       TEST_CAST_ERROR("9223372036854775808", bool, INCORRECT_TYPE);
       // TODO BUG: this should be an error but is presently not
-      // TEST_CAST_ERROR("9223372036854775808", int64, NUMBER_ERROR);
+      // TEST_CAST_ERROR("9223372036854775808", int64, INCORRECT_TYPE);
       TEST_CAST_ERROR("9223372036854775808", string, INCORRECT_TYPE);
       TEST_CAST_ERROR("9223372036854775808", raw_json_string, INCORRECT_TYPE);
       TEST_SUCCEED();
@@ -157,9 +157,8 @@ namespace error_tests {
       TEST_CAST_ERROR("18446744073709551616", array, INCORRECT_TYPE);
       TEST_CAST_ERROR("18446744073709551616", object, INCORRECT_TYPE);
       TEST_CAST_ERROR("18446744073709551616", bool, INCORRECT_TYPE);
-      TEST_CAST_ERROR("18446744073709551616", int64, NUMBER_ERROR);
-      // TODO BUG: this should be an error but is presently not
-      // TEST_CAST_ERROR("18446744073709551616", uint64, NUMBER_ERROR);
+      TEST_CAST_ERROR("18446744073709551616", int64, INCORRECT_TYPE);
+      TEST_CAST_ERROR("18446744073709551616", uint64, INCORRECT_TYPE);
       TEST_CAST_ERROR("18446744073709551616", string, INCORRECT_TYPE);
       TEST_CAST_ERROR("18446744073709551616", raw_json_string, INCORRECT_TYPE);
       TEST_SUCCEED();
@@ -238,43 +237,43 @@ namespace error_tests {
   bool top_level_array_iterate_error() {
     TEST_START();
     ONDEMAND_SUBTEST("missing comma", "[1 1]",  assert_iterate(doc, { int64_t(1) }, { TAPE_ERROR }));
-    ONDEMAND_SUBTEST("extra comma  ", "[1,,1]", assert_iterate(doc, { int64_t(1) }, { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("extra comma  ", "[,]",    assert_iterate(doc,                 { NUMBER_ERROR }));
-    ONDEMAND_SUBTEST("extra comma  ", "[,,]",   assert_iterate(doc,                 { NUMBER_ERROR, NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("extra comma  ", "[1,,1]", assert_iterate(doc, { int64_t(1) }, { INCORRECT_TYPE, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("extra comma  ", "[,]",    assert_iterate(doc,                 { INCORRECT_TYPE }));
+    ONDEMAND_SUBTEST("extra comma  ", "[,,]",   assert_iterate(doc,                 { INCORRECT_TYPE, INCORRECT_TYPE, TAPE_ERROR }));
     TEST_SUCCEED();
   }
   bool top_level_array_iterate_unclosed_error() {
     TEST_START();
-    ONDEMAND_SUBTEST("unclosed extra comma", "[,", assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("unclosed     ", "[1 ",    assert_iterate(doc, { int64_t(1) }, { TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed extra comma", "[,", assert_iterate(doc,                 { INCORRECT_TYPE, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed     ", "[1 ",       assert_iterate(doc, { int64_t(1) }, { TAPE_ERROR }));
     // TODO These pass the user values that may run past the end of the buffer if they aren't careful
     // In particular, if the padding is decorated with the wrong values, we could cause overrun!
-    ONDEMAND_SUBTEST("unclosed extra comma", "[,,", assert_iterate(doc,                 { NUMBER_ERROR, NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("unclosed     ", "[1,",    assert_iterate(doc, { int64_t(1) }, { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("unclosed     ", "[1",     assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("unclosed     ", "[",      assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed extra comma", "[,,", assert_iterate(doc,                 { INCORRECT_TYPE, INCORRECT_TYPE, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed     ", "[1,",        assert_iterate(doc, { int64_t(1) }, { INCORRECT_TYPE, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed     ", "[1",         assert_iterate(doc,                 { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed     ", "[",          assert_iterate(doc,                 { INCORRECT_TYPE, TAPE_ERROR }));
     TEST_SUCCEED();
   }
 
   bool array_iterate_error() {
     TEST_START();
     ONDEMAND_SUBTEST("missing comma", R"({ "a": [1 1] })",  assert_iterate(doc["a"], { int64_t(1) }, { TAPE_ERROR }));
-    ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [1,,1] })", assert_iterate(doc["a"], { int64_t(1) }, { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [1,,] })",  assert_iterate(doc["a"], { int64_t(1) }, { NUMBER_ERROR }));
-    ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [,] })",    assert_iterate(doc["a"],                 { NUMBER_ERROR }));
-    ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [,,] })",   assert_iterate(doc["a"],                 { NUMBER_ERROR, NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [1,,1] })", assert_iterate(doc["a"], { int64_t(1) }, { INCORRECT_TYPE, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [1,,] })",  assert_iterate(doc["a"], { int64_t(1) }, { INCORRECT_TYPE }));
+    ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [,] })",    assert_iterate(doc["a"],                 { INCORRECT_TYPE }));
+    ONDEMAND_SUBTEST("extra comma  ", R"({ "a": [,,] })",   assert_iterate(doc["a"],                 { INCORRECT_TYPE, INCORRECT_TYPE, TAPE_ERROR }));
     TEST_SUCCEED();
   }
   bool array_iterate_unclosed_error() {
     TEST_START();
-    ONDEMAND_SUBTEST("unclosed extra comma", R"({ "a": [,)",  assert_iterate(doc["a"],                 { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("unclosed extra comma", R"({ "a": [,,)", assert_iterate(doc["a"],                 { NUMBER_ERROR, NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed extra comma", R"({ "a": [,)",  assert_iterate(doc["a"],                 { INCORRECT_TYPE, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed extra comma", R"({ "a": [,,)", assert_iterate(doc["a"],                 { INCORRECT_TYPE, INCORRECT_TYPE, TAPE_ERROR }));
     ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [1 )",        assert_iterate(doc["a"], { int64_t(1) }, { TAPE_ERROR }));
     // TODO These pass the user values that may run past the end of the buffer if they aren't careful
     // In particular, if the padding is decorated with the wrong values, we could cause overrun!
-    ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [1,)",        assert_iterate(doc["a"], { int64_t(1) }, { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [1,)",        assert_iterate(doc["a"], { int64_t(1) }, { INCORRECT_TYPE, TAPE_ERROR }));
     ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [1)",         assert_iterate(doc["a"],                 { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [)",          assert_iterate(doc["a"],                 { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [)",          assert_iterate(doc["a"],                 { INCORRECT_TYPE, TAPE_ERROR }));
     TEST_SUCCEED();
   }
 
@@ -317,7 +316,7 @@ namespace error_tests {
     TEST_START();
     ONDEMAND_SUBTEST("missing colon", R"({ "a"  1, "b": 2 })",    assert_iterate_object(doc.get_object(),                          { TAPE_ERROR }));
     ONDEMAND_SUBTEST("missing key  ", R"({    : 1, "b": 2 })",    assert_iterate_object(doc.get_object(),                          { TAPE_ERROR }));
-    ONDEMAND_SUBTEST("missing value", R"({ "a":  , "b": 2 })",    assert_iterate_object(doc.get_object(),                          { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("missing value", R"({ "a":  , "b": 2 })",    assert_iterate_object(doc.get_object(),                          { INCORRECT_TYPE, TAPE_ERROR }));
     ONDEMAND_SUBTEST("missing comma", R"({ "a": 1  "b": 2 })",    assert_iterate_object(doc.get_object(), { "a" }, { int64_t(1) }, { TAPE_ERROR }));
     TEST_SUCCEED();
   }
@@ -337,7 +336,7 @@ namespace error_tests {
     // TODO These next two pass the user a value that may run past the end of the buffer if they aren't careful.
     // In particular, if the padding is decorated with the wrong values, we could cause overrun!
     ONDEMAND_SUBTEST("unclosed", R"({ "a": 1          )",    assert_iterate_object(doc.get_object(), { "a" }, { int64_t(1) }, { TAPE_ERROR }));
-    ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_iterate_object(doc.get_object(),                          { NUMBER_ERROR, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_iterate_object(doc.get_object(),                          { INCORRECT_TYPE, TAPE_ERROR }));
     ONDEMAND_SUBTEST("unclosed", R"({ "a"             )",    assert_iterate_object(doc.get_object(),                          { TAPE_ERROR }));
     ONDEMAND_SUBTEST("unclosed", R"({                 )",    assert_iterate_object(doc.get_object(),                          { TAPE_ERROR }));
     TEST_SUCCEED();
@@ -399,6 +398,177 @@ namespace error_tests {
     TEST_SUCCEED();
   }
 
+  bool get_fail_then_succeed_bool() {
+    TEST_START();
+    auto json = R"({ "val" : true })"_padded;
+    SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc) {
+      simdjson_result<ondemand::value> val = doc["val"];
+      // Get everything that can fail in both forward and backwards order
+      ASSERT_EQUAL( val.is_null(), false );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_object(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_EQUAL( val.is_null(), false );
+      ASSERT_SUCCESS( val.get_bool() );
+      TEST_SUCCEED();
+    }));
+    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc) {
+      ondemand::value val;
+      ASSERT_SUCCESS( doc["val"].get(val) );
+      // Get everything that can fail in both forward and backwards order
+      ASSERT_EQUAL( val.is_null(), false );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_object(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_EQUAL( val.is_null(), false );
+      ASSERT_SUCCESS( val.get_bool() );
+      TEST_SUCCEED();
+    }));
+    json = R"(true)"_padded;
+    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](simdjson_result<ondemand::document> val) {
+      // Get everything that can fail in both forward and backwards order
+      ASSERT_EQUAL( val.is_null(), false );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_object(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_EQUAL( val.is_null(), false );
+      ASSERT_SUCCESS( val.get_bool());
+      TEST_SUCCEED();
+    }));
+    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc) {
+      ondemand::document val;
+      ASSERT_SUCCESS( std::move(doc).get(val) );      // Get everything that can fail in both forward and backwards order
+      ASSERT_EQUAL( val.is_null(), false );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_object(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_EQUAL( val.is_null(), false );
+      ASSERT_SUCCESS( val.get_bool() );
+      TEST_SUCCEED();
+    }));
+
+    TEST_SUCCEED();
+  }
+
+  bool get_fail_then_succeed_null() {
+    TEST_START();
+    auto json = R"({ "val" : null })"_padded;
+    SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc) {
+      simdjson_result<ondemand::value> val = doc["val"];
+      // Get everything that can fail in both forward and backwards order
+      ASSERT_ERROR( val.get_bool(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_object(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_bool(), INCORRECT_TYPE );
+      ASSERT_EQUAL( val.is_null(), true );
+      TEST_SUCCEED();
+    }));
+    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc) {
+      ondemand::value val;
+      ASSERT_SUCCESS( doc["val"].get(val) );
+      // Get everything that can fail in both forward and backwards order
+      ASSERT_ERROR( val.get_bool(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_object(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_bool(), INCORRECT_TYPE );
+      ASSERT_EQUAL( val.is_null(), true );
+      TEST_SUCCEED();
+    }));
+    json = R"(null)"_padded;
+    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](simdjson_result<ondemand::document> val) {
+      // Get everything that can fail in both forward and backwards order
+      ASSERT_ERROR( val.get_bool(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_object(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_bool(), INCORRECT_TYPE );
+      ASSERT_EQUAL( val.is_null(), true );
+      TEST_SUCCEED();
+    }));
+    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc) {
+      ondemand::document val;
+      ASSERT_SUCCESS( std::move(doc).get(val) );      // Get everything that can fail in both forward and backwards order
+      ASSERT_ERROR( val.get_bool(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_object(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_bool(), INCORRECT_TYPE );
+      ASSERT_EQUAL( val.is_null(), true );
+      TEST_SUCCEED();
+    }));
+
+    //
+    // Do it again for bool
+    //
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return
            empty_document_error() &&
@@ -416,6 +586,8 @@ namespace error_tests {
            object_lookup_miss_unclosed_error() &&
            object_lookup_miss_wrong_key_type_error() &&
            object_lookup_miss_next_error() &&
+           get_fail_then_succeed_bool() &&
+           get_fail_then_succeed_null() &&
            true;
   }
 }

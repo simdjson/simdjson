@@ -44,14 +44,6 @@ protected:
   /**
    * Begin array iteration.
    *
-   * @param iter The iterator. Must be where the initial [ is expected. Will be *moved* into the
-   *        resulting array.
-   * @error INCORRECT_TYPE if the iterator is not at [.
-   */
-  static simdjson_really_inline simdjson_result<array> try_start(value_iterator &iter) noexcept;
-  /**
-   * Begin array iteration.
-   *
    * This version of the method should be called after the initial [ has been verified, and is
    * intended for use by switch statements that check the type of a value.
    *

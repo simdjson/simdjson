@@ -50,11 +50,6 @@ simdjson_really_inline simdjson_result<array> array::start(value_iterator &iter)
   SIMDJSON_TRY( iter.start_array().get(has_value) );
   return array(iter);
 }
-simdjson_really_inline simdjson_result<array> array::try_start(value_iterator &iter) noexcept {
-  simdjson_unused bool has_value;
-  SIMDJSON_TRY( iter.try_start_array().get(has_value) );
-  return array(iter);
-}
 simdjson_really_inline array array::started(value_iterator &iter) noexcept {
   simdjson_unused bool has_value = iter.started_array();
   return array(iter);

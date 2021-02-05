@@ -208,13 +208,6 @@ public:
    * @error INCORRECT_TYPE If there is no [.
    */
   simdjson_warn_unused simdjson_really_inline simdjson_result<bool> start_array() noexcept;
-  /**
-   * Check for an opening [ and start an array iteration.
-   *
-   * @returns Whether the array had any elements (returns false for empty).
-   * @error INCORRECT_TYPE If there is no [.
-   */
-  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> try_start_array() noexcept;
 
   /**
    * Start an array iteration after the user has already checked and moved past the [.
@@ -278,16 +271,19 @@ protected:
   simdjson_really_inline bool parse_null(const uint8_t *json) const noexcept;
   simdjson_really_inline simdjson_result<bool> parse_bool(const uint8_t *json) const noexcept;
 
-  simdjson_really_inline const uint8_t *peek_scalar() const noexcept;
-  simdjson_really_inline uint32_t peek_scalar_length() const noexcept;
-  simdjson_really_inline const uint8_t *advance_scalar(const char *type) const noexcept;
+  simdjson_really_inline const uint8_t *peek_start() const noexcept;
+  simdjson_really_inline uint32_t peek_start_length() const noexcept;
+  simdjson_really_inline const uint8_t *advance_start(const char *type) const noexcept;
+  simdjson_really_inline const uint8_t *advance_container_start(const char *type) const noexcept;
   simdjson_really_inline const uint8_t *advance_root_scalar(const char *type) const noexcept;
   simdjson_really_inline const uint8_t *advance_non_root_scalar(const char *type) const noexcept;
 
   simdjson_really_inline error_code incorrect_type_error(const char *message) const noexcept;
 
   simdjson_really_inline bool is_at_start() const noexcept;
+  simdjson_really_inline bool is_at_container_start() const noexcept;
   simdjson_really_inline void assert_at_start() const noexcept;
+  simdjson_really_inline void assert_at_container_start() const noexcept;
   simdjson_really_inline void assert_at_root() const noexcept;
   simdjson_really_inline void assert_at_child() const noexcept;
   simdjson_really_inline void assert_at_next() const noexcept;
