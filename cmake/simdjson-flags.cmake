@@ -172,11 +172,13 @@ endif()
 #
 # Other optional flags
 #
-option(SIMDJSON_API_USAGE_CHECKS "Validate ondemand user code at runtime to ensure it is being used correctly. Turning this off disables some checks that have a small performance impact. Defaults to ON." ON)
-if(SIMDJSON_API_USAGE_CHECKS)
-  message(STATUS "Ondemand safety rails enabled. Ondemand user code will be checked at runtime. Turn this on for production to get maximum performance!")
+option(SIMDJSON_PRODUCTION "Optimize for production by disabling development-time aids, such as checks for incorrect API usage." OFF)
+if(SIMDJSON_PRODUCTION)
+  message(STATUS "SIMDJSON_PRODUCTION is ON: optimizing for production by disabling development-time aids, such as checks for incorrect API usage.")
+else()
+  message(STATUS "Development-time aids enabled. Use cmake -DSIMDJSON_PRODUCTION=ON to disable development-time aids, such as checks for incorrect API usage.")
   target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_API_USAGE_CHECKS=1)
-endif(SIMDJSON_API_USAGE_CHECKS)
+endif()
 
 option(SIMDJSON_BASH "Allow usage of bash within CMake" ON)
 
