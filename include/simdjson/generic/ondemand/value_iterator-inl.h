@@ -24,7 +24,7 @@ simdjson_warn_unused simdjson_really_inline bool value_iterator::started_object(
     _json_iter->ascend_to(depth()-1);
     return false;
   }
-  _json_iter->descend_to(depth()+1);
+  _json_iter->descend_to(depth()+1); //, _start_position+3); // skip {"key":
   logger::log_start_value(*_json_iter, "object");
   return true;
 }
@@ -38,7 +38,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
       _json_iter->ascend_to(depth()-1);
       return false;
     case ',':
-      _json_iter->descend_to(depth()+1);
+      _json_iter->descend_to(depth()+1); //, _json_iter->token.index+2); // index+2 skips "key":
       return true;
     default:
       return _json_iter->report_error(TAPE_ERROR, "Missing comma between object fields");
@@ -94,6 +94,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else {
+    // if (_json_iter->nested_start_position(depth()) != _start_position+1) { return OUT_OF_ORDER_ITERATION; }
     if ((error = skip_child() )) { abandon(); return error; }
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
   }
@@ -168,6 +169,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else {
+    // if (_json_iter->nested_start_position(depth()) != _start_position) { return OUT_OF_ORDER_ITERATION; }
     // Finish the previous value and see if , or } is next
     if ((error = skip_child() )) { abandon(); return error; }
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
@@ -217,7 +219,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   // (We have already run through the object before, so we've already validated its structure. We
   // don't check errors in this bit.)
   _json_iter->set_position(_start_position + 1);
-  _json_iter->descend_to(_depth);
+  _json_iter->descend_to(depth()); // , _start_position);
 
   has_value = started_object();
   while (_json_iter->position() < search_start) {

@@ -508,8 +508,11 @@ namespace object_tests {
     SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::value object;
       ASSERT_SUCCESS( doc_result["outer"].get(object) );
-      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
-      ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );
+      uint64_t v;
+      ASSERT_SUCCESS( object["a"].get(v) );
+      ASSERT_EQUAL( v, 1 );
+      ASSERT_SUCCESS( object["b"].get(v) );
+      ASSERT_EQUAL( v, 2 );
       ASSERT_EQUAL( object["c/d"].get_uint64().value_unsafe(), 3 );
 
       ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
