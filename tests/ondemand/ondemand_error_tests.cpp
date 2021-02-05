@@ -565,6 +565,7 @@ namespace error_tests {
     TEST_SUCCEED();
   }
 
+#if SIMDJSON_API_USAGE_CHECKS
   bool out_of_order_array_iteration_error() {
     TEST_START();
     auto json = R"([ [ 1, 2 ] ])"_padded;
@@ -698,6 +699,7 @@ namespace error_tests {
     }));
     TEST_SUCCEED();
   }
+#endif
 
   bool run() {
     return
@@ -718,11 +720,13 @@ namespace error_tests {
            object_lookup_miss_next_error() &&
            get_fail_then_succeed_bool() &&
            get_fail_then_succeed_null() &&
+#if SIMDJSON_API_USAGE_CHECKS
            out_of_order_array_iteration_error() &&
            out_of_order_object_iteration_error() &&
            out_of_order_object_index_error() &&
            out_of_order_object_find_field_error() &&
            out_of_order_object_find_field_unordered_error() &&
+#endif
            true;
   }
 }

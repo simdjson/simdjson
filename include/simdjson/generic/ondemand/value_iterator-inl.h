@@ -71,10 +71,12 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else if (!is_open()) {
+#if SIMDJSON_API_USAGE_CHECKS
     // If we're past the end of the object, we're being iterated out of order.
     // Note: this isn't perfect detection. It's possible the user is inside some other object; if so,
     // this object iterator will blithely scan that object for fields.
     if (_json_iter->depth() < depth() - 1) { return OUT_OF_ORDER_ITERATION; }
+#endif
     has_value = false;
 
   // 3. When a previous search found a field or an iterator yielded a value:
@@ -148,10 +150,12 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else if (!is_open()) {
+#if SIMDJSON_API_USAGE_CHECKS
     // If we're past the end of the object, we're being iterated out of order.
     // Note: this isn't perfect detection. It's possible the user is inside some other object; if so,
     // this object iterator will blithely scan that object for fields.
     if (_json_iter->depth() < depth() - 1) { return OUT_OF_ORDER_ITERATION; }
+#endif
     has_value = false;
 
   // 3. When a previous search found a field or an iterator yielded a value:
@@ -452,7 +456,9 @@ simdjson_really_inline error_code value_iterator::advance_container_start(const 
 
   // If we're not at the position anymore, we don't want to advance the cursor.
   if (!is_at_start()) {
+#if SIMDJSON_API_USAGE_CHECKS
     if (!is_at_container_start()) { return OUT_OF_ORDER_ITERATION; }
+#endif
     json = peek_start();
     return SUCCESS;
   }
