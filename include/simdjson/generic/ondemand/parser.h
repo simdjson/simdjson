@@ -109,6 +109,8 @@ public:
 private:
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<internal::dom_parser_implementation> implementation{};
+  size_t _capacity{0};
+  size_t _max_depth{0};
   std::unique_ptr<uint8_t[]> string_buf{};
 #if SIMDJSON_API_USAGE_CHECKS
   std::unique_ptr<token_position[]> start_positions{};

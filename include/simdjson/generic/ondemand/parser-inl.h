@@ -6,6 +6,8 @@ simdjson_warn_unused simdjson_really_inline error_code parser::allocate(size_t n
   if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
+  _capacity = 0;
+  _max_depth = 0;
   size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * new_capacity / 3 + SIMDJSON_PADDING, 64);
   string_buf.reset(new (std::nothrow) uint8_t[string_capacity]);
 #if SIMDJSON_API_USAGE_CHECKS
@@ -17,6 +19,8 @@ simdjson_warn_unused simdjson_really_inline error_code parser::allocate(size_t n
   } else {
     SIMDJSON_TRY( simdjson::active_implementation->create_dom_parser_implementation(new_capacity, new_max_depth, implementation) );
   }
+  _capacity = new_capacity;
+  _max_depth = new_max_depth;
   return SUCCESS;
 }
 
@@ -50,10 +54,10 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<json_iterator> parse
 }
 
 simdjson_really_inline size_t parser::capacity() const noexcept {
-  return implementation ? implementation->capacity() : 0;
+  return _capacity;
 }
 simdjson_really_inline size_t parser::max_depth() const noexcept {
-  return implementation ? implementation->max_depth() : DEFAULT_MAX_DEPTH;
+  return implementation ? _max_depth : DEFAULT_MAX_DEPTH;
 }
 
 
