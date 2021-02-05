@@ -23,10 +23,12 @@ simdjson_really_inline json_iterator::json_iterator(const uint8_t *buf, ondemand
   : token(buf, _parser->implementation->structural_indexes.get()),
     parser{_parser},
     _string_buf_loc{parser->string_buf.get()},
-    _depth{0}
+    _depth{1}
 {
-  // Release the string buf so it can be reused by the next document
-  descend_to(1);
+#if SIMDJSON_API_USAGE_CHECKS
+  parser->start_positions[0] = token.index;
+  parser->start_positions[1] = token.index;
+#endif
   logger::log_headers();
 }
 
