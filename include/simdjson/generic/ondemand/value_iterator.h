@@ -274,7 +274,7 @@ protected:
   simdjson_really_inline const uint8_t *peek_start() const noexcept;
   simdjson_really_inline uint32_t peek_start_length() const noexcept;
   simdjson_really_inline const uint8_t *advance_start(const char *type) const noexcept;
-  simdjson_really_inline const uint8_t *advance_container_start(const char *type) const noexcept;
+  simdjson_really_inline error_code advance_container_start(const char *type, const uint8_t *&json) const noexcept;
   simdjson_really_inline const uint8_t *advance_root_scalar(const char *type) const noexcept;
   simdjson_really_inline const uint8_t *advance_non_root_scalar(const char *type) const noexcept;
 
