@@ -25,6 +25,9 @@ simdjson_warn_unused simdjson_really_inline bool value_iterator::started_object(
     return false;
   }
   logger::log_start_value(*_json_iter, "object");
+#if SIMDJSON_API_USAGE_CHECKS
+  _json_iter->set_start_position(_depth, _start_position);
+#endif
   return true;
 }
 
@@ -285,6 +288,9 @@ simdjson_warn_unused simdjson_really_inline bool value_iterator::started_array()
   }
   logger::log_start_value(*_json_iter, "array");
   _json_iter->descend_to(depth()+1);
+#if SIMDJSON_API_USAGE_CHECKS
+  _json_iter->set_start_position(_depth, _start_position);
+#endif
   return true;
 }
 
