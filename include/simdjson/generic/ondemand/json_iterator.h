@@ -181,7 +181,7 @@ public:
 
   simdjson_really_inline token_position position() const noexcept;
   simdjson_really_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
-#if SIMDJSON_API_USAGE_CHECKS
+#ifndef SIMDJSON_PRODUCTION
   simdjson_really_inline token_position start_position(depth_t depth) const noexcept;
   simdjson_really_inline void set_start_position(depth_t depth, token_position position) noexcept;
 #endif

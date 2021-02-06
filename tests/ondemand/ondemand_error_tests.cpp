@@ -565,7 +565,7 @@ namespace error_tests {
     TEST_SUCCEED();
   }
 
-#if SIMDJSON_API_USAGE_CHECKS
+#ifndef SIMDJSON_PRODUCTION
   bool out_of_order_array_iteration_error() {
     TEST_START();
     auto json = R"([ [ 1, 2 ] ])"_padded;
@@ -1011,7 +1011,7 @@ namespace error_tests {
            object_lookup_miss_next_error() &&
            get_fail_then_succeed_bool() &&
            get_fail_then_succeed_null() &&
-#if SIMDJSON_API_USAGE_CHECKS
+#ifndef SIMDJSON_PRODUCTION
            out_of_order_array_iteration_error() &&
            out_of_order_object_iteration_error() &&
            out_of_order_object_index_child_error() &&
