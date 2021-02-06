@@ -179,7 +179,9 @@ simdjson_really_inline void json_iterator::reenter_child(token_position position
   SIMDJSON_ASSUME(child_depth >= 1 && child_depth < INT32_MAX);
   SIMDJSON_ASSUME(_depth == child_depth - 1);
 #ifndef SIMDJSON_PRODUCTION
-  SIMDJSON_ASSUME(position >= parser->start_positions.get()[child_depth]);
+#ifndef SIMDJSON_CLANG_VISUAL_STUDIO
+  SIMDJSON_ASSUME(position >= parser->start_positions[child_depth]);
+#endif
 #endif
   token.set_position(position);
   _depth = child_depth;
