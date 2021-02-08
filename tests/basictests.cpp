@@ -27,6 +27,10 @@
 #endif
 #endif
 
+#if defined (__APPLE__) || defined (__FreeBSD__)
+#include <xlocale.h>
+#endif
+
 const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
 #define SIMDJSON_SHOW_DEFINE(x) printf("%s=%s\n", #x, STRINGIFY(x))
 
