@@ -204,7 +204,11 @@ inline error_code parser::ensure_capacity(document& target_document, size_t desi
 }
 
 simdjson_really_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
-  _max_capacity = max_capacity;
+  if(max_capacity < MINIMAL_DOCUMENT_CAPACITY) {
+    _max_capacity = max_capacity;
+  } else {
+    _max_capacity = MINIMAL_DOCUMENT_CAPACITY;
+  }
 }
 
 } // namespace dom

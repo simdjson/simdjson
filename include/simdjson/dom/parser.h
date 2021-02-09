@@ -494,6 +494,10 @@ public:
    * The parser may reallocate internal buffers as needed up to this amount as documents are passed
    * to it.
    *
+   * Note: To avoid limiting the memory to an absurd value, such as zero or two bytes,
+   * iff you try to set max_capacity to a value lower than MINIMAL_DOCUMENT_CAPACITY,
+   * then the maximal capacity is set to MINIMAL_DOCUMENT_CAPACITY.
+   *
    * This call will not allocate or deallocate, even if capacity is currently above max_capacity.
    *
    * @param max_capacity The new maximum capacity, in bytes.
