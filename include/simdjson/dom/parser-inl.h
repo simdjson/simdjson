@@ -186,7 +186,7 @@ inline error_code parser::ensure_capacity(document& target_document, size_t desi
   // 2. If we allow desired_capacity = 0 then it is possible to exit this function with implementation == nullptr.
   if(desired_capacity < MINIMAL_DOCUMENT_CAPACITY) { desired_capacity = MINIMAL_DOCUMENT_CAPACITY; }
   // If we don't have enough capacity, (try to) automatically bump it.
-  // If the document need allocation, do it too.
+  // If the document needs allocation, do it too.
   // Both in one if statement to minimize unlikely branching.
   //
   // Note: we must make sure that this function is called if capacity() == 0. We do so because we
