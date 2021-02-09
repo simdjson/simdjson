@@ -586,7 +586,7 @@ private:
    * and auto-allocate if not. This also allocates memory if needed in the
    * internal document.
    */
-  inline error_code ensure_capacity_with_document(size_t desired_capacity) noexcept;
+  inline error_code ensure_capacity(size_t desired_capacity) noexcept;
   /**
    * Ensure we have enough capacity to handle at least desired_capacity bytes,
    * and auto-allocate if not. This also allocates memory if needed in the

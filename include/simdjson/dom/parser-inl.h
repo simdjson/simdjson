@@ -176,7 +176,7 @@ inline bool parser::allocate_capacity(size_t capacity, size_t max_depth) noexcep
 }
 #endif // SIMDJSON_DISABLE_DEPRECATED_API
 
-inline error_code parser::ensure_capacity_with_document(size_t desired_capacity) noexcept {
+inline error_code parser::ensure_capacity(size_t desired_capacity) noexcept {
   return ensure_capacity(doc, desired_capacity);
 }
 
