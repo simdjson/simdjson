@@ -26,7 +26,7 @@ inline size_t document::capacity() const noexcept {
 
 simdjson_warn_unused
 inline error_code document::allocate(size_t capacity) noexcept {
-  if (len == 0) {
+  if (capacity == 0) {
     string_buf.reset();
     tape.reset();
     allocated_capacity = 0;
