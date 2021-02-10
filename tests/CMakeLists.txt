@@ -21,7 +21,9 @@ endif()
 
 # All remaining tests link with simdjson proper
 link_libraries(simdjson)
-add_cpp_test(random_string_number_tests LABELS dom acceptance per_implementation)
+if(NOT MSVC)
+  add_cpp_test(random_string_number_tests LABELS dom acceptance per_implementation)
+endif()
 add_cpp_test(basictests                 LABELS dom acceptance per_implementation)
 add_cpp_test(document_stream_tests      LABELS dom acceptance per_implementation)
 add_cpp_test(document_tests             LABELS dom acceptance per_implementation)
