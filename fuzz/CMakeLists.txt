@@ -53,7 +53,9 @@ if(ENABLE_FUZZING)
   implement_fuzzer(fuzz_atpointer)
   implement_fuzzer(fuzz_dump)
   implement_fuzzer(fuzz_dump_raw_tape)
-  implement_fuzzer(fuzz_element)
+  if(NOT MSVC)
+    implement_fuzzer(fuzz_element)
+  endif()
   implement_fuzzer(fuzz_implementations) # parses and serializes again, compares across implementations
   implement_fuzzer(fuzz_minify)          # minify *with* parsing
   implement_fuzzer(fuzz_minifyimpl)      # minify *without* parsing, plus compare implementations
