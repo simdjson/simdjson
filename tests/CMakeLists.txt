@@ -10,10 +10,10 @@ add_subdirectory(ondemand)
 #
 # These tests explicitly do #include "simdjson.cpp" so they can override stuff
 #
-add_cpp_test(numberparsingcheck LABELS acceptance per_implementation)
-target_link_libraries(numberparsingcheck simdjson-include-source simdjson-windows-headers)
-target_compile_definitions(numberparsingcheck PRIVATE NOMINMAX)
 if(NOT MSVC)
+  add_cpp_test(numberparsingcheck LABELS acceptance per_implementation)
+  target_link_libraries(numberparsingcheck simdjson-include-source simdjson-windows-headers)
+  target_compile_definitions(numberparsingcheck PRIVATE NOMINMAX)
   add_cpp_test(stringparsingcheck LABELS acceptance per_implementation)
   target_link_libraries(stringparsingcheck simdjson-include-source simdjson-windows-headers)
   target_compile_definitions(stringparsingcheck PRIVATE NOMINMAX)
