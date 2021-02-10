@@ -24,13 +24,12 @@ jobs:
     - name: 'Run CMake with VS15'
       uses: lukka/run-cmake@v2
       with:
-        cmakeListsOrSettingsJson: CMakeListsTxtBasic
+        cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
         cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
         buildDirectory: "${{ github.workspace }}/../../_temp/windows"
         cmakeBuildType: Release   
         buildWithCMake: true
-        cmakeGenerator: VS15Win64 
-        cmakeAppendedArgs: -DSIMDJSON_COMPETITION=OFF
+        cmakeAppendedArgs: '-G "Visual Studio 15 2017" -A x64 -DSIMDJSON_COMPETITION=OFF' 
         buildWithCMakeArgs: --config Release  
         
     - name: 'Run CTest'

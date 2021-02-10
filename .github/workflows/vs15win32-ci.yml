@@ -29,7 +29,7 @@ jobs:
         buildDirectory: "${{ github.workspace }}/../../_temp/windows"
         cmakeBuildType: Release   
         buildWithCMake: true
-        cmakeGenerator: VS15Win32 
+        cmakeAppendedArgs: '-G "Visual Studio 15 2017" -A x86 -DSIMDJSON_COMPETITION=OFF' 
         cmakeAppendedArgs: -DSIMDJSON_COMPETITION=OFF
         buildWithCMakeArgs: --config Release  
         
