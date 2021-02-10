@@ -24,12 +24,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Configure
-        run: |
+      run: |
           mkdir build
           cd build && cmake -DSIMDJSON_COMPETITION=OFF -G "${{matrix.gen}}" -A ${{matrix.arch}} ..
     - name: Build
-        run: cmake --build build --config Release --parallel
+      run: cmake --build build --config Release --parallel
     - name: 'Run CTest'
-        run: |
+      run: |
           cd build
           ctest -C Release  -LE explicitonly  --output-on-failure 
