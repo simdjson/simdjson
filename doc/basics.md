@@ -555,6 +555,8 @@ bool parse_string(const char *j, std::string &s) {
 }
 ```
 
+To ensure you don't write any code that uses exceptions, compile with `SIMDJSON_EXCEPTIONS=0`.
+
 ### Exceptions
 
 Users more comfortable with an exception flow may choose to directly cast the `simdjson_result<T>` to the desired type:
