@@ -120,9 +120,11 @@ include(${PROJECT_SOURCE_DIR}/cmake/add_compile_only_test.cmake)
 #
 # Test the generated simdjson.cpp/simdjson.h using the generated amalgamate_demo.cpp
 #
-add_executable(amalgamate_demo $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamate_demo.cpp>)
-target_link_libraries(amalgamate_demo simdjson-singleheader-include-source simdjson-internal-flags)
-add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
+if(NOT MSVC)
+  add_executable(amalgamate_demo $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamate_demo.cpp>)
+  target_link_libraries(amalgamate_demo simdjson-singleheader-include-source simdjson-internal-flags)
+  add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
+endif()
 
 install(FILES simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
@@ -144,9 +146,9 @@ if (NOT (${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR}))
   add_library(simdjson-singleheader-source-direct-from-repository INTERFACE)
   target_sources(simdjson-singleheader-source-direct-from-repository INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
   target_link_libraries(simdjson-singleheader-source-direct-from-repository INTERFACE simdjson-singleheader-include-source-direct-from-repository)
-
-  add_executable(amalgamate_demo_direct_from_repository ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp)
-  target_link_libraries(amalgamate_demo_direct_from_repository simdjson-singleheader-include-source-direct-from-repository simdjson-internal-flags)
-  add_test(amalgamate_demo_direct_from_repository amalgamate_demo_direct_from_repository ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
-
+  if(NOT MSVC)
+    add_executable(amalgamate_demo_direct_from_repository ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp)
+    target_link_libraries(amalgamate_demo_direct_from_repository simdjson-singleheader-include-source-direct-from-repository simdjson-internal-flags)
+    add_test(amalgamate_demo_direct_from_repository amalgamate_demo_direct_from_repository ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
+  endif()
 endif()
