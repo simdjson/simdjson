@@ -1,4 +1,9 @@
-option(ENABLE_FUZZING "enable building the fuzzers" ON)
+if(NOT MSVC)
+  option(ENABLE_FUZZING "enable building the fuzzers" ON)
+else()
+  option(ENABLE_FUZZING "enable building the fuzzers" OFF)
+endif()
+
 
 if(ENABLE_FUZZING)
 
@@ -53,9 +58,7 @@ if(ENABLE_FUZZING)
   implement_fuzzer(fuzz_atpointer)
   implement_fuzzer(fuzz_dump)
   implement_fuzzer(fuzz_dump_raw_tape)
-  if(NOT MSVC)
-    implement_fuzzer(fuzz_element)
-  endif()
+  implement_fuzzer(fuzz_element)
   implement_fuzzer(fuzz_implementations) # parses and serializes again, compares across implementations
   implement_fuzzer(fuzz_minify)          # minify *with* parsing
   implement_fuzzer(fuzz_minifyimpl)      # minify *without* parsing, plus compare implementations
