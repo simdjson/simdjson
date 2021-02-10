@@ -1,4 +1,4 @@
-/* auto-generated on 2021-01-22 12:04:08 -0500. Do not edit! */
+/* auto-generated on 2021-01-28 09:47:45 -0500. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -429,6 +429,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 // even if we do not have C++17 support.
 #ifdef __cpp_lib_string_view
 #define SIMDJSON_HAS_STRING_VIEW
+#include <string_view> // by the standard, this has to be safe.
 #endif
 
 // Some systems have string_view even if we do not have C++17 support,
@@ -2017,7 +2018,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 0.8.1
+#define SIMDJSON_VERSION 0.8.2
 
 namespace simdjson {
 enum {
@@ -2032,7 +2033,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 1
+  SIMDJSON_VERSION_REVISION = 2
 };
 } // namespace simdjson
 

@@ -7,7 +7,7 @@
 
 # Clone the repository if it's not there
 find_package(Git QUIET)
-if (Git_FOUND AND (GIT_VERSION_STRING VERSION_GREATER  "2.1.4") AND (NOT CMAKE_GENERATOR MATCHES Ninja) ) # We use "-C" which requires a recent git
+if (Git_FOUND AND (GIT_VERSION_STRING VERSION_GREATER  "2.1.4") AND (NOT CMAKE_GENERATOR MATCHES Ninja)  AND (NOT MSVC) ) # We use "-C" which requires a recent git
   message(STATUS "Git is available and it is recent. We are enabling checkperf targets.")
   # sync_git_repository(myrepo ...) creates two targets:
   # myrepo - if the repo does not exist, creates and syncs it against the origin branch

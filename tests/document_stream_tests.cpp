@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <cctype>
 #include <unistd.h>
 
 #include "simdjson.h"
