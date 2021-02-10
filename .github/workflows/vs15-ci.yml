@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {gen: Visual Studio 15 2017, arch: Win32}
+          #- {gen: Visual Studio 15 2017, arch: Win32}
           - {gen: Visual Studio 15 2017, arch: x64}
     steps:
     - uses: actions/checkout@v2
