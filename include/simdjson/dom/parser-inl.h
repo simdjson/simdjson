@@ -87,21 +87,39 @@ inline simdjson_result<document_stream> parser::load_many(const std::string &pat
   return document_stream(*this, reinterpret_cast<const uint8_t*>(loaded_bytes.get()), len, batch_size);
 }
 
-inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
-  error_code _error = ensure_capacity(len);
+inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
+  // Important: we need to ensure that document has enough capacity.
+  // Important: It is possible that provided_doc is actually the internal 'doc' within the parser!!!
+  error_code _error = ensure_capacity(provided_doc, len);
   if (_error) { return _error; }
   std::unique_ptr<uint8_t[]> tmp_buf;
-
   if (realloc_if_needed) {
     tmp_buf.reset(reinterpret_cast<uint8_t *>( internal::allocate_padded_buffer(len) ));
     if (tmp_buf.get() == nullptr) { return MEMALLOC; }
     std::memcpy(static_cast<void *>(tmp_buf.get()), buf, len);
   }
-  _error = implementation->parse(realloc_if_needed ? tmp_buf.get() : buf, len, doc);
+  _error = implementation->parse(realloc_if_needed ? tmp_buf.get() : buf, len, provided_doc);
+
   if (_error) { return _error; }
 
-  return doc.root();
+  return provided_doc.root();
 }
+
+simdjson_really_inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const char *buf, size_t len, bool realloc_if_needed) & noexcept {
+  return parse_into_document(provided_doc, reinterpret_cast<const uint8_t *>(buf), len, realloc_if_needed);
+}
+simdjson_really_inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const std::string &s) & noexcept {
+  return parse_into_document(provided_doc, s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
+}
+simdjson_really_inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const padded_string &s) & noexcept {
+  return parse_into_document(provided_doc, s.data(), s.length(), false);
+}
+
+
+inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
+  return parse_into_document(doc, buf, len, realloc_if_needed);
+}
+
 simdjson_really_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) & noexcept {
   return parse(reinterpret_cast<const uint8_t *>(buf), len, realloc_if_needed);
 }
@@ -139,26 +157,15 @@ simdjson_really_inline size_t parser::max_depth() const noexcept {
 simdjson_warn_unused
 inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   //
-  // Reallocate implementation and document if needed
+  // Reallocate implementation if needed
   //
   error_code err;
-  //
-  // It is possible that we change max_depth without touching capacity, in
-  // which case, we do not want to reallocate the document buffers.
-  //
-  bool need_doc_allocation{false};
   if (implementation) {
-    need_doc_allocation = implementation->capacity() != capacity || !doc.tape;
     err = implementation->allocate(capacity, max_depth);
   } else {
-    need_doc_allocation = true;
     err = simdjson::active_implementation->create_dom_parser_implementation(capacity, max_depth, implementation);
   }
   if (err) { return err; }
-  if (need_doc_allocation) {
-    err = doc.allocate(capacity);
-    if (err) { return err; }
-  }
   return SUCCESS;
 }
 
@@ -168,22 +175,40 @@ inline bool parser::allocate_capacity(size_t capacity, size_t max_depth) noexcep
   return !allocate(capacity, max_depth);
 }
 #endif // SIMDJSON_DISABLE_DEPRECATED_API
+
 inline error_code parser::ensure_capacity(size_t desired_capacity) noexcept {
+  return ensure_capacity(doc, desired_capacity);
+}
+
+
+inline error_code parser::ensure_capacity(document& target_document, size_t desired_capacity) noexcept {
+  // 1. It is wasteful to allocate a document and a parser for documents spanning less than MINIMAL_DOCUMENT_CAPACITY bytes.
+  // 2. If we allow desired_capacity = 0 then it is possible to exit this function with implementation == nullptr.
+  if(desired_capacity < MINIMAL_DOCUMENT_CAPACITY) { desired_capacity = MINIMAL_DOCUMENT_CAPACITY; }
   // If we don't have enough capacity, (try to) automatically bump it.
-  // If the document was taken, reallocate that too.
+  // If the document needs allocation, do it too.
   // Both in one if statement to minimize unlikely branching.
-  if (simdjson_unlikely(capacity() < desired_capacity || !doc.tape)) {
+  //
+  // Note: we must make sure that this function is called if capacity() == 0. We do so because we
+  // ensure that desired_capacity > 0.
+  if (simdjson_unlikely(capacity() < desired_capacity || target_document.capacity() < desired_capacity)) {
     if (desired_capacity > max_capacity()) {
       return error = CAPACITY;
     }
-    return allocate(desired_capacity, max_depth());
+    error_code err1 = target_document.capacity() < desired_capacity ? target_document.allocate(desired_capacity) : SUCCESS;
+    error_code err2 = capacity() < desired_capacity ? allocate(desired_capacity, max_depth()) : SUCCESS;
+    if(err1 != SUCCESS) { return error = err1; }
+    if(err2 != SUCCESS) { return error = err2; }
   }
-
   return SUCCESS;
 }
 
 simdjson_really_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
-  _max_capacity = max_capacity;
+  if(max_capacity < MINIMAL_DOCUMENT_CAPACITY) {
+    _max_capacity = max_capacity;
+  } else {
+    _max_capacity = MINIMAL_DOCUMENT_CAPACITY;
+  }
 }
 
 } // namespace dom

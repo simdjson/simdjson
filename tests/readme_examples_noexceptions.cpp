@@ -76,7 +76,7 @@ void basics_error_3() {
   for (dom::element elem : array) {
       dom::object obj;
       if ((error = elem.get(obj))) { cerr << error << endl; exit(1); }
-      for (auto & key_value : obj) {
+      for (auto key_value : obj) {
           cout << "key: " << key_value.key << " : ";
           dom::object innerobj;
           if ((error = key_value.value.get(innerobj))) { cerr << error << endl; exit(1); }
