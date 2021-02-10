@@ -14,7 +14,7 @@ jobs:
       ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
       ! contains(toJSON(github.event.commits.*.message), '[skip github]')
     name: windows-vs15win32
-    runs-on: windows-latest
+    runs-on: windows-2016
     steps:
     - uses: actions/checkout@v2
     - uses: actions/cache@v2
@@ -30,7 +30,6 @@ jobs:
         cmakeBuildType: Release   
         buildWithCMake: true
         cmakeAppendedArgs: '-G "Visual Studio 15 2017" -A x86 -DSIMDJSON_COMPETITION=OFF' 
-        cmakeAppendedArgs: -DSIMDJSON_COMPETITION=OFF
         buildWithCMakeArgs: --config Release  
         
     - name: 'Run CTest'
