@@ -555,7 +555,11 @@ bool parse_string(const char *j, std::string &s) {
 }
 ```
 
-To ensure you don't write any code that uses exceptions, compile with `SIMDJSON_EXCEPTIONS=0`.
+To ensure you don't write any code that uses exceptions, compile with `SIMDJSON_EXCEPTIONS=OFF`:
+
+```cmake
+target_compile_definitions(simdjson PUBLIC SIMDJSON_EXCEPTIONS=OFF)
+```
 
 ### Exceptions
 
