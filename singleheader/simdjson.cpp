@@ -1,4 +1,4 @@
-/* auto-generated on 2021-01-20 13:20:49 -0500. Do not edit! */
+/* auto-generated on 2021-02-10 16:52:04 -0500. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -1476,7 +1476,8 @@ namespace internal {
     { INVALID_JSON_POINTER, "Invalid JSON pointer syntax." },
     { INVALID_URI_FRAGMENT, "Invalid URI fragment syntax." },
     { UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as you may have found a bug in simdjson" },
-    { PARSER_IN_USE, "Cannot parse a new document while a document is still in use." }
+    { PARSER_IN_USE, "Cannot parse a new document while a document is still in use." },
+    { OUT_OF_ORDER_ITERATION, "Objects and arrays can only be iterated when they are first encountered." }
   }; // error_messages[]
 
 } // namespace internal
@@ -2639,7 +2640,7 @@ SIMDJSON_DLLIMPORTEXPORT const internal::available_implementation_list available
 SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation> active_implementation{&internal::detect_best_supported_implementation_on_first_use_singleton};
 
 simdjson_warn_unused error_code minify(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept {
-  return active_implementation->minify((const uint8_t *)buf, len, (uint8_t *)dst, dst_len);
+  return active_implementation->minify(reinterpret_cast<const uint8_t *>(buf), len, reinterpret_cast<uint8_t *>(dst), dst_len);
 }
 simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) noexcept {
   return active_implementation->validate_utf8(buf, len);
@@ -3016,7 +3017,7 @@ private:
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text_64(const uint8_t *text) {
-  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
+  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
   }
@@ -3026,8 +3027,8 @@ simdjson_unused static char * format_input_text_64(const uint8_t *text) {
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
-  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
-  in.store((uint8_t*)buf);
+  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
+  in.store(reinterpret_cast<uint8_t*>(buf));
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     if (buf[i] < ' ') { buf[i] = '_'; }
   }
@@ -3036,7 +3037,7 @@ simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
 }
 
 simdjson_unused static char * format_mask(uint64_t mask) {
-  static char *buf = (char*)malloc(64 + 1);
+  static char *buf = reinterpret_cast<char*>(malloc(64 + 1));
   for (size_t i=0; i<64; i++) {
     buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
   }
@@ -3811,7 +3812,7 @@ bool generic_validate_utf8(const uint8_t * input, size_t length) {
 }
 
 bool generic_validate_utf8(const char * input, size_t length) {
-    return generic_validate_utf8<utf8_checker>((const uint8_t *)input,length);
+    return generic_validate_utf8<utf8_checker>(reinterpret_cast<const uint8_t *>(input),length);
 }
 
 } // namespace stage1
@@ -3880,7 +3881,7 @@ namespace logger {
       printf("| %*s%s%-*s ", log_depth*2, "", title_prefix, LOG_EVENT_LEN - log_depth*2 - int(strlen(title_prefix)), title);
       auto current_index = structurals.at_beginning() ? nullptr : structurals.next_structural-1;
       auto next_index = structurals.next_structural;
-      auto current = current_index ? &structurals.buf[*current_index] : (const uint8_t*)"                                                       ";
+      auto current = current_index ? &structurals.buf[*current_index] : reinterpret_cast<const uint8_t*>("                                                       ");
       auto next = &structurals.buf[*next_index];
       {
         // Print the next N characters in the buffer.
@@ -5034,7 +5035,7 @@ simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_
 
 // credit: based on code from Google Fuchsia (Apache Licensed)
 simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
-  const uint8_t *data = (const uint8_t *)buf;
+  const uint8_t *data = reinterpret_cast<const uint8_t *>(buf);
   uint64_t pos = 0;
   uint32_t code_point = 0;
   while (pos < len) {
@@ -5157,7 +5158,7 @@ namespace logger {
       printf("| %*s%s%-*s ", log_depth*2, "", title_prefix, LOG_EVENT_LEN - log_depth*2 - int(strlen(title_prefix)), title);
       auto current_index = structurals.at_beginning() ? nullptr : structurals.next_structural-1;
       auto next_index = structurals.next_structural;
-      auto current = current_index ? &structurals.buf[*current_index] : (const uint8_t*)"                                                       ";
+      auto current = current_index ? &structurals.buf[*current_index] : reinterpret_cast<const uint8_t*>("                                                       ");
       auto next = &structurals.buf[*next_index];
       {
         // Print the next N characters in the buffer.
@@ -6296,7 +6297,7 @@ private:
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text_64(const uint8_t *text) {
-  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
+  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
   }
@@ -6306,8 +6307,8 @@ simdjson_unused static char * format_input_text_64(const uint8_t *text) {
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
-  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
-  in.store((uint8_t*)buf);
+  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
+  in.store(reinterpret_cast<uint8_t*>(buf));
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     if (buf[i] < ' ') { buf[i] = '_'; }
   }
@@ -6316,7 +6317,7 @@ simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
 }
 
 simdjson_unused static char * format_mask(uint64_t mask) {
-  static char *buf = (char*)malloc(64 + 1);
+  static char *buf = reinterpret_cast<char*>(malloc(64 + 1));
   for (size_t i=0; i<64; i++) {
     buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
   }
@@ -7091,7 +7092,7 @@ bool generic_validate_utf8(const uint8_t * input, size_t length) {
 }
 
 bool generic_validate_utf8(const char * input, size_t length) {
-    return generic_validate_utf8<utf8_checker>((const uint8_t *)input,length);
+    return generic_validate_utf8<utf8_checker>(reinterpret_cast<const uint8_t *>(input),length);
 }
 
 } // namespace stage1
@@ -7159,7 +7160,7 @@ namespace logger {
       printf("| %*s%s%-*s ", log_depth*2, "", title_prefix, LOG_EVENT_LEN - log_depth*2 - int(strlen(title_prefix)), title);
       auto current_index = structurals.at_beginning() ? nullptr : structurals.next_structural-1;
       auto next_index = structurals.next_structural;
-      auto current = current_index ? &structurals.buf[*current_index] : (const uint8_t*)"                                                       ";
+      auto current = current_index ? &structurals.buf[*current_index] : reinterpret_cast<const uint8_t*>("                                                       ");
       auto next = &structurals.buf[*next_index];
       {
         // Print the next N characters in the buffer.
@@ -8289,7 +8290,7 @@ private:
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text_64(const uint8_t *text) {
-  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
+  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
   }
@@ -8299,8 +8300,8 @@ simdjson_unused static char * format_input_text_64(const uint8_t *text) {
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
-  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
-  in.store((uint8_t*)buf);
+  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
+  in.store(reinterpret_cast<uint8_t*>(buf));
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     if (buf[i] < ' ') { buf[i] = '_'; }
   }
@@ -8309,7 +8310,7 @@ simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
 }
 
 simdjson_unused static char * format_mask(uint64_t mask) {
-  static char *buf = (char*)malloc(64 + 1);
+  static char *buf = reinterpret_cast<char*>(malloc(64 + 1));
   for (size_t i=0; i<64; i++) {
     buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
   }
@@ -9084,7 +9085,7 @@ bool generic_validate_utf8(const uint8_t * input, size_t length) {
 }
 
 bool generic_validate_utf8(const char * input, size_t length) {
-    return generic_validate_utf8<utf8_checker>((const uint8_t *)input,length);
+    return generic_validate_utf8<utf8_checker>(reinterpret_cast<const uint8_t *>(input),length);
 }
 
 } // namespace stage1
@@ -9153,7 +9154,7 @@ namespace logger {
       printf("| %*s%s%-*s ", log_depth*2, "", title_prefix, LOG_EVENT_LEN - log_depth*2 - int(strlen(title_prefix)), title);
       auto current_index = structurals.at_beginning() ? nullptr : structurals.next_structural-1;
       auto next_index = structurals.next_structural;
-      auto current = current_index ? &structurals.buf[*current_index] : (const uint8_t*)"                                                       ";
+      auto current = current_index ? &structurals.buf[*current_index] : reinterpret_cast<const uint8_t*>("                                                       ");
       auto next = &structurals.buf[*next_index];
       {
         // Print the next N characters in the buffer.
@@ -10318,7 +10319,7 @@ private:
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text_64(const uint8_t *text) {
-  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
+  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
   }
@@ -10328,8 +10329,8 @@ simdjson_unused static char * format_input_text_64(const uint8_t *text) {
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
-  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
-  in.store((uint8_t*)buf);
+  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
+  in.store(reinterpret_cast<uint8_t*>(buf));
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     if (buf[i] < ' ') { buf[i] = '_'; }
   }
@@ -10338,7 +10339,7 @@ simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
 }
 
 simdjson_unused static char * format_mask(uint64_t mask) {
-  static char *buf = (char*)malloc(64 + 1);
+  static char *buf = reinterpret_cast<char*>(malloc(64 + 1));
   for (size_t i=0; i<64; i++) {
     buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
   }
@@ -11113,7 +11114,7 @@ bool generic_validate_utf8(const uint8_t * input, size_t length) {
 }
 
 bool generic_validate_utf8(const char * input, size_t length) {
-    return generic_validate_utf8<utf8_checker>((const uint8_t *)input,length);
+    return generic_validate_utf8<utf8_checker>(reinterpret_cast<const uint8_t *>(input),length);
 }
 
 } // namespace stage1
@@ -11181,7 +11182,7 @@ namespace logger {
       printf("| %*s%s%-*s ", log_depth*2, "", title_prefix, LOG_EVENT_LEN - log_depth*2 - int(strlen(title_prefix)), title);
       auto current_index = structurals.at_beginning() ? nullptr : structurals.next_structural-1;
       auto next_index = structurals.next_structural;
-      auto current = current_index ? &structurals.buf[*current_index] : (const uint8_t*)"                                                       ";
+      auto current = current_index ? &structurals.buf[*current_index] : reinterpret_cast<const uint8_t*>("                                                       ");
       auto next = &structurals.buf[*next_index];
       {
         // Print the next N characters in the buffer.

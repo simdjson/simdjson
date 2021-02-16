@@ -14,26 +14,22 @@ jobs:
       ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
       ! contains(toJSON(github.event.commits.*.message), '[skip github]')
     name: windows-vs15
-    runs-on: windows-latest
+    runs-on: windows-2016
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {gen: Visual Studio 15 2017, arch: Win32}
+          - {gen: Visual Studio 15 2017, arch: x64}
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/cache@v2
-      with:
-        path: dependencies/.cache
-        key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
-    - name: 'Run CMake with VS15'
-      uses: lukka/run-cmake@v2
-      with:
-        cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
-        cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
-        buildDirectory: "${{ github.workspace }}/../../_temp/windows"
-        cmakeBuildType: Release   
-        buildWithCMake: true
-        cmakeGenerator: VS15Win64 
-        cmakeAppendedArgs: -DSIMDJSON_COMPETITION=OFF
-        buildWithCMakeArgs: --config Release  
-        
+    - name: Configure
+      run: |
+          mkdir build
+          cd build && cmake -DSIMDJSON_COMPETITION=OFF -G "${{matrix.gen}}" -A ${{matrix.arch}} ..
+    - name: Build
+      run: cmake --build build --config Release --parallel
     - name: 'Run CTest'
-      run: ctest -C Release  -LE explicitonly  --output-on-failure 
-      working-directory: "${{ github.workspace }}/../../_temp/windows"
-  
+      run: |
+          cd build
+          ctest -C Release  -LE explicitonly  --output-on-failure 

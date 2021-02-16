@@ -165,6 +165,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 // C++17 requires string_view.
 #if SIMDJSON_CPLUSPLUS17
 #define SIMDJSON_HAS_STRING_VIEW
+#include <string_view> // by the standard, this has to be safe.
 #endif
 
 // This macro (__cpp_lib_string_view) has to be defined
