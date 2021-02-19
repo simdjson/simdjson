@@ -17,7 +17,7 @@ static void print_json(std::ostream& os, simdjson::dom::element element) noexcep
   case simdjson::dom::element_type::ARRAY:
     os << "[";
     {
-      simdjson::dom::array array = element.get<simdjson::dom::array>().value_unsafe();
+      simdjson::dom::array array = element.get_array().value_unsafe();
       for (simdjson::dom::element child : array) {
         print_json(os, child);
         os << ",";
@@ -28,7 +28,7 @@ static void print_json(std::ostream& os, simdjson::dom::element element) noexcep
   case simdjson::dom::element_type::OBJECT:
     os << "{";
     {
-      simdjson::dom::object object = element.get<simdjson::dom::object>().value_unsafe();
+      simdjson::dom::object object = element.get_object().value_unsafe();
       for (simdjson::dom::key_value_pair field : object) {
         os << "\"" << field.key << "\": ";
         print_json(os, field.value);
