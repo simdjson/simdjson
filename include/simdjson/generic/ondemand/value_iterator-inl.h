@@ -422,7 +422,6 @@ simdjson_really_inline void value_iterator::abandon() noexcept {
   _json_iter->abandon();
 }
 
-
 simdjson_warn_unused simdjson_really_inline depth_t value_iterator::depth() const noexcept {
   return _depth;
 }
@@ -539,6 +538,13 @@ simdjson_really_inline void value_iterator::assert_at_non_root_start() const noe
   SIMDJSON_ASSUME( _depth > 1 );
 }
 
+simdjson_really_inline void value_iterator::assert_is_valid() const noexcept {
+  SIMDJSON_ASSUME( _json_iter != nullptr );
+}
+
+simdjson_really_inline bool value_iterator::is_valid() const noexcept {
+  return _json_iter;
+}
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

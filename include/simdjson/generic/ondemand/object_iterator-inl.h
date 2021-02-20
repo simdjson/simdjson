@@ -97,6 +97,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object
 ) noexcept
   : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>(std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>(value))
 {
+  first.iter.assert_is_valid();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::simdjson_result(error_code error) noexcept
   : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>({}, error)
@@ -104,22 +105,23 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object
 }
 
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator*() noexcept {
-  if (error()) { second = SUCCESS; return error(); }
+  if (error()) { return error(); }
   return *first;
 }
-// Assumes it's being compared with the end. true if depth < iter->depth.
+// If we're iterating and there is an error, return the error once.
 simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &other) const noexcept {
-  if (error()) { return true; }
+  if (!first.iter.is_valid()) { return !error(); }
   return first == other.first;
 }
-// Assumes it's being compared with the end. true if depth >= iter->depth.
+// If we're iterating and there is an error, return the error once.
 simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &other) const noexcept {
-  if (error()) { return false; }
+  if (!first.iter.is_valid()) { return error(); }
   return first != other.first;
 }
 // Checks for ']' and ','
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator++() noexcept {
-  if (error()) { return *this; }
+  // Clear the error if there is one, so we don't yield it twice
+  if (error()) { second = SUCCESS; return *this; }
   ++first;
   return *this;
 }

@@ -58,7 +58,7 @@ simdjson_really_inline simdjson_result<object_iterator> object::begin() noexcept
   return object_iterator(iter);
 }
 simdjson_really_inline simdjson_result<object_iterator> object::end() noexcept {
-  return object_iterator();
+  return object_iterator(iter);
 }
 
 } // namespace ondemand

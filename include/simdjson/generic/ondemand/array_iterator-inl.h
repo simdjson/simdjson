@@ -37,6 +37,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_
 ) noexcept
   : SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>(std::forward<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>(value))
 {
+  first.iter.assert_is_valid();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::simdjson_result(error_code error) noexcept
   : SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>({}, error)
@@ -44,20 +45,21 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_
 }
 
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::operator*() noexcept {
-  if (this->error()) { this->second = SUCCESS; return this->error(); }
-  return *this->first;
+  if (error()) { return error(); }
+  return *first;
 }
 simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &other) const noexcept {
-  if (this->error()) { return true; }
-  return this->first == other.first;
+  if (!first.iter.is_valid()) { return !error(); }
+  return first == other.first;
 }
 simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &other) const noexcept {
-  if (this->error()) { return false; }
-  return this->first != other.first;
+  if (!first.iter.is_valid()) { return error(); }
+  return first != other.first;
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::operator++() noexcept {
-  if (this->error()) { return *this; }
-  ++(this->first);
+  // Clear the error if there is one, so we don't yield it twice
+  if (error()) { second = SUCCESS; return *this; }
+  ++(first);
   return *this;
 }
 
