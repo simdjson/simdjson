@@ -483,6 +483,11 @@ namespace object_tests {
       ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
       return true;
     }));
+    TEST_SUCCEED();
+  }
+  bool document_object_index() {
+    TEST_START();
+    auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
     SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
@@ -503,8 +508,11 @@ namespace object_tests {
       ASSERT_ERROR( doc_result["d"], NO_SUCH_FIELD );
       return true;
     }));
-
-    json = R"({ "outer": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
+    TEST_SUCCEED();
+  }
+  bool value_object_index() {
+    TEST_START();
+    auto json = R"({ "outer": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
     SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::value object;
       ASSERT_SUCCESS( doc_result["outer"].get(object) );
@@ -556,6 +564,12 @@ namespace object_tests {
       ASSERT_ERROR( object.find_field_unordered("d"), NO_SUCH_FIELD );
       return true;
     }));
+    TEST_SUCCEED();
+  }
+
+  bool document_object_find_field_unordered() {
+    TEST_START();
+    auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
     SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
@@ -576,8 +590,12 @@ namespace object_tests {
       ASSERT_ERROR( doc_result.find_field_unordered("d"), NO_SUCH_FIELD );
       return true;
     }));
+    TEST_SUCCEED();
+  }
 
-    json = R"({ "outer": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
+  bool value_object_find_field_unordered() {
+    TEST_START();
+    auto json = R"({ "outer": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
     SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::value object;
       ASSERT_SUCCESS( doc_result.find_field_unordered("outer").get(object) );
@@ -629,6 +647,12 @@ namespace object_tests {
       ASSERT_ERROR( object.find_field("d"), NO_SUCH_FIELD );
       return true;
     }));
+    TEST_SUCCEED();
+  }
+
+  bool document_object_find_field() {
+    TEST_START();
+    auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
     SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
@@ -649,8 +673,12 @@ namespace object_tests {
       ASSERT_ERROR( doc_result.find_field("d"), NO_SUCH_FIELD );
       return true;
     }));
+    TEST_SUCCEED();
+  }
 
-    json = R"({ "outer": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
+  bool value_object_find_field() {
+    TEST_START();
+    auto json = R"({ "outer": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
     SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::value object;
       ASSERT_SUCCESS( doc_result.find_field("outer").get(object) );
@@ -675,7 +703,7 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
-  bool nested_object_index() {
+  bool document_nested_object_index() {
     TEST_START();
     auto json = R"({ "x": { "y": { "z": 2 } } }})"_padded;
     SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
@@ -688,6 +716,12 @@ namespace object_tests {
       ASSERT_EQUAL( doc["x"]["y"]["z"].get_uint64().value_unsafe(), 2 );
       return true;
     }));
+    TEST_SUCCEED();
+  }
+
+  bool nested_object_index() {
+    TEST_START();
+    auto json = R"({ "x": { "y": { "z": 2 } } }})"_padded;
     SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::object> object = doc_result.get_object();
       ASSERT_EQUAL( object["x"]["y"]["z"].get_uint64().value_unsafe(), 2 );
@@ -699,6 +733,12 @@ namespace object_tests {
       ASSERT_EQUAL( object["x"]["y"]["z"].get_uint64().value_unsafe(), 2 );
       return true;
     }));
+    TEST_SUCCEED();
+  }
+
+  bool value_nested_object_index() {
+    TEST_START();
+    auto json = R"({ "x": { "y": { "z": 2 } } }})"_padded;
     SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::value> x = doc_result["x"];
       ASSERT_EQUAL( x["y"]["z"].get_uint64().value_unsafe(), 2 );
@@ -778,9 +818,17 @@ namespace object_tests {
            iterate_object() &&
            iterate_empty_object() &&
            object_index() &&
+           document_object_index() &&
+           value_object_index() &&
            object_find_field_unordered() &&
+           document_object_find_field_unordered() &&
+           value_object_find_field_unordered() &&
            object_find_field() &&
+           document_object_find_field() &&
+           value_object_find_field() &&
            nested_object_index() &&
+           document_nested_object_index() &&
+           value_nested_object_index() &&
            iterate_object_partial_children() &&
            object_index_partial_children() &&
 #if SIMDJSON_EXCEPTIONS
