@@ -172,12 +172,9 @@ endif()
 #
 # Other optional flags
 #
-option(SIMDJSON_PRODUCTION "Optimize for production by disabling development-time aids, such as checks for incorrect API usage." OFF)
-if(SIMDJSON_PRODUCTION)
-  message(STATUS "SIMDJSON_PRODUCTION is ON: optimizing for production by disabling development-time aids, such as checks for incorrect API usage.")
-  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_PRODUCTION)
-else()
-  message(STATUS "Development-time aids enabled. Use cmake -DSIMDJSON_PRODUCTION=ON to disable development-time aids, such as checks for incorrect API usage.")
+option(SIMDJSON_DEVELOPMENT_CHECKS "Enable development-time aids, such as checks for incorrect API usage. Enabled by default in DEBUG." OFF)
+if(SIMDJSON_DEVELOPMENT_CHECKS)
+  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_DEVELOPMENT_CHECKS)
 endif()
 
 option(SIMDJSON_BASH "Allow usage of bash within CMake" ON)

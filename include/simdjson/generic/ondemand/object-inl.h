@@ -52,7 +52,7 @@ simdjson_really_inline object::object(const value_iterator &_iter) noexcept
 }
 
 simdjson_really_inline simdjson_result<object_iterator> object::begin() noexcept {
-#ifndef SIMDJSON_PRODUCTION
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.is_at_container_start()) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return object_iterator(iter);

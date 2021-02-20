@@ -127,7 +127,7 @@ namespace object_error_tests {
     TEST_SUCCEED();
   }
 
-#ifndef SIMDJSON_PRODUCTION
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
   bool out_of_order_object_iteration_error() {
     TEST_START();
     auto json = R"([ { "x": 1, "y": 2 } ])"_padded;
@@ -526,7 +526,7 @@ namespace object_error_tests {
            object_lookup_miss_unclosed_error() &&
            object_lookup_miss_wrong_key_type_error() &&
            object_lookup_miss_next_error() &&
-#ifndef SIMDJSON_PRODUCTION
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
            out_of_order_object_iteration_error() &&
            out_of_order_object_index_child_error() &&
            out_of_order_object_index_sibling_error() &&

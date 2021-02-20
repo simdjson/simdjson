@@ -216,5 +216,10 @@ namespace std {
 /// If EXPR is an error, returns it.
 #define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }
 
+#ifndef SIMDJSON_DEVELOPMENT_CHECKS
+#ifndef NDEBUG
+#define SIMDJSON_DEVELOPMENT_CHECKS
+#endif
+#endif
 
 #endif // SIMDJSON_COMMON_DEFS_H

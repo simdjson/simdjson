@@ -101,7 +101,7 @@ namespace array_error_tests {
     TEST_SUCCEED();
   }
 
-#ifndef SIMDJSON_PRODUCTION
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
   bool out_of_order_array_iteration_error() {
     TEST_START();
     auto json = R"([ [ 1, 2 ] ])"_padded;
@@ -140,7 +140,7 @@ namespace array_error_tests {
     }));
     TEST_SUCCEED();
   }
-#endif // SIMDJSON_PRODUCTION
+#endif // SIMDJSON_DEVELOPMENT_CHECKS
 
   bool run() {
     return
@@ -148,7 +148,7 @@ namespace array_error_tests {
            top_level_array_iterate_unclosed_error() &&
            array_iterate_error() &&
            array_iterate_unclosed_error() &&
-#ifndef SIMDJSON_PRODUCTION
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
            out_of_order_array_iteration_error() &&
 #endif
            true;
