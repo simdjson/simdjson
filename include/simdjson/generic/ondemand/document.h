@@ -115,9 +115,17 @@ public:
    * @returns A value of the given type, parsed from the JSON.
    * @returns INCORRECT_TYPE If the JSON value is not the given type.
    */
-  template<typename T> simdjson_really_inline simdjson_result<T> get() & noexcept;
+  template<typename T> simdjson_really_inline simdjson_result<T> get() & noexcept {
+    // Unless the simdjson library provides an inline implementation, calling this method should
+    // immediately fail.
+    static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library.");
+  }
   /** @overload template<typename T> simdjson_result<T> get() & noexcept */
-  template<typename T> simdjson_really_inline simdjson_result<T> get() && noexcept;
+  template<typename T> simdjson_really_inline simdjson_result<T> get() && noexcept {
+    // Unless the simdjson library provides an inline implementation, calling this method should
+    // immediately fail.
+    static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library.");
+  }
 
   /**
    * Get this value as the given type.

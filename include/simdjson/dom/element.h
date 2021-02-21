@@ -222,7 +222,11 @@ public:
    */
 
   template<typename T>
-  inline simdjson_result<T> get() const noexcept;
+  inline simdjson_result<T> get() const noexcept {
+    // Unless the simdjson library provides an inline implementation, calling this method should
+    // immediately fail.
+    static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library.");
+  }
 
   /**
    * Get the value as the provided type (T).
