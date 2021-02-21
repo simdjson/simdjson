@@ -285,6 +285,7 @@ protected:
 
   simdjson_really_inline bool is_at_start() const noexcept;
   simdjson_really_inline bool is_at_container_start() const noexcept;
+  simdjson_really_inline bool is_at_iterator_start() const noexcept;
   simdjson_really_inline void assert_at_start() const noexcept;
   simdjson_really_inline void assert_at_container_start() const noexcept;
   simdjson_really_inline void assert_at_root() const noexcept;

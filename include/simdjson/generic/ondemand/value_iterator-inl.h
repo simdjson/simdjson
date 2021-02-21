@@ -462,7 +462,7 @@ simdjson_really_inline error_code value_iterator::advance_container_start(const 
   // If we're not at the position anymore, we don't want to advance the cursor.
   if (!is_at_start()) {
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
-    if (!is_at_container_start()) { return OUT_OF_ORDER_ITERATION; }
+    if (!is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
 #endif
     json = peek_start();
     return SUCCESS;
@@ -502,6 +502,10 @@ simdjson_really_inline bool value_iterator::is_at_start() const noexcept {
 }
 simdjson_really_inline bool value_iterator::is_at_container_start() const noexcept {
   return _json_iter->token.index == _start_position + 1;
+}
+simdjson_really_inline bool value_iterator::is_at_iterator_start() const noexcept {
+  auto delta = _json_iter->token.index - _start_position;
+  return delta == 1 || delta == 2;
 }
 
 simdjson_really_inline void value_iterator::assert_at_start() const noexcept {
