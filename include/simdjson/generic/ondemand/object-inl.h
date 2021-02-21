@@ -38,6 +38,11 @@ simdjson_really_inline simdjson_result<object> object::start(value_iterator &ite
   SIMDJSON_TRY( iter.start_object().get(has_value) );
   return object(iter);
 }
+simdjson_really_inline simdjson_result<object> object::start_root(value_iterator &iter) noexcept {
+  simdjson_unused bool has_value;
+  SIMDJSON_TRY( iter.start_root_object().get(has_value) );
+  return object(iter);
+}
 simdjson_really_inline object object::started(value_iterator &iter) noexcept {
   simdjson_unused bool has_value = iter.started_object();
   return iter;

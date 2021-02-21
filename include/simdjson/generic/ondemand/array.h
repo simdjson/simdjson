@@ -42,6 +42,15 @@ protected:
    */
   static simdjson_really_inline simdjson_result<array> start(value_iterator &iter) noexcept;
   /**
+   * Begin array iteration from the root.
+   *
+   * @param iter The iterator. Must be where the initial [ is expected. Will be *moved* into the
+   *        resulting array.
+   * @error INCORRECT_TYPE if the iterator is not at [.
+   * @error TAPE_ERROR if there is no closing ] at the end of the document.
+   */
+  static simdjson_really_inline simdjson_result<array> start_root(value_iterator &iter) noexcept;
+  /**
    * Begin array iteration.
    *
    * This version of the method should be called after the initial [ has been verified, and is
@@ -68,6 +77,7 @@ protected:
   value_iterator iter{};
 
   friend class value;
+  friend class document;
   friend struct simdjson_result<value>;
   friend struct simdjson_result<array>;
   friend class array_iterator;

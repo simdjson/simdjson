@@ -130,6 +130,15 @@ public:
    * @param index The position of the token to retrieve.
    */
   simdjson_really_inline uint32_t peek_length(token_position position) const noexcept;
+  /**
+   * Get the JSON text for the last token in the document.
+   *
+   * This is not null-terminated; it is a view into the JSON.
+   *
+   * TODO consider a string_view, assuming the length will get stripped out by the optimizer when
+   * it isn't used ...
+   */
+  simdjson_really_inline const uint8_t *peek_last() const noexcept;
 
   /**
    * Ascend one level.
@@ -188,6 +197,7 @@ public:
 
 protected:
   simdjson_really_inline json_iterator(const uint8_t *buf, ondemand::parser *parser) noexcept;
+  simdjson_really_inline token_position last_document_position() const noexcept;
 
   friend class document;
   friend class object;

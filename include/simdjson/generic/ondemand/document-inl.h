@@ -26,10 +26,12 @@ simdjson_really_inline value document::get_root_value() noexcept {
 }
 
 simdjson_really_inline simdjson_result<array> document::get_array() & noexcept {
-  return get_root_value().get_array();
+  auto value = get_root_value_iterator();
+  return array::start_root(value);
 }
 simdjson_really_inline simdjson_result<object> document::get_object() & noexcept {
-  return get_root_value().get_object();
+  auto value = get_root_value_iterator();
+  return object::start_root(value);
 }
 simdjson_really_inline simdjson_result<uint64_t> document::get_uint64() noexcept {
   return get_root_value_iterator().get_root_uint64();

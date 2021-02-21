@@ -145,6 +145,14 @@ simdjson_really_inline uint32_t json_iterator::peek_length(token_position positi
   return token.peek_length(position);
 }
 
+simdjson_really_inline token_position json_iterator::last_document_position() const noexcept {
+  SIMDJSON_ASSUME(parser->implementation->n_structural_indexes > 0);
+  return &parser->implementation->structural_indexes[parser->implementation->n_structural_indexes - 1];
+}
+simdjson_really_inline const uint8_t *json_iterator::peek_last() const noexcept {
+  return token.peek(last_document_position());
+}
+
 simdjson_really_inline void json_iterator::ascend_to(depth_t parent_depth) noexcept {
   SIMDJSON_ASSUME(parent_depth >= 0 && parent_depth < INT32_MAX - 1);
   SIMDJSON_ASSUME(_depth == parent_depth + 1);
