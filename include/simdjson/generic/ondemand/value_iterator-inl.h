@@ -401,9 +401,15 @@ simdjson_really_inline value_iterator value_iterator::child() const noexcept {
   return { _json_iter, depth()+1, _json_iter->token.position() };
 }
 
+// GCC 7 warns when the first line of this function is inlined away into oblivion due to the caller
+// relating depth and iterator depth, which is a desired effect. It does not happen if is_open is
+// marked non-inline.
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_really_inline bool value_iterator::is_open() const noexcept {
   return _json_iter->depth() >= depth();
 }
+SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_really_inline bool value_iterator::at_eof() const noexcept {
   return _json_iter->at_eof();
