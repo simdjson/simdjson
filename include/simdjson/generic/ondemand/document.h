@@ -71,8 +71,6 @@ public:
    *
    * The string is guaranteed to be valid UTF-8.
    *
-   * Equivalent to get<std::string_view>().
-   *
    * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
    *          time it parses a document or when it is destroyed.
    * @returns INCORRECT_TYPE if the JSON value is not a string.
@@ -102,6 +100,14 @@ public:
   simdjson_really_inline bool is_null() noexcept;
 
   /**
+   * @private
+   * Deprecated as a public interface. These methods will be made private in a future
+   * release. Use get_double(), get_bool(), get_uint64(), get_int64(),
+   * get_object(), get_array() or get_string() instead. We found in practice that
+   * the template would mislead users into writing get<X>() for types X that
+   * are not among the supported types (e.g., get<QString>(), get<std::string>(),
+   * get<short>()), and the resulting C++ compiler error is difficult to parse.
+   *
    * Get this value as the given type.
    *
    * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool
@@ -166,8 +172,6 @@ public:
    * Cast this JSON value to a string.
    *
    * The string is guaranteed to be valid UTF-8.
-   *
-   * Equivalent to get<std::string_view>().
    *
    * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
    *          time it parses a document or when it is destroyed.

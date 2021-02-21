@@ -54,7 +54,7 @@ static bool parse_and_check_signed(const std::string src) {
   const padded_string pstr{src};
   simdjson::dom::parser parser;
   simdjson::dom::element value;
-  ASSERT_SUCCESS( parser.parse(pstr).get<dom::object>()["key"].get(value) );
+  ASSERT_SUCCESS( parser.parse(pstr).get_object()["key"].get(value) );
   ASSERT_EQUAL( value.is<int64_t>(), true );
   return true;
 }
@@ -64,7 +64,7 @@ static bool parse_and_check_unsigned(const std::string src) {
   const padded_string pstr{src};
   simdjson::dom::parser parser;
   simdjson::dom::element value;
-  ASSERT_SUCCESS( parser.parse(pstr).get<dom::object>()["key"].get(value) );
+  ASSERT_SUCCESS( parser.parse(pstr).get_object()["key"].get(value) );
   ASSERT_EQUAL( value.is<uint64_t>(), true );
   return true;
 }

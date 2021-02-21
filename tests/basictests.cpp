@@ -737,7 +737,7 @@ namespace dom_api_tests {
     int i = 0;
     for (auto [key, value] : object) {
       ASSERT_EQUAL( key, expected_key[i] );
-      ASSERT_EQUAL( value.get<uint64_t>().value_unsafe(), expected_value[i] );
+      ASSERT_EQUAL( value.get_uint64().value_unsafe(), expected_value[i] );
       i++;
     }
     ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
@@ -822,18 +822,18 @@ namespace dom_api_tests {
     ASSERT_SUCCESS( parser.parse(json).get(array) );
 
     auto iter = array.begin();
-    ASSERT_EQUAL( (*iter).get<uint64_t>().value_unsafe(), 0 );
-    ASSERT_EQUAL( (*iter).get<int64_t>().value_unsafe(), 0 );
-    ASSERT_EQUAL( (*iter).get<double>().value_unsafe(), 0 );
+    ASSERT_EQUAL( (*iter).get_uint64().value_unsafe(), 0 );
+    ASSERT_EQUAL( (*iter).get_int64().value_unsafe(), 0 );
+    ASSERT_EQUAL( (*iter).get_double().value_unsafe(), 0 );
     ++iter;
-    ASSERT_EQUAL( (*iter).get<uint64_t>().value_unsafe(), 1 );
-    ASSERT_EQUAL( (*iter).get<int64_t>().value_unsafe(), 1 );
-    ASSERT_EQUAL( (*iter).get<double>().value_unsafe(), 1 );
+    ASSERT_EQUAL( (*iter).get_uint64().value_unsafe(), 1 );
+    ASSERT_EQUAL( (*iter).get_int64().value_unsafe(), 1 );
+    ASSERT_EQUAL( (*iter).get_double().value_unsafe(), 1 );
     ++iter;
-    ASSERT_EQUAL( (*iter).get<int64_t>().value_unsafe(), -1 );
-    ASSERT_EQUAL( (*iter).get<double>().value_unsafe(), -1 );
+    ASSERT_EQUAL( (*iter).get_int64().value_unsafe(), -1 );
+    ASSERT_EQUAL( (*iter).get_double().value_unsafe(), -1 );
     ++iter;
-    ASSERT_EQUAL( (*iter).get<double>().value_unsafe(), 1.1 );
+    ASSERT_EQUAL( (*iter).get_double().value_unsafe(), 1.1 );
     return true;
   }
 
@@ -875,13 +875,13 @@ namespace dom_api_tests {
     auto mylambda = [](dom::element e) { return int64_t(e); };
     ASSERT_EQUAL( mylambda(node), 1 );
 #endif
-    ASSERT_EQUAL( object["a"].get<uint64_t>().value_unsafe(), 1 );
-    ASSERT_EQUAL( object["b"].get<uint64_t>().value_unsafe(), 2 );
-    ASSERT_EQUAL( object["c/d"].get<uint64_t>().value_unsafe(), 3 );
+    ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
+    ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );
+    ASSERT_EQUAL( object["c/d"].get_uint64().value_unsafe(), 3 );
     // Check all three again in backwards order, to ensure we can go backwards
-    ASSERT_EQUAL( object["c/d"].get<uint64_t>().value_unsafe(), 3 );
-    ASSERT_EQUAL( object["b"].get<uint64_t>().value_unsafe(), 2 );
-    ASSERT_EQUAL( object["a"].get<uint64_t>().value_unsafe(), 1 );
+    ASSERT_EQUAL( object["c/d"].get_uint64().value_unsafe(), 3 );
+    ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );
+    ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
 
     simdjson::error_code error;
     simdjson_unused element val;
@@ -906,20 +906,20 @@ namespace dom_api_tests {
     dom::parser parser;
     dom::element doc;
     ASSERT_SUCCESS( parser.parse(json).get(doc) );
-    ASSERT_EQUAL( doc["obj"]["a"].get<uint64_t>().value_unsafe(), 1);
+    ASSERT_EQUAL( doc["obj"]["a"].get_uint64().value_unsafe(), 1);
 
     object obj;
     ASSERT_SUCCESS( doc.get(obj) );
-    ASSERT_EQUAL( obj["obj"]["a"].get<uint64_t>().value_unsafe(), 1);
+    ASSERT_EQUAL( obj["obj"]["a"].get_uint64().value_unsafe(), 1);
 
     ASSERT_SUCCESS( obj["obj"].get(obj) );
-    ASSERT_EQUAL( obj["a"].get<uint64_t>().value_unsafe(), 1 );
-    ASSERT_EQUAL( obj["b"].get<uint64_t>().value_unsafe(), 2 );
-    ASSERT_EQUAL( obj["c/d"].get<uint64_t>().value_unsafe(), 3 );
+    ASSERT_EQUAL( obj["a"].get_uint64().value_unsafe(), 1 );
+    ASSERT_EQUAL( obj["b"].get_uint64().value_unsafe(), 2 );
+    ASSERT_EQUAL( obj["c/d"].get_uint64().value_unsafe(), 3 );
     // Check all three again in backwards order, to ensure we can go backwards
-    ASSERT_EQUAL( obj["c/d"].get<uint64_t>().value_unsafe(), 3 );
-    ASSERT_EQUAL( obj["b"].get<uint64_t>().value_unsafe(), 2 );
-    ASSERT_EQUAL( obj["a"].get<uint64_t>().value_unsafe(), 1 );
+    ASSERT_EQUAL( obj["c/d"].get_uint64().value_unsafe(), 3 );
+    ASSERT_EQUAL( obj["b"].get_uint64().value_unsafe(), 2 );
+    ASSERT_EQUAL( obj["a"].get_uint64().value_unsafe(), 1 );
 
     simdjson_unused element val;
     ASSERT_ERROR( doc["d"].get(val), NO_SUCH_FIELD);
@@ -1107,7 +1107,7 @@ namespace dom_api_tests {
     set<string_view> default_users;
     dom::parser parser;
     element doc = parser.load(TWITTER_JSON);
-    for (object tweet : doc["statuses"].get<dom::array>()) {
+    for (object tweet : doc["statuses"].get_array()) {
       object user = tweet["user"];
       if (user["default_profile"]) {
         default_users.insert(user["screen_name"]);
@@ -1858,14 +1858,14 @@ namespace format_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     ostringstream s;
-    s << parser.parse(DOCUMENT)["bar"].get<dom::array>();
+    s << parser.parse(DOCUMENT)["bar"].get_array();
     return assert_minified(s, "[1,2,0.11111111111111113]");
   }
   bool print_minify_array_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     ostringstream s;
-    s << minify(parser.parse(DOCUMENT)["bar"].get<dom::array>());
+    s << minify(parser.parse(DOCUMENT)["bar"].get_array());
     return assert_minified(s, "[1,2,0.11111111111111113]");
   }
 
@@ -1873,14 +1873,14 @@ namespace format_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     ostringstream s;
-    s << parser.parse(DOCUMENT)["baz"].get<dom::object>();
+    s << parser.parse(DOCUMENT)["baz"].get_object();
     return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
   }
   bool print_minify_object_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     ostringstream s;
-    s << minify(parser.parse(DOCUMENT)["baz"].get<dom::object>());
+    s << minify(parser.parse(DOCUMENT)["baz"].get_object());
     return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
   }
 
@@ -2041,7 +2041,7 @@ namespace to_string_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     ostringstream s;
-    s << to_string(parser.parse(DOCUMENT)["bar"].get<dom::array>());
+    s << to_string(parser.parse(DOCUMENT)["bar"].get_array());
     return assert_minified(s, "[1,2,0.11111111111111113]");
   }
 
@@ -2050,7 +2050,7 @@ namespace to_string_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     ostringstream s;
-    s << to_string(parser.parse(DOCUMENT)["baz"].get<dom::object>());
+    s << to_string(parser.parse(DOCUMENT)["baz"].get_object());
     return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
   }
 

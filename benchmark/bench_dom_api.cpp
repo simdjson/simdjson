@@ -522,7 +522,7 @@ static void twitter_image_sizes(State& state) {
       dom::array media;
       if (not (error = tweet["entities"]["media"].get(media))) {
         for (dom::object image : media) {
-          for (auto size : image["sizes"].get<dom::object>()) {
+          for (auto size : image["sizes"].get_object()) {
              image_sizes.emplace(size.value["w"], size.value["h"]);
           }
         }
