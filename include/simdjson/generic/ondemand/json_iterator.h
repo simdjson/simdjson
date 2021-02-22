@@ -148,6 +148,7 @@ public:
    * @param child_depth the expected child depth.
    */
   simdjson_really_inline void descend_to(depth_t parent_depth) noexcept;
+  simdjson_really_inline void descend_to(depth_t parent_depth, int32_t delta) noexcept;
 
   /**
    * Get current depth.
@@ -179,7 +180,11 @@ public:
   template<int N> simdjson_warn_unused simdjson_really_inline bool advance_to_buffer(uint8_t (&tmpbuf)[N]) noexcept;
 
   simdjson_really_inline token_position position() const noexcept;
-  simdjson_really_inline void set_position(token_position target_checkpoint) noexcept;
+  simdjson_really_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+  simdjson_really_inline token_position start_position(depth_t depth) const noexcept;
+  simdjson_really_inline void set_start_position(depth_t depth, token_position position) noexcept;
+#endif
 
 protected:
   simdjson_really_inline json_iterator(const uint8_t *buf, ondemand::parser *parser) noexcept;

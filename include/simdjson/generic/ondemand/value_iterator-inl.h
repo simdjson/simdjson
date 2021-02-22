@@ -24,8 +24,10 @@ simdjson_warn_unused simdjson_really_inline bool value_iterator::started_object(
     _json_iter->ascend_to(depth()-1);
     return false;
   }
-  _json_iter->descend_to(depth()+1);
   logger::log_start_value(*_json_iter, "object");
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+  _json_iter->set_start_position(_depth, _start_position);
+#endif
   return true;
 }
 
@@ -38,7 +40,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
       _json_iter->ascend_to(depth()-1);
       return false;
     case ',':
-      _json_iter->descend_to(depth()+1);
       return true;
     default:
       return _json_iter->report_error(TAPE_ERROR, "Missing comma between object fields");
@@ -73,10 +74,12 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else if (!is_open()) {
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
     // If we're past the end of the object, we're being iterated out of order.
     // Note: this isn't perfect detection. It's possible the user is inside some other object; if so,
     // this object iterator will blithely scan that object for fields.
     if (_json_iter->depth() < depth() - 1) { return OUT_OF_ORDER_ITERATION; }
+#endif
     has_value = false;
 
   // 3. When a previous search found a field or an iterator yielded a value:
@@ -96,6 +99,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   } else {
     if ((error = skip_child() )) { abandon(); return error; }
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+    if (_json_iter->start_position(_depth) != _start_position) { return OUT_OF_ORDER_ITERATION; }
+#endif
   }
   while (has_value) {
     // Get the key and colon, stopping at the value.
@@ -147,10 +153,12 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else if (!is_open()) {
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
     // If we're past the end of the object, we're being iterated out of order.
     // Note: this isn't perfect detection. It's possible the user is inside some other object; if so,
     // this object iterator will blithely scan that object for fields.
     if (_json_iter->depth() < depth() - 1) { return OUT_OF_ORDER_ITERATION; }
+#endif
     has_value = false;
 
   // 3. When a previous search found a field or an iterator yielded a value:
@@ -171,6 +179,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // Finish the previous value and see if , or } is next
     if ((error = skip_child() )) { abandon(); return error; }
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+    if (_json_iter->start_position(_depth) != _start_position) { return OUT_OF_ORDER_ITERATION; }
+#endif
   }
 
   // After initial processing, we will be in one of two states:
@@ -193,7 +204,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
   // Next, we find a match starting from the current position.
   while (has_value) {
-    SIMDJSON_ASSUME( _json_iter->_depth == _depth + 1 ); // We must be at the start of a field
+    SIMDJSON_ASSUME( _json_iter->_depth == _depth ); // We must be at the start of a field
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
@@ -216,13 +227,12 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   // beginning of the object.
   // (We have already run through the object before, so we've already validated its structure. We
   // don't check errors in this bit.)
-  _json_iter->set_position(_start_position + 1);
-  _json_iter->descend_to(_depth);
+  _json_iter->reenter_child(_start_position + 1, _depth);
 
   has_value = started_object();
   while (_json_iter->position() < search_start) {
     SIMDJSON_ASSUME(has_value); // we should reach search_start before ever reaching the end of the object
-    SIMDJSON_ASSUME( _json_iter->_depth == _depth + 1 ); // We must be at the start of a field
+    SIMDJSON_ASSUME( _json_iter->_depth == _depth ); // We must be at the start of a field
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
@@ -246,7 +256,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::field_key() noexcept {
-  assert_at_child();
+  assert_at_next();
 
   const uint8_t *key = _json_iter->advance();
   if (*(key++) != '"') { return _json_iter->report_error(TAPE_ERROR, "Object key is not a string"); }
@@ -254,9 +264,10 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> val
 }
 
 simdjson_warn_unused simdjson_really_inline error_code value_iterator::field_value() noexcept {
-  assert_at_child();
+  assert_at_next();
 
   if (*_json_iter->advance() != ':') { return _json_iter->report_error(TAPE_ERROR, "Missing colon in object field"); }
+  _json_iter->descend_to(depth()+1);
   return SUCCESS;
 }
 
@@ -277,6 +288,9 @@ simdjson_warn_unused simdjson_really_inline bool value_iterator::started_array()
   }
   logger::log_start_value(*_json_iter, "array");
   _json_iter->descend_to(depth()+1);
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+  _json_iter->set_start_position(_depth, _start_position);
+#endif
   return true;
 }
 
@@ -448,7 +462,9 @@ simdjson_really_inline error_code value_iterator::advance_container_start(const 
 
   // If we're not at the position anymore, we don't want to advance the cursor.
   if (!is_at_start()) {
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
     if (!is_at_container_start()) { return OUT_OF_ORDER_ITERATION; }
+#endif
     json = peek_start();
     return SUCCESS;
   }

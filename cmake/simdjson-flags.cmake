@@ -176,11 +176,10 @@ endif()
 #
 # Other optional flags
 #
-option(SIMDJSON_ONDEMAND_SAFETY_RAILS "Validate ondemand user code at runtime to ensure it is being used correctly. Defaults to ON for debug builds, OFF for release builds." $<IF:$<CONFIG:DEBUG>,ON,OFF>)
-if(SIMDJSON_ONDEMAND_SAFETY_RAILS)
-  message(STATUS "Ondemand safety rails enabled. Ondemand user code will be checked at runtime. This will be slower than normal!")
-  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_ONDEMAND_SAFETY_RAILS)
-endif(SIMDJSON_ONDEMAND_SAFETY_RAILS)
+option(SIMDJSON_DEVELOPMENT_CHECKS "Enable development-time aids, such as checks for incorrect API usage. Enabled by default in DEBUG." OFF)
+if(SIMDJSON_DEVELOPMENT_CHECKS)
+  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_DEVELOPMENT_CHECKS)
+endif()
 
 option(SIMDJSON_BASH "Allow usage of bash within CMake" ON)
 
