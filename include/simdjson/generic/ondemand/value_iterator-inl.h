@@ -16,6 +16,13 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   return started_object();
 }
 
+simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::start_root_object() noexcept {
+  bool result;
+  SIMDJSON_TRY( start_object().get(result) );
+  if (*_json_iter->peek_last() != '}') { return _json_iter->report_error(TAPE_ERROR, "object invalid: { at beginning of document unmatched by } at end of document"); }
+  return result;
+}
+
 simdjson_warn_unused simdjson_really_inline bool value_iterator::started_object() noexcept {
   assert_at_container_start();
   if (*_json_iter->peek() == '}') {
@@ -276,6 +283,13 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   SIMDJSON_TRY( advance_container_start("array", json) );
   if (*json != '[') { return incorrect_type_error("Not an array"); }
   return started_array();
+}
+
+simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::start_root_array() noexcept {
+  bool result;
+  SIMDJSON_TRY( start_array().get(result) );
+  if (*_json_iter->peek_last() != ']') { return _json_iter->report_error(TAPE_ERROR, "array invalid: [ at beginning of document unmatched by ] at end of document"); }
+  return result;
 }
 
 simdjson_warn_unused simdjson_really_inline bool value_iterator::started_array() noexcept {
