@@ -34,6 +34,8 @@ simdjson_really_inline simdjson_result<value> object::find_field(const std::stri
 }
 
 simdjson_really_inline simdjson_result<object> object::start(value_iterator &iter) noexcept {
+  // We don't need to know if the object is empty to start iteration, but we do want to know if there
+  // is an error--thus `simdjson_unused`.
   simdjson_unused bool has_value;
   SIMDJSON_TRY( iter.start_object().get(has_value) );
   return object(iter);
