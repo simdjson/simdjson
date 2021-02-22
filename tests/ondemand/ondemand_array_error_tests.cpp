@@ -106,18 +106,18 @@ namespace array_error_tests {
     TEST_START();
     auto json = R"([ [ 1, 2 ] ])"_padded;
     SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc) {
-      for (auto element : doc) {
-        for (auto subelement : element) { ASSERT_SUCCESS(subelement); }
-        ASSERT_ERROR( element.begin(), OUT_OF_ORDER_ITERATION );
+      for (auto arr : doc) {
+        for (auto subelement : arr) { ASSERT_SUCCESS(subelement); }
+        ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );
       }
       return true;
     }));
     SUBTEST("value", test_ondemand_doc(json, [&](auto doc) {
       for (auto element : doc) {
-        ondemand::value val;
-        ASSERT_SUCCESS( element.get(val) );
-        for (auto subelement : val) { ASSERT_SUCCESS(subelement); }
-        ASSERT_ERROR( val.begin(), OUT_OF_ORDER_ITERATION );
+        ondemand::value arr;
+        ASSERT_SUCCESS( element.get(arr) );
+        for (auto subelement : arr) { ASSERT_SUCCESS(subelement); }
+        ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );
       }
       return true;
     }));
@@ -125,7 +125,7 @@ namespace array_error_tests {
       for (auto element : doc) {
         auto arr = element.get_array();
         for (auto subelement : arr) { ASSERT_SUCCESS(subelement); }
-        ASSERT_ERROR( arr.begin(), OUT_OF_ORDER_ITERATION );
+        ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );
       }
       return true;
     }));
@@ -134,8 +134,39 @@ namespace array_error_tests {
         ondemand::array arr;
         ASSERT_SUCCESS( element.get(arr) );
         for (auto subelement : arr) { ASSERT_SUCCESS(subelement); }
-        ASSERT_ERROR( arr.begin(), OUT_OF_ORDER_ITERATION );
+        ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );
       }
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+  bool out_of_order_top_level_array_iteration_error() {
+    TEST_START();
+    auto json = R"([ 1, 2 ])"_padded;
+    SUBTEST("simdjson_result<document>", test_ondemand_doc(json, [&](auto arr) {
+      for (auto element : arr) { ASSERT_SUCCESS(element); }
+      ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );
+      return true;
+    }));
+    SUBTEST("document", test_ondemand_doc(json, [&](auto doc) {
+      ondemand::document arr;
+      ASSERT_SUCCESS( std::move(doc).get(arr) );
+      for (auto element : arr) { ASSERT_SUCCESS(element); }
+      ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );
+      return true;
+    }));
+    SUBTEST("simdjson_result<array>", test_ondemand_doc(json, [&](auto doc) {
+      simdjson_result<ondemand::array> arr = doc.get_array();
+      for (auto element : arr) { ASSERT_SUCCESS(element); }
+      ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );
+     return true;
+    }));
+    SUBTEST("array", test_ondemand_doc(json, [&](auto doc) {
+      ondemand::array arr;
+      ASSERT_SUCCESS( doc.get(arr) );
+      for (auto element : arr) { ASSERT_SUCCESS(element); }
+      ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );
       return true;
     }));
     TEST_SUCCEED();
@@ -150,6 +181,7 @@ namespace array_error_tests {
            array_iterate_unclosed_error() &&
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
            out_of_order_array_iteration_error() &&
+           out_of_order_top_level_array_iteration_error() &&
 #endif
            true;
   }

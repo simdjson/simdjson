@@ -401,9 +401,15 @@ simdjson_really_inline value_iterator value_iterator::child() const noexcept {
   return { _json_iter, depth()+1, _json_iter->token.position() };
 }
 
+// GCC 7 warns when the first line of this function is inlined away into oblivion due to the caller
+// relating depth and iterator depth, which is a desired effect. It does not happen if is_open is
+// marked non-inline.
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_really_inline bool value_iterator::is_open() const noexcept {
   return _json_iter->depth() >= depth();
 }
+SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_really_inline bool value_iterator::at_eof() const noexcept {
   return _json_iter->at_eof();
@@ -421,7 +427,6 @@ simdjson_really_inline bool value_iterator::at_first_field() const noexcept {
 simdjson_really_inline void value_iterator::abandon() noexcept {
   _json_iter->abandon();
 }
-
 
 simdjson_warn_unused simdjson_really_inline depth_t value_iterator::depth() const noexcept {
   return _depth;
@@ -463,7 +468,7 @@ simdjson_really_inline error_code value_iterator::advance_container_start(const 
   // If we're not at the position anymore, we don't want to advance the cursor.
   if (!is_at_start()) {
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
-    if (!is_at_container_start()) { return OUT_OF_ORDER_ITERATION; }
+    if (!is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
 #endif
     json = peek_start();
     return SUCCESS;
@@ -504,6 +509,11 @@ simdjson_really_inline bool value_iterator::is_at_start() const noexcept {
 simdjson_really_inline bool value_iterator::is_at_container_start() const noexcept {
   return _json_iter->token.index == _start_position + 1;
 }
+simdjson_really_inline bool value_iterator::is_at_iterator_start() const noexcept {
+  // We can legitimately be either at the first value ([1]), or after the array if it's empty ([]).
+  auto delta = _json_iter->token.index - _start_position;
+  return delta == 1 || delta == 2;
+}
 
 simdjson_really_inline void value_iterator::assert_at_start() const noexcept {
   SIMDJSON_ASSUME( _json_iter->token.index == _start_position );
@@ -539,6 +549,13 @@ simdjson_really_inline void value_iterator::assert_at_non_root_start() const noe
   SIMDJSON_ASSUME( _depth > 1 );
 }
 
+simdjson_really_inline void value_iterator::assert_is_valid() const noexcept {
+  SIMDJSON_ASSUME( _json_iter != nullptr );
+}
+
+simdjson_really_inline bool value_iterator::is_valid() const noexcept {
+  return _json_iter;
+}
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

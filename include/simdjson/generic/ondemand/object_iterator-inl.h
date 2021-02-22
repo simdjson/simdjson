@@ -26,11 +26,6 @@ simdjson_really_inline bool object_iterator::operator!=(const object_iterator &)
   return iter.is_open();
 }
 
-// GCC 7 warns when the first line of this function is inlined away into oblivion due to the caller
-// relating depth and iterator depth, which is a desired effect. It does not happen if is_open is
-// marked non-inline.
-SIMDJSON_PUSH_DISABLE_WARNINGS
-SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_really_inline object_iterator &object_iterator::operator++() noexcept {
   // TODO this is a safety rail ... users should exit loops as soon as they receive an error.
   // Nonetheless, let's see if performance is OK with this if statement--the compiler may give it to us for free.
@@ -43,7 +38,6 @@ simdjson_really_inline object_iterator &object_iterator::operator++() noexcept {
   if ((error = iter.has_next_field().get(has_value) )) { return *this; };
   return *this;
 }
-SIMDJSON_POP_DISABLE_WARNINGS
 
 //
 // ### Live States
@@ -97,6 +91,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object
 ) noexcept
   : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>(std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>(value))
 {
+  first.iter.assert_is_valid();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::simdjson_result(error_code error) noexcept
   : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>({}, error)
@@ -104,22 +99,23 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object
 }
 
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator*() noexcept {
-  if (error()) { second = SUCCESS; return error(); }
+  if (error()) { return error(); }
   return *first;
 }
-// Assumes it's being compared with the end. true if depth < iter->depth.
+// If we're iterating and there is an error, return the error once.
 simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &other) const noexcept {
-  if (error()) { return true; }
+  if (!first.iter.is_valid()) { return !error(); }
   return first == other.first;
 }
-// Assumes it's being compared with the end. true if depth >= iter->depth.
+// If we're iterating and there is an error, return the error once.
 simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &other) const noexcept {
-  if (error()) { return false; }
+  if (!first.iter.is_valid()) { return error(); }
   return first != other.first;
 }
 // Checks for ']' and ','
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator++() noexcept {
-  if (error()) { return *this; }
+  // Clear the error if there is one, so we don't yield it twice
+  if (error()) { second = SUCCESS; return *this; }
   ++first;
   return *this;
 }

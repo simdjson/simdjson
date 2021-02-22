@@ -263,6 +263,9 @@ public:
   simdjson_really_inline const json_iterator &json_iter() const noexcept;
   simdjson_really_inline json_iterator &json_iter() noexcept;
 
+  simdjson_really_inline void assert_is_valid() const noexcept;
+  simdjson_really_inline bool is_valid() const noexcept;
+
   /** @} */
 
 protected:
@@ -282,6 +285,7 @@ protected:
 
   simdjson_really_inline bool is_at_start() const noexcept;
   simdjson_really_inline bool is_at_container_start() const noexcept;
+  simdjson_really_inline bool is_at_iterator_start() const noexcept;
   simdjson_really_inline void assert_at_start() const noexcept;
   simdjson_really_inline void assert_at_container_start() const noexcept;
   simdjson_really_inline void assert_at_root() const noexcept;

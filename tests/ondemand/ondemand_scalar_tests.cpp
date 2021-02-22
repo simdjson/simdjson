@@ -21,12 +21,14 @@ namespace scalar_tests {
       return true;
     }));
     SUBTEST( "document", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::document doc;
+      ASSERT_SUCCESS( std::move(doc_result).get(doc) );
       T actual;
-      ASSERT_SUCCESS( doc_result.get(actual) );
+      ASSERT_SUCCESS( doc.get(actual) );
       ASSERT_EQUAL( expected, actual );
       // Test it twice (scalars can be retrieved more than once)
       if (test_twice) {
-        ASSERT_SUCCESS( doc_result.get(actual) );
+        ASSERT_SUCCESS( doc.get(actual) );
         ASSERT_EQUAL( expected, actual );
       }
       return true;
@@ -47,12 +49,14 @@ namespace scalar_tests {
         return true;
       }));
       SUBTEST( "document", test_ondemand_doc(whitespace_json, [&](auto doc_result) {
+        ondemand::document doc;
+        ASSERT_SUCCESS( std::move(doc_result).get(doc) );
         T actual;
-        ASSERT_SUCCESS( doc_result.get(actual) );
+        ASSERT_SUCCESS( doc.get(actual) );
         ASSERT_EQUAL( expected, actual );
         // Test it twice (scalars can be retrieved more than once)
         if (test_twice) {
-          ASSERT_SUCCESS( doc_result.get(actual) );
+          ASSERT_SUCCESS( doc.get(actual) );
           ASSERT_EQUAL( expected, actual );
         }
         return true;
@@ -213,7 +217,9 @@ namespace scalar_tests {
   bool test_scalar_value_exception(const padded_string &json, const T &expected) {
     std::cout << "- JSON: " << json << endl;
     SUBTEST( "document", test_ondemand_doc(json, [&](auto doc_result) {
-      ASSERT_EQUAL( expected, T(doc_result) );
+      ondemand::document doc;
+      ASSERT_SUCCESS( std::move(doc_result).get(doc) );
+      ASSERT_EQUAL( expected, T(doc) );
       return true;
     }));
     padded_string array_json = std::string("[") + std::string(json) + "]";
