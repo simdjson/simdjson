@@ -198,14 +198,6 @@ public:
   simdjson_really_inline bool is() const noexcept;
 
   /**
-   * @private
-   * Deprecated as a public interface. These methods will be made private in a future
-   * release. Use get_double(), get_bool(), get_uint64(), get_int64(),
-   * get_object(), get_array() or get_string() instead.  We found in practice that
-   * the template would mislead users into writing get<X>() for types X that
-   * are not among the supported types (e.g., get<QString>(), get<std::string>(),
-   * get<short>()), and the resulting C++ compiler error is difficult to parse.
-   *
    * Get the value as the provided type (T).
    *
    * Supported types:
@@ -215,6 +207,9 @@ public:
    * - Array: dom::array
    * - Object: dom::object
    *
+   * You may use get_double(), get_bool(), get_uint64(), get_int64(),
+   * get_object(), get_array() or get_string() instead.
+   *
    * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
    *
    * @returns The value cast to the given type, or:
@@ -222,7 +217,11 @@ public:
    */
 
   template<typename T>
-  inline simdjson_result<T> get() const noexcept;
+  inline simdjson_result<T> get() const noexcept {
+    // Unless the simdjson library provides an inline implementation, calling this method should
+    // immediately fail.
+    static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library.");
+  }
 
   /**
    * Get the value as the provided type (T).
