@@ -510,6 +510,7 @@ simdjson_really_inline bool value_iterator::is_at_container_start() const noexce
   return _json_iter->token.index == _start_position + 1;
 }
 simdjson_really_inline bool value_iterator::is_at_iterator_start() const noexcept {
+  // We can legitimately be either at the first value ([1]), or after the array if it's empty ([]).
   auto delta = _json_iter->token.index - _start_position;
   return delta == 1 || delta == 2;
 }
