@@ -409,10 +409,12 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
      * the regular visual studio or clang under visual
      * studio.
      */
-    #if SIMDJSON_USING_LIBRARY
-    #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)
-    #else
+    #if @SIMDJSON_BUILD_STATIC@
+    #define SIMDJSON_DLLIMPORTEXPORT 
+    #elif SIMDJSON_BUILD_DYNAMIC
     #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllexport)
+    #else
+    #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)
     #endif
 #else
     #define SIMDJSON_DLLIMPORTEXPORT

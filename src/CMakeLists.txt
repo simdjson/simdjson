@@ -51,11 +51,17 @@ if(SIMDJSON_BUILD_STATIC)
   # not want to install them.
   ####
   add_library(simdjson STATIC simdjson.cpp)
+  set(SIMDJSON_BUILD_STATIC 1)
+  configure_file(${CMAKE_CURRENT_LIST_DIR}/../include/simdjson/common_defs.h.in
+    ${CMAKE_CURRENT_LIST_DIR}/../include/simdjson/common_defs.h @ONLY)
   target_include_directories(simdjson PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 else()
   MESSAGE( STATUS "Building a dynamic library." )
   add_library(simdjson SHARED "")
-  target_compile_definitions(simdjson INTERFACE SIMDJSON_USING_LIBRARY=1)
+  configure_file(${CMAKE_CURRENT_LIST_DIR}/../include/simdjson/common_defs.h.in
+    ${CMAKE_CURRENT_LIST_DIR}/../include/simdjson/common_defs.h @ONLY)
+  target_compile_definitions(simdjson INTERFACE SIMDJSON_BUILD_DYNAMIC=1)
+  set(SIMDJSON_BUILD_STATIC 0)
   if(MSVC)
     MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." )
     set_target_properties(simdjson PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
