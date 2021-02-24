@@ -146,8 +146,12 @@ simdjson_really_inline uint32_t json_iterator::peek_length(token_position positi
 }
 
 simdjson_really_inline token_position json_iterator::last_document_position() const noexcept {
-  SIMDJSON_ASSUME(parser->implementation->n_structural_indexes > 0);
-  return &parser->implementation->structural_indexes[parser->implementation->n_structural_indexes - 1];
+  // The following line fails under some compilers...
+  // SIMDJSON_ASSUME(parser->implementation->n_structural_indexes > 0);
+  // since it has side-effects.
+  uint32_t n_structural_indexes{parser->implementation->n_structural_indexes};
+  SIMDJSON_ASSUME(n_structural_indexes > 0);
+  return &parser->implementation->structural_indexes[n_structural_indexes - 1];
 }
 simdjson_really_inline const uint8_t *json_iterator::peek_last() const noexcept {
   return token.peek(last_document_position());
