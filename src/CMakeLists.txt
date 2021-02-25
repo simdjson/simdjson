@@ -72,8 +72,6 @@ else()
     #      )
     #
     target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY=1)
-endif()
-
   endif()
   ###
   # Somehow, for a dynamic library, the next line is entirely fine (but not for a static one).
