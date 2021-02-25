@@ -25,25 +25,21 @@ jobs:
           - {gen: Ninja, arch: x64, static: OFF}
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/cache@v2
-      with:
-        path: dependencies/.cache
-        key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: Configure
-        run: |
-          cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_BUILD_STATIC=${{matrix.static}} -B build
-      - name: Build
-        run: cmake --build build --config Release
-      - name: Run tests
-        run: |
-          cd build
-          ctest -C Release  -LE explicitonly  --output-on-failure
-      - name: Install
-        run: |
-          cmake --install build
-      - name: Test Installation
-        run: |
-          cmake -G "${{matrix.gen}}" -A ${{matrix.arch}}  -B build_install_test tests/installation_tests/find
-          cmake --build build_install_test
+    - name: checkout
+      uses: actions/checkout@v2
+    - name: Configure
+      run: |
+        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_BUILD_STATIC=${{matrix.static}} -B build
+    - name: Build
+      run: cmake --build build --config Release
+    - name: Run tests
+      run: |
+        cd build
+        ctest -C Release  -LE explicitonly  --output-on-failure
+    - name: Install
+      run: |
+        cmake --install build
+    - name: Test Installation
+      run: |
+        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}}  -B build_install_test tests/installation_tests/find
+        cmake --build build_install_test
