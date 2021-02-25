@@ -32,4 +32,4 @@ jobs:
     - name: 'Run CTest'
       run: |
           cd build
-          ctest -C Release  -LE explicitonly  --output-on-failure 
+          ctest -C Release  -LE explicitonly  --output-on-failure

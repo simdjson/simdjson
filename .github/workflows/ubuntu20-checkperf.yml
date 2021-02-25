@@ -26,4 +26,4 @@ jobs:
           cd build &&
           cmake  -DCMAKE_CXX_FLAGS="-Werror=old-style-cast -pedantic -Wpedantic" -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
           cmake --build . --target checkperf  &&
-          ctest --output-on-failure -R checkperf 
+          ctest --output-on-failure -R checkperf
