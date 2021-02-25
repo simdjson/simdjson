@@ -52,21 +52,6 @@ else()
   option(SIMDJSON_USE_LIBCPP "Use the libc++ library" OFF)
 endif()
 
-if(MSVC AND NOT(SIMDJSON_BUILD_STATIC))
-  # The simdjson-flags are exported as part of the CMake install. Therefore users of
-  # the library should pick up the SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY=1 value.
-  # It should appear in simdjson-config.cmake (an installed file) as (for example)
-  #      set_target_properties(simdjson::simdjson-flags PROPERTIES
-  #        INTERFACE_COMPILE_DEFINITIONS "SIMDJSON_THREADS_ENABLED=1"
-  #        INTERFACE_COMPILE_DEFINITIONS "SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY=1"
-  #        INTERFACE_LINK_LIBRARIES "Threads::Threads"
-  #      )
-  #
-  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY=1)
-  # The simdjson-internal-flags is only for our own purposes.
-  target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY=1)
-endif()
-
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
 # We compile tools, tests, etc. with C++ 17. Override yourself if you need on a target.

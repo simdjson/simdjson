@@ -416,13 +416,17 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
      * It does not matter here whether you are using
      * the regular visual studio or clang under visual
      * studio, you still need to handle these issues.
+     *
+     * Non-Windows sytems do not have this complexity.
      */
-    #if SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY
+    #if SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY
+    // We set SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY when we build a DLL under Windows.
+    // It should never happen that both SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY and
+    // SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY are set.
+    #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllexport)
+    #elif SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY
     // Windows user who call a dynamic library should set SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY to 1.
     #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)
-    #elif SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY
-    // We set SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY when we build a DLL under Windows.
-    #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllexport)
     #else
     // We assume by default static linkage
     #define SIMDJSON_DLLIMPORTEXPORT
