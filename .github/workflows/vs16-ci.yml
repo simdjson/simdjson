@@ -15,12 +15,6 @@ jobs:
       ! contains(toJSON(github.event.commits.*.message), '[skip github]')
     name: windows-vs16
     runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/cache@v2
-      with:
-        path: dependencies/.cache
-        key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
     strategy:
       fail-fast: false
       matrix:
@@ -30,6 +24,11 @@ jobs:
           - {gen: Ninja, arch: x64, static: ON}
           - {gen: Ninja, arch: x64, static: OFF}
     steps:
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: dependencies/.cache
+        key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
       - name: checkout
         uses: actions/checkout@v2
       - name: Configure

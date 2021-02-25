@@ -1,4 +1,4 @@
-name: VS15-CI
+name: VS16-CI
 
 on:
   push:
@@ -13,23 +13,37 @@ jobs:
     if: >-
       ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
       ! contains(toJSON(github.event.commits.*.message), '[skip github]')
-    name: windows-vs15
-    runs-on: windows-2016
+    name: windows-vs16
+    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {gen: Visual Studio 15 2017, arch: Win32}
-          - {gen: Visual Studio 15 2017, arch: x64}
+          - {gen: Visual Studio 16 2019, arch: x64, static: ON}
+          - {gen: Visual Studio 16 2019, arch: x64, static: OFF}
+          - {gen: Ninja, arch: x64, static: ON}
+          - {gen: Ninja, arch: x64, static: OFF}
     steps:
     - uses: actions/checkout@v2
-    - name: Configure
-      run: |
-          mkdir build
-          cd build && cmake -DSIMDJSON_COMPETITION=OFF -G "${{matrix.gen}}" -A ${{matrix.arch}} ..
-    - name: Build
-      run: cmake --build build --config Release --parallel
-    - name: 'Run CTest'
-      run: |
+    - uses: actions/cache@v2
+      with:
+        path: dependencies/.cache
+        key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: Configure
+        run: |
+          cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_BUILD_STATIC=${{matrix.static}} -B build
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Run tests
+        run: |
           cd build
           ctest -C Release  -LE explicitonly  --output-on-failure
+      - name: Install
+        run: |
+          cmake --install build
+      - name: Test Installation
+        run: |
+          cmake -G "${{matrix.gen}}" -A ${{matrix.arch}}  -B build_install_test tests/installation_tests/find
+          cmake --build build_install_test
