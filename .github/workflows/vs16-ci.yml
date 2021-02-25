@@ -21,19 +21,20 @@ jobs:
       with:
         path: dependencies/.cache
         key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
-    name: windows-vs16
-    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {gen: Visual Studio 16 2019, arch: x64}
+          - {gen: Visual Studio 16 2019, arch: x64, static: ON}
+          - {gen: Visual Studio 16 2019, arch: x64, static: OFF}
+          - {gen: Ninja, arch: x64, static: ON}
+          - {gen: Ninja, arch: x64, static: OFF}
     steps:
       - name: checkout
         uses: actions/checkout@v2
       - name: Configure
         run: |
-          cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_BUILD_STATIC=OFF -B build
+          cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_BUILD_STATIC=${{matrix.static}} -B build
       - name: Build
         run: cmake --build build --config Release
       - name: Run tests
