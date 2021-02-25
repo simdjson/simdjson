@@ -31,4 +31,4 @@ file(WRITE main.cpp "
 
 
 add_executable(repro main.cpp)
-target_link_libraries(repro PUBLIC simdjson)
+target_link_libraries(repro PUBLIC simdjson::simdjson)

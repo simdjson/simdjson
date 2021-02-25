@@ -29,7 +29,7 @@ jobs:
         buildDirectory: "${{ github.workspace }}/../../_temp/windows"
         cmakeBuildType: Release   
         buildWithCMake: true
-        cmakeAppendedArgs: -DSIMDJSON_COMPETITION=OFF
+        cmakeAppendedArgs: -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_BUILD_STATIC=OFF
         buildWithCMakeArgs: --config Release  
     - name: 'Run CTest'
       run: ctest -C Release  -LE explicitonly  --output-on-failure 
@@ -46,5 +46,6 @@ jobs:
         cmakeListsTxtPath: '${{ github.workspace }}/tests/installation_tests/find/CMakeLists.txt'
         cmakeBuildType: Release   
         buildWithCMake: true
+        buildDirectory: '${{ github.workspace }}/tests/installation_tests/find/buildDirectory'
         buildWithCMakeArgs: --config Release  
 
