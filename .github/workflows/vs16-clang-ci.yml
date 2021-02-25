@@ -35,21 +35,3 @@ jobs:
     - name: 'Run CTest'
       run: ctest -C Release -LE explicitonly  --output-on-failure
       working-directory: "${{ github.workspace }}/../../_temp/windows"
-    - name: 'Install with CMake'
-      uses: lukka/run-cmake@v3
-      with:
-        cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
-        buildWithCMake: true
-        buildDirectory: "${{ github.workspace }}/../../_temp/windows"
-        cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
-        buildWithCMakeArgs: '--target install  --verbose'
-    - name: 'Test Installation with CMake'
-      uses: lukka/run-cmake@v3
-      with:
-        cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
-        cmakeListsTxtPath: '${{ github.workspace }}/tests/installation_tests/find/CMakeLists.txt'
-        cmakeBuildType: Release
-        buildWithCMake: true
-        cmakeAppendedArgs:  -T ClangCL
-        buildDirectory: '${{ github.workspace }}/tests/installation_tests/find/buildDirectory'
-        buildWithCMakeArgs: '--config Release  --verbose'
