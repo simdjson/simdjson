@@ -1,4 +1,4 @@
-if(NOT SIMDJSON_LEGACY_VISUAL_STUDIO)
+if(NOT SIMDJSON_LEGACY_VISUAL_STUDIO AND NOT SIMDJSON_WINDOWS_DLL)
   option(ENABLE_FUZZING "enable building the fuzzers" ON)
 else()
   option(ENABLE_FUZZING "enable building the fuzzers" OFF)

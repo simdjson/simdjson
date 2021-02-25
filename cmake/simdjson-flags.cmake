@@ -52,6 +52,11 @@ else()
   option(SIMDJSON_USE_LIBCPP "Use the libc++ library" OFF)
 endif()
 
+if(MSVC AND NOT(SIMDJSON_BUILD_STATIC))
+  # This will require special handling.
+  set(SIMDJSON_WINDOWS_DLL TRUE)
+endif()
+
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
 # We compile tools, tests, etc. with C++ 17. Override yourself if you need on a target.

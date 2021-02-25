@@ -24,6 +24,8 @@ struct yyjson_base {
       default:
         SIMDJSON_UNREACHABLE();
     }
+    SIMDJSON_UNREACHABLE();
+    return 0.0; // unreachable
   }
 
   bool run(yyjson_doc *doc, std::vector<point> &result) {

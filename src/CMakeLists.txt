@@ -80,6 +80,7 @@ else()
 endif()
 target_link_libraries(simdjson PUBLIC simdjson-headers simdjson-flags) # Only expose the headers, not sources
 
+
 ##
 ## In systems like R, libraries must not use stderr or abort to be acceptable.
 ## Thus we make it a hard rule that one is not allowed to call abort or stderr.
