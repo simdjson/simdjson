@@ -16,9 +16,9 @@ struct yyjson_base {
 
     switch (yyjson_get_subtype(val)) {
       case YYJSON_SUBTYPE_UINT:
-        return yyjson_get_uint(val);
+        return double(yyjson_get_uint(val));
       case YYJSON_SUBTYPE_SINT:
-        return yyjson_get_sint(val);
+        return double(yyjson_get_sint(val));
       case YYJSON_SUBTYPE_REAL:
         return yyjson_get_real(val);
       default:
