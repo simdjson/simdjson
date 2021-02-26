@@ -15,24 +15,28 @@ jobs:
       ! contains(toJSON(github.event.commits.*.message), '[skip github]')
     name: windows-vs16
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {gen: Visual Studio 16 2019, arch: x64, static: ON}
+          - {gen: Visual Studio 16 2019, arch: x64, static: OFF}
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/cache@v2
-      with:
-        path: dependencies/.cache
-        key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
-    - name: 'Run CMake with VS16'
-      uses: lukka/run-cmake@v2
-      with:
-        cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
-        cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
-        buildDirectory: "${{ github.workspace }}/../../_temp/windows"
-        cmakeBuildType: Release   
-        buildWithCMake: true
-        cmakeAppendedArgs: -DSIMDJSON_COMPETITION=OFF
-        buildWithCMakeArgs: --config Release  
-        
-    - name: 'Run CTest'
-      run: ctest -C Release  -LE explicitonly  --output-on-failure 
-      working-directory: "${{ github.workspace }}/../../_temp/windows"
-  
+    - name: checkout
+      uses: actions/checkout@v2
+    - name: Configure
+      run: |
+        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_BUILD_STATIC=${{matrix.static}} -B build
+    - name: Build
+      run: cmake --build build --config Release
+    - name: Run tests
+      run: |
+        cd build
+        ctest -C Release  -LE explicitonly  --output-on-failure
+    - name: Install
+      run: |
+        cmake --install build --config Release
+    - name: Test Installation
+      run: |
+        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}}  -B build_install_test tests/installation_tests/find
+        cmake --build build_install_test --config Release

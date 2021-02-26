@@ -405,15 +405,43 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #if defined(SIMDJSON_VISUAL_STUDIO)
     /**
+     * Windows users need to do some extra work when building
+     * or using a dynamic library (DLL). When building, we need
+     * to set SIMDJSON_DLLIMPORTEXPORT to __declspec(dllexport).
+     * When *using* the DLL, the user needs to set
+     * SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport).
+     *
+     * Static libraries not need require such work.
+     *
      * It does not matter here whether you are using
      * the regular visual studio or clang under visual
-     * studio.
+     * studio, you still need to handle these issues.
+     *
+     * Non-Windows sytems do not have this complexity.
      */
-    #if SIMDJSON_USING_LIBRARY
+    #if SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY
+    // We set SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY when we build a DLL under Windows.
+    // It should never happen that both SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY and
+    // SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY are set.
+    #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllexport)
+    #elif SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY
+    // Windows user who call a dynamic library should set SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY to 1.
     #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)
     #else
-    #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllexport)
+    // We assume by default static linkage
+    #define SIMDJSON_DLLIMPORTEXPORT
     #endif
+
+/**
+ * Workaround for the vcpkg package manager. Only vcpkg should
+ * ever touch the next line. The SIMDJSON_USING_LIBRARY macro is otherwise unused.
+ */
+#if SIMDJSON_USING_LIBRARY
+#define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)
+#endif
+/**
+ * End of workaround for the vcpkg package manager.
+ */
 #else
     #define SIMDJSON_DLLIMPORTEXPORT
 #endif

@@ -55,10 +55,23 @@ if(SIMDJSON_BUILD_STATIC)
 else()
   MESSAGE( STATUS "Building a dynamic library." )
   add_library(simdjson SHARED "")
-  target_compile_definitions(simdjson INTERFACE SIMDJSON_USING_LIBRARY=1)
   if(MSVC)
     MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." )
     set_target_properties(simdjson PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
+    # Setting the dllexport, users of the library should never need to set SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY
+    # once the DLL is built. Note the private scope on the next line.
+    target_compile_definitions(simdjson PRIVATE SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY=1)
+    #
+    # The simdjson-flags are exported as part of the CMake install. Therefore users of
+    # the library should pick up the SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY=1 value.
+    # It should appear in simdjson-config.cmake (an installed file) as (for example)
+    #      set_target_properties(simdjson::simdjson-flags PROPERTIES
+    #        INTERFACE_COMPILE_DEFINITIONS "SIMDJSON_THREADS_ENABLED=1"
+    #        INTERFACE_COMPILE_DEFINITIONS "SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY=1"
+    #        INTERFACE_LINK_LIBRARIES "Threads::Threads"
+    #      )
+    #
+    target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY=1)
   endif()
   ###
   # Somehow, for a dynamic library, the next line is entirely fine (but not for a static one).
@@ -66,6 +79,7 @@ else()
   target_link_libraries(simdjson PRIVATE simdjson-source simdjson-internal-flags)
 endif()
 target_link_libraries(simdjson PUBLIC simdjson-headers simdjson-flags) # Only expose the headers, not sources
+
 
 ##
 ## In systems like R, libraries must not use stderr or abort to be acceptable.
