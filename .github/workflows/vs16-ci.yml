@@ -22,8 +22,6 @@ jobs:
           - {gen: Visual Studio 16 2019, arch: x64, static: ON}
           - {gen: Visual Studio 16 2019, arch: x64, static: OFF}
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/cache@v2
     - name: checkout
       uses: actions/checkout@v2
     - name: Configure
