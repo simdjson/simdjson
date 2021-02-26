@@ -35,8 +35,8 @@ jobs:
         ctest -C Release  -LE explicitonly  --output-on-failure
     - name: Install
       run: |
-        cmake --install build
+        cmake --install build --config Release
     - name: Test Installation
       run: |
         cmake -G "${{matrix.gen}}" -A ${{matrix.arch}}  -B build_install_test tests/installation_tests/find
-        cmake --build build_install_test
+        cmake --build build_install_test --config Release
