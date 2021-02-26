@@ -196,6 +196,8 @@ if(NOT SIMDJSON_EXCEPTIONS)
 
     # Because we cannot change the flag above on an invidual target (yet), the definition below must similarly be added globally
     add_definitions(-D_HAS_EXCEPTIONS=0)
+  elseif (CMAKE_COMPILER_IS_GNUCC)
+    target_link_libraries(simdjson-flags INTERFACE -fno-exceptions)
   endif()
 endif()
 

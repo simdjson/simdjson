@@ -1,0 +1,34 @@
+name: Ubuntu 20.04 CI (GCC 9) without exceptions
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  ubuntu-build:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: dependencies/.cache
+          key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
+      - name: Use cmake
+        run: |
+          mkdir build &&
+          cd build &&
+          cmake  -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_EXCEPTIONS=OFF -DSIMDJSON_BUILD_STATIC=ON -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
+          cmake --build .   &&
+          ctest -j --output-on-failure -LE explicitonly   &&
+          make install  &&
+          echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json &&
+          mkdir testfindpackage &&
+          cd testfindpackage &&
+          echo -e 'cmake_minimum_required(VERSION 3.1)\nproject(simdjsontester)\nset(CMAKE_CXX_STANDARD 17)\nfind_package(simdjson REQUIRED)'> CMakeLists.txt && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX:PATH=../destination .. &&  cmake --build .
