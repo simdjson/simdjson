@@ -21,8 +21,6 @@ jobs:
         include:
           - {gen: Visual Studio 16 2019, arch: x64, static: ON}
           - {gen: Visual Studio 16 2019, arch: x64, static: OFF}
-          - {gen: Ninja, arch: x64, static: ON}
-          - {gen: Ninja, arch: x64, static: OFF}
     steps:
     - uses: actions/checkout@v2
     - uses: actions/cache@v2
