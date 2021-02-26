@@ -1,4 +1,4 @@
-name: Ubuntu 20.04 CI (GCC 9)
+name: Ubuntu 20.04 CI (GCC 9) without exceptions
 
 on:
   push:
