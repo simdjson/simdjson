@@ -19,18 +19,18 @@ jobs:
         path: dependencies/.cache
         key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
     - name: 'Run CMake with VS16'
-      uses: lukka/run-cmake@v2
+      uses: lukka/run-cmake@v3
       with:
         cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
         cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
         buildDirectory: "${{ github.workspace }}/../../_temp/windows"
-        cmakeBuildType: Release   
+        cmakeBuildType: Release
         buildWithCMake: true
-        cmakeGenerator: VS16Win64 
+        cmakeGenerator: VS16Win64
         cmakeAppendedArgs: -DSIMDJSON_COMPETITION=OFF  -DSIMDJSON_EXCEPTIONS=OFF
-        buildWithCMakeArgs: --config Release  
-        
+        buildWithCMakeArgs: --config Release
+
     - name: 'Run CTest'
-      run: ctest -C Release  -LE explicitonly  --output-on-failure 
+      run: ctest -C Release  -LE explicitonly  --output-on-failure
       working-directory: "${{ github.workspace }}/../../_temp/windows"
-  
+
