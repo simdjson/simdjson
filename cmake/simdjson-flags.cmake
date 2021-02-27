@@ -100,6 +100,12 @@ else(MSVC)
   target_compile_options(simdjson-internal-flags INTERFACE -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion)
 endif(MSVC)
 
+
+# workaround for GNU GCC poor AVX load/store code generation
+if ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_SYSTEM_PROCESSOR MATCHES "^(i.86|x86(_64)?)$"))
+  target_compile_options(simdjson-internal-flags PRIVATE -mno-avx256-split-unaligned-load -mno-avx256-split-unaligned-store)
+endif()
+
 #
 # Optional flags
 #
