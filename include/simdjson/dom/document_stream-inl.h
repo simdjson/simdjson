@@ -121,28 +121,32 @@ simdjson_really_inline document_stream::~document_stream() noexcept {
 #endif
 }
 
+simdjson_really_inline document_stream::iterator::iterator() noexcept
+  : stream{nullptr}, finished{true} {
+}
+
 simdjson_really_inline document_stream::iterator document_stream::begin() noexcept {
   start();
   // If there are no documents, we're finished.
-  return iterator(*this, error == EMPTY);
+  return iterator(this, error == EMPTY);
 }
 
 simdjson_really_inline document_stream::iterator document_stream::end() noexcept {
-  return iterator(*this, true);
+  return iterator(this, true);
 }
 
-simdjson_really_inline document_stream::iterator::iterator(document_stream& _stream, bool is_end) noexcept
+simdjson_really_inline document_stream::iterator::iterator(document_stream* _stream, bool is_end) noexcept
   : stream{_stream}, finished{is_end} {
 }
 
-simdjson_really_inline simdjson_result<element> document_stream::iterator::operator*() noexcept {
+simdjson_really_inline document_stream::iterator::reference document_stream::iterator::operator*() noexcept {
   // Note that in case of error, we do not yet mark
   // the iterator as "finished": this detection is done
   // in the operator++ function since it is possible
   // to call operator++ repeatedly while omitting
   // calls to operator*.
-  if (stream.error) { return stream.error; }
-  return stream.parser->doc.root();
+  if (stream->error) { return stream->error; }
+  return stream->parser->doc.root();
 }
 
 simdjson_really_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {
@@ -156,16 +160,16 @@ simdjson_really_inline document_stream::iterator& document_stream::iterator::ope
   //
   // Note that setting finished = true is essential otherwise
   // we would enter an infinite loop.
-  if (stream.error) { finished = true; }
-  // Note that stream.error() is guarded against error conditions
-  // (it will immediately return if stream.error casts to false).
-  // In effect, this next function does nothing when (stream.error)
+  if (stream->error) { finished = true; }
+  // Note that stream->error() is guarded against error conditions
+  // (it will immediately return if stream->error casts to false).
+  // In effect, this next function does nothing when (stream->error)
   // is true (hence the risk of an infinite loop).
-  stream.next();
+  stream->next();
   // If that was the last document, we're finished.
   // It is the only type of error we do not want to appear
   // in operator*.
-  if (stream.error == EMPTY) { finished = true; }
+  if (stream->error == EMPTY) { finished = true; }
   // If we had any other kind of error (not EMPTY) then we want
   // to pass it along to the operator* and we cannot mark the result
   // as "finished" just yet.
@@ -205,12 +209,12 @@ inline void document_stream::start() noexcept {
 }
 
 simdjson_really_inline size_t document_stream::iterator::current_index() const noexcept {
-  return stream.doc_index;
+  return stream->doc_index;
 }
 
 simdjson_really_inline std::string_view document_stream::iterator::source() const noexcept {
-  size_t next_doc_index = stream.batch_start + stream.parser->implementation->structural_indexes[stream.parser->implementation->next_structural_index];
-  return std::string_view(reinterpret_cast<const char*>(stream.buf) + current_index(), next_doc_index - current_index() - 1);
+  size_t next_doc_index = stream->batch_start + stream->parser->implementation->structural_indexes[stream->parser->implementation->next_structural_index];
+  return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), next_doc_index - current_index() - 1);
 }
 
 
