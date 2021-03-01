@@ -31,7 +31,7 @@ The following is a dump of the content of the tape, with the first number of eac
 ### The Tape
 | index | element (64 bit word)                                               |
 | ----- | ------------------------------------------------------------------- |
-| 0     | r	// pointing to 38 (right after last node)                         |
+| 0     | r	// pointing to 39 (right after last node)                         |
 | 1     | {	// pointing to next tape location 38 (first node after the scope) |
 | 2     | string "Image"                                                      |
 | 3     | {	// pointing to next tape location 37 (first node after the scope) |
@@ -115,7 +115,7 @@ We store string values using UTF-8 encoding with null termination on a separate 
 
 JSON arrays are represented using two 64-bit tape elements.
 
-- The first 64-bit tape element contains the value `('[' << 56) + x` where the payload `x` is 1 + the index of the second 64-bit tape element on the tape.
+- The first 64-bit tape element contains the value `('[' << 56) + (c << 32) + x` where the payload `x` is 1 + the index of the second 64-bit tape element on the tape  as a 32-bit integer and where `c` is the count of the number of elements (immediate children) in the array, satured to a 24-bit value (meaning that it cannot exceed 16777215 and if the real count exceeds 16777215, 16777215 is stored).  Note that the exact count of elements can always be computed by iterating (e.g., when it is 16777215 or higher).
 - The second 64-bit tape element contains the value `(']' << 56) + x` where the payload `x` contains the index of the first 64-bit tape element on the tape.
 
 All the content of the array is located between these two tape elements, including arrays and objects.
@@ -126,7 +126,7 @@ Performance consideration: We can skip the content of an array entirely by acces
 
 JSON objects are represented using two 64-bit tape elements.
 
-- The first 64-bit tape element contains the value `('{' << 56) + x` where the payload `x` is 1 + the index of the second 64-bit tape element on the tape.
+- The first 64-bit tape element contains the value `('{' << 56) + (c << 32) + x` where the payload `x` is 1 + the index of the second 64-bit tape element on the tape as a 32-bit integer and where `c` is the count of the number of key-value pairs (immediate children) in the array, satured to a 24-bit value (meaning that it cannot exceed 16777215 and if the real count exceeds 16777215, 16777215 is stored). Note that the exact count of key-value pairs can always be computed by iterating (e.g., when it is 16777215 or higher).
 - The second 64-bit tape element contains the value `('}' << 56) + x` where the payload `x` contains the index of the first 64-bit tape element on the tape.
 
 In-between these two tape elements, we alternate between key (which must be strings) and values. A value could be an object or an array.
