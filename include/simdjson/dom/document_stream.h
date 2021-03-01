@@ -93,12 +93,23 @@ public:
    */
   class iterator {
   public:
+    using value_type = simdjson_result<element>;
+    using reference  = value_type;
+
+    using difference_type   = std::ptrdiff_t;
+
+    using iterator_category = std::input_iterator_tag;
+
+    /**
+     * Default contructor.
+     */
+    simdjson_really_inline iterator() noexcept;
     /**
      * Get the current document (or error).
      */
-    simdjson_really_inline simdjson_result<element> operator*() noexcept;
+    simdjson_really_inline reference operator*() noexcept;
     /**
-     * Advance to the next document.
+     * Advance to the next document (prefix).
      */
     inline iterator& operator++() noexcept;
     /**
@@ -144,9 +155,9 @@ public:
      simdjson_really_inline std::string_view source() const noexcept;
 
   private:
-    simdjson_really_inline iterator(document_stream &s, bool finished) noexcept;
+    simdjson_really_inline iterator(document_stream *s, bool finished) noexcept;
     /** The document_stream we're iterating through. */
-    document_stream& stream;
+    document_stream* stream;
     /** Whether we're finished or not. */
     bool finished;
     friend class document_stream;
