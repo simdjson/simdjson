@@ -119,20 +119,23 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
       os << "false\n";
       break;
     case '{': // we have an object
-      os << "{\t// pointing to next tape location " << payload
-         << " (first node after the scope) \n";
-      break;
-    case '}': // we end an object
-      os << "}\t// pointing to previous tape location " << payload
-         << " (start of the scope) \n";
+      os << "{\t// pointing to next tape location " << uint32_t(payload)
+         << " (first node after the scope), "
+         << " saturated count " 
+         << ((payload >> 32) & internal::JSON_COUNT_MASK)<< "\n";
+      break;    case '}': // we end an object
+      os << "}\t// pointing to previous tape location " << uint32_t(payload)
+         << " (start of the scope)\n";
       break;
     case '[': // we start an array
-      os << "[\t// pointing to next tape location " << payload
-         << " (first node after the scope) \n";
+      os << "[\t// pointing to next tape location " << uint32_t(payload)
+         << " (first node after the scope), "
+         << " saturated count " 
+         << ((payload >> 32) & internal::JSON_COUNT_MASK)<< "\n";
       break;
     case ']': // we end an array
-      os << "]\t// pointing to previous tape location " << payload
-         << " (start of the scope) \n";
+      os << "]\t// pointing to previous tape location " << uint32_t(payload)
+         << " (start of the scope)\n";
       break;
     case 'r': // we start and end with the root node
       // should we be hitting the root node?
