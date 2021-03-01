@@ -312,10 +312,12 @@ namespace document_stream_tests {
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS( parser.parse_many(json).get(stream) );
     size_t count = 0;
+    simdjson::dom::document_stream::iterator previous_i; // just to check we can copy iters
     // We do not touch the document, intentionally.
     for(auto i = stream.begin(); i != stream.end(); ++i) {
       if(count > 10) { break; }
       count++;
+      previous_i = i;
     }
     return count == 1;
   }
