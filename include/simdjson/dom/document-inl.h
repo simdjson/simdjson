@@ -121,7 +121,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
     case '{': // we have an object
       os << "{\t// pointing to next tape location " << uint32_t(payload)
          << " (first node after the scope), "
-         << " saturated count " 
+         << " saturated count "
          << ((payload >> 32) & internal::JSON_COUNT_MASK)<< "\n";
       break;    case '}': // we end an object
       os << "}\t// pointing to previous tape location " << uint32_t(payload)
@@ -130,7 +130,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
     case '[': // we start an array
       os << "[\t// pointing to next tape location " << uint32_t(payload)
          << " (first node after the scope), "
-         << " saturated count " 
+         << " saturated count "
          << ((payload >> 32) & internal::JSON_COUNT_MASK)<< "\n";
       break;
     case ']': // we end an array
