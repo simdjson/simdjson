@@ -177,12 +177,11 @@ simdjson_warn_unused simdjson_really_inline error_code tape_builder::visit_root_
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  uint8_t *copy = static_cast<uint8_t *>(malloc(iter.remaining_len() + SIMDJSON_PADDING));
-  if (copy == nullptr) { return MEMALLOC; }
-  std::memcpy(copy, value, iter.remaining_len());
-  std::memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
-  error_code error = visit_number(iter, copy);
-  free(copy);
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  if (copy.get() == nullptr) { return MEMALLOC; }
+  std::memcpy(copy.get(), value, iter.remaining_len());
+  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  error_code error = visit_number(iter, copy.get());
   return error;
 }
 
