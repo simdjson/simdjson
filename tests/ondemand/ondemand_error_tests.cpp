@@ -181,11 +181,22 @@ namespace error_tests {
     TEST_SUCCEED();
   }
 
+  bool invalid_type() {
+    TEST_START();
+    ONDEMAND_SUBTEST("]", "]", doc.type().error() == TAPE_ERROR);
+    ONDEMAND_SUBTEST("}", "}", doc.type().error() == TAPE_ERROR);
+    ONDEMAND_SUBTEST(":", ":", doc.type().error() == TAPE_ERROR);
+    ONDEMAND_SUBTEST(",", ",", doc.type().error() == TAPE_ERROR);
+    ONDEMAND_SUBTEST("+", "+", doc.type().error() == TAPE_ERROR);
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return
            empty_document_error() &&
            get_fail_then_succeed_bool() &&
            get_fail_then_succeed_null() &&
+           invalid_type() &&
            true;
   }
 }

@@ -96,7 +96,7 @@ simdjson_really_inline const T& simdjson_result_base<T>::value_unsafe() const& n
 
 template<typename T>
 simdjson_really_inline T&& simdjson_result_base<T>::value_unsafe() && noexcept {
-  return std::forward<T>(this->first);;
+  return std::forward<T>(this->first);
 }
 
 template<typename T>

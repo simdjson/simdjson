@@ -13,6 +13,7 @@ namespace object_tests {
     const uint64_t expected_value[] = { 1, 2, 3 };
     SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::object object;
+      ASSERT_RESULT( doc_result.type(), json_type::object );
       ASSERT_SUCCESS( doc_result.get(object) );
       size_t i = 0;
       for (auto [ field, error ] : object) {

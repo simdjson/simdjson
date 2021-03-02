@@ -43,12 +43,14 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 // Public API
 #include "simdjson/simdjson_version.h"
 #include "simdjson/error.h"
+#include "simdjson/json_type.h"
 #include "simdjson/minify.h"
 #include "simdjson/padded_string.h"
 #include "simdjson/implementation.h"
 
 // Inline functions
 #include "simdjson/error-inl.h"
+#include "simdjson/json_type-inl.h"
 #include "simdjson/padded_string-inl.h"
 
 // DOM

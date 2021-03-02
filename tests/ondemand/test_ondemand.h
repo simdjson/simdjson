@@ -31,7 +31,7 @@ bool test_ondemand_doc(const simdjson::padded_string &json, const F& f) {
 
 #define ONDEMAND_SUBTEST(NAME, JSON, TEST) \
 { \
-  std::cout << "- Subtest " << (NAME) << " - JSON: " << (JSON) << " ..." << std::endl; \
+  std::cout << "- Subtest " << NAME << " - JSON: " << (JSON) << " ..." << std::endl; \
   if (!test_ondemand_doc(JSON##_padded, [&](auto doc) { \
     return (TEST); \
   })) { \
