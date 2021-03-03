@@ -23,9 +23,9 @@ struct json_character_block {
   uint64_t _op; // structural characters (comma, colon, braces, brackets but not quotes)
 };
 
-simdjson_really_inline uint64_t json_character_block::whitespace()  const noexcept { return _whitespace; }
-simdjson_really_inline uint64_t json_character_block::op()  const noexcept { return _op; }
-simdjson_really_inline uint64_t json_character_block::scalar()  const noexcept { return ~(op() | whitespace()); }
+simdjson_really_inline uint64_t json_character_block::whitespace() const noexcept { return _whitespace; }
+simdjson_really_inline uint64_t json_character_block::op() const noexcept { return _op; }
+simdjson_really_inline uint64_t json_character_block::scalar() const noexcept { return ~(op() | whitespace()); }
 
 // This identifies structural characters (comma, colon, braces, brackets),
 // and ASCII white-space ('\r','\n','\t',' ').
