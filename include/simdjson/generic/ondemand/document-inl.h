@@ -119,6 +119,11 @@ simdjson_really_inline simdjson_result<json_type> document::type() noexcept {
   return get_root_value_iterator().type();
 }
 
+simdjson_really_inline simdjson_result<std::string_view> document::raw_json_token() noexcept {
+  auto _iter = get_root_value_iterator();
+  return std::string_view(reinterpret_cast<const char*>(_iter.peek_start()), _iter.peek_start_length());
+}
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
@@ -282,5 +287,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::docume
   return first;
 }
 #endif
+
+simdjson_really_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::raw_json_token() noexcept {
+  if (error()) { return error(); }
+  return first.raw_json_token();
+}
 
 } // namespace simdjson

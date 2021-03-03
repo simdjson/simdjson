@@ -284,6 +284,13 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
 
 }; // struct simdjson_result
 
+#if SIMDJSON_EXCEPTIONS
+
+template<typename T>
+inline std::ostream& operator<<(std::ostream& out, simdjson_result<T> value) noexcept { return out << value.value(); }
+
+#endif // SIMDJSON_EXCEPTIONS
+
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
 /**
  * @deprecated This is an alias and will be removed, use error_code instead
