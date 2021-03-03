@@ -29,18 +29,21 @@ double from_chars(const char *first) noexcept;
 #endif
 #endif
 
-#if ((!SIMDJSON_EXCEPTIONS) && SIMDJSON_THREADS_ENABLED)
+#if ((!SIMDJSON_EXCEPTIONS) && defined(SIMDJSON_THREADS_ENABLED))
 /**
  * Important: common_defs.h includes portability.h where
- * SIMDJSON_THREADS_ENABLED gets defined.
+ * SIMDJSON_THREADS_ENABLED gets defined if needed.
  *
  * If exceptions are disabled, then we want to disable
  * threads too since our C++ threaded code may generate exceptions.
  *
  * This should never happen if a user relies on our CMake build,
  * so this check here is for users who use other build setups.
+ *
+ * Note that the convention is that if SIMDJSON_THREADS_ENABLED is
+ * defined (to anything including no value), then threads are enabled.
  */
-#define SIMDJSON_THREADS_ENABLED 0
+#undef SIMDJSON_THREADS_ENABLED
 #endif
 /** The maximum document size supported by simdjson. */
 constexpr size_t SIMDJSON_MAXSIZE_BYTES = 0xFFFFFFFF;

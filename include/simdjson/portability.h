@@ -119,7 +119,7 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 // Is threading enabled?
 #if defined(_REENTRANT) || defined(_MT)
 #ifndef SIMDJSON_THREADS_ENABLED
-#define SIMDJSON_THREADS_ENABLED
+#define SIMDJSON_THREADS_ENABLED 1
 #endif
 #endif
 
