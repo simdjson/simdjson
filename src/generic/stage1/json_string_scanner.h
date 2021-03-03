@@ -33,6 +33,8 @@ struct json_string_block {
   uint64_t _in_string;
 };
 
+class json_scanner;
+
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
@@ -49,6 +51,7 @@ private:
   uint64_t prev_in_string = 0ULL;
   // Whether the first character of the next iteration is escaped.
   uint64_t prev_escaped = 0ULL;
+  friend class json_scanner;
 };
 
 //

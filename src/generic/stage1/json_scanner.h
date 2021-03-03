@@ -117,7 +117,26 @@ simdjson_really_inline uint64_t follows(const uint64_t match, uint64_t &overflow
 }
 
 simdjson_really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
-  json_string_block strings = string_scanner.next(in);
+  // Visual studio 2017 may fail to inline the following call under some conditions,
+  // so we manually inline it.
+  // json_string_block strings = string_scanner.next(in);
+  /////
+  // Start manually inlined json_string_scanner::next
+  /////
+  const uint64_t backslash = in.eq('\\');
+  const uint64_t escaped = string_scanner.find_escaped(backslash);
+  const uint64_t quote = in.eq('"') & ~escaped;
+  const uint64_t in_string = prefix_xor(quote) ^ string_scanner.prev_in_string;
+  string_scanner.prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
+  json_string_block strings = {
+    backslash,
+    escaped,
+    quote,
+    in_string
+  };
+  /////
+  // End manually inlined json_string_scanner::next
+  /////
   // identifies the white-space and the structurat characters
   json_character_block characters = json_character_block::classify(in);
   // The term "scalar" refers to anything except structural characters and white space
