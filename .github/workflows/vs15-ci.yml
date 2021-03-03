@@ -24,7 +24,7 @@ jobs:
           - {gen: Visual Studio 15 2017, arch: x64, static: ON}
           - {gen: Visual Studio 15 2017, arch: x64, static: OFF}
     steps:
-   - name: checkout
+    - name: checkout
       uses: actions/checkout@v2
     - name: Configure
       run: |
