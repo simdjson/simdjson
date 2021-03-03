@@ -53,8 +53,11 @@ public:
    * those bytes are initialized to, as long as they are allocated.
    *
    * @param json The JSON to parse.
+   * @param len The length of the JSON.
+   * @param capacity The number of bytes allocated in the JSON (must be at least len+SIMDJSON_PADDING).
    *
    * @return The document, or an error:
+   *         - INSUFFICIENT_PADDING if the input has less than SIMDJSON_PADDING extra bytes.
    *         - MEMALLOC if realloc_if_needed the parser does not have enough capacity, and memory
    *           allocation fails.
    *         - EMPTY if the document is all whitespace.
@@ -63,9 +66,21 @@ public:
    *         - UNCLOSED_STRING if there is an unclosed string in the document.
    */
   simdjson_warn_unused simdjson_result<document> iterate(padded_string_view json) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate(const char *json, size_t len, size_t capacity) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate(const uint8_t *json, size_t len, size_t capacity) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate(std::string_view json, size_t capacity) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate(const std::string &json) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string> &json) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string_view> &json) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(padded_string &&json) & noexcept = delete;
+
   /**
    * @private
    *
@@ -91,8 +106,11 @@ public:
    * those bytes are initialized to, as long as they are allocated.
    *
    * @param json The JSON to parse.
+   * @param len The length of the JSON.
+   * @param allocated The number of bytes allocated in the JSON (must be at least len+SIMDJSON_PADDING).
    *
    * @return The iterator, or an error:
+   *         - INSUFFICIENT_PADDING if the input has less than SIMDJSON_PADDING extra bytes.
    *         - MEMALLOC if realloc_if_needed the parser does not have enough capacity, and memory
    *           allocation fails.
    *         - EMPTY if the document is all whitespace.
@@ -102,7 +120,9 @@ public:
    */
   simdjson_warn_unused simdjson_result<json_iterator> iterate_raw(padded_string_view json) & noexcept;
 
+  /** The capacity of this parser (the largest document it can process). */
   simdjson_really_inline size_t capacity() const noexcept;
+  /** The maximum depth of this parser (the most deeply nested objects and arrays it can process). */
   simdjson_really_inline size_t max_depth() const noexcept;
 
 private:

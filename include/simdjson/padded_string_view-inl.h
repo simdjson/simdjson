@@ -11,28 +11,29 @@
 
 namespace simdjson {
 
-inline padded_string_view::padded_string_view(const char* s, size_t s_len) noexcept
-  : std::string_view(s, s_len)
+inline padded_string_view::padded_string_view(const char* s, size_t len, size_t capacity) noexcept
+  : std::string_view(s, len), _capacity(capacity)
 {
 }
 
-inline padded_string_view::padded_string_view(const uint8_t* s, size_t s_len) noexcept
-  : padded_string_view(reinterpret_cast<const char*>(s), s_len)
+inline padded_string_view::padded_string_view(const uint8_t* s, size_t len, size_t capacity) noexcept
+  : padded_string_view(reinterpret_cast<const char*>(s), len, capacity)
 {
 }
 
-inline padded_string_view::padded_string_view(std::string_view s) noexcept
-  : std::string_view(s)
+inline padded_string_view::padded_string_view(const std::string &s) noexcept
+  : std::string_view(s), _capacity(s.capacity())
 {
 }
 
-inline padded_string_view promise_padded(const char* s, uint8_t s_len) noexcept {
-  return padded_string_view(s, s_len);
+inline padded_string_view::padded_string_view(std::string_view s, size_t capacity) noexcept
+  : std::string_view(s), _capacity(capacity)
+{
 }
 
-inline padded_string_view promise_padded(std::string_view s) noexcept {
-  return padded_string_view(s);
-}
+inline size_t padded_string_view::capacity() const noexcept { return _capacity; }
+
+inline size_t padded_string_view::padding() const noexcept { return capacity() - length(); }
 
 } // namespace simdjson
 

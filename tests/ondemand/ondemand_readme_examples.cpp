@@ -35,8 +35,9 @@ bool basics_3() {
   TEST_START();
 
   ondemand::parser parser;
-  auto json = "[1]                                "; // An extra 32 bytes
-  ondemand::document doc = parser.iterate(promise_padded(json, 3)); // 3 JSON bytes
+  char json[3+SIMDJSON_PADDING];
+  strcpy(json, "[1]");
+  ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
 
   simdjson_unused auto unused_doc = doc.get_array();
 

@@ -75,8 +75,9 @@ If you have a buffer of your own with enough padding already (SIMDJSON_PADDING e
 
 ```c++
 ondemand::parser parser;
-auto json = "[1]                                "; // An extra 32 bytes
-ondemand::document doc = parser.iterate(promise_padded(json, 3)); // 3 JSON bytes
+char json[3+SIMDJSON_PADDING];
+strcpy(json, "[1]");
+ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
 ```
 
 Documents Are Iterators

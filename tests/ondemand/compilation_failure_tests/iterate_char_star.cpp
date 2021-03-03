@@ -6,8 +6,8 @@ using namespace simdjson;
 int main() {
     ondemand::parser parser;
 #if COMPILATION_TEST_USE_FAILING_CODE
-    auto json = std::string("1");
-    auto doc = parser.iterate(json);
+    const char* json;
+    auto doc = parser.iterate(json, strlen(json));
 #else
     auto json = "1"_padded;
     auto doc = parser.iterate(json);

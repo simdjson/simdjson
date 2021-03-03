@@ -11,7 +11,7 @@
 
 namespace simdjson {
 
-struct padded_string_view;
+class padded_string_view;
 
 /**
  * String with extra allocation for ease of use with parser::parse()

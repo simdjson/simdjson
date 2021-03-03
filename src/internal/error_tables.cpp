@@ -29,7 +29,8 @@ namespace internal {
     { INVALID_URI_FRAGMENT, "Invalid URI fragment syntax." },
     { UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as you may have found a bug in simdjson" },
     { PARSER_IN_USE, "Cannot parse a new document while a document is still in use." },
-    { OUT_OF_ORDER_ITERATION, "Objects and arrays can only be iterated when they are first encountered." }
+    { OUT_OF_ORDER_ITERATION, "Objects and arrays can only be iterated when they are first encountered." },
+    { INSUFFICIENT_PADDING, "simdjson requires the input JSON string to have at least SIMDJSON_PADDING extra bytes allocated, beyond the string's length." }
   }; // error_messages[]
 
 } // namespace internal
