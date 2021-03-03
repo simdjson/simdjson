@@ -18,6 +18,37 @@ namespace parse_api_tests {
     return true;
   }
 
+  bool parser_iterate_padded_string_view() {
+    TEST_START();
+    ondemand::parser parser;
+
+    padded_string_view json("12                                ", 2);
+    auto doc = parser.iterate(json);
+    ASSERT_SUCCESS( doc.get_double() );
+
+    json = padded_string_view(std::string_view("12                                ", 2));
+    doc = parser.iterate(json);
+    ASSERT_SUCCESS( doc.get_double() );
+
+    doc = parser.iterate(padded_string_view("12                                ", 2));
+    ASSERT_SUCCESS( doc.get_double() );
+    return true;
+  }
+
+  bool parser_iterate_promise_padded() {
+    TEST_START();
+    ondemand::parser parser;
+
+    auto doc = parser.iterate(promise_padded("12                                ", 2));
+    ASSERT_SUCCESS( doc.get_double() );
+
+    std::string_view json("12                                ", 2);
+    doc = parser.iterate(promise_padded(json));
+    ASSERT_SUCCESS( doc.get_double() );
+
+    return true;
+  }
+
 #if SIMDJSON_EXCEPTIONS
   bool parser_iterate_exception() {
     TEST_START();
@@ -30,6 +61,8 @@ namespace parse_api_tests {
 
   bool run() {
     return parser_iterate() &&
+           parser_iterate_padded_string_view() &&
+           parser_iterate_promise_padded() &&
 #if SIMDJSON_EXCEPTIONS
            parser_iterate_exception() &&
 #endif // SIMDJSON_EXCEPTIONS

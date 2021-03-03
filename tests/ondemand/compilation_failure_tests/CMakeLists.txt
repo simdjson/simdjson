@@ -14,4 +14,6 @@ function(add_dual_compile_test TEST_NAME)
 endfunction(add_dual_compile_test)
 
 
+add_dual_compile_test(iterate_string)
+add_dual_compile_test(iterate_string_view)
 add_dual_compile_test(iterate_temporary_buffer)

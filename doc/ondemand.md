@@ -71,6 +71,14 @@ auto json = "[1,2,3]"_padded; // The _padded suffix creates a simdjson::padded_s
 ondemand::document doc = parser.iterate(json); // parse a string
 ```
 
+If you have a buffer of your own with enough padding already (SIMDJSON_PADDING extra bytes allocated), you can use `promise_padded` to pass it in:
+
+```c++
+ondemand::parser parser;
+auto json = "[1]                                "; // An extra 32 bytes
+ondemand::document doc = parser.iterate(promise_padded(json, 3)); // 3 JSON bytes
+```
+
 Documents Are Iterators
 -----------------------
 

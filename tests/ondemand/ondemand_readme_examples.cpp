@@ -31,6 +31,18 @@ bool basics_2() {
   TEST_SUCCEED();
 }
 
+bool basics_3() {
+  TEST_START();
+
+  ondemand::parser parser;
+  auto json = "[1]                                "; // An extra 32 bytes
+  ondemand::document doc = parser.iterate(promise_padded(json, 3)); // 3 JSON bytes
+
+  simdjson_unused auto unused_doc = doc.get_array();
+
+  TEST_SUCCEED();
+}
+
 bool using_the_parsed_json_1() {
   TEST_START();
 

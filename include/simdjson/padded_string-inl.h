@@ -111,6 +111,8 @@ inline char *padded_string::data() noexcept { return data_ptr; }
 
 inline padded_string::operator std::string_view() const { return std::string_view(data(), length()); }
 
+inline padded_string::operator padded_string_view() const noexcept { return padded_string_view(data(), length()); }
+
 inline simdjson_result<padded_string> padded_string::load(const std::string &filename) noexcept {
   // Open the file
   SIMDJSON_PUSH_DISABLE_WARNINGS

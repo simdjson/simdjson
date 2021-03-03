@@ -4,13 +4,14 @@
 #include "simdjson/portability.h"
 #include "simdjson/common_defs.h" // for SIMDJSON_PADDING
 #include "simdjson/error.h"
-
 #include <cstring>
 #include <memory>
 #include <string>
 #include <ostream>
 
 namespace simdjson {
+
+struct padded_string_view;
 
 /**
  * String with extra allocation for ease of use with parser::parse()
@@ -96,6 +97,11 @@ struct padded_string final {
    * Create a std::string_view with the same content.
    */
   operator std::string_view() const;
+
+  /**
+   * Create a padded_string_view with the same content.
+   */
+  operator padded_string_view() const noexcept;
 
   /**
    * Load this padded string from a file.

@@ -23,33 +23,40 @@ simdjson_warn_unused simdjson_really_inline error_code parser::allocate(size_t n
   return SUCCESS;
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const padded_string &buf) & noexcept {
+simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(padded_string_view json) & noexcept {
   // Allocate if needed
-  if (capacity() < buf.size() || !string_buf) {
-    SIMDJSON_TRY( allocate(buf.size(), max_depth()) );
+  if (capacity() < json.length() || !string_buf) {
+    SIMDJSON_TRY( allocate(json.length(), max_depth()) );
   }
 
   // Run stage 1.
-  SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(buf.data()), buf.size(), false) );
-  return document::start({ reinterpret_cast<const uint8_t *>(buf.data()), this });
+  SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), false) );
+  return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this });
+}
+
+simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string_view> &result) & noexcept {
+  // We don't presently have a way to temporarily get a const T& from a simdjson_result<T> without throwing an exception
+  SIMDJSON_TRY( result.error() );
+  padded_string_view json = result.value_unsafe();
+  return iterate(json);
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string> &result) & noexcept {
   // We don't presently have a way to temporarily get a const T& from a simdjson_result<T> without throwing an exception
   SIMDJSON_TRY( result.error() );
-  const padded_string &buf = result.value_unsafe();
-  return iterate(buf);
+  const padded_string &json = result.value_unsafe();
+  return iterate(json);
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<json_iterator> parser::iterate_raw(const padded_string &buf) & noexcept {
+simdjson_warn_unused simdjson_really_inline simdjson_result<json_iterator> parser::iterate_raw(padded_string_view json) & noexcept {
   // Allocate if needed
-  if (capacity() < buf.size()) {
-    SIMDJSON_TRY( allocate(buf.size(), max_depth()) );
+  if (capacity() < json.length()) {
+    SIMDJSON_TRY( allocate(json.length(), max_depth()) );
   }
 
   // Run stage 1.
-  SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(buf.data()), buf.size(), false) );
-  return json_iterator(reinterpret_cast<const uint8_t *>(buf.data()), this);
+  SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), false) );
+  return json_iterator(reinterpret_cast<const uint8_t *>(json.data()), this);
 }
 
 simdjson_really_inline size_t parser::capacity() const noexcept {

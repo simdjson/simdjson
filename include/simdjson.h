@@ -45,15 +45,16 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "simdjson/error.h"
 #include "simdjson/minify.h"
 #include "simdjson/padded_string.h"
+#include "simdjson/padded_string_view.h"
 #include "simdjson/implementation.h"
 
 // Inline functions
 #include "simdjson/error-inl.h"
 #include "simdjson/padded_string-inl.h"
+#include "simdjson/padded_string_view-inl.h"
 
 // DOM
 #include "simdjson/dom.h"
-
 // Implementations
 #include "simdjson/implementations.h"
 
