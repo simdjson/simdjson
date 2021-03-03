@@ -243,7 +243,7 @@ template<> simdjson_really_inline error_code simdjson_result<SIMDJSON_IMPLEMENTA
   return SUCCESS;
 }
 
-simdjson_really_inline simdjson_result<json_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::type() noexcept {
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::type() noexcept {
   if (error()) { return error(); }
   return first.type();
 }

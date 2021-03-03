@@ -413,7 +413,7 @@ public:
    * better to just call .get_double, .get_string, etc. and check for INCORRECT_TYPE (or just
    * let it throw an exception).
    */
-  simdjson_really_inline simdjson_result<json_type> type() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
 };
 
 } // namespace simdjson

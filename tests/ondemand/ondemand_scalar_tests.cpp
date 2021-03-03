@@ -5,6 +5,8 @@ using namespace simdjson;
 
 namespace scalar_tests {
   using namespace std;
+  using simdjson::ondemand::json_type;
+
   template<typename T> json_type expected_json_type();
   template<> json_type expected_json_type<std::string_view>() { return json_type::string; }
   template<> json_type expected_json_type<double>() { return json_type::number; }

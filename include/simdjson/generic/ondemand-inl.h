@@ -1,3 +1,4 @@
+#include "simdjson/generic/ondemand/json_type-inl.h"
 #include "simdjson/generic/ondemand/logger-inl.h"
 #include "simdjson/generic/ondemand/raw_json_string-inl.h"
 #include "simdjson/generic/ondemand/token_iterator-inl.h"

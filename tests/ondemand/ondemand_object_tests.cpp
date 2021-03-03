@@ -5,6 +5,7 @@ using namespace simdjson;
 
 namespace object_tests {
   using namespace std;
+  using simdjson::ondemand::json_type;
 
   bool iterate_object() {
     TEST_START();

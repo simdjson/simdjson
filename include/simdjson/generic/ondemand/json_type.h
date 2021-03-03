@@ -1,9 +1,6 @@
-#ifndef SIMDJSON_JSON_TYPE_H
-#define SIMDJSON_JSON_TYPE_H
-
-#include "simdjson/common_defs.h"
-
 namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
+namespace ondemand {
 
 /**
  * The type of a JSON value.
@@ -39,6 +36,19 @@ inline std::ostream& operator<<(std::ostream& out, json_type type) noexcept;
 inline std::ostream& operator<<(std::ostream& out, simdjson_result<json_type> &type) noexcept(false);
 #endif
 
+} // namespace ondemand
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#endif // SIMDJSON_JSON_TYPE_H
+namespace simdjson {
+
+template<>
+struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> : public SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::json_type> {
+public:
+  simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::json_type &&value) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
+  simdjson_really_inline simdjson_result() noexcept = default;
+  simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
+};
+
+} // namespace simdjson
