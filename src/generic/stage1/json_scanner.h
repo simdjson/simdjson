@@ -25,10 +25,8 @@ public:
   // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
   simdjson_really_inline json_block(json_string_block&& string, json_character_block characters, uint64_t follows_potential_nonquote_scalar) :
   _string(std::move(string)), _characters(characters), _follows_potential_nonquote_scalar(follows_potential_nonquote_scalar) {}
-  simdjson_really_inline json_block(json_block &&) = default;
-  // We forbid copies:
-  json_block(json_block &) = delete;
-  json_block& operator=(const json_block&) = delete;
+  simdjson_really_inline json_block(json_string_block string, json_character_block characters, uint64_t follows_potential_nonquote_scalar) :
+  _string(string), _characters(characters), _follows_potential_nonquote_scalar(follows_potential_nonquote_scalar) {}
 
   /**
    * The start of structurals.
@@ -140,8 +138,10 @@ simdjson_really_inline json_block json_scanner::next(const simd::simd8x64<uint8_
   // Performance: there are many ways to skin this cat.
   const uint64_t nonquote_scalar = characters.scalar() & ~strings.quote();
   uint64_t follows_nonquote_scalar = follows(nonquote_scalar, prev_scalar);
+  // We are returning a function-local object so either we get a move constructor
+  // or we get copy elision.
   return json_block(
-    std::move(strings),
+    strings,// strings is a function-local object so either it moves or the copy is elided.
     characters,
     follows_nonquote_scalar
   );

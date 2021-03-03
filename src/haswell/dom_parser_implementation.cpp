@@ -13,11 +13,11 @@ using namespace simd;
 struct json_character_block {
   static simdjson_really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
   //  ASCII white-space ('\r','\n','\t',' ')
-  simdjson_really_inline uint64_t whitespace()  const noexcept;
+  simdjson_really_inline uint64_t whitespace() const noexcept;
   // non-quote structural characters (comma, colon, braces, brackets)
-  simdjson_really_inline uint64_t op()  const noexcept;
+  simdjson_really_inline uint64_t op() const noexcept;
   // neither a structural character nor a white-space, so letters, numbers and quotes
-  simdjson_really_inline uint64_t scalar()  const noexcept;
+  simdjson_really_inline uint64_t scalar() const noexcept;
 
   uint64_t _whitespace; // ASCII white-space ('\r','\n','\t',' ')
   uint64_t _op; // structural characters (comma, colon, braces, brackets but not quotes)

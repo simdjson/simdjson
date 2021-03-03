@@ -297,7 +297,7 @@ namespace simd {
     const simd8<T> chunks[NUM_CHUNKS];
 
     simd8x64(const simd8x64<T>& o) = delete; // no copy allowed
-    simd8x64<T>& operator=(const simd8<T> other) = delete; // no assignment allowed
+    simd8x64<T>& operator=(const simd8<T>& other) = delete; // no assignment allowed
     simd8x64() = delete; // no default constructor allowed
 
     simdjson_really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1) : chunks{chunk0, chunk1} {}
