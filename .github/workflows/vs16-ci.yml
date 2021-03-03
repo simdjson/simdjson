@@ -19,6 +19,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {gen: Visual Studio 16 2019, arch: Win32, static: ON}
+          - {gen: Visual Studio 16 2019, arch: Win32, static: OFF}
           - {gen: Visual Studio 16 2019, arch: x64, static: ON}
           - {gen: Visual Studio 16 2019, arch: x64, static: OFF}
     steps:
