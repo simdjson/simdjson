@@ -23,9 +23,9 @@ const char *SMALLDEMO_JSON = SIMDJSON_BENCHMARK_SMALLDATA_DIR  "smalldemo.json";
 const char *TRUENULL_JSON = SIMDJSON_BENCHMARK_SMALLDATA_DIR  "truenull.json";
 
 // For the ASSERT_EQUAL macro
-template<typename T, typename S>
-simdjson_really_inline bool equals_expected(T actual, S expected) {
-  return actual == T(expected);
+template<typename A, typename E>
+simdjson_really_inline bool equals_expected(A actual, E expected) {
+  return actual == A(expected);
 }
 template<>
 simdjson_really_inline bool equals_expected<const char *, const char *>(const char *actual, const char *expected) {
@@ -76,10 +76,11 @@ simdjson_really_inline bool assert_error(const T &actual_result, simdjson::error
   }
   return true;
 }
-template<typename E, typename A>
+template<typename A, typename E>
 simdjson_really_inline bool assert_result(simdjson::simdjson_result<A> &&actual_result, const E &expected, const char *operation = "result") {
   E actual;
-  return assert_success(actual_result.get(actual), operation) && assert_equal(actual, expected, operation);
+  return assert_success(std::forward<simdjson::simdjson_result<A>>(actual_result).get(actual))
+      && assert_equal(actual, expected, operation);
 }
 simdjson_really_inline bool assert_true(bool value, const char *operation = "result") {
   if (!value) {
@@ -102,7 +103,7 @@ simdjson_really_inline bool assert_iterate_error(T &arr, simdjson::error_code ex
 #define TEST_START()                    do { std::cout << "Running " << __func__ << " ..." << std::endl; } while(0);
 #define SUBTEST(NAME, TEST)             do { std::cout << "- Subtest " << (NAME) << " ..." << std::endl; if (!(TEST)) { return false; } } while (0);
 #define ASSERT_EQUAL(ACTUAL, EXPECTED)  do { if (!::assert_equal  ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
-#define ASSERT_RESULT(ACTUAL, EXPECTED) do { if (!::assert_equal  ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
+#define ASSERT_RESULT(ACTUAL, EXPECTED) do { if (!::assert_result ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
 #define ASSERT_SUCCESS(ACTUAL)          do { if (!::assert_success((ACTUAL),             #ACTUAL)) { return false; } } while (0);
 #define ASSERT_ERROR(ACTUAL, EXPECTED)  do { if (!::assert_error  ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
 #define ASSERT_TRUE(ACTUAL)             do { if (!::assert_true   ((ACTUAL),             #ACTUAL)) { return false; } } while (0);

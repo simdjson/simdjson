@@ -117,6 +117,10 @@ simdjson_really_inline simdjson_result<value> value::operator[](const char *key)
   return start_or_resume_object()[key];
 }
 
+simdjson_really_inline simdjson_result<json_type> value::type() noexcept {
+  return iter.type();
+}
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
@@ -228,6 +232,11 @@ template<> simdjson_really_inline error_code simdjson_result<SIMDJSON_IMPLEMENTA
   if (error()) { return error(); }
   out = first;
   return SUCCESS;
+}
+
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::type() noexcept {
+  if (error()) { return error(); }
+  return first.type();
 }
 
 #if SIMDJSON_EXCEPTIONS

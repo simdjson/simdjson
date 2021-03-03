@@ -568,7 +568,29 @@ simdjson_really_inline void value_iterator::assert_is_valid() const noexcept {
 }
 
 simdjson_really_inline bool value_iterator::is_valid() const noexcept {
-  return _json_iter;
+  return _json_iter != nullptr;
+}
+
+
+simdjson_really_inline simdjson_result<json_type> value_iterator::type() noexcept {
+  switch (*peek_start()) {
+    case '{':
+      return json_type::object;
+    case '[':
+      return json_type::array;
+    case '"':
+      return json_type::string;
+    case 'n':
+      return json_type::null;
+    case 't': case 'f':
+      return json_type::boolean;
+    case '-':
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      return json_type::number;
+    default:
+      return TAPE_ERROR;
+  }
 }
 
 } // namespace ondemand

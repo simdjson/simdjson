@@ -81,6 +81,13 @@ public:
   simdjson_really_inline depth_t depth() const noexcept;
 
   /**
+   * Get the JSON type of this value.
+   *
+   * @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse".
+   */
+  simdjson_really_inline simdjson_result<json_type> type() noexcept;
+
+  /**
    * @addtogroup object Object iteration
    *
    * Methods to iterate and find object fields. These methods generally *assume* the value is

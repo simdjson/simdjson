@@ -260,6 +260,19 @@ public:
   /** @overload simdjson_really_inline simdjson_result<value> find_field_unordered(std::string_view key) noexcept; */
   simdjson_really_inline simdjson_result<value> operator[](const char *key) noexcept;
 
+  /**
+   * Get the type of this JSON value.
+   *
+   * NOTE: If you're only expecting a value to be one type (a typical case), it's generally
+   * better to just call .get_double, .get_string, etc. and check for INCORRECT_TYPE (or just
+   * let it throw an exception).
+   *
+   * @return The type of JSON value (json_type::array, json_type::object, json_type::string,
+   *     json_type::number, json_type::boolean, or json_type::null).
+   * @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse".
+   */
+  simdjson_really_inline simdjson_result<json_type> type() noexcept;
+
 protected:
   /**
    * Create a value.
@@ -394,6 +407,15 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) noexcept;
   /** @overload simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) noexcept; */
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) noexcept;
+
+  /**
+   * Get the type of this JSON value.
+   *
+   * NOTE: If you're only expecting a value to be one type (a typical case), it's generally
+   * better to just call .get_double, .get_string, etc. and check for INCORRECT_TYPE (or just
+   * let it throw an exception).
+   */
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
 };
 
 } // namespace simdjson

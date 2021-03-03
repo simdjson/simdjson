@@ -122,7 +122,7 @@ namespace object_error_tests {
     TEST_START();
     ONDEMAND_SUBTEST("missing comma", R"({ "a": 1  "b": 2 })", ([&]() {
       auto obj = doc.get_object();
-      return assert_result<int64_t>(obj["a"], 1) && assert_error(obj["b"], TAPE_ERROR);
+      return assert_result(obj["a"], int64_t(1)) && assert_error(obj["b"], TAPE_ERROR);
     })());
     TEST_SUCCEED();
   }
