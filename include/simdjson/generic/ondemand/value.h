@@ -267,6 +267,8 @@ public:
    * better to just call .get_double, .get_string, etc. and check for INCORRECT_TYPE (or just
    * let it throw an exception).
    *
+   * @return The type of JSON value (json_type::array, json_type::object, json_type::string,
+   *     json_type::number, json_type::boolean, or json_type::null).
    * @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse".
    */
   simdjson_really_inline simdjson_result<json_type> type() noexcept;

@@ -10,7 +10,7 @@ enum class json_type {
     array=1, ///< A JSON array   ( [ 1, 2, 3 ... ] )
     object,  ///< A JSON object  ( { "a": 1, "b" 2, ... } )
     number,  ///< A JSON number  ( 1 or -2.3 or 4.5e6 ...)
-    string,  ///< A JSON string  ( "a" or "å" or "hello world\n" ...)
+    string,  ///< A JSON string  ( "a" or "hello world\n" ...)
     boolean, ///< A JSON boolean (true or false)
     null     ///< A JSON null    (null)
 };
