@@ -80,7 +80,7 @@ private:
   simdjson_really_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx);
+  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
   simdjson_really_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, bool partial);
 
   json_scanner scanner{};
@@ -170,7 +170,7 @@ simdjson_really_inline void json_structural_indexer::step<64>(const uint8_t *blo
   reader.advance();
 }
 
-simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx) {
+simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx) {
   uint64_t unescaped = in.lteq(0x1F);
   checker.check_next_input(in);
   indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser

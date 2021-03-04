@@ -19,6 +19,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {gen: Visual Studio 16 2019, arch: Win32, static: ON}
+          - {gen: Visual Studio 16 2019, arch: Win32, static: OFF}
           - {gen: Visual Studio 16 2019, arch: x64, static: ON}
           - {gen: Visual Studio 16 2019, arch: x64, static: OFF}
     steps:
@@ -27,8 +29,10 @@ jobs:
     - name: Configure
       run: |
         cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_BUILD_STATIC=${{matrix.static}} -B build
-    - name: Build
-      run: cmake --build build --config Release
+    - name: Build Debug
+      run: cmake --build build --config Debug --verbose
+    - name: Build Release
+      run: cmake --build build --config Release --verbose
     - name: Run tests
       run: |
         cd build

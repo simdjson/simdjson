@@ -22,20 +22,26 @@ namespace stage1 {
  */
 struct json_block {
 public:
+  // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
+  simdjson_really_inline json_block(json_string_block&& string, json_character_block characters, uint64_t follows_potential_nonquote_scalar) :
+  _string(std::move(string)), _characters(characters), _follows_potential_nonquote_scalar(follows_potential_nonquote_scalar) {}
+  simdjson_really_inline json_block(json_string_block string, json_character_block characters, uint64_t follows_potential_nonquote_scalar) :
+  _string(string), _characters(characters), _follows_potential_nonquote_scalar(follows_potential_nonquote_scalar) {}
+
   /**
    * The start of structurals.
    * In simdjson prior to v0.3, these were called the pseudo-structural characters.
    **/
-  simdjson_really_inline uint64_t structural_start() { return potential_structural_start() & ~_string.string_tail(); }
+  simdjson_really_inline uint64_t structural_start() const noexcept { return potential_structural_start() & ~_string.string_tail(); }
   /** All JSON whitespace (i.e. not in a string) */
-  simdjson_really_inline uint64_t whitespace() { return non_quote_outside_string(_characters.whitespace()); }
+  simdjson_really_inline uint64_t whitespace() const noexcept { return non_quote_outside_string(_characters.whitespace()); }
 
   // Helpers
 
   /** Whether the given characters are inside a string (only works on non-quotes) */
-  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) { return _string.non_quote_inside_string(mask); }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const noexcept { return _string.non_quote_inside_string(mask); }
   /** Whether the given characters are outside a string (only works on non-quotes) */
-  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) { return _string.non_quote_outside_string(mask); }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const noexcept { return _string.non_quote_outside_string(mask); }
 
   // string and escape characters
   json_string_block _string;
@@ -50,12 +56,12 @@ private:
    * structural elements ([,],{,},:, comma) plus scalar starts like 123, true and "abc".
    * They may reside inside a string.
    **/
-  simdjson_really_inline uint64_t potential_structural_start() { return _characters.op() | potential_scalar_start(); }
+  simdjson_really_inline uint64_t potential_structural_start() const noexcept { return _characters.op() | potential_scalar_start(); }
   /**
    * The start of non-operator runs, like 123, true and "abc".
    * It main reside inside a string.
    **/
-  simdjson_really_inline uint64_t potential_scalar_start() {
+  simdjson_really_inline uint64_t potential_scalar_start() const noexcept {
     // The term "scalar" refers to anything except structural characters and white space
     // (so letters, numbers, quotes).
     // Whenever it is preceded by something that is not a structural element ({,},[,],:, ") nor a white-space
@@ -66,7 +72,7 @@ private:
    * Whether the given character is immediately after a non-operator like 123, true.
    * The characters following a quote are not included.
    */
-  simdjson_really_inline uint64_t follows_potential_scalar() {
+  simdjson_really_inline uint64_t follows_potential_scalar() const noexcept {
     // _follows_potential_nonquote_scalar: is defined as marking any character that follows a character
     // that is not a structural element ({,},[,],:, comma) nor a quote (") and that is not a
     // white space.
@@ -132,11 +138,13 @@ simdjson_really_inline json_block json_scanner::next(const simd::simd8x64<uint8_
   // Performance: there are many ways to skin this cat.
   const uint64_t nonquote_scalar = characters.scalar() & ~strings.quote();
   uint64_t follows_nonquote_scalar = follows(nonquote_scalar, prev_scalar);
-  return {
-    strings,
+  // We are returning a function-local object so either we get a move constructor
+  // or we get copy elision.
+  return json_block(
+    strings,// strings is a function-local object so either it moves or the copy is elided.
     characters,
     follows_nonquote_scalar
-  };
+  );
 }
 
 simdjson_really_inline error_code json_scanner::finish() {

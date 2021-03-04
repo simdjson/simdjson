@@ -19,17 +19,28 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {gen: Visual Studio 15 2017, arch: Win32}
-          - {gen: Visual Studio 15 2017, arch: x64}
+          - {gen: Visual Studio 15 2017, arch: Win32, static: ON}
+          - {gen: Visual Studio 15 2017, arch: Win32, static: OFF}
+          - {gen: Visual Studio 15 2017, arch: x64, static: ON}
+          - {gen: Visual Studio 15 2017, arch: x64, static: OFF}
     steps:
-    - uses: actions/checkout@v2
+    - name: checkout
+      uses: actions/checkout@v2
     - name: Configure
       run: |
-          mkdir build
-          cd build && cmake -DSIMDJSON_COMPETITION=OFF -G "${{matrix.gen}}" -A ${{matrix.arch}} ..
-    - name: Build
-      run: cmake --build build --config Release --parallel
-    - name: 'Run CTest'
+        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_BUILD_STATIC=${{matrix.static}} -B build
+    - name: Build Debug
+      run: cmake --build build --config Debug --verbose
+    - name: Build Release
+      run: cmake --build build --config Release --verbose
+    - name: Run tests
       run: |
-          cd build
-          ctest -C Release  -LE explicitonly  --output-on-failure 
+        cd build
+        ctest -C Release  -LE explicitonly  --output-on-failure
+    - name: Install
+      run: |
+        cmake --install build --config Release
+    - name: Test Installation
+      run: |
+        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}}  -B build_install_test tests/installation_tests/find
+        cmake --build build_install_test --config Release

@@ -4,6 +4,10 @@ namespace {
 namespace stage1 {
 
 struct json_string_block {
+  // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
+  simdjson_really_inline json_string_block(uint64_t backslash, uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  _backslash(backslash), _escaped(escaped), _quote(quote), _in_string(in_string) {}
+
   // Escaped characters (characters following an escape() character)
   simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Escape characters (backslashes that are not escaped--i.e. in \\, includes only the first \)
@@ -125,12 +129,15 @@ simdjson_really_inline json_string_block json_string_scanner::next(const simd::s
   prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
 
   // Use ^ to turn the beginning quote off, and the end quote on.
-  return {
+
+  // We are returning a function-local object so either we get a move constructor
+  // or we get copy elision.
+  return json_string_block(
     backslash,
     escaped,
     quote,
     in_string
-  };
+  );
 }
 
 simdjson_really_inline error_code json_string_scanner::finish() {
