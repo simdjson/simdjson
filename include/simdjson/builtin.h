@@ -21,6 +21,8 @@
 
 namespace simdjson {
   /**
+   * @deprecated On Demand classes are now under the top level simdjson namespace.
+   *
    * Represents the best statically linked simdjson implementation that can be used by the compiling
    * program.
    *
@@ -32,6 +34,7 @@ namespace simdjson {
    */
   namespace builtin = SIMDJSON_BUILTIN_IMPLEMENTATION;
   /**
+   * @deprecated On Demand is under the simdjson namespace.
    * @overload simdjson::SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand
    */
   namespace ondemand = SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand;

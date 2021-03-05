@@ -5,15 +5,15 @@ using namespace simdjson;
 
 namespace object_tests {
   using namespace std;
-  using simdjson::ondemand::json_type;
+  using simdjson::json_type;
 
   bool iterate_object() {
     TEST_START();
     auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
     const char* expected_key[] = { "a", "b", "c" };
     const uint64_t expected_value[] = { 1, 2, 3 };
-    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::object object;
+    SUBTEST("object", test_ondemand_doc(json, [&](auto doc_result) {
+      object object;
       ASSERT_RESULT( doc_result.type(), json_type::object );
       ASSERT_SUCCESS( doc_result.get(object) );
       size_t i = 0;
@@ -26,8 +26,8 @@ namespace object_tests {
       ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
-      simdjson_result<ondemand::object> object_result = doc_result.get_object();
+    SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<object> object_result = doc_result.get_object();
       size_t i = 0;
       for (auto [ field, error ] : object_result) {
         ASSERT_SUCCESS(error);
@@ -58,12 +58,12 @@ namespace object_tests {
         "actual_value": 10
       }
     )"_padded;
-    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::object object;
+    SUBTEST("object", test_ondemand_doc(json, [&](auto doc_result) {
+      object object;
       ASSERT_SUCCESS( doc_result.get(object) );
       size_t i = 0;
       for (auto field : object) {
-        ondemand::raw_json_string key;
+        raw_json_string key;
         ASSERT_SUCCESS( field.key().get(key) );
 
         switch (i) {
@@ -212,8 +212,8 @@ namespace object_tests {
         "actual_value": 10
       }
     )"_padded;
-    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::object object;
+    SUBTEST("object", test_ondemand_doc(json, [&](auto doc_result) {
+      object object;
       ASSERT_SUCCESS( doc_result.get(object) );
 
       ASSERT_SUCCESS( object["scalar_ignore"] );
@@ -324,7 +324,7 @@ namespace object_tests {
       return true;
     }));
 
-    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+    SUBTEST("simdjson_result<document>", test_ondemand_doc(json, [&](auto doc_result) {
       ASSERT_SUCCESS( doc_result["scalar_ignore"] );
       std::cout << "  - After ignoring empty scalar ..." << std::endl;
 
@@ -440,16 +440,16 @@ namespace object_tests {
     TEST_START();
     auto json = R"({})"_padded;
 
-    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::object object;
+    SUBTEST("object", test_ondemand_doc(json, [&](auto doc_result) {
+      object object;
       ASSERT_SUCCESS( doc_result.get(object) );
       for (simdjson_unused auto field : object) {
         TEST_FAIL("Unexpected field");
       }
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
-      simdjson_result<ondemand::object> object_result = doc_result.get_object();
+    SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<object> object_result = doc_result.get_object();
       for (simdjson_unused auto field : object_result) {
         TEST_FAIL("Unexpected field");
       }
@@ -461,8 +461,8 @@ namespace object_tests {
   bool object_index() {
     TEST_START();
     auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
-    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::object object;
+    SUBTEST("object", test_ondemand_doc(json, [&](auto doc_result) {
+      object object;
       ASSERT_SUCCESS( doc_result.get(object) );
 
       ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
@@ -473,8 +473,8 @@ namespace object_tests {
       ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
-      simdjson_result<ondemand::object> object;
+    SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<object> object;
       object = doc_result.get_object();
 
       ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
@@ -490,8 +490,8 @@ namespace object_tests {
   bool document_object_index() {
     TEST_START();
     auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
-    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::document doc;
+    SUBTEST("document", test_ondemand_doc(json, [&](auto doc_result) {
+      document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
       ASSERT_EQUAL( doc["a"].get_uint64().value_unsafe(), 1 );
       ASSERT_EQUAL( doc["b"].get_uint64().value_unsafe(), 2 );
@@ -501,7 +501,7 @@ namespace object_tests {
       ASSERT_ERROR( doc["d"], NO_SUCH_FIELD );
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+    SUBTEST("simdjson_result<document>", test_ondemand_doc(json, [&](auto doc_result) {
       ASSERT_EQUAL( doc_result["a"].get_uint64().value_unsafe(), 1 );
       ASSERT_EQUAL( doc_result["b"].get_uint64().value_unsafe(), 2 );
       ASSERT_EQUAL( doc_result["c/d"].get_uint64().value_unsafe(), 3 );
@@ -515,8 +515,8 @@ namespace object_tests {
   bool value_object_index() {
     TEST_START();
     auto json = R"({ "outer": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
-    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::value object;
+    SUBTEST("value", test_ondemand_doc(json, [&](auto doc_result) {
+      value object;
       ASSERT_SUCCESS( doc_result["outer"].get(object) );
       ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
       ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );
@@ -526,8 +526,8 @@ namespace object_tests {
       ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
-      simdjson_result<ondemand::value> object = doc_result["outer"];
+    SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<value> object = doc_result["outer"];
       ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
       ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );
       ASSERT_EQUAL( object["c/d"].get_uint64().value_unsafe(), 3 );
@@ -542,8 +542,8 @@ namespace object_tests {
   bool object_find_field_unordered() {
     TEST_START();
     auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
-    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::object object;
+    SUBTEST("object", test_ondemand_doc(json, [&](auto doc_result) {
+      object object;
       ASSERT_SUCCESS( doc_result.get(object) );
 
       ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
@@ -554,8 +554,8 @@ namespace object_tests {
       ASSERT_ERROR( object.find_field_unordered("d"), NO_SUCH_FIELD );
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
-      simdjson_result<ondemand::object> object;
+    SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<object> object;
       object = doc_result.get_object();
 
       ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
@@ -572,8 +572,8 @@ namespace object_tests {
   bool document_object_find_field_unordered() {
     TEST_START();
     auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
-    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::document doc;
+    SUBTEST("document", test_ondemand_doc(json, [&](auto doc_result) {
+      document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
       ASSERT_EQUAL( doc.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
       ASSERT_EQUAL( doc.find_field_unordered("b").get_uint64().value_unsafe(), 2 );
@@ -583,7 +583,7 @@ namespace object_tests {
       ASSERT_ERROR( doc.find_field_unordered("d"), NO_SUCH_FIELD );
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+    SUBTEST("simdjson_result<document>", test_ondemand_doc(json, [&](auto doc_result) {
       ASSERT_EQUAL( doc_result.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
       ASSERT_EQUAL( doc_result.find_field_unordered("b").get_uint64().value_unsafe(), 2 );
       ASSERT_EQUAL( doc_result.find_field_unordered("c/d").get_uint64().value_unsafe(), 3 );
@@ -598,8 +598,8 @@ namespace object_tests {
   bool value_object_find_field_unordered() {
     TEST_START();
     auto json = R"({ "outer": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
-    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::value object;
+    SUBTEST("value", test_ondemand_doc(json, [&](auto doc_result) {
+      value object;
       ASSERT_SUCCESS( doc_result.find_field_unordered("outer").get(object) );
       ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
       ASSERT_EQUAL( object.find_field_unordered("b").get_uint64().value_unsafe(), 2 );
@@ -609,8 +609,8 @@ namespace object_tests {
       ASSERT_ERROR( object.find_field_unordered("d"), NO_SUCH_FIELD );
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
-      simdjson_result<ondemand::value> object = doc_result.find_field_unordered("outer");
+    SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<value> object = doc_result.find_field_unordered("outer");
       ASSERT_EQUAL( object.find_field_unordered("a").get_uint64().value_unsafe(), 1 );
       ASSERT_EQUAL( object.find_field_unordered("b").get_uint64().value_unsafe(), 2 );
       ASSERT_EQUAL( object.find_field_unordered("c/d").get_uint64().value_unsafe(), 3 );
@@ -625,8 +625,8 @@ namespace object_tests {
   bool object_find_field() {
     TEST_START();
     auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
-    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::object object;
+    SUBTEST("object", test_ondemand_doc(json, [&](auto doc_result) {
+      object object;
       ASSERT_SUCCESS( doc_result.get(object) );
 
       ASSERT_EQUAL( object.find_field("a").get_uint64().value_unsafe(), 1 );
@@ -637,8 +637,8 @@ namespace object_tests {
       ASSERT_ERROR( object.find_field("d"), NO_SUCH_FIELD );
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
-      simdjson_result<ondemand::object> object;
+    SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<object> object;
       object = doc_result.get_object();
 
       ASSERT_EQUAL( object.find_field("a").get_uint64().value_unsafe(), 1 );
@@ -655,8 +655,8 @@ namespace object_tests {
   bool document_object_find_field() {
     TEST_START();
     auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
-    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::document doc;
+    SUBTEST("document", test_ondemand_doc(json, [&](auto doc_result) {
+      document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
       ASSERT_EQUAL( doc.find_field("a").get_uint64().value_unsafe(), 1 );
       ASSERT_EQUAL( doc.find_field("b").get_uint64().value_unsafe(), 2 );
@@ -666,7 +666,7 @@ namespace object_tests {
       ASSERT_ERROR( doc.find_field("d"), NO_SUCH_FIELD );
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+    SUBTEST("simdjson_result<document>", test_ondemand_doc(json, [&](auto doc_result) {
       ASSERT_EQUAL( doc_result.find_field("a").get_uint64().value_unsafe(), 1 );
       ASSERT_EQUAL( doc_result.find_field("b").get_uint64().value_unsafe(), 2 );
       ASSERT_EQUAL( doc_result.find_field("c/d").get_uint64().value_unsafe(), 3 );
@@ -681,8 +681,8 @@ namespace object_tests {
   bool value_object_find_field() {
     TEST_START();
     auto json = R"({ "outer": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
-    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::value object;
+    SUBTEST("value", test_ondemand_doc(json, [&](auto doc_result) {
+      value object;
       ASSERT_SUCCESS( doc_result.find_field("outer").get(object) );
       ASSERT_EQUAL( object.find_field("a").get_uint64().value_unsafe(), 1 );
       ASSERT_EQUAL( object.find_field("b").get_uint64().value_unsafe(), 2 );
@@ -692,8 +692,8 @@ namespace object_tests {
       ASSERT_ERROR( object.find_field("d"), NO_SUCH_FIELD );
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
-      simdjson_result<ondemand::value> object = doc_result.find_field("outer");
+    SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<value> object = doc_result.find_field("outer");
       ASSERT_EQUAL( object.find_field("a").get_uint64().value_unsafe(), 1 );
       ASSERT_EQUAL( object.find_field("b").get_uint64().value_unsafe(), 2 );
       ASSERT_EQUAL( object.find_field("c/d").get_uint64().value_unsafe(), 3 );
@@ -708,12 +708,12 @@ namespace object_tests {
   bool document_nested_object_index() {
     TEST_START();
     auto json = R"({ "x": { "y": { "z": 2 } } }})"_padded;
-    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+    SUBTEST("simdjson_result<document>", test_ondemand_doc(json, [&](auto doc_result) {
       ASSERT_EQUAL( doc_result["x"]["y"]["z"].get_uint64().value_unsafe(), 2 );
       return true;
     }));
-    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::document doc;
+    SUBTEST("document", test_ondemand_doc(json, [&](auto doc_result) {
+      document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
       ASSERT_EQUAL( doc["x"]["y"]["z"].get_uint64().value_unsafe(), 2 );
       return true;
@@ -724,13 +724,13 @@ namespace object_tests {
   bool nested_object_index() {
     TEST_START();
     auto json = R"({ "x": { "y": { "z": 2 } } }})"_padded;
-    SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
-      simdjson_result<ondemand::object> object = doc_result.get_object();
+    SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<object> object = doc_result.get_object();
       ASSERT_EQUAL( object["x"]["y"]["z"].get_uint64().value_unsafe(), 2 );
       return true;
     }));
-    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::object object;
+    SUBTEST("object", test_ondemand_doc(json, [&](auto doc_result) {
+      object object;
       ASSERT_SUCCESS( doc_result.get(object) );
       ASSERT_EQUAL( object["x"]["y"]["z"].get_uint64().value_unsafe(), 2 );
       return true;
@@ -741,13 +741,13 @@ namespace object_tests {
   bool value_nested_object_index() {
     TEST_START();
     auto json = R"({ "x": { "y": { "z": 2 } } }})"_padded;
-    SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
-      simdjson_result<ondemand::value> x = doc_result["x"];
+    SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<value> x = doc_result["x"];
       ASSERT_EQUAL( x["y"]["z"].get_uint64().value_unsafe(), 2 );
       return true;
     }));
-    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::value x;
+    SUBTEST("value", test_ondemand_doc(json, [&](auto doc_result) {
+      value x;
       ASSERT_SUCCESS( doc_result["x"].get(x) );
       ASSERT_EQUAL( x["y"]["z"].get_uint64().value_unsafe(), 2 );
       return true;
@@ -764,7 +764,7 @@ namespace object_tests {
     const uint64_t expected_value[] = { 1, 2, 3 };
     ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
       size_t i = 0;
-      for (ondemand::field field : doc_result.get_object()) {
+      for (field field : doc_result.get_object()) {
         ASSERT_EQUAL( field.key(), expected_key[i] );
         ASSERT_EQUAL( uint64_t(field.value()), expected_value[i] );
         i++;
@@ -780,7 +780,7 @@ namespace object_tests {
     auto json = R"({})"_padded;
 
     ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
-      for (simdjson_unused ondemand::field field : doc_result.get_object()) {
+      for (simdjson_unused field field : doc_result.get_object()) {
         TEST_FAIL("Unexpected field");
       }
       return true;
@@ -792,8 +792,8 @@ namespace object_tests {
   bool object_index_exception() {
     TEST_START();
     auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
-    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::object object = doc_result;
+    SUBTEST("object", test_ondemand_doc(json, [&](auto doc_result) {
+      object object = doc_result;
 
       ASSERT_EQUAL( uint64_t(object["a"]), 1 );
       ASSERT_EQUAL( uint64_t(object["b"]), 2 );
@@ -806,7 +806,7 @@ namespace object_tests {
   bool nested_object_index_exception() {
     TEST_START();
     auto json = R"({ "x": { "y": { "z": 2 } } }})"_padded;
-    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+    SUBTEST("simdjson_result<document>", test_ondemand_doc(json, [&](auto doc_result) {
       ASSERT_EQUAL( uint64_t(doc_result["x"]["y"]["z"]), 2 );
       return true;
     }));

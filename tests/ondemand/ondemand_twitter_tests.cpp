@@ -24,9 +24,9 @@ namespace twitter_tests {
     TEST_START();
     padded_string json;
     ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
-    ondemand::parser parser;
+    parser parser;
     auto doc = parser.iterate(json);
-    for (ondemand::object tweet : doc["statuses"]) {
+    for (object tweet : doc["statuses"]) {
       uint64_t         id            = tweet["id"];
       std::string_view text          = tweet["text"];
       std::string_view screen_name   = tweet["user"]["screen_name"];
@@ -126,7 +126,7 @@ namespace twitter_tests {
       // Print users with a default profile.
       set<string_view> default_users;
       for (auto tweet : doc_result["statuses"]) {
-        ondemand::object user = tweet["user"];
+        object user = tweet["user"];
 
         // We have to get the screen name before default_profile because it appears first
         std::string_view screen_name = user["screen_name"];

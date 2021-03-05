@@ -156,9 +156,8 @@ void basics_error_2_cpp17() {
 #endif
 
 // See https://github.com/miloyip/nativejson-benchmark/blob/master/src/tests/simdjsontest.cpp
-simdjson::dom::parser parser{};
-
 bool parse_double(const char *j, double &d) {
+  simdjson::dom::parser parser{};
   auto error = parser.parse(j, std::strlen(j))
         .at(0)
         .get(d);
@@ -167,6 +166,7 @@ bool parse_double(const char *j, double &d) {
 }
 
 bool parse_string(const char *j, std::string &s) {
+  simdjson::dom::parser parser{};
   std::string_view answer;
   auto error = parser.parse(j,strlen(j))
         .at(0)

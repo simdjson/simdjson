@@ -12,12 +12,12 @@ namespace ordering_tests {
 
   bool in_order_object_index() {
     TEST_START();
-    ondemand::parser parser{};
+    parser parser{};
     auto doc = parser.iterate(json);
     double x{0};
     double y{0};
     double z{0};
-    for (ondemand::object point_object : doc["coordinates"]) {
+    for (object point_object : doc["coordinates"]) {
       x += double(point_object["x"]);
       y += double(point_object["y"]);
       z += double(point_object["z"]);
@@ -27,12 +27,12 @@ namespace ordering_tests {
 
   bool in_order_object_find_field_unordered() {
     TEST_START();
-    ondemand::parser parser{};
+    parser parser{};
     auto doc = parser.iterate(json);
     double x{0};
     double y{0};
     double z{0};
-    for (ondemand::object point_object : doc["coordinates"]) {
+    for (object point_object : doc["coordinates"]) {
       x += double(point_object.find_field_unordered("x"));
       y += double(point_object.find_field_unordered("y"));
       z += double(point_object.find_field_unordered("z"));
@@ -42,12 +42,12 @@ namespace ordering_tests {
 
   bool in_order_object_find_field() {
     TEST_START();
-    ondemand::parser parser{};
+    parser parser{};
     auto doc = parser.iterate(json);
     double x{0};
     double y{0};
     double z{0};
-    for (ondemand::object point_object : doc["coordinates"]) {
+    for (object point_object : doc["coordinates"]) {
       x += double(point_object.find_field("x"));
       y += double(point_object.find_field("y"));
       z += double(point_object.find_field("z"));
@@ -57,12 +57,12 @@ namespace ordering_tests {
 
   bool out_of_order_object_index() {
     TEST_START();
-    ondemand::parser parser{};
+    parser parser{};
     auto doc = parser.iterate(json);
     double x{0};
     double y{0};
     double z{0};
-    for (ondemand::object point_object : doc["coordinates"]) {
+    for (object point_object : doc["coordinates"]) {
       z += double(point_object["z"]);
       x += double(point_object["x"]);
       y += double(point_object["y"]);
@@ -72,12 +72,12 @@ namespace ordering_tests {
 
   bool out_of_order_object_find_field_unordered() {
     TEST_START();
-    ondemand::parser parser{};
+    parser parser{};
     auto doc = parser.iterate(json);
     double x{0};
     double y{0};
     double z{0};
-    for (ondemand::object point_object : doc["coordinates"]) {
+    for (object point_object : doc["coordinates"]) {
       z += double(point_object.find_field_unordered("z"));
       x += double(point_object.find_field_unordered("x"));
       y += double(point_object.find_field_unordered("y"));
@@ -87,12 +87,12 @@ namespace ordering_tests {
 
   bool out_of_order_object_find_field() {
     TEST_START();
-    ondemand::parser parser{};
+    parser parser{};
     auto doc = parser.iterate(json);
     double x{0};
     double y{0};
     double z{0};
-    for (ondemand::object point_object : doc["coordinates"]) {
+    for (object point_object : doc["coordinates"]) {
       z += double(point_object.find_field("z"));
       ASSERT_ERROR( point_object.find_field("x"), NO_SUCH_FIELD );
       ASSERT_ERROR( point_object.find_field("y"), NO_SUCH_FIELD );
@@ -102,7 +102,7 @@ namespace ordering_tests {
 
   bool foreach_object_field_lookup() {
     TEST_START();
-    ondemand::parser parser{};
+    parser parser{};
     auto doc = parser.iterate(json);
     double x{0};
     double y{0};
@@ -119,9 +119,9 @@ namespace ordering_tests {
 
   bool use_values_out_of_order_after_array() {
     TEST_START();
-    ondemand::parser parser{};
+    parser parser{};
     auto doc = parser.iterate(json);
-    simdjson_result<ondemand::value> x{}, y{}, z{};
+    simdjson_result<value> x{}, y{}, z{};
     for (auto point_object : doc["coordinates"]) {
       x = point_object["x"];
       y = point_object["y"];
@@ -132,7 +132,7 @@ namespace ordering_tests {
 
   bool use_object_multiple_times_out_of_order() {
     TEST_START();
-    ondemand::parser parser{};
+    parser parser{};
     auto json2 = "{\"coordinates\":{\"x\":1.1,\"y\":2.2,\"z\":3.3}}"_padded;
     auto doc = parser.iterate(json2);
     auto x = doc["coordinates"]["x"];

@@ -5,15 +5,15 @@ using namespace simdjson;
 
 namespace array_tests {
   using namespace std;
-  using simdjson::ondemand::json_type;
+  using simdjson::json_type;
 
   bool iterate_document_array() {
     TEST_START();
     const auto json = R"([ 1, 10, 100 ])"_padded;
     const uint64_t expected_value[] = { 1, 10, 100 };
 
-    SUBTEST("ondemand::array", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::array array;
+    SUBTEST("array", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson::array array;
       ASSERT_RESULT( doc_result.type(), json_type::array );
       ASSERT_SUCCESS( doc_result.get(array) );
 
@@ -28,8 +28,8 @@ namespace array_tests {
       return true;
     }));
 
-    SUBTEST("simdjson_result<ondemand::array>", test_ondemand_doc(json, [&](auto doc_result) {
-      simdjson_result<ondemand::array> array = doc_result.get_array();
+    SUBTEST("simdjson_result<array>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<simdjson::array> array = doc_result.get_array();
       ASSERT_RESULT( doc_result.type(), json_type::array );
       size_t i=0;
       for (simdjson_unused auto value : array) { int64_t actual; ASSERT_SUCCESS( value.get(actual) ); ASSERT_EQUAL(actual, expected_value[i]); i++; }
@@ -37,8 +37,8 @@ namespace array_tests {
       return true;
     }));
 
-    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::document doc;
+    SUBTEST("document", test_ondemand_doc(json, [&](auto doc_result) {
+      document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
       ASSERT_RESULT( doc.type(), json_type::array );
       size_t i=0;
@@ -46,7 +46,7 @@ namespace array_tests {
       ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+    SUBTEST("simdjson_result<document>", test_ondemand_doc(json, [&](auto doc_result) {
       size_t i=0;
       ASSERT_RESULT( doc_result.type(), json_type::array );
       for (simdjson_unused auto value : doc_result) { int64_t actual; ASSERT_SUCCESS( value.get(actual) ); ASSERT_EQUAL(actual, expected_value[i]); i++; }
@@ -61,12 +61,12 @@ namespace array_tests {
     const auto json = R"( [ [ 1, 10, 100 ] ] )"_padded;
     const uint64_t expected_value[] = { 1, 10, 100 };
 
-    SUBTEST("ondemand::array", test_ondemand_doc(json, [&](auto doc_result) {
+    SUBTEST("array", test_ondemand_doc(json, [&](auto doc_result) {
       bool found = false;
-      for (simdjson_result<ondemand::value> array_result : doc_result) {
+      for (simdjson_result<value> array_result : doc_result) {
         ASSERT_TRUE(!found); found = true;
 
-        ondemand::array array;
+        simdjson::array array;
         ASSERT_RESULT( array_result.type(), json_type::array );
         ASSERT_SUCCESS( array_result.get(array) );
 
@@ -83,12 +83,12 @@ namespace array_tests {
       return true;
     }));
 
-    SUBTEST("simdjson_result<ondemand::array>", test_ondemand_doc(json, [&](auto doc_result) {
+    SUBTEST("simdjson_result<array>", test_ondemand_doc(json, [&](auto doc_result) {
       bool found = false;
-      for (simdjson_result<ondemand::value> array_result : doc_result) {
+      for (simdjson_result<value> array_result : doc_result) {
         ASSERT_TRUE(!found); found = true;
 
-        ondemand::array array;
+        simdjson::array array;
         ASSERT_RESULT( array_result.type(), json_type::array );
         ASSERT_SUCCESS( array_result.get(array) );
 
@@ -100,12 +100,12 @@ namespace array_tests {
       return true;
     }));
 
-    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
+    SUBTEST("value", test_ondemand_doc(json, [&](auto doc_result) {
       bool found = false;
-      for (simdjson_result<ondemand::value> array_result : doc_result) {
+      for (simdjson_result<value> array_result : doc_result) {
         ASSERT_TRUE(!found); found = true;
 
-        ondemand::value array;
+        value array;
         ASSERT_SUCCESS( std::move(array_result).get(array) );
         ASSERT_RESULT( array.type(), json_type::array );
         size_t i=0;
@@ -115,9 +115,9 @@ namespace array_tests {
       ASSERT_TRUE(found);
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
+    SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc_result) {
       bool found = false;
-      for (simdjson_result<ondemand::value> array_result : doc_result) {
+      for (simdjson_result<value> array_result : doc_result) {
         ASSERT_TRUE(!found); found = true;
 
         size_t i=0;
@@ -148,7 +148,7 @@ namespace array_tests {
         10
       ]
     )"_padded;
-    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+    SUBTEST("simdjson_result<document>", test_ondemand_doc(json, [&](auto doc_result) {
       size_t i = 0;
       for (auto value : doc_result) {
         ASSERT_SUCCESS(value);
@@ -271,24 +271,24 @@ namespace array_tests {
   bool iterate_empty_array() {
     TEST_START();
     auto json = "[]"_padded;
-    SUBTEST("ondemand::array", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::array array;
+    SUBTEST("array", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson::array array;
       ASSERT_SUCCESS( doc_result.get(array) );
       for (simdjson_unused auto value : array) { TEST_FAIL("Unexpected value"); }
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::array>", test_ondemand_doc(json, [&](auto doc_result) {
-      simdjson_result<ondemand::array> array_result = doc_result.get_array();
+    SUBTEST("simdjson_result<array>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<simdjson::array> array_result = doc_result.get_array();
       for (simdjson_unused auto value : array_result) { TEST_FAIL("Unexpected value"); }
       return true;
     }));
-    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::document doc;
+    SUBTEST("document", test_ondemand_doc(json, [&](auto doc_result) {
+      document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
       for (simdjson_unused auto value : doc) { TEST_FAIL("Unexpected value"); }
       return true;
     }));
-    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+    SUBTEST("simdjson_result<document>", test_ondemand_doc(json, [&](auto doc_result) {
       for (simdjson_unused auto value : doc_result) { TEST_FAIL("Unexpected value"); }
       return true;
     }));
@@ -316,7 +316,7 @@ namespace array_tests {
     auto json = R"({})"_padded;
 
     ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
-      for (simdjson_unused ondemand::field field : doc_result.get_object()) {
+      for (simdjson_unused field field : doc_result.get_object()) {
         TEST_FAIL("Unexpected field");
       }
       return true;
@@ -330,7 +330,7 @@ namespace array_tests {
     auto json = "[]"_padded;
 
     ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
-      for (simdjson_unused ondemand::value value : doc_result) { TEST_FAIL("Unexpected value"); }
+      for (simdjson_unused value value : doc_result) { TEST_FAIL("Unexpected value"); }
       return true;
     }));
 

@@ -12,7 +12,7 @@ namespace parse_api_tests {
 
   bool parser_iterate() {
     TEST_START();
-    ondemand::parser parser;
+    parser parser;
     auto doc = parser.iterate(BASIC_JSON);
     ASSERT_SUCCESS( doc.get_array() );
     return true;
@@ -20,7 +20,7 @@ namespace parse_api_tests {
 
   bool parser_iterate_padded() {
     TEST_START();
-    ondemand::parser parser;
+    parser parser;
     const char json_str[] = "12\0                              "; // 32 padding
     ASSERT_EQUAL(sizeof(json_str), 34);
     ASSERT_EQUAL(strlen(json_str), 2);
@@ -58,7 +58,7 @@ namespace parse_api_tests {
 
   bool parser_iterate_padded_string_view() {
     TEST_START();
-    ondemand::parser parser;
+    parser parser;
     const char json_str[] = "12\0                              "; // 32 padding
     ASSERT_EQUAL(sizeof(json_str), 34);
     ASSERT_EQUAL(strlen(json_str), 2);
@@ -96,7 +96,7 @@ namespace parse_api_tests {
 
   bool parser_iterate_insufficient_padding() {
     TEST_START();
-    ondemand::parser parser;
+    parser parser;
     constexpr char json_str[] = "12\0                             "; // 31 padding
     ASSERT_EQUAL(sizeof(json_str), 33);
     ASSERT_EQUAL(strlen(json_str), 2);
@@ -133,9 +133,9 @@ namespace parse_api_tests {
 #if SIMDJSON_EXCEPTIONS
   bool parser_iterate_exception() {
     TEST_START();
-    ondemand::parser parser;
+    parser parser;
     auto doc = parser.iterate(BASIC_JSON);
-    simdjson_unused ondemand::array array = doc;
+    simdjson_unused simdjson::array array = doc;
     TEST_SUCCEED();
   }
 #endif // SIMDJSON_EXCEPTIONS

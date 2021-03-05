@@ -57,6 +57,8 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "simdjson/dom.h"
 // Implementations
 #include "simdjson/implementations.h"
+// On Demand
+#include "simdjson/ondemand.h"
 
 SIMDJSON_POP_DISABLE_WARNINGS
 

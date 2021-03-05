@@ -54,30 +54,30 @@ The Basics: Loading and Parsing JSON Documents
 ----------------------------------------------
 
 The simdjson library offers a simple DOM tree API, which you can access by creating a
-`ondemand::parser` and calling the `iterate()` method:
+`parser` and calling the `iterate()` method:
 
 ```c++
-ondemand::parser parser;
+parser parser;
 auto json = padded_string::load("twitter.json");
-ondemand::document doc = parser.iterate(json); // load and parse a file
+document doc = parser.iterate(json); // load and parse a file
 ```
 
 Or by creating a padded string (for efficiency reasons, simdjson requires a string with
 SIMDJSON_PADDING bytes at the end) and calling `iterate()`:
 
 ```c++
-ondemand::parser parser;
+parser parser;
 auto json = "[1,2,3]"_padded; // The _padded suffix creates a simdjson::padded_string instance
-ondemand::document doc = parser.iterate(json); // parse a string
+document doc = parser.iterate(json); // parse a string
 ```
 
 If you have a buffer of your own with enough padding already (SIMDJSON_PADDING extra bytes allocated), you can use `promise_padded` to pass it in:
 
 ```c++
-ondemand::parser parser;
+parser parser;
 char json[3+SIMDJSON_PADDING];
 strcpy(json, "[1]");
-ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
+document doc = parser.iterate(json, strlen(json), sizeof(json));
 ```
 
 Documents Are Iterators
@@ -112,7 +112,7 @@ support for users who avoid exceptions. See [the simdjson DOM API's error handli
 
 * **Extracting Values:** You can cast a JSON element to a native type:
   `double(element)` or `double x = json_element`. This works for double, uint64_t, int64_t, bool,
-  ondemand::object and ondemand::array. At this point, the number, string or boolean will be parsed,
+  object and array. At this point, the number, string or boolean will be parsed,
   or the initial `[` or `{` will be verified. An exception is thrown if the cast is not possible.
 
   > IMPORTANT NOTE: values can only be parsed once. Since documents are *iterators*, once you have
@@ -133,7 +133,7 @@ support for users who avoid exceptions. See [the simdjson DOM API's error handli
   > will fail:
   >
   > ```c++
-  > ondemand::parser parser;
+  > parser parser;
   > auto json = R"(  { "x": 1, "y": 2 }  )"_padded;
   > auto doc = parser.iterate(json);
   > double y = doc.find_field("y"); // The cursor is now after the 2 (at })
@@ -143,7 +143,7 @@ support for users who avoid exceptions. See [the simdjson DOM API's error handli
   > By contrast, using the default (order-insensitive) lookup succeeds:
   >
   > ```c++
-  > ondemand::parser parser;
+  > parser parser;
   > auto json = R"(  { "x": 1, "y": 2 }  )"_padded;
   > auto doc = parser.iterate(json);
   > double y = doc["y"]; // The cursor is now after the 2 (at })
@@ -164,7 +164,7 @@ support for users who avoid exceptions. See [the simdjson DOM API's error handli
 The following code illustrates many of the above concepts:
 
 ```c++
-ondemand::parser parser;
+parser parser;
 auto cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
@@ -172,7 +172,7 @@ auto cars_json = R"( [
 ] )"_padded;
 
 // Iterating through an array of objects
-for (ondemand::object car : parser.iterate(cars_json)) {
+for (object car : parser.iterate(cars_json)) {
   // Accessing a field by name
   cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
 
@@ -192,14 +192,14 @@ for (ondemand::object car : parser.iterate(cars_json)) {
 Here is a different example illustrating the same ideas:
 
 ```C++
-ondemand::parser parser;
+parser parser;
 auto points_json = R"( [
     {  "12345" : {"x":12.34, "y":56.78, "z": 9998877}   },
     {  "12545" : {"x":11.44, "y":12.78, "z": 11111111}  }
   ] )"_padded;
 
 // Parse and iterate through an array of objects
-for (ondemand::object points : parser.iterate(points_json)) {
+for (object points : parser.iterate(points_json)) {
   for (auto point : points) {
     cout << "id: " << std::string_view(point.unescaped_key()) << ": (";
     cout << point.value()["x"].get_double() << ", ";
@@ -215,21 +215,21 @@ And another one:
 auto abstract_json = R"(
   { "str" : { "123" : {"abc" : 3.14 } } }
 )"_padded;
-ondemand::parser parser;
+parser parser;
 auto doc = parser.iterate(abstract_json);
 cout << doc["str"]["123"]["abc"].get_double() << endl; // Prints 3.14
 ```
 
 * **Extracting Values (without exceptions):** You can use a variant usage of `get()` with error
   codes to avoid exceptions. You first declare the variable of the appropriate type (`double`,
-  `uint64_t`, `int64_t`, `bool`, `ondemand::object` and `ondemand::array`) and pass it by reference
+  `uint64_t`, `int64_t`, `bool`, `object` and `array`) and pass it by reference
   to `get()` which gives you back an error code: e.g.,
 
   ```c++
   auto abstract_json = R"(
     { "str" : { "123" : {"abc" : 3.14 } } }
   )"_padded;
-  ondemand::parser parser;
+  parser parser;
 
   double value;
   auto doc = parser.iterate(abstract_json);

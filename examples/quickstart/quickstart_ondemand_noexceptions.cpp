@@ -5,8 +5,8 @@ int main(void) {
     auto error = padded_string::load("twitter.json").get(json);
     if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
 
-    ondemand::parser parser;
-    ondemand::document tweets;
+    dom::parser parser;
+    dom::document tweets;
     error = parser.iterate(json).get(tweets);
     if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
 

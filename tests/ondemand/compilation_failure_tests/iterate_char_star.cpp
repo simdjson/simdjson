@@ -4,7 +4,7 @@
 using namespace simdjson;
 
 int main() {
-    ondemand::parser parser;
+    parser parser;
 #if COMPILATION_TEST_USE_FAILING_CODE
     const char* json;
     auto doc = parser.iterate(json, strlen(json));

@@ -324,20 +324,19 @@ namespace number_tests {
 namespace parse_api_tests {
   using namespace std;
   using namespace simdjson;
-  using namespace simdjson::dom;
 
   const padded_string BASIC_JSON = "[1,2,3]"_padded;
   const padded_string BASIC_NDJSON = "[1,2,3]\n[4,5,6]"_padded;
   const padded_string EMPTY_NDJSON = ""_padded;
   bool parser_moving_parser() {
     std::cout << "Running " << __func__ << std::endl;
-    typedef std::tuple<std::string, std::unique_ptr<parser>,element> simdjson_tuple;
+    typedef std::tuple<std::string, std::unique_ptr<dom::parser>,dom::element> simdjson_tuple;
     std::vector<simdjson_tuple> results;
     std::vector<std::string> my_data = {"[1,2,3]", "[1,2,3]", "[1,2,3]"};
 
     for (std::string s : my_data) {
       std::unique_ptr<dom::parser> parser(new dom::parser{});
-      element root;
+      dom::element root;
       ASSERT_SUCCESS( parser->parse(s).get(root) );
       results.emplace_back(s, std::move(parser), root);
     }
@@ -353,22 +352,22 @@ namespace parse_api_tests {
     dom::document doc;
     {
       dom::parser parser;
-      element doc_root = parser.parse_into_document(doc, input);
+      dom::element doc_root = parser.parse_into_document(doc, input);
       if(simdjson::to_string(doc_root) != "[1,2,3]") { return false; }
       // parser will go out of scope here.
     }
     if(simdjson::to_string(doc.root()) != "[1,2,3]") { return false; }
     dom::parser parser; // new parser
-    element doc_root1 = parser.parse_into_document(doc, input);
+    dom::element doc_root1 = parser.parse_into_document(doc, input);
     if(simdjson::to_string(doc_root1) != "[1,2,3]") { return false; }
     //... doc_root1 is a pointer inside doc
-    element doc_root2 = parser.parse_into_document(doc, input);
+    dom::element doc_root2 = parser.parse_into_document(doc, input);
     //... doc_root2 is a pointer inside doc
     if(simdjson::to_string(doc_root2) != "[1,2,3]") { return false; }
 
-    // Here let us take moving the document:
+    // Here let us take moving the dom::document:
     dom::document docm = std::move(doc);
-    element doc_root3 = docm.root();
+    dom::element doc_root3 = docm.root();
     if(simdjson::to_string(doc_root3) != "[1,2,3]") { return false; }
     return true;
   }
@@ -612,7 +611,6 @@ namespace parse_api_tests {
 namespace dom_api_tests {
   using namespace std;
   using namespace simdjson;
-  using namespace simdjson::dom;
 
   SIMDJSON_PUSH_DISABLE_WARNINGS
   SIMDJSON_DISABLE_DEPRECATED_WARNING
@@ -884,7 +882,7 @@ namespace dom_api_tests {
     ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
 
     simdjson::error_code error;
-    simdjson_unused element val;
+    simdjson_unused dom::element val;
 // This is disabled, see https://github.com/simdjson/simdjson/issues/1243
 //#ifndef _LIBCPP_VERSION // should work everywhere but with libc++, must include the <ciso646> header.
 //    std::tie(val,error) = object["d"];
@@ -908,7 +906,7 @@ namespace dom_api_tests {
     ASSERT_SUCCESS( parser.parse(json).get(doc) );
     ASSERT_EQUAL( doc["obj"]["a"].get_uint64().value_unsafe(), 1);
 
-    object obj;
+    dom::object obj;
     ASSERT_SUCCESS( doc.get(obj) );
     ASSERT_EQUAL( obj["obj"]["a"].get_uint64().value_unsafe(), 1);
 
@@ -921,7 +919,7 @@ namespace dom_api_tests {
     ASSERT_EQUAL( obj["b"].get_uint64().value_unsafe(), 2 );
     ASSERT_EQUAL( obj["a"].get_uint64().value_unsafe(), 1 );
 
-    simdjson_unused element val;
+    simdjson_unused dom::element val;
     ASSERT_ERROR( doc["d"].get(val), NO_SUCH_FIELD);
     return true;
   }
@@ -944,7 +942,7 @@ namespace dom_api_tests {
     dom::array tweets;
     ASSERT_SUCCESS( parser.load(TWITTER_JSON)["statuses"].get(tweets) );
     for (auto tweet : tweets) {
-      object user;
+      dom::object user;
       ASSERT_SUCCESS( tweet["user"].get(user) );
       bool default_profile;
       ASSERT_SUCCESS( user["default_profile"].get(default_profile) );
@@ -970,7 +968,7 @@ namespace dom_api_tests {
       dom::array media;
       if (not (error = tweet["entities"]["media"].get(media))) {
         for (auto image : media) {
-          object sizes;
+          dom::object sizes;
           ASSERT_SUCCESS( image["sizes"].get(sizes) );
           for (auto size : sizes) {
             uint64_t width, height;
@@ -1084,7 +1082,7 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "obj": { "a": 1, "b": 2, "c": 3 } })");
     dom::parser parser;
-    object obj = parser.parse(json)["obj"];
+    dom::object obj = parser.parse(json)["obj"];
 
     ASSERT_EQUAL( uint64_t(obj["a"]), 1);
 
@@ -1095,7 +1093,7 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     // Prints the number of results in twitter.json
     dom::parser parser;
-    element doc = parser.load(TWITTER_JSON);
+    dom::element doc = parser.load(TWITTER_JSON);
     uint64_t result_count = doc["search_metadata"]["count"];
     if (result_count != 100) { cerr << "Expected twitter.json[metadata_count][count] = 100, got " << result_count << endl; return false; }
     return true;
@@ -1106,9 +1104,9 @@ namespace dom_api_tests {
     // Print users with a default profile.
     set<string_view> default_users;
     dom::parser parser;
-    element doc = parser.load(TWITTER_JSON);
-    for (object tweet : doc["statuses"].get_array()) {
-      object user = tweet["user"];
+    dom::element doc = parser.load(TWITTER_JSON);
+    for (dom::object tweet : doc["statuses"].get_array()) {
+      dom::object user = tweet["user"];
       if (user["default_profile"]) {
         default_users.insert(user["screen_name"]);
       }
@@ -1122,11 +1120,11 @@ namespace dom_api_tests {
     // Print image names and sizes
     set<pair<uint64_t, uint64_t>> image_sizes;
     dom::parser parser;
-    for (object tweet : parser.load(TWITTER_JSON)["statuses"]) {
+    for (dom::object tweet : parser.load(TWITTER_JSON)["statuses"]) {
       auto media = tweet["entities"]["media"];
       if (!media.error()) {
-        for (object image : media) {
-          for (auto size : object(image["sizes"])) {
+        for (dom::object image : media) {
+          for (auto size : dom::object(image["sizes"])) {
             image_sizes.insert(make_pair(size.value["w"], size.value["h"]));
           }
         }
@@ -1715,7 +1713,6 @@ namespace minify_tests {
 
 namespace format_tests {
   using namespace simdjson;
-  using namespace simdjson::dom;
   using namespace std;
   const padded_string DOCUMENT = R"({ "foo" : 1, "bar" : [ 1, 2, 0.11111111111111113 ], "baz": { "a": 3.1415926535897936, "b": 2, "c": 3.141592653589794 } })"_padded;
   const string MINIFIED(R"({"foo":1,"bar":[1,2,0.11111111111111113],"baz":{"a":3.1415926535897936,"b":2,"c":3.141592653589794}})");
@@ -1840,7 +1837,7 @@ namespace format_tests {
   bool print_element_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    element value = parser.parse(DOCUMENT)["foo"];
+    dom::element value = parser.parse(DOCUMENT)["foo"];
     ostringstream s;
     s << value;
     return assert_minified(s, "1");
@@ -1848,7 +1845,7 @@ namespace format_tests {
   bool print_minify_element_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    element value = parser.parse(DOCUMENT)["foo"];
+    dom::element value = parser.parse(DOCUMENT)["foo"];
     ostringstream s;
     s << minify(value);
     return assert_minified(s, "1");
@@ -1940,7 +1937,6 @@ namespace format_tests {
 
 namespace to_string_tests {
   using namespace simdjson;
-  using namespace simdjson::dom;
   using namespace std;
   const padded_string DOCUMENT = R"({ "foo" : 1, "bar" : [ 1, 2, 0.11111111111111113 ], "baz": { "a": 3.1415926535897936, "b": 2, "c": 3.141592653589794 } })"_padded;
   const string MINIFIED(R"({"foo":1,"bar":[1,2,0.11111111111111113],"baz":{"a":3.1415926535897936,"b":2,"c":3.141592653589794}})");
@@ -2031,7 +2027,7 @@ namespace to_string_tests {
   bool print_to_string_element_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    element value = parser.parse(DOCUMENT)["foo"];
+    dom::element value = parser.parse(DOCUMENT)["foo"];
     ostringstream s;
     s << to_string(value);
     return assert_minified(s, "1");

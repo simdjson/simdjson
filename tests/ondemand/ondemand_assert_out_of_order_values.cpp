@@ -8,7 +8,7 @@
 using namespace simdjson;
 
 // This ensures the compiler can't rearrange them into the proper order (which causes it to work!)
-simdjson_never_inline bool check_point(simdjson_result<ondemand::value> xval, simdjson_result<ondemand::value> yval) {
+simdjson_never_inline bool check_point(simdjson_result<value> xval, simdjson_result<value> yval) {
   // Verify the expected release behavior
   uint64_t x, y;
   if (!xval.get(x)) { return false; }
@@ -23,7 +23,7 @@ bool test_check_point() {
       "x": 1,
       "y": 2 3
   )"_padded;
-  ondemand::parser parser;
+  parser parser;
   auto doc = parser.iterate(json);
   return check_point(doc["x"], doc["y"]);
 }

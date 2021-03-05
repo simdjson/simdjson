@@ -22,15 +22,15 @@ public:
   simdjson_really_inline size_t ItemCount() { return tweets.size(); }
 
 private:
-  ondemand::parser parser{};
+  parser parser{};
   std::vector<tweet> tweets{};
 
-  simdjson_really_inline uint64_t nullable_int(ondemand::value value) {
+  simdjson_really_inline uint64_t nullable_int(value value) {
     if (value.is_null()) { return 0; }
     return value;
   }
 
-  simdjson_really_inline twitter_user read_user(ondemand::object user) {
+  simdjson_really_inline twitter_user read_user(object user) {
     return { user.find_field("id"), user.find_field("screen_name") };
   }
 
@@ -42,7 +42,7 @@ simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
 
   // Walk the document, parsing the tweets as we go
   auto doc = parser.iterate(json);
-  for (ondemand::object tweet : doc.find_field("statuses")) {
+  for (object tweet : doc.find_field("statuses")) {
     tweets.emplace_back(partial_tweets::tweet{
       tweet.find_field("created_at"),
       tweet.find_field("id"),

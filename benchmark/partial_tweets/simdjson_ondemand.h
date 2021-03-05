@@ -11,21 +11,21 @@ using namespace simdjson;
 struct simdjson_ondemand {
   using StringType=std::string_view;
 
-  ondemand::parser parser{};
+  parser parser{};
 
-  simdjson_really_inline uint64_t nullable_int(ondemand::value value) {
+  simdjson_really_inline uint64_t nullable_int(value value) {
     if (value.is_null()) { return 0; }
     return value;
   }
 
-  simdjson_really_inline twitter_user<std::string_view> read_user(ondemand::object user) {
+  simdjson_really_inline twitter_user<std::string_view> read_user(object user) {
     return { user.find_field("id"), user.find_field("screen_name") };
   }
 
   bool run(simdjson::padded_string &json, std::vector<tweet<std::string_view>> &result) {
     // Walk the document, parsing the tweets as we go
     auto doc = parser.iterate(json);
-    for (ondemand::object tweet : doc.find_field("statuses")) {
+    for (object tweet : doc.find_field("statuses")) {
       result.emplace_back(partial_tweets::tweet<std::string_view>{
         tweet.find_field("created_at"),
         tweet.find_field("id"),

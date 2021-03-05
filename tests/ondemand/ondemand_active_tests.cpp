@@ -9,16 +9,16 @@ namespace active_tests {
 
   bool parser_child() {
     TEST_START();
-    ondemand::parser parser;
+    parser parser;
     const padded_string json = R"({ "parent": {"child1": {"name": "John"} , "child2": {"name": "Daniel"}} })"_padded;
     auto doc = parser.iterate(json);
-    ondemand::object parent = doc["parent"];
+    object parent = doc["parent"];
     {
-      ondemand::object c1 = parent["child1"];
+      object c1 = parent["child1"];
       if(std::string_view(c1["name"]) != "John") { return false; }
     }
     {
-      ondemand::object c2 = parent["child2"];
+      object c2 = parent["child2"];
       if(std::string_view(c2["name"]) != "Daniel") { return false; }
     }
     return true;
@@ -26,10 +26,10 @@ namespace active_tests {
 
   bool parser_doc_correct() {
     TEST_START();
-    ondemand::parser parser;
+    parser parser;
     const padded_string json = R"({ "key1": 1, "key2":2, "key3": 3 })"_padded;
     auto doc = parser.iterate(json);
-    ondemand::object root_object = doc.get_object();
+    object root_object = doc.get_object();
     int64_t k1 = root_object["key1"];
     int64_t k2 = root_object["key2"];
     int64_t k3 = root_object["key3"];
@@ -38,7 +38,7 @@ namespace active_tests {
 
   bool parser_doc_limits() {
     TEST_START();
-    ondemand::parser parser;
+    parser parser;
     const padded_string json = R"({ "key1": 1, "key2":2, "key3": 3 })"_padded;
     auto doc = parser.iterate(json);
     int64_t k1 = doc["key1"];

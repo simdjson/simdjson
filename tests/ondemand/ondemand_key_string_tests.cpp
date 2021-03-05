@@ -7,7 +7,7 @@ namespace key_string_tests {
 #if SIMDJSON_EXCEPTIONS
   bool parser_key_value() {
     TEST_START();
-    ondemand::parser parser;
+    parser parser;
     const padded_string json = R"({ "1": "1", "2": "2", "3": "3", "abc": "abc", "\u0075": "\u0075" })"_padded;
     auto doc = parser.iterate(json);
     for(auto field : doc.get_object())  {

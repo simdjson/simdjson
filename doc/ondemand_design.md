@@ -24,7 +24,7 @@ applications with a computation efficiency that is difficult to surpass.
 A code example illustrates our API from a programmer's point of view:
 
 ```c++
-ondemand::parser parser;
+parser parser;
 auto doc = parser.iterate(json);
 for (auto tweet : doc["statuses"]) {
   std::string_view text        = tweet["text"];
@@ -285,7 +285,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    This declaration does not allocate any memory; that will happen in the next step.
 
    ```c++
-   ondemand::parser parser;
+   parser parser;
    ```
 
 2. We then start iterating the JSON document by allocating internal parser buffers, preprocessing
@@ -338,7 +338,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    `{ "statuses": [ {`.
 
    ```c++
-   for (ondemand::object tweet : doc["statuses"]) {
+   for (object tweet : doc["statuses"]) {
    ```
 
    This shorthand does a lot, and it is helpful to see what it expands to.
@@ -346,7 +346,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
    ```c++
    // Validate that the top-level value is an object: check for {. Increase depth to 2 (root > field).
-   ondemand::object top = doc.get_object();
+   object top = doc.get_object();
 
    // Find the field statuses by:
    // 1. Check whether the object is empty (check for }). (We do not really need to do this unless
@@ -358,17 +358,17 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    // - Validate that the field value is an array: check for [
    // - If the array is empty (if there is a ] next), decrease depth back to 0.
    // - If not, increase depth to 3 (root > statuses > tweet).
-   ondemand::array tweets = tweets_field.get_array();
+   array tweets = tweets_field.get_array();
    // These three method calls do nothing substantial (the real checking happens in get_array() and ++)
    // != checks whether the array is finished (if we found a ] and decreased depth back to 0).
-   ondemand::array_iterator tweets_iter = tweets.begin();
+   array_iterator tweets_iter = tweets.begin();
    while (tweets_iter != tweets.end()) {
      auto tweet_value = *tweets_iter;
 
      // - Validate that the array element is an object: check for {
      // - If the object is empty (if there is a } next), decrease depth back to 1.
      // - If not, increase depth to 4 (root > statuses > tweet > field).
-     ondemand::object tweet = tweet_value.get_object();
+     object tweet = tweet_value.get_object();
      ...
    }
    ```
@@ -436,14 +436,14 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 4. We get the `"screen_name"` from the `"user"` object.
 
    ```c++
-      ondemand::object user        = tweet["user"];
+      object user        = tweet["user"];
       screen_name                  = user["screen_name"];
    ```
 
    First, `["user"]` finds the `,`, discovers the next key is `"user"`, validates that the `:`
    is there, and increases depth to 4 (root > statuses > tweet > field).
 
-   Next, the cast to ondemand::object checks for `{` and increases depth to 5 (root > statuses >
+   Next, the cast to object checks for `{` and increases depth to 5 (root > statuses >
    tweet > user > field).
 
    `["screen_name"]` finds the first field `"screen_name"` and validates the `:`.
@@ -514,7 +514,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 6. We loop to the next tweet.
 
    ```c++
-   for (ondemand::object tweet : doc["statuses"]) {
+   for (object tweet : doc["statuses"]) {
      ...
    }
    ```
@@ -523,7 +523,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
    ```c++
    while (iter != statuses.end()) {
-     ondemand::object tweet = *iter;
+     object tweet = *iter;
      ...
      iter++;
    }
@@ -537,7 +537,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    Next, `iter++` finds the `,` and advances past it to the `{`, increasing depth to 3 (root >
    statuses > tweet).
 
-   Finally, `ondemand::object tweet = *iter` validates the `{` and increases depth to 4 (root >
+   Finally, `object tweet = *iter` validates the `{` and increases depth to 4 (root >
    statuses > tweet > field). This leaves the iterator here:
 
    ```json
@@ -568,7 +568,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
    ```c++
    while (iter != statuses.end()) {
-     ondemand::object tweet = *iter;
+     object tweet = *iter;
      ...
      iter++;
    }
@@ -611,13 +611,13 @@ so that users enjoy the same string performance as the core simdjson. We do not 
 string buffer, however; that is stored in the `string_view` instance we return to the user.
 
 ```C++
-  ondemand::parser parser;
+  parser parser;
   auto doc = parser.iterate(json);
   std::set<std::string_view> default_users;
-  ondemand::array tweets = doc["statuses"].get_array();
+  array tweets = doc["statuses"].get_array();
   for (auto tweet_value : tweets) {
     auto tweet = tweet_value.get_object();
-    ondemand::object user = tweet["user"].get_object();
+    object user = tweet["user"].get_object();
     std::string_view screen_name = user["screen_name"].get_string();
     bool default_profile = user["default_profile"].get_bool();
     if (default_profile) { default_users.insert(screen_name); }
@@ -666,17 +666,17 @@ in production systems:
   only one object or array can be active at any one time. Let us consider the following example:
 
 ```C++
-    ondemand::parser parser;
+    parser parser;
     const padded_string json = R"({ "parent": {"child1": {"name": "John"} , "child2": {"name": "Daniel"}} })"_padded;
     auto doc = parser.iterate(json);
-    ondemand::object parent = doc["parent"];
+    object parent = doc["parent"];
     // parent owns the focus
-    ondemand::object c1 = parent["child1"];
+    object c1 = parent["child1"];
     // c1 owns the focus
     //
     if(std::string_view(c1["name"]) != "John") { ... }
     // c2 attempts to grab the focus from parent but fails
-    ondemand::object c2 = parent["child2"];
+    object c2 = parent["child2"];
     // c2 is now in an unsafe state and the following line would be unsafe
     // if(std::string_view(c2["name"]) != "Daniel") { return false; }
 ```
@@ -684,20 +684,20 @@ in production systems:
     A correct usage is given by the following example:
 
 ```C++
-    ondemand::parser parser;
+    parser parser;
     const padded_string json = R"({ "parent": {"child1": {"name": "John"} , "child2": {"name": "Daniel"}} })"_padded;
     auto doc = parser.iterate(json);
-    ondemand::object parent = doc["parent"];
+    object parent = doc["parent"];
     // At this point, parent owns the focus
     {
-      ondemand::object c1 = parent["child1"];
+      object c1 = parent["child1"];
       // c1 grabbed the focus from parent
       if(std::string_view(c1["name"]) != "John") { return false; }
     }
     // c1 went out of scope, so its destructor was called and the focus
     // was handed back to parent.
     {
-      ondemand::object c2 = parent["child2"];
+      object c2 = parent["child2"];
       // c2 grabbed the focus from parent
       // the following is safe:
       if(std::string_view(c2["name"]) != "Daniel") { return false; }

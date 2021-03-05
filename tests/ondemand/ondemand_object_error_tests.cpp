@@ -141,7 +141,7 @@ namespace object_error_tests {
     }));
     SUBTEST("object", test_ondemand_doc(json, [&](auto doc) {
       for (auto element : doc) {
-        ondemand::object obj;
+        object obj;
         ASSERT_SUCCESS( element.get(obj) );
         for (auto field : obj) { ASSERT_SUCCESS(field); }
         ASSERT_ITERATE_ERROR( obj, OUT_OF_ORDER_ITERATION );
@@ -161,7 +161,7 @@ namespace object_error_tests {
       return true;
     }));
     SUBTEST("object", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::object obj;
+      object obj;
       ASSERT_SUCCESS( doc.get(obj) );
       for (auto field : obj) { ASSERT_SUCCESS(field); }
       ASSERT_ITERATE_ERROR( obj, OUT_OF_ORDER_ITERATION );
@@ -174,7 +174,7 @@ namespace object_error_tests {
     TEST_START();
     auto json = R"([ { "x": 1, "y": 2 } ])"_padded;
     SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
-      simdjson_result<ondemand::object> obj;
+      simdjson_result<object> obj;
       for (auto element : doc) {
         obj = element.get_object();
         for (auto field : obj) { ASSERT_SUCCESS(field); }
@@ -183,7 +183,7 @@ namespace object_error_tests {
       return true;
     }));
     SUBTEST("object", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::object obj;
+      object obj;
       for (auto element : doc) {
         ASSERT_SUCCESS( element.get(obj) );
         for (auto field : obj) { ASSERT_SUCCESS(field); }
@@ -192,7 +192,7 @@ namespace object_error_tests {
       return true;
     }));
     SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc) {
-      simdjson_result<ondemand::value> obj;
+      simdjson_result<value> obj;
       for (auto element : doc) {
         obj = element;
         ASSERT_SUCCESS( obj["x"] );
@@ -201,7 +201,7 @@ namespace object_error_tests {
       return true;
     }));
     SUBTEST("value", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::value obj;
+      value obj;
       for (auto element : doc) {
         ASSERT_SUCCESS( element.get(obj) );
         ASSERT_SUCCESS( obj["x"] );
@@ -216,7 +216,7 @@ namespace object_error_tests {
     TEST_START();
     auto json = R"([ { "x": 0, "y": 2 }, { "x": 1, "y": 4 } ])"_padded;
     SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
-      simdjson_result<ondemand::object> last_obj;
+      simdjson_result<object> last_obj;
       uint64_t i = 0;
       for (auto element : doc) {
         auto obj = element.get_object();
@@ -234,10 +234,10 @@ namespace object_error_tests {
     }));
 
     SUBTEST("object", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::object last_obj;
+      object last_obj;
       uint64_t i = 0;
       for (auto element : doc) {
-        ondemand::object obj;
+        object obj;
         ASSERT_SUCCESS( element.get_object().get(obj) );
         uint64_t x;
         ASSERT_SUCCESS( obj["x"].get(x) );
@@ -253,7 +253,7 @@ namespace object_error_tests {
     }));
 
     SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc) {
-      simdjson_result<ondemand::value> last_obj;
+      simdjson_result<value> last_obj;
       uint64_t i = 0;
       for (auto element : doc) {
         auto obj = element;
@@ -271,10 +271,10 @@ namespace object_error_tests {
     }));
 
     SUBTEST("value", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::value last_obj;
+      value last_obj;
       uint64_t i = 0;
       for (auto element : doc) {
-        ondemand::value obj;
+        value obj;
         ASSERT_SUCCESS( element.get(obj) );
         uint64_t x;
         ASSERT_SUCCESS( obj["x"].get(x) );
@@ -295,7 +295,7 @@ namespace object_error_tests {
     TEST_START();
     auto json = R"([ { "x": 1, "y": 2 } ])"_padded;
     SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
-      simdjson_result<ondemand::object> obj;
+      simdjson_result<object> obj;
       for (auto element : doc) {
         obj = element.get_object();
         for (auto field : obj) { ASSERT_SUCCESS(field); }
@@ -304,7 +304,7 @@ namespace object_error_tests {
       return true;
     }));
     SUBTEST("object", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::object obj;
+      object obj;
       for (auto element : doc) {
         ASSERT_SUCCESS( element.get(obj) );
         for (auto field : obj) { ASSERT_SUCCESS(field); }
@@ -313,7 +313,7 @@ namespace object_error_tests {
       return true;
     }));
     SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc) {
-      simdjson_result<ondemand::value> obj;
+      simdjson_result<value> obj;
       for (auto element : doc) {
         obj = element;
         ASSERT_SUCCESS( obj.find_field("x") );
@@ -322,7 +322,7 @@ namespace object_error_tests {
       return true;
     }));
     SUBTEST("value", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::value obj;
+      value obj;
       for (auto element : doc) {
         ASSERT_SUCCESS( element.get(obj) );
         ASSERT_SUCCESS( obj.find_field("x") );
@@ -337,7 +337,7 @@ namespace object_error_tests {
     TEST_START();
     auto json = R"([ { "x": 0, "y": 2 }, { "x": 1, "y": 4 } ])"_padded;
     SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
-      simdjson_result<ondemand::object> last_obj;
+      simdjson_result<object> last_obj;
       uint64_t i = 0;
       for (auto element : doc) {
         auto obj = element.get_object();
@@ -355,10 +355,10 @@ namespace object_error_tests {
     }));
 
     SUBTEST("object", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::object last_obj;
+      object last_obj;
       uint64_t i = 0;
       for (auto element : doc) {
-        ondemand::object obj;
+        object obj;
         ASSERT_SUCCESS( element.get_object().get(obj) );
         uint64_t x;
         ASSERT_SUCCESS( obj.find_field("x").get(x) );
@@ -374,7 +374,7 @@ namespace object_error_tests {
     }));
 
     SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc) {
-      simdjson_result<ondemand::value> last_obj;
+      simdjson_result<value> last_obj;
       uint64_t i = 0;
       for (auto element : doc) {
         auto obj = element;
@@ -392,10 +392,10 @@ namespace object_error_tests {
     }));
 
     SUBTEST("value", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::value last_obj;
+      value last_obj;
       uint64_t i = 0;
       for (auto element : doc) {
-        ondemand::value obj;
+        value obj;
         ASSERT_SUCCESS( element.get(obj) );
         uint64_t x;
         ASSERT_SUCCESS( obj.find_field("x").get(x) );
@@ -416,7 +416,7 @@ namespace object_error_tests {
     TEST_START();
     auto json = R"([ { "x": 1, "y": 2 } ])"_padded;
     SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
-      simdjson_result<ondemand::object> obj;
+      simdjson_result<object> obj;
       for (auto element : doc) {
         obj = element.get_object();
         for (auto field : obj) { ASSERT_SUCCESS(field); }
@@ -425,7 +425,7 @@ namespace object_error_tests {
       return true;
     }));
     SUBTEST("object", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::object obj;
+      object obj;
       for (auto element : doc) {
         ASSERT_SUCCESS( element.get(obj) );
         for (auto field : obj) { ASSERT_SUCCESS(field); }
@@ -434,7 +434,7 @@ namespace object_error_tests {
       return true;
     }));
     SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc) {
-      simdjson_result<ondemand::value> obj;
+      simdjson_result<value> obj;
       for (auto element : doc) {
         obj = element;
         ASSERT_SUCCESS( obj.find_field_unordered("x") );
@@ -443,7 +443,7 @@ namespace object_error_tests {
       return true;
     }));
     SUBTEST("value", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::value obj;
+      value obj;
       for (auto element : doc) {
         ASSERT_SUCCESS( element.get(obj) );
         ASSERT_SUCCESS( obj.find_field_unordered("x") );
@@ -458,7 +458,7 @@ namespace object_error_tests {
     TEST_START();
     auto json = R"([ { "x": 0, "y": 2 }, { "x": 1, "y": 4 } ])"_padded;
     SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
-      simdjson_result<ondemand::object> last_obj;
+      simdjson_result<object> last_obj;
       uint64_t i = 0;
       for (auto element : doc) {
         auto obj = element.get_object();
@@ -476,10 +476,10 @@ namespace object_error_tests {
     }));
 
     SUBTEST("object", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::object last_obj;
+      object last_obj;
       uint64_t i = 0;
       for (auto element : doc) {
-        ondemand::object obj;
+        object obj;
         ASSERT_SUCCESS( element.get_object().get(obj) );
         uint64_t x;
         ASSERT_SUCCESS( obj.find_field_unordered("x").get(x) );
@@ -495,7 +495,7 @@ namespace object_error_tests {
     }));
 
     SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc) {
-      simdjson_result<ondemand::value> last_obj;
+      simdjson_result<value> last_obj;
       uint64_t i = 0;
       for (auto element : doc) {
         auto obj = element;
@@ -513,10 +513,10 @@ namespace object_error_tests {
     }));
 
     SUBTEST("value", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::value last_obj;
+      value last_obj;
       uint64_t i = 0;
       for (auto element : doc) {
-        ondemand::value obj;
+        value obj;
         ASSERT_SUCCESS( element.get(obj) );
         uint64_t x;
         ASSERT_SUCCESS( obj.find_field_unordered("x").get(x) );

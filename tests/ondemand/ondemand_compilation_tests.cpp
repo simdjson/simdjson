@@ -14,9 +14,9 @@ void process3(int ) {}
 // Do not run this, it is only meant to compile
 void compilation_test_1() {
   const padded_string bogus = ""_padded;
-  ondemand::parser parser;
+  parser parser;
   auto doc = parser.iterate(bogus);
-  for (ondemand::object my_object : doc["mykey"]) {
+  for (object my_object : doc["mykey"]) {
       for (auto field : my_object) {
         if (field.key() == "key_value1") { process1(field.value()); }
         else if (field.key() == "key_value2") { process2(field.value()); }
@@ -29,13 +29,13 @@ void compilation_test_1() {
 // Do not run this, it is only meant to compile
  void compilation_test_2() {
   const padded_string bogus = ""_padded;
-  ondemand::parser parser;
+  parser parser;
   auto doc = parser.iterate(bogus);
   std::set<std::string_view> default_users;
-  ondemand::array tweets = doc["statuses"].get_array();
+  array tweets = doc["statuses"].get_array();
   for (auto tweet_value : tweets) {
     auto tweet = tweet_value.get_object();
-    ondemand::object user = tweet["user"].get_object();
+    object user = tweet["user"].get_object();
     std::string_view screen_name = user["screen_name"].get_string();
     bool default_profile = user["default_profile"].get_bool();
     if (default_profile) { default_users.insert(screen_name); }
@@ -46,9 +46,9 @@ void compilation_test_1() {
 // Do not run this, it is only meant to compile
 void compilation_test_3() {
   const padded_string bogus = ""_padded;
-  ondemand::parser parser;
+  parser parser;
   auto doc = parser.iterate(bogus);
-  ondemand::array tweets;
+  array tweets;
   if(! doc["statuses"].get(tweets)) { return; }
   for (auto tweet_value : tweets) {
     auto tweet = tweet_value.get_object();

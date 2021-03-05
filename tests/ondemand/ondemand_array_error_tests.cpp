@@ -112,7 +112,7 @@ namespace array_error_tests {
     }));
     SUBTEST("value", test_ondemand_doc(json, [&](auto doc) {
       for (auto element : doc) {
-        ondemand::value arr;
+        value arr;
         ASSERT_SUCCESS( element.get(arr) );
         for (auto subelement : arr) { ASSERT_SUCCESS(subelement); }
         ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );
@@ -129,7 +129,7 @@ namespace array_error_tests {
     }));
     SUBTEST("array", test_ondemand_doc(json, [&](auto doc) {
       for (auto element : doc) {
-        ondemand::array arr;
+        array arr;
         ASSERT_SUCCESS( element.get(arr) );
         for (auto subelement : arr) { ASSERT_SUCCESS(subelement); }
         ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );
@@ -148,20 +148,20 @@ namespace array_error_tests {
       return true;
     }));
     SUBTEST("document", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::document arr;
+      document arr;
       ASSERT_SUCCESS( std::move(doc).get(arr) );
       for (auto element : arr) { ASSERT_SUCCESS(element); }
       ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );
       return true;
     }));
     SUBTEST("simdjson_result<array>", test_ondemand_doc(json, [&](auto doc) {
-      simdjson_result<ondemand::array> arr = doc.get_array();
+      simdjson_result<array> arr = doc.get_array();
       for (auto element : arr) { ASSERT_SUCCESS(element); }
       ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );
      return true;
     }));
     SUBTEST("array", test_ondemand_doc(json, [&](auto doc) {
-      ondemand::array arr;
+      array arr;
       ASSERT_SUCCESS( doc.get(arr) );
       for (auto element : arr) { ASSERT_SUCCESS(element); }
       ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );

@@ -11,7 +11,7 @@ using namespace simdjson;
 struct simdjson_ondemand {
   using StringType=std::string_view;
 
-  ondemand::parser parser{};
+  parser parser{};
 
   bool run(simdjson::padded_string &json, int64_t max_retweet_count, top_tweet_result<StringType> &result) {
     result.retweet_count = -1;
@@ -19,7 +19,7 @@ struct simdjson_ondemand {
     // into string_views until we're sure which ones we want to parse
     // NOTE: simdjson does not presently support reuse of objects or arrays--just scalars. This is
     // why we have to grab the text and screen_name fields instead of just saving the tweet object.
-    ondemand::value screen_name, text;
+    value screen_name, text;
 
     auto doc = parser.iterate(json);
     for (auto tweet : doc["statuses"]) {
@@ -49,7 +49,7 @@ BENCHMARK_TEMPLATE(top_tweet, simdjson_ondemand)->UseManualTime();
 struct simdjson_ondemand_forward_only {
   using StringType=std::string_view;
 
-  ondemand::parser parser{};
+  parser parser{};
 
   bool run(simdjson::padded_string &json, int64_t max_retweet_count, top_tweet_result<StringType> &result) {
     result.retweet_count = -1;
