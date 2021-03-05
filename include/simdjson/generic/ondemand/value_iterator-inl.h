@@ -113,11 +113,12 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   while (has_value) {
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
+    size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
-    if ((error = field_value() )) { abandon(); return error; }
 
+    if ((error = field_value() )) { abandon(); return error; }
     // If it matches, stop and return
-    if (actual_key == key) {
+    if (actual_key.unsafe_is_equal(max_key_length, key)) {
       logger::log_event(*this, "match", key, -2);
       return true;
     }
@@ -215,11 +216,13 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
+    size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
     if ((error = field_value() )) { abandon(); return error; }
 
     // If it matches, stop and return
-    if (actual_key == key) {
+    if (actual_key.unsafe_is_equal(max_key_length, key)) {
       logger::log_event(*this, "match", key, -2);
       return true;
     }
@@ -243,11 +246,13 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
+    size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+
     error = field_key().get(actual_key); SIMDJSON_ASSUME(!error);
     error = field_value(); SIMDJSON_ASSUME(!error);
 
     // If it matches, stop and return
-    if (actual_key == key) {
+    if (actual_key.unsafe_is_equal(max_key_length, key)) {
       logger::log_event(*this, "match", key, -2);
       return true;
     }

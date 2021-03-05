@@ -16,7 +16,7 @@ class json_iterator;
  * JSON file.)
  *
  * This class is deliberately simplistic and has little functionality. You can
- * compare two raw_json_string instances, or compare a raw_json_string with a string_view, but
+ * compare a raw_json_string instance with an unescaped C string, but
  * that is pretty much all you can do.
  *
  * They originate typically from field instance which in turn represent key-value pairs from
@@ -49,7 +49,25 @@ public:
    */
   simdjson_really_inline const char * raw() const noexcept;
 
+  /**
+   * This compares the current instance to the std::string_view target: returns true if
+   * they are byte-by-byte equal (no escaping is done).
+   * If length is smaller than target.size(), this will return false.
+   */
+  simdjson_really_inline bool unsafe_is_equal(size_t length, std::string_view target) const noexcept;
+
+  /**
+   * This compares the current instance to the C string target: returns true if
+   * they are byte-by-byte equal (no escaping is done).
+   * If length is smaller than target.size(), this will return false.
+   * The provided C string should be null terminated and it should not end with
+   * the escape character (\): the caller is responsible for reaching.
+   */
+  simdjson_really_inline bool unsafe_is_equal(const char* target) const noexcept;
+
 private:
+
+
   /**
    * This will set the inner pointer to zero, effectively making
    * this instance unusable.
@@ -92,12 +110,9 @@ private:
   friend struct simdjson_result<raw_json_string>;
 };
 
-simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view b) noexcept;
-simdjson_unused simdjson_really_inline bool operator==(std::string_view a, const raw_json_string &b) noexcept;
-simdjson_unused simdjson_really_inline bool operator!=(const raw_json_string &a, std::string_view b) noexcept;
-simdjson_unused simdjson_really_inline bool operator!=(std::string_view a, const raw_json_string &b) noexcept;
-
 simdjson_unused simdjson_really_inline std::ostream &operator<<(std::ostream &, const raw_json_string &) noexcept;
+simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, const char *c) noexcept;
+simdjson_unused simdjson_really_inline bool operator==(const char *c, const raw_json_string &a) noexcept;
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
