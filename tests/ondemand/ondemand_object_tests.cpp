@@ -539,6 +539,67 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
+  bool issue_1480() {
+    TEST_START();
+    auto json = R"({"name": "something", "version": "0.13.2", "version_major": 0})"_padded;
+
+    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      ASSERT_EQUAL( object.find_field_unordered("version_major").get_uint64().value_unsafe(), 0 );
+      ASSERT_EQUAL( object.find_field_unordered("version").get_string().value_unsafe(),  "0.13.2");
+      return true;
+    }));
+    SUBTEST("ondemand::object-iteration", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      size_t counter_version{0};
+      size_t counter_version_major{0};
+      for(auto field : object)  {
+        std::string_view keyv = field.unescaped_key();
+        if(keyv == "version") { counter_version++; }
+        if(keyv == "version_major") { counter_version_major++; }
+      }
+      ASSERT_EQUAL( counter_version, 1 );
+      ASSERT_EQUAL( counter_version_major, 1 );
+      return true;
+    }));
+    SUBTEST("ondemand::object-iteration-string-view", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      size_t counter_version{0};
+      size_t counter_version_major{0};
+      const char * bufv = "version";
+      const char * bufvm = "version_major";
+      std::vector<char> large_buf(512,' ');
+
+      std::string_view v{bufv};
+      std::string_view vm{bufvm};
+      std::string_view lb{large_buf.data(), large_buf.size()};
+
+      for(auto field : object)  {
+        std::string_view keyv = field.unescaped_key();
+        if(keyv == v) { counter_version++; }
+        if(keyv == vm) { counter_version_major++; }
+        ASSERT_EQUAL( keyv == lb, false );
+      }
+      ASSERT_EQUAL( counter_version, 1 );
+      ASSERT_EQUAL( counter_version_major, 1 );
+      return true;
+    }));
+#if SIMDJSON_EXCEPTIONS
+    SUBTEST("ondemand::object-operator", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      ASSERT_EQUAL( std::string_view(object["version"]), "0.13.2" );
+      ASSERT_EQUAL( uint64_t(object["version_major"]), 0 );
+      return true;
+    }));
+#endif
+    TEST_SUCCEED();
+  }
+
+
   bool object_find_field_unordered() {
     TEST_START();
     auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
@@ -833,6 +894,7 @@ namespace object_tests {
            value_nested_object_index() &&
            iterate_object_partial_children() &&
            object_index_partial_children() &&
+           issue_1480() &&
 #if SIMDJSON_EXCEPTIONS
            iterate_object_exception() &&
            object_index_exception() &&
