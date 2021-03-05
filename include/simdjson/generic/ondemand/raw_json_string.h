@@ -51,8 +51,11 @@ public:
 
   /**
    * This compares the current instance to the std::string_view target: returns true if
-   * they are byte-by-byte equal (no escaping is done).
+   * they are byte-by-byte equal (no escaping is done) on target.size() characters,
+   * and if the raw_json_string instance has a quote character at byte index target.size().
+   * We never read more than length + 1 bytes in the raw_json_string instance.
    * If length is smaller than target.size(), this will return false.
+   *
    * The std::string_view instance may contain any characters. However, the caller
    * is responsible for setting length so that length bytes may be read in the
    * raw_json_string.
@@ -65,7 +68,7 @@ public:
   /**
    * This compares the current instance to the std::string_view target: returns true if
    * they are byte-by-byte equal (no escaping is done).
-   * The std::string_view instance should be unescaped, it should not contain quote characters.
+   * The std::string_view instance should not contain unescaped quote characters.
    *
    * Performance: the comparison is done byte-by-byte which might be inefficient for
    * long strings.
@@ -75,9 +78,8 @@ public:
   /**
    * This compares the current instance to the C string target: returns true if
    * they are byte-by-byte equal (no escaping is done).
-   * If length is smaller than target.size(), this will return false.
-   * The provided C string should be null terminated and it should not end with
-   * the escape character (\): the caller is responsible for reaching.
+   * The provided C string should not contain an unescape quote character:
+   * the caller is responsible for this check.
    */
   simdjson_really_inline bool unsafe_is_equal(const char* target) const noexcept;
 
@@ -130,7 +132,7 @@ simdjson_unused simdjson_really_inline std::ostream &operator<<(std::ostream &, 
 
 /**
  * Comparisons between raw_json_string and C string are potentially unsafe: the user is responsible
- * for providing a null terminated string with unescaped content, without quote.
+ * for providing a null terminated string with no unescaped quote.
  */
 simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, const char *c) noexcept;
 simdjson_unused simdjson_really_inline bool operator==(const char *c, const raw_json_string &a) noexcept;

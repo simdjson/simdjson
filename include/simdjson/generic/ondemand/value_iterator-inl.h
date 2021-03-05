@@ -122,7 +122,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // key content (including escaped quotes).
     //if (actual_key.unsafe_is_equal(max_key_length, key)) {
     // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key.
+    // user provides an adversarial key (containing a well placed unescaped quote
+    // character and being longer than the number of bytes remaining in the JSON
+    // input).
     if (actual_key.unsafe_is_equal(key)) {
       logger::log_event(*this, "match", key, -2);
       return true;
@@ -231,7 +233,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // key content (including escaped quotes).
     // if (actual_key.unsafe_is_equal(max_key_length, key)) {
     // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key.
+    // user provides an adversarial key (containing a well placed unescaped quote
+    // character and being longer than the number of bytes remaining in the JSON
+    // input).
     if (actual_key.unsafe_is_equal(key)) {
       logger::log_event(*this, "match", key, -2);
       return true;
@@ -266,7 +270,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // key content (including escaped quotes).
     // if (actual_key.unsafe_is_equal(max_key_length, key)) {
     // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key.
+    // user provides an adversarial key (containing a well placed unescaped quote
+    // character and being longer than the number of bytes remaining in the JSON
+    // input).
     if (actual_key.unsafe_is_equal(key)) {
       logger::log_event(*this, "match", key, -2);
       return true;
