@@ -113,8 +113,8 @@ public:
    * compile-time, we might expect the computation to happen at compile time with
    * many compilers (not all!).
    */
-  static constexpr simdjson_really_inline bool is_free_from_unescaped_quote(std::string_view target) noexcept;
-  static constexpr simdjson_really_inline bool is_free_from_unescaped_quote(const char* target) noexcept;
+  static simdjson_really_inline bool is_free_from_unescaped_quote(std::string_view target) noexcept;
+  static simdjson_really_inline bool is_free_from_unescaped_quote(const char* target) noexcept;
 
 private:
 
