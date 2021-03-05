@@ -56,7 +56,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_field_raw(const std::string_view key) noexcept {
   error_code error;
   bool has_value;
-
   //
   // Initially, the object can be in one of a few different places:
   //
@@ -143,7 +142,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_field_unordered_raw(const std::string_view key) noexcept {
   error_code error;
   bool has_value;
-
   //
   // Initially, the object can be in one of a few different places:
   //

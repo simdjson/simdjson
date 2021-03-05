@@ -13,6 +13,43 @@ simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> ra
   return result;
 }
 
+constexpr simdjson_really_inline bool raw_json_string::is_free_from_unescaped_quote(std::string_view target) noexcept {
+  size_t pos{0};
+  // if the content has no escape character, just scan through it quickly!
+  for(;pos < target.size() && target[pos] != '\\';pos++) {}
+  // slow path may begin.
+  bool escaping{false};
+  for(;pos < target.size();pos++) {
+    if((target[pos] == '"') && !escaping) {
+      return false;
+    } else if(target[pos] == '\\') {
+      escaping = !escaping;
+    } else {
+      escaping = false;
+    }
+  }
+  return true;
+}
+
+constexpr simdjson_really_inline bool raw_json_string::is_free_from_unescaped_quote(const char* target) noexcept {
+  size_t pos{0};
+  // if the content has no escape character, just scan through it quickly!
+  for(;target[pos] && target[pos] != '\\';pos++) {}
+  // slow path may begin.
+  bool escaping{false};
+  for(;target[pos];pos++) {
+    if((target[pos] == '"') && !escaping) {
+      return false;
+    } else if(target[pos] == '\\') {
+      escaping = !escaping;
+    } else {
+      escaping = false;
+    }
+  }
+  return true;
+}
+
+
 simdjson_really_inline bool raw_json_string::unsafe_is_equal(size_t length, std::string_view target) const noexcept {
   // If we are going to call memcmp, then we must know something about the length of the raw_json_string.
   return (length >= target.size()) && (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());

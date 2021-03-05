@@ -68,18 +68,31 @@ public:
   /**
    * This compares the current instance to the std::string_view target: returns true if
    * they are byte-by-byte equal (no escaping is done).
-   * The std::string_view instance should not contain unescaped quote characters.
+   * The std::string_view instance should not contain unescaped quote characters:
+   * the caller is responsible for this check. See is_free_from_unescaped_quote.
    *
    * Performance: the comparison is done byte-by-byte which might be inefficient for
    * long strings.
+   *
+   * If target is a compile-time constant, and your compiler likes you,
+   * you should be able to do the following without performance penatly...
+   *
+   *   static_assert(raw_json_string::is_free_from_unescaped_quote(target), "");
+   *   s.unsafe_is_equal(target);
    */
   simdjson_really_inline bool unsafe_is_equal(std::string_view target) const noexcept;
 
   /**
    * This compares the current instance to the C string target: returns true if
    * they are byte-by-byte equal (no escaping is done).
-   * The provided C string should not contain an unescape quote character:
-   * the caller is responsible for this check.
+   * The provided C string should not contain an unescaped quote character:
+   * the caller is responsible for this check. See is_free_from_unescaped_quote.
+   *
+   * If target is a compile-time constant, and your compiler likes you,
+   * you should be able to do the following without performance penatly...
+   *
+   *   static_assert(raw_json_string::is_free_from_unescaped_quote(target), "");
+   *   s.unsafe_is_equal(target);
    */
   simdjson_really_inline bool unsafe_is_equal(const char* target) const noexcept;
 
@@ -94,6 +107,15 @@ public:
    * they are byte-by-byte equal (no escaping is done).
    */
   simdjson_really_inline bool is_equal(const char* target) const noexcept;
+
+  /**
+   * Returns true if target is free from unescaped quote. If target is known at
+   * compile-time, we might expect the computation to happen at compile time with
+   * many compilers (not all!).
+   */
+  static constexpr simdjson_really_inline bool is_free_from_unescaped_quote(std::string_view target) noexcept;
+  static constexpr simdjson_really_inline bool is_free_from_unescaped_quote(const char* target) noexcept;
+
 private:
 
 

@@ -32,6 +32,8 @@ public:
    * double y = obj.find_field("y");
    * double x = obj.find_field("x");
    * ```
+   * If you have multiple fields with a matching key ({"x": 1,  "x": 1}) be mindful
+   * that only one field is returned.
    *
    * **Raw Keys:** The lookup will be done against the *raw* key, and will not unescape keys.
    * e.g. `object["a"]` will match `{ "a": 1 }`, but will *not* match `{ "\u0061": 1 }`.
@@ -58,6 +60,9 @@ public:
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
    * field wasn't there when they aren't).
+   *
+   * If you have multiple fields with a matching key ({"x": 1,  "x": 1}) be mindful
+   * that only one field is returned.
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
