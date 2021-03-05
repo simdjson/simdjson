@@ -550,6 +550,16 @@ namespace object_tests {
       ASSERT_EQUAL( object.find_field_unordered("version").get_string().value_unsafe(),  "0.13.2");
       return true;
     }));
+    SUBTEST("ondemand::issue_1480::big-key", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      std::vector<char> large_buf(512,' ');
+      std::string_view lb{large_buf.data(), large_buf.size()};
+      ASSERT_ERROR( object.find_field(lb), NO_SUCH_FIELD );
+      return true;
+    }));
+
+#if SIMDJSON_EXCEPTIONS
     SUBTEST("ondemand::issue_1480::object-iteration", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::object object;
       ASSERT_SUCCESS( doc_result.get(object) );
@@ -564,16 +574,6 @@ namespace object_tests {
       ASSERT_EQUAL( counter_version_major, 1 );
       return true;
     }));
-    SUBTEST("ondemand::issue_1480::big-key", test_ondemand_doc(json, [&](auto doc_result) {
-      ondemand::object object;
-      ASSERT_SUCCESS( doc_result.get(object) );
-      std::vector<char> large_buf(512,' ');
-      std::string_view lb{large_buf.data(), large_buf.size()};
-      ASSERT_ERROR( object.find_field(lb), NO_SUCH_FIELD );
-      return true;
-    }));
-
-#if SIMDJSON_EXCEPTIONS
     SUBTEST("ondemand::issue_1480::object-iteration-string-view", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::object object;
       ASSERT_SUCCESS( doc_result.get(object) );
