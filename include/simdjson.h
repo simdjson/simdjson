@@ -34,30 +34,8 @@
     }
  */
 
-#include "simdjson/compiler_check.h"
-#include "simdjson/common_defs.h"
-
-SIMDJSON_PUSH_DISABLE_WARNINGS
-SIMDJSON_DISABLE_UNDESIRED_WARNINGS
-
-// Public API
-#include "simdjson/simdjson_version.h"
-#include "simdjson/error.h"
-#include "simdjson/minify.h"
-#include "simdjson/padded_string.h"
-#include "simdjson/padded_string_view.h"
-#include "simdjson/implementation.h"
-
-// Inline functions
-#include "simdjson/error-inl.h"
-#include "simdjson/padded_string-inl.h"
-#include "simdjson/padded_string_view-inl.h"
-
-// DOM
+#include "simdjson/base.h"
 #include "simdjson/dom.h"
-// Implementations
 #include "simdjson/implementations.h"
-
-SIMDJSON_POP_DISABLE_WARNINGS
 
 #endif // SIMDJSON_H

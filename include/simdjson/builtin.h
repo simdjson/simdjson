@@ -32,7 +32,7 @@ namespace simdjson {
    */
   namespace builtin = SIMDJSON_BUILTIN_IMPLEMENTATION;
   /**
-   * @overload simdjson::SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand
+   * @copydoc simdjson::SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand
    */
   namespace ondemand = SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand;
   /**

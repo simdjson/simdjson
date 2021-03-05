@@ -1,6 +1,9 @@
 #ifndef SIMDJSON_DOM_H
 #define SIMDJSON_DOM_H
 
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_UNDESIRED_WARNINGS
+
 #include "simdjson/dom/array.h"
 #include "simdjson/dom/document_stream.h"
 #include "simdjson/dom/document.h"
@@ -24,5 +27,7 @@
 #include "simdjson/dom/parser-inl.h"
 #include "simdjson/internal/tape_ref-inl.h"
 #include "simdjson/dom/serialization-inl.h"
+
+SIMDJSON_POP_DISABLE_WARNINGS
 
 #endif // SIMDJSON_DOM_H
