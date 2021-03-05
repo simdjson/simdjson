@@ -53,8 +53,24 @@ public:
    * This compares the current instance to the std::string_view target: returns true if
    * they are byte-by-byte equal (no escaping is done).
    * If length is smaller than target.size(), this will return false.
+   * The std::string_view instance may contain any characters. However, the caller
+   * is responsible for setting length so that length bytes may be read in the
+   * raw_json_string.
+   *
+   * Performance: the comparison may be done using memcmp which may be efficient
+   * for long strings.
    */
   simdjson_really_inline bool unsafe_is_equal(size_t length, std::string_view target) const noexcept;
+
+  /**
+   * This compares the current instance to the std::string_view target: returns true if
+   * they are byte-by-byte equal (no escaping is done).
+   * The std::string_view instance should be unescaped, it should not contain quote characters.
+   *
+   * Performance: the comparison is done byte-by-byte which might be inefficient for
+   * long strings.
+   */
+  simdjson_really_inline bool unsafe_is_equal(std::string_view target) const noexcept;
 
   /**
    * This compares the current instance to the C string target: returns true if
@@ -111,8 +127,15 @@ private:
 };
 
 simdjson_unused simdjson_really_inline std::ostream &operator<<(std::ostream &, const raw_json_string &) noexcept;
+
+/**
+ * Comparisons between raw_json_string and C string are potentially unsafe: the user is responsible
+ * for providing a null terminated string with unescaped content, without quote.
+ */
 simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, const char *c) noexcept;
 simdjson_unused simdjson_really_inline bool operator==(const char *c, const raw_json_string &a) noexcept;
+simdjson_unused simdjson_really_inline bool operator!=(const raw_json_string &a, const char *c) noexcept;
+simdjson_unused simdjson_really_inline bool operator!=(const char *c, const raw_json_string &a) noexcept;
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

@@ -113,12 +113,17 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   while (has_value) {
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
 
     if ((error = field_value() )) { abandon(); return error; }
     // If it matches, stop and return
-    if (actual_key.unsafe_is_equal(max_key_length, key)) {
+    // We could do it this way if we wanted to allow arbitrary
+    // key content (including escaped quotes).
+    //if (actual_key.unsafe_is_equal(max_key_length, key)) {
+    // Instead we do the following which may trigger buffer overruns if the
+    // user provides an adversarial key.
+    if (actual_key.unsafe_is_equal(key)) {
       logger::log_event(*this, "match", key, -2);
       return true;
     }
@@ -216,13 +221,18 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
 
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
     if ((error = field_value() )) { abandon(); return error; }
 
     // If it matches, stop and return
-    if (actual_key.unsafe_is_equal(max_key_length, key)) {
+    // We could do it this way if we wanted to allow arbitrary
+    // key content (including escaped quotes).
+    // if (actual_key.unsafe_is_equal(max_key_length, key)) {
+    // Instead we do the following which may trigger buffer overruns if the
+    // user provides an adversarial key.
+    if (actual_key.unsafe_is_equal(key)) {
       logger::log_event(*this, "match", key, -2);
       return true;
     }
@@ -246,13 +256,18 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
 
     error = field_key().get(actual_key); SIMDJSON_ASSUME(!error);
     error = field_value(); SIMDJSON_ASSUME(!error);
 
     // If it matches, stop and return
-    if (actual_key.unsafe_is_equal(max_key_length, key)) {
+    // We could do it this way if we wanted to allow arbitrary
+    // key content (including escaped quotes).
+    // if (actual_key.unsafe_is_equal(max_key_length, key)) {
+    // Instead we do the following which may trigger buffer overruns if the
+    // user provides an adversarial key.
+    if (actual_key.unsafe_is_equal(key)) {
       logger::log_event(*this, "match", key, -2);
       return true;
     }
