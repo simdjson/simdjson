@@ -83,6 +83,17 @@ public:
    */
   simdjson_really_inline bool unsafe_is_equal(const char* target) const noexcept;
 
+  /**
+   * This compares the current instance to the std::string_view target: returns true if
+   * they are byte-by-byte equal (no escaping is done).
+   */
+  simdjson_really_inline bool is_equal(std::string_view target) const noexcept;
+
+  /**
+   * This compares the current instance to the C string target: returns true if
+   * they are byte-by-byte equal (no escaping is done).
+   */
+  simdjson_really_inline bool is_equal(const char* target) const noexcept;
 private:
 
 

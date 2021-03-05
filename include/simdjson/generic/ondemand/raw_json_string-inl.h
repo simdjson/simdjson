@@ -19,7 +19,7 @@ simdjson_really_inline bool raw_json_string::unsafe_is_equal(size_t length, std:
 }
 
 simdjson_really_inline bool raw_json_string::unsafe_is_equal(std::string_view target) const noexcept {
-  // Assumptions: 'target' is unescaped, does not contain quote characters, and
+  // Assumptions: does not contain unescaped quote characters, and
   // the raw content is quote terminated within a valid JSON string.
   const char * r{raw()};
   size_t pos{0};
@@ -30,13 +30,56 @@ simdjson_really_inline bool raw_json_string::unsafe_is_equal(std::string_view ta
   return true;
 }
 
+simdjson_really_inline bool raw_json_string::is_equal(std::string_view target) const noexcept {
+  const char * r{raw()};
+  size_t pos{0};
+  bool escaping{false};
+  for(;pos < target.size();pos++) {
+    if(r[pos] != target[pos]) { return false; }
+    if((r[pos] == '"') && !escaping) {
+      // We have reached the end of the raw_json_string but
+      // the target is not done.
+      return false;
+    } else if(r[pos] == '\\') {
+      escaping = !escaping;
+    } else {
+      escaping = false;
+    }
+  }
+  if(r[pos] != '"') { return false; }
+  return true;
+}
+
+
 simdjson_really_inline bool raw_json_string::unsafe_is_equal(const char * target) const noexcept {
-  // Assumptions: 'target' is unescaped, does not contain quote characters, is null terminated and
+  // Assumptions: 'target' does not contain unescaped quote characters, is null terminated and
   // the raw content is quote terminated within a valid JSON string.
   const char * r{raw()};
   size_t pos{0};
   for(;target[pos];pos++) {
     if(r[pos] != target[pos]) { return false; }
+  }
+  if(r[pos] != '"') { return false; }
+  return true;
+}
+
+simdjson_really_inline bool raw_json_string::is_equal(const char* target) const noexcept {
+  // Assumptions: does not contain unescaped quote characters, and
+  // the raw content is quote terminated within a valid JSON string.
+  const char * r{raw()};
+  size_t pos{0};
+  bool escaping{false};
+  for(;target[pos];pos++) {
+    if(r[pos] != target[pos]) { return false; }
+    if((r[pos] == '"') && !escaping) {
+      // We have reached the end of the raw_json_string but
+      // the target is not done.
+      return false;
+    } else if(r[pos] == '\\') {
+      escaping = !escaping;
+    } else {
+      escaping = false;
+    }
   }
   if(r[pos] != '"') { return false; }
   return true;
