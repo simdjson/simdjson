@@ -31,6 +31,19 @@ bool basics_2() {
   TEST_SUCCEED();
 }
 
+bool basics_3() {
+  TEST_START();
+
+  ondemand::parser parser;
+  char json[3+SIMDJSON_PADDING];
+  strcpy(json, "[1]");
+  ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
+
+  simdjson_unused auto unused_doc = doc.get_array();
+
+  TEST_SUCCEED();
+}
+
 bool using_the_parsed_json_1() {
   TEST_START();
 
