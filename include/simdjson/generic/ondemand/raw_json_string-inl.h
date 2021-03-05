@@ -73,11 +73,14 @@ simdjson_really_inline bool raw_json_string::is_equal(std::string_view target) c
   bool escaping{false};
   for(;pos < target.size();pos++) {
     if(r[pos] != target[pos]) { return false; }
-    if((r[pos] == '"') && !escaping) {
+    // if target is a compile-time constant and it is free from
+    // quotes, then the next part could get optimized away through
+    // inlining.
+    if((target[pos] == '"') && !escaping) {
       // We have reached the end of the raw_json_string but
       // the target is not done.
       return false;
-    } else if(r[pos] == '\\') {
+    } else if(target[pos] == '\\') {
       escaping = !escaping;
     } else {
       escaping = false;
@@ -108,11 +111,14 @@ simdjson_really_inline bool raw_json_string::is_equal(const char* target) const 
   bool escaping{false};
   for(;target[pos];pos++) {
     if(r[pos] != target[pos]) { return false; }
-    if((r[pos] == '"') && !escaping) {
+    // if target is a compile-time constant and it is free from
+    // quotes, then the next part could get optimized away through
+    // inlining.
+    if((target[pos] == '"') && !escaping) {
       // We have reached the end of the raw_json_string but
       // the target is not done.
       return false;
-    } else if(r[pos] == '\\') {
+    } else if(target[pos] == '\\') {
       escaping = !escaping;
     } else {
       escaping = false;
