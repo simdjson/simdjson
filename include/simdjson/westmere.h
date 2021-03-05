@@ -1,11 +1,11 @@
 #ifndef SIMDJSON_WESTMERE_H
 #define SIMDJSON_WESTMERE_H
 
+#include "simdjson/implementation-base.h"
+
 #ifdef SIMDJSON_FALLBACK_H
 #error "westmere.h must be included before fallback.h"
 #endif
-
-#include "simdjson/portability.h"
 
 // Default Westmere to on if this is x86-64, unless we'll always select Haswell.
 #ifndef SIMDJSON_IMPLEMENTATION_WESTMERE

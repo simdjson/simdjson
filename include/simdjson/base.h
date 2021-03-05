@@ -3,6 +3,7 @@
 
 #include "simdjson/compiler_check.h"
 #include "simdjson/common_defs.h"
+#include "simdjson/portability.h"
 
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_UNDESIRED_WARNINGS

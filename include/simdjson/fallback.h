@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_FALLBACK_H
 #define SIMDJSON_FALLBACK_H
 
-#include "simdjson/portability.h"
+#include "simdjson/implementation-base.h"
 
 // Default Fallback to on unless a builtin implementation has already been selected.
 #ifndef SIMDJSON_IMPLEMENTATION_FALLBACK

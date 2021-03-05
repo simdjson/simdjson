@@ -6,14 +6,19 @@
 #ifndef SIMDJSON_BUILTIN_IMPLEMENTATION
 #if SIMDJSON_CAN_ALWAYS_RUN_HASWELL
 #define SIMDJSON_BUILTIN_IMPLEMENTATION haswell
+#include "simdjson/haswell.h"
 #elif SIMDJSON_CAN_ALWAYS_RUN_WESTMERE
 #define SIMDJSON_BUILTIN_IMPLEMENTATION westmere
+#include "simdjson/westmere.h"
 #elif SIMDJSON_CAN_ALWAYS_RUN_ARM64
 #define SIMDJSON_BUILTIN_IMPLEMENTATION arm64
+#include "simdjson/arm64.h"
 #elif SIMDJSON_CAN_ALWAYS_RUN_PPC64
 #define SIMDJSON_BUILTIN_IMPLEMENTATION ppc64
+#include "simdjson/ppc64.h"
 #elif SIMDJSON_CAN_ALWAYS_RUN_FALLBACK
 #define SIMDJSON_BUILTIN_IMPLEMENTATION fallback
+#include "simdjson/fallback.h"
 #else
 #error "All possible implementations (including fallback) have been disabled! simdjson will not run."
 #endif

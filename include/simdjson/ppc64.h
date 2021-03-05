@@ -1,22 +1,16 @@
 #ifndef SIMDJSON_PPC64_H
 #define SIMDJSON_PPC64_H
 
+#include "simdjson/implementation-base.h"
+
 #ifdef SIMDJSON_FALLBACK_H
 #error "ppc64.h must be included before fallback.h"
 #endif
-
-#include "simdjson/portability.h"
 
 #ifndef SIMDJSON_IMPLEMENTATION_PPC64
 #define SIMDJSON_IMPLEMENTATION_PPC64 (SIMDJSON_IS_PPC64)
 #endif
 #define SIMDJSON_CAN_ALWAYS_RUN_PPC64 SIMDJSON_IMPLEMENTATION_PPC64 && SIMDJSON_IS_PPC64
-
-
-#include "simdjson/internal/isadetection.h"
-#include "simdjson/internal/jsoncharutils_tables.h"
-#include "simdjson/internal/numberparsing_tables.h"
-#include "simdjson/internal/simdprune_tables.h"
 
 #if SIMDJSON_IMPLEMENTATION_PPC64
 
