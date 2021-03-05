@@ -13,7 +13,7 @@ simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> ra
   return result;
 }
 
-constexpr simdjson_really_inline bool raw_json_string::is_free_from_unescaped_quote(std::string_view target) noexcept {
+simdjson_really_inline bool raw_json_string::is_free_from_unescaped_quote(std::string_view target) noexcept {
   size_t pos{0};
   // if the content has no escape character, just scan through it quickly!
   for(;pos < target.size() && target[pos] != '\\';pos++) {}
@@ -31,7 +31,7 @@ constexpr simdjson_really_inline bool raw_json_string::is_free_from_unescaped_qu
   return true;
 }
 
-constexpr simdjson_really_inline bool raw_json_string::is_free_from_unescaped_quote(const char* target) noexcept {
+simdjson_really_inline bool raw_json_string::is_free_from_unescaped_quote(const char* target) noexcept {
   size_t pos{0};
   // if the content has no escape character, just scan through it quickly!
   for(;target[pos] && target[pos] != '\\';pos++) {}
