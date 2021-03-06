@@ -22088,8 +22088,6 @@ public:
   simdjson_warn_unused error_code stage2_next(dom::document &doc) noexcept final;
   inline simdjson_warn_unused error_code set_capacity(size_t capacity) noexcept final;
   inline simdjson_warn_unused error_code set_max_depth(size_t max_depth) noexcept final;
-private:
-  simdjson_really_inline simdjson_warn_unused error_code set_capacity_stage1(size_t capacity);
 
 };
 

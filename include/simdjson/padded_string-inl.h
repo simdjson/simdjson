@@ -131,11 +131,19 @@ inline simdjson_result<padded_string> padded_string::load(const std::string &fil
     std::fclose(fp);
     return IO_ERROR;
   }
+#ifdef SIMDJSON_VISUAL_STUDIO
+  __int64 llen _ftelli64(fp);
+  if(llen == -1L) {
+    std::fclose(fp);
+    return IO_ERROR;
+  }
+#else
   long llen = std::ftell(fp);
   if((llen < 0) || (llen == LONG_MAX)) {
     std::fclose(fp);
     return IO_ERROR;
   }
+#endif
 
   // Allocate the padded_string
   size_t len = static_cast<size_t>(llen);

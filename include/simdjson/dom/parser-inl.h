@@ -46,11 +46,19 @@ inline simdjson_result<size_t> parser::read_file(const std::string &path) noexce
     std::fclose(fp);
     return IO_ERROR;
   }
+#ifdef SIMDJSON_VISUAL_STUDIO
+  __int64 llen _ftelli64(fp);
+  if(llen == -1L) {
+    std::fclose(fp);
+    return IO_ERROR;
+  }
+#else
   long len = std::ftell(fp);
   if((len < 0) || (len == LONG_MAX)) {
     std::fclose(fp);
     return IO_ERROR;
   }
+#endif
 
   // Make sure we have enough capacity to load the file
   if (_loaded_bytes_capacity < size_t(len)) {

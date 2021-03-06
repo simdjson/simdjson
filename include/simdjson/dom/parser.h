@@ -113,7 +113,9 @@ public:
    *
    * @param path The path to load.
    * @return The document, or an error:
-   *         - IO_ERROR if there was an error opening or reading the file.
+   *         - IO_ERROR if there was an error opening or reading the file. 
+   *           Be mindful that on some 32-bit systems, 
+   *           the file size might be limited to 2 GB.
    *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails.
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
    *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
