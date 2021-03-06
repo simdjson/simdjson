@@ -105,8 +105,8 @@ struct padded_string final {
 
   /**
    * Load this padded string from a file.
-   * 
-   * @return IO_ERROR on error. Be mindful that on some 32-bit systems, 
+   *
+   * @return IO_ERROR on error. Be mindful that on some 32-bit systems,
    * the file size might be limited to 2 GB.
    *
    * @param path the path to the file.
