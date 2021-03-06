@@ -1,3 +1,7 @@
+// Instead of including simdjson.h, we include the stuff inside so we can get all the
+// implementations and not just builtin
+#define SIMDJSON_CPP
+
 #include "simdjson.h"
 
 SIMDJSON_PUSH_DISABLE_WARNINGS

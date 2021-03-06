@@ -35,7 +35,6 @@
  */
 
 #include "simdjson/dom.h"
-#include "simdjson/implementations.h"
 #include "simdjson/builtin.h"
 
 #endif // SIMDJSON_H

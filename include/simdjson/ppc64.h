@@ -3,15 +3,6 @@
 
 #include "simdjson/implementation-base.h"
 
-#ifdef SIMDJSON_FALLBACK_H
-#error "ppc64.h must be included before fallback.h"
-#endif
-
-#ifndef SIMDJSON_IMPLEMENTATION_PPC64
-#define SIMDJSON_IMPLEMENTATION_PPC64 (SIMDJSON_IS_PPC64)
-#endif
-#define SIMDJSON_CAN_ALWAYS_RUN_PPC64 SIMDJSON_IMPLEMENTATION_PPC64 && SIMDJSON_IS_PPC64
-
 #if SIMDJSON_IMPLEMENTATION_PPC64
 
 namespace simdjson {

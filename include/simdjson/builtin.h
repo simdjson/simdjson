@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_BUILTIN_H
 #define SIMDJSON_BUILTIN_H
 
-#include "simdjson/portability.h"
+#include "simdjson/implementation-base.h"
 
 #ifndef SIMDJSON_BUILTIN_IMPLEMENTATION
 #if SIMDJSON_CAN_ALWAYS_RUN_HASWELL

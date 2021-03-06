@@ -3,22 +3,6 @@
 
 #include "simdjson/implementation-base.h"
 
-#ifdef SIMDJSON_WESTMERE_H
-#error "haswell.h must be included before westmere.h"
-#endif
-#ifdef SIMDJSON_FALLBACK_H
-#error "haswell.h must be included before fallback.h"
-#endif
-
-// Default Haswell to on if this is x86-64. Even if we're not compiled for it, it could be selected
-// at runtime.
-#ifndef SIMDJSON_IMPLEMENTATION_HASWELL
-#define SIMDJSON_IMPLEMENTATION_HASWELL (SIMDJSON_IS_X86_64)
-#endif
-// To see why  (__BMI__) && (__PCLMUL__) && (__LZCNT__) are not part of this next line, see
-// https://github.com/simdjson/simdjson/issues/1247
-#define SIMDJSON_CAN_ALWAYS_RUN_HASWELL ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__))
-
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 
 #define SIMDJSON_TARGET_HASWELL SIMDJSON_TARGET_REGION("avx2,bmi,pclmul,lzcnt")

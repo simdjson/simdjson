@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_INTERNAL_JSONCHARUTILS_TABLES_H
 #define SIMDJSON_INTERNAL_JSONCHARUTILS_TABLES_H
 
-#include "simdjson.h"
+#include "simdjson/common_defs.h"
 
 #ifdef JSON_TEST_STRINGS
 void found_string(const uint8_t *buf, const uint8_t *parsed_begin,

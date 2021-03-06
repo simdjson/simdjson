@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_HASWELL_INTRINSICS_H
 #define SIMDJSON_HASWELL_INTRINSICS_H
 
-#include "simdjson.h"
+#include "simdjson/base.h"
 
 #ifdef SIMDJSON_VISUAL_STUDIO
 // under clang within visual studio, this will include <x86intrin.h>
