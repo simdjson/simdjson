@@ -131,7 +131,7 @@ inline simdjson_result<padded_string> padded_string::load(const std::string &fil
     std::fclose(fp);
     return IO_ERROR;
   }
-#ifdef SIMDJSON_VISUAL_STUDIO
+#if defined(SIMDJSON_VISUAL_STUDIO) && !SIMDJSON_IS_32BITS
   __int64 llen = _ftelli64(fp);
   if(llen == -1L) {
     std::fclose(fp);
