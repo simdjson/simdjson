@@ -83,7 +83,8 @@ def dofile(fid, prepath, filename):
     # Last lines are always ignored. Files should end by an empty lines.
     print(f"/* begin file {RELFILE} */", file=fid)
     includepattern = re.compile('^#include "(.*)"')
-    redefines_simdjson_implementation = re.compile('^#define SIMDJSON_IMPLEMENTATION (.*)')
+    redefines_simdjson_implementation = re.compile('^#define\s+SIMDJSON_IMPLEMENTATION\s+(.*)')
+    undefines_simdjson_implementation = re.compile('^#undef\s+SIMDJSON_IMPLEMENTATION\s*$')
     uses_simdjson_implementation = re.compile('SIMDJSON_IMPLEMENTATION([^_a-zA-Z0-9]|$)')
     with open(file, 'r') as fid2:
         for line in fid2:
@@ -106,6 +107,9 @@ def dofile(fid, prepath, filename):
                 if s:
                     current_implementation=s.group(1)
                     print(f"// redefining SIMDJSON_IMPLEMENTATION to \"{current_implementation}\"\n// {line}", file=fid)
+                elif undefines_simdjson_implementation.search(line):
+                    # Don't include #undef SIMDJSON_IMPLEMENTATION since we're handling it ourselves
+                    print(f"// {line}")
                 else:
                     # copy the line, with SIMDJSON_IMPLEMENTATION replace to what it is currently defined to
                     print(uses_simdjson_implementation.sub(current_implementation+"\\1",line), file=fid)

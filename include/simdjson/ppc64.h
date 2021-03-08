@@ -27,12 +27,6 @@ namespace ppc64 {
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/ppc64/stringparsing.h"
 #include "simdjson/ppc64/numberparsing.h"
-#include "simdjson/generic/implementation_simdjson_result_base.h"
-#include "simdjson/generic/ondemand.h"
-
-// Inline definitions
-#include "simdjson/generic/implementation_simdjson_result_base-inl.h"
-#include "simdjson/generic/ondemand-inl.h"
 #include "simdjson/ppc64/end.h"
 
 #endif // SIMDJSON_IMPLEMENTATION_PPC64

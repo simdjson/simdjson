@@ -5,12 +5,12 @@
 
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 
-#ifndef SIMDJSON_CAN_ALWAYS_RUN_HASWELL
-#define SIMDJSON_TARGET_HASWELL SIMDJSON_TARGET_REGION("avx2,bmi,pclmul,lzcnt")
-#define SIMDJSON_UNTARGET_HASWELL SIMDJSON_UNTARGET_REGION
-#else
+#if SIMDJSON_CAN_ALWAYS_RUN_HASWELL
 #define SIMDJSON_TARGET_HASWELL
 #define SIMDJSON_UNTARGET_HASWELL
+#else
+#define SIMDJSON_TARGET_HASWELL SIMDJSON_TARGET_REGION("avx2,bmi,pclmul,lzcnt")
+#define SIMDJSON_UNTARGET_HASWELL SIMDJSON_UNTARGET_REGION
 #endif
 
 namespace simdjson {
@@ -41,13 +41,6 @@ namespace haswell {
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/haswell/stringparsing.h"
 #include "simdjson/haswell/numberparsing.h"
-#include "simdjson/generic/implementation_simdjson_result_base.h"
-#include "simdjson/generic/ondemand.h"
-
-// Inline definitions
-#include "simdjson/generic/implementation_simdjson_result_base-inl.h"
-#include "simdjson/generic/ondemand-inl.h"
-
 #include "simdjson/haswell/end.h"
 
 #endif // SIMDJSON_IMPLEMENTATION_HASWELL

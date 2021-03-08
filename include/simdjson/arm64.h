@@ -27,10 +27,6 @@ namespace arm64 {
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/arm64/stringparsing.h"
 #include "simdjson/arm64/numberparsing.h"
-#include "simdjson/generic/implementation_simdjson_result_base.h"
-
-// Inline definitions
-#include "simdjson/generic/implementation_simdjson_result_base-inl.h"
 #include "simdjson/arm64/end.h"
 
 #endif // SIMDJSON_IMPLEMENTATION_ARM64

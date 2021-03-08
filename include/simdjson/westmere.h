@@ -5,12 +5,12 @@
 
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
 
-#ifndef SIMDJSON_CAN_ALWAYS_RUN_WESTMERE
-#define SIMDJSON_TARGET_WESTMERE SIMDJSON_TARGET_REGION("sse4.2,pclmul")
-#define SIMDJSON_UNTARGET_WESTMERE SIMDJSON_UNTARGET_REGION
-#else
+#if SIMDJSON_CAN_ALWAYS_RUN_WESTMERE
 #define SIMDJSON_TARGET_WESTMERE
 #define SIMDJSON_UNTARGET_WESTMERE
+#else
+#define SIMDJSON_TARGET_WESTMERE SIMDJSON_TARGET_REGION("sse4.2,pclmul")
+#define SIMDJSON_UNTARGET_WESTMERE SIMDJSON_UNTARGET_REGION
 #endif
 
 namespace simdjson {
@@ -41,13 +41,6 @@ namespace westmere {
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/westmere/stringparsing.h"
 #include "simdjson/westmere/numberparsing.h"
-#include "simdjson/generic/implementation_simdjson_result_base.h"
-#include "simdjson/generic/ondemand.h"
-
-// Inline definitions
-#include "simdjson/generic/implementation_simdjson_result_base-inl.h"
-#include "simdjson/generic/ondemand-inl.h"
-
 #include "simdjson/westmere/end.h"
 
 #endif // SIMDJSON_IMPLEMENTATION_WESTMERE
