@@ -165,12 +165,21 @@ simdjson_unused simdjson_really_inline std::ostream &operator<<(std::ostream &, 
 
 /**
  * Comparisons between raw_json_string and C string are potentially unsafe: the user is responsible
- * for providing a null terminated string with no unescaped quote.
+ * for providing a null terminated string with no unescaped quote. Note that unescaped quotes cannot be present in valid JSON strings.
  */
 simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, const char *c) noexcept;
 simdjson_unused simdjson_really_inline bool operator==(const char *c, const raw_json_string &a) noexcept;
 simdjson_unused simdjson_really_inline bool operator!=(const raw_json_string &a, const char *c) noexcept;
 simdjson_unused simdjson_really_inline bool operator!=(const char *c, const raw_json_string &a) noexcept;
+/**
+ * Comparisons between raw_json_string and std::string_view instances are potentially unsafe: the user is responsible
+ * for providing a string with no unescaped quote. Note that unescaped quotes cannot be present in valid JSON strings.
+ */
+simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view c) noexcept;
+simdjson_unused simdjson_really_inline bool operator==(std::string_view c, const raw_json_string &a) noexcept;
+simdjson_unused simdjson_really_inline bool operator!=(const raw_json_string &a, std::string_view c) noexcept;
+simdjson_unused simdjson_really_inline bool operator!=(std::string_view c, const raw_json_string &a) noexcept;
+
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

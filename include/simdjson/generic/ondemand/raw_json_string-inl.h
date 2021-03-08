@@ -58,6 +58,9 @@ simdjson_really_inline bool raw_json_string::unsafe_is_equal(size_t length, std:
 simdjson_really_inline bool raw_json_string::unsafe_is_equal(std::string_view target) const noexcept {
   // Assumptions: does not contain unescaped quote characters, and
   // the raw content is quote terminated within a valid JSON string.
+  if(target.size() <= SIMDJSON_PADDING) {
+    return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
+  }
   const char * r{raw()};
   size_t pos{0};
   for(;pos < target.size();pos++) {
@@ -127,6 +130,23 @@ simdjson_really_inline bool raw_json_string::is_equal(const char* target) const 
   if(r[pos] != '"') { return false; }
   return true;
 }
+
+simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view c) noexcept {
+  return a.unsafe_is_equal(c);
+}
+
+simdjson_unused simdjson_really_inline bool operator==(std::string_view c, const raw_json_string &a) noexcept {
+  return a == c;
+}
+
+simdjson_unused simdjson_really_inline bool operator!=(const raw_json_string &a, std::string_view c) noexcept {
+  return !(a == c);
+}
+
+simdjson_unused simdjson_really_inline bool operator!=(std::string_view c, const raw_json_string &a) noexcept {
+  return !(a == c);
+}
+
 
 simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, const char *c) noexcept {
   return a.unsafe_is_equal(c);
