@@ -42,7 +42,8 @@ inline error_code document::allocate(size_t capacity) noexcept {
   // a document with only zero-length strings... could have capacity/3 string
   // and we would need capacity/3 * 5 bytes on the string buffer
   size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * capacity / 3 + SIMDJSON_PADDING, 64);
-  string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
+  std::allocator<uint8_t> uint8_allocator;
+  string_buf.reset( std::allocator_traits<std::allocator<uint8_t>>::allocate(uint8_allocator, string_capacity));
   tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
   if(!(string_buf && tape)) {
     allocated_capacity = 0;
