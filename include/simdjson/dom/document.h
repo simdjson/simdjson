@@ -58,11 +58,19 @@ public:
   /** @private Structural values. */
   std::unique_ptr<uint64_t[]> tape{};
 
+  struct uint8_unique_ptr_deleter {
+    void operator()(uint8_t* p) {
+      std::allocator<uint8_t> uint8_allocator;
+      std::allocator_traits<std::allocator<uint8_t>>::destroy(uint8_allocator, p);
+    }
+  };
+
   /** @private String values.
    *
    * Should be at least byte_capacity.
    */
-  std::unique_ptr<uint8_t[]> string_buf{};
+  std::unique_ptr<uint8_t[], uint8_unique_ptr_deleter> string_buf{};
+
   /** @private Allocate memory to support
    * input JSON documents of up to len bytes.
    *
