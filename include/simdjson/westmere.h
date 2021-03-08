@@ -5,7 +5,13 @@
 
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
 
+#ifndef SIMDJSON_CAN_ALWAYS_RUN_WESTMERE
 #define SIMDJSON_TARGET_WESTMERE SIMDJSON_TARGET_REGION("sse4.2,pclmul")
+#define SIMDJSON_UNTARGET_WESTMERE SIMDJSON_UNTARGET_REGION
+#else
+#define SIMDJSON_TARGET_WESTMERE
+#define SIMDJSON_UNTARGET_WESTMERE
+#endif
 
 namespace simdjson {
 /**
@@ -16,7 +22,7 @@ namespace westmere {
 } // namespace simdjson
 
 //
-// These two need to be included outside SIMDJSON_TARGET_REGION
+// These two need to be included outside SIMDJSON_TARGET_WESTMERE
 //
 #include "simdjson/westmere/implementation.h"
 #include "simdjson/westmere/intrinsics.h"

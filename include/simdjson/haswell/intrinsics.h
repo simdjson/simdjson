@@ -45,7 +45,7 @@ SIMDJSON_TARGET_HASWELL
 static simdjson_really_inline uint64_t _blsr_u64(uint64_t n) {
   return (n - 1) & n;
 }
-SIMDJSON_UNTARGET_REGION
+SIMDJSON_UNTARGET_HASWELL
 #endif //  _blsr_u64
 #endif // SIMDJSON_CLANG_VISUAL_STUDIO
 
