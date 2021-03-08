@@ -1,4 +1,5 @@
 namespace simdjson {
+
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
@@ -147,22 +148,6 @@ simdjson_unused simdjson_really_inline bool operator!=(std::string_view c, const
   return !(a == c);
 }
 
-
-simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, const char *c) noexcept {
-  return a.unsafe_is_equal(c);
-}
-
-simdjson_unused simdjson_really_inline bool operator==(const char *c, const raw_json_string &a) noexcept {
-  return a == c;
-}
-
-simdjson_unused simdjson_really_inline bool operator!=(const raw_json_string &a, const char *c) noexcept {
-  return !(a == c);
-}
-
-simdjson_unused simdjson_really_inline bool operator!=(const char *c, const raw_json_string &a) noexcept {
-  return !(a == c);
-}
 
 simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(json_iterator &iter) const noexcept {
   return unescape(iter.string_buf_loc());
