@@ -54,7 +54,7 @@ inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parse
 
 // Leaving these here so they can be inlined if so desired
 inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(size_t capacity) noexcept {
-  if(capacity > SIMDJSON_MAXSIZE_BYTES) { return UNALLOWED_CAPACITY; }
+  if(capacity > SIMDJSON_MAXSIZE_BYTES) { return CAPACITY; }
   // Stage 1 index output
   size_t max_structures = SIMDJSON_ROUNDUP_N(capacity, 64) + 2 + 7;
   structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );

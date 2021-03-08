@@ -84,7 +84,7 @@ public:
    * Change the capacity of this parser.
    *
    * The capacity can never exceed SIMDJSON_MAXSIZE_BYTES (e.g., 4 GB)
-   * and an UNALLOWED_CAPACITY error is returned if it is attempted.
+   * and an CAPACITY error is returned if it is attempted.
    *
    * Generally used for reallocation.
    *
