@@ -11,7 +11,8 @@ void maybe_display_implementation() {
   if(!displayed_implementation) {
     displayed_implementation = true;
     std::cout << "simdjson::dom implementation:      " << simdjson::active_implementation->name() << std::endl;
-    std::cout << "simdjson::ondemand implementation: " << simdjson::builtin_implementation()->name() << std::endl;
+    std::cout << "simdjson::ondemand implementation (stage 1): " << simdjson::active_implementation->name() << std::endl;
+    std::cout << "simdjson::ondemand implementation (stage 2): " << simdjson::builtin_implementation()->name() << std::endl;
   }
 }
 
