@@ -54,7 +54,8 @@ if(SIMDJSON_SANITIZE_THREADS)
 endif()
 
 if (NOT CMAKE_BUILD_TYPE)
-  if(SIMDJSON_SANITIZE)
+  # Deliberately not including SIMDJSON_SANITIZE_THREADS since thread behavior depends on the build type.
+  if(SIMDJSON_SANITIZE OR SIMDJSON_SANITIZE_UNDEFINED)
     message(STATUS "No build type selected and you have enabled the sanitizer, default to Debug. Consider setting CMAKE_BUILD_TYPE.")
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
   else()
