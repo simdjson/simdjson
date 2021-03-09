@@ -222,7 +222,9 @@ public:
    * double y = obj.find_field("y");
    * double x = obj.find_field("x");
    * ```
-   *
+   * If you have multiple fields with a matching key ({"x": 1,  "x": 1}) be mindful
+   * that only one field is returned.
+
    * **Raw Keys:** The lookup will be done against the *raw* key, and will not unescape keys.
    * e.g. `object["a"]` will match `{ "a": 1 }`, but will *not* match `{ "\u0061": 1 }`.
    *
@@ -245,6 +247,9 @@ public:
    * It is the default, however, because it would be highly surprising (and hard to debug) if the
    * default behavior failed to look up a field just because it was in the wrong order--and many
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
+   *
+   * If you have multiple fields with a matching key ({"x": 1,  "x": 1}) be mindful
+   * that only one field is returned.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
    * field wasn't there when they aren't).

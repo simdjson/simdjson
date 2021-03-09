@@ -30,8 +30,8 @@ public:
    */
   simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> unescaped_key() noexcept;
   /**
-   * Get the key as a raw_json_string: this is fast and allows straight comparisons.
-   * We want this to be the default for most users.
+   * Get the key as a raw_json_string. Can be used for direct comparison with
+   * an unescaped C string: e.g., key() == "test".
    */
   simdjson_really_inline raw_json_string key() const noexcept;
   /**

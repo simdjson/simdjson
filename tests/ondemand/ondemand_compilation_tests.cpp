@@ -25,7 +25,6 @@ void compilation_test_1() {
     }
 }
 
-
 // Do not run this, it is only meant to compile
  void compilation_test_2() {
   const padded_string bogus = ""_padded;

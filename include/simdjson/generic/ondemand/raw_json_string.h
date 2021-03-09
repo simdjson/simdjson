@@ -16,7 +16,7 @@ class json_iterator;
  * JSON file.)
  *
  * This class is deliberately simplistic and has little functionality. You can
- * compare two raw_json_string instances, or compare a raw_json_string with a string_view, but
+ * compare a raw_json_string instance with an unescaped C string, but
  * that is pretty much all you can do.
  *
  * They originate typically from field instance which in turn represent key-value pairs from
@@ -49,7 +49,76 @@ public:
    */
   simdjson_really_inline const char * raw() const noexcept;
 
+  /**
+   * This compares the current instance to the std::string_view target: returns true if
+   * they are byte-by-byte equal (no escaping is done) on target.size() characters,
+   * and if the raw_json_string instance has a quote character at byte index target.size().
+   * We never read more than length + 1 bytes in the raw_json_string instance.
+   * If length is smaller than target.size(), this will return false.
+   *
+   * The std::string_view instance may contain any characters. However, the caller
+   * is responsible for setting length so that length bytes may be read in the
+   * raw_json_string.
+   *
+   * Performance: the comparison may be done using memcmp which may be efficient
+   * for long strings.
+   */
+  simdjson_really_inline bool unsafe_is_equal(size_t length, std::string_view target) const noexcept;
+
+  /**
+   * This compares the current instance to the std::string_view target: returns true if
+   * they are byte-by-byte equal (no escaping is done).
+   * The std::string_view instance should not contain unescaped quote characters:
+   * the caller is responsible for this check. See is_free_from_unescaped_quote.
+   *
+   * Performance: the comparison is done byte-by-byte which might be inefficient for
+   * long strings.
+   *
+   * If target is a compile-time constant, and your compiler likes you,
+   * you should be able to do the following without performance penatly...
+   *
+   *   static_assert(raw_json_string::is_free_from_unescaped_quote(target), "");
+   *   s.unsafe_is_equal(target);
+   */
+  simdjson_really_inline bool unsafe_is_equal(std::string_view target) const noexcept;
+
+  /**
+   * This compares the current instance to the C string target: returns true if
+   * they are byte-by-byte equal (no escaping is done).
+   * The provided C string should not contain an unescaped quote character:
+   * the caller is responsible for this check. See is_free_from_unescaped_quote.
+   *
+   * If target is a compile-time constant, and your compiler likes you,
+   * you should be able to do the following without performance penatly...
+   *
+   *   static_assert(raw_json_string::is_free_from_unescaped_quote(target), "");
+   *   s.unsafe_is_equal(target);
+   */
+  simdjson_really_inline bool unsafe_is_equal(const char* target) const noexcept;
+
+  /**
+   * This compares the current instance to the std::string_view target: returns true if
+   * they are byte-by-byte equal (no escaping is done).
+   */
+  simdjson_really_inline bool is_equal(std::string_view target) const noexcept;
+
+  /**
+   * This compares the current instance to the C string target: returns true if
+   * they are byte-by-byte equal (no escaping is done).
+   */
+  simdjson_really_inline bool is_equal(const char* target) const noexcept;
+
+  /**
+   * Returns true if target is free from unescaped quote. If target is known at
+   * compile-time, we might expect the computation to happen at compile time with
+   * many compilers (not all!).
+   */
+  static simdjson_really_inline bool is_free_from_unescaped_quote(std::string_view target) noexcept;
+  static simdjson_really_inline bool is_free_from_unescaped_quote(const char* target) noexcept;
+
 private:
+
+
   /**
    * This will set the inner pointer to zero, effectively making
    * this instance unusable.
@@ -92,12 +161,17 @@ private:
   friend struct simdjson_result<raw_json_string>;
 };
 
-simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view b) noexcept;
-simdjson_unused simdjson_really_inline bool operator==(std::string_view a, const raw_json_string &b) noexcept;
-simdjson_unused simdjson_really_inline bool operator!=(const raw_json_string &a, std::string_view b) noexcept;
-simdjson_unused simdjson_really_inline bool operator!=(std::string_view a, const raw_json_string &b) noexcept;
-
 simdjson_unused simdjson_really_inline std::ostream &operator<<(std::ostream &, const raw_json_string &) noexcept;
+
+/**
+ * Comparisons between raw_json_string and std::string_view instances are potentially unsafe: the user is responsible
+ * for providing a string with no unescaped quote. Note that unescaped quotes cannot be present in valid JSON strings.
+ */
+simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view c) noexcept;
+simdjson_unused simdjson_really_inline bool operator==(std::string_view c, const raw_json_string &a) noexcept;
+simdjson_unused simdjson_really_inline bool operator!=(const raw_json_string &a, std::string_view c) noexcept;
+simdjson_unused simdjson_really_inline bool operator!=(std::string_view c, const raw_json_string &a) noexcept;
+
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

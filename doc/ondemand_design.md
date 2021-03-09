@@ -632,7 +632,12 @@ We iterate through object instances using `field` instances which represent key-
 is accessible by the `value()` method whereas the key is accessible by the `key()` method.
 The keys are treated differently than values are made available as as special type `raw_json_string`
 which is a lightweight type that is meant to be used on a temporary basis, amost solely for
-direct raw ASCII comparisons (`field.key() == "mykey"`). If you occasionally need to access and store the
+direct raw ASCII comparisons: `key().raw()` provides direct access to the unescaped string.
+You can compare `key()` with unescaped C strings (e.g., `key()=="test"`). It is expected
+that the provided string is a valid JSON string. Importantly,
+the C string must not contain an unescaped quote character (`"`). For speed, the comparison is done byte-by-byte
+without handling the escaped caracters.
+If you occasionally need to access and store the
 unescaped key values, you may use the `unescaped_key()` method. Once you have called `unescaped_key()` method,
 neither the `key()` nor the `unescaped_key()` methods should be called: the current field instance
 has no longer a key (that is by design). Like other strings, the resulting `std::string_view` generated
