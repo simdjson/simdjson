@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_PPC64_SIMD_H
 #define SIMDJSON_PPC64_SIMD_H
 
-#include "simdjson.h"
+#include "simdjson/base.h"
 #include "simdjson/internal/simdprune_tables.h"
 #include "simdjson/ppc64/bitmanipulation.h"
 #include <type_traits>

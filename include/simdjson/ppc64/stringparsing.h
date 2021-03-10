@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_PPC64_STRINGPARSING_H
 #define SIMDJSON_PPC64_STRINGPARSING_H
 
-#include "simdjson.h"
+#include "simdjson/base.h"
 #include "simdjson/ppc64/bitmanipulation.h"
 #include "simdjson/ppc64/simd.h"
 

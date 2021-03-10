@@ -3,7 +3,7 @@
 
 #include "simdjson/implementation.h"
 
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_REGION
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
 namespace simdjson {
 namespace haswell {
 

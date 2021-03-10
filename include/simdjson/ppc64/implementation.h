@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_PPC64_IMPLEMENTATION_H
 #define SIMDJSON_PPC64_IMPLEMENTATION_H
 
-#include "simdjson.h"
+#include "simdjson/base.h"
 #include "simdjson/internal/isadetection.h"
 
 namespace simdjson {

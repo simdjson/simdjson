@@ -1,8 +1,9 @@
 #ifndef SIMDJSON_BUILTIN_H
 #define SIMDJSON_BUILTIN_H
 
-#include "simdjson/portability.h"
+#include "simdjson/implementations.h"
 
+// Determine the best builtin implementation
 #ifndef SIMDJSON_BUILTIN_IMPLEMENTATION
 #if SIMDJSON_CAN_ALWAYS_RUN_HASWELL
 #define SIMDJSON_BUILTIN_IMPLEMENTATION haswell
@@ -19,6 +20,20 @@
 #endif
 #endif // SIMDJSON_BUILTIN_IMPLEMENTATION
 
+#define SIMDJSON_IMPLEMENTATION SIMDJSON_BUILTIN_IMPLEMENTATION
+
+// ondemand is only compiled as part of the builtin implementation at present
+
+// Interface declarations
+#include "simdjson/generic/implementation_simdjson_result_base.h"
+#include "simdjson/generic/ondemand.h"
+
+// Inline definitions
+#include "simdjson/generic/implementation_simdjson_result_base-inl.h"
+#include "simdjson/generic/ondemand-inl.h"
+
+#undef SIMDJSON_IMPLEMENTATION
+
 namespace simdjson {
   /**
    * Represents the best statically linked simdjson implementation that can be used by the compiling
@@ -32,7 +47,7 @@ namespace simdjson {
    */
   namespace builtin = SIMDJSON_BUILTIN_IMPLEMENTATION;
   /**
-   * @overload simdjson::SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand
+   * @copydoc simdjson::SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand
    */
   namespace ondemand = SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand;
   /**

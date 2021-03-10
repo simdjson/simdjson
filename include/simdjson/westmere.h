@@ -1,21 +1,17 @@
 #ifndef SIMDJSON_WESTMERE_H
 #define SIMDJSON_WESTMERE_H
 
-#ifdef SIMDJSON_FALLBACK_H
-#error "westmere.h must be included before fallback.h"
-#endif
-
-#include "simdjson/portability.h"
-
-// Default Westmere to on if this is x86-64, unless we'll always select Haswell.
-#ifndef SIMDJSON_IMPLEMENTATION_WESTMERE
-#define SIMDJSON_IMPLEMENTATION_WESTMERE (SIMDJSON_IS_X86_64 && !SIMDJSON_REQUIRES_HASWELL)
-#endif
-#define SIMDJSON_CAN_ALWAYS_RUN_WESTMERE (SIMDJSON_IMPLEMENTATION_WESTMERE && SIMDJSON_IS_X86_64 && __SSE4_2__ && __PCLMUL__)
+#include "simdjson/implementation-base.h"
 
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
 
+#if SIMDJSON_CAN_ALWAYS_RUN_WESTMERE
+#define SIMDJSON_TARGET_WESTMERE
+#define SIMDJSON_UNTARGET_WESTMERE
+#else
 #define SIMDJSON_TARGET_WESTMERE SIMDJSON_TARGET_REGION("sse4.2,pclmul")
+#define SIMDJSON_UNTARGET_WESTMERE SIMDJSON_UNTARGET_REGION
+#endif
 
 namespace simdjson {
 /**
@@ -26,7 +22,7 @@ namespace westmere {
 } // namespace simdjson
 
 //
-// These two need to be included outside SIMDJSON_TARGET_REGION
+// These two need to be included outside SIMDJSON_TARGET_WESTMERE
 //
 #include "simdjson/westmere/implementation.h"
 #include "simdjson/westmere/intrinsics.h"
@@ -45,13 +41,6 @@ namespace westmere {
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/westmere/stringparsing.h"
 #include "simdjson/westmere/numberparsing.h"
-#include "simdjson/generic/implementation_simdjson_result_base.h"
-#include "simdjson/generic/ondemand.h"
-
-// Inline definitions
-#include "simdjson/generic/implementation_simdjson_result_base-inl.h"
-#include "simdjson/generic/ondemand-inl.h"
-
 #include "simdjson/westmere/end.h"
 
 #endif // SIMDJSON_IMPLEMENTATION_WESTMERE

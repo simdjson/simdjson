@@ -1,4 +1,4 @@
-#include "simdjson.h"
+#include "simdjson/base.h"
 #include "simdjson/internal/isadetection.h"
 
 namespace simdjson {
