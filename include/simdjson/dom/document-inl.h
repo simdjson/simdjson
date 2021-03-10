@@ -42,9 +42,11 @@ inline error_code document::allocate(size_t capacity) noexcept {
   // a document with only zero-length strings... could have capacity/3 string
   // and we would need capacity/3 * 5 bytes on the string buffer
   size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * capacity / 3 + SIMDJSON_PADDING, 64);
-  std::allocator<uint8_t> uint8_allocator;
-  string_buf.reset( std::allocator_traits<std::allocator<uint8_t>>::allocate(uint8_allocator, string_capacity));
-  tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
+  string_buf.reset(
+      string_buf.get_deleter().uint8_allocator.allocate(string_capacity));
+  string_buf.get_deleter().allocated_count = string_capacity;
+  tape.reset(tape.get_deleter().uint64_allocator.allocate(tape_capacity));
+  tape.get_deleter().allocated_count = tape_capacity;
   if(!(string_buf && tape)) {
     allocated_capacity = 0;
     string_buf.reset();
@@ -83,8 +85,8 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
       os << "string \"";
       std::memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
       os << internal::escape_json_string(std::string_view(
-        reinterpret_cast<const char *>(string_buf.get() + payload + sizeof(uint32_t)),
-        string_length
+          reinterpret_cast<const char *>(string_buf.get() + payload + sizeof(uint32_t)),
+          string_length
       ));
       os << '"';
       os << '\n';
