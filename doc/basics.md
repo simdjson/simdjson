@@ -5,8 +5,10 @@ An overview of what you need to know to use simdjson, with examples.
 
 * [Requirements](#requirements)
 * [Including simdjson](#including-simdjson)
+* [Using simdjson with package managers](#using-simdjson-with-package-managers)
 * [Using simdjson as a CMake dependency](#using-simdjson-as-a-cmake-dependency)
 * [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents)
+* [Documents Are Iterators](#documents-are-iterators)
 * [Using the Parsed JSON](#using-the-parsed-json)
 * [C++11 Support and string_view](#c11-support-and-string_view)
 * [C++17 Support](#c17-support)
@@ -64,16 +66,13 @@ include(FetchContent)
 FetchContent_Declare(
   simdjson
   GIT_REPOSITORY https://github.com/simdjson/simdjson.git
-  GIT_TAG  v0.5.0
+  GIT_TAG  v0.9.0
   GIT_SHALLOW TRUE)
-
-set(SIMDJSON_JUST_LIBRARY ON CACHE INTERNAL "")
-set(SIMDJSON_BUILD_STATIC ON CACHE INTERNAL "")
 
 FetchContent_MakeAvailable(simdjson)
 ```
 
-You should replace `GIT_TAG  v0.5.0` by the version you need. If you omit `GIT_TAG  v0.5.0`, you will work from the main branch of simdjson: we recommend that if you are working on production code,
+You should replace `GIT_TAG  v0.9.0` by the version you need. If you omit `GIT_TAG  v0.9.0`, you will work from the main branch of simdjson: we recommend that if you are working on production code,
 
 Elsewhere in your project, you can  declare dependencies on simdjson with lines such as these:
 
@@ -90,88 +89,133 @@ See [our CMake demonstration](https://github.com/simdjson/cmake_demo_single_file
 
 The CMake build in simdjson can be taylored with a few variables. You can see the available variables and their default values by entering the `cmake -LA` command.
 
+
 The Basics: Loading and Parsing JSON Documents
 ----------------------------------------------
 
-The simdjson library offers a simple DOM tree API, which you can access by creating a
-`dom::parser` and calling the `load()` method:
+The simdjson library offers a  tree API, which you can access by creating a
+`ondemand::parser` and calling the `iterate()` method:
 
 ```c++
-dom::parser parser;
-dom::element doc = parser.load(filename); // load and parse a file
+ondemand::parser parser;
+auto json = padded_string::load("twitter.json");
+ondemand::document doc = parser.iterate(json); // load and parse a file
 ```
 
 Or by creating a padded string (for efficiency reasons, simdjson requires a string with
-SIMDJSON_PADDING bytes at the end) and calling `parse()`:
+SIMDJSON_PADDING bytes at the end) and calling `iterate()`:
 
 ```c++
-dom::parser parser;
-dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string, the _padded suffix creates a simdjson::padded_string instance
+ondemand::parser parser;
+auto json = "[1,2,3]"_padded; // The _padded suffix creates a simdjson::padded_string instance
+ondemand::document doc = parser.iterate(json); // parse a string
 ```
 
-The parsed document resulting from the `parser.load` and `parser.parse` calls depends on the `parser` instance. Thus the `parser` instance must remain in scope. Furthermore, you must have at most one parsed document in play per `parser` instance.
-You cannot copy a `parser` instance, you may only move it.
+If you have a buffer of your own with enough padding already (SIMDJSON_PADDING extra bytes allocated), you can use `promise_padded` to pass it in:
 
-If you need to keep a document around long term, you can keep or move the parser instance. Note that moving a parser instance, or keeping one in a movable data structure like vector or map, can cause any outstanding `element`, `object` or `array` instances to be invalidated. If you need to store a parser in a movable data structure, you should use a `std::unique_ptr` to avoid this invalidation(e.g., `std::unique_ptr<dom::parser> parser(new dom::parser{})`).
+```c++
+ondemand::parser parser;
+char json[3+SIMDJSON_PADDING];
+strcpy(json, "[1]");
+ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
+```
 
-During the`load` or `parse` calls, neither the input file nor the input string are ever modified. After calling `load` or `parse`, the source (either a file or a string) can be safely discarded. All of the JSON data is stored in the `parser` instance.  The parsed document is also immutable in simdjson: you do not modify it by accessing it.
+Documents Are Iterators
+-----------------------
 
-For best performance, a `parser` instance should be reused over several files: otherwise you will needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory allocations during parsing when using simdjson. [See our performance notes for details](performance.md).
+The simdjson library relies on an approach to parsing JSON that we call "On Demand".
+A `document` is *not* a fully-parsed JSON value; rather, it is an **iterator** over the JSON text.
+This means that while you iterate an array, or search for a field in an object, it is actually
+walking through the original JSON text, merrily reading commas and colons and brackets to make sure
+you get where you are going. This is the key to On Demand's performance: since it's just an iterator,
+it lets you parse values as you use them. And particularly, it lets you *skip* values you do not want
+to use.
 
-If you need a lower-level interface, you may call the function `parser.parse(const char * p, size_t l)` on a pointer `p` while specifying the
-length of your input `l` in bytes. To see how to get the very best performance from a low-level approach, you way want to read our [performance notes](https://github.com/simdjson/simdjson/blob/master/doc/performance.md#padding-and-temporary-copies) on this topic (see the Padding and Temporary Copies section).
+### Parser, Document and JSON Scope
 
+Because a document is an iterator over the JSON text, both the JSON text and the parser must
+remain alive (in scope) while you are using it. Further, a `parser` may have at most
+one document open at a time, since it holds allocated memory used for the parsing.
+
+During the `iterate` call, the original JSON text is never modified--only read. After you are done
+with the document, the source (whether file or string) can be safely discarded.
+
+For best performance, a `parser` instance should be reused over several files: otherwise you will
+needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory
+allocations during parsing when using simdjson. [See our performance notes for details](performance.md).
 
 Using the Parsed JSON
 ---------------------
 
-Once you have an element, you can navigate it with idiomatic C++ iterators, operators and casts.
+Once you have a document, you can navigate it with idiomatic C++ iterators, operators and casts.
+The following show how to use the JSON when exceptions are enabled, but simdjson has full, idiomatic
+support for users who avoid exceptions. See [the simdjson DOM API's error handling documentation](basics.md#error-handling) for more.
 
-* **Extracting Values (with exceptions):** You can cast a JSON element to a native type: `double(element)` or
-  `double x = json_element`. This works for double, uint64_t, int64_t, bool,
-  dom::object and dom::array. An exception is thrown if the cast is not possible.
-* **Extracting Values (without exceptions):** You can use a variant usage of `get()` with error codes to avoid exceptions. You first declare the variable of the appropriate type (`double`, `uint64_t`, `int64_t`, `bool`,
-  `dom::object` and `dom::array`) and pass it by reference to `get()` which gives you back an error code: e.g.,
-  ```c++
-  simdjson::error_code error;
-  simdjson::padded_string numberstring = "1.2"_padded; // our JSON input ("1.2")
-  simdjson::dom::parser parser;
-  double value; // variable where we store the value to be parsed
-  error = parser.parse(numberstring).get(value);
-  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
-  std::cout << "I parsed " << value << " from " << numberstring.data() << std::endl;
-  ```
-* **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`.
-* **Array Iteration:** To iterate through an array, use `for (auto value : array) { ... }`. If you
-  know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`
-* **Object Iteration:** You can iterate through an object's fields, too: `for (auto [key, value] : object)`
-* **Array Index:** To get at an array value by index, use the at() method: `array.at(0)` gets the
-  first element.
-  > Note that array[0] does not compile, because implementing [] gives the impression indexing is a
-  > O(1) operation, which it is not presently in simdjson. Instead, you should iterate over the elements
-  > using a for-loop, as in our examples.
-* **Array and Object size** Given an array or an object, you can get its size (number of elements or keys)
-  with the `size()` method.
-* **Checking an Element Type:** You can check an element's type with `element.type()`. It
-  returns an `element_type` with values such as `simdjson::dom::element_type::ARRAY`, `simdjson::dom::element_type::OBJECT`, `simdjson::dom::element_type::INT64`,  `simdjson::dom::element_type::UINT64`,`simdjson::dom::element_type::DOUBLE`, `simdjson::dom::element_type::BOOL` or, `simdjson::dom::element_type::NULL_VALUE`.
-* **Output to streams and strings:** Given a document or an element (or node) out of a JSON document, you can output a minified string version using the C++ stream idiom (`out << element`). You can also request the construction of a minified string version (`simdjson::minify(element)`).
+* **Extracting Values:** You can cast a JSON element to a native type:
+  `double(element)` or `double x = json_element`. This works for double, uint64_t, int64_t, bool,
+  ondemand::object and ondemand::array. At this point, the number, string or boolean will be parsed,
+  or the initial `[` or `{` will be verified. An exception is thrown if the cast is not possible.
+
+  > IMPORTANT NOTE: values can only be parsed once. Since documents are *iterators*, once you have
+  > parsed a value (such as by casting to double), you cannot get at it again.
+* **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
+  scan through the object looking for the field with the matching string.
+
+  > NOTE: simdjson does *not* unescape keys when matching. This is not generally a problem for
+  > applications with well-defined key names (which generally do not use escapes). If you do need this
+  > support, it's best to iterate through the object fields to find the field you are looking for.
+  >
+  > By default, field lookup is order-insensitive, so you can look up values in any order. However,
+  > we still encourage you to look up fields in the order you expect them in the JSON, as it is still
+  > much faster.
+  >
+  > If you want to enforce finding fields in order, you can use `object.find_field("foo")` instead.
+  > This will only look forward, and will fail to find fields in the wrong order: for example, this
+  > will fail:
+  >
+  > ```c++
+  > ondemand::parser parser;
+  > auto json = R"(  { "x": 1, "y": 2 }  )"_padded;
+  > auto doc = parser.iterate(json);
+  > double y = doc.find_field("y"); // The cursor is now after the 2 (at })
+  > double x = doc.find_field("x"); // This fails, because there are no more fields after "y"
+  > ```
+  >
+  > By contrast, using the default (order-insensitive) lookup succeeds:
+  >
+  > ```c++
+  > ondemand::parser parser;
+  > auto json = R"(  { "x": 1, "y": 2 }  )"_padded;
+  > auto doc = parser.iterate(json);
+  > double y = doc["y"]; // The cursor is now after the 2 (at })
+  > double x = doc["x"]; // Success: [] loops back around to find "x"
+  > ```
+* **Array Iteration:** To iterate through an array, use `for (auto value : array) { ... }`. This will
+  step through each value in the JSON array.
+
+  If you know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`.
+* **Object Iteration:** You can iterate through an object's fields, as well: `for (auto field : object) { ... }`
+  - `field.unescaped_key()` will get you the key string.
+  - `field.value()` will get you the value, which you can then use all these other methods on.
+* **Array Index:** Because it is forward-only, you cannot look up an array element by index. Instead,
+  you will need to iterate through the array and keep an index yourself.
 
 ### Examples
 
-The following code illustrates all of the above:
+The following code illustrates many of the above concepts:
 
 ```c++
+ondemand::parser parser;
 auto cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
 ] )"_padded;
-dom::parser parser;
 
 // Iterating through an array of objects
-for (dom::object car : parser.parse(cars_json)) {
+for (ondemand::object car : parser.iterate(cars_json)) {
   // Accessing a field by name
-  cout << "Make/Model: " << car["make"] << "/" << car["model"] << endl;
+  cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
 
   // Casting a JSON element to an integer
   uint64_t year = car["year"];
@@ -183,44 +227,120 @@ for (dom::object car : parser.parse(cars_json)) {
     total_tire_pressure += tire_pressure;
   }
   cout << "- Average tire pressure: " << (total_tire_pressure / 4) << endl;
-
-  // Writing out all the information about the car
-  for (auto field : car) {
-    cout << "- " << field.key << ": " << field.value << endl;
-  }
 }
 ```
 
 Here is a different example illustrating the same ideas:
 
 ```C++
-auto abstract_json = R"( [
-    {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
-    {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
+ondemand::parser parser;
+auto points_json = R"( [
+    {  "12345" : {"x":12.34, "y":56.78, "z": 9998877}   },
+    {  "12545" : {"x":11.44, "y":12.78, "z": 11111111}  }
   ] )"_padded;
-dom::parser parser;
 
 // Parse and iterate through an array of objects
-for (dom::object obj : parser.parse(abstract_json)) {
-    for(const auto key_value : obj) {
-      cout << "key: " << key_value.key << " : ";
-      dom::object innerobj = key_value.value;
-      cout << "a: " << double(innerobj["a"]) << ", ";
-      cout << "b: " << double(innerobj["b"]) << ", ";
-      cout << "c: " << int64_t(innerobj["c"]) << endl;
-    }
+for (ondemand::object points : parser.iterate(points_json)) {
+  for (auto point : points) {
+    cout << "id: " << std::string_view(point.unescaped_key()) << ": (";
+    cout << point.value()["x"].get_double() << ", ";
+    cout << point.value()["y"].get_double() << ", ";
+    cout << point.value()["z"].get_int64() << endl;
+  }
 }
 ```
 
 And another one:
 
-
 ```C++
+auto abstract_json = R"(
+  { "str" : { "123" : {"abc" : 3.14 } } }
+)"_padded;
+ondemand::parser parser;
+auto doc = parser.iterate(abstract_json);
+cout << doc["str"]["123"]["abc"].get_double() << endl; // Prints 3.14
+```
+
+* **Extracting Values (without exceptions):** You can use a variant usage of `get()` with error
+  codes to avoid exceptions. You first declare the variable of the appropriate type (`double`,
+  `uint64_t`, `int64_t`, `bool`, `ondemand::object` and `ondemand::array`) and pass it by reference
+  to `get()` which gives you back an error code: e.g.,
+
+  ```c++
   auto abstract_json = R"(
-    {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
-  dom::parser parser;
-  double v = parser.parse(abstract_json)["str"]["123"]["abc"];
-  cout << "number: " << v << endl;
+    { "str" : { "123" : {"abc" : 3.14 } } }
+  )"_padded;
+  ondemand::parser parser;
+
+  double value;
+  auto doc = parser.iterate(abstract_json);
+  auto error = doc["str"]["123"]["abc"].get(value);
+  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  cout << value << endl; // Prints 3.14
+  ```
+
+
+
+Tree Walking and JSON Element Types: Sometimes you don't necessarily have a document with a known type, and are trying to generically inspect or walk over JSON elements. To do that, you can use iterators and the type() method. For example, here's a quick and dirty recursive function that verbosely prints the JSON document as JSON:
+
+```c++
+
+void recursive_print_json(ondemand::value element) {
+  bool add_comma;
+  switch (element.type()) {
+  case ondemand::json_type::array:
+    cout << "[";
+    add_comma = false;
+    for (auto child : element.get_array()) {
+      if (add_comma) {
+        cout << ",";
+      }
+      // We need the call to value() to get
+      // an ondemand::value type.
+      recursive_print_json(child.value());
+      add_comma = true;
+    }
+    cout << "]";
+    break;
+  case ondemand::json_type::object:
+    cout << "{";
+    add_comma = false;
+    for (auto field : element.get_object()) {
+      if (add_comma) {
+        cout << ",";
+      }
+      // key() returns the unescaped key, if we
+      // want the escaped key, we should do
+      // field.unescaped_key().
+      cout << "\"" << field.key() << "\": ";
+      recursive_print_json(field.value());
+      add_comma = true;
+    }
+    cout << "}";
+    break;
+  case ondemand::json_type::number:
+    // assume it fits in a double
+    cout << element.get_double();
+    break;
+  case ondemand::json_type::string:
+    // get_string() would return escaped string, but
+    // we are happy with unescaped string.
+    cout << "\"" << element.get_raw_json_string() << "\"";
+    break;
+  case ondemand::json_type::boolean:
+    cout << element.get_bool();
+    break;
+  case ondemand::json_type::null:
+    cout << "null";
+    break;
+  }
+}
+void basics_treewalk() {
+  ondemand::parser parser;
+  auto json = padded_string::load("twitter.json");
+  ondemand::document doc = parser.iterate(json);
+  recursive_print_json(doc.get_root_value());
+}
 ```
 
 

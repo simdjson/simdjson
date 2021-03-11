@@ -298,6 +298,11 @@ public:
    */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
 
+  /**
+   * Get the root value.
+   */
+  simdjson_really_inline value get_root_value() noexcept;
+
 protected:
   simdjson_really_inline document(ondemand::json_iterator &&iter) noexcept;
   simdjson_really_inline const uint8_t *text(uint32_t idx) const noexcept;
@@ -305,7 +310,6 @@ protected:
   simdjson_really_inline value_iterator resume_value_iterator() noexcept;
   simdjson_really_inline value_iterator get_root_value_iterator() noexcept;
   simdjson_really_inline value resume_value() noexcept;
-  simdjson_really_inline value get_root_value() noexcept;
   static simdjson_really_inline document start(ondemand::json_iterator &&iter) noexcept;
 
   //
