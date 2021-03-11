@@ -302,6 +302,7 @@ public:
    * Get the root value.
    */
   simdjson_really_inline value get_root_value() noexcept;
+  simdjson_really_inline operator value() noexcept;
 
 protected:
   simdjson_really_inline document(ondemand::json_iterator &&iter) noexcept;

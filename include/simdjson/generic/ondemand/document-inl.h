@@ -24,6 +24,9 @@ simdjson_really_inline value document::resume_value() noexcept {
 simdjson_really_inline value document::get_root_value() noexcept {
   return get_root_value_iterator();
 }
+simdjson_really_inline document::operator value() noexcept {
+  return get_root_value();
+}
 
 simdjson_really_inline simdjson_result<array> document::get_array() & noexcept {
   auto value = get_root_value_iterator();

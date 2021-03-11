@@ -156,7 +156,7 @@ namespace ondemand_treewalk {
     ondemand::parser parser;
     auto json = padded_string::load("twitter.json");
     ondemand::document doc = parser.iterate(json);
-    recursive_print_json(doc.get_root_value());
+    recursive_print_json(doc);
   }
 
 }
