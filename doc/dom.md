@@ -3,7 +3,7 @@ The Document-Object-Model (DOM) front-end
 
 An overview of what you need to know to use simdjson, with examples.
 
-* [DOM vs OnDemand](#dom-vs-ondemand)
+* [DOM vs On Demand](#dom-vs-ondemand)
 * [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents)
 * [Using the Parsed JSON](#using-the-parsed-json)
 * [C++17 Support](#c17-support)
@@ -13,6 +13,13 @@ An overview of what you need to know to use simdjson, with examples.
   * [Exceptions](#exceptions)
 * [Tree Walking and JSON Element Types](#tree-walking-and-json-element-types)
 
+DOM vs On Demand
+----------------------------------------------
+
+The simdjson library offers two distinct approaches on how to access a JSON document. We support
+a conventional Document-Object-Model (DOM) front-end. In such a scenario, the JSON document is
+entirely parsed, validated and materialized in memory as the first step. The programmer may
+then access the parsed data using this in-memory model.
 
 The Basics: Loading and Parsing JSON Documents using the DOM front-end
 ----------------------------------------------
