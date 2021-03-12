@@ -11,12 +11,11 @@ simdjson : Parsing gigabytes of JSON per second
 <img src="images/logo.png" width="10%" style="float: right">
 JSON is everywhere on the Internet. Servers spend a *lot* of time parsing it. We need a fresh
 approach. The simdjson library uses commonly available SIMD instructions and microparallel algorithms
-to parse JSON 2.5x  faster than RapidJSON and 25x faster than JSON for Modern C++.
+to parse JSON 4x  faster than RapidJSON and 25x faster than JSON for Modern C++.
 
-* **Fast:** Over 2.5x faster than commonly used production-grade JSON parsers.
+* **Fast:** Over 4x faster than commonly used production-grade JSON parsers.
 * **Record Breaking Features:** Minify JSON  at 6 GB/s, validate UTF-8  at 13 GB/s,  NDJSON at 3.5 GB/s.
 * **Easy:** First-class, easy to use and carefully documented APIs.
-* **Beyond DOM:** Try the new On Demand API for twice the speed (>4GB/s).
 * **Strict:** Full JSON and UTF-8 validation, lossless parsing. Performance with no compromises.
 * **Automatic:** Selects a CPU-tailored parser at runtime. No configuration needed.
 * **Reliable:** From memory allocation to error handling, simdjson's design avoids surprises.
@@ -85,44 +84,16 @@ Usage documentation is available:
 Performance results
 -------------------
 
-The simdjson library uses three-quarters less instructions than state-of-the-art parser [RapidJSON](https://rapidjson.org) and
-fifty percent less than sajson. To our knowledge, simdjson is the first fully-validating JSON parser
+The simdjson library uses three-quarters less instructions than state-of-the-art parser [RapidJSON](https://rapidjson.org). To our knowledge, simdjson is the first fully-validating JSON parser
 to run at [gigabytes per second](https://en.wikipedia.org/wiki/Gigabyte) (GB/s) on commodity processors. It can parse millions of JSON documents per second on a single core.
 
 The following figure represents parsing speed in GB/s for parsing various files
-on an Intel Skylake processor (3.4 GHz) using the GNU GCC 9 compiler (with the -O3 flag).
-We compare against the best and fastest C++ libraries.
+on an Intel Skylake processor (3.4 GHz) using the GNU GCC 10 compiler (with the -O3 flag).
+We compare against the best and fastest C++ libraries on benchmarks that load and process the data.
 The simdjson library offers full unicode ([UTF-8](https://en.wikipedia.org/wiki/UTF-8)) validation and exact
-number parsing. The RapidJSON library is tested in two modes: fast and
-exact number parsing. The sajson library offers fast (but not exact)
-number parsing and partial unicode validation. In this data set, the file
-sizes range from 65KB (github_events) all the way to 3.3GB (gsoc-2018).
-Many files are mostly made of numbers: canada, mesh.pretty, mesh, random
-and numbers: in such instances, we see lower JSON parsing speeds due to the
-high cost of number parsing. The simdjson library uses exact number parsing which
-is particular taxing.
+number parsing. 
 
-<img src="doc/gbps.png" width="90%">
-
-On a Skylake processor, the parsing speeds (in GB/s) of various processors on the twitter.json file are as follows, using again GNU GCC 9.1 (with the -O3 flag). The popular JSON for Modern C++ library is particularly slow: it obviously trades parsing speed for other desirable features.
-
-| parser                                | GB/s |
-| ------------------------------------- | ---- |
-| simdjson                              | 2.5  |
-| RapidJSON UTF8-validation             | 0.29 |
-| RapidJSON UTF8-valid., exact numbers  | 0.28 |
-| RapidJSON insitu, UTF8-validation     | 0.41 |
-| RapidJSON insitu, UTF8-valid., exact  | 0.39 |
-| sajson (insitu, dynamic)              | 0.62 |
-| sajson (insitu, static)               | 0.88 |
-| dropbox                               | 0.13 |
-| fastjson                              | 0.27 |
-| gason                                 | 0.59 |
-| ultrajson                             | 0.34 |
-| jsmn                                  | 0.25 |
-| cJSON                                 | 0.31 |
-| JSON for Modern C++ (nlohmann/json)   | 0.11 |
-
+<img src="doc/rome.png" width="90%">
 
 The simdjson library offers high speed whether it processes tiny files (e.g., 300 bytes)
 or larger files (e.g., 3MB). The following plot presents parsing
@@ -132,7 +103,6 @@ speed for [synthetic files over various sizes generated with a script](https://g
 [All our experiments are reproducible](https://github.com/simdjson/simdjson_experiments_vldb2019).
 
 
-You can go beyond 4 GB/s with our new [On Demand API](https://github.com/simdjson/simdjson/blob/master/doc/ondemand.md).
 For NDJSON files, we can exceed 3 GB/s with [our  multithreaded parsing functions](https://github.com/simdjson/simdjson/blob/master/doc/parse_many.md).
 
 
