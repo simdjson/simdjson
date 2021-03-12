@@ -149,7 +149,7 @@ Using the Parsed JSON
 
 Once you have a document, you can navigate it with idiomatic C++ iterators, operators and casts.
 The following show how to use the JSON when exceptions are enabled, but simdjson has full, idiomatic
-support for users who avoid exceptions. See [the simdjson DOM API's error handling documentation](basics.md#error-handling) for more.
+support for users who avoid exceptions. See [the simdjson error handling documentation](basics.md#error-handling) for more.
 
 * **Extracting Values:** You can cast a JSON element to a native type:
   `double(element)` or `double x = json_element`. This works for double, uint64_t, int64_t, bool,
