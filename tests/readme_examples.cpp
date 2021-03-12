@@ -99,6 +99,69 @@ void basics_dom_4() {
   cout << "number: " << v << endl;
 }
 
+namespace ondemand_treewalk {
+  // We use a template function because we need to
+  // support both ondemand::value and ondemand::document
+  // as a parameter type. Note that we move the values.
+  template <class T>
+  void recursive_print_json(T&& element) {
+    bool add_comma;
+    switch (element.type()) {
+    case ondemand::json_type::array:
+      cout << "[";
+      add_comma = false;
+      for (auto child : element.get_array()) {
+        if (add_comma) {
+          cout << ",";
+        }
+        // We need the call to value() to get
+        // an ondemand::value type.
+        recursive_print_json(child.value());
+        add_comma = true;
+      }
+      cout << "]";
+      break;
+    case ondemand::json_type::object:
+      cout << "{";
+      add_comma = false;
+      for (auto field : element.get_object()) {
+        if (add_comma) {
+          cout << ",";
+        }
+        // key() returns the unescaped key, if we
+        // want the escaped key, we should do
+        // field.unescaped_key().
+        cout << "\"" << field.key() << "\": ";
+        recursive_print_json(field.value());
+        add_comma = true;
+      }
+      cout << "}";
+      break;
+    case ondemand::json_type::number:
+      // assume it fits in a double
+      cout << element.get_double();
+      break;
+    case ondemand::json_type::string:
+      // get_string() would return escaped string, but
+      // we are happy with unescaped string.
+      cout << "\"" << element.get_raw_json_string() << "\"";
+      break;
+    case ondemand::json_type::boolean:
+      cout << element.get_bool();
+      break;
+    case ondemand::json_type::null:
+      cout << "null";
+      break;
+    }
+  }
+
+  void basics_treewalk() {
+    ondemand::parser parser;
+    auto json = padded_string::load("twitter.json");
+    recursive_print_json(parser.iterate(json));
+  }
+
+}
 
 namespace treewalk_1 {
   void print_json(dom::element element) {

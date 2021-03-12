@@ -55,12 +55,15 @@ The simdjson library is easily consumable with a single .h and .cpp file.
 2. Create `quickstart.cpp`:
 
    ```c++
-   #include "simdjson.h"
-   int main(void) {
-     simdjson::dom::parser parser;
-     simdjson::dom::element tweets = parser.load("twitter.json");
-     std::cout << tweets["search_metadata"]["count"] << " results." << std::endl;
-   }
+#include "simdjson.h"
+using namespace simdjson;
+int main(void) {
+    ondemand::parser parser;
+    padded_string json = padded_string::load("twitter.json");
+    ondemand::document tweets = parser.iterate(json);
+    std::cout << uint64_t(tweets["search_metadata"]["count"]) << " results." << std::endl;
+}
+
    ```
 3. `c++ -o quickstart quickstart.cpp simdjson.cpp`
 4. `./quickstart`
