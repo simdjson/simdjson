@@ -284,8 +284,11 @@ cout << doc["str"]["123"]["abc"].get_double() << endl; // Prints 3.14
 Tree Walking and JSON Element Types: Sometimes you don't necessarily have a document with a known type, and are trying to generically inspect or walk over JSON elements. To do that, you can use iterators and the type() method. For example, here's a quick and dirty recursive function that verbosely prints the JSON document as JSON:
 
 ```c++
-
-void recursive_print_json(ondemand::value element) {
+// We use a template function because we need to
+// support both ondemand::value and ondemand::document
+// as a parameter type. Note that we move the values.
+template <class T>
+void recursive_print_json(T&& element) {
   bool add_comma;
   switch (element.type()) {
   case ondemand::json_type::array:
@@ -335,11 +338,11 @@ void recursive_print_json(ondemand::value element) {
     break;
   }
 }
+
 void basics_treewalk() {
   ondemand::parser parser;
   auto json = padded_string::load("twitter.json");
-  ondemand::document doc = parser.iterate(json);
-  recursive_print_json(doc);
+  recursive_print_json(parser.iterate(json));
 }
 ```
 

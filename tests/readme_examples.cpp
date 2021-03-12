@@ -100,8 +100,11 @@ void basics_dom_4() {
 }
 
 namespace ondemand_treewalk {
-
-  void recursive_print_json(ondemand::value element) {
+  // We use a template function because we need to
+  // support both ondemand::value and ondemand::document
+  // as a parameter type. Note that we move the values.
+  template <class T>
+  void recursive_print_json(T&& element) {
     bool add_comma;
     switch (element.type()) {
     case ondemand::json_type::array:
@@ -155,8 +158,7 @@ namespace ondemand_treewalk {
   void basics_treewalk() {
     ondemand::parser parser;
     auto json = padded_string::load("twitter.json");
-    ondemand::document doc = parser.iterate(json);
-    recursive_print_json(doc);
+    recursive_print_json(parser.iterate(json));
   }
 
 }
