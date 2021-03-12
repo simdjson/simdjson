@@ -99,7 +99,7 @@ The simdjson library offers a  tree API, which you can access by creating a
 ```c++
 ondemand::parser parser;
 auto json = padded_string::load("twitter.json");
-ondemand::document doc = parser.iterate(json); // load and parse a file
+ondemand::document doc = parser.iterate(json); // position a pointer at the beginning of the JSON data
 ```
 
 Or by creating a padded string (for efficiency reasons, simdjson requires a string with
