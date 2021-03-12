@@ -287,6 +287,25 @@ void implementation_selection_4() {
   simdjson::active_implementation = simdjson::available_implementations["fallback"];
 }
 
+void ondemand_performance_1() {
+  ondemand::parser parser;
+
+  // This initializes buffers  big enough to handle this JSON.
+  auto json = "[ true, false ]"_padded;
+  auto doc = parser.iterate(json);
+  for(bool i : doc.get_array()) {
+    cout << i << endl;
+  }
+  
+
+  // This reuses the existing buffers
+  auto number_json = "[1, 2, 3]"_padded;
+  doc = parser.iterate(number_json);
+  for(int64_t i : doc.get_array()) {
+    cout << i << endl;
+  }
+}
+
 void performance_1() {
   dom::parser parser;
 
@@ -312,7 +331,8 @@ void performance_2() {
   dom::parser parser(1000*1000); // Never grow past documents > 1MB
   /* for (web_request request : listen()) */ {
     dom::element doc;
-    auto error = parser.parse("1"_padded/*request.body*/).get(doc);
+    auto body = "1"_padded; /*request.body*/
+    auto error = parser.parse(body/*request.body*/).get(doc);
     // If the document was above our limit, emit 413 = payload too large
     if (error == CAPACITY) { /* request.respond(413); continue; */ }
     // ...
@@ -327,7 +347,8 @@ void performance_3() {
 
   /* for (web_request request : listen()) */ {
     dom::element doc;
-    auto error = parser.parse("1"_padded/*request.body*/).get(doc);
+    auto body = "1"_padded;/*request.body*/
+    auto error = parser.parse(body).get(doc);
     // If the document was above our limit, emit 413 = payload too large
     if (error == CAPACITY) { /* request.respond(413); continue; */ }
     // ...
