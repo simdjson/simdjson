@@ -93,12 +93,12 @@ We compare against the best and fastest C++ libraries on benchmarks that load an
 The simdjson library offers full unicode ([UTF-8](https://en.wikipedia.org/wiki/UTF-8)) validation and exact
 number parsing. 
 
-<img src="doc/rome.png" width="90%">
+<img src="doc/rome.png" width="60%">
 
 The simdjson library offers high speed whether it processes tiny files (e.g., 300 bytes)
 or larger files (e.g., 3MB). The following plot presents parsing
 speed for [synthetic files over various sizes generated with a script](https://github.com/simdjson/simdjson_experiments_vldb2019/blob/master/experiments/growing/gen.py) on a 3.4 GHz Skylake processor (GNU GCC 9, -O3).
-<img src="doc/growing.png" width="90%">
+<img src="doc/growing.png" width="60%">
 
 [All our experiments are reproducible](https://github.com/simdjson/simdjson_experiments_vldb2019).
 
