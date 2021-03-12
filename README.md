@@ -54,7 +54,7 @@ The simdjson library is easily consumable with a single .h and .cpp file.
    ```
 2. Create `quickstart.cpp`:
 
-   ```c++
+```c++
 #include "simdjson.h"
 using namespace simdjson;
 int main(void) {
@@ -70,34 +70,6 @@ int main(void) {
    ```
    100 results.
    ```
-
-### On Demand
-
-The new On Demand JSON parser is just as easy, but much faster due to just-in-time parsing. It is in
-alpha right now. More information can be found in the [On Demand Guide](doc/ondemand.md).
-
-1. Do step 1 of the [Quick Start](#quick-start).
-2. Create `quickstart.cpp`:
-
-   ```c++
-   #include "simdjson.h"
-   using namespace simdjson;
-   int main(void) {
-      ondemand::parser parser;
-      padded_string json = padded_string::load("twitter.json");
-      ondemand::document tweets = parser.iterate(json);
-      std::cout << uint64_t(tweets["search_metadata"]["count"]) << " results." << std::endl;
-   }
-   ```
-3. `c++ -march=native -o quickstart quickstart.cpp simdjson.cpp`
-4. `./quickstart`
-   ```
-   100 results.
-   ```
-
-You'll notice that the code here is very similar to the [main Quick Start code](#quick-start) (and
-indeed, it does the same thing). However, if you compare the performance, you should find On
-Demand much faster.
 
 Documentation
 -------------
