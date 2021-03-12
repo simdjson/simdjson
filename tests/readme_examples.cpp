@@ -296,7 +296,7 @@ void ondemand_performance_1() {
   for(bool i : doc.get_array()) {
     cout << i << endl;
   }
-  
+
 
   // This reuses the existing buffers
   auto number_json = "[1, 2, 3]"_padded;
