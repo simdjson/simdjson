@@ -16,6 +16,7 @@ public:
     std::allocator<uint8_t> uint8_allocator = decltype(uint8_allocator)();
     size_t allocated_count = 0;
     void operator()(uint8_t* p) {
+      if(p == nullptr) return;
       std::allocator_traits<decltype(uint8_allocator)>::destroy(uint8_allocator, p);
       std::allocator_traits<decltype(uint8_allocator)>::deallocate(uint8_allocator, p, allocated_count);
     }
@@ -25,6 +26,7 @@ public:
     std::allocator<uint64_t> uint64_allocator = decltype(uint64_allocator)();
     size_t allocated_count = 0;
     void operator()(uint64_t* p) {
+      if(p == nullptr) return;
       std::allocator_traits<decltype(uint64_allocator)>::destroy(uint64_allocator, p);
       std::allocator_traits<decltype(uint64_allocator)>::deallocate(uint64_allocator, p, allocated_count);
     }
