@@ -1,27 +1,17 @@
 #ifndef SIMDJSON_HASWELL_H
 #define SIMDJSON_HASWELL_H
 
-#ifdef SIMDJSON_WESTMERE_H
-#error "haswell.h must be included before westmere.h"
-#endif
-#ifdef SIMDJSON_FALLBACK_H
-#error "haswell.h must be included before fallback.h"
-#endif
-
-#include "simdjson/portability.h"
-
-// Default Haswell to on if this is x86-64. Even if we're not compiled for it, it could be selected
-// at runtime.
-#ifndef SIMDJSON_IMPLEMENTATION_HASWELL
-#define SIMDJSON_IMPLEMENTATION_HASWELL (SIMDJSON_IS_X86_64)
-#endif
-// To see why  (__BMI__) && (__PCLMUL__) && (__LZCNT__) are not part of this next line, see
-// https://github.com/simdjson/simdjson/issues/1247
-#define SIMDJSON_CAN_ALWAYS_RUN_HASWELL ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__))
+#include "simdjson/implementation-base.h"
 
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 
+#if SIMDJSON_CAN_ALWAYS_RUN_HASWELL
+#define SIMDJSON_TARGET_HASWELL
+#define SIMDJSON_UNTARGET_HASWELL
+#else
 #define SIMDJSON_TARGET_HASWELL SIMDJSON_TARGET_REGION("avx2,bmi,pclmul,lzcnt")
+#define SIMDJSON_UNTARGET_HASWELL SIMDJSON_UNTARGET_REGION
+#endif
 
 namespace simdjson {
 /**
@@ -32,7 +22,7 @@ namespace haswell {
 } // namespace simdjson
 
 //
-// These two need to be included outside SIMDJSON_TARGET_REGION
+// These two need to be included outside SIMDJSON_TARGET_HASWELL
 //
 #include "simdjson/haswell/implementation.h"
 #include "simdjson/haswell/intrinsics.h"
@@ -51,13 +41,6 @@ namespace haswell {
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/haswell/stringparsing.h"
 #include "simdjson/haswell/numberparsing.h"
-#include "simdjson/generic/implementation_simdjson_result_base.h"
-#include "simdjson/generic/ondemand.h"
-
-// Inline definitions
-#include "simdjson/generic/implementation_simdjson_result_base-inl.h"
-#include "simdjson/generic/ondemand-inl.h"
-
 #include "simdjson/haswell/end.h"
 
 #endif // SIMDJSON_IMPLEMENTATION_HASWELL

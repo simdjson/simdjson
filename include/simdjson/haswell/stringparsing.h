@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_HASWELL_STRINGPARSING_H
 #define SIMDJSON_HASWELL_STRINGPARSING_H
 
-#include "simdjson.h"
+#include "simdjson/base.h"
 #include "simdjson/haswell/simd.h"
 #include "simdjson/haswell/bitmanipulation.h"
 

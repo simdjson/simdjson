@@ -1,22 +1,7 @@
 #ifndef SIMDJSON_ARM64_H
 #define SIMDJSON_ARM64_H
 
-#ifdef SIMDJSON_FALLBACK_H
-#error "arm64.h must be included before fallback.h"
-#endif
-
-#include "simdjson/portability.h"
-
-#ifndef SIMDJSON_IMPLEMENTATION_ARM64
-#define SIMDJSON_IMPLEMENTATION_ARM64 (SIMDJSON_IS_ARM64)
-#endif
-#define SIMDJSON_CAN_ALWAYS_RUN_ARM64 SIMDJSON_IMPLEMENTATION_ARM64 && SIMDJSON_IS_ARM64
-
-
-#include "simdjson/internal/isadetection.h"
-#include "simdjson/internal/jsoncharutils_tables.h"
-#include "simdjson/internal/numberparsing_tables.h"
-#include "simdjson/internal/simdprune_tables.h"
+#include "simdjson/implementation-base.h"
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 
@@ -42,12 +27,6 @@ namespace arm64 {
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/arm64/stringparsing.h"
 #include "simdjson/arm64/numberparsing.h"
-#include "simdjson/generic/implementation_simdjson_result_base.h"
-#include "simdjson/generic/ondemand.h"
-
-// Inline definitions
-#include "simdjson/generic/implementation_simdjson_result_base-inl.h"
-#include "simdjson/generic/ondemand-inl.h"
 #include "simdjson/arm64/end.h"
 
 #endif // SIMDJSON_IMPLEMENTATION_ARM64

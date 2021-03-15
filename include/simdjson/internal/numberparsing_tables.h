@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_INTERNAL_NUMBERPARSING_TABLES_H
 #define SIMDJSON_INTERNAL_NUMBERPARSING_TABLES_H
 
-#include "simdjson.h"
+#include "simdjson/base.h"
 
 namespace simdjson {
 namespace internal {

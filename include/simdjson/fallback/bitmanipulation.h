@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_FALLBACK_BITMANIPULATION_H
 #define SIMDJSON_FALLBACK_BITMANIPULATION_H
 
-#include "simdjson.h"
+#include "simdjson/base.h"
 #include <limits>
 
 namespace simdjson {
