@@ -91,7 +91,7 @@ The following figure represents parsing speed in GB/s for parsing various files
 on an Intel Skylake processor (3.4 GHz) using the GNU GCC 10 compiler (with the -O3 flag).
 We compare against the best and fastest C++ libraries on benchmarks that load and process the data.
 The simdjson library offers full unicode ([UTF-8](https://en.wikipedia.org/wiki/UTF-8)) validation and exact
-number parsing. 
+number parsing.
 
 <img src="doc/rome.png" width="60%">
 
