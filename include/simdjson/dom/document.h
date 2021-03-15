@@ -10,6 +10,27 @@ namespace dom {
 
 class element;
 
+class deleter {
+public:
+  struct uint8_unique_ptr_deleter {
+    std::allocator<uint8_t> uint8_allocator = decltype(uint8_allocator)();
+    size_t allocated_count = 0;
+    void operator()(uint8_t* p) {
+      std::allocator_traits<decltype(uint8_allocator)>::destroy(uint8_allocator, p);
+      std::allocator_traits<decltype(uint8_allocator)>::deallocate(uint8_allocator, p, allocated_count);
+    }
+  };
+
+  struct uint64_unique_ptr_deleter {
+    std::allocator<uint64_t> uint64_allocator = decltype(uint64_allocator)();
+    size_t allocated_count = 0;
+    void operator()(uint64_t* p) {
+      std::allocator_traits<decltype(uint64_allocator)>::destroy(uint64_allocator, p);
+      std::allocator_traits<decltype(uint64_allocator)>::deallocate(uint64_allocator, p, allocated_count);
+    }
+  };
+};
+
 /**
  * A parsed JSON document.
  *
@@ -56,13 +77,13 @@ public:
   bool dump_raw_tape(std::ostream &os) const noexcept;
 
   /** @private Structural values. */
-  std::unique_ptr<uint64_t[]> tape{};
+  std::unique_ptr<uint64_t[], deleter::uint64_unique_ptr_deleter> tape{};
 
   /** @private String values.
    *
    * Should be at least byte_capacity.
    */
-  std::unique_ptr<uint8_t[]> string_buf{};
+  std::unique_ptr<uint8_t[], deleter::uint8_unique_ptr_deleter> string_buf{};
   /** @private Allocate memory to support
    * input JSON documents of up to len bytes.
    *
