@@ -12,6 +12,10 @@ An overview of what you need to know to use simdjson, with examples.
   * [Error Handling Example](#error-handling-example)
   * [Exceptions](#exceptions)
 * [Tree Walking and JSON Element Types](#tree-walking-and-json-element-types)
+* [Reusing the parser for maximum efficiency](#reusing-the-parser-for-maximum-efficiency)
+* [Server Loops: Long-Running Processes and Memory Capacity](#server-loops-long-running-processes-and-memory-capacity)
+* [Best Use of the DOM API](#best-use-of-the-dom-api)
+* [Padding and Temporary Copies](#padding-and-temporary-copies)
 
 DOM vs On Demand
 ----------------------------------------------
@@ -517,3 +521,115 @@ void basics_treewalk_1() {
   print_json(parser.load("twitter.json"));
 }
 ```
+
+
+
+Reusing the parser for maximum efficiency
+-----------------------------------------
+
+If you're using simdjson to parse multiple documents, or in a loop, you should make a parser once
+and reuse it. The simdjson library will allocate and retain internal buffers between parses, keeping
+buffers hot in cache and keeping memory allocation and initialization to a minimum. In this manner,
+you can parse terabytes of JSON data without doing any new allocation.
+
+```c++
+dom::parser parser;
+
+// This initializes buffers and a document big enough to handle this JSON.
+dom::element doc = parser.parse("[ true, false ]"_padded);
+cout << doc << endl;
+
+// This reuses the existing buffers, and reuses and *overwrites* the old document
+doc = parser.parse("[1, 2, 3]"_padded);
+cout << doc << endl;
+
+// This also reuses the existing buffers, and reuses and *overwrites* the old document
+dom::element doc2 = parser.parse("true"_padded);
+// Even if you keep the old reference around, doc and doc2 refer to the same document.
+cout << doc << endl;
+cout << doc2 << endl;
+```
+
+It's not just internal buffers though. The simdjson library reuses the document itself. The dom::element, dom::object and dom::array instances are *references* to the internal document.
+You are only *borrowing* the document from simdjson, which purposely reuses and overwrites it each
+time you call parse. This prevent wasteful and unnecessary memory allocation in 99% of cases where
+JSON is just read, used, and converted to native values or thrown away.
+
+> **You are only borrowing the document from the simdjson parser. Don't keep it long term!**
+
+This is key: don't keep the `document&`, `dom::element`, `dom::array`, `dom::object`
+or `string_view` objects you get back from the API. Convert them to C++ native values, structs and
+arrays that you own.
+
+Server Loops: Long-Running Processes and Memory Capacity
+--------------------------------------------------------
+
+The simdjson library automatically expands its memory capacity when larger documents are parsed, so
+that you don't unexpectedly fail. In a short process that reads a bunch of files and then exits,
+this works pretty flawlessly.
+
+Server loops, though, are long-running processes that will keep the parser around forever. This
+means that if you encounter a really, really large document, simdjson will not resize back down.
+The simdjson library lets you adjust your allocation strategy to prevent your server from growing
+without bound:
+
+* You can set a *max capacity* when constructing a parser:
+
+  ```c++
+  dom::parser parser(1000*1000); // Never grow past documents > 1MB
+  for (web_request request : listen()) {
+    dom::element doc;
+    auto error = parser.parse(request.body).get(doc);
+    // If the document was above our limit, emit 413 = payload too large
+    if (error == CAPACITY) { request.respond(413); continue; }
+    // ...
+  }
+  ```
+
+  This parser will grow normally as it encounters larger documents, but will never pass 1MB.
+
+* You can set a *fixed capacity* that never grows, as well, which can be excellent for
+  predictability and reliability, since simdjson will never call malloc after startup!
+
+  ```c++
+  dom::parser parser(0); // This parser will refuse to automatically grow capacity
+  auto error = parser.allocate(1000*1000); // This allocates enough capacity to handle documents <= 1MB
+  if (error) { cerr << error << endl; exit(1); }
+
+  for (web_request request : listen()) {
+    dom::element doc;
+    error = parser.parse(request.body).get(doc);
+    // If the document was above our limit, emit 413 = payload too large
+    if (error == CAPACITY) { request.respond(413); continue; }
+    // ...
+  }
+  ```
+
+
+Best Use of the DOM API
+-------------------------
+
+The simdjson API provides access to the JSON DOM (document-object-model) content as a tree of `dom::element` instances, each representing an object, an array or an atomic type (null, true, false, number). These `dom::element` instances are lightweight objects (e.g., spanning 16 bytes) and it might be advantageous to pass them by value, as opposed to passing them by reference or by pointer.
+
+Padding and Temporary Copies
+--------------
+
+The simdjson function `parser.parse` reads data from a padded  buffer, containing SIMDJSON_PADDING extra bytes added at the end.
+If you are passing a `padded_string` to `parser.parse` or loading the JSON directly from
+disk (`parser.load`), padding is automatically  handled.
+When calling `parser.parse` on a pointer (e.g., `parser.parse(my_char_pointer, my_length_in_bytes)`) a temporary copy  is made by default with adequate padding and you, again, do not need to be concerned with padding.
+
+Some users may not be able use our `padded_string` class or to load the data directly from disk (`parser.load`). They may need to pass data pointers to the library.  If these users wish to avoid temporary copies and corresponding temporary memory allocations, they may want to call `parser.parse` with the `realloc_if_needed` parameter set to false (e.g., `parser.parse(my_char_pointer, my_length_in_bytes, false)`). In such cases, they need to ensure that there are at least SIMDJSON_PADDING extra bytes at the end that can be safely accessed and read. They do not need to initialize the padded bytes to any value in particular. The following example is safe:
+
+
+```C++
+const char *json      = R"({"key":"value"})";
+const size_t json_len = std::strlen(json);
+std::unique_ptr<char[]> padded_json_copy{new char[json_len + SIMDJSON_PADDING]};
+memcpy(padded_json_copy.get(), json, json_len);
+memset(padded_json_copy.get() + json_len, 0, SIMDJSON_PADDING);
+simdjson::dom::parser parser;
+simdjson::dom::element element = parser.parse(padded_json_copy.get(), json_len, false);
+````
+
+Setting the `realloc_if_needed` parameter `false` in this manner may lead to better performance since copies are avoided, but it requires that the user takes more responsibilities: the simdjson library cannot verify that the input buffer was padded with SIMDJSON_PADDING extra bytes.
