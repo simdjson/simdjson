@@ -120,7 +120,7 @@ strcpy(json, "[1]");
 ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
 ```
 
-We recommend against creating many `std::string` or many `std::padding_string` instances in your application to store your JSON data. 
+We recommend against creating many `std::string` or many `std::padding_string` instances in your application to store your JSON data.
 Consider reusing the same buffers and limiting memory allocations.
 
 Documents Are Iterators
