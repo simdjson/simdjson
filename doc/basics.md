@@ -111,7 +111,7 @@ auto json = "[1,2,3]"_padded; // The _padded suffix creates a simdjson::padded_s
 ondemand::document doc = parser.iterate(json); // parse a string
 ```
 
-If you have a buffer of your own with enough padding already (SIMDJSON_PADDING extra bytes allocated), you can use `promise_padded` to pass it in:
+If you have a buffer of your own with enough padding already (SIMDJSON_PADDING extra bytes allocated), you can use `padded_string_view` to pass it in:
 
 ```c++
 ondemand::parser parser;
@@ -119,6 +119,9 @@ char json[3+SIMDJSON_PADDING];
 strcpy(json, "[1]");
 ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
 ```
+
+We recommend against creating many `std::string` or many `std::padding_string` instances in your application to store your JSON data. 
+Consider reusing the same buffers and limiting memory allocations.
 
 Documents Are Iterators
 -----------------------
