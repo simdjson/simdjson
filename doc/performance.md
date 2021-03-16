@@ -5,6 +5,7 @@ simdjson strives to be at its fastest *without tuning*, and generally achieves t
 are still some scenarios where tuning can enhance performance.
 
 * [Reusing the parser for maximum efficiency](#reusing-the-parser-for-maximum-efficiency)
+* [Reusing string buffers](#reusing-string-buffers)
 * [Server Loops: Long-Running Processes and Memory Capacity](#server-loops-long-running-processes-and-memory-capacity)
 * [Large files and huge page support](#large-files-and-huge-page-support)
 * [Number parsing](#number-parsing)
@@ -35,6 +36,16 @@ doc = parser.iterate(number_json);
 for(int64_t i : doc.get_array()) {
   cout << i << endl;
 }
+```
+
+
+Reusing string buffers
+-----------------------------------------
+
+We recommend against creating many `std::string` or `simdjson::padded_string` instances to store the JSON content in your application. [Creating many non-trivial objects is convenient but often surprisingly slow](https://lemire.me/blog/2020/08/08/performance-tip-constructing-many-non-trivial-objects-is-slow/). Instead, as much as possible, you should allocate (once or a few times) reusable memory buffers where you write your JSON content. If you have a buffer `json_str` (of type `char*`) allocated for  `capacity` bytes and you store a JSON document spanning `length` bytes, you can pass it to simdjson as follows:
+
+```c++
+ auto doc = parser.iterate(padded_string_view(json_str, length, capacity));
 ```
 
 
