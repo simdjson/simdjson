@@ -1,4 +1,4 @@
-/* auto-generated on 2021-02-10 16:52:04 -0500. Do not edit! */
+/* auto-generated on 2021-03-16 17:57:23 -0400. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -1477,7 +1477,8 @@ namespace internal {
     { INVALID_URI_FRAGMENT, "Invalid URI fragment syntax." },
     { UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as you may have found a bug in simdjson" },
     { PARSER_IN_USE, "Cannot parse a new document while a document is still in use." },
-    { OUT_OF_ORDER_ITERATION, "Objects and arrays can only be iterated when they are first encountered." }
+    { OUT_OF_ORDER_ITERATION, "Objects and arrays can only be iterated when they are first encountered." },
+    { INSUFFICIENT_PADDING, "simdjson requires the input JSON string to have at least SIMDJSON_PADDING extra bytes allocated, beyond the string's length." }
   }; // error_messages[]
 
 } // namespace internal
@@ -2648,6 +2649,7 @@ simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) noexcept {
 
 const implementation * builtin_implementation() {
   static const implementation * builtin_impl = available_implementations[STRINGIFY(SIMDJSON_BUILTIN_IMPLEMENTATION)];
+  assert(builtin_impl);
   return builtin_impl;
 }
 
@@ -2681,7 +2683,6 @@ simdjson_warn_unused error_code implementation::create_dom_parser_implementation
 } // namespace simdjson
 
 /* begin file include/simdjson/arm64/end.h */
-#undef arm64
 /* end file include/simdjson/arm64/end.h */
 /* end file src/arm64/implementation.cpp */
 /* begin file src/arm64/dom_parser_implementation.cpp */
@@ -2702,9 +2703,9 @@ using namespace simd;
 struct json_character_block {
   static simdjson_really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
 
-  simdjson_really_inline uint64_t whitespace() const { return _whitespace; }
-  simdjson_really_inline uint64_t op() const { return _op; }
-  simdjson_really_inline uint64_t scalar() { return ~(op() | whitespace()); }
+  simdjson_really_inline uint64_t whitespace() const noexcept { return _whitespace; }
+  simdjson_really_inline uint64_t op() const noexcept { return _op; }
+  simdjson_really_inline uint64_t scalar() const noexcept { return ~(op() | whitespace()); }
 
   uint64_t _whitespace;
   uint64_t _op;
@@ -3017,7 +3018,7 @@ private:
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text_64(const uint8_t *text) {
-  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
   }
@@ -3027,7 +3028,7 @@ simdjson_unused static char * format_input_text_64(const uint8_t *text) {
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
-  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
   in.store(reinterpret_cast<uint8_t*>(buf));
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     if (buf[i] < ' ') { buf[i] = '_'; }
@@ -3037,7 +3038,7 @@ simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
 }
 
 simdjson_unused static char * format_mask(uint64_t mask) {
-  static char *buf = reinterpret_cast<char*>(malloc(64 + 1));
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
   for (size_t i=0; i<64; i++) {
     buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
   }
@@ -3085,6 +3086,10 @@ namespace {
 namespace stage1 {
 
 struct json_string_block {
+  // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
+  simdjson_really_inline json_string_block(uint64_t backslash, uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  _backslash(backslash), _escaped(escaped), _quote(quote), _in_string(in_string) {}
+
   // Escaped characters (characters following an escape() character)
   simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Escape characters (backslashes that are not escaped--i.e. in \\, includes only the first \)
@@ -3206,12 +3211,15 @@ simdjson_really_inline json_string_block json_string_scanner::next(const simd::s
   prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
 
   // Use ^ to turn the beginning quote off, and the end quote on.
-  return {
+
+  // We are returning a function-local object so either we get a move constructor
+  // or we get copy elision.
+  return json_string_block(
     backslash,
     escaped,
     quote,
     in_string
-  };
+  );
 }
 
 simdjson_really_inline error_code json_string_scanner::finish() {
@@ -3251,20 +3259,26 @@ namespace stage1 {
  */
 struct json_block {
 public:
+  // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
+  simdjson_really_inline json_block(json_string_block&& string, json_character_block characters, uint64_t follows_potential_nonquote_scalar) :
+  _string(std::move(string)), _characters(characters), _follows_potential_nonquote_scalar(follows_potential_nonquote_scalar) {}
+  simdjson_really_inline json_block(json_string_block string, json_character_block characters, uint64_t follows_potential_nonquote_scalar) :
+  _string(string), _characters(characters), _follows_potential_nonquote_scalar(follows_potential_nonquote_scalar) {}
+
   /**
    * The start of structurals.
    * In simdjson prior to v0.3, these were called the pseudo-structural characters.
    **/
-  simdjson_really_inline uint64_t structural_start() { return potential_structural_start() & ~_string.string_tail(); }
+  simdjson_really_inline uint64_t structural_start() const noexcept { return potential_structural_start() & ~_string.string_tail(); }
   /** All JSON whitespace (i.e. not in a string) */
-  simdjson_really_inline uint64_t whitespace() { return non_quote_outside_string(_characters.whitespace()); }
+  simdjson_really_inline uint64_t whitespace() const noexcept { return non_quote_outside_string(_characters.whitespace()); }
 
   // Helpers
 
   /** Whether the given characters are inside a string (only works on non-quotes) */
-  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) { return _string.non_quote_inside_string(mask); }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const noexcept { return _string.non_quote_inside_string(mask); }
   /** Whether the given characters are outside a string (only works on non-quotes) */
-  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) { return _string.non_quote_outside_string(mask); }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const noexcept { return _string.non_quote_outside_string(mask); }
 
   // string and escape characters
   json_string_block _string;
@@ -3279,12 +3293,12 @@ private:
    * structural elements ([,],{,},:, comma) plus scalar starts like 123, true and "abc".
    * They may reside inside a string.
    **/
-  simdjson_really_inline uint64_t potential_structural_start() { return _characters.op() | potential_scalar_start(); }
+  simdjson_really_inline uint64_t potential_structural_start() const noexcept { return _characters.op() | potential_scalar_start(); }
   /**
    * The start of non-operator runs, like 123, true and "abc".
    * It main reside inside a string.
    **/
-  simdjson_really_inline uint64_t potential_scalar_start() {
+  simdjson_really_inline uint64_t potential_scalar_start() const noexcept {
     // The term "scalar" refers to anything except structural characters and white space
     // (so letters, numbers, quotes).
     // Whenever it is preceded by something that is not a structural element ({,},[,],:, ") nor a white-space
@@ -3295,7 +3309,7 @@ private:
    * Whether the given character is immediately after a non-operator like 123, true.
    * The characters following a quote are not included.
    */
-  simdjson_really_inline uint64_t follows_potential_scalar() {
+  simdjson_really_inline uint64_t follows_potential_scalar() const noexcept {
     // _follows_potential_nonquote_scalar: is defined as marking any character that follows a character
     // that is not a structural element ({,},[,],:, comma) nor a quote (") and that is not a
     // white space.
@@ -3361,11 +3375,13 @@ simdjson_really_inline json_block json_scanner::next(const simd::simd8x64<uint8_
   // Performance: there are many ways to skin this cat.
   const uint64_t nonquote_scalar = characters.scalar() & ~strings.quote();
   uint64_t follows_nonquote_scalar = follows(nonquote_scalar, prev_scalar);
-  return {
-    strings,
+  // We are returning a function-local object so either we get a move constructor
+  // or we get copy elision.
+  return json_block(
+    strings,// strings is a function-local object so either it moves or the copy is elided.
     characters,
     follows_nonquote_scalar
-  };
+  );
 }
 
 simdjson_really_inline error_code json_scanner::finish() {
@@ -3399,13 +3415,13 @@ private:
   {}
   template<size_t STEP_SIZE>
   simdjson_really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block);
+  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block);
   simdjson_really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
 
-simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, json_block block) {
+simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
   in.compress(mask, dst);
   dst += 64 - count_ones(mask);
@@ -3620,7 +3636,7 @@ private:
   simdjson_really_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx);
+  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
   simdjson_really_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, bool partial);
 
   json_scanner scanner{};
@@ -3710,7 +3726,7 @@ simdjson_really_inline void json_structural_indexer::step<64>(const uint8_t *blo
   reader.advance();
 }
 
-simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx) {
+simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx) {
   uint64_t unescaped = in.lteq(0x1F);
   checker.check_next_input(in);
   indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
@@ -4518,12 +4534,11 @@ simdjson_warn_unused simdjson_really_inline error_code tape_builder::visit_root_
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  uint8_t *copy = static_cast<uint8_t *>(malloc(iter.remaining_len() + SIMDJSON_PADDING));
-  if (copy == nullptr) { return MEMALLOC; }
-  std::memcpy(copy, value, iter.remaining_len());
-  std::memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
-  error_code error = visit_number(iter, copy);
-  free(copy);
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  if (copy.get() == nullptr) { return MEMALLOC; }
+  std::memcpy(copy.get(), value, iter.remaining_len());
+  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  error_code error = visit_number(iter, copy.get());
   return error;
 }
 
@@ -4675,7 +4690,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 } // namespace simdjson
 
 /* begin file include/simdjson/arm64/end.h */
-#undef arm64
 /* end file include/simdjson/arm64/end.h */
 /* end file src/arm64/dom_parser_implementation.cpp */
 #endif
@@ -4705,7 +4719,6 @@ simdjson_warn_unused error_code implementation::create_dom_parser_implementation
 } // namespace simdjson
 
 /* begin file include/simdjson/fallback/end.h */
-#undef fallback
 /* end file include/simdjson/fallback/end.h */
 /* end file src/fallback/implementation.cpp */
 /* begin file src/fallback/dom_parser_implementation.cpp */
@@ -5795,12 +5808,11 @@ simdjson_warn_unused simdjson_really_inline error_code tape_builder::visit_root_
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  uint8_t *copy = static_cast<uint8_t *>(malloc(iter.remaining_len() + SIMDJSON_PADDING));
-  if (copy == nullptr) { return MEMALLOC; }
-  std::memcpy(copy, value, iter.remaining_len());
-  std::memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
-  error_code error = visit_number(iter, copy);
-  free(copy);
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  if (copy.get() == nullptr) { return MEMALLOC; }
+  std::memcpy(copy.get(), value, iter.remaining_len());
+  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  error_code error = visit_number(iter, copy.get());
   return error;
 }
 
@@ -5923,7 +5935,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 } // namespace simdjson
 
 /* begin file include/simdjson/fallback/end.h */
-#undef fallback
 /* end file include/simdjson/fallback/end.h */
 /* end file src/fallback/dom_parser_implementation.cpp */
 #endif
@@ -5954,8 +5965,7 @@ simdjson_warn_unused error_code implementation::create_dom_parser_implementation
 } // namespace simdjson
 
 /* begin file include/simdjson/haswell/end.h */
-SIMDJSON_UNTARGET_REGION
-#undef haswell
+SIMDJSON_UNTARGET_HASWELL
 /* end file include/simdjson/haswell/end.h */
 
 /* end file src/haswell/implementation.cpp */
@@ -5979,19 +5989,19 @@ using namespace simd;
 struct json_character_block {
   static simdjson_really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
   //  ASCII white-space ('\r','\n','\t',' ')
-  simdjson_really_inline uint64_t whitespace() const;
+  simdjson_really_inline uint64_t whitespace() const noexcept;
   // non-quote structural characters (comma, colon, braces, brackets)
-  simdjson_really_inline uint64_t op() const;
+  simdjson_really_inline uint64_t op() const noexcept;
   // neither a structural character nor a white-space, so letters, numbers and quotes
-  simdjson_really_inline uint64_t scalar() const;
+  simdjson_really_inline uint64_t scalar() const noexcept;
 
   uint64_t _whitespace; // ASCII white-space ('\r','\n','\t',' ')
   uint64_t _op; // structural characters (comma, colon, braces, brackets but not quotes)
 };
 
-simdjson_really_inline uint64_t json_character_block::whitespace() const { return _whitespace; }
-simdjson_really_inline uint64_t json_character_block::op() const { return _op; }
-simdjson_really_inline uint64_t json_character_block::scalar() const { return ~(op() | whitespace()); }
+simdjson_really_inline uint64_t json_character_block::whitespace() const noexcept { return _whitespace; }
+simdjson_really_inline uint64_t json_character_block::op() const noexcept { return _op; }
+simdjson_really_inline uint64_t json_character_block::scalar() const noexcept { return ~(op() | whitespace()); }
 
 // This identifies structural characters (comma, colon, braces, brackets),
 // and ASCII white-space ('\r','\n','\t',' ').
@@ -6297,7 +6307,7 @@ private:
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text_64(const uint8_t *text) {
-  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
   }
@@ -6307,7 +6317,7 @@ simdjson_unused static char * format_input_text_64(const uint8_t *text) {
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
-  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
   in.store(reinterpret_cast<uint8_t*>(buf));
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     if (buf[i] < ' ') { buf[i] = '_'; }
@@ -6317,7 +6327,7 @@ simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
 }
 
 simdjson_unused static char * format_mask(uint64_t mask) {
-  static char *buf = reinterpret_cast<char*>(malloc(64 + 1));
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
   for (size_t i=0; i<64; i++) {
     buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
   }
@@ -6365,6 +6375,10 @@ namespace {
 namespace stage1 {
 
 struct json_string_block {
+  // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
+  simdjson_really_inline json_string_block(uint64_t backslash, uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  _backslash(backslash), _escaped(escaped), _quote(quote), _in_string(in_string) {}
+
   // Escaped characters (characters following an escape() character)
   simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Escape characters (backslashes that are not escaped--i.e. in \\, includes only the first \)
@@ -6486,12 +6500,15 @@ simdjson_really_inline json_string_block json_string_scanner::next(const simd::s
   prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
 
   // Use ^ to turn the beginning quote off, and the end quote on.
-  return {
+
+  // We are returning a function-local object so either we get a move constructor
+  // or we get copy elision.
+  return json_string_block(
     backslash,
     escaped,
     quote,
     in_string
-  };
+  );
 }
 
 simdjson_really_inline error_code json_string_scanner::finish() {
@@ -6531,20 +6548,26 @@ namespace stage1 {
  */
 struct json_block {
 public:
+  // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
+  simdjson_really_inline json_block(json_string_block&& string, json_character_block characters, uint64_t follows_potential_nonquote_scalar) :
+  _string(std::move(string)), _characters(characters), _follows_potential_nonquote_scalar(follows_potential_nonquote_scalar) {}
+  simdjson_really_inline json_block(json_string_block string, json_character_block characters, uint64_t follows_potential_nonquote_scalar) :
+  _string(string), _characters(characters), _follows_potential_nonquote_scalar(follows_potential_nonquote_scalar) {}
+
   /**
    * The start of structurals.
    * In simdjson prior to v0.3, these were called the pseudo-structural characters.
    **/
-  simdjson_really_inline uint64_t structural_start() { return potential_structural_start() & ~_string.string_tail(); }
+  simdjson_really_inline uint64_t structural_start() const noexcept { return potential_structural_start() & ~_string.string_tail(); }
   /** All JSON whitespace (i.e. not in a string) */
-  simdjson_really_inline uint64_t whitespace() { return non_quote_outside_string(_characters.whitespace()); }
+  simdjson_really_inline uint64_t whitespace() const noexcept { return non_quote_outside_string(_characters.whitespace()); }
 
   // Helpers
 
   /** Whether the given characters are inside a string (only works on non-quotes) */
-  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) { return _string.non_quote_inside_string(mask); }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const noexcept { return _string.non_quote_inside_string(mask); }
   /** Whether the given characters are outside a string (only works on non-quotes) */
-  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) { return _string.non_quote_outside_string(mask); }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const noexcept { return _string.non_quote_outside_string(mask); }
 
   // string and escape characters
   json_string_block _string;
@@ -6559,12 +6582,12 @@ private:
    * structural elements ([,],{,},:, comma) plus scalar starts like 123, true and "abc".
    * They may reside inside a string.
    **/
-  simdjson_really_inline uint64_t potential_structural_start() { return _characters.op() | potential_scalar_start(); }
+  simdjson_really_inline uint64_t potential_structural_start() const noexcept { return _characters.op() | potential_scalar_start(); }
   /**
    * The start of non-operator runs, like 123, true and "abc".
    * It main reside inside a string.
    **/
-  simdjson_really_inline uint64_t potential_scalar_start() {
+  simdjson_really_inline uint64_t potential_scalar_start() const noexcept {
     // The term "scalar" refers to anything except structural characters and white space
     // (so letters, numbers, quotes).
     // Whenever it is preceded by something that is not a structural element ({,},[,],:, ") nor a white-space
@@ -6575,7 +6598,7 @@ private:
    * Whether the given character is immediately after a non-operator like 123, true.
    * The characters following a quote are not included.
    */
-  simdjson_really_inline uint64_t follows_potential_scalar() {
+  simdjson_really_inline uint64_t follows_potential_scalar() const noexcept {
     // _follows_potential_nonquote_scalar: is defined as marking any character that follows a character
     // that is not a structural element ({,},[,],:, comma) nor a quote (") and that is not a
     // white space.
@@ -6641,11 +6664,13 @@ simdjson_really_inline json_block json_scanner::next(const simd::simd8x64<uint8_
   // Performance: there are many ways to skin this cat.
   const uint64_t nonquote_scalar = characters.scalar() & ~strings.quote();
   uint64_t follows_nonquote_scalar = follows(nonquote_scalar, prev_scalar);
-  return {
-    strings,
+  // We are returning a function-local object so either we get a move constructor
+  // or we get copy elision.
+  return json_block(
+    strings,// strings is a function-local object so either it moves or the copy is elided.
     characters,
     follows_nonquote_scalar
-  };
+  );
 }
 
 simdjson_really_inline error_code json_scanner::finish() {
@@ -6679,13 +6704,13 @@ private:
   {}
   template<size_t STEP_SIZE>
   simdjson_really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block);
+  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block);
   simdjson_really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
 
-simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, json_block block) {
+simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
   in.compress(mask, dst);
   dst += 64 - count_ones(mask);
@@ -6900,7 +6925,7 @@ private:
   simdjson_really_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx);
+  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
   simdjson_really_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, bool partial);
 
   json_scanner scanner{};
@@ -6990,7 +7015,7 @@ simdjson_really_inline void json_structural_indexer::step<64>(const uint8_t *blo
   reader.advance();
 }
 
-simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx) {
+simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx) {
   uint64_t unescaped = in.lteq(0x1F);
   checker.check_next_input(in);
   indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
@@ -7797,12 +7822,11 @@ simdjson_warn_unused simdjson_really_inline error_code tape_builder::visit_root_
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  uint8_t *copy = static_cast<uint8_t *>(malloc(iter.remaining_len() + SIMDJSON_PADDING));
-  if (copy == nullptr) { return MEMALLOC; }
-  std::memcpy(copy, value, iter.remaining_len());
-  std::memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
-  error_code error = visit_number(iter, copy);
-  free(copy);
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  if (copy.get() == nullptr) { return MEMALLOC; }
+  std::memcpy(copy.get(), value, iter.remaining_len());
+  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  error_code error = visit_number(iter, copy.get());
   return error;
 }
 
@@ -7952,8 +7976,7 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 } // namespace simdjson
 
 /* begin file include/simdjson/haswell/end.h */
-SIMDJSON_UNTARGET_REGION
-#undef haswell
+SIMDJSON_UNTARGET_HASWELL
 /* end file include/simdjson/haswell/end.h */
 /* end file src/haswell/dom_parser_implementation.cpp */
 #endif
@@ -7983,7 +8006,6 @@ simdjson_warn_unused error_code implementation::create_dom_parser_implementation
 } // namespace simdjson
 
 /* begin file include/simdjson/ppc64/end.h */
-#undef ppc64
 /* end file include/simdjson/ppc64/end.h */
 /* end file src/ppc64/implementation.cpp */
 /* begin file src/ppc64/dom_parser_implementation.cpp */
@@ -8004,9 +8026,9 @@ using namespace simd;
 struct json_character_block {
   static simdjson_really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
 
-  simdjson_really_inline uint64_t whitespace() const { return _whitespace; }
-  simdjson_really_inline uint64_t op() const { return _op; }
-  simdjson_really_inline uint64_t scalar() { return ~(op() | whitespace()); }
+  simdjson_really_inline uint64_t whitespace() const noexcept { return _whitespace; }
+  simdjson_really_inline uint64_t op() const noexcept { return _op; }
+  simdjson_really_inline uint64_t scalar() const noexcept { return ~(op() | whitespace()); }
 
   uint64_t _whitespace;
   uint64_t _op;
@@ -8290,7 +8312,7 @@ private:
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text_64(const uint8_t *text) {
-  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
   }
@@ -8300,7 +8322,7 @@ simdjson_unused static char * format_input_text_64(const uint8_t *text) {
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
-  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
   in.store(reinterpret_cast<uint8_t*>(buf));
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     if (buf[i] < ' ') { buf[i] = '_'; }
@@ -8310,7 +8332,7 @@ simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
 }
 
 simdjson_unused static char * format_mask(uint64_t mask) {
-  static char *buf = reinterpret_cast<char*>(malloc(64 + 1));
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
   for (size_t i=0; i<64; i++) {
     buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
   }
@@ -8358,6 +8380,10 @@ namespace {
 namespace stage1 {
 
 struct json_string_block {
+  // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
+  simdjson_really_inline json_string_block(uint64_t backslash, uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  _backslash(backslash), _escaped(escaped), _quote(quote), _in_string(in_string) {}
+
   // Escaped characters (characters following an escape() character)
   simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Escape characters (backslashes that are not escaped--i.e. in \\, includes only the first \)
@@ -8479,12 +8505,15 @@ simdjson_really_inline json_string_block json_string_scanner::next(const simd::s
   prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
 
   // Use ^ to turn the beginning quote off, and the end quote on.
-  return {
+
+  // We are returning a function-local object so either we get a move constructor
+  // or we get copy elision.
+  return json_string_block(
     backslash,
     escaped,
     quote,
     in_string
-  };
+  );
 }
 
 simdjson_really_inline error_code json_string_scanner::finish() {
@@ -8524,20 +8553,26 @@ namespace stage1 {
  */
 struct json_block {
 public:
+  // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
+  simdjson_really_inline json_block(json_string_block&& string, json_character_block characters, uint64_t follows_potential_nonquote_scalar) :
+  _string(std::move(string)), _characters(characters), _follows_potential_nonquote_scalar(follows_potential_nonquote_scalar) {}
+  simdjson_really_inline json_block(json_string_block string, json_character_block characters, uint64_t follows_potential_nonquote_scalar) :
+  _string(string), _characters(characters), _follows_potential_nonquote_scalar(follows_potential_nonquote_scalar) {}
+
   /**
    * The start of structurals.
    * In simdjson prior to v0.3, these were called the pseudo-structural characters.
    **/
-  simdjson_really_inline uint64_t structural_start() { return potential_structural_start() & ~_string.string_tail(); }
+  simdjson_really_inline uint64_t structural_start() const noexcept { return potential_structural_start() & ~_string.string_tail(); }
   /** All JSON whitespace (i.e. not in a string) */
-  simdjson_really_inline uint64_t whitespace() { return non_quote_outside_string(_characters.whitespace()); }
+  simdjson_really_inline uint64_t whitespace() const noexcept { return non_quote_outside_string(_characters.whitespace()); }
 
   // Helpers
 
   /** Whether the given characters are inside a string (only works on non-quotes) */
-  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) { return _string.non_quote_inside_string(mask); }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const noexcept { return _string.non_quote_inside_string(mask); }
   /** Whether the given characters are outside a string (only works on non-quotes) */
-  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) { return _string.non_quote_outside_string(mask); }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const noexcept { return _string.non_quote_outside_string(mask); }
 
   // string and escape characters
   json_string_block _string;
@@ -8552,12 +8587,12 @@ private:
    * structural elements ([,],{,},:, comma) plus scalar starts like 123, true and "abc".
    * They may reside inside a string.
    **/
-  simdjson_really_inline uint64_t potential_structural_start() { return _characters.op() | potential_scalar_start(); }
+  simdjson_really_inline uint64_t potential_structural_start() const noexcept { return _characters.op() | potential_scalar_start(); }
   /**
    * The start of non-operator runs, like 123, true and "abc".
    * It main reside inside a string.
    **/
-  simdjson_really_inline uint64_t potential_scalar_start() {
+  simdjson_really_inline uint64_t potential_scalar_start() const noexcept {
     // The term "scalar" refers to anything except structural characters and white space
     // (so letters, numbers, quotes).
     // Whenever it is preceded by something that is not a structural element ({,},[,],:, ") nor a white-space
@@ -8568,7 +8603,7 @@ private:
    * Whether the given character is immediately after a non-operator like 123, true.
    * The characters following a quote are not included.
    */
-  simdjson_really_inline uint64_t follows_potential_scalar() {
+  simdjson_really_inline uint64_t follows_potential_scalar() const noexcept {
     // _follows_potential_nonquote_scalar: is defined as marking any character that follows a character
     // that is not a structural element ({,},[,],:, comma) nor a quote (") and that is not a
     // white space.
@@ -8634,11 +8669,13 @@ simdjson_really_inline json_block json_scanner::next(const simd::simd8x64<uint8_
   // Performance: there are many ways to skin this cat.
   const uint64_t nonquote_scalar = characters.scalar() & ~strings.quote();
   uint64_t follows_nonquote_scalar = follows(nonquote_scalar, prev_scalar);
-  return {
-    strings,
+  // We are returning a function-local object so either we get a move constructor
+  // or we get copy elision.
+  return json_block(
+    strings,// strings is a function-local object so either it moves or the copy is elided.
     characters,
     follows_nonquote_scalar
-  };
+  );
 }
 
 simdjson_really_inline error_code json_scanner::finish() {
@@ -8672,13 +8709,13 @@ private:
   {}
   template<size_t STEP_SIZE>
   simdjson_really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block);
+  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block);
   simdjson_really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
 
-simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, json_block block) {
+simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
   in.compress(mask, dst);
   dst += 64 - count_ones(mask);
@@ -8893,7 +8930,7 @@ private:
   simdjson_really_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx);
+  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
   simdjson_really_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, bool partial);
 
   json_scanner scanner{};
@@ -8983,7 +9020,7 @@ simdjson_really_inline void json_structural_indexer::step<64>(const uint8_t *blo
   reader.advance();
 }
 
-simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx) {
+simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx) {
   uint64_t unescaped = in.lteq(0x1F);
   checker.check_next_input(in);
   indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
@@ -9791,12 +9828,11 @@ simdjson_warn_unused simdjson_really_inline error_code tape_builder::visit_root_
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  uint8_t *copy = static_cast<uint8_t *>(malloc(iter.remaining_len() + SIMDJSON_PADDING));
-  if (copy == nullptr) { return MEMALLOC; }
-  std::memcpy(copy, value, iter.remaining_len());
-  std::memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
-  error_code error = visit_number(iter, copy);
-  free(copy);
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  if (copy.get() == nullptr) { return MEMALLOC; }
+  std::memcpy(copy.get(), value, iter.remaining_len());
+  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  error_code error = visit_number(iter, copy.get());
   return error;
 }
 
@@ -9948,7 +9984,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 } // namespace simdjson
 
 /* begin file include/simdjson/ppc64/end.h */
-#undef ppc64
 /* end file include/simdjson/ppc64/end.h */
 /* end file src/ppc64/dom_parser_implementation.cpp */
 #endif
@@ -9979,8 +10014,7 @@ simdjson_warn_unused error_code implementation::create_dom_parser_implementation
 } // namespace simdjson
 
 /* begin file include/simdjson/westmere/end.h */
-SIMDJSON_UNTARGET_REGION
-#undef westmere
+SIMDJSON_UNTARGET_WESTMERE
 /* end file include/simdjson/westmere/end.h */
 /* end file src/westmere/implementation.cpp */
 /* begin file src/westmere/dom_parser_implementation.cpp */
@@ -10003,9 +10037,9 @@ using namespace simd;
 struct json_character_block {
   static simdjson_really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
 
-  simdjson_really_inline uint64_t whitespace() const { return _whitespace; }
-  simdjson_really_inline uint64_t op() const { return _op; }
-  simdjson_really_inline uint64_t scalar() { return ~(op() | whitespace()); }
+  simdjson_really_inline uint64_t whitespace() const noexcept { return _whitespace; }
+  simdjson_really_inline uint64_t op() const noexcept { return _op; }
+  simdjson_really_inline uint64_t scalar() const noexcept { return ~(op() | whitespace()); }
 
   uint64_t _whitespace;
   uint64_t _op;
@@ -10319,7 +10353,7 @@ private:
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text_64(const uint8_t *text) {
-  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
   }
@@ -10329,7 +10363,7 @@ simdjson_unused static char * format_input_text_64(const uint8_t *text) {
 
 // Routines to print masks and text for debugging bitmask operations
 simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
-  static char *buf = reinterpret_cast<char*>(malloc(sizeof(simd8x64<uint8_t>) + 1));
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
   in.store(reinterpret_cast<uint8_t*>(buf));
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
     if (buf[i] < ' ') { buf[i] = '_'; }
@@ -10339,7 +10373,7 @@ simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
 }
 
 simdjson_unused static char * format_mask(uint64_t mask) {
-  static char *buf = reinterpret_cast<char*>(malloc(64 + 1));
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
   for (size_t i=0; i<64; i++) {
     buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
   }
@@ -10387,6 +10421,10 @@ namespace {
 namespace stage1 {
 
 struct json_string_block {
+  // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
+  simdjson_really_inline json_string_block(uint64_t backslash, uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  _backslash(backslash), _escaped(escaped), _quote(quote), _in_string(in_string) {}
+
   // Escaped characters (characters following an escape() character)
   simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Escape characters (backslashes that are not escaped--i.e. in \\, includes only the first \)
@@ -10508,12 +10546,15 @@ simdjson_really_inline json_string_block json_string_scanner::next(const simd::s
   prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
 
   // Use ^ to turn the beginning quote off, and the end quote on.
-  return {
+
+  // We are returning a function-local object so either we get a move constructor
+  // or we get copy elision.
+  return json_string_block(
     backslash,
     escaped,
     quote,
     in_string
-  };
+  );
 }
 
 simdjson_really_inline error_code json_string_scanner::finish() {
@@ -10553,20 +10594,26 @@ namespace stage1 {
  */
 struct json_block {
 public:
+  // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
+  simdjson_really_inline json_block(json_string_block&& string, json_character_block characters, uint64_t follows_potential_nonquote_scalar) :
+  _string(std::move(string)), _characters(characters), _follows_potential_nonquote_scalar(follows_potential_nonquote_scalar) {}
+  simdjson_really_inline json_block(json_string_block string, json_character_block characters, uint64_t follows_potential_nonquote_scalar) :
+  _string(string), _characters(characters), _follows_potential_nonquote_scalar(follows_potential_nonquote_scalar) {}
+
   /**
    * The start of structurals.
    * In simdjson prior to v0.3, these were called the pseudo-structural characters.
    **/
-  simdjson_really_inline uint64_t structural_start() { return potential_structural_start() & ~_string.string_tail(); }
+  simdjson_really_inline uint64_t structural_start() const noexcept { return potential_structural_start() & ~_string.string_tail(); }
   /** All JSON whitespace (i.e. not in a string) */
-  simdjson_really_inline uint64_t whitespace() { return non_quote_outside_string(_characters.whitespace()); }
+  simdjson_really_inline uint64_t whitespace() const noexcept { return non_quote_outside_string(_characters.whitespace()); }
 
   // Helpers
 
   /** Whether the given characters are inside a string (only works on non-quotes) */
-  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) { return _string.non_quote_inside_string(mask); }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const noexcept { return _string.non_quote_inside_string(mask); }
   /** Whether the given characters are outside a string (only works on non-quotes) */
-  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) { return _string.non_quote_outside_string(mask); }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const noexcept { return _string.non_quote_outside_string(mask); }
 
   // string and escape characters
   json_string_block _string;
@@ -10581,12 +10628,12 @@ private:
    * structural elements ([,],{,},:, comma) plus scalar starts like 123, true and "abc".
    * They may reside inside a string.
    **/
-  simdjson_really_inline uint64_t potential_structural_start() { return _characters.op() | potential_scalar_start(); }
+  simdjson_really_inline uint64_t potential_structural_start() const noexcept { return _characters.op() | potential_scalar_start(); }
   /**
    * The start of non-operator runs, like 123, true and "abc".
    * It main reside inside a string.
    **/
-  simdjson_really_inline uint64_t potential_scalar_start() {
+  simdjson_really_inline uint64_t potential_scalar_start() const noexcept {
     // The term "scalar" refers to anything except structural characters and white space
     // (so letters, numbers, quotes).
     // Whenever it is preceded by something that is not a structural element ({,},[,],:, ") nor a white-space
@@ -10597,7 +10644,7 @@ private:
    * Whether the given character is immediately after a non-operator like 123, true.
    * The characters following a quote are not included.
    */
-  simdjson_really_inline uint64_t follows_potential_scalar() {
+  simdjson_really_inline uint64_t follows_potential_scalar() const noexcept {
     // _follows_potential_nonquote_scalar: is defined as marking any character that follows a character
     // that is not a structural element ({,},[,],:, comma) nor a quote (") and that is not a
     // white space.
@@ -10663,11 +10710,13 @@ simdjson_really_inline json_block json_scanner::next(const simd::simd8x64<uint8_
   // Performance: there are many ways to skin this cat.
   const uint64_t nonquote_scalar = characters.scalar() & ~strings.quote();
   uint64_t follows_nonquote_scalar = follows(nonquote_scalar, prev_scalar);
-  return {
-    strings,
+  // We are returning a function-local object so either we get a move constructor
+  // or we get copy elision.
+  return json_block(
+    strings,// strings is a function-local object so either it moves or the copy is elided.
     characters,
     follows_nonquote_scalar
-  };
+  );
 }
 
 simdjson_really_inline error_code json_scanner::finish() {
@@ -10701,13 +10750,13 @@ private:
   {}
   template<size_t STEP_SIZE>
   simdjson_really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block);
+  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block);
   simdjson_really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
 
-simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, json_block block) {
+simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
   in.compress(mask, dst);
   dst += 64 - count_ones(mask);
@@ -10922,7 +10971,7 @@ private:
   simdjson_really_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx);
+  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
   simdjson_really_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, bool partial);
 
   json_scanner scanner{};
@@ -11012,7 +11061,7 @@ simdjson_really_inline void json_structural_indexer::step<64>(const uint8_t *blo
   reader.advance();
 }
 
-simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx) {
+simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx) {
   uint64_t unescaped = in.lteq(0x1F);
   checker.check_next_input(in);
   indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
@@ -11819,12 +11868,11 @@ simdjson_warn_unused simdjson_really_inline error_code tape_builder::visit_root_
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  uint8_t *copy = static_cast<uint8_t *>(malloc(iter.remaining_len() + SIMDJSON_PADDING));
-  if (copy == nullptr) { return MEMALLOC; }
-  std::memcpy(copy, value, iter.remaining_len());
-  std::memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
-  error_code error = visit_number(iter, copy);
-  free(copy);
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  if (copy.get() == nullptr) { return MEMALLOC; }
+  std::memcpy(copy.get(), value, iter.remaining_len());
+  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  error_code error = visit_number(iter, copy.get());
   return error;
 }
 
@@ -11975,8 +12023,7 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 } // namespace simdjson
 
 /* begin file include/simdjson/westmere/end.h */
-SIMDJSON_UNTARGET_REGION
-#undef westmere
+SIMDJSON_UNTARGET_WESTMERE
 /* end file include/simdjson/westmere/end.h */
 /* end file src/westmere/dom_parser_implementation.cpp */
 #endif
