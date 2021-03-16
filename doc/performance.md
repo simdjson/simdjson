@@ -48,6 +48,13 @@ We recommend against creating many `std::string` or `simdjson::padded_string` in
  auto doc = parser.iterate(padded_string_view(json_str, length, capacity));
 ```
 
+or simply
+
+
+```c++
+ auto doc = parser.iterate(json_str, length, capacity);
+```
+
 
 Large files and huge page support
 ---------------------------------
