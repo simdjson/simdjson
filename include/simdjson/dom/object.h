@@ -123,7 +123,7 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get_uint64().first == 1
+   *   int64_t(parser.parse(R"({ "a\n": 1 })"_padded)["a\n"]) == 1
    *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get_uint64().error() == NO_SUCH_FIELD
    *
    * This function has linear-time complexity: the keys are checked one by one.
@@ -140,7 +140,7 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get_uint64().first == 1
+   *   int64_t(parser.parse(R"({ "a\n": 1 })"_padded)["a\n"]) == 1
    *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get_uint64().error() == NO_SUCH_FIELD
    *
    * This function has linear-time complexity: the keys are checked one by one.
@@ -182,7 +182,7 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get_uint64().first == 1
+   *   int64_t(parser.parse(R"({ "a\n": 1 })"_padded)["a\n"]) == 1
    *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get_uint64().error() == NO_SUCH_FIELD
    *
    * This function has linear-time complexity: the keys are checked one by one.

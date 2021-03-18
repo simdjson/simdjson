@@ -355,7 +355,7 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get_uint64().first == 1
+   *   int64_t(parser.parse(R"({ "a\n": 1 })"_padded)["a\n"]) == 1
    *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get_uint64().error() == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
@@ -370,7 +370,7 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get_uint64().first == 1
+   *   int64_t(parser.parse(R"({ "a\n": 1 })"_padded)["a\n"]) == 1
    *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get_uint64().error() == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
@@ -442,7 +442,7 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get_uint64().first == 1
+   *   int64_t(parser.parse(R"({ "a\n": 1 })"_padded)["a\n"]) == 1
    *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get_uint64().error() == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
