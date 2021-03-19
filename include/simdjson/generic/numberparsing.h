@@ -728,10 +728,10 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer(co
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
   size_t digit_count = size_t(p - start_digits);
-  // The longest negative 64-bit number is 19 digits.
-  // The longest positive 64-bit number is 20 digits.
-  // We do it this way so we don't trigger this branch unless we must.
-  size_t longest_digit_count = negative ? 19 : 20;
+  // We go from
+  // -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
+  // so we can never represent numbers that have more than 19 digits.
+  size_t longest_digit_count = 19;
   // Optimization note: the compiler can probably merge
   // ((digit_count == 0) || (digit_count > longest_digit_count))
   // into a single  branch since digit_count is unsigned.
@@ -744,27 +744,10 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer(co
   // }
   // as a single table lookup:
   if(integer_string_finisher[*p] != SUCCESS) { return error_code(integer_string_finisher[*p]); }
-  if (digit_count == longest_digit_count) {
-    if (negative) {
-      // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return INCORRECT_TYPE; }
-      return ~i+1;
-
-    // Positive overflow check:
-    // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
-    //   biggest uint64_t.
-    // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
-    //   If we got here, it's a 20 digit number starting with the digit "1".
-    // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
-    //   than 1,553,255,926,290,448,384.
-    // - That is smaller than the smallest possible 20-digit number the user could write:
-    //   10,000,000,000,000,000,000.
-    // - Therefore, if the number is positive and lower than that, it's overflow.
-    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
-    //
-    } else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INCORRECT_TYPE; }
-  }
-
+  // Negative numbers have can go down to - INT64_MAX - 1 whereas positive numbers are limited to INT64_MAX.
+  // Performance note: This check is only needed when digit_count == longest_digit_count but it is
+  // so cheap that we might as well always make it.
+  if(i > uint64_t(INT64_MAX) + uint64_t(negative)) { return INCORRECT_TYPE; }
   return negative ? (~i+1) : i;
 }
 
