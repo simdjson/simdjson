@@ -180,13 +180,13 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
 
   /**
    * Get the result value. This function is safe if and only
-   * the error() method returns a value that evoluates to false.
+   * the error() method returns a value that evaluates to false.
    */
   simdjson_really_inline const T& value_unsafe() const& noexcept;
 
   /**
    * Take the result value (move it). This function is safe if and only
-   * the error() method returns a value that evoluates to false.
+   * the error() method returns a value that evaluates to false.
    */
   simdjson_really_inline T&& value_unsafe() && noexcept;
 
@@ -271,13 +271,13 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
 
   /**
    * Get the result value. This function is safe if and only
-   * the error() method returns a value that evoluates to false.
+   * the error() method returns a value that evaluates to false.
    */
   simdjson_really_inline const T& value_unsafe() const& noexcept;
 
   /**
    * Take the result value (move it). This function is safe if and only
-   * the error() method returns a value that evoluates to false.
+   * the error() method returns a value that evaluates to false.
    */
   simdjson_really_inline T&& value_unsafe() && noexcept;
 
