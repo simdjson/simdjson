@@ -48,7 +48,7 @@ public:
   /**
    * Tell whether the iterator is at the EOF mark
    */
-  simdjson_really_inline bool at_eof() const noexcept;
+  simdjson_really_inline bool at_end() const noexcept;
 
   /**
    * Tell whether the iterator is at the start of the value
@@ -85,7 +85,7 @@ public:
    *
    * @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse".
    */
-  simdjson_really_inline simdjson_result<json_type> type() noexcept;
+  simdjson_really_inline simdjson_result<json_type> type() const noexcept;
 
   /**
    * @addtogroup object Object iteration
@@ -307,6 +307,9 @@ protected:
   simdjson_really_inline void assert_at_child() const noexcept;
   simdjson_really_inline void assert_at_next() const noexcept;
   simdjson_really_inline void assert_at_non_root_start() const noexcept;
+
+  simdjson_really_inline token_position position() const noexcept;
+  simdjson_really_inline token_position start_position() const noexcept;
 
   friend class document;
   friend class object;

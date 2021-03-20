@@ -65,7 +65,7 @@ public:
   /**
    * Get the root value iterator
    */
-  simdjson_really_inline token_position root_checkpoint() const noexcept;
+  simdjson_really_inline token_position root_position() const noexcept;
 
   /**
    * Assert if the iterator is not at the start
@@ -75,7 +75,7 @@ public:
   /**
    * Tell whether the iterator is at the EOF mark
    */
-  simdjson_really_inline bool at_eof() const noexcept;
+  simdjson_really_inline bool at_end() const noexcept;
 
   /**
    * Tell whether the iterator is live (has not been moved).
@@ -197,7 +197,12 @@ public:
 
 protected:
   simdjson_really_inline json_iterator(const uint8_t *buf, ondemand::parser *parser) noexcept;
-  simdjson_really_inline token_position last_document_position() const noexcept;
+  /// The last token before the end
+  simdjson_really_inline token_position last_position() const noexcept;
+  /// The token *at* the end. This points at gibberish and should only be used for comparison.
+  simdjson_really_inline token_position end_position() const noexcept;
+  /// The end of the buffer.
+  simdjson_really_inline token_position end() const noexcept;
 
   friend class document;
   friend class object;
