@@ -92,6 +92,8 @@ if (Git_FOUND AND (GIT_VERSION_STRING VERSION_GREATER  "2.1.4") AND (NOT CMAKE_G
   set_property(TEST checkperf APPEND PROPERTY LABELS per_implementation explicitonly)
   set_property(TEST checkperf APPEND PROPERTY DEPENDS parse perfdiff ${SIMDJSON_USER_CMAKECACHE})
   set_property(TEST checkperf PROPERTY RUN_SERIAL TRUE)
+  add_dependencies(per_implementation_tests checkperf)
+  add_dependencies(explicitonly_tests checkperf)
 else()
   if (CMAKE_GENERATOR MATCHES Ninja)
    message(STATUS "We disable the checkperf targets under Ninja.")

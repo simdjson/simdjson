@@ -19,7 +19,8 @@ include(GNUInstallDirs)
 include(cmake/simdjson-flags.cmake)
 include(cmake/simdjson-user-cmakecache.cmake)
 
-
+# So we can build just tests with "make all_tests"
+add_custom_target(all_tests)
 
 if(SIMDJSON_JUST_LIBRARY)
   message( STATUS "Building just the library, omitting all tests, tools and benchmarks." )
@@ -35,6 +36,7 @@ endif(SIMDJSON_JUST_LIBRARY)
 # Create the top level simdjson library (must be done at this level to use both src/ and include/
 # directories) and tools
 #
+
 add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(windows)
