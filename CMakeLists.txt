@@ -26,16 +26,29 @@ set(SIMDJSON_LIB_SOVERSION "8" CACHE STRING "simdjson library soversion")
 
 include(GNUInstallDirs)
 include(cmake/simdjson-flags.cmake)
-include(cmake/simdjson-user-cmakecache.cmake)
 
-# So we can build just tests with "make all_tests"
-add_custom_target(all_tests)
+if(is_top_project)
+  set(
+      SIMDJSON_USER_CMAKECACHE
+      "${CMAKE_BINARY_DIR}/.simdjson-user-CMakeCache.txt"
+  )
+  add_custom_target(
+      simdjson-user-cmakecache
+      COMMAND "${CMAKE_COMMAND}"
+      -D "BINARY_DIR=${CMAKE_BINARY_DIR}"
+      -D "USER_CMAKECACHE=${SIMDJSON_USER_CMAKECACHE}"
+      -P "${PROJECT_SOURCE_DIR}/cmake/simdjson-user-cmakecache.cmake"
+      VERBATIM
+  )
+endif()
 
 if(SIMDJSON_JUST_LIBRARY)
   message( STATUS "Building just the library, omitting all tests, tools and benchmarks." )
 else(SIMDJSON_JUST_LIBRARY)
   # Setup tests
   enable_testing()
+  # So we can build just tests with "make all_tests"
+  add_custom_target(all_tests)
   add_subdirectory(jsonchecker)
   add_subdirectory(jsonexamples)
   add_library(test-data INTERFACE)
