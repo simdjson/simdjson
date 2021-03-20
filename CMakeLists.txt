@@ -9,6 +9,12 @@ project(
     LANGUAGES CXX C
 )
 
+string(
+    COMPARE EQUAL
+    "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}"
+    is_top_project
+)
+
 set(
     SIMDJSON_SEMANTIC_VERSION "${PROJECT_VERSION}"
     CACHE STRING "simdjson semantic version"
