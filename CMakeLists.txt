@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-# CMP0025: Compiler id for Apple Clang is now AppleClang.
-# https://cmake.org/cmake/help/v3.17/policy/CMP0025.html
-cmake_policy(SET CMP0025 NEW)
+
 project(simdjson
   DESCRIPTION "Parsing gigabytes of JSON per second"
   LANGUAGES CXX C
