@@ -1,14 +1,3 @@
-
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  message (STATUS "The simdjson repository appears to be standalone.")
-  option(SIMDJSON_JUST_LIBRARY "Build just the library, omit tests, tools and benchmarks" OFF)
-  message (STATUS "By default, we attempt to build everything.")
-else()
-  message (STATUS "The simdjson repository appears to be used as a subdirectory.")
-  option(SIMDJSON_JUST_LIBRARY "Build just the library, omit tests, tools and benchmarks" ON)
-  message (STATUS "By default, we just build the library.")
-endif()
-
 #
 # Flags used by exes and by the simdjson library (project-wide flags)
 #

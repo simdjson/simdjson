@@ -24,8 +24,11 @@ set(SIMDJSON_GITHUB_REPOSITORY "${PROJECT_HOMEPAGE_URL}")
 set(SIMDJSON_LIB_VERSION "8.0.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "8" CACHE STRING "simdjson library soversion")
 
+if(is_top_project)
+  option(SIMDJSON_DEVELOPER_MODE "Enable targets for developing simdjson" OFF)
+endif()
+
 include(GNUInstallDirs)
-include(cmake/simdjson-flags.cmake)
 
 if(is_top_project)
   set(
@@ -42,9 +45,8 @@ if(is_top_project)
   )
 endif()
 
-if(SIMDJSON_JUST_LIBRARY)
-  message( STATUS "Building just the library, omitting all tests, tools and benchmarks." )
-else(SIMDJSON_JUST_LIBRARY)
+if(SIMDJSON_DEVELOPER_MODE)
+  include(cmake/simdjson-flags.cmake)
   # Setup tests
   enable_testing()
   # So we can build just tests with "make all_tests"
@@ -53,7 +55,7 @@ else(SIMDJSON_JUST_LIBRARY)
   add_subdirectory(jsonexamples)
   add_library(test-data INTERFACE)
   target_link_libraries(test-data INTERFACE jsonchecker-data jsonchecker-minefield-data jsonexamples-data)
-endif(SIMDJSON_JUST_LIBRARY)
+endif()
 
 # Create the top level simdjson library (must be done at this level to use both src/ and include/
 # directories) and tools
@@ -62,7 +64,7 @@ endif(SIMDJSON_JUST_LIBRARY)
 add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(windows)
-if(NOT(SIMDJSON_JUST_LIBRARY))
+if(SIMDJSON_DEVELOPER_MODE)
   add_subdirectory(dependencies) ## This needs to be before tools because of cxxopts
   add_subdirectory(tools)  ## This needs to be before tests because of cxxopts
   add_subdirectory(singleheader)
@@ -87,7 +89,7 @@ install(FILES "${PROJECT_BINARY_DIR}/simdjson-config.cmake"
 #
 # Compile tools / tests / benchmarks
 #
-if(NOT(SIMDJSON_JUST_LIBRARY))
+if(SIMDJSON_DEVELOPER_MODE)
   add_subdirectory(tests)
   add_subdirectory(examples)
   add_subdirectory(benchmark)
