@@ -24,6 +24,7 @@ set(SIMDJSON_LIB_SOVERSION "8" CACHE STRING "simdjson library soversion")
 option(SIMDJSON_ENABLE_THREADS "Link with thread support" ON)
 
 set(impl_definitions "")
+include(cmake/simdjson-props.cmake)
 include(cmake/implementation-flags.cmake)
 include(cmake/exception-flags.cmake)
 
@@ -78,9 +79,7 @@ if(SIMDJSON_ENABLE_THREADS)
   target_compile_definitions(simdjson PUBLIC SIMDJSON_THREADS_ENABLED=1)
 endif()
 
-if(SIMDJSON_DEVELOPER_MODE)
-  target_link_libraries(simdjson PRIVATE simdjson-flags)
-endif()
+simdjson_apply_props(simdjson)
 
 # ---- Install rules ----
 
