@@ -4,8 +4,8 @@ namespace ondemand {
 
 simdjson_really_inline token_iterator::token_iterator(
   const uint8_t *_buf,
-  token_position _position
-) noexcept : buf{_buf}, _position{_position}
+  token_position position
+) noexcept : buf{_buf}, _position{position}
 {
 }
 

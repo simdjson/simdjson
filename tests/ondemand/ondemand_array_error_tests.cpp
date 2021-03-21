@@ -89,13 +89,13 @@ namespace array_error_tests {
   bool array_iterate_unclosed_error() {
     TEST_START();
     ONDEMAND_SUBTEST("unclosed extra comma", R"({ "a": [,)",  assert_iterate(doc["a"],                 { INCORRECT_TYPE, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("unclosed extra comma", R"({ "a": [,,)", assert_iterate(doc["a"],                 { INCORRECT_TYPE, INCORRECT_TYPE, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed extra comma", R"({ "a": [,,)", assert_iterate(doc["a"],                 { INCORRECT_TYPE, TAPE_ERROR }));
     ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [1 )",        assert_iterate(doc["a"], { int64_t(1) }, { TAPE_ERROR }));
     // TODO These pass the user values that may run past the end of the buffer if they aren't careful
     // In particular, if the padding is decorated with the wrong values, we could cause overrun!
-    ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [1,)",        assert_iterate(doc["a"], { int64_t(1) }, { INCORRECT_TYPE, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [1,)",        assert_iterate(doc["a"], { int64_t(1) }, { TAPE_ERROR }));
     ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [1)",         assert_iterate(doc["a"],                 { NUMBER_ERROR, TAPE_ERROR }));
-    ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [)",          assert_iterate(doc["a"],                 { INCORRECT_TYPE, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [)",          assert_iterate(doc["a"],                 { TAPE_ERROR }));
     TEST_SUCCEED();
   }
 

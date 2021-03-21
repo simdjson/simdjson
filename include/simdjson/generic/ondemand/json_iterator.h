@@ -88,10 +88,38 @@ public:
   simdjson_really_inline void abandon() noexcept;
 
   /**
-   * Advance the current token.
+   * Advance the current token without modifying depth.
    */
   simdjson_really_inline const uint8_t *advance() noexcept;
 
+  /**
+   * Advance the current token by one, without modifying depth.
+   *
+   * @param requiremed_tokens The number of tokens that must exist. Only advances one token.
+   *
+   * @error TAPE_ERROR If there are not at least required_tokens tokens remaining.
+   */
+  simdjson_really_inline simdjson_result<const uint8_t *> try_advance(uint32_t required_tokens=1) noexcept;
+
+  /**
+   * Return an error unless there are enough tokens left.
+   *
+   * @param required_tokens The number of tokens that must exist.
+   * @error TAPE_ERROR If there are not at least required_tokens tokens remaining.
+   */
+  simdjson_really_inline error_code require_tokens(uint32_t required_tokens=1) noexcept;
+  /**
+   * Assert that there are at least the given number of tokens left.
+   *
+   * Has no effect in release builds.
+   */
+  simdjson_really_inline void assert_more_tokens(uint32_t required_tokens=1) const noexcept;
+  /**
+   * Assert that the given position addresses an actual token (is within bounds).
+   *
+   * Has no effect in release builds.
+   */
+  simdjson_really_inline void assert_valid_position(token_position position) const noexcept;
   /**
    * Get the JSON text for a given token (relative).
    *
