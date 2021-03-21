@@ -2,7 +2,7 @@ option(SIMDJSON_EXCEPTIONS "Enable simdjson's exception-throwing interface" ON)
 if(NOT SIMDJSON_EXCEPTIONS)
   message(STATUS "simdjson exception interface turned off. \
 Code that does not check error codes will not compile.")
-  add_definitions(SIMDJSON_EXCEPTIONS=0)
+  simdjson_add_props(target_compile_definitions PUBLIC SIMDJSON_EXCEPTIONS=0)
   if(MSVC)
     if(NOT is_top_project)
       message(AUTHOR_WARNING "Turning SIMDJSON_EXCEPTIONS off requires \
@@ -23,6 +23,6 @@ editing CMAKE_CXX_FLAGS")
     # definition below must similarly be added globally
     add_definitions(-D_HAS_EXCEPTIONS=0)
   elseif(CMAKE_COMPILER_IS_GNUCC)
-    link_libraries(-fno-exceptions)
+    simdjson_add_props(target_link_libraries PRIVATE -fno-exceptions)
   endif()
 endif()
