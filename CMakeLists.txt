@@ -27,9 +27,33 @@ endif()
 
 # ---- simdjson library ----
 
-add_subdirectory(include)
-add_subdirectory(src)
-add_subdirectory(windows)
+add_library(simdjson src/simdjson.cpp)
+add_library(simdjson::simdjson ALIAS simdjson)
+
+set_target_properties(
+    simdjson PROPERTIES
+    VERSION "${SIMDJSON_LIB_VERSION}"
+    SOVERSION "${SIMDJSON_LIB_SOVERSION}"
+    # FIXME: symbols should be hidden by default
+    WINDOWS_EXPORT_ALL_SYMBOLS YES
+)
+
+# FIXME: Use proper CMake integration for exports
+if(MSVC)
+  target_compile_definitions(
+      simdjson
+      PRIVATE SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY=1
+      INTERFACE SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY=1
+  )
+endif()
+
+target_include_directories(
+    simdjson
+    PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+    PRIVATE "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
+)
+
+target_compile_features(simdjson PUBLIC cxx_std_11)
 
 # ---- Install rules ----
 
@@ -97,6 +121,7 @@ add_subdirectory(jsonexamples)
 add_library(test-data INTERFACE)
 target_link_libraries(test-data INTERFACE jsonchecker-data jsonchecker-minefield-data jsonexamples-data)
 
+add_subdirectory(windows)
 add_subdirectory(dependencies) ## This needs to be before tools because of cxxopts
 add_subdirectory(tools)  ## This needs to be before tests because of cxxopts
 add_subdirectory(singleheader)
@@ -124,4 +149,50 @@ ${FIND} include src windows tools singleheader tests examples benchmark \
 -type f -exec ${FILE} '{}' \; | ${GREP} -qv ASCII || exit 0  && exit 1"
       WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
   )
+endif()
+
+##
+## In systems like R, libraries must not use stderr or abort to be acceptable.
+## Thus we make it a hard rule that one is not allowed to call abort or stderr.
+## The sanitized builds are allowed to abort.
+##
+if(NOT SIMDJSON_SANITIZE)
+  find_program(GREP grep)
+  find_program(NM nm)
+  if((NOT GREP) OR (NOT NM))
+    message("grep and nm are unavailable on this system.")
+  else()
+    add_test(
+      NAME "avoid_abort"
+      # Under FreeBSD, the __cxa_guard_abort symbol may appear but it is fine.
+      # So we want to look for <space><possibly _>abort as a test.
+      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} ' _*abort' || exit 0  && exit 1"
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+    add_test(
+      NAME "avoid_cout"
+      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} ' _*cout' || exit 0  && exit 1"
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+    add_test(
+      NAME "avoid_cerr"
+      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} ' _*cerr' || exit 0  && exit 1"
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+    add_test(
+      NAME "avoid_printf"
+      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} ' _*printf' || exit 0  && exit 1"
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+    add_test(
+      NAME "avoid_stdout"
+      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} stdout || exit 0 && exit 1"
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+    add_test(
+      NAME "avoid_stderr"
+      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} stderr || exit 0 && exit 1"
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+  endif()
 endif()
