@@ -27,6 +27,23 @@ include(cmake/simdjson-props.cmake)
 include(cmake/implementation-flags.cmake)
 include(cmake/exception-flags.cmake)
 
+option(SIMDJSON_DISABLE_DEPRECATED_API "Disables deprecated APIs" OFF)
+if(SIMDJSON_DISABLE_DEPRECATED_API)
+  simdjson_add_props(
+      target_compile_definitions PUBLIC
+      SIMDJSON_DISABLE_DEPRECATED_API=1
+  )
+endif()
+
+option(SIMDJSON_DEVELOPMENT_CHECKS "Enable development-time aids, such as \
+checks for incorrect API usage. Enabled by default in DEBUG." OFF)
+if(SIMDJSON_DEVELOPMENT_CHECKS)
+  simdjson_add_props(
+      target_compile_definitions PUBLIC
+      SIMDJSON_DEVELOPMENT_CHECKS
+  )
+endif()
+
 if(is_top_project)
   option(SIMDJSON_DEVELOPER_MODE "Enable targets for developing simdjson" OFF)
   option(BUILD_SHARED_LIBS "Build simdjson as a shared library" OFF)
@@ -74,6 +91,17 @@ if(SIMDJSON_ENABLE_THREADS)
   find_package(Threads REQUIRED)
   target_link_libraries(simdjson PUBLIC Threads::Threads)
   target_compile_definitions(simdjson PUBLIC SIMDJSON_THREADS_ENABLED=1)
+endif()
+
+# workaround for GNU GCC poor AVX load/store code generation
+if(
+    CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+    AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(i.86|x86(_64)?)$"
+)
+  simdjson_add_props(
+      target_compile_definitions PRIVATE
+      -mno-avx256-split-unaligned-load -mno-avx256-split-unaligned-store
+  )
 endif()
 
 simdjson_apply_props(simdjson)

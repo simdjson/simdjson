@@ -151,29 +151,9 @@ else()
   )
 endif()
 
-# workaround for GNU GCC poor AVX load/store code generation
-if(
-    CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-    AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(i.86|x86(_64)?)$"
-)
-  target_compile_options(
-      simdjson-flags INTERFACE
-      -mno-avx256-split-unaligned-load -mno-avx256-split-unaligned-store
-  )
-endif()
-
 #
 # Other optional flags
 #
-option(SIMDJSON_DEVELOPMENT_CHECKS "Enable development-time aids, such as \
-checks for incorrect API usage. Enabled by default in DEBUG." OFF)
-if(SIMDJSON_DEVELOPMENT_CHECKS)
-  target_compile_definitions(
-      simdjson-flags INTERFACE
-      SIMDJSON_DEVELOPMENT_CHECKS
-  )
-endif()
-
 option(SIMDJSON_BASH "Allow usage of bash within CMake" ON)
 
 option(
@@ -186,14 +166,6 @@ if(SIMDJSON_VERBOSE_LOGGING)
       simdjson-flags INTERFACE
       SIMDJSON_VERBOSE_LOGGING=1
   )
-endif()
-
-option(SIMDJSON_DISABLE_DEPRECATED_API "Disables deprecated APIs" OFF)
-if(SIMDJSON_DISABLE_DEPRECATED_API)
-    target_compile_definitions(
-        simdjson-flags INTERFACE
-        SIMDJSON_DISABLE_DEPRECATED_API=1
-    )
 endif()
 
 if(SIMDJSON_USE_LIBCPP)
