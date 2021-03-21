@@ -17,11 +17,6 @@ string(
 
 # ---- Options, variables ----
 
-set(
-    SIMDJSON_SEMANTIC_VERSION "${PROJECT_VERSION}"
-    CACHE STRING "simdjson semantic version"
-)
-set(SIMDJSON_GITHUB_REPOSITORY "${PROJECT_HOMEPAGE_URL}")
 # These version numbers are modified by tools/release.py
 set(SIMDJSON_LIB_VERSION "8.0.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "8" CACHE STRING "simdjson library soversion")
@@ -50,7 +45,6 @@ configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/simdjson-config.cmake
       NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 write_basic_package_version_file(
       "${PROJECT_BINARY_DIR}/simdjson-config-version.cmake"
-      VERSION ${SIMDJSON_SEMANTIC_VERSION}
       COMPATIBILITY SameMinorVersion)
 install(FILES "${PROJECT_BINARY_DIR}/simdjson-config.cmake"
               "${PROJECT_BINARY_DIR}/simdjson-config-version.cmake"

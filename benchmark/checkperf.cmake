@@ -46,7 +46,7 @@ if (Git_FOUND AND (GIT_VERSION_STRING VERSION_GREATER  "2.1.4") AND (NOT CMAKE_G
   set(SIMDJSON_CHECKPERF_BRANCH master CACHE STRING "Branch to compare performance against")
   set(SIMDJSON_CHECKPERF_DIR ${CMAKE_CURRENT_BINARY_DIR}/checkperf-reference/${SIMDJSON_CHECKPERF_BRANCH} CACHE STRING "Location to put checkperf performance comparison repository")
   set(SIMDJSON_CHECKPERF_ARGS ${EXAMPLE_JSON} CACHE STRING "Arguments to pass to parse during checkperf")
-  sync_git_repository(checkperf-repo ${SIMDJSON_CHECKPERF_DIR} ${SIMDJSON_CHECKPERF_REMOTE} ${SIMDJSON_CHECKPERF_BRANCH} ${SIMDJSON_GITHUB_REPOSITORY})
+  sync_git_repository(checkperf-repo ${SIMDJSON_CHECKPERF_DIR} ${SIMDJSON_CHECKPERF_REMOTE} ${SIMDJSON_CHECKPERF_BRANCH} ${PROJECT_HOMEPAGE_URL})
 
   # Commands to cause cmake on benchmark/checkperf-master/build/
   # - first, copy CMakeCache.txt
