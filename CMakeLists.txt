@@ -179,6 +179,8 @@ elseif(NOT is_top_project)
   message(AUTHOR_WARNING "Developer mode is intended for developers of simdjson")
 endif()
 
+simdjson_apply_props(simdjson-internal-flags)
+
 set(
     SIMDJSON_USER_CMAKECACHE
     "${CMAKE_BINARY_DIR}/.simdjson-user-CMakeCache.txt"

@@ -2,16 +2,15 @@
 # Flags used by exes and by the simdjson library (project-wide flags)
 #
 add_library(simdjson-internal-flags INTERFACE)
-target_link_libraries(simdjson-internal-flags INTERFACE simdjson-flags)
 
 option(SIMDJSON_SANITIZE_UNDEFINED "Sanitize undefined behavior" OFF)
 if(SIMDJSON_SANITIZE_UNDEFINED)
-  target_compile_options(
-      simdjson-flags INTERFACE
+  simdjson_add_props(
+      target_compile_options PRIVATE
       -fsanitize=undefined -fno-sanitize-recover=all
   )
-  target_link_libraries(
-      simdjson-flags INTERFACE
+  simdjson_add_props(
+      target_link_libraries PRIVATE
       -fsanitize=undefined -fno-sanitize-recover=all
   )
 endif()
@@ -23,16 +22,16 @@ if(SIMDJSON_SANITIZE)
 incompatible with the undefined-behavior sanitizer.")
     message(STATUS "You may set SIMDJSON_SANITIZE_UNDEFINED to sanitize \
 undefined behavior.")
-    target_compile_options(
-        simdjson-flags INTERFACE
+    simdjson_add_props(
+        target_compile_options PRIVATE
         -fsanitize=address -fno-omit-frame-pointer -fno-sanitize-recover=all
     )
-    target_compile_definitions(
-        simdjson-flags INTERFACE
+    simdjson_add_props(
+        target_compile_definitions PRIVATE
         ASAN_OPTIONS=detect_leaks=1
     )
-    target_link_libraries(
-        simdjson-flags INTERFACE
+    simdjson_add_props(
+        target_link_libraries PRIVATE
         -fsanitize=address  -fno-omit-frame-pointer -fno-sanitize-recover=all
     )
   else()
@@ -40,13 +39,13 @@ undefined behavior.")
         STATUS
         "Setting both the address sanitizer and the undefined sanitizer."
     )
-    target_compile_options(
-        simdjson-flags INTERFACE
+    simdjson_add_props(
+        target_compile_options PRIVATE
         -fsanitize=address -fno-omit-frame-pointer
         -fsanitize=undefined -fno-sanitize-recover=all
     )
-    target_link_libraries(
-        simdjson-flags INTERFACE
+    simdjson_add_props(
+        target_link_libraries PRIVATE
         -fsanitize=address -fno-omit-frame-pointer
         -fsanitize=undefined -fno-sanitize-recover=all
     )
@@ -54,25 +53,25 @@ undefined behavior.")
 
   # Ubuntu bug for GCC 5.0+ (safe for all versions)
   if(CMAKE_COMPILER_IS_GNUCC)
-    target_link_libraries(simdjson-flags INTERFACE -fuse-ld=gold)
+    simdjson_add_props(target_link_libraries PRIVATE -fuse-ld=gold)
   endif()
 endif()
 
 if(SIMDJSON_SANITIZE_THREADS)
   message(STATUS "Setting both the thread sanitizer \
 and the undefined-behavior sanitizer.")
-  target_compile_options(
-      simdjson-flags INTERFACE
+  simdjson_add_props(
+      target_compile_options PRIVATE
       -fsanitize=thread -fsanitize=undefined -fno-sanitize-recover=all
   )
-  target_link_libraries(
-      simdjson-flags INTERFACE
+  simdjson_add_props(
+      target_link_libraries PRIVATE
       -fsanitize=thread -fsanitize=undefined -fno-sanitize-recover=all
   )
 
   # Ubuntu bug for GCC 5.0+ (safe for all versions)
   if(CMAKE_COMPILER_IS_GNUCC)
-    target_link_libraries(simdjson-flags INTERFACE -fuse-ld=gold)
+    simdjson_add_props(target_link_libraries PRIVATE -fuse-ld=gold)
   endif()
 endif()
 
@@ -137,8 +136,8 @@ We recommend Visual Studio 2019 or better on a 64-bit system.")
     target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl /w34714)
   endif()
   if(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING)
-    target_link_options(simdjson-flags INTERFACE /DEBUG )
-    target_compile_options(simdjson-flags INTERFACE /Zi)
+    simdjson_add_props(target_link_options PRIVATE /DEBUG )
+    simdjson_add_props(target_compile_options PRIVATE /Zi)
   endif()
 else()
   if(NOT WIN32)
@@ -162,14 +161,14 @@ option(
     OFF
 )
 if(SIMDJSON_VERBOSE_LOGGING)
-  target_compile_definitions(
-      simdjson-flags INTERFACE
+  simdjson_add_props(
+      target_compile_definitions PRIVATE
       SIMDJSON_VERBOSE_LOGGING=1
   )
 endif()
 
 if(SIMDJSON_USE_LIBCPP)
-  target_link_libraries(simdjson-flags INTERFACE -stdlib=libc++ -lc++abi)
+  simdjson_add_props(target_link_libraries PRIVATE -stdlib=libc++ -lc++abi)
   # instead of the above line, we could have used
   # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++
   # -lc++abi")
