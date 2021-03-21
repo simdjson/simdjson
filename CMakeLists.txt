@@ -37,7 +37,7 @@ if(is_top_project)
 endif()
 
 if(SIMDJSON_DEVELOPER_MODE)
-  include(cmake/simdjson-flags.cmake)
+  include(cmake/developer-options.cmake)
 endif()
 
 # ---- simdjson library ----
