@@ -122,22 +122,6 @@ endif()
 
 option(SIMDJSON_BASH "Allow usage of bash within CMake" ON)
 
-option(SIMDJSON_EXCEPTIONS "Enable simdjson's exception-throwing interface" ON)
-if(NOT SIMDJSON_EXCEPTIONS)
-  message(STATUS "simdjson exception interface turned off. Code that does not check error codes will not compile.")
-  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_EXCEPTIONS=0)
-  if(MSVC)
-    # CMake currently /EHsc as a default flag in CMAKE_CXX_FLAGS on MSVC. Replacing this with a more general abstraction is a WIP (see https://gitlab.kitware.com/cmake/cmake/-/issues/20610)
-    # /EHs enables standard C++ stack unwinding when catching exceptions (non-structured exception handling)
-    # /EHc used in conjection with /EHs indicates that extern "C" functions never throw (terminate-on-throw)
-    # Here, we disable both with the - argument negation operator
-    string(REPLACE "/EHsc" "/EHs-c-" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-
-    # Because we cannot change the flag above on an invidual target (yet), the definition below must similarly be added globally
-    add_definitions(-D_HAS_EXCEPTIONS=0)
-  elseif (CMAKE_COMPILER_IS_GNUCC)
-    target_link_libraries(simdjson-flags INTERFACE -fno-exceptions)
-  endif()
 endif()
 
 option(SIMDJSON_VERBOSE_LOGGING, "Enable verbose logging for internal simdjson library development." OFF)

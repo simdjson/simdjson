@@ -25,6 +25,7 @@ option(SIMDJSON_ENABLE_THREADS "Link with thread support" ON)
 
 set(impl_definitions "")
 include(cmake/implementation-flags.cmake)
+include(cmake/exception-flags.cmake)
 
 if(is_top_project)
   option(SIMDJSON_DEVELOPER_MODE "Enable targets for developing simdjson" OFF)
