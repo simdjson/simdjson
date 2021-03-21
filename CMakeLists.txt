@@ -25,6 +25,7 @@ option(SIMDJSON_ENABLE_THREADS "Link with thread support" ON)
 
 if(is_top_project)
   option(SIMDJSON_DEVELOPER_MODE "Enable targets for developing simdjson" OFF)
+  option(BUILD_SHARED_LIBS "Build simdjson as a shared library" OFF)
 endif()
 
 # ---- simdjson library ----
@@ -41,7 +42,7 @@ set_target_properties(
 )
 
 # FIXME: Use proper CMake integration for exports
-if(MSVC)
+if(MSVC AND BUILD_SHARED_LIBS)
   target_compile_definitions(
       simdjson
       PRIVATE SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY=1
