@@ -42,7 +42,8 @@ if(SIMDJSON_SANITIZE_THREADS)
   endif()
 endif()
 
-if (NOT CMAKE_BUILD_TYPE)
+get_cmake_property(is_multi_config GENERATOR_IS_MULTI_CONFIG)
+if(NOT is_multi_config AND NOT CMAKE_BUILD_TYPE)
   # Deliberately not including SIMDJSON_SANITIZE_THREADS since thread behavior depends on the build type.
   if(SIMDJSON_SANITIZE OR SIMDJSON_SANITIZE_UNDEFINED)
     message(STATUS "No build type selected and you have enabled the sanitizer, default to Debug. Consider setting CMAKE_BUILD_TYPE.")
