@@ -16,12 +16,12 @@ function(simdjson_add_props command)
     else()
       set(value "[==[${value}]==]")
     endif()
-    string(APPEND args "${value}")
+    string(APPEND args " ${value}")
   endforeach()
 
   set(
       simdjson_props_content
-      "${simdjson_props_content}${command}(\${target} ${args})\n"
+      "${simdjson_props_content}${command}(\"\${target}\"${args})\n"
       PARENT_SCOPE
   )
 endfunction()
