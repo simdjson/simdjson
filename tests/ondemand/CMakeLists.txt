@@ -1,7 +1,5 @@
-# All remaining tests link with simdjson proper
 link_libraries(simdjson)
 include_directories(..)
-add_subdirectory(compilation_failure_tests)
 
 add_cpp_test(ondemand_active_tests           LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_array_tests            LABELS ondemand acceptance per_implementation)
@@ -9,7 +7,7 @@ add_cpp_test(ondemand_array_error_tests      LABELS ondemand acceptance per_impl
 add_cpp_test(ondemand_compilation_tests      LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_error_tests            LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_key_string_tests       LABELS ondemand acceptance per_implementation)
-add_cpp_test(ondemand_misc_tests           LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_misc_tests            LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_number_tests           LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_object_tests           LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_object_error_tests     LABELS ondemand acceptance per_implementation)
@@ -23,6 +21,8 @@ add_cpp_test(ondemand_wrong_type_error_tests LABELS ondemand acceptance per_impl
 if(HAVE_POSIX_FORK AND HAVE_POSIX_WAIT) # assert tests use fork and wait, which aren't on MSVC
   add_cpp_test(ondemand_assert_out_of_order_values LABELS assert per_implementation explicitonly ondemand)
 endif()
+
+add_subdirectory(compilation_failure_tests)
 
 # Copy the simdjson dll into the tests directory
 if(MSVC)
