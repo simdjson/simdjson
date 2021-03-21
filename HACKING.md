@@ -32,6 +32,18 @@ Stage 1 also does unicode validation.
 
 Stage 2 handles all of the rest: number parsings, recognizing atoms like true, false, null, and so forth.
 
+Developer mode
+--------------
+
+Build system targets that are only useful for developers of the simdjson
+library are behind the `SIMDJSON_DEVELOPER_MODE` option. Enabling this option
+makes tests, examples, benchmarks and other developer targets available. Not
+enabling this option means that you are a consumer of simdjson and thus you
+only get the library targets and options.
+
+Developer mode is forced to be on when the `CI` environment variable is set to
+a value that CMake recognizes as "on", which is set to `true` in all of the CI
+workflows used by simdjson.
 
 Directory Structure and Source
 ------------------------------
@@ -74,7 +86,7 @@ Other important files and directories:
   ```bash
   mkdir build
   cd build
-  cmake ..
+  cmake .. -D SIMDJSON_DEVELOPER_MODE=ON
   cmake --build . --config Release
   benchmark/parse ../jsonexamples/twitter.json
   ```
@@ -82,7 +94,7 @@ Other important files and directories:
   ```bash
   mkdir build
   cd build
-  cmake ..
+  cmake .. -D SIMDJSON_DEVELOPER_MODE=ON
   cmake --build . --target bench_parse_call --config Release
   ./benchmark/bench_parse_call
   ```
@@ -168,7 +180,7 @@ systematically regenerated on releases. To ensure you have the latest code, you 
 ```bash
 mkdir build
 cd build
-cmake ..
+cmake .. -D SIMDJSON_DEVELOPER_MODE=ON
 cmake --build . # needed, because currently dependencies do not work fully for the amalgamate target
 cmake --build . --target amalgamate
 ```
@@ -209,19 +221,19 @@ Building: While in the project repository, do the following:
 ```
 mkdir build
 cd build
-cmake ..
+cmake .. -D SIMDJSON_DEVELOPER_MODE=ON
 cmake --build .
 ctest
 ```
 
-CMake will build a library. By default, it builds a shared library (e.g., libsimdjson.so on Linux).
+CMake will build a library. By default, it builds a static library (e.g., libsimdjson.a on Linux).
 
-You can build a static library:
+You can build a shared library:
 
 ```
-mkdir buildstatic
-cd buildstatic
-cmake -DSIMDJSON_BUILD_STATIC=ON ..
+mkdir buildshared
+cd buildshared
+cmake .. -D BUILD_SHARED_LIBS=ON -D SIMDJSON_DEVELOPER_MODE=ON
 cmake --build .
 ctest
 ```
@@ -233,7 +245,7 @@ brew install gcc@8
 mkdir build
 cd build
 export CXX=g++-8 CC=gcc-8
-cmake ..
+cmake .. -D SIMDJSON_DEVELOPER_MODE=ON
 cmake --build .
 ctest
 ```
