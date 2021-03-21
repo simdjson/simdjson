@@ -32,6 +32,10 @@ if(is_top_project)
   endif()
 endif()
 
+if(SIMDJSON_DEVELOPER_MODE)
+  include(cmake/simdjson-flags.cmake)
+endif()
+
 # ---- simdjson library ----
 
 add_library(simdjson src/simdjson.cpp)
@@ -66,6 +70,10 @@ if(SIMDJSON_ENABLE_THREADS)
   find_package(Threads REQUIRED)
   target_link_libraries(simdjson PUBLIC Threads::Threads)
   target_compile_definitions(simdjson PUBLIC SIMDJSON_THREADS_ENABLED=1)
+endif()
+
+if(SIMDJSON_DEVELOPER_MODE)
+  target_link_libraries(simdjson PRIVATE simdjson-flags)
 endif()
 
 # ---- Install rules ----
@@ -154,7 +162,6 @@ add_custom_target(
     VERBATIM
 )
 
-include(cmake/simdjson-flags.cmake)
 # Setup tests
 enable_testing()
 # So we can build just tests with "make all_tests"
