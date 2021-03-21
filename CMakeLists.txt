@@ -60,19 +60,49 @@ target_compile_features(simdjson PUBLIC cxx_std_11)
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
-install(FILES singleheader/simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(
+    FILES singleheader/simdjson.h
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+    COMPONENT simdjson_Development
+)
 
-configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/simdjson-config.cmake.in"
-      "${PROJECT_BINARY_DIR}/simdjson-config.cmake"
-      INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/simdjson"
-      NO_SET_AND_CHECK_MACRO
-      NO_CHECK_REQUIRED_COMPONENTS_MACRO)
+install(
+    TARGETS simdjson
+    EXPORT simdjsonTargets
+    RUNTIME COMPONENT simdjson_Runtime
+    LIBRARY COMPONENT simdjson_Runtime
+    NAMELINK_COMPONENT simdjson_Development
+    ARCHIVE COMPONENT simdjson_Development
+    INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+)
+
+configure_file(cmake/simdjson-config.cmake.in simdjson-config.cmake @ONLY)
+
 write_basic_package_version_file(
-      "${PROJECT_BINARY_DIR}/simdjson-config-version.cmake"
-      COMPATIBILITY SameMinorVersion)
-install(FILES "${PROJECT_BINARY_DIR}/simdjson-config.cmake"
-              "${PROJECT_BINARY_DIR}/simdjson-config-version.cmake"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/simdjson")
+    simdjson-config-version.cmake
+    COMPATIBILITY SameMinorVersion
+)
+
+set(
+    SIMDJSON_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/simdjson"
+    CACHE STRING "CMake package config location relative to the install prefix"
+)
+mark_as_advanced(SIMDJSON_INSTALL_CMAKEDIR)
+
+install(
+    FILES
+    "${PROJECT_BINARY_DIR}/simdjson-config.cmake"
+    "${PROJECT_BINARY_DIR}/simdjson-config-version.cmake"
+    DESTINATION "${SIMDJSON_INSTALL_CMAKEDIR}"
+    COMPONENT simdjson_Development
+)
+
+install(
+    EXPORT simdjsonTargets
+    NAMESPACE simdjson::
+    DESTINATION "${SIMDJSON_INSTALL_CMAKEDIR}"
+    COMPONENT example_Development
+)
 
 #
 # CPack
