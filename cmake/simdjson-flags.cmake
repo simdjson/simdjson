@@ -1,7 +1,6 @@
 #
 # Flags used by exes and by the simdjson library (project-wide flags)
 #
-add_library(simdjson-flags INTERFACE)
 add_library(simdjson-internal-flags INTERFACE)
 target_link_libraries(simdjson-internal-flags INTERFACE simdjson-flags)
 
@@ -9,46 +8,83 @@ target_compile_definitions(simdjson-flags INTERFACE ${impl_definitions})
 
 option(SIMDJSON_SANITIZE_UNDEFINED "Sanitize undefined behavior" OFF)
 if(SIMDJSON_SANITIZE_UNDEFINED)
-  target_compile_options(simdjson-flags INTERFACE -fsanitize=undefined -fno-sanitize-recover=all)
-  target_link_libraries(simdjson-flags INTERFACE -fsanitize=undefined -fno-sanitize-recover=all)
+  target_compile_options(
+      simdjson-flags INTERFACE
+      -fsanitize=undefined -fno-sanitize-recover=all
+  )
+  target_link_libraries(
+      simdjson-flags INTERFACE
+      -fsanitize=undefined -fno-sanitize-recover=all
+  )
 endif()
 
 option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
 if(SIMDJSON_SANITIZE)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-    message(STATUS "The address sanitizer under Apple's clang appears to be incompatible with the undefined-behavior sanitizer.")
-    message(STATUS "You may set SIMDJSON_SANITIZE_UNDEFINED to sanitize undefined behavior.")
-    target_compile_options(simdjson-flags INTERFACE -fsanitize=address  -fno-omit-frame-pointer -fno-sanitize-recover=all)
-    target_compile_definitions(simdjson-flags INTERFACE ASAN_OPTIONS=detect_leaks=1)
-    target_link_libraries(simdjson-flags INTERFACE -fsanitize=address  -fno-omit-frame-pointer -fno-sanitize-recover=all)
+    message(STATUS "The address sanitizer under Apple's clang appears to be \
+incompatible with the undefined-behavior sanitizer.")
+    message(STATUS "You may set SIMDJSON_SANITIZE_UNDEFINED to sanitize \
+undefined behavior.")
+    target_compile_options(
+        simdjson-flags INTERFACE
+        -fsanitize=address -fno-omit-frame-pointer -fno-sanitize-recover=all
+    )
+    target_compile_definitions(
+        simdjson-flags INTERFACE
+        ASAN_OPTIONS=detect_leaks=1
+    )
+    target_link_libraries(
+        simdjson-flags INTERFACE
+        -fsanitize=address  -fno-omit-frame-pointer -fno-sanitize-recover=all
+    )
   else()
-    message(STATUS "Setting both the address sanitizer and the undefined sanitizer.")
-    target_compile_options(simdjson-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
-    target_link_libraries(simdjson-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
+    message(
+        STATUS
+        "Setting both the address sanitizer and the undefined sanitizer."
+    )
+    target_compile_options(
+        simdjson-flags INTERFACE
+        -fsanitize=address -fno-omit-frame-pointer
+        -fsanitize=undefined -fno-sanitize-recover=all
+    )
+    target_link_libraries(
+        simdjson-flags INTERFACE
+        -fsanitize=address -fno-omit-frame-pointer
+        -fsanitize=undefined -fno-sanitize-recover=all
+    )
   endif()
+
   # Ubuntu bug for GCC 5.0+ (safe for all versions)
-  if (CMAKE_COMPILER_IS_GNUCC)
+  if(CMAKE_COMPILER_IS_GNUCC)
     target_link_libraries(simdjson-flags INTERFACE -fuse-ld=gold)
   endif()
 endif()
 
-
 if(SIMDJSON_SANITIZE_THREADS)
-  message(STATUS "Setting both the thread sanitizer and the undefined-behavior sanitizer.")
-  target_compile_options(simdjson-flags INTERFACE -fsanitize=thread -fsanitize=undefined -fno-sanitize-recover=all)
-  target_link_libraries(simdjson-flags INTERFACE -fsanitize=thread -fsanitize=undefined -fno-sanitize-recover=all)
+  message(STATUS "Setting both the thread sanitizer \
+and the undefined-behavior sanitizer.")
+  target_compile_options(
+      simdjson-flags INTERFACE
+      -fsanitize=thread -fsanitize=undefined -fno-sanitize-recover=all
+  )
+  target_link_libraries(
+      simdjson-flags INTERFACE
+      -fsanitize=thread -fsanitize=undefined -fno-sanitize-recover=all
+  )
 
   # Ubuntu bug for GCC 5.0+ (safe for all versions)
-  if (CMAKE_COMPILER_IS_GNUCC)
+  if(CMAKE_COMPILER_IS_GNUCC)
     target_link_libraries(simdjson-flags INTERFACE -fuse-ld=gold)
   endif()
 endif()
 
 get_cmake_property(is_multi_config GENERATOR_IS_MULTI_CONFIG)
 if(NOT is_multi_config AND NOT CMAKE_BUILD_TYPE)
-  # Deliberately not including SIMDJSON_SANITIZE_THREADS since thread behavior depends on the build type.
+  # Deliberately not including SIMDJSON_SANITIZE_THREADS since thread behavior
+  # depends on the build type.
   if(SIMDJSON_SANITIZE OR SIMDJSON_SANITIZE_UNDEFINED)
-    message(STATUS "No build type selected and you have enabled the sanitizer, default to Debug. Consider setting CMAKE_BUILD_TYPE.")
+    message(STATUS "No build type selected and you have enabled the sanitizer, \
+default to Debug. Consider setting CMAKE_BUILD_TYPE.")
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
   else()
     message(STATUS "No build type selected, default to Release")
@@ -65,7 +101,8 @@ if(MSVC AND BUILD_SHARED_LIBS)
   set(SIMDJSON_WINDOWS_DLL TRUE)
 endif()
 
-# We compile tools, tests, etc. with C++ 17. Override yourself if you need on a target.
+# We compile tools, tests, etc. with C++ 17. Override yourself if you need on a
+# target.
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -81,79 +118,102 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 #  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 #endif()
 
-option(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING "Under Visual Studio, add Zi to the compile flag and DEBUG to the link file to add debugging information to the release build for easier profiling inside tools like VTune" OFF)
+option(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING "\
+Under Visual Studio, add Zi to the compile flag and DEBUG to the link file to \
+add debugging information to the release build for easier profiling inside \
+tools like VTune" OFF)
 if(MSVC)
-  if("${MSVC_TOOLSET_VERSION}" STRLESS "142")
+  if(MSVC_TOOLSET_VERSION STRLESS "142")
     set(SIMDJSON_LEGACY_VISUAL_STUDIO TRUE)
-    message (STATUS "A legacy Visual Studio version was detected. We recommend Visual Studio 2019 or better on a 64-bit system.")
+    message (STATUS "A legacy Visual Studio version was detected. \
+We recommend Visual Studio 2019 or better on a 64-bit system.")
   endif()
-  if("${MSVC_TOOLSET_VERSION}" STREQUAL "140")
-    # Visual Studio 2015 issues warnings and we tolerate it,  cmake -G"Visual Studio 14" ..
+  if(MSVC_TOOLSET_VERSION STREQUAL "140")
+    # Visual Studio 2015 issues warnings and we tolerate it
+    # cmake -G "Visual Studio 14" ..
     target_compile_options(simdjson-internal-flags INTERFACE /W0 /sdl)
   else()
-    # Recent version of Visual Studio expected (2017, 2019...). Prior versions are unsupported.
-    target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl /w34714) # https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4714?view=vs-2019
+    # Recent version of Visual Studio expected (2017, 2019...). Prior versions
+    # are unsupported.
+    # https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4714?view=vs-2019
+    target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl /w34714)
   endif()
   if(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING)
-    target_link_options(simdjson-flags  INTERFACE    /DEBUG )
-    target_compile_options(simdjson-flags INTERFACE  /Zi)
-  endif(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING)
-else(MSVC)
+    target_link_options(simdjson-flags INTERFACE /DEBUG )
+    target_compile_options(simdjson-flags INTERFACE /Zi)
+  endif()
+else()
   if(NOT WIN32)
     target_compile_options(simdjson-internal-flags INTERFACE -fPIC)
   endif()
-  target_compile_options(simdjson-internal-flags INTERFACE -Werror -Wall -Wextra -Weffc++)
-  target_compile_options(simdjson-internal-flags INTERFACE -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion)
-endif(MSVC)
-
+  target_compile_options(
+      simdjson-internal-flags INTERFACE
+      -Werror -Wall -Wextra -Weffc++ -Wsign-compare -Wshadow -Wwrite-strings
+      -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion
+  )
+endif()
 
 # workaround for GNU GCC poor AVX load/store code generation
-if ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_SYSTEM_PROCESSOR MATCHES "^(i.86|x86(_64)?)$"))
-  target_compile_options(simdjson-flags INTERFACE -mno-avx256-split-unaligned-load -mno-avx256-split-unaligned-store)
+if(
+    CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+    AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(i.86|x86(_64)?)$"
+)
+  target_compile_options(
+      simdjson-flags INTERFACE
+      -mno-avx256-split-unaligned-load -mno-avx256-split-unaligned-store
+  )
 endif()
 
 #
 # Other optional flags
 #
-option(SIMDJSON_DEVELOPMENT_CHECKS "Enable development-time aids, such as checks for incorrect API usage. Enabled by default in DEBUG." OFF)
+option(SIMDJSON_DEVELOPMENT_CHECKS "Enable development-time aids, such as \
+checks for incorrect API usage. Enabled by default in DEBUG." OFF)
 if(SIMDJSON_DEVELOPMENT_CHECKS)
-  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_DEVELOPMENT_CHECKS)
+  target_compile_definitions(
+      simdjson-flags INTERFACE
+      SIMDJSON_DEVELOPMENT_CHECKS
+  )
 endif()
 
 option(SIMDJSON_BASH "Allow usage of bash within CMake" ON)
 
+option(
+    SIMDJSON_VERBOSE_LOGGING
+    "Enable verbose logging for internal simdjson library development."
+    OFF
+)
+if(SIMDJSON_VERBOSE_LOGGING)
+  target_compile_definitions(
+      simdjson-flags INTERFACE
+      SIMDJSON_VERBOSE_LOGGING=1
+  )
 endif()
 
-option(SIMDJSON_VERBOSE_LOGGING, "Enable verbose logging for internal simdjson library development." OFF)
-if (SIMDJSON_VERBOSE_LOGGING)
-  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_VERBOSE_LOGGING=1)
-endif()
-
-option(SIMDJSON_DISABLE_DEPRECATED_API "Disables deprecated APIs" Off)
-if (SIMDJSON_DISABLE_DEPRECATED_API)
-    target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_DISABLE_DEPRECATED_API=1)
+option(SIMDJSON_DISABLE_DEPRECATED_API "Disables deprecated APIs" OFF)
+if(SIMDJSON_DISABLE_DEPRECATED_API)
+    target_compile_definitions(
+        simdjson-flags INTERFACE
+        SIMDJSON_DISABLE_DEPRECATED_API=1
+    )
 endif()
 
 if(SIMDJSON_USE_LIBCPP)
   target_link_libraries(simdjson-flags INTERFACE -stdlib=libc++ -lc++abi)
   # instead of the above line, we could have used
-  # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++  -lc++abi")
+  # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++
+  # -lc++abi")
   # The next line is needed empirically.
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
   # we update CMAKE_SHARED_LINKER_FLAGS, this gets updated later as well
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lc++abi")
-endif(SIMDJSON_USE_LIBCPP)
+endif()
 
 # prevent shared libraries from depending on Intel provided libraries
-if(${CMAKE_C_COMPILER_ID} MATCHES "Intel") # icc / icpc
+if(CMAKE_C_COMPILER_ID MATCHES "Intel")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-intel")
 endif()
 
-include (CheckSymbolExists)
-CHECK_SYMBOL_EXISTS(fork unistd.h HAVE_POSIX_FORK)
-CHECK_SYMBOL_EXISTS(wait sys/wait.h HAVE_POSIX_WAIT)
-
-install(TARGETS simdjson-flags EXPORT simdjson-config)
-
-# I do not think we want to export our internal flags!
-# install(TARGETS simdjson-internal-flags EXPORT simdjson-config)
+include(CheckSymbolExists)
+check_symbol_exists(fork unistd.h HAVE_POSIX_FORK)
+check_symbol_exists(wait sys/wait.h HAVE_POSIX_WAIT)
