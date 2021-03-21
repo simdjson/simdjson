@@ -53,6 +53,18 @@ if(is_top_project)
   endif()
 endif()
 
+if(DEFINED SIMDJSON_BUILD_STATIC)
+  message(DEPRECATION "SIMDJSON_BUILD_STATIC is deprecated, setting \
+BUILD_SHARED_LIBS with its value and unsetting it")
+  set(shared ON)
+  if(SIMDJSON_BUILD_STATIC)
+    set(shared OFF)
+  endif()
+
+  set(BUILD_SHARED_LIBS "${shared}" CACHE BOOL "" FORCE)
+  unset(SIMDJSON_BUILD_STATIC CACHE)
+endif()
+
 if(SIMDJSON_DEVELOPER_MODE)
   include(cmake/developer-options.cmake)
 endif()
