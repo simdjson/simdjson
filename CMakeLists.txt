@@ -76,6 +76,8 @@ endif()
 
 if(NOT SIMDJSON_DEVELOPER_MODE)
   return()
+elseif(NOT is_top_project)
+  message(AUTHOR_WARNING "Developer mode is intended for developers of simdjson")
 endif()
 
 set(
