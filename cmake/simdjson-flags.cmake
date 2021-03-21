@@ -54,14 +54,11 @@ if(NOT is_multi_config AND NOT CMAKE_BUILD_TYPE)
   endif()
 endif()
 
-if(MSVC)
-  option(SIMDJSON_BUILD_STATIC "Build a static library" ON) # turning it on disables the production of a dynamic library
-else()
-  option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
+if(NOT MSVC)
   option(SIMDJSON_USE_LIBCPP "Use the libc++ library" OFF)
 endif()
 
-if(MSVC AND NOT(SIMDJSON_BUILD_STATIC))
+if(MSVC AND BUILD_SHARED_LIBS)
   # This will require special handling.
   set(SIMDJSON_WINDOWS_DLL TRUE)
 endif()
