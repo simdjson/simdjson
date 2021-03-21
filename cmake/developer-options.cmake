@@ -4,8 +4,6 @@
 add_library(simdjson-internal-flags INTERFACE)
 target_link_libraries(simdjson-internal-flags INTERFACE simdjson-flags)
 
-target_compile_definitions(simdjson-flags INTERFACE ${impl_definitions})
-
 option(SIMDJSON_SANITIZE_UNDEFINED "Sanitize undefined behavior" OFF)
 if(SIMDJSON_SANITIZE_UNDEFINED)
   target_compile_options(

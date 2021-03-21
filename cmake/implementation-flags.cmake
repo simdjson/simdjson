@@ -33,7 +33,10 @@ endforeach()
 
 macro(flag_action action var val)
   message(STATUS "${action} implementation ${impl} due to ${var}=${${var}}")
-  list(APPEND impl_definitions "SIMDJSON_IMPLEMENTATION_${impl_upper}=${val}")
+  simdjson_add_props(
+      target_compile_definitions PUBLIC
+      "SIMDJSON_IMPLEMENTATION_${impl_upper}=${val}"
+  )
 endmacro()
 
 foreach(impl IN LISTS SIMDJSON_ALL_IMPLEMENTATIONS)
@@ -59,8 +62,8 @@ compiler will pick the best implementation that can always be selected given \
 the compiler flags."
 )
 if(NOT SIMDJSON_BUILTIN_IMPLEMENTATION STREQUAL "")
-  list(
-      APPEND impl_definitions
+  simdjson_add_props(
+      target_compile_definitions PUBLIC
       "SIMDJSON_BUILTIN_IMPLEMENTATION=${SIMDJSON_BUILTIN_IMPLEMENTATION}"
   )
 else()
@@ -74,7 +77,10 @@ else()
       message(STATUS "\
 Selected implementation ${impl} as builtin implementation based on \
 ${SIMDJSON_IMPLEMENTATION}")
-      list(APPEND impl_definitions "SIMDJSON_BUILTIN_IMPLEMENTATION=${impl}")
+      simdjson_add_props(
+          target_compile_definitions PUBLIC
+          "SIMDJSON_BUILTIN_IMPLEMENTATION=${impl}"
+      )
       break()
     endif()
   endforeach()
@@ -92,6 +98,9 @@ foreach(impl IN LISTS SIMDJSON_ALL_IMPLEMENTATIONS)
     message(DEPRECATION "\
 SIMDJSON_IMPLEMENTATION_${impl_upper} is deprecated. \
 Use SIMDJSON_IMPLEMENTATION=-${impl} instead")
-    list(APPEND impl_definitions "SIMDJSON_IMPLEMENTATION_${impl_upper}=0")
+     simdjson_add_props(
+        target_compile_definitions PUBLIC
+        "SIMDJSON_IMPLEMENTATION_${impl_upper}=0"
+    )
   endif()
 endforeach()
