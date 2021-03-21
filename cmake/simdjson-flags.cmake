@@ -220,15 +220,6 @@ if(NOT SIMDJSON_EXCEPTIONS)
   endif()
 endif()
 
-option(SIMDJSON_ENABLE_THREADS "Link with thread support" ON)
-if(SIMDJSON_ENABLE_THREADS)
-  set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-  set(THREADS_PREFER_PTHREAD_FLAG TRUE)
-  find_package(Threads REQUIRED)
-  target_link_libraries(simdjson-flags INTERFACE Threads::Threads)
-  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_THREADS_ENABLED=1) # This will be set in the code automatically.
-endif()
-
 option(SIMDJSON_VERBOSE_LOGGING, "Enable verbose logging for internal simdjson library development." OFF)
 if (SIMDJSON_VERBOSE_LOGGING)
   target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_VERBOSE_LOGGING=1)

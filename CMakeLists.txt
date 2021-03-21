@@ -21,6 +21,8 @@ string(
 set(SIMDJSON_LIB_VERSION "8.0.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "8" CACHE STRING "simdjson library soversion")
 
+option(SIMDJSON_ENABLE_THREADS "Link with thread support" ON)
+
 if(is_top_project)
   option(SIMDJSON_DEVELOPER_MODE "Enable targets for developing simdjson" OFF)
 endif()
@@ -54,6 +56,12 @@ target_include_directories(
 )
 
 target_compile_features(simdjson PUBLIC cxx_std_11)
+
+if(SIMDJSON_ENABLE_THREADS)
+  find_package(Threads REQUIRED)
+  target_link_libraries(simdjson PUBLIC Threads::Threads)
+  target_compile_definitions(simdjson PUBLIC SIMDJSON_THREADS_ENABLED=1)
+endif()
 
 # ---- Install rules ----
 
