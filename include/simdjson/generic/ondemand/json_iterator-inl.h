@@ -186,10 +186,12 @@ simdjson_really_inline simdjson_result<const uint8_t *> json_iterator::try_advan
   return json;
 }
 
-simdjson_really_inline error_code json_iterator::require_tokens(uint32_t required_tokens) noexcept {
+simdjson_really_inline error_code json_iterator::require_tokens(simdjson_unused uint32_t required_tokens) noexcept {
+#if __SIMDJSON_CHECK_EOF
   if (position() + required_tokens > end_position()) {
     return report_error(TAPE_ERROR, "Document ended early");
   }
+#endif
   return SUCCESS;
 }
 
