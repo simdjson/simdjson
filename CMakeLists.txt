@@ -99,12 +99,6 @@ target_include_directories(
 
 target_compile_features(simdjson PUBLIC cxx_std_11)
 
-if(SIMDJSON_ENABLE_THREADS)
-  find_package(Threads REQUIRED)
-  target_link_libraries(simdjson PUBLIC Threads::Threads)
-  target_compile_definitions(simdjson PUBLIC SIMDJSON_THREADS_ENABLED=1)
-endif()
-
 # workaround for GNU GCC poor AVX load/store code generation
 if(
     CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
@@ -116,7 +110,15 @@ if(
   )
 endif()
 
+# Make sure this comes first before any other link flags, so the sanitizers
+# work properly
 simdjson_apply_props(simdjson)
+
+if(SIMDJSON_ENABLE_THREADS)
+  find_package(Threads REQUIRED)
+  target_link_libraries(simdjson PUBLIC Threads::Threads)
+  target_compile_definitions(simdjson PUBLIC SIMDJSON_THREADS_ENABLED=1)
+endif()
 
 # ---- Install rules ----
 
