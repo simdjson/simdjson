@@ -32,7 +32,7 @@ jobs:
           run: |
             export CLANGSUFFIX="-7"
             apt-get -qq update
-            apt-get install -q -y clang-7 libfuzzer-7-dev git wget zip ninja-build
+            apt-get install -q -y clang-7 libfuzzer-7-dev git wget zip ninja-build gnupg
             wget -q -O - "https://raw.githubusercontent.com/simdjson/debian-ppa/master/key.gpg" | apt-key add -
             apt-add-repository "deb https://raw.githubusercontent.com/simdjson/debian-ppa/master simdjson main"
             apt-get -qq update
