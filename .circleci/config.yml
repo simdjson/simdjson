@@ -94,7 +94,9 @@ commands:
   cmake_build:
     steps:
       - cmake_build_cache
-      - run: cmake --build build
+      - run:
+          command: cmake --build build
+          no_output_timeout: 60m
 
   cmake_test:
     steps:
