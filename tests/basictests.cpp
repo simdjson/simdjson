@@ -124,17 +124,17 @@ namespace number_tests {
 
   bool powers_of_two() {
     std::cout << __func__ << std::endl;
-    char buf[1024];
+    std::vector<char> buf(1024);
     simdjson::dom::parser parser;
     for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
       double expected = pow(2, i);
-      size_t n = snprintf(buf, sizeof(buf), "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
-      if (n >= sizeof(buf)) { abort(); }
+      size_t n = snprintf(buf.data(), buf.size(), "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
+      if (n >= buf.size()) { abort(); }
       double actual;
-      auto error = parser.parse(buf, n).get(actual);
+      auto error = parser.parse(buf.data(), n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
       if(actual!=expected) {
-        std::cerr << "JSON '" << buf << " parsed to ";
+        std::cerr << "JSON '" << buf.data() << " parsed to ";
         fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
         SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
         return false;
@@ -218,7 +218,7 @@ namespace number_tests {
 
   bool powers_of_ten() {
     std::cout << __func__ << std::endl;
-    char buf[1024];
+    std::vector<char> buf(1024);
     simdjson::dom::parser parser;
 
     bool is_pow_correct{1e-308 == std::pow(10,-308)};
@@ -227,14 +227,14 @@ namespace number_tests {
       std::cout << "On your system, the pow function is busted. Sorry about that. " << std::endl;
     }
     for (int i = start_point; i <= 308; ++i) {// large negative values should be zero.
-      size_t n = snprintf(buf, sizeof(buf), "1e%d", i);
-      if (n >= sizeof(buf)) { abort(); }
+      size_t n = snprintf(buf.data(), buf.size(), "1e%d", i);
+      if (n >= buf.size()) { abort(); }
       double actual;
-      auto error = parser.parse(buf, n).get(actual);
+      auto error = parser.parse(buf.data(), n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
       double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
       if(actual!=expected) {
-        std::cerr << "JSON '" << buf << " parsed to ";
+        std::cerr << "JSON '" << buf.data() << " parsed to ";
         fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
         SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
         return false;
