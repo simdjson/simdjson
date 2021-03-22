@@ -79,7 +79,11 @@ namespace object_error_tests {
   }
   bool object_lookup_unclosed_error() {
     TEST_START();
+  #if __SIMDJSON_CHECK_EOF
     ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_error(doc["a"], TAPE_ERROR));
+  #else
+    ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_success(doc["a"]));
+  #endif
     ONDEMAND_SUBTEST("unclosed", R"({ "a"             )",    assert_error(doc["a"], TAPE_ERROR));
     ONDEMAND_SUBTEST("unclosed", R"({                 )",    assert_error(doc["a"], TAPE_ERROR));
     TEST_SUCCEED();
