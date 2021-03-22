@@ -35,11 +35,10 @@ if(ENABLE_FUZZING)
 
   # Fuzzer build flags and libraries
   add_library(simdjson-fuzzer INTERFACE)
+  target_link_libraries(simdjson-fuzzer INTERFACE simdjson)
   if (SIMDJSON_FUZZ_LINKMAIN)
-    target_link_libraries(simdjson-fuzzer INTERFACE simdjson-source)
     target_sources(simdjson-fuzzer INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/main.cpp)
   else ()
-    target_link_libraries(simdjson-fuzzer INTERFACE simdjson)
     target_link_libraries(simdjson-fuzzer INTERFACE ${SIMDJSON_FUZZ_LDFLAGS})
   endif ()
   target_link_libraries(simdjson-fuzzer INTERFACE simdjson-internal-flags)
