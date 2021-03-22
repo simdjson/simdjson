@@ -182,7 +182,10 @@ script:
   - mkdir build
   - cd build
   - cmake $CMAKE_FLAGS ..
-  - cmake --build . -- -j2
+  - if [[ "${SANITIZE}" == "on" ]]; then
+      export TRAVIS_WAIT=travis_wait
+    fi
+  - $TRAVIS_WAIT cmake --build . -- -j2
   - SIMDJSON_FORCE_IMPLEMENTATION=ppc64 ctest $CTEST_FLAGS -L per_implementation
   - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
   - ctest $CTEST_FLAGS -LE "acceptance|per_implementation"
