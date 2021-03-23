@@ -19,6 +19,8 @@ char *to_chars(char *first, const char *last, double value);
  * Defined in src/from_chars
  */
 double from_chars(const char *first) noexcept;
+double from_chars(const char *first, const char* end) noexcept;
+
 }
 
 #ifndef SIMDJSON_EXCEPTIONS
