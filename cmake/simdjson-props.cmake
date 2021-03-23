@@ -19,6 +19,7 @@ function(simdjson_add_props command)
     string(APPEND args " ${value}")
   endforeach()
 
+  set(simdjson_props_flushed NO PARENT_SCOPE)
   set(
       simdjson_props_content
       "${simdjson_props_content}${command}(\"\${target}\"${args})\n"
