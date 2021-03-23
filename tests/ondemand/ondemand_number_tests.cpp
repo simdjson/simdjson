@@ -28,15 +28,15 @@ namespace number_tests {
     // converts the double "expected" to a padded string
     auto format_into_padded=[](const double expected) -> padded_string
     {
-      char buf[1024];
-      const auto n = std::snprintf(buf,
-                               sizeof(buf),
+      std::vector<char> buf(1024);
+      const auto n = std::snprintf(buf.data(),
+                               buf.size(),
                                "%.*e",
                                std::numeric_limits<double>::max_digits10 - 1,
                                expected);
       const auto nz=static_cast<size_t>(n);
-      if (n<0 || nz >= sizeof(buf)) { std::abort(); }
-      return padded_string(buf, nz);
+      if (n<0 || nz >= buf.size()) { std::abort(); }
+      return padded_string(buf.data(), nz);
     };
 
     for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
@@ -134,7 +134,7 @@ namespace number_tests {
 
   bool powers_of_ten() {
     std::cout << __func__ << std::endl;
-    char buf[1024];
+    std::vector<char> buf(1024);
 
     const bool is_pow_correct{1e-308 == std::pow(10,-308)};
     const int start_point = is_pow_correct ? -10000 : -307;
@@ -142,14 +142,14 @@ namespace number_tests {
       std::cout << "On your system, the pow function is busted. Sorry about that. " << std::endl;
     }
     for (int i = start_point; i <= 308; ++i) {// large negative values should be zero.
-      const size_t n = std::snprintf(buf, sizeof(buf), "1e%d", i);
-      if (n >= sizeof(buf)) { std::abort(); }
+      const size_t n = std::snprintf(buf.data(), buf.size(), "1e%d", i);
+      if (n >= buf.size()) { std::abort(); }
       std::fflush(nullptr);
       const double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
 
-      if(!test_ondemand<double>(padded_string(buf, n), [&](double actual) {
+      if(!test_ondemand<double>(padded_string(buf.data(), n), [&](double actual) {
                                 if(actual!=expected) {
-                                  std::cerr << "JSON '" << buf << " parsed to ";
+                                  std::cerr << "JSON '" << buf.data() << " parsed to ";
                                   std::fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
                                   SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
                                   return false;
