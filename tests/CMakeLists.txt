@@ -9,14 +9,16 @@ add_subdirectory(ondemand)
 #
 if(NOT SIMDJSON_LEGACY_VISUAL_STUDIO AND NOT SIMDJSON_WINDOWS_DLL)
   add_cpp_test(numberparsingcheck LABELS acceptance per_implementation)
-  target_link_libraries(numberparsingcheck simdjson simdjson-windows-headers)
+  simdjson_apply_props(numberparsingcheck)
+  target_link_libraries(numberparsingcheck simdjson-windows-headers)
   target_compile_definitions(numberparsingcheck PRIVATE NOMINMAX)
   target_include_directories(
       numberparsingcheck
       PRIVATE "${PROJECT_SOURCE_DIR}/src"
   )
   add_cpp_test(stringparsingcheck LABELS acceptance per_implementation)
-  target_link_libraries(stringparsingcheck simdjson simdjson-windows-headers)
+  simdjson_apply_props(numberparsingcheck)
+  target_link_libraries(stringparsingcheck simdjson-windows-headers)
   target_compile_definitions(stringparsingcheck PRIVATE NOMINMAX)
   target_include_directories(
       stringparsingcheck
