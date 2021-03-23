@@ -93,13 +93,13 @@ if(MSVC AND BUILD_SHARED_LIBS)
   )
 endif()
 
-target_include_directories(
-    simdjson
+simdjson_add_props(
+    target_include_directories
     PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
     PRIVATE "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
 )
 
-target_compile_features(simdjson PUBLIC cxx_std_11)
+simdjson_add_props(target_compile_features PUBLIC cxx_std_11)
 
 # workaround for GNU GCC poor AVX load/store code generation
 if(
@@ -112,15 +112,13 @@ if(
   )
 endif()
 
-# Make sure this comes first before any other link flags, so the sanitizers
-# work properly
-simdjson_apply_props(simdjson)
-
 if(SIMDJSON_ENABLE_THREADS)
   find_package(Threads REQUIRED)
-  target_link_libraries(simdjson PUBLIC Threads::Threads)
-  target_compile_definitions(simdjson PUBLIC SIMDJSON_THREADS_ENABLED=1)
+  simdjson_add_props(target_link_libraries PUBLIC Threads::Threads)
+  simdjson_add_props(target_compile_definitions PUBLIC SIMDJSON_THREADS_ENABLED=1)
 endif()
+
+simdjson_apply_props(simdjson)
 
 # ---- Install rules ----
 
