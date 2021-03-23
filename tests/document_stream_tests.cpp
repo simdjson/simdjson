@@ -474,13 +474,13 @@ namespace document_stream_tests {
   }
   bool small_window() {
     std::cout << "Running " << __func__ << std::endl;
-    char input[2049];
-    input[0] = '[';
+    std::vector<char> input;
+    input.push_back('[');
     for(size_t i = 1; i < 1024; i++) {
-      input[2*i+1]= '1';
-      input[2*i+2]= i < 1023 ? ',' : ']';
+      input.push_back('1');
+      input.push_back(i < 1023 ? ',' : ']');
     }
-    auto json = simdjson::padded_string(input,2049);
+    auto json = simdjson::padded_string(input.data(),input.size());
     simdjson::dom::parser parser;
     size_t count = 0;
     size_t window_size = 1024; // deliberately too small
@@ -502,13 +502,13 @@ namespace document_stream_tests {
 
   bool window_too_small_issue1370() {
     std::cout << "Running " << __func__ << std::endl;
-    char input[2049];
-    input[0] = '[';
+    std::vector<char> input;
+    input.push_back('[');
     for(size_t i = 1; i < 1024; i++) {
-      input[2*i+1]= '1';
-      input[2*i+2]= i < 1023 ? ',' : ']';
+      input.push_back('1');
+      input.push_back(i < 1023 ? ',' : ']');
     }
-    auto json = simdjson::padded_string(input,2049);
+    auto json = simdjson::padded_string(input.data(), input.size());
     // We are going to repeat this test 1000 times so
     // that if there is an issue, we are more likely to
     // trigger it systematically.
@@ -598,15 +598,15 @@ namespace document_stream_tests {
     fflush(NULL);
     const size_t n_records = 10000;
     std::string data;
-    char buf[1024];
+    std::vector<char> buf(1024);
     for (size_t i = 0; i < n_records; ++i) {
-      size_t n = snprintf(buf,
-                          sizeof(buf),
+      size_t n = snprintf(buf.data(),
+                          buf.size(),
                       "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
                       "\"ete\": {\"id\": %zu, \"name\": \"eventail%zu\"}}",
                       i, i, (i % 2) ? "homme" : "femme", i % 10, i % 10);
-      if (n >= sizeof(buf)) { abort(); }
-      data += std::string(buf, n);
+      if (n >= buf.size()) { abort(); }
+      data += std::string(buf.data(), n);
     }
     for(size_t batch_size = 1000; batch_size < 2000; batch_size += (batch_size>1050?10:1)) {
       printf(".");
@@ -638,15 +638,15 @@ namespace document_stream_tests {
     fflush(NULL);
     const size_t n_records = 10000;
     std::string data;
-    char buf[1024];
+    std::vector<char> buf(1024);
     for (size_t i = 0; i < n_records; ++i) {
-      size_t n = snprintf(buf,
-                        sizeof(buf),
+      size_t n = snprintf(buf.data(),
+                        buf.size(),
                       "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
                       "\"\xC3\xA9t\xC3\xA9\": {\"id\": %zu, \"name\": \"\xC3\xA9ventail%zu\"}}",
                       i, i, (i % 2) ? "\xE2\xBA\x83" : "\xE2\xBA\x95", i % 10, i % 10);
-      if (n >= sizeof(buf)) { abort(); }
-      data += std::string(buf, n);
+      if (n >= buf.size()) { abort(); }
+      data += std::string(buf.data(), n);
     }
     for(size_t batch_size = 1000; batch_size < 2000; batch_size += (batch_size>1050?10:1)) {
       printf(".");

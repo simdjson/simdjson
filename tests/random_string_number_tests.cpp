@@ -134,16 +134,16 @@ bool check_float(double result, const char *buf) {
  * and we verify that we get the same answer.
  */
 bool tester(int seed, size_t volume) {
-  char buffer[1024]; // large buffer (can't overflow)
+  std::vector<char> buffer(1024); // large buffer (can't overflow)
   simdjson::dom::parser parser;
   RandomEngine rand(seed);
   double result;
   for (size_t i = 0; i < volume; i++) {
     if((i%100000) == 0) { std::cout << "."; std::cout.flush(); }
-    size_t length = build_random_string(rand, buffer);
-    auto error = parser.parse(buffer, length).get(result);
+    size_t length = build_random_string(rand, buffer.data());
+    auto error = parser.parse(buffer.data(), length).get(result);
     // When we parse a (finite) number, it better match strtod.
-    if ((!error) && (!check_float(result, buffer))) { return false; }
+    if ((!error) && (!check_float(result, buffer.data()))) { return false; }
   }
   return true;
 }
