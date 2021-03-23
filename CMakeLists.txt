@@ -5,9 +5,11 @@ project(
     # The version number is modified by tools/release.py
     VERSION 0.9.1
     DESCRIPTION "Parsing gigabytes of JSON per second"
-    HOMEPAGE_URL "https://github.com/simdjson/simdjson"
+    HOMEPAGE_URL "https://simdjson.org/"
     LANGUAGES CXX C
 )
+
+set(SIMDJSON_GITHUB_REPOSITORY "https://github.com/simdjson/simdjson")
 
 string(
     COMPARE EQUAL
