@@ -489,5 +489,22 @@ double from_chars(const char *first) noexcept {
   return value;
 }
 
+
+double from_chars(const char *first, const char *end) noexcept {
+  bool negative = first[0] == '-';
+  if (negative) {
+    first++;
+  }
+  adjusted_mantissa am = parse_long_mantissa<binary_format<double>>(first, end);
+  uint64_t word = am.mantissa;
+  word |= uint64_t(am.power2)
+          << binary_format<double>::mantissa_explicit_bits();
+  word = negative ? word | (uint64_t(1) << binary_format<double>::sign_index())
+                  : word;
+  double value;
+  std::memcpy(&value, &word, sizeof(double));
+  return value;
+}
+
 } // internal
 } // simdjson
