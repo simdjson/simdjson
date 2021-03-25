@@ -498,6 +498,7 @@ namespace parse_api_tests {
   }
 
   bool parser_load_empty() {
+    std::cout << "Running " << __func__ << std::endl;
     FILE *p;
     const char *const tmpfilename = "empty.txt";
     if((p = fopen(tmpfilename, "w")) != nullptr) {
