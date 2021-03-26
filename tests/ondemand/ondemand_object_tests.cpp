@@ -6,6 +6,34 @@ using namespace simdjson;
 namespace object_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
+  // used in issue_1521
+  // difficult to use as a lambda because it is recursive.
+  void descend(ondemand::object node) {
+    if(auto type = node.find_field_unordered("type"); type.error() == SUCCESS && type == "child") {
+      if(node.find_field_unordered("name").error() == simdjson::SUCCESS) {
+          std::cout << std::string_view(node["name"]) << std::endl;
+      }
+    } else {
+     for (ondemand::object child_node : node["nodes"]) { descend(child_node); }
+    }
+  }
+
+  bool issue_1521() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string json = R"({"type":"root","nodes":[{"type":"child","nodes":[]},{"type":"child","name":"child-name","nodes":[]}]})"_padded;
+    ondemand::document file_tree = parser.iterate(json);
+    try {
+      descend(file_tree);
+    } catch(simdjson::simdjson_error& e) {
+      std::cout << "The document is valid JSON: " << json << std::endl;
+      TEST_FAIL(e.error());
+    }
+    simdjson::ondemand::object root_object;
+    if(file_tree.get(root_object)) { descend(root_object); }
+    TEST_SUCCEED();
+  }
+
 
   bool iterate_object() {
     TEST_START();
@@ -893,6 +921,7 @@ namespace object_tests {
 
   bool run() {
     return
+           issue_1521() &&
            iterate_object() &&
            iterate_empty_object() &&
            object_index() &&
