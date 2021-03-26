@@ -496,6 +496,28 @@ namespace parse_api_tests {
     ASSERT_SUCCESS( parser.load(TWITTER_JSON).get(object) );
     return true;
   }
+
+  bool parser_load_empty() {
+    std::cout << "Running " << __func__ << std::endl;
+    FILE *p;
+    const char *const tmpfilename = "empty.txt";
+    if((p = fopen(tmpfilename, "w")) != nullptr) {
+      fclose(p);
+      dom::parser parser;
+      simdjson::dom::element doc;
+      auto error = parser.load(tmpfilename).get(doc);
+      remove(tmpfilename);
+      if(error != simdjson::EMPTY) {
+        std::cerr << "Was expecting empty but got " << error << std::endl;
+        return false;
+      }
+    } else {
+      std::cout << "Warning: I could not create temporary file " << tmpfilename << std::endl;
+      std::cout << "We omit testing the empty file case." << std::endl;
+    }
+    return true;
+  }
+
   bool parser_load_many() {
     std::cout << "Running " << __func__ << " on " << AMAZON_CELLPHONES_NDJSON << std::endl;
     dom::parser parser;
@@ -583,7 +605,8 @@ namespace parse_api_tests {
 #endif
 
   bool run() {
-    return parser_moving_parser() &&
+    return parser_load_empty() &&
+           parser_moving_parser() &&
            parser_parse() &&
            parser_parse_many() &&
 #ifdef SIMDJSON_ENABLE_DEPRECATED_API
