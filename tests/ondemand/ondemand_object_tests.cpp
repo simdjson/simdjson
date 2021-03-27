@@ -6,6 +6,8 @@ using namespace simdjson;
 namespace object_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
+#if SIMDJSON_EXCEPTIONS
+
   // used in issue_1521
   // difficult to use as a lambda because it is recursive.
   void broken_descend(ondemand::object node) {
@@ -60,7 +62,7 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
-
+#endif
   bool iterate_object() {
     TEST_START();
     auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
@@ -947,8 +949,10 @@ namespace object_tests {
 
   bool run() {
     return
+#if SIMDJSON_EXCEPTIONS
            broken_issue_1521() &&
            issue_1521() &&
+#endif
            iterate_object() &&
            iterate_empty_object() &&
            object_index() &&
