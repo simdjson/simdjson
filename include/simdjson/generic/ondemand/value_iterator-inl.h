@@ -142,6 +142,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_field_unordered_raw(const std::string_view key) noexcept {
   error_code error;
   bool has_value;
+  // We want to be able to loop back to where we were.
+  token_position search_start = _json_iter->position();
+  
   //
   // Initially, the object can be in one of a few different places:
   //
@@ -213,7 +216,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
   // First, we scan from that point to the end.
   // If we don't find a match, we loop back around, and scan from the beginning to that point.
-  token_position search_start = _json_iter->position();
 
   // Next, we find a match starting from the current position.
   while (has_value) {
@@ -250,9 +252,11 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   // (We have already run through the object before, so we've already validated its structure. We
   // don't check errors in this bit.)
   _json_iter->reenter_child(_start_position + 1, _depth);
+  // If we started at the beginning of the object, we are done.
+  if(_json_iter->position() == search_start) { return false; }
 
   has_value = started_object();
-  while (_json_iter->position() < search_start) {
+  while (true) {
     SIMDJSON_ASSUME(has_value); // we should reach search_start before ever reaching the end of the object
     SIMDJSON_ASSUME( _json_iter->_depth == _depth ); // We must be at the start of a field
 
@@ -279,7 +283,11 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // No match: skip the value and see if , or } is next
     logger::log_event(*this, "no match", key, -2);
     SIMDJSON_TRY( skip_child() );
-    error = has_next_field().get(has_value); SIMDJSON_ASSUME(!error);
+    if (_json_iter->position() < search_start) {
+      error = has_next_field().get(has_value); SIMDJSON_ASSUME(!error);
+    } else {
+      break;
+    }
   }
 
   // If the loop ended, we're out of fields to look at.
