@@ -35,6 +35,21 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
+  bool fixed_broken_issue_1521() {
+    TEST_START();
+    ondemand::parser parser;
+    // We omit the ',"nodes":[]'
+    padded_string json = R"({"type":"root","nodes":[{"type":"child"},{"type":"child","name":"child-name","nodes":[]}]})"_padded;
+    ondemand::document file_tree = parser.iterate(json);
+    try {
+      broken_descend(file_tree);
+    } catch(simdjson::simdjson_error& e) {
+      std::cout << "The document is valid JSON: " << json << std::endl;
+      TEST_FAIL(e.error());
+    }
+    TEST_SUCCEED();
+  }
+
   // used in issue_1521
   // difficult to use as a lambda because it is recursive.
   void descend(ondemand::object node) {
@@ -950,8 +965,9 @@ namespace object_tests {
   bool run() {
     return
 #if SIMDJSON_EXCEPTIONS
-           broken_issue_1521() &&
+           fixed_broken_issue_1521() &&
            issue_1521() &&
+           broken_issue_1521() &&
 #endif
            iterate_object() &&
            iterate_empty_object() &&
