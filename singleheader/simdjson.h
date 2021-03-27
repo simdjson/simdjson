@@ -22093,7 +22093,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   bool has_value;
   // We want to be able to loop back to where we were.
   token_position search_start = _json_iter->position();
-  
+
   //
   // Initially, the object can be in one of a few different places:
   //
