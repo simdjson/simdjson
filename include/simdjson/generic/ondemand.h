@@ -29,3 +29,4 @@ using depth_t = int32_t;
 #include "simdjson/generic/ondemand/field.h"
 #include "simdjson/generic/ondemand/object.h"
 #include "simdjson/generic/ondemand/parser.h"
+#include "simdjson/generic/ondemand/serialization.h"

@@ -2,7 +2,7 @@
 link_libraries(simdjson)
 include_directories(..)
 add_subdirectory(compilation_failure_tests)
-
+add_cpp_test(ondemand_tostring_tests           LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_active_tests           LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_array_tests            LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_array_error_tests      LABELS ondemand acceptance per_implementation)
