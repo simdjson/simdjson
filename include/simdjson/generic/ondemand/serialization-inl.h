@@ -10,20 +10,20 @@ template <class serializer>
 inline void string_builder<serializer>::append(document& element) {
   switch (element.type()) {
     case ondemand::json_type::array:
-      append(array(element));
+      append(element.get_array());
       break;
     case ondemand::json_type::object:
-      append(object(element));
+      append(element.get_object());
       break;
     case ondemand::json_type::number:
       // Assume it fits in a double. We do not detect integer types. This could be improved.
-      format.number(double(element));
+      format.number(element.get_double());
       break;
     case ondemand::json_type::string:
-      format.string(std::string_view(element));
+      format.string(element.get_string());
       break;
     case ondemand::json_type::boolean:
-      bool(element) ? format.true_atom() : format.false_atom();
+      element.get_bool() ? format.true_atom() : format.false_atom();
       break;
     case ondemand::json_type::null:
       format.null_atom();
@@ -34,20 +34,20 @@ template <class serializer>
 inline void string_builder<serializer>::append(value element) {
   switch (element.type()) {
     case ondemand::json_type::array:
-      append(array(element));
+      append(element.get_array());
       break;
     case ondemand::json_type::object:
-      append(object(element));
+      append(element.get_object());
       break;
     case ondemand::json_type::number:
       // Assume it fits in a double. We do not detect integer types. This could be improved.
       format.number(double(element));
       break;
     case ondemand::json_type::string:
-      format.string(std::string_view(element));
+      format.string(element.get_string());
       break;
     case ondemand::json_type::boolean:
-      bool(element) ? format.true_atom() : format.false_atom();
+      element.get_bool() ? format.true_atom() : format.false_atom();
       break;
     case ondemand::json_type::null:
       format.null_atom();
