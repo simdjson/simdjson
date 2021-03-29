@@ -58,7 +58,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<val
 #else
 inline std::ostream& operator<<(std::ostream& out, value x) {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
-    auto error = sb.append(value);
+    auto error = sb.append(x);
     if(error == simdjson::SUCCESS) {
       return (out << sb.str());
     } else {

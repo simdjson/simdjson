@@ -8,7 +8,10 @@ namespace ondemand {
 
 template <class serializer>
 inline simdjson::error_code string_builder<serializer>::append(document& element) noexcept {
-  switch (element.type()) {
+  json_type t;
+  auto e = element.type().get(t);
+  if(e != simdjson::SUCCESS) { return e; }
+  switch (t) {
     case ondemand::json_type::array:
       {
         array x;
@@ -59,11 +62,15 @@ inline simdjson::error_code string_builder<serializer>::append(document& element
       format.null_atom();
       return simdjson::SUCCESS;
   }
+  return simdjson::INCORRECT_TYPE;
 }
 
 template <class serializer>
 inline simdjson::error_code string_builder<serializer>::append(value element) noexcept {
-  switch (element.type()) {
+  json_type t;
+  auto e = element.type().get(t);
+  if(e != simdjson::SUCCESS) { return e; }
+  switch (t) {
     case ondemand::json_type::array:
       {
         array x;
@@ -115,6 +122,7 @@ inline simdjson::error_code string_builder<serializer>::append(value element) no
       format.null_atom();
       return simdjson::SUCCESS;
   }
+  return simdjson::INCORRECT_TYPE;
 }
 
 template <class serializer>
@@ -133,9 +141,12 @@ template <class serializer>
 inline simdjson::error_code string_builder<serializer>::append(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array x) noexcept {
   format.start_array();
   bool first{true};
-  for(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value element: x) {
+  for(simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> v: x) {
+    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value element;
+    simdjson::error_code error = std::move(v).get(element);
+    if(error != simdjson::SUCCESS) { return error; }
     if(first) { first = false; }  else { format.comma(); };
-    auto error = append(element);
+    error = append(element);
     if(error != simdjson::SUCCESS) { return error; }
   }
   format.end_array();
@@ -146,9 +157,12 @@ template <class serializer>
 inline simdjson::error_code string_builder<serializer>::append(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object x) noexcept {
   format.start_object();
   bool first{true};
-  for(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::field element: x) {
+  for(simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::field> r: x) {
+    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::field element;
+    simdjson::error_code error = std::move(r).get(element);
+    if(error != simdjson::SUCCESS) { return error; }
     if(first) { first = false; }  else { format.comma(); };
-    auto error = append(element);
+    error = append(element);
     if(error != simdjson::SUCCESS) { return error; }
   }
   format.end_object();
