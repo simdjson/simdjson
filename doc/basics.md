@@ -202,6 +202,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   - `field.value()` will get you the value, which you can then use all these other methods on.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index. Instead,
   you will need to iterate through the array and keep an index yourself.
+* **Output to sstrings:** Given a document or an element (or node) out of a JSON document, you can output a string version (`simdjson::to_string(element)`). This consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document.
 
 ### Examples
 

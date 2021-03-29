@@ -34,6 +34,82 @@ private:
   formatter format{};
 };
 
+
+
+/**
+ * Print JSON to an output stream.
+ *
+ * @param out The output stream.
+ * @param value The element.
+ * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
+ */
+inline std::ostream& operator<<(std::ostream& out, value x) {
+    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
+    sb.append(x);
+    return (out << sb.str());
+}
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<value> x) {
+    if (x.error()) { throw simdjson::simdjson_error(x.error()); }
+    return (out << x.value());
+}
+#endif
+/**
+ * Print JSON to an output stream.
+ *
+ * @param out The output stream.
+ * @param value The array.
+ * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
+ */
+inline std::ostream& operator<<(std::ostream& out, array value)  {
+    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
+    sb.append(value);
+    return (out << sb.str());
+}
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<array> x) {
+    if (x.error()) { throw simdjson::simdjson_error(x.error()); }
+    return (out << x.value());
+}
+#endif
+/**
+ * Print JSON to an output stream.
+ *
+ * @param out The output stream.
+ * @param value The array.
+ * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
+ */
+inline std::ostream& operator<<(std::ostream& out, document& value)  {
+    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
+    sb.append(value);
+    return (out << sb.str());
+}
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<document> x) {
+    if (x.error()) { throw simdjson::simdjson_error(x.error()); }
+    return (out << x.value());
+}
+#endif
+/**
+ * Print JSON to an output stream.
+ *
+ * @param out The output stream.
+ * @param value The objet.
+ * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
+ */
+inline std::ostream& operator<<(std::ostream& out, object value)   {
+    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
+    sb.append(value);
+    return (out << sb.str());
+}
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out,  simdjson::simdjson_result<object> x) {
+    if (x.error()) { throw  simdjson::simdjson_error(x.error()); }
+    return (out << x.value());
+}
+#endif
+
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
@@ -67,6 +143,7 @@ std::string to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array& x)   {
     std::string_view answer = sb.str();
     return std::string(answer.data(), answer.size());
 }
+
 
 
 }// namespace simdjson
