@@ -387,8 +387,6 @@ namespace document_stream_tests {
 #endif
   bool simple_example() {
     std::cout << "Running " << __func__ << std::endl;
-    // The last JSON document is
-    // intentionally truncated.
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
     simdjson::dom::parser parser;
     size_t count = 0;
