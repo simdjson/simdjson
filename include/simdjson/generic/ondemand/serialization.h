@@ -1,4 +1,5 @@
 #include "simdjson/dom/serialization.h"
+#include "simdjson/error.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -10,15 +11,15 @@ public:
   /** Append an document to the builder (to be printed), numbers are
    * assumed to be 64-bit floating-point numbers.
    **/
-  inline void append(document& value);
+  inline simdjson::error_code append(document& value) noexcept;
   /** Append an element to the builder (to be printed) **/
-  inline void append(value element);
+  inline simdjson::error_code append(value element) noexcept;
   /** Append an array to the builder (to be printed) **/
-  inline void append(array value);
+  inline simdjson::error_code append(array value) noexcept;
   /** Append an objet to the builder (to be printed) **/
-  inline void append(object value);
+  inline simdjson::error_code append(object value) noexcept;
   /** Append a field to the builder (to be printed) **/
-  inline void append(field value);
+  inline simdjson::error_code append(field value) noexcept;
   /** Reset the builder (so that it would print the empty string) **/
   simdjson_really_inline void clear();
   /**
@@ -29,7 +30,7 @@ public:
    * own.
    */
   simdjson_really_inline std::string_view str() const;
-private: 
+private:
   formatter format{};
 };
 
@@ -40,16 +41,30 @@ private:
  * @param value The element.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
+#if SIMDJSON_EXCEPTIONS
 inline std::ostream& operator<<(std::ostream& out, value x) {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
-    sb.append(x);
-    return (out << sb.str());
+    auto err = sb.append(x);
+    if(err == simdjson::SUCCESS) {
+      return (out << sb.str());
+    } else {
+      throw simdjson::simdjson_error(err);
+    }
 }
-#if SIMDJSON_EXCEPTIONS
 inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<value> x) {
     if (x.error()) { throw simdjson::simdjson_error(x.error()); }
     return (out << x.value());
 }
+#else
+inline std::ostream& operator<<(std::ostream& out, value x) {
+    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
+    auto error = sb.append(value);
+    if(error == simdjson::SUCCESS) {
+      return (out << sb.str());
+    } else {
+      return (out << error);
+    }
+}
 #endif
 /**
  * Print JSON to an output stream.
@@ -58,16 +73,30 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<val
  * @param value The array.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, array value)  {
-    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
-    sb.append(value);
-    return (out << sb.str());
-}
 #if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out, array value) {
+    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
+    auto err = sb.append(value);
+    if(err == simdjson::SUCCESS) {
+      return (out << sb.str());
+    } else {
+      throw simdjson::simdjson_error(err);
+    }
+}
 inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<array> x) {
     if (x.error()) { throw simdjson::simdjson_error(x.error()); }
     return (out << x.value());
 }
+#else
+inline std::ostream& operator<<(std::ostream& out, array value) {
+    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
+    auto error = sb.append(value);
+    if(error == simdjson::SUCCESS) {
+      return (out << sb.str());
+    } else {
+      return (out << error);
+    }
+}
 #endif
 /**
  * Print JSON to an output stream.
@@ -76,15 +105,29 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<arr
  * @param value The array.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
+#if SIMDJSON_EXCEPTIONS
 inline std::ostream& operator<<(std::ostream& out, document& value)  {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
-    sb.append(value);
-    return (out << sb.str());
+    auto err = sb.append(value);
+    if(err == simdjson::SUCCESS) {
+      return (out << sb.str());
+    } else {
+      throw simdjson::simdjson_error(err);
+    }
 }
-#if SIMDJSON_EXCEPTIONS
 inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<document> x) {
     if (x.error()) { throw simdjson::simdjson_error(x.error()); }
     return (out << x.value());
+}
+#else
+inline std::ostream& operator<<(std::ostream& out, document& value)  {
+    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
+    auto error = sb.append(value);
+    if(error == simdjson::SUCCESS) {
+      return (out << sb.str());
+    } else {
+      return (out << error);
+    }
 }
 #endif
 /**
@@ -94,15 +137,29 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<doc
  * @param value The objet.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, object value)   {
-    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
-    sb.append(value);
-    return (out << sb.str());
-}
 #if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out, object value) {
+    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
+    auto err = sb.append(value);
+    if(err == simdjson::SUCCESS) {
+      return (out << sb.str());
+    } else {
+       throw simdjson::simdjson_error(err);
+    }
+}
 inline std::ostream& operator<<(std::ostream& out,  simdjson::simdjson_result<object> x) {
     if (x.error()) { throw  simdjson::simdjson_error(x.error()); }
     return (out << x.value());
+}
+#else
+inline std::ostream& operator<<(std::ostream& out, object value) {
+    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
+    auto error = sb.append(value);
+    if(error == simdjson::SUCCESS) {
+      return (out << sb.str());
+    } else {
+      return (out << error);
+    }
 }
 #endif
 
@@ -112,30 +169,34 @@ inline std::ostream& operator<<(std::ostream& out,  simdjson::simdjson_result<ob
 
 namespace simdjson {
 
-inline std::string to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document& x)   {
+inline simdjson::simdjson_result<std::string> to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document& x) {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
-    sb.append(x);
+    auto error = sb.append(x);
+    if(error != simdjson::SUCCESS) { return error; }
     std::string_view answer = sb.str();
     return std::string(answer.data(), answer.size());
 }
 
-inline std::string to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value& x)   {
+inline simdjson::simdjson_result<std::string> to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value& x) {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
-    sb.append(x);
+    auto error = sb.append(x);
+    if(error != simdjson::SUCCESS) { return error; }
     std::string_view answer = sb.str();
     return std::string(answer.data(), answer.size());
 }
 
-inline std::string to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object& x)   {
+inline simdjson::simdjson_result<std::string> to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object& x) {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
-    sb.append(x);
+    auto error = sb.append(x);
+    if(error != simdjson::SUCCESS) { return error; }
     std::string_view answer = sb.str();
     return std::string(answer.data(), answer.size());
 }
 
-inline std::string to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array& x)   {
+inline simdjson::simdjson_result<std::string> to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array& x) {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
-    sb.append(x);
+    auto error = sb.append(x);
+    if(error != simdjson::SUCCESS) { return error; }
     std::string_view answer = sb.str();
     return std::string(answer.data(), answer.size());
 }
