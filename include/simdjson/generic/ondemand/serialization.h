@@ -1,6 +1,5 @@
-
-
 #include "simdjson/dom/serialization.h"
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -33,8 +32,6 @@ public:
 private: 
   formatter format{};
 };
-
-
 
 /**
  * Print JSON to an output stream.
@@ -109,41 +106,38 @@ inline std::ostream& operator<<(std::ostream& out,  simdjson::simdjson_result<ob
 }
 #endif
 
-
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
 namespace simdjson {
 
-std::string to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document& x)   {
+inline std::string to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document& x)   {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
     sb.append(x);
     std::string_view answer = sb.str();
     return std::string(answer.data(), answer.size());
 }
 
-std::string to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value& x)   {
+inline std::string to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value& x)   {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
     sb.append(x);
     std::string_view answer = sb.str();
     return std::string(answer.data(), answer.size());
 }
 
-std::string to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object& x)   {
+inline std::string to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object& x)   {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
     sb.append(x);
     std::string_view answer = sb.str();
     return std::string(answer.data(), answer.size());
 }
 
-std::string to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array& x)   {
+inline std::string to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array& x)   {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
     sb.append(x);
     std::string_view answer = sb.str();
     return std::string(answer.data(), answer.size());
 }
 
-
-
-}// namespace simdjson
+} // namespace simdjson
