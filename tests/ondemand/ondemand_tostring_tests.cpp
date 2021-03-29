@@ -125,7 +125,7 @@ bool load_to_string_exceptionless(const char *filename) {
 bool minify_exceptionless_test() {
   TEST_START();
   for (size_t i = 0; i < sizeof(test_files) / sizeof(test_files[0]); i++) {
-    bool ok = load_to_string(test_files[i]);
+    bool ok = load_to_string_exceptionless(test_files[i]);
     if (!ok) {
       return false;
     }
