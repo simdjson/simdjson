@@ -6,6 +6,28 @@ using namespace simdjson;
 namespace object_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
+
+
+  bool missing_keys() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata =  R"([{"a":"a"},{}])"_padded;
+    simdjson::ondemand::document doc;
+    auto error = parser.iterate(docdata).get(doc);
+    if(error != simdjson::SUCCESS) { return false; }
+    simdjson::ondemand::array a;
+    error = doc.get_array().get(a);
+    if(error != simdjson::SUCCESS) { return false; }
+    for(auto elem : a) {
+      error = elem.find_field_unordered("keynotfound").error();
+      if(error != simdjson::NO_SUCH_FIELD) {
+        std::cout << error << std::endl;
+        return false;
+      }
+    }
+    return true;
+  }
+
 #if SIMDJSON_EXCEPTIONS
 
   // used in issue_1521
@@ -964,6 +986,7 @@ namespace object_tests {
 
   bool run() {
     return
+           missing_keys() &&
 #if SIMDJSON_EXCEPTIONS
            fixed_broken_issue_1521() &&
            issue_1521() &&
