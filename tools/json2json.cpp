@@ -46,7 +46,6 @@ int main(int argc, const char *argv[]) {
   	return EXIT_SUCCESS;
   }
   bool ondemand = result["ondemand"].as<bool>();
-
   bool rawdump = result["rawdump"].as<bool>();
 
   if(!result.count("file")) {
@@ -58,8 +57,12 @@ int main(int argc, const char *argv[]) {
   const char *filename = result["file"].as<std::string>().c_str();
   if(ondemand) {
     simdjson::ondemand::parser parser;
-    simdjson::padded_string docdata  = simdjson::padded_string::load(filename);
-    simdjson::ondemand::document doc = parser.iterate(docdata);
+    simdjson::padded_string docdata;
+    auto error = simdjson::padded_string::load(filename).get(docdata);
+    if(error != simdjson::SUCCESS) { std::cout << error << std::endl; return EXIT_FAILURE; }
+    simdjson::ondemand::document doc;
+    error = parser.iterate(docdata).get(doc);
+    if(error != simdjson::SUCCESS) { std::cout << error << std::endl; return EXIT_FAILURE; }
     std::cout << doc;
     return EXIT_SUCCESS;
   }
