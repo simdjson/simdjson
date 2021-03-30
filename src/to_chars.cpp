@@ -913,7 +913,8 @@ format. Returns an iterator pointing past-the-end of the decimal representation.
 */
 char *to_chars(char *first, const char *last, double value) {
   static_cast<void>(last); // maybe unused - fix warning
-  if (value <= -0) {
+  bool negative = value <= -0;
+  if (negative) {
     value = -value;
     *first++ = '-';
   }
@@ -922,8 +923,10 @@ char *to_chars(char *first, const char *last, double value) {
   {
     *first++ = '0';
     // Make it look like a floating-point number (#362, #378)
-    // *first++ = '.';
-    // *first++ = '0';
+    if(negative) {
+      *first++ = '.';
+      *first++ = '0';
+    }
     return first;
   }
   // Compute v = buffer * 10^decimal_exponent.

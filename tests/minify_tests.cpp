@@ -42,6 +42,8 @@ bool load_to_string(const char *filename) {
     std::cout << "Parsing to_string and calling to_string again results in the "
                  "same content."
               << std::endl;
+  } else {
+    std::cout << "The content differs!" << std::endl;
   }
   return match;
 }
@@ -61,6 +63,8 @@ bool load_minify(const char *filename) {
     std::cout << "Parsing minify and calling minify again results in the same "
                  "content."
               << std::endl;
+  } else {
+    std::cout << "The content differs!" << std::endl;
   }
   return match;
 }
