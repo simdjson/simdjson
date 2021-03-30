@@ -62,11 +62,26 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child
       if(*peek() == ':') {
         // we are at a key!!! This is
         // only possible if someone searched
-        // for a key and the  key was not found.
+        // for a key and the key was not found.
         logger::log_value(*this, "key");
         advance(); // eat up the ':'
         break; // important!!!
       }
+      // Because maniacs want to do crazy pedantic static analysis, we get the following
+      // error if we stop there...
+      // error: this statement may fall through [-Werror=implicit-fallthrough=]
+      //
+      // So we have to patch it up with the following ugly bit:
+#if SIMDJSON_CPLUSPLUS17
+      [[fallthrough]];
+#else
+      // copy-pase of default:
+      logger::log_value(*this, "skip");
+      _depth--;
+      if (depth() <= parent_depth) { return SUCCESS; }
+      break;
+      // End of ugly bit.
+#endif
     // Anything else must be a scalar value
     default:
       // For the first scalar, we will have incremented depth already, so we decrement it here.
