@@ -60,10 +60,15 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child
       break;
     // Anything else must be a scalar value
     default:
-      // For the first scalar, we will have incremented depth already, so we decrement it here.
-      logger::log_value(*this, "skip");
-      _depth--;
-      if (depth() <= parent_depth) { return SUCCESS; }
+      if(*peek() == ':') {
+        // we are at a key!!!
+        logger::log_value(*this, "key");
+      } else {
+        // For the first scalar, we will have incremented depth already, so we decrement it here.
+        logger::log_value(*this, "skip");
+        _depth--;
+        if (depth() <= parent_depth) { return SUCCESS; }
+      }
       break;
   }
 
