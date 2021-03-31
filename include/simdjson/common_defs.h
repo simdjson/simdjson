@@ -252,11 +252,11 @@ namespace std {
 #endif
 
 #if SIMDJSON_CPLUSPLUS17
-# define simdjson_fallthrough [[fallthrough]];
+# define simdjson_fallthrough [[fallthrough]]
 #elif __has_attribute(__fallthrough__)
 # define simdjson_fallthrough                    __attribute__((__fallthrough__))
 #else
-# define simdjson_fallthrough                    do {} while (0);  /* fallthrough */
+# define simdjson_fallthrough                    do {} while (0)  /* fallthrough */
 #endif
 
 #endif // SIMDJSON_COMMON_DEFS_H
