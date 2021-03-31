@@ -67,7 +67,7 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child
         advance(); // eat up the ':'
         break; // important!!!
       }
-      simdjson_fallthrough
+      simdjson_fallthrough;
     // Anything else must be a scalar value
     default:
       // For the first scalar, we will have incremented depth already, so we decrement it here.
