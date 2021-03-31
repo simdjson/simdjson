@@ -7,6 +7,122 @@ namespace object_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
 
+  // In this test, no non-trivial object in an array have a missing key
+  bool no_missing_keys() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata =  R"([{"a":"a"},{}])"_padded;
+    simdjson::ondemand::document doc;
+    auto error = parser.iterate(docdata).get(doc);
+    if(error != simdjson::SUCCESS) { return false; }
+    simdjson::ondemand::array a;
+    error = doc.get_array().get(a);
+    if(error != simdjson::SUCCESS) { return false; }
+    size_t counter{0};
+    for(auto elem : a) {
+      error = elem.find_field_unordered("a").error();
+      if(counter == 0) {
+        ASSERT_EQUAL( error, simdjson::SUCCESS);
+      } else {
+        ASSERT_EQUAL( error, simdjson::NO_SUCH_FIELD);
+      }
+      counter++;
+    }
+    return true;
+  }
+
+
+  bool missing_keys() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata =  R"([{"a":"a"},{}])"_padded;
+    simdjson::ondemand::document doc;
+    auto error = parser.iterate(docdata).get(doc);
+    if(error != simdjson::SUCCESS) { return false; }
+    simdjson::ondemand::array a;
+    error = doc.get_array().get(a);
+    if(error != simdjson::SUCCESS) { return false; }
+    for(auto elem : a) {
+      error = elem.find_field_unordered("keynotfound").error();
+      if(error != simdjson::NO_SUCH_FIELD) {
+        std::cout << error << std::endl;
+        return false;
+      }
+    }
+    return true;
+  }
+
+#if SIMDJSON_EXCEPTIONS
+  // used in issue_1521
+  // difficult to use as a lambda because it is recursive.
+  void broken_descend(ondemand::object node) {
+    if(auto type = node.find_field_unordered("type"); type.error() == SUCCESS && type == "child") {
+      auto n = node.find_field_unordered("name");
+      if(n.error() == simdjson::SUCCESS) {
+          std::cout << std::string_view(n) << std::endl;
+      }
+    } else {
+     for (ondemand::object child_node : node["nodes"]) { broken_descend(child_node); }
+    }
+  }
+
+  bool broken_issue_1521() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string json = R"({"type":"root","nodes":[{"type":"child","nodes":[]},{"type":"child","name":"child-name","nodes":[]}]})"_padded;
+    ondemand::document file_tree = parser.iterate(json);
+    try {
+      broken_descend(file_tree);
+    } catch(simdjson::simdjson_error& e) {
+      std::cout << "The document is valid JSON: " << json << std::endl;
+      TEST_FAIL(e.error());
+    }
+    TEST_SUCCEED();
+  }
+
+  bool fixed_broken_issue_1521() {
+    TEST_START();
+    ondemand::parser parser;
+    // We omit the ',"nodes":[]'
+    padded_string json = R"({"type":"root","nodes":[{"type":"child"},{"type":"child","name":"child-name","nodes":[]}]})"_padded;
+    ondemand::document file_tree = parser.iterate(json);
+    try {
+      broken_descend(file_tree);
+    } catch(simdjson::simdjson_error& e) {
+      std::cout << "The document is valid JSON: " << json << std::endl;
+      TEST_FAIL(e.error());
+    }
+    TEST_SUCCEED();
+  }
+
+  // used in issue_1521
+  // difficult to use as a lambda because it is recursive.
+  void descend(ondemand::object node) {
+    auto n = node.find_field_unordered("name");
+    if(auto type = node.find_field_unordered("type"); type.error() == SUCCESS && type == "child") {
+      if(n.error() == simdjson::SUCCESS) {
+          std::cout << std::string_view(n) << std::endl;
+      }
+    } else {
+     for (ondemand::object child_node : node["nodes"]) { descend(child_node); }
+    }
+  }
+
+  bool issue_1521() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string json = R"({"type":"root","nodes":[{"type":"child","nodes":[]},{"type":"child","name":"child-name","nodes":[]}]})"_padded;
+    ondemand::document file_tree = parser.iterate(json);
+    try {
+      descend(file_tree);
+    } catch(simdjson::simdjson_error& e) {
+      std::cout << "The document is valid JSON: " << json << std::endl;
+      TEST_FAIL(e.error());
+    }
+    TEST_SUCCEED();
+  }
+#endif
+
   bool iterate_object() {
     TEST_START();
     auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
@@ -893,6 +1009,13 @@ namespace object_tests {
 
   bool run() {
     return
+           no_missing_keys() &&
+           missing_keys() &&
+#if SIMDJSON_EXCEPTIONS
+           fixed_broken_issue_1521() &&
+           issue_1521() &&
+           broken_issue_1521() &&
+#endif
            iterate_object() &&
            iterate_empty_object() &&
            object_index() &&
