@@ -1,6 +1,8 @@
 #include <cstring>
 #include <cstdint>
 #include <array>
+#include <cmath>
+
 namespace simdjson {
 namespace internal {
 /*!
@@ -913,7 +915,7 @@ format. Returns an iterator pointing past-the-end of the decimal representation.
 */
 char *to_chars(char *first, const char *last, double value) {
   static_cast<void>(last); // maybe unused - fix warning
-  bool negative = value <= -0;
+  bool negative = std::signbit(value);
   if (negative) {
     value = -value;
     *first++ = '-';
