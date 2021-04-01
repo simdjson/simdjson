@@ -1,6 +1,8 @@
 #include <cstring>
 #include <cstdint>
 #include <array>
+#include <cmath>
+
 namespace simdjson {
 namespace internal {
 /*!
@@ -858,9 +860,9 @@ inline char *format_buffer(char *buf, int len, int decimal_exponent,
 
     std::memset(buf + k, '0', static_cast<size_t>(n) - static_cast<size_t>(k));
     // Make it look like a floating-point number (#362, #378)
-    buf[n + 0] = '.';
-    buf[n + 1] = '0';
-    return buf + (static_cast<size_t>(n) + 2);
+    // buf[n + 0] = '.';
+    // buf[n + 1] = '0';
+    return buf + (static_cast<size_t>(n));
   }
 
   if (0 < n && n <= max_exp) {
@@ -913,7 +915,8 @@ format. Returns an iterator pointing past-the-end of the decimal representation.
 */
 char *to_chars(char *first, const char *last, double value) {
   static_cast<void>(last); // maybe unused - fix warning
-  if (value <= -0) {
+  bool negative = std::signbit(value);
+  if (negative) {
     value = -value;
     *first++ = '-';
   }
@@ -922,8 +925,10 @@ char *to_chars(char *first, const char *last, double value) {
   {
     *first++ = '0';
     // Make it look like a floating-point number (#362, #378)
-    *first++ = '.';
-    *first++ = '0';
+    if(negative) {
+      *first++ = '.';
+      *first++ = '0';
+    }
     return first;
   }
   // Compute v = buffer * 10^decimal_exponent.
