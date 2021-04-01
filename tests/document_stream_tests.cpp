@@ -461,7 +461,6 @@ namespace document_stream_tests {
     simdjson::dom::document_stream stream;
     // We use a window of json.size() though any large value would do.
     ASSERT_SUCCESS( parser.parse_many(json,json.size()).get(stream) );
-    // Rest is ineffective because stage 1 fails.
     auto i = stream.begin();
     size_t counter{0};
     for(; i != stream.end(); ++i) {
@@ -473,6 +472,11 @@ namespace document_stream_tests {
           std::cout << doc.error() << std::endl;
         }
         counter++;
+    }
+    std::cout << "final index is " << i.current_index() << std::endl;
+    if(i.current_index() != 29) {
+      std::cerr << "bad final index" << std::endl;
+      return false;
     }
     if(counter != 2) {
       std::cerr << "You should have parsed two documents. I found " << counter << "." << std::endl;

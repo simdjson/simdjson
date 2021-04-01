@@ -207,5 +207,11 @@ Incomplete streams
 
 Some users may need to work with truncated streams while tracking their location in the stream.
 The same code, with the `current_index()` will work. These users need to be aware that the last
-document parsed may be in error if it is truncated. These users are responsible for handling the
-last truncated document.
+document parsed may be in error if it is truncated.
+
+If the input ends with an unclosed string, the unclosed string is virtually removed. Its content
+is not checked.
+
+You can query `i.current_index()` after looping through the documents to see where
+the parsing ended: it should point just beyond the last document. If there was an unclosed string,
+the processing terminates before the unclosed string.
