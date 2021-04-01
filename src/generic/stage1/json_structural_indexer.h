@@ -74,14 +74,14 @@ public:
    *   you are processing substrings, you may want to call on a function like trimmed_length_safe_utf8.
    */
   template<size_t STEP_SIZE>
-  static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, bool partial) noexcept;
+  static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, stage1_mode partial) noexcept;
 
 private:
   simdjson_really_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
-  simdjson_really_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, bool partial);
+  simdjson_really_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
 
   json_scanner scanner{};
   utf8_checker checker{};
@@ -131,9 +131,9 @@ simdjson_really_inline size_t trim_partial_utf8(const uint8_t *buf, size_t len) 
 // workout.
 //
 template<size_t STEP_SIZE>
-error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, bool partial) noexcept {
+error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, stage1_mode partial) noexcept {
   if (simdjson_unlikely(len > parser.capacity())) { return CAPACITY; }
-  if (partial) { len = trim_partial_utf8(buf, len); }
+  if (is_streaming(partial)) { len = trim_partial_utf8(buf, len); }
 
   buf_block_reader<STEP_SIZE> reader(buf, len);
   json_structural_indexer indexer(parser.structural_indexes.get());
@@ -178,14 +178,14 @@ simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<u
   unescaped_chars_error |= block.non_quote_inside_string(unescaped);
 }
 
-simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_implementation &parser, size_t idx, size_t len, bool partial) {
+simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial) {
   // Write out the final iteration's structurals
   indexer.write(uint32_t(idx-64), prev_structurals);
 
   error_code error = scanner.finish();
   // We deliberately break down the next expression so that it is
   // human readable.
-  const bool should_we_exit =  partial ?
+  const bool should_we_exit = is_streaming(partial) ?
     ((error != SUCCESS) && (error != UNCLOSED_STRING)) // when partial we tolerate UNCLOSED_STRING
     : (error != SUCCESS); // if partial is false, we must have SUCCESS
   const bool have_unclosed_string = (error == UNCLOSED_STRING);
@@ -194,7 +194,6 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
   if (unescaped_chars_error) {
     return UNESCAPED_CHARS;
   }
-
   parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
   /***
    * This is related to https://github.com/simdjson/simdjson/issues/906
@@ -221,7 +220,7 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
   if (simdjson_unlikely(parser.structural_indexes[parser.n_structural_indexes - 1] > len)) {
     return UNEXPECTED_ERROR;
   }
-  if (partial) {
+  if (partial == stage1_mode::streaming_partial) {
     // If we have an unclosed string, then the last structural
     // will be the quote and we want to make sure to omit it.
     if(have_unclosed_string) {
@@ -234,6 +233,16 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
       return CAPACITY; // If the buffer is partial but the document is incomplete, it's too big to parse.
     }
     parser.n_structural_indexes = new_structural_indexes;
+  } else if (partial == stage1_mode::streaming_final) {
+     if(have_unclosed_string) {
+      parser.n_structural_indexes--;
+      if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
+        // We tolerate an unclosed string at the very end of the stream. Indeed, users
+        // often load their data in bulk without being careful and they want us to ignore
+        // the trailing garbage.
+        return EMPTY;
+      }
+     }
   }
   checker.check_eof();
   return checker.errors();

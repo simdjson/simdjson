@@ -206,12 +206,6 @@ Incomplete streams
 -----------
 
 Some users may need to work with truncated streams while tracking their location in the stream.
-The same code, with the `current_index()` will work. However, the last block (by default 1MB)
-terminates with an unclosed string, then no JSON document within this last block will validate.
-In particular, it means that if your input string is `[1,2,3]  {"1":1,"2":3,"4":4} [1,2` then
-no JSON document will be successfully parsed. The error `simdjson::UNCLOSED_STRING` will be
-given (even with the first JSON document). It is then your responsability to terminate the input
-maybe by appending the missing data at the end of the truncated string, or by copying the truncated
-data before the continuing input.
-
-
+The same code, with the `current_index()` will work. These users need to be aware that the last
+document parsed may be in error if it is truncated. These users are responsible for handling the
+last truncated document.

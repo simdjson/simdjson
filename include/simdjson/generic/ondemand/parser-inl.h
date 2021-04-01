@@ -32,7 +32,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
   }
 
   // Run stage 1.
-  SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), false) );
+  SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), stage1_mode::regular) );
   return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this });
 }
 
@@ -75,7 +75,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<json_iterator> parse
   }
 
   // Run stage 1.
-  SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), false) );
+  SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), stage1_mode::regular) );
   return json_iterator(reinterpret_cast<const uint8_t *>(json.data()), this);
 }
 

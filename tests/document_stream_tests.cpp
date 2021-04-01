@@ -319,7 +319,12 @@ namespace document_stream_tests {
       count++;
       previous_i = i;
     }
-    return count == 1;
+    // We should have three documents including a broken one
+    if(count != 3) {
+      std::cout << "finished with count = " << count << std::endl;
+      return false;
+    }
+    return true;
   }
 
   bool single_document() {
@@ -458,17 +463,22 @@ namespace document_stream_tests {
     ASSERT_SUCCESS( parser.parse_many(json,json.size()).get(stream) );
     // Rest is ineffective because stage 1 fails.
     auto i = stream.begin();
+    size_t counter{0};
     for(; i != stream.end(); ++i) {
         auto doc = *i;
         if(!doc.error()) {
           std::cout << "got full document at " << i.current_index() << std::endl;
-          return false;
+          if(counter > 1) { return false; }
         } else {
           std::cout << doc.error() << std::endl;
-          return (doc.error() == simdjson::UNCLOSED_STRING);
         }
+        counter++;
     }
-    return false;
+    if(counter != 2) {
+      std::cerr << "You should have parsed two documents. I found " << counter << "." << std::endl;
+      return false;
+    }
+    return true;
   }
   bool small_window() {
     std::cout << "Running " << __func__ << std::endl;
