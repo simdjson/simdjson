@@ -30,6 +30,34 @@ bool contains(const char *pre, const char *str) {
     return (strstr(str, pre) != nullptr);
 }
 
+ 
+ 
+ 
+ 
+bool is_skip_listed(const char *name) {
+  std::vector<const char*> white_list = {"fail36.json", "fail62.json", "fail63.json", "fail64.json"};
+  for(const char* x : white_list) {
+    if(starts_with(x, name)) {
+      std::cout << " Though the file " << x << " is not valid JSON, whether it should pass as ndjson after truncation is undefined" << std::endl;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool is_white_listed(const char *name) {
+  std::vector<const char*> white_list = {"fail02.json", "fail08.json", "fail10.json", "fail32.json", "fail33.json",
+                                         "fail52.json", "fail53.json", "fail54.json", "fail70.json", "fail74.json",
+                                         "fail78.json", "fail79.json", "fail80.json"};
+  for(const char* x : white_list) {
+    if(starts_with(x, name)) {
+      std::cout << " Though the file " << x << " is not valid JSON, we expect parse_many to succeed." << std::endl;
+      return true;
+    }
+  }
+  return false;
+}
+
 bool validate(const char *dirname) {
     bool everything_fine = true;
     const char *extension1 = ".ndjson";
@@ -59,6 +87,9 @@ bool validate(const char *dirname) {
     for (int i = 0; i < c; i++) {
         const char *name = entry_list[i]->d_name;
         if (has_extension(name, extension1) || has_extension(name, extension2) || has_extension(name, extension3)) {
+            if(is_skip_listed(name)) {
+                continue;
+            } 
 
             /*  Finding the file path  */
             printf("validating: file %s ", name);
@@ -77,15 +108,15 @@ bool validate(const char *dirname) {
                 simdjson::dom::document_stream docs;
                 error = parser.parse_many(json).get(docs);
                 for (auto doc : docs) {
-                    error = doc.error();
+                  error = doc.error();
                 }
             }
-            printf("%s\n", error ? "ok" : "invalid");
+            std::cout << "error status:  "<<error<<std::endl; 
             /* Check if the file is supposed to pass or not.  Print the results */
             if (contains("EXCLUDE", name)) {
                 // skipping
                 how_many--;
-            } else if (starts_with("pass", name) or starts_with("fail10.json", name) or starts_with("fail70.json", name)) {
+            } else if (starts_with("pass", name) or is_white_listed(name)) {
                 if (error) {
                     is_file_as_expected[i] = false;
                     printf("warning: file %s should pass but it fails. Error is: %s\n",
@@ -127,7 +158,39 @@ bool validate(const char *dirname) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
+  std::cout << std::unitbuf;
+  int c;
+  while ((c = getopt(argc, argv, "a:")) != -1) {
+    switch (c) {
+    case 'a': {
+      const simdjson::implementation *impl = simdjson::available_implementations[optarg];
+      if (!impl) {
+        fprintf(stderr, "Unsupported architecture value -a %s\n", optarg);
+        return EXIT_FAILURE;
+      }
+      if(!impl->supported_by_runtime_system()) {
+        fprintf(stderr, "The selected implementation does not match your current CPU: -a %s\n", optarg);
+        return EXIT_FAILURE;
+      }
+      simdjson::active_implementation = impl;
+      break;
+    }
+    default:
+      fprintf(stderr, "Unexpected argument %c\n", c);
+      return EXIT_FAILURE;
+    }
+  }
+
+  // this is put here deliberately to check that the documentation is correct (README),
+  // should this fail to compile, you should update the documentation:
+  if (simdjson::active_implementation->name() == "unsupported") {
+    printf("unsupported CPU\n");
+  }
+  // We want to know what we are testing.
+  std::cout << "Running tests against this implementation: " << simdjson::active_implementation->name();
+  std::cout << " (" << simdjson::active_implementation->description() << ")" << std::endl;
+  std::cout << "------------------------------------------------------------" << std::endl;
+  if(optind >= argc) {
         std::cerr << "Usage: " << argv[0] << " <directorywithjsonfiles>"
                   << std::endl;
 #ifndef SIMDJSON_TEST_DATA_DIR
@@ -140,6 +203,6 @@ int main(int argc, char *argv[]) {
                   << SIMDJSON_TEST_DATA_DIR << "' directory." << std::endl;
         return validate(SIMDJSON_TEST_DATA_DIR) ? EXIT_SUCCESS : EXIT_FAILURE;
 #endif
-    }
-    return validate(argv[1]) ? EXIT_SUCCESS : EXIT_FAILURE;
+  }
+  return validate(argv[optind]) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

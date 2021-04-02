@@ -196,6 +196,8 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
   }
   parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
   /***
+   * The On Demand API requires special padding.
+   *
    * This is related to https://github.com/simdjson/simdjson/issues/906
    * Basically, we want to make sure that if the parsing continues beyond the last (valid)
    * structural character, it quickly stops.
@@ -208,6 +210,8 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
    * if the repeated character is [. But if so, the document must start with [. But if the document
    * starts with [, it should end with ]. If we enforce that rule, then we would get
    * ][[ which is invalid.
+   *
+   *
    **/
   parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
@@ -228,24 +232,33 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
       // a valid JSON file cannot have zero structural indexes - we should have found something
       if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return CAPACITY; }
     }
+    // We truncate the input to the end of the last complete document (or zero).
     auto new_structural_indexes = find_next_document_index(parser);
     if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
       return CAPACITY; // If the buffer is partial but the document is incomplete, it's too big to parse.
     }
+
     parser.n_structural_indexes = new_structural_indexes;
   } else if (partial == stage1_mode::streaming_final) {
-    if(have_unclosed_string) {
-      parser.n_structural_indexes--;
-      parser.n_structural_indexes = find_next_document_index(parser);
-      // This next line is critical, do not change it unless you understand what you are
-      // doing.
-      parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
-      if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
+    if(have_unclosed_string) { parser.n_structural_indexes--; }
+    // We truncate the input to the end of the last complete document (or zero).
+    // Because partial == stage1_mode::streaming_final, it means that we may
+    // silently ignore trailing garbage. Though it sounds bad, we do it
+    // deliberately because many people who have streams of JSON documents
+    // will truncate them for processing. E.g., imagine that you are uncompressing
+    // the data from a size file or receiving it in chunks from the network. You
+    // may not know where exactly the last document will be. Meanwhile the
+    // document_stream instances allow people to know the JSON documents they are
+    // parsing (see the iterator.source() method).
+    parser.n_structural_indexes = find_next_document_index(parser);
+    // This next line is critical, do not change it unless you understand what you are
+    // doing.
+    parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
+    if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
         // We tolerate an unclosed string at the very end of the stream. Indeed, users
         // often load their data in bulk without being careful and they want us to ignore
         // the trailing garbage.
         return EMPTY;
-      }
     }
   }
   checker.check_eof();

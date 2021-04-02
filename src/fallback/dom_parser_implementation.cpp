@@ -147,24 +147,40 @@ simdjson_really_inline error_code scan() {
         break;
     }
   }
-  *next_structural_index = len;
   // We pad beyond.
   // https://github.com/simdjson/simdjson/issues/906
+  // See json_structural_indexer.h for an explanation.
+  *next_structural_index = len;
   next_structural_index[1] = len;
   next_structural_index[2] = 0;
   parser.n_structural_indexes = uint32_t(next_structural_index - parser.structural_indexes.get());
   if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return EMPTY; }
   parser.next_structural_index = 0;
-  if (is_streaming(partial)) {
+  if (partial == stage1_mode::streaming_partial) {
     if(unclosed_string) {
       parser.n_structural_indexes--;
       if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return CAPACITY; }
     }
+    // We truncate the input to the end of the last complete document (or zero).
     auto new_structural_indexes = find_next_document_index(parser);
     if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
       return CAPACITY; // If the buffer is partial but the document is incomplete, it's too big to parse.
     }
     parser.n_structural_indexes = new_structural_indexes;
+  } else if(partial == stage1_mode::streaming_final) {
+    if(unclosed_string) { parser.n_structural_indexes--; }
+    // We truncate the input to the end of the last complete document (or zero).
+    // Because partial == stage1_mode::streaming_final, it means that we may
+    // silently ignore trailing garbage. Though it sounds bad, we do it
+    // deliberately because many people who have streams of JSON documents
+    // will truncate them for processing. E.g., imagine that you are uncompressing
+    // the data from a size file or receiving it in chunks from the network. You
+    // may not know where exactly the last document will be. Meanwhile the
+    // document_stream instances allow people to know the JSON documents they are
+    // parsing (see the iterator.source() method).
+    parser.n_structural_indexes = find_next_document_index(parser);
+    parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
+    if (parser.n_structural_indexes == 0) { return EMPTY; }
   } else if(unclosed_string) { error = UNCLOSED_STRING; }
   return error;
 }

@@ -217,4 +217,5 @@ Incomplete streams
 Some users may need to work with truncated streams while tracking their location in the stream.
 The same code, with the `current_index()` will work. These users need to be aware that the last
 document parsed may be in error if it is truncated. They may use the `source()` method to
-determine which content was parsed.
+determine which content was parsed. In some instances, a truncated final document may be detected
+as a document in error.

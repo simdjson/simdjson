@@ -25,7 +25,10 @@ enum class stage1_mode { regular, streaming_partial, streaming_final};
  * Returns true if mode == streaming_partial or mode == streaming_final
  */
 inline bool is_streaming(stage1_mode mode) {
-  return (mode == stage1_mode::streaming_partial || mode == stage1_mode::streaming_final);
+  // performance note: it is probably faster to check that mode is different
+  // from regular than checking that it is either streaming_partial or streaming_final.
+  return (mode != stage1_mode::regular);
+  // return (mode == stage1_mode::streaming_partial || mode == stage1_mode::streaming_final);
 }
 
 
