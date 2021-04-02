@@ -29,6 +29,7 @@ namespace {
   */
 simdjson_really_inline uint32_t find_next_document_index(dom_parser_implementation &parser) {
   // TODO don't count separately, just figure out depth
+  if(parser.n_structural_indexes == 0) { return 0; }
   auto arr_cnt = 0;
   auto obj_cnt = 0;
   for (auto i = parser.n_structural_indexes - 1; i > 0; i--) {

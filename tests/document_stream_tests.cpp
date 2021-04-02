@@ -319,8 +319,8 @@ namespace document_stream_tests {
       count++;
       previous_i = i;
     }
-    // We should have three documents including a broken one
-    if(count != 3) {
+    // We should have two documents
+    if(count != 2) {
       std::cout << "finished with count = " << count << std::endl;
       return false;
     }
@@ -403,7 +403,11 @@ namespace document_stream_tests {
         auto doc = *i;
         if(!doc.error()) {
           std::cout << "got full document at " << i.current_index() << std::endl;
+          std::cout << i.source() << std::endl;
           count++;
+        } else {
+          std::cout << "got broken document at " << i.current_index() << std::endl;
+          return false;
         }
     }
     if(count != 3) {
@@ -435,7 +439,10 @@ namespace document_stream_tests {
         auto doc = *i;
         if(!doc.error()) {
           std::cout << "got full document at " << i.current_index() << std::endl;
+          std::cout << i.source() << std::endl;
           count++;
+        } else {
+          std::cout << "got broken document at " << i.current_index() << std::endl;
         }
     }
     if(count != 2) {
@@ -467,23 +474,53 @@ namespace document_stream_tests {
         auto doc = *i;
         if(!doc.error()) {
           std::cout << "got full document at " << i.current_index() << std::endl;
-          if(counter > 1) { return false; }
+          std::cout << "the document is " << i.source() << std::endl;
         } else {
+          std::cout << "got broken document at " << i.current_index() << std::endl;
           std::cout << doc.error() << std::endl;
         }
         counter++;
     }
     std::cout << "final index is " << i.current_index() << std::endl;
-    if(i.current_index() != 29) {
-      std::cerr << "bad final index" << std::endl;
-      return false;
-    }
     if(counter != 2) {
       std::cerr << "You should have parsed two documents. I found " << counter << "." << std::endl;
       return false;
     }
     return true;
   }
+
+
+  bool truncated_window_unclosed_string_in_object() {
+    std::cout << "Running " << __func__ << std::endl;
+    // The last JSON document is intentionally truncated. In this instance, we use
+    // a truncated string which will create trouble since stage 1 will recognize the
+    // JSON as invalid and refuse to even start parsing.
+    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    // We use a window of json.size() though any large value would do.
+    ASSERT_SUCCESS( parser.parse_many(json,json.size()).get(stream) );
+    auto i = stream.begin();
+    size_t counter{0};
+    for(; i != stream.end(); ++i) {
+        auto doc = *i;
+        if(!doc.error()) {
+          std::cout << "got full document at " << i.current_index() << std::endl;
+          std::cout << "the document is " << i.source() << std::endl;
+        } else {
+          std::cout << "got broken document at " << i.current_index() << std::endl;
+          std::cout << doc.error() << std::endl;
+        }
+        counter++;
+    }
+    std::cout << "final index is " << i.current_index() << std::endl;
+    if(counter != 2) {
+      std::cerr << "You should have parsed two documents. I found " << counter << "." << std::endl;
+      return false;
+    }
+    return true;
+  }
+
   bool small_window() {
     std::cout << "Running " << __func__ << std::endl;
     std::vector<char> input;
@@ -687,6 +724,7 @@ namespace document_stream_tests {
            test_leading_spaces() &&
            simple_example() &&
            truncated_window() &&
+           truncated_window_unclosed_string_in_object() &&
            truncated_window_unclosed_string() &&
            issue1307() &&
            issue1308() &&

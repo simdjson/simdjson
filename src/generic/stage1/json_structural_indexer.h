@@ -234,15 +234,19 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
     }
     parser.n_structural_indexes = new_structural_indexes;
   } else if (partial == stage1_mode::streaming_final) {
-     if(have_unclosed_string) {
+    if(have_unclosed_string) {
       parser.n_structural_indexes--;
+      parser.n_structural_indexes = find_next_document_index(parser);
+      // This next line is critical, do not change it unless you understand what you are
+      // doing.
+      parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
       if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
         // We tolerate an unclosed string at the very end of the stream. Indeed, users
         // often load their data in bulk without being careful and they want us to ignore
         // the trailing garbage.
         return EMPTY;
       }
-     }
+    }
   }
   checker.check_eof();
   return checker.errors();

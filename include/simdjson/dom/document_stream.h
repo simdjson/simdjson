@@ -245,7 +245,6 @@ private:
   error_code error;
   size_t batch_start{0};
   size_t doc_index{};
-
 #ifdef SIMDJSON_THREADS_ENABLED
   /** Indicates whether we use threads. Note that this needs to be a constant during the execution of the parsing. */
   bool use_thread;

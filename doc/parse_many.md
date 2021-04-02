@@ -168,6 +168,7 @@ Tracking your position
 Some users would like to know where the document they parsed is in the input array of bytes.
 It is possible to do so by accessing directly the iterator and calling its `current_index()`
 method which reports the location (in bytes) of the current document in the input stream.
+You may also call the `source()` method to get a `std::string_view` instance on the document.
 
 Let us illustrate the idea with code:
 
@@ -182,6 +183,11 @@ Let us illustrate the idea with code:
         auto doc = *i;
         if(!doc.error()) {
           std::cout << "got full document at " << i.current_index() << std::endl;
+          std::cout << i.source() << std::endl;
+          count++;
+        } else {
+          std::cout << "got broken document at " << i.current_index() << std::endl;
+          return false;
         }
     }
     size_t index = i.current_index();
@@ -195,8 +201,11 @@ Let us illustrate the idea with code:
 This code will print:
 ```
 got full document at 0
+[1,2,3]
 got full document at 9
+{"1":1,"2":3,"4":4}
 got full document at 29
+[1,2,3]
 ```
 
 The last call to `i.current_index()` return the byte index 38, which is just beyond
@@ -207,11 +216,5 @@ Incomplete streams
 
 Some users may need to work with truncated streams while tracking their location in the stream.
 The same code, with the `current_index()` will work. These users need to be aware that the last
-document parsed may be in error if it is truncated.
-
-If the input ends with an unclosed string, the unclosed string is virtually removed. Its content
-is not checked.
-
-You can query `i.current_index()` after looping through the documents to see where
-the parsing ended: it should point just beyond the last document. If there was an unclosed string,
-the processing terminates before the unclosed string.
+document parsed may be in error if it is truncated. They may use the `source()` method to
+determine which content was parsed.
