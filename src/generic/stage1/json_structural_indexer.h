@@ -211,7 +211,8 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
    * starts with [, it should end with ]. If we enforce that rule, then we would get
    * ][[ which is invalid.
    *
-   *
+   * This is illustrated with the test array_iterate_unclosed_error() on the following input:
+   * R"({ "a": [,,)"
    **/
   parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);

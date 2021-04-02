@@ -30,10 +30,6 @@ bool contains(const char *pre, const char *str) {
     return (strstr(str, pre) != nullptr);
 }
 
- 
- 
- 
- 
 bool is_skip_listed(const char *name) {
   std::vector<const char*> white_list = {"fail36.json", "fail62.json", "fail63.json", "fail64.json"};
   for(const char* x : white_list) {
@@ -87,9 +83,7 @@ bool validate(const char *dirname) {
     for (int i = 0; i < c; i++) {
         const char *name = entry_list[i]->d_name;
         if (has_extension(name, extension1) || has_extension(name, extension2) || has_extension(name, extension3)) {
-            if(is_skip_listed(name)) {
-                continue;
-            } 
+            if(is_skip_listed(name)) { continue; }
 
             /*  Finding the file path  */
             printf("validating: file %s ", name);
@@ -111,7 +105,7 @@ bool validate(const char *dirname) {
                   error = doc.error();
                 }
             }
-            std::cout << "error status:  "<<error<<std::endl; 
+            std::cout << "error status:  " << error << std::endl;
             /* Check if the file is supposed to pass or not.  Print the results */
             if (contains("EXCLUDE", name)) {
                 // skipping
