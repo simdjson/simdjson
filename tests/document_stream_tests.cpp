@@ -412,6 +412,10 @@ namespace document_stream_tests {
         }
         count += 1;
     }
+    if(docs.truncated_bytes() != 0) {
+      std::cerr << "Unexpected truncation : " << docs.truncated_bytes() << std::endl;
+      return false;
+    }
     return count == 1;
   }
 #endif
@@ -437,6 +441,10 @@ namespace document_stream_tests {
     }
     if(count != 3) {
       std::cerr << "Expected to get three full documents " << std::endl;
+      return false;
+    }
+    if(stream.truncated_bytes() != 0) {
+      std::cerr << "Unexpected truncation : " << stream.truncated_bytes() << std::endl;
       return false;
     }
     size_t index = i.current_index();
@@ -476,6 +484,7 @@ namespace document_stream_tests {
     // The last JSON document is
     // intentionally truncated.
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2  )"_padded;
+    std::cout << "input size " << json.size() << std::endl;
     simdjson::dom::parser parser;
     size_t count = 0;
     simdjson::dom::document_stream stream;
@@ -496,14 +505,20 @@ namespace document_stream_tests {
       std::cerr << "Expected to get two full documents " << std::endl;
       return false;
     }
+    if(stream.truncated_bytes() == 0) {
+      std::cerr << "Expected truncation : " << stream.truncated_bytes() << std::endl;
+      return false;
+    }
+    if(stream.truncated_bytes() != 6) {
+      std::cerr << "Expected truncation of 6 bytes got " << stream.truncated_bytes() << std::endl;
+      return false;
+    }
     return true;
   }
 
   bool truncated_window_unclosed_string() {
     std::cout << "Running " << __func__ << std::endl;
-    // The last JSON document is intentionally truncated. In this instance, we use
-    // a truncated string which will create trouble since stage 1 will recognize the
-    // JSON as invalid and refuse to even start parsing.
+    // The last JSON document is intentionally truncated.
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} "intentionally unclosed string  )"_padded;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
@@ -527,15 +542,21 @@ namespace document_stream_tests {
       std::cerr << "You should have parsed two documents. I found " << counter << "." << std::endl;
       return false;
     }
+    if(stream.truncated_bytes() == 0) {
+      std::cerr << "Expected truncation : " << stream.truncated_bytes() << std::endl;
+      return false;
+    }
+    if(stream.truncated_bytes() != 32) {
+      std::cerr << "Expected truncation of 32 bytes got " << stream.truncated_bytes() << std::endl;
+      return false;
+    }
     return true;
   }
 
 
   bool truncated_window_unclosed_string_in_object() {
     std::cout << "Running " << __func__ << std::endl;
-    // The last JSON document is intentionally truncated. In this instance, we use
-    // a truncated string which will create trouble since stage 1 will recognize the
-    // JSON as invalid and refuse to even start parsing.
+    // The last JSON document is intentionally truncated.
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
@@ -557,6 +578,14 @@ namespace document_stream_tests {
     std::cout << "final index is " << i.current_index() << std::endl;
     if(counter != 2) {
       std::cerr << "You should have parsed two documents. I found " << counter << "." << std::endl;
+      return false;
+    }
+    if(stream.truncated_bytes() == 0) {
+      std::cerr << "Expected truncation : " << stream.truncated_bytes() << std::endl;
+      return false;
+    }
+    if(stream.truncated_bytes() != 39) {
+      std::cerr << "Expected truncation of 39 bytes got " << stream.truncated_bytes() << std::endl;
       return false;
     }
     return true;

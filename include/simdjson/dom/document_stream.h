@@ -87,7 +87,29 @@ public:
   simdjson_really_inline document_stream &operator=(document_stream &&other) noexcept = default;
 
   simdjson_really_inline ~document_stream() noexcept;
-
+  /**
+   * Returns the input size in bytes.
+   */
+  inline size_t size_in_bytes() const noexcept;
+  /**
+   * After iterating through the stream, this method
+   * returns the number of bytes that were not parsed at the end
+   * of the stream. If truncated_bytes() differs from zero,
+   * then the input was truncated maybe because incomplete JSON
+   * documents were found at the end of the stream. You
+   * may need to process the bytes in the interval [size_in_bytes()-truncated_bytes(), size_in_bytes()).
+   *
+   * You should only call truncated_bytes() after streaming through all
+   * documents, like so:
+   *
+   *   document_stream stream = parser.parse_many(json,window);
+   *   for(auto doc : stream) {
+   *      // do something with doc
+   *   }
+   *   size_t truncated = stream.truncated_bytes();
+   *
+   */
+  inline size_t truncated_bytes() const noexcept;
   /**
    * An iterator through a forward-only stream of documents.
    */

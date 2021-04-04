@@ -252,6 +252,13 @@ inline void document_stream::next() noexcept {
     error = parser->implementation->stage2_next(parser->doc);
   }
 }
+inline size_t document_stream::size_in_bytes() const noexcept {
+  return len;
+}
+
+inline size_t document_stream::truncated_bytes() const noexcept {
+  return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
+}
 
 inline size_t document_stream::next_batch_start() const noexcept {
   return batch_start + parser->implementation->structural_indexes[parser->implementation->n_structural_indexes];

@@ -150,7 +150,7 @@ simdjson_really_inline error_code scan() {
   // We pad beyond.
   // https://github.com/simdjson/simdjson/issues/906
   // See json_structural_indexer.h for an explanation.
-  *next_structural_index = len;
+  *next_structural_index = len; // assumed later in partial == stage1_mode::streaming_final
   next_structural_index[1] = len;
   next_structural_index[2] = 0;
   parser.n_structural_indexes = uint32_t(next_structural_index - parser.structural_indexes.get());
@@ -179,6 +179,13 @@ simdjson_really_inline error_code scan() {
     // document_stream instances allow people to know the JSON documents they are
     // parsing (see the iterator.source() method).
     parser.n_structural_indexes = find_next_document_index(parser);
+    // We store the initial n_structural_indexes so that the client can see
+    // whether we used truncation. If initial_n_structural_indexes == parser.n_structural_indexes,
+    // then this will query parser.structural_indexes[parser.n_structural_indexes] which is len,
+    // otherwise, it will copy some prior index.
+    parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
+    // This next line is critical, do not change it unless you understand what you are
+    // doing.
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (parser.n_structural_indexes == 0) { return EMPTY; }
   } else if(unclosed_string) { error = UNCLOSED_STRING; }

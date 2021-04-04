@@ -190,12 +190,7 @@ Let us illustrate the idea with code:
           return false;
         }
     }
-    size_t index = i.current_index();
-    if(index != 38) {
-      std::cerr << "Expected to stop after the three full documents " << std::endl;
-      std::cerr << "index = " << index << std::endl;
-      return false;
-    }
+
 ```
 
 This code will print:
@@ -208,14 +203,26 @@ got full document at 29
 [1,2,3]
 ```
 
-The last call to `i.current_index()` return the byte index 38, which is just beyond
-the last document.
 
 Incomplete streams
 -----------
 
-Some users may need to work with truncated streams while tracking their location in the stream.
-The same code, with the `current_index()` will work. These users need to be aware that the last
-document parsed may be in error if it is truncated. They may use the `source()` method to
-determine which content was parsed. In some instances, a truncated final document may be detected
-as a document in error.
+Some users may need to work with truncated streams. The simdjson may truncate documents at the very end of the stream that cannot possibly be valid JSON (e.g., they contain unclosed strings, unmatched brackets, unmatched braces). After iterating through the stream, you may query the `truncated_bytes()` method which tells you how many bytes were truncated. If the stream is made of full (whole) documents, then you should expect `truncated_bytes()` to return zero.
+
+
+Consider the following example where a truncated document (`{"key":"intentionally unclosed string  `) containing 39 bytes has been left within the stream. In such cases, the first two whole documents are parsed and returned, and the `truncated_bytes()` method returns 39.
+
+```C++
+    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    auto error = parser.parse_many(json,json.size()).get(stream);
+    if(error) { std::cerr << error << std::endl; return; }
+    for(auto doc : stream) {
+       std::cout << doc << std::endl;
+    }
+    std::cout << stream.truncated_bytes() << " bytes "<< std::endl; // returns 39 bytes
+```
+
+
+Importantly, you should only call `truncated_bytes()` after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet.

@@ -214,7 +214,7 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
    * This is illustrated with the test array_iterate_unclosed_error() on the following input:
    * R"({ "a": [,,)"
    **/
-  parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
+  parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len); // used later in partial == stage1_mode::streaming_final
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
   parser.next_structural_index = 0;
@@ -252,6 +252,11 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
     // document_stream instances allow people to know the JSON documents they are
     // parsing (see the iterator.source() method).
     parser.n_structural_indexes = find_next_document_index(parser);
+    // We store the initial n_structural_indexes so that the client can see
+    // whether we used truncation. If initial_n_structural_indexes == parser.n_structural_indexes,
+    // then this will query parser.structural_indexes[parser.n_structural_indexes] which is len,
+    // otherwise, it will copy some prior index.
+    parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
     // This next line is critical, do not change it unless you understand what you are
     // doing.
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
