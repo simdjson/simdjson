@@ -1,0 +1,71 @@
+name: Binary size with bloaty
+
+on: [push, pull_request]
+
+jobs:
+  bloat:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
+    runs-on: ubuntu-20.04
+    env:
+      cmakeflags: '-DCMAKE_BUILD_TYPE=Release -DSIMDJSON_BUILD_STATIC=On -DSIMDJSON_JUST_LIBRARY=On'
+    steps:
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.4
+        with:
+          cmake-version: '3.16.x'
+
+      - name: Fetch head
+        uses: actions/checkout@v2
+        with:
+          path: 'source-head'
+
+      - uses: actions/cache@v2
+        with:
+          path: source-head/dependencies/.cache
+          key: ${{ hashFiles('source-head/dependencies/CMakeLists.txt') }}
+
+      - name: Compile static lib for head ref
+        run: |
+          cmake -S source-head -B build-head ${{env.cmakeflags}} -DCMAKE_INSTALL_PREFIX=install-head
+          cmake --build build-head --target install
+      - name: Bloat analysis - absolute values
+        id: absolute
+        uses: pauldreik/bloaty-analyze@v1.0.1
+        with: # see https://github.com/marketplace/actions/bloaty-analyze for explanations what these do
+          file: install-head/lib/libsimdjson.a
+          rows: 0
+          resultsfile: 'bloaty-sizes.txt'
+      - name: Fetch base
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.base_ref }}
+          path: 'source-base'
+
+      - uses: actions/cache@v2
+        with:
+          path: source-base/dependencies/.cache
+          key: ${{ hashFiles('source-base/dependencies/CMakeLists.txt') }}
+
+      - name: Compile static lib for base ref
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          cmake -S source-base -B build-base ${{env.cmakeflags}} -DCMAKE_INSTALL_PREFIX=install-base
+          cmake --build build-base --target install
+      - name: Bloat analysis - diff
+        id: diff
+        uses: pauldreik/bloaty-analyze@v1.0.1
+        if: ${{ github.event_name == 'pull_request' }}
+        with: # see https://github.com/marketplace/actions/bloaty-analyze for explanations what these do
+          file: install-head/lib/libsimdjson.a
+          base-file: install-base/lib/libsimdjson.a
+          rows: 0
+          resultsfile: 'bloaty-diff.txt'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: bloaty
+          path: bloaty-*.txt
+          if-no-files-found: error
+
