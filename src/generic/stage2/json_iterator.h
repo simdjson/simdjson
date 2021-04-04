@@ -125,12 +125,12 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::walk_docum
   {
     auto value = advance();
 
-    // Make sure the outer hash or array is closed before continuing; otherwise, there are ways we
+    // Make sure the outer object or array is closed before continuing; otherwise, there are ways we
     // could get into memory corruption. See https://github.com/simdjson/simdjson/issues/906
     if (!STREAMING) {
       switch (*value) {
-        case '{': if (last_structural() != '}') { return TAPE_ERROR; }; break;
-        case '[': if (last_structural() != ']') { return TAPE_ERROR; }; break;
+        case '{': if (last_structural() != '}') { log_value("starting brace unmatched"); return TAPE_ERROR; }; break;
+        case '[': if (last_structural() != ']') { log_value("starting bracket unmatched"); return TAPE_ERROR; }; break;
       }
     }
 
