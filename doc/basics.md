@@ -772,10 +772,9 @@ void basics_treewalk_1() {
 Rewinding
 ----------
 
-In some instances, you may need to go through a document most than once. For that purpose, you may
-call the `rewind()` method on the document instance. It invalidates all values, objects and arrays
-that you have created so far, but it allows you to restart processing from the beginning without
-rescanning all of the input file again.
+In some instances, you may need to go through a document more than once. For that purpose, you may
+call the `rewind()` method on the document instance. It allows you to restart processing from the beginning without rescanning all of the input data again. It invalidates all values, objects and arrays
+that you have created so far.
 
 In the following example, we print on the screen the number of cars in the JSON input file
 before printout the data.
@@ -801,7 +800,7 @@ before printout the data.
   }
 ```
 
-Performance note: the On Demand front-end does not materializes the parsed numbers and other values. If you accessing everything twice, you may need to parse them twice. Thus the rewind functionality is
+Performance note: the On Demand front-end does not materialize the parsed numbers and other values. If you are accessing everything twice, you may need to parse them twice. Thus the rewind functionality is
 best suited for cases where the first pass only scans the structure of the document.
 
 Newline-Delimited JSON (ndjson) and JSON lines
