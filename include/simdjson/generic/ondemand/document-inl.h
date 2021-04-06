@@ -12,6 +12,10 @@ simdjson_really_inline document document::start(json_iterator &&iter) noexcept {
   return document(std::forward<json_iterator>(iter));
 }
 
+inline void document::rewind() noexcept {
+  iter.rewind();
+}
+
 simdjson_really_inline value_iterator document::resume_value_iterator() noexcept {
   return value_iterator(&iter, 1, iter.root_checkpoint());
 }
@@ -142,7 +146,11 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::docume
     )
 {
 }
-
+simdjson_really_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::rewind() noexcept {
+  if (error()) { return error(); }
+  first.rewind();
+  return SUCCESS;
+}
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();

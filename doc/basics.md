@@ -19,6 +19,7 @@ An overview of what you need to know to use simdjson, with examples.
   * [Error Handling Example](#error-handling-example)
   * [Exceptions](#exceptions)
 * [Tree Walking and JSON Element Types](#tree-walking-and-json-element-types)
+* [Rewinding](#rewinding)
 * [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
 * [Thread Safety](#thread-safety)
 * [Standard Compliance](#standard-compliance)
@@ -767,6 +768,38 @@ void basics_treewalk_1() {
   print_json(parser.load("twitter.json"));
 }
 ```
+
+Rewinding
+----------
+
+In some instances, you may need to go through a document most than once. For that purpose, you may
+call the `rewind()` method on the document instance. It invalidates all values, objects and arrays
+that you have created so far, but it allows you to restart processing from the beginning without
+rescanning all of the input file again.
+
+In the following example, we print on the screen the number of cars in the JSON input file
+before printout the data.
+
+```C++
+  ondemand::parser parser;
+  auto cars_json = R"( [
+    { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+    { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+    { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  ] )"_padded;
+
+  auto doc = parser.iterate(cars_json);
+  size_t count = 0;
+  for (ondemand::object car : doc) { count++; }
+  std::cout << "We have " << count << " cars.\n";
+  doc.rewind();
+  for (ondemand::object car : doc) {
+    cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
+  }
+```
+
+Performance note: the On Demand front-end does not materializes the parsed numbers and other values. If you accessing everything twice, you may need to parse them twice. Thus the rewind functionality is
+best suited for cases where the first pass only scans the structure of the document.
 
 Newline-Delimited JSON (ndjson) and JSON lines
 ----------------------------------------------
