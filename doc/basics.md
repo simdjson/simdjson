@@ -790,7 +790,10 @@ before printout the data.
 
   auto doc = parser.iterate(cars_json);
   size_t count = 0;
-  for (ondemand::object car : doc) { count++; }
+  for (ondemand::object car : doc) {
+    (void)car;  // to avoid warnings about unused variables
+    count++;
+  }
   std::cout << "We have " << count << " cars.\n";
   doc.rewind();
   for (ondemand::object car : doc) {
