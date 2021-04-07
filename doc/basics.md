@@ -193,6 +193,17 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > double y = doc["y"]; // The cursor is now after the 2 (at })
   > double x = doc["x"]; // Success: [] loops back around to find "x"
   > ```
+  >
+  > By default, the simdjson does not check that keys are unique. If you are concerned
+  > about repeated keys, you may use the `find_unique_field` method instead.
+    > ```c++
+  > ondemand::parser parser;
+  > auto json = R"(  { "x": 1, "y": 2, "y": 3 }  )"_padded;
+  > auto doc = parser.iterate(json);
+  > double x = doc.find_unique_field["x"]; // return 2
+  > double y = doc.find_unique_field["y"]; // will throw with NON_UNIQUE_FIELD error
+  > ```
+  > Users should be aware that `find_unique_field` could be significantly less performant.
 * **Array Iteration:** To iterate through an array, use `for (auto value : array) { ... }`. This will
   step through each value in the JSON array.
 

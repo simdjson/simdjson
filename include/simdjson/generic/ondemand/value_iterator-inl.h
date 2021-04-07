@@ -141,6 +141,13 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_unique_field_raw(const std::string_view key) noexcept {
+ /*
+
+  We could implement find_unique_field_raw by using solely
+  find_field_unordered_raw using the following code. Unfortunately,
+  in the worst case, it might involve checking all keys twice.
+
+  -----------------------------
   bool found;
   auto error = find_field_unordered_raw(key).get(found);
   // if we have an, then let us exit
@@ -155,10 +162,164 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   // if there is no error, we better find it again!
   SIMDJSON_ASSUME( found );
   token_position search2 = _json_iter->position();
-  if(search1 != search2) {
+  if(search1 != search2) { return NON_UNIQUE_FIELD; }
+  return true;
+
+  -----------------------------
+
+  Instead we copy/paste find_unique_field_raw and change the logic a bit.q
+  This suggest that we could improve elegance with a bit of reengineering.
+
+  */
+  error_code error;
+  bool has_value;
+  //
+  // Initially, the object can be in one of a few different places:
+  //
+  // 1. The start of the object, at the first field:
+  //
+  //    ```
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //      ^ (depth 2, index 1)
+  //    ```
+  //
+  if (at_first_field()) {
+    // If we're at the beginning of the object, we definitely have a field
+    has_value = true;
+
+  // 2. When a previous search did not yield a value or the object is empty:
+  //
+  //    ```
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                                     ^ (depth 0)
+  //    { }
+  //        ^ (depth 0, index 2)
+  //    ```
+  //
+  } else if (!is_open()) {
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+    // If we're past the end of the object, we're being iterated out of order.
+    // Note: this isn't perfect detection. It's possible the user is inside some other object; if so,
+    // this object iterator will blithely scan that object for fields.
+    if (_json_iter->depth() < depth() - 1) { return OUT_OF_ORDER_ITERATION; }
+#endif
+    has_value = false;
+
+  // 3. When a previous search found a field or an iterator yielded a value:
+  //
+  //    ```
+  //    // When a field was not fully consumed (or not even touched at all)
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //           ^ (depth 2)
+  //    // When a field was fully consumed
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                   ^ (depth 1)
+  //    // When the last field was fully consumed
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                                   ^ (depth 1)
+  //    ```
+  //
+  } else {
+    // Finish the previous value and see if , or } is next
+    if ((error = skip_child() )) { abandon(); return error; }
+    if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+    if (_json_iter->start_position(_depth) != _start_position) { return OUT_OF_ORDER_ITERATION; }
+#endif
+  }
+
+  // After initial processing, we will be in one of two states:
+  //
+  // ```
+  // // At the beginning of a field
+  // { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //   ^ (depth 1)
+  // { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                  ^ (depth 1)
+  // // At the end of the object
+  // { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                                  ^ (depth 0)
+  // ```
+  //
+
+  // First, we scan from that point to the end.
+  // then we loop back around, and scan from the beginning to that point.
+  token_position search_start = _json_iter->position();
+  token_position search_success = search_start;
+  size_t found_counter{0};
+
+  // Next, we find a match starting from the current position.
+  while (has_value) {
+    SIMDJSON_ASSUME( _json_iter->_depth == _depth ); // We must be at the start of a field
+
+    // Get the key and colon, stopping at the value.
+    raw_json_string actual_key;
+    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+
+    if ((error = field_key().get(actual_key) )) { abandon(); return error; };
+    if ((error = field_value() )) { abandon(); return error; }
+
+    // If it matches, stop and return
+    // We could do it this way if we wanted to allow arbitrary
+    // key content (including escaped quotes).
+    // if (actual_key.unsafe_is_equal(max_key_length, key)) {
+    // Instead we do the following which may trigger buffer overruns if the
+    // user provides an adversarial key (containing a well placed unescaped quote
+    // character and being longer than the number of bytes remaining in the JSON
+    // input).
+    if (actual_key.unsafe_is_equal(key)) {
+      found_counter++;
+      search_success = _json_iter->position();
+      logger::log_event(*this, "match", key, -2);
+    }
+
+    SIMDJSON_TRY( skip_child() );
+    if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
+  }
+
+  // If we reach the end without finding a match, search the rest of the fields starting at the
+  // beginning of the object.
+  // (We have already run through the object before, so we've already validated its structure. We
+  // don't check errors in this bit.)
+  _json_iter->reenter_child(_start_position + 1, _depth);
+
+  has_value = started_object();
+  while (_json_iter->position() < search_start) {
+    SIMDJSON_ASSUME(has_value); // we should reach search_start before ever reaching the end of the object
+    SIMDJSON_ASSUME( _json_iter->_depth == _depth ); // We must be at the start of a field
+
+    // Get the key and colon, stopping at the value.
+    raw_json_string actual_key;
+    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+
+    error = field_key().get(actual_key); SIMDJSON_ASSUME(!error);
+    error = field_value(); SIMDJSON_ASSUME(!error);
+
+    // If it matches, stop and return
+    // We could do it this way if we wanted to allow arbitrary
+    // key content (including escaped quotes).
+    // if (actual_key.unsafe_is_equal(max_key_length, key)) {
+    // Instead we do the following which may trigger buffer overruns if the
+    // user provides an adversarial key (containing a well placed unescaped quote
+    // character and being longer than the number of bytes remaining in the JSON
+    // input).
+    if (actual_key.unsafe_is_equal(key)) {
+      found_counter++;
+      logger::log_event(*this, "match", key, -2);
+      search_success = _json_iter->position();
+    }
+
+    SIMDJSON_TRY( skip_child() );
+    error = has_next_field().get(has_value); SIMDJSON_ASSUME(!error);
+  }
+  if(found_counter == 0) {
+    return false;
+  } else if(found_counter > 1) {
     return NON_UNIQUE_FIELD;
   }
+  _json_iter->reenter_child(search_success, _depth + 1);
   return true;
+
 }
 
 

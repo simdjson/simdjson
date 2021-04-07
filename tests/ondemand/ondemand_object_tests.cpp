@@ -9,7 +9,7 @@ namespace object_tests {
   bool find_unique_really_unique() {
     TEST_START();
     simdjson::ondemand::parser parser;
-    simdjson::padded_string docdata =  R"([{"a":"1", "b":"2"},{}])"_padded;
+    simdjson::padded_string docdata =  R"([{"a":1, "b":2},{}])"_padded;
     simdjson::ondemand::document doc;
     auto error = parser.iterate(docdata).get(doc);
     if(error != simdjson::SUCCESS) { return false; }
@@ -18,9 +18,11 @@ namespace object_tests {
     if(error != simdjson::SUCCESS) { return false; }
     size_t counter{0};
     for(auto elem : a) {
-      error = elem.find_unique_field("a").error();
+      int64_t v;
+      error = elem.find_unique_field("a").get(v);
       if(counter == 0) {
         ASSERT_EQUAL( error, simdjson::SUCCESS);
+        ASSERT_EQUAL( v, 1);
       } else {
         ASSERT_EQUAL( error, simdjson::NO_SUCH_FIELD);
       }
@@ -38,7 +40,7 @@ namespace object_tests {
   bool find_unique_not_really_unique() {
     TEST_START();
     simdjson::ondemand::parser parser;
-    simdjson::padded_string docdata =  R"([{"a":"1", "a":"2"},{}])"_padded;
+    simdjson::padded_string docdata =  R"([{"a":1, "b":3, "a":2},{"b":4}])"_padded;
     simdjson::ondemand::document doc;
     auto error = parser.iterate(docdata).get(doc);
     if(error != simdjson::SUCCESS) { return false; }
@@ -53,13 +55,15 @@ namespace object_tests {
       } else {
         ASSERT_EQUAL( error, simdjson::NO_SUCH_FIELD);
       }
-      error = elem.find_unique_field("b").error();
-      ASSERT_EQUAL( error, simdjson::NO_SUCH_FIELD);
+      int64_t v;
+      error = elem.find_unique_field("b").get(v);
+      ASSERT_EQUAL( error, simdjson::SUCCESS);
+      ASSERT_EQUAL( v, 3+counter);
+
       counter++;
     }
     return true;
   }
-
 
   // In this test, no non-trivial object in an array have a missing key
   bool no_missing_keys() {
@@ -107,6 +111,39 @@ namespace object_tests {
   }
 
 #if SIMDJSON_EXCEPTIONS
+  bool basic_find_field_example() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = R"(  { "x": 1, "y": 2 }  )"_padded;
+    auto doc = parser.iterate(json);
+    double y = doc.find_field("y"); // The cursor is now after the 2 (at })
+    ASSERT_EQUAL( y, 2);
+    return true;
+  }
+  bool basic_bracket_example() {
+    ondemand::parser parser;
+    auto json = R"(  { "x": 1, "y": 2 }  )"_padded;
+    auto doc = parser.iterate(json);
+    double y = doc["y"]; // The cursor is now after the 2 (at })
+    double x = doc["x"]; // Success: [] loops back around to find "x"
+    ASSERT_EQUAL( x, 1);
+    ASSERT_EQUAL( y, 2);
+    return true;
+  }
+
+  bool basic_find_unique_field_example() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = R"(  { "x": 1, "y": 2, "y": 3 }  )"_padded;
+    auto doc = parser.iterate(json);
+    double x = doc.find_unique_field("x"); // return 2
+    ASSERT_EQUAL( x, 1);
+    double y;
+    auto error = doc.find_unique_field("y").get(y); // will throw with NON_UNIQUE_FIELD error
+    ASSERT_EQUAL( error, simdjson::NON_UNIQUE_FIELD);
+    return true;
+  }
+
   // used in issue_1521
   // difficult to use as a lambda because it is recursive.
   void broken_descend(ondemand::object node) {
@@ -1068,6 +1105,9 @@ namespace object_tests {
            no_missing_keys() &&
            missing_keys() &&
 #if SIMDJSON_EXCEPTIONS
+           basic_find_field_example() &&
+           basic_bracket_example() &&
+           basic_find_unique_field_example() &&
            fixed_broken_issue_1521() &&
            issue_1521() &&
            broken_issue_1521() &&
@@ -1102,3 +1142,12 @@ namespace object_tests {
 int main(int argc, char *argv[]) {
   return test_main(argc, argv, object_tests::run);
 }
+  bool basic_find_field_example() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = R"(  { "x": 1, "y": 2 }  )"_padded;
+    auto doc = parser.iterate(json);
+    double y = doc.find_field("y"); // The cursor is now after the 2 (at })
+    ASSERT_EQUAL( y, 2);
+    return true;
+  }
