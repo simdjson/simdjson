@@ -178,6 +178,10 @@ public:
    * fail to match some keys with escapes (\u, \n, etc.).
    */
   simdjson_warn_unused simdjson_really_inline simdjson_result<bool> find_field_raw(const std::string_view key) noexcept;
+  /**
+   * Much like find_field, but report an error in case a duplicated key is found.
+   */
+  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> find_unique_field_raw(const std::string_view key) noexcept;
 
   /**
    * Find the field with the given key without regard to order, and *without* unescaping.

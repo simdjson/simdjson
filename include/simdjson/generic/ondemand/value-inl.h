@@ -102,7 +102,12 @@ simdjson_really_inline simdjson_result<value> value::find_field(std::string_view
 simdjson_really_inline simdjson_result<value> value::find_field(const char *key) noexcept {
   return start_or_resume_object().find_field(key);
 }
-
+simdjson_really_inline simdjson_result<value> value::find_unique_field(std::string_view key) noexcept {
+  return start_or_resume_object().find_unique_field(key);
+}
+simdjson_really_inline simdjson_result<value> value::find_unique_field(const char *key) noexcept {
+  return start_or_resume_object().find_unique_field(key);
+}
 simdjson_really_inline simdjson_result<value> value::find_field_unordered(std::string_view key) noexcept {
   return start_or_resume_object().find_field_unordered(key);
 }
@@ -162,6 +167,15 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::find_field(const char *key) noexcept {
   if (error()) { return error(); }
   return first.find_field(key);
+}
+
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::find_unique_field(std::string_view key) noexcept {
+  if (error()) { return error(); }
+  return first.find_unique_field(key);
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::find_unique_field(const char *key) noexcept {
+  if (error()) { return error(); }
+  return first.find_unique_field(key);
 }
 
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::find_field_unordered(std::string_view key) noexcept {

@@ -32,7 +32,18 @@ simdjson_really_inline simdjson_result<value> object::find_field(const std::stri
   if (!has_value) { return NO_SUCH_FIELD; }
   return value(iter.child());
 }
-
+simdjson_really_inline simdjson_result<value> object::find_unique_field(const std::string_view key) & noexcept {
+  bool has_value;
+  SIMDJSON_TRY( iter.find_unique_field_raw(key).get(has_value) );
+  if (!has_value) { return NO_SUCH_FIELD; }
+  return value(iter.child());
+}
+simdjson_really_inline simdjson_result<value> object::find_unique_field(const std::string_view key) && noexcept {
+  bool has_value;
+  SIMDJSON_TRY( iter.find_unique_field_raw(key).get(has_value) );
+  if (!has_value) { return NO_SUCH_FIELD; }
+  return value(iter.child());
+}
 simdjson_really_inline simdjson_result<object> object::start(value_iterator &iter) noexcept {
   // We don't need to know if the object is empty to start iteration, but we do want to know if there
   // is an error--thus `simdjson_unused`.
@@ -110,6 +121,14 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::find_field(std::string_view key) && noexcept {
   if (error()) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object>(first).find_field(key);
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::find_unique_field(std::string_view key) & noexcept {
+  if (error()) { return error(); }
+  return first.find_unique_field(key);
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::find_unique_field(std::string_view key) && noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object>(first).find_unique_field(key);
 }
 
 } // namespace simdjson

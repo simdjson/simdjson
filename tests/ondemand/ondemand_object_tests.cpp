@@ -6,6 +6,61 @@ using namespace simdjson;
 namespace object_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
+  bool find_unique_really_unique() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata =  R"([{"a":"1", "b":"2"},{}])"_padded;
+    simdjson::ondemand::document doc;
+    auto error = parser.iterate(docdata).get(doc);
+    if(error != simdjson::SUCCESS) { return false; }
+    simdjson::ondemand::array a;
+    error = doc.get_array().get(a);
+    if(error != simdjson::SUCCESS) { return false; }
+    size_t counter{0};
+    for(auto elem : a) {
+      error = elem.find_unique_field("a").error();
+      if(counter == 0) {
+        ASSERT_EQUAL( error, simdjson::SUCCESS);
+      } else {
+        ASSERT_EQUAL( error, simdjson::NO_SUCH_FIELD);
+      }
+      error = elem.find_unique_field("b").error();
+      if(counter == 0) {
+        ASSERT_EQUAL( error, simdjson::SUCCESS);
+      } else {
+        ASSERT_EQUAL( error, simdjson::NO_SUCH_FIELD);
+      }
+      counter++;
+    }
+    return true;
+  }
+
+  bool find_unique_not_really_unique() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata =  R"([{"a":"1", "a":"2"},{}])"_padded;
+    simdjson::ondemand::document doc;
+    auto error = parser.iterate(docdata).get(doc);
+    if(error != simdjson::SUCCESS) { return false; }
+    simdjson::ondemand::array a;
+    error = doc.get_array().get(a);
+    if(error != simdjson::SUCCESS) { return false; }
+    size_t counter{0};
+    for(auto elem : a) {
+      error = elem.find_unique_field("a").error();
+      if(counter == 0) {
+        ASSERT_EQUAL( error, simdjson::NON_UNIQUE_FIELD);
+      } else {
+        ASSERT_EQUAL( error, simdjson::NO_SUCH_FIELD);
+      }
+      error = elem.find_unique_field("b").error();
+      ASSERT_EQUAL( error, simdjson::NO_SUCH_FIELD);
+      counter++;
+    }
+    return true;
+  }
+
+
   // In this test, no non-trivial object in an array have a missing key
   bool no_missing_keys() {
     TEST_START();
@@ -1008,6 +1063,8 @@ namespace object_tests {
 
   bool run() {
     return
+           find_unique_really_unique() &&
+           find_unique_not_really_unique() &&
            no_missing_keys() &&
            missing_keys() &&
 #if SIMDJSON_EXCEPTIONS

@@ -237,6 +237,16 @@ public:
   simdjson_really_inline simdjson_result<value> find_field(const char *key) & noexcept;
 
   /**
+   * Look up a field by name on an object. This function is similar to find_field_unordered but
+   * returns a NON_UNIQUE_FIELD if the key appears more than once.
+   *
+   * @param key The key to look up.
+   * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object, or NON_UNIQUE_FIELD if the key appears more than once.
+   */
+  simdjson_really_inline simdjson_result<value> find_unique_field(std::string_view key) & noexcept;
+  /** @overload simdjson_really_inline simdjson_result<value> find_unique_field(std::string_view key) & noexcept; */
+  simdjson_really_inline simdjson_result<value> find_unique_field(const char *key) & noexcept;
+  /**
    * Look up a field by name on an object, without regard to key order.
    *
    * **Performance Notes:** This is a bit less performant than find_field(), though its effect varies
@@ -369,6 +379,8 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field(const char *key) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_unique_field(std::string_view key) & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_unique_field(const char *key) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(const char *key) & noexcept;
 

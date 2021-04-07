@@ -139,6 +139,29 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   return false;
 }
 
+
+simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_unique_field_raw(const std::string_view key) noexcept {
+  bool found;
+  auto error = find_field_unordered_raw(key).get(found);
+  // if we have an, then let us exit
+  if(error) { return error; }
+  // if the key is not found, we return false
+  if(!found) { return false; }
+  token_position search1 = _json_iter->position();
+
+  // search again
+  error = find_field_unordered_raw(key).get(found);
+  if(error) { return error; }
+  // if there is no error, we better find it again!
+  SIMDJSON_ASSUME( found );
+  token_position search2 = _json_iter->position();
+  if(search1 != search2) {
+    return NON_UNIQUE_FIELD;
+  }
+  return true;
+}
+
+
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_field_unordered_raw(const std::string_view key) noexcept {
   error_code error;
   bool has_value;
