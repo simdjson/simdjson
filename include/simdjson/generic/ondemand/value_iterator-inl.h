@@ -483,6 +483,10 @@ simdjson_warn_unused simdjson_really_inline error_code value_iterator::field_val
 
   if (*_json_iter->advance() != ':') { return _json_iter->report_error(TAPE_ERROR, "Missing colon in object field"); }
   _json_iter->descend_to(depth()+1);
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+  // any child of the object must occur >= _start_position.
+  _json_iter->set_start_position(depth()+1, _start_position);
+#endif
   return SUCCESS;
 }
 

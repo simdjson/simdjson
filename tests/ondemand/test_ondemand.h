@@ -74,7 +74,8 @@ int test_main(int argc, char *argv[], const F& test_function) {
   // std::cout << "Running tests against this implementation: " << simdjson::active_implementation->name();
   // Rather, we want to display builtin_implementation()->name().
   // In practice, by default, we often end up testing against fallback.
-  std::cout << "builtin_implementation -- " << simdjson::builtin_implementation()->name() << std::endl;
+  std::cout << "builtin_implementation (on demand front-end) -- " << simdjson::builtin_implementation()->name() << std::endl;
+  std::cout << "active_implementation (stage 1, with runtime dispatch) -- " << simdjson::active_implementation->name() << std::endl;
   std::cout << "------------------------------------------------------------" << std::endl;
 
   std::cout << "Running tests." << std::endl;
