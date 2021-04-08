@@ -119,8 +119,7 @@ bool using_the_parsed_json_rewind() {
 
   auto doc = parser.iterate(cars_json);
   size_t count = 0;
-  for (ondemand::object car : doc) {
-    (void)car;  // to avoid warnings about unused variables
+  for (simdjson_unused ondemand::object car : doc) {
     count++;
   }
   std::cout << "We have " << count << " cars.\n";
