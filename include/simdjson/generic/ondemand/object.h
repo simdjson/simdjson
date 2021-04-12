@@ -18,7 +18,11 @@ public:
 
   simdjson_really_inline simdjson_result<object_iterator> begin() noexcept;
   simdjson_really_inline simdjson_result<object_iterator> end() noexcept;
-
+  /**
+   * Reset the iterator inside the object instance so we are pointing back at the
+   * beginning of the object, as if it had just been created.
+   */
+  inline void rewind() noexcept;
   /**
    * Look up a field by name on an object (order-sensitive).
    *

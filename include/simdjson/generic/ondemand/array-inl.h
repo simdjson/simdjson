@@ -45,6 +45,10 @@ simdjson_really_inline array::array(const value_iterator &_iter) noexcept
 {
 }
 
+inline void array::rewind() noexcept {
+  iter.rewind_array();
+}
+
 simdjson_really_inline simdjson_result<array> array::start(value_iterator &iter) noexcept {
   // We don't need to know if the array is empty to start iteration, but we do want to know if there
   // is an error--thus `simdjson_unused`.

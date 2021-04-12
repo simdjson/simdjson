@@ -25,8 +25,6 @@ protected:
   depth_t _depth{};
   /**
    * The starting token index for this value
-   *
-   * PERF NOTE: this is a safety check; we expect this to be elided in release builds.
    */
   token_position _start_position{};
 
@@ -284,6 +282,12 @@ public:
   /** @} */
 
 protected:
+  /**
+   * When the value is an array or an object, we reset it to its beginning.
+   */
+  inline void rewind_object() noexcept;
+  inline void rewind_array() noexcept;
+
   simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept;
 
   simdjson_really_inline bool parse_null(const uint8_t *json) const noexcept;

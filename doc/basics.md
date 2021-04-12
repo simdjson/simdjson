@@ -799,6 +799,22 @@ before printout the data.
   }
 ```
 
+You may also rewind arrays and objects, as in the following example:
+
+```C++
+  auto doc = parser.iterate(cars_json);
+  ondemand::array doc_array = doc;
+  size_t count = 0;
+  for (simdjson_unused ondemand::object car : doc_array) {
+    count++;
+  }
+  std::cout << "We have " << count << " cars.\n";
+  doc_array.rewind();
+  for (ondemand::object car : doc_array) {
+    cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
+  }
+```
+
 Performance note: the On Demand front-end does not materialize the parsed numbers and other values. If you are accessing everything twice, you may need to parse them twice. Thus the rewind functionality is
 best suited for cases where the first pass only scans the structure of the document.
 
