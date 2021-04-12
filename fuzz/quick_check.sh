@@ -23,8 +23,10 @@ done
 
 #download the corpus if it does not already exist
 if [ ! -d out ] ; then
-  wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
-  tar xf corpus.tar && rm corpus.tar
+  # ideally, we would download the github artifact but that requires being logged in which can not
+  # easily be fixed from this shell script.
+  echo "NOTE! please go to the artifacts page on https://github.com/simdjson/simdjson/actions/workflows/fuzzers.yml and download the latest corpus.tar.zip artifact manually to speed up fuzzing"
+  sleep 5s
 fi
 
 # By default, use the debug friendly variant since this script is intended
