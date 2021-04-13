@@ -64,10 +64,14 @@ if (NOT CMAKE_BUILD_TYPE)
   endif()
 endif()
 
-if(MSVC)
-  option(SIMDJSON_BUILD_STATIC "Build a static library" ON) # turning it on disables the production of a dynamic library
-else()
-  option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
+option(SIMDJSON_BUILD_STATIC "Build a static library" ON)
+if(BUILD_SHARED_LIBS)
+  MESSAGE( STATUS "BUILD_SHARED_LIBS: " ${BUILD_SHARED_LIBS})
+  MESSAGE( STATUS "Building a shared library by request. ")
+  set(SIMDJSON_BUILD_STATIC OFF)
+endif()
+
+if(NOT MSVC)
   option(SIMDJSON_USE_LIBCPP "Use the libc++ library" OFF)
 endif()
 
