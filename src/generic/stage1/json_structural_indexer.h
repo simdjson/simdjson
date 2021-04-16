@@ -31,8 +31,56 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-    int cnt = static_cast<int>(count_ones(bits));
+#if defined(SIMDJSON_PREFER_REVERSE_BITS)
+    /**
+     * ARM lacks a fast trailing zero instruction, but it has a fast
+     * bit reversal instruction and a fast leading zero instruction.
+     * Thus it may be profitable to reverse the bits (once) and then
+     * to rely on a sequence of instructions that call the leading
+     * zero instruction.
+     */
 
+    uint64_t rev_bits = reverse_bits(bits);
+    int cnt = static_cast<int>(count_ones(bits));
+    int i = 0;
+    // Do the first 8 all together
+    for (; i<8; i++) {
+      int lz = leading_zeroes(rev_bits);
+      this->tail[i] = static_cast<uint32_t>(idx) + lz;
+      rev_bits = rev_bits ^ (uint64_t(0x8000000000000000) >> lz);
+    }
+    // Do the next 8 all together (we hope in most cases it won't happen at all
+    // and the branch is easily predicted).
+    if (simdjson_unlikely(cnt > 8)) {
+      i = 8;
+      for (; i<16; i++) {
+        int lz = leading_zeroes(rev_bits);
+        this->tail[i] = static_cast<uint32_t>(idx) + lz;
+        rev_bits = rev_bits ^ (uint64_t(0x8000000000000000) >> lz);
+      }
+
+
+      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
+      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
+      // or the start of a value ("abc" true 123) every four characters.
+      if (simdjson_unlikely(cnt > 16)) {
+        i = 16;
+        while (rev_bits != 0) {
+          int lz = leading_zeroes(rev_bits);
+          this->tail[i++] = static_cast<uint32_t>(idx) + lz;
+          rev_bits = rev_bits ^ (uint64_t(0x8000000000000000) >> lz);
+        }
+      }
+    }
+    this->tail += cnt;
+#else // SIMDJSON_PREFER_REVERSE_BITS
+    /**
+     * Under recent x64 systems, we often have both a fast trailing zero
+     * instruction and a fast 'clear-lower-bit' instruction so the following
+     * algorithm can be competitive.
+     */
+
+    int cnt = static_cast<int>(count_ones(bits));
     // Do the first 8 all together
     for (int i=0; i<8; i++) {
       this->tail[i] = idx + trailing_zeroes(bits);
@@ -61,6 +109,7 @@ public:
     }
 
     this->tail += cnt;
+#endif
   }
 };
 
