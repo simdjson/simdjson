@@ -31,32 +31,44 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-#if defined(SIMDJSON_PREFER_REVERSE_BITS)
+#if defined(SIMDJSON_PREFER_LEADING_ZEROS)
     /**
      * ARM lacks a fast trailing zero instruction, but it has a fast
      * bit reversal instruction and a fast leading zero instruction.
-     * Thus it may be profitable to reverse the bits (once) and then
-     * to rely on a sequence of instructions that call the leading
-     * zero instruction.
      */
-
-    uint64_t rev_bits = reverse_bits(bits);
+    uint64_t lowest = 0;
     int cnt = static_cast<int>(count_ones(bits));
     int i = 0;
     // Do the first 8 all together
     for (; i<8; i++) {
-      int lz = leading_zeroes(rev_bits);
-      this->tail[i] = static_cast<uint32_t>(idx) + lz;
-      rev_bits = rev_bits ^ (uint64_t(0x8000000000000000) >> lz);
+      // we make a 'copy' of lowest, but it should not be compiled as a copy
+      uint64_t tmp = lowest;
+      // the next two line can execute at the same time
+      lowest = (lowest - bits);
+      bits = (bits - tmp);
+      // then we finish updating 'lowest', in a second cycle
+      lowest &= bits;
+      // We are now reading to loop back again since lowest and bits have both
+      // been updated (in 2 cycles).
+      uint32_t lz = static_cast<uint32_t>(leading_zeroes(lowest));
+      this->tail[i] = idx + 63 - lz;
     }
     // Do the next 8 all together (we hope in most cases it won't happen at all
     // and the branch is easily predicted).
     if (simdjson_unlikely(cnt > 8)) {
       i = 8;
       for (; i<16; i++) {
-        int lz = leading_zeroes(rev_bits);
-        this->tail[i] = static_cast<uint32_t>(idx) + lz;
-        rev_bits = rev_bits ^ (uint64_t(0x8000000000000000) >> lz);
+        // we make a 'copy' of lowest, but it should not be compiled as a copy
+        uint64_t tmp = lowest;
+        // the next two line can execute at the same time
+        lowest = (lowest - bits);
+        bits = (bits - tmp);
+        // then we finish updating 'lowest', in a second cycle
+        lowest &= bits;
+        // We are now reading to loop back again since lowest and bits have both
+        // been updated (in 2 cycles).
+        uint32_t lz = static_cast<uint32_t>(leading_zeroes(lowest));
+        this->tail[i] = idx + 63 - lz;
       }
 
 
@@ -65,10 +77,18 @@ public:
       // or the start of a value ("abc" true 123) every four characters.
       if (simdjson_unlikely(cnt > 16)) {
         i = 16;
-        while (rev_bits != 0) {
-          int lz = leading_zeroes(rev_bits);
-          this->tail[i++] = static_cast<uint32_t>(idx) + lz;
-          rev_bits = rev_bits ^ (uint64_t(0x8000000000000000) >> lz);
+        while (bits != 0) {
+          // we make a 'copy' of lowest, but it should not be compiled as a copy
+          uint64_t tmp = lowest;
+          // the next two line can execute at the same time
+          lowest = (lowest - bits);
+          bits = (bits - tmp);
+          // then we finish updating 'lowest', in a second cycle
+          lowest &= bits;
+          // We are now reading to loop back again since lowest and bits have both
+          // been updated (in 2 cycles).
+          uint32_t lz = static_cast<uint32_t>(leading_zeroes(lowest));
+          this->tail[i] = idx + 63 - lz;
         }
       }
     }
