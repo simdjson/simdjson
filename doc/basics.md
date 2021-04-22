@@ -48,7 +48,7 @@ c++ myproject.cpp simdjson.cpp
 ```
 
 Note:
-- Users on macOS and other platforms were default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ -std=c++17 myproject.cpp simdjson.cpp`).
+- Users on macOS and other platforms where default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ -std=c++17 myproject.cpp simdjson.cpp`).
 
 Using simdjson with package managers
 ------------------
