@@ -1,6 +1,6 @@
 include_directories( . linux )
 link_libraries(simdjson-windows-headers test-data)
-link_libraries(simdjson simdjson-flags)
+link_libraries(simdjson)
 
 add_executable(benchfeatures benchfeatures.cpp)
 add_executable(get_corpus_benchmark get_corpus_benchmark.cpp)
