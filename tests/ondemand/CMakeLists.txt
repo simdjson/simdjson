@@ -30,4 +30,4 @@ if(MSVC AND BUILD_SHARED_LIBS)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake -E copy_if_different..."
         "$<TARGET_FILE:simdjson>"      # <--this is in-file
         "$<TARGET_FILE_DIR:ondemand_parse_api_tests>")                 # <--this is out-file path
-endif(MSVC)
+endif(MSVC AND BUILD_SHARED_LIBS)
