@@ -8,6 +8,10 @@ add_subdirectory(ondemand)
 # All remaining tests link with simdjson proper
 link_libraries(simdjson)
 
+add_cpp_test(unicode_tests       LABELS dom acceptance per_implementation)
+add_cpp_test(minify_tests        LABELS other acceptance per_implementation)
+add_cpp_test(padded_string_tests LABELS other acceptance                   )
+
 if(MSVC AND BUILD_SHARED_LIBS)
   # Copy the simdjson dll into the tests directory
   add_custom_command(TARGET unicode_tests POST_BUILD        # Adds a post-build event
@@ -15,11 +19,6 @@ if(MSVC AND BUILD_SHARED_LIBS)
         "$<TARGET_FILE:simdjson>"      # <--this is in-file
         "$<TARGET_FILE_DIR:unicode_tests>")                 # <--this is out-file path
 endif()
-
-add_cpp_test(unicode_tests       LABELS dom acceptance per_implementation)
-add_cpp_test(minify_tests        LABELS other acceptance per_implementation)
-add_cpp_test(padded_string_tests LABELS other acceptance                   )
-
 
 # This tests validates that the implementation is what we think it is if we get passed
 # SIMDJSON_FORCE_IMPLEMENTATION, so we know we're testing what we think we're testing
