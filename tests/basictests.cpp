@@ -124,17 +124,17 @@ namespace number_tests {
 
   bool powers_of_two() {
     std::cout << __func__ << std::endl;
-    char buf[1024];
+    std::vector<char> buf(1024);
     simdjson::dom::parser parser;
     for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
       double expected = pow(2, i);
-      size_t n = snprintf(buf, sizeof(buf), "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
-      if (n >= sizeof(buf)) { abort(); }
+      size_t n = snprintf(buf.data(), buf.size(), "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
+      if (n >= buf.size()) { abort(); }
       double actual;
-      auto error = parser.parse(buf, n).get(actual);
+      auto error = parser.parse(buf.data(), n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
       if(actual!=expected) {
-        std::cerr << "JSON '" << buf << " parsed to ";
+        std::cerr << "JSON '" << buf.data() << " parsed to ";
         fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
         SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
         return false;
@@ -218,7 +218,7 @@ namespace number_tests {
 
   bool powers_of_ten() {
     std::cout << __func__ << std::endl;
-    char buf[1024];
+    std::vector<char> buf(1024);
     simdjson::dom::parser parser;
 
     bool is_pow_correct{1e-308 == std::pow(10,-308)};
@@ -227,14 +227,14 @@ namespace number_tests {
       std::cout << "On your system, the pow function is busted. Sorry about that. " << std::endl;
     }
     for (int i = start_point; i <= 308; ++i) {// large negative values should be zero.
-      size_t n = snprintf(buf, sizeof(buf), "1e%d", i);
-      if (n >= sizeof(buf)) { abort(); }
+      size_t n = snprintf(buf.data(), buf.size(), "1e%d", i);
+      if (n >= buf.size()) { abort(); }
       double actual;
-      auto error = parser.parse(buf, n).get(actual);
+      auto error = parser.parse(buf.data(), n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
       double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
       if(actual!=expected) {
-        std::cerr << "JSON '" << buf << " parsed to ";
+        std::cerr << "JSON '" << buf.data() << " parsed to ";
         fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
         SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
         return false;
@@ -496,6 +496,28 @@ namespace parse_api_tests {
     ASSERT_SUCCESS( parser.load(TWITTER_JSON).get(object) );
     return true;
   }
+
+  bool parser_load_empty() {
+    std::cout << "Running " << __func__ << std::endl;
+    FILE *p;
+    const char *const tmpfilename = "empty.txt";
+    if((p = fopen(tmpfilename, "w")) != nullptr) {
+      fclose(p);
+      dom::parser parser;
+      simdjson::dom::element doc;
+      auto error = parser.load(tmpfilename).get(doc);
+      remove(tmpfilename);
+      if(error != simdjson::EMPTY) {
+        std::cerr << "Was expecting empty but got " << error << std::endl;
+        return false;
+      }
+    } else {
+      std::cout << "Warning: I could not create temporary file " << tmpfilename << std::endl;
+      std::cout << "We omit testing the empty file case." << std::endl;
+    }
+    return true;
+  }
+
   bool parser_load_many() {
     std::cout << "Running " << __func__ << " on " << AMAZON_CELLPHONES_NDJSON << std::endl;
     dom::parser parser;
@@ -583,7 +605,8 @@ namespace parse_api_tests {
 #endif
 
   bool run() {
-    return parser_moving_parser() &&
+    return parser_load_empty() &&
+           parser_moving_parser() &&
            parser_parse() &&
            parser_parse_many() &&
 #ifdef SIMDJSON_ENABLE_DEPRECATED_API
@@ -2126,7 +2149,7 @@ int main(int argc, char *argv[]) {
   }
   // We want to know what we are testing.
   std::cout << "Running tests against this implementation: " << simdjson::active_implementation->name();
-  std::cout << "(" << simdjson::active_implementation->description() << ")" << std::endl;
+  std::cout << " (" << simdjson::active_implementation->description() << ")" << std::endl;
   std::cout << "------------------------------------------------------------" << std::endl;
 
   std::cout << "Running basic tests." << std::endl;

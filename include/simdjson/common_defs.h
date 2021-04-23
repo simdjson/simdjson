@@ -257,6 +257,23 @@ namespace std {
 // TODO remove before 1.0
 #ifndef __SIMDJSON_CHECK_EOF
 #define __SIMDJSON_CHECK_EOF 1
-#endif
+#endif // __SIMDJSON_CHECK_EOF
+
+#if SIMDJSON_CPLUSPLUS17
+// if we have C++, then fallthrough is a default attribute
+# define simdjson_fallthrough [[fallthrough]]
+// check if we have __attribute__ support
+#elif defined(__has_attribute)
+// check if we have the __fallthrough__ attribute
+#if __has_attribute(__fallthrough__)
+// we are good to go:
+# define simdjson_fallthrough                    __attribute__((__fallthrough__))
+#endif // __has_attribute(__fallthrough__)
+#endif // SIMDJSON_CPLUSPLUS17
+
+// on some systems, we simply do not have support for fallthrough, so use a default:
+#ifndef simdjson_fallthrough
+# define simdjson_fallthrough do {} while (0)  /* fallthrough */
+#endif // simdjson_fallthrough
 
 #endif // SIMDJSON_COMMON_DEFS_H

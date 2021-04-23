@@ -1,10 +1,13 @@
 if(TARGET cxxopts) # we only build the tools if cxxopts is available
   message(STATUS "We have cxxopts as a dependency and we are buiding the tools (e.g., json2json).")
-  link_libraries(simdjson simdjson-internal-flags simdjson-windows-headers cxxopts)
-  add_executable(json2json json2json.cpp)
-  add_executable(jsonstats jsonstats.cpp)
-  add_executable(jsonpointer jsonpointer.cpp)
-  add_executable(minify minify.cpp)
+  foreach(tool IN ITEMS json2json jsonstats jsonpointer minify)
+    add_executable("${tool}" "${tool}.cpp")
+    simdjson_apply_props("${tool}")
+    target_link_libraries(
+        "${tool}" PRIVATE
+        simdjson simdjson-internal-flags simdjson-windows-headers cxxopts
+    )
+  endforeach()
 else()
   message(STATUS "We are missing cxxopts as a dependency so the tools (e.g., json2json) are omitted.")
 endif()

@@ -31,6 +31,7 @@ int main(int argc, const char *argv[]) {
   cxxopts::Options options(progName, progUsage);
 
   options.add_options()
+    ("z,ondemand", "Use On Demand front-end.", cxxopts::value<bool>()->default_value("false"))
   	("d,rawdump", "Dumps the raw content of the tape.", cxxopts::value<bool>()->default_value("false"))
   	("f,file", "File name.", cxxopts::value<std::string>())
   	("h,help", "Print usage.")
@@ -44,7 +45,7 @@ int main(int argc, const char *argv[]) {
   	std::cerr << options.help() << std::endl;
   	return EXIT_SUCCESS;
   }
-
+  bool ondemand = result["ondemand"].as<bool>();
   bool rawdump = result["rawdump"].as<bool>();
 
   if(!result.count("file")) {
@@ -54,7 +55,17 @@ int main(int argc, const char *argv[]) {
   }
 
   const char *filename = result["file"].as<std::string>().c_str();
-
+  if(ondemand) {
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata;
+    auto error = simdjson::padded_string::load(filename).get(docdata);
+    if(error != simdjson::SUCCESS) { std::cout << error << std::endl; return EXIT_FAILURE; }
+    simdjson::ondemand::document doc;
+    error = parser.iterate(docdata).get(doc);
+    if(error != simdjson::SUCCESS) { std::cout << error << std::endl; return EXIT_FAILURE; }
+    std::cout << doc;
+    return EXIT_SUCCESS;
+  }
   simdjson::dom::parser parser;
   simdjson::dom::element doc;
   auto error = parser.load(filename).get(doc); // do the parsing, return false on error

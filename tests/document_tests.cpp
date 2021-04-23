@@ -110,25 +110,25 @@ namespace document_tests {
     std::cout << "Running " << __func__ << std::endl;
     const size_t n_records = 100000;
     std::vector<std::string> data;
-    char buf[1024];
+    std::vector<char> buf(1024);
     for (size_t i = 0; i < n_records; ++i) {
-      size_t n = snprintf(buf, sizeof(buf),
+      size_t n = snprintf(buf.data(), buf.size(),
                       "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
                       "\"school\": {\"id\": %zu, \"name\": \"school%zu\"}}",
                       i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
-      if (n >= sizeof(buf)) { abort(); }
-      data.emplace_back(std::string(buf, n));
+      if (n >= buf.size()) { abort(); }
+      data.emplace_back(std::string(buf.data(), n));
     }
     for (size_t i = 0; i < n_records; ++i) {
-      size_t n = snprintf(buf, sizeof(buf), "{\"counter\": %f, \"array\": [%s]}", static_cast<double>(i) * 3.1416,
+      size_t n = snprintf(buf.data(), buf.size(), "{\"counter\": %f, \"array\": [%s]}", static_cast<double>(i) * 3.1416,
                         (i % 2) ? "true" : "false");
-      if (n >= sizeof(buf)) { abort(); }
-      data.emplace_back(std::string(buf, n));
+      if (n >= buf.size()) { abort(); }
+      data.emplace_back(std::string(buf.data(), n));
     }
     for (size_t i = 0; i < n_records; ++i) {
-      size_t n = snprintf(buf, sizeof(buf), "{\"number\": %e}", static_cast<double>(i) * 10000.31321321);
-      if (n >= sizeof(buf)) { abort(); }
-      data.emplace_back(std::string(buf, n));
+      size_t n = snprintf(buf.data(), buf.size(), "{\"number\": %e}", static_cast<double>(i) * 10000.31321321);
+      if (n >= buf.size()) { abort(); }
+      data.emplace_back(std::string(buf.data(), n));
     }
     data.emplace_back(std::string("true"));
     data.emplace_back(std::string("false"));
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
   }
   // We want to know what we are testing.
   std::cout << "Running tests against this implementation: " << simdjson::active_implementation->name();
-  std::cout << "(" << simdjson::active_implementation->description() << ")" << std::endl;
+  std::cout << " (" << simdjson::active_implementation->description() << ")" << std::endl;
   std::cout << "------------------------------------------------------------" << std::endl;
 
   std::cout << "Running document tests." << std::endl;

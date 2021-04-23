@@ -1,24 +1,19 @@
 #
-# ${SIMDJSON_USER_CMAKECACHE} contains the *user-specified* simdjson options so you can call cmake on
-# another branch or repository with the same options.
+# ${USER_CMAKECACHE} contains the *user-specified* simdjson options so you can
+# call cmake on another branch or repository with the same options.
 #
-# Not supported on Windows at present, because the only thing that uses it is checkperf, which we
-# don't run on Windows.
-#
-set(SIMDJSON_USER_CMAKECACHE ${CMAKE_CURRENT_BINARY_DIR}/.simdjson-user-CMakeCache.txt)
-if (MSVC)
-  add_custom_command(
-    OUTPUT ${SIMDJSON_USER_CMAKECACHE}
-    COMMAND findstr SIMDJSON_ ${PROJECT_BINARY_DIR}/CMakeCache.txt > ${SIMDJSON_USER_CMAKECACHE}.tmp
-    COMMAND findstr /v SIMDJSON_LIB_ ${SIMDJSON_USER_CMAKECACHE}.tmp > ${SIMDJSON_USER_CMAKECACHE}
-    VERBATIM # Makes it not do weird escaping with the command
-  )
-else()
-  add_custom_command(
-    OUTPUT ${SIMDJSON_USER_CMAKECACHE}
-    COMMAND grep SIMDJSON_ ${PROJECT_BINARY_DIR}/CMakeCache.txt > ${SIMDJSON_USER_CMAKECACHE}.tmp
-    COMMAND grep -v SIMDJSON_LIB_ ${SIMDJSON_USER_CMAKECACHE}.tmp > ${SIMDJSON_USER_CMAKECACHE}
-    VERBATIM # Makes it not do weird escaping with the command
-  )
-endif()
-add_custom_target(simdjson-user-cmakecache DEPENDS ${SIMDJSON_USER_CMAKECACHE})
+
+file(READ "${BINARY_DIR}/CMakeCache.txt" cache)
+# Escape semicolons, so the lines can be safely iterated in CMake
+string(REPLACE ";" "\\;" cache "${cache}")
+# Turn the contents into a list
+string(REPLACE "\n" ";" cache "${cache}")
+
+message(STATUS "${USER_CMAKECACHE}")
+
+file(REMOVE "${USER_CMAKECACHE}")
+foreach(line IN LISTS cache)
+  if(line MATCHES "^SIMDJSON_" AND NOT line MATCHES "^SIMDJSON_LIB_")
+    file(APPEND "${USER_CMAKECACHE}" "${line}\n")
+  endif()
+endforeach()

@@ -10,6 +10,30 @@ namespace parse_api_tests {
   const padded_string BASIC_NDJSON = "[1,2,3]\n[4,5,6]"_padded;
   const padded_string EMPTY_NDJSON = ""_padded;
 
+  bool parser_iterate_empty() {
+    TEST_START();
+    FILE *p;
+    // Of course, we could just call iterate on the empty string, but
+    // we want to test the whole process.
+    const char *const tmpfilename = "emptyondemand.txt";
+    if((p = fopen(tmpfilename, "w")) != nullptr) {
+      fclose(p);
+      auto json = padded_string::load(tmpfilename);
+      ondemand::document doc;
+      ondemand::parser parser;
+      auto error = parser.iterate(json).get(doc);
+      remove(tmpfilename);
+      if(error != simdjson::EMPTY) {
+        std::cerr << "Was expecting empty but got " << error << std::endl;
+        return false;
+      }
+    } else {
+      std::cout << "Warning: I could not create temporary file " << tmpfilename << std::endl;
+      std::cout << "We omit testing the empty file case." << std::endl;
+    }
+    return true;
+  }
+
   bool parser_iterate() {
     TEST_START();
     ondemand::parser parser;
@@ -141,7 +165,8 @@ namespace parse_api_tests {
 #endif // SIMDJSON_EXCEPTIONS
 
   bool run() {
-    return parser_iterate() &&
+    return parser_iterate_empty() &&
+           parser_iterate() &&
            parser_iterate_padded() &&
            parser_iterate_padded_string_view() &&
            parser_iterate_insufficient_padding() &&

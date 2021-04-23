@@ -48,7 +48,7 @@ c++ myproject.cpp simdjson.cpp
 ```
 
 Note:
-- Users on macOS and other platforms were default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ -std=c++17 myproject.cpp simdjson.cpp`).
+- Users on macOS and other platforms where default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ -std=c++17 myproject.cpp simdjson.cpp`).
 
 Using simdjson with package managers
 ------------------
@@ -66,13 +66,13 @@ include(FetchContent)
 FetchContent_Declare(
   simdjson
   GIT_REPOSITORY https://github.com/simdjson/simdjson.git
-  GIT_TAG  v0.9.0
+  GIT_TAG  v0.9.3
   GIT_SHALLOW TRUE)
 
 FetchContent_MakeAvailable(simdjson)
 ```
 
-You should replace `GIT_TAG  v0.9.0` by the version you need. If you omit `GIT_TAG  v0.9.0`, you will work from the main branch of simdjson: we recommend that if you are working on production code,
+You should replace `GIT_TAG  v0.9.3` by the version you need. If you omit `GIT_TAG  v0.9.3`, you will work from the main branch of simdjson: we recommend that if you are working on production code, you always work from a release.
 
 Elsewhere in your project, you can  declare dependencies on simdjson with lines such as these:
 
@@ -202,6 +202,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   - `field.value()` will get you the value, which you can then use all these other methods on.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index. Instead,
   you will need to iterate through the array and keep an index yourself.
+* **Output to sstrings:** Given a document or an element (or node) out of a JSON document, you can output a string version: `simdjson::to_string(element)` returns a `simdjson::simdjson_result<std::string>` instance. You can cast it to `std::string` and it will throw when an error was encountered (`std::string(simdjson::to_string(element))`). Or else you can do `std::string s; if(simdjson::to_string(element).get(s) == simdjson::SUCCESS) { ... }`. This consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document.
 
 ### Examples
 

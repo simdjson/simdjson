@@ -61,7 +61,13 @@ if (Git_FOUND AND (GIT_VERSION_STRING VERSION_GREATER  "2.1.4") AND (NOT CMAKE_G
     OUTPUT ${SIMDJSON_CHECKPERF_DIR}/build/cmake_install.cmake # We make many things but this seems the most cross-platform one we can depend on
     COMMAND
     ${CMAKE_COMMAND} -E env CXX=${CMAKE_CXX_COMPILER} CC=${CMAKE_C_COMPILER}
-    ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_COMPETITION=OFF -G ${CMAKE_GENERATOR} ..
+    ${CMAKE_COMMAND}
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
+    -DSIMDJSON_COMPETITION=OFF
+    -DSIMDJSON_DEVELOPER_MODE=YES
+    -G ${CMAKE_GENERATOR}
+    ..
     WORKING_DIRECTORY ${SIMDJSON_CHECKPERF_DIR}/build
     DEPENDS ${SIMDJSON_CHECKPERF_DIR}/build/CMakeCache.txt
   )
@@ -92,6 +98,8 @@ if (Git_FOUND AND (GIT_VERSION_STRING VERSION_GREATER  "2.1.4") AND (NOT CMAKE_G
   set_property(TEST checkperf APPEND PROPERTY LABELS per_implementation explicitonly)
   set_property(TEST checkperf APPEND PROPERTY DEPENDS parse perfdiff ${SIMDJSON_USER_CMAKECACHE})
   set_property(TEST checkperf PROPERTY RUN_SERIAL TRUE)
+  add_dependencies(per_implementation_tests checkperf)
+  add_dependencies(explicitonly_tests checkperf)
 else()
   if (CMAKE_GENERATOR MATCHES Ninja)
    message(STATUS "We disable the checkperf targets under Ninja.")

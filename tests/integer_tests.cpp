@@ -9,9 +9,6 @@
 #ifndef ASSERT
 #define ASSERT(x)                                                       \
 {    if (!(x)) {                                                        \
-        char buf[4096];                                                 \
-        snprintf (buf, 4096, "Failure in \"%s\", line %d\n",            \
-                 __FILE__, __LINE__);                                   \
         abort ();                                                       \
     }                                                                   \
 }

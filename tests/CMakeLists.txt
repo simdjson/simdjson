@@ -2,9 +2,6 @@
 link_libraries(simdjson-internal-flags test-data simdjson-windows-headers)
 include(${PROJECT_SOURCE_DIR}/cmake/add_cpp_test.cmake)
 
-# add_cpp_tests will add dependencies to this
-add_custom_target(all_tests)
-
 add_subdirectory(ondemand)
 
 #
@@ -12,11 +9,21 @@ add_subdirectory(ondemand)
 #
 if(NOT SIMDJSON_LEGACY_VISUAL_STUDIO AND NOT SIMDJSON_WINDOWS_DLL)
   add_cpp_test(numberparsingcheck LABELS acceptance per_implementation)
-  target_link_libraries(numberparsingcheck simdjson-include-source simdjson-windows-headers)
+  simdjson_apply_props(numberparsingcheck)
+  target_link_libraries(numberparsingcheck PRIVATE simdjson-windows-headers)
   target_compile_definitions(numberparsingcheck PRIVATE NOMINMAX)
+  target_include_directories(
+      numberparsingcheck
+      PRIVATE "${PROJECT_SOURCE_DIR}/src"
+  )
   add_cpp_test(stringparsingcheck LABELS acceptance per_implementation)
-  target_link_libraries(stringparsingcheck simdjson-include-source simdjson-windows-headers)
+  simdjson_apply_props(numberparsingcheck)
+  target_link_libraries(stringparsingcheck PRIVATE simdjson-windows-headers)
   target_compile_definitions(stringparsingcheck PRIVATE NOMINMAX)
+  target_include_directories(
+      stringparsingcheck
+      PRIVATE "${PROJECT_SOURCE_DIR}/src"
+  )
 endif()
 
 # All remaining tests link with simdjson proper
@@ -59,6 +66,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
   )
   set_property(TEST testjson2json APPEND PROPERTY DEPENDS minify json2json)
   set_property(TEST testjson2json APPEND PROPERTY LABELS per_implementation)
+  add_dependencies(per_implementation_tests minify)
 
   #
   # Competition parse test
@@ -71,8 +79,8 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
     target_link_libraries(allparserscheckfile PRIVATE competition-all)
 
     add_test(issue150 ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/issue150.sh)
-    set_property(TEST issue150 APPEND PROPERTY DEPENDS allparserscheckfile)
     set_property(TEST issue150 APPEND PROPERTY LABELS per_implementation competition)
+    add_dependencies(all_tests allparserscheckfile)
   endif()
 
   #
@@ -85,6 +93,8 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
 
   add_test(NAME json2json COMMAND $<TARGET_FILE:json2json> ${EXAMPLE_JSON})
   set_property(TEST json2json APPEND PROPERTY LABELS acceptance per_implementation)
+  add_dependencies(acceptance_tests json2json)
+  add_dependencies(per_implementation_tests json2json)
 
   #
   # SIMDJSON_FORCE_IMPLEMENTATION tests: run json2json with SIMDJSON
