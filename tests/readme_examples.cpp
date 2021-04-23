@@ -52,7 +52,17 @@ void basics_dom_1() {
   }
 }
 
-
+void parse_many_truncated() {
+    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    auto error = parser.parse_many(json,json.size()).get(stream);
+    if(error) { std::cerr << error << std::endl; return; }
+    for(auto doc : stream) {
+       std::cout << doc << std::endl;
+    }
+    std::cout << stream.truncated_bytes() << " bytes "<< std::endl; // returns 39 bytes
+}
 
 void basics_dom_2() {
   auto cars_json = R"( [
