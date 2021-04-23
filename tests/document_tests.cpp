@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
   }
   // We want to know what we are testing.
   std::cout << "Running tests against this implementation: " << simdjson::active_implementation->name();
-  std::cout << "(" << simdjson::active_implementation->description() << ")" << std::endl;
+  std::cout << " (" << simdjson::active_implementation->description() << ")" << std::endl;
   std::cout << "------------------------------------------------------------" << std::endl;
 
   std::cout << "Running document tests." << std::endl;

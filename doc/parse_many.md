@@ -168,6 +168,7 @@ Tracking your position
 Some users would like to know where the document they parsed is in the input array of bytes.
 It is possible to do so by accessing directly the iterator and calling its `current_index()`
 method which reports the location (in bytes) of the current document in the input stream.
+You may also call the `source()` method to get a `std::string_view` instance on the document.
 
 Let us illustrate the idea with code:
 
@@ -182,36 +183,46 @@ Let us illustrate the idea with code:
         auto doc = *i;
         if(!doc.error()) {
           std::cout << "got full document at " << i.current_index() << std::endl;
+          std::cout << i.source() << std::endl;
+          count++;
+        } else {
+          std::cout << "got broken document at " << i.current_index() << std::endl;
+          return false;
         }
     }
-    size_t index = i.current_index();
-    if(index != 38) {
-      std::cerr << "Expected to stop after the three full documents " << std::endl;
-      std::cerr << "index = " << index << std::endl;
-      return false;
-    }
+
 ```
 
 This code will print:
 ```
 got full document at 0
+[1,2,3]
 got full document at 9
+{"1":1,"2":3,"4":4}
 got full document at 29
+[1,2,3]
 ```
 
-The last call to `i.current_index()` return the byte index 38, which is just beyond
-the last document.
 
 Incomplete streams
 -----------
 
-Some users may need to work with truncated streams while tracking their location in the stream.
-The same code, with the `current_index()` will work. However, the last block (by default 1MB)
-terminates with an unclosed string, then no JSON document within this last block will validate.
-In particular, it means that if your input string is `[1,2,3]  {"1":1,"2":3,"4":4} [1,2` then
-no JSON document will be successfully parsed. The error `simdjson::UNCLOSED_STRING` will be
-given (even with the first JSON document). It is then your responsability to terminate the input
-maybe by appending the missing data at the end of the truncated string, or by copying the truncated
-data before the continuing input.
+Some users may need to work with truncated streams. The simdjson may truncate documents at the very end of the stream that cannot possibly be valid JSON (e.g., they contain unclosed strings, unmatched brackets, unmatched braces). After iterating through the stream, you may query the `truncated_bytes()` method which tells you how many bytes were truncated. If the stream is made of full (whole) documents, then you should expect `truncated_bytes()` to return zero.
 
 
+Consider the following example where a truncated document (`{"key":"intentionally unclosed string  `) containing 39 bytes has been left within the stream. In such cases, the first two whole documents are parsed and returned, and the `truncated_bytes()` method returns 39.
+
+```C++
+    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    auto error = parser.parse_many(json,json.size()).get(stream);
+    if(error) { std::cerr << error << std::endl; return; }
+    for(auto doc : stream) {
+       std::cout << doc << std::endl;
+    }
+    std::cout << stream.truncated_bytes() << " bytes "<< std::endl; // returns 39 bytes
+```
+
+
+Importantly, you should only call `truncated_bytes()` after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet.

@@ -13,8 +13,8 @@ namespace {
   *
   * Simply put, we iterate over the structural characters, starting from
   * the end. We consider that we found the end of a JSON document when the
-  * first element of the pair is NOT one of these characters: '{' '[' ';' ','
-  * and when the second element is NOT one of these characters: '}' '}' ';' ','.
+  * first element of the pair is NOT one of these characters: '{' '[' ':' ','
+  * and when the second element is NOT one of these characters: '}' ']' ':' ','.
   *
   * This simple comparison works most of the time, but it does not cover cases
   * where the batch's structural indexes contain a perfect amount of documents.
@@ -28,7 +28,8 @@ namespace {
   * batch.
   */
 simdjson_really_inline uint32_t find_next_document_index(dom_parser_implementation &parser) {
-  // TODO don't count separately, just figure out depth
+  // Variant: do not count separately, just figure out depth
+  if(parser.n_structural_indexes == 0) { return 0; }
   auto arr_cnt = 0;
   auto obj_cnt = 0;
   for (auto i = parser.n_structural_indexes - 1; i > 0; i--) {
@@ -64,6 +65,25 @@ simdjson_really_inline uint32_t find_next_document_index(dom_parser_implementati
     }
     // Last document is incomplete; mark the document at i + 1 as the next one
     return i;
+  }
+  // If we made it to the end, we want to finish counting to see if we have a full document.
+  switch (parser.buf[parser.structural_indexes[0]]) {
+    case '}':
+      obj_cnt--;
+      break;
+    case ']':
+      arr_cnt--;
+      break;
+    case '{':
+      obj_cnt++;
+      break;
+    case '[':
+      arr_cnt++;
+      break;
+  }
+  if (!arr_cnt && !obj_cnt) {
+    // We have a complete document.
+    return parser.n_structural_indexes;
   }
   return 0;
 }

@@ -133,7 +133,7 @@ simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_
   return arm64::stage1::json_minifier::minify<64>(buf, len, dst, dst_len);
 }
 
-simdjson_warn_unused error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, bool streaming) noexcept {
+simdjson_warn_unused error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, stage1_mode streaming) noexcept {
   this->buf = _buf;
   this->len = _len;
   return arm64::stage1::json_structural_indexer::index<64>(buf, len, *this, streaming);
@@ -152,7 +152,7 @@ simdjson_warn_unused error_code dom_parser_implementation::stage2_next(dom::docu
 }
 
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
-  auto error = stage1(_buf, _len, false);
+  auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
 }
