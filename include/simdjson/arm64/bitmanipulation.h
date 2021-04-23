@@ -62,10 +62,22 @@ simdjson_really_inline int count_ones(uint64_t input_num) {
 
 /* reverse the bits */
 simdjson_really_inline uint64_t reverse_bits(uint64_t input_num) {
-    uint64_t rev_bits;
-    __asm("rbit %0, %1" : "=r"(rev_bits) : "r"(input_num));
-    return rev_bits;
+  uint64_t rev_bits;
+  __asm("rbit %0, %1" : "=r"(rev_bits) : "r"(input_num));
+  return rev_bits;
 }
+
+/**
+ * Flips bit at index 63 - lz. Thus if you have 'leading_zeroes' leading zeroes,
+ * then this will set to zero the leading bit. It is possible for leading_zeroes to be
+ * greating or equal to 63 in which case we trigger undefined behavior, but the ouput
+ * of such undefined behavior is never used.
+ **/
+NO_SANITIZE_UNDEFINED
+simdjson_really_inline uint64_t zero_leading_bit(uint64_t rev_bits, int leading_zeroes) {
+  return rev_bits ^ (uint64_t(0x8000000000000000) >> leading_zeroes);
+}
+
 #endif
 
 simdjson_really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {

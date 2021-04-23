@@ -38,6 +38,12 @@ public:
      * Thus it may be profitable to reverse the bits (once) and then
      * to rely on a sequence of instructions that call the leading
      * zero instruction.
+     *
+     * Performance notes:
+     * The chosen routine is not optimal in terms of data dependency
+     * since zero_leading_bit might require two instructions. However,
+     * it tends to minimize the total number of instructions which is
+     * beneficial.
      */
 
     uint64_t rev_bits = reverse_bits(bits);
@@ -47,7 +53,7 @@ public:
     for (; i<8; i++) {
       int lz = leading_zeroes(rev_bits);
       this->tail[i] = static_cast<uint32_t>(idx) + lz;
-      rev_bits = rev_bits ^ (uint64_t(0x8000000000000000) >> lz);
+      rev_bits = zero_leading_bit(rev_bits, lz);
     }
     // Do the next 8 all together (we hope in most cases it won't happen at all
     // and the branch is easily predicted).
@@ -56,7 +62,7 @@ public:
       for (; i<16; i++) {
         int lz = leading_zeroes(rev_bits);
         this->tail[i] = static_cast<uint32_t>(idx) + lz;
-        rev_bits = rev_bits ^ (uint64_t(0x8000000000000000) >> lz);
+        rev_bits = zero_leading_bit(rev_bits, lz);
       }
 
 
@@ -68,7 +74,7 @@ public:
         while (rev_bits != 0) {
           int lz = leading_zeroes(rev_bits);
           this->tail[i++] = static_cast<uint32_t>(idx) + lz;
-          rev_bits = rev_bits ^ (uint64_t(0x8000000000000000) >> lz);
+          rev_bits = zero_leading_bit(rev_bits, lz);
         }
       }
     }
