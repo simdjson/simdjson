@@ -86,17 +86,14 @@ namespace document_stream_tests {
     std::cout << "Running " << __func__ << std::endl;
     // Correct JSON.
     const simdjson::padded_string input = R"([1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
-    // This will spin up and tear down 1000 worker threads.
-    for(size_t i = 0; i < 1; i++) {
-      simdjson::dom::parser parser;
-      simdjson::dom::document_stream stream;
-      ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
-      for(auto doc: stream) {
-          auto error = doc.error();
-          if(error) {
-            std::cout << "Expected no error but got " << error << std::endl;
-            return false;
-          }
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
+    for(auto doc: stream) {
+      auto error = doc.error();
+      if(error) {
+        std::cout << "Expected no error but got " << error << std::endl;
+        return false;
       }
     }
     return true;
@@ -106,13 +103,11 @@ namespace document_stream_tests {
     std::cout << "Running " << __func__ << std::endl;
     // Intentionally broken
     const simdjson::padded_string input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
-    // This will spin up and tear down 1000 worker threads.
-    for(size_t i = 0; i < 1; i++) {
-      simdjson::dom::parser parser;
-      simdjson::dom::document_stream stream;
-      ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
-      size_t count = 0;
-      for(auto doc: stream) {
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
+    size_t count = 0;
+    for(auto doc: stream) {
           auto error = doc.error();
           if(count <= 2) {
             if(error) {
@@ -127,7 +122,6 @@ namespace document_stream_tests {
             break;
           }
           count++;
-      }
     }
     return true;
   }
@@ -319,7 +313,42 @@ namespace document_stream_tests {
       count++;
       previous_i = i;
     }
-    return count == 1;
+    // We should have two documents
+    if(count != 2) {
+      std::cout << "finished with count = " << count << std::endl;
+      return false;
+    }
+    return true;
+  }
+
+  bool adversarial_single_document() {
+    std::cout << "Running " << __func__ << std::endl;
+    simdjson::dom::parser parser;
+    auto json = R"({"f[)"_padded;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS(parser.parse_many(json).get(stream));
+    size_t count = 0;
+    for (auto doc : stream) {
+        (void)doc;
+        count += 1;
+    }
+    std::cout << "number of documents (0 expected) = " << count << std::endl;
+    return count == 0;
+  }
+
+  bool adversarial_single_document_array() {
+    std::cout << "Running " << __func__ << std::endl;
+    simdjson::dom::parser parser;
+    auto json = R"(["this is an unclosed string ])"_padded;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS(parser.parse_many(json).get(stream));
+    size_t count = 0;
+    for (auto doc : stream) {
+        (void)doc;
+        count += 1;
+    }
+    std::cout << "number of documents (0 expected) = " << count << std::endl;
+    return count == 0;
   }
 
   bool single_document() {
@@ -345,6 +374,7 @@ namespace document_stream_tests {
         }
         count += 1;
     }
+    std::cout << "number of documents " << count << std::endl;
     return count == 1;
   }
 #if SIMDJSON_EXCEPTIONS
@@ -382,6 +412,10 @@ namespace document_stream_tests {
         }
         count += 1;
     }
+    if(docs.truncated_bytes() != 0) {
+      std::cerr << "Unexpected truncation : " << docs.truncated_bytes() << std::endl;
+      return false;
+    }
     return count == 1;
   }
 #endif
@@ -398,11 +432,19 @@ namespace document_stream_tests {
         auto doc = *i;
         if(!doc.error()) {
           std::cout << "got full document at " << i.current_index() << std::endl;
+          std::cout << i.source() << std::endl;
           count++;
+        } else {
+          std::cout << "got broken document at " << i.current_index() << std::endl;
+          return false;
         }
     }
     if(count != 3) {
       std::cerr << "Expected to get three full documents " << std::endl;
+      return false;
+    }
+    if(stream.truncated_bytes() != 0) {
+      std::cerr << "Unexpected truncation : " << stream.truncated_bytes() << std::endl;
       return false;
     }
     size_t index = i.current_index();
@@ -414,12 +456,35 @@ namespace document_stream_tests {
     return true;
   }
 
+  bool unquoted_key() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto json = R"({unquoted_key: "keys must be quoted"})"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    // We use a window of json.size() though any large value would do.
+    ASSERT_SUCCESS( parser.parse_many(json, json.size()).get(stream) );
+    auto i = stream.begin();
+    for(; i != stream.end(); ++i) {
+        auto doc = *i;
+        if(!doc.error()) {
+          std::cout << "got full document at " << i.current_index() << std::endl;
+          std::cout << i.source() << std::endl;
+          return false;
+        } else {
+          std::cout << "got broken document at " << i.current_index() << std::endl;
+          return true;
+        }
+    }
+    return false;
+  }
+
 
   bool truncated_window() {
     std::cout << "Running " << __func__ << std::endl;
     // The last JSON document is
     // intentionally truncated.
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2  )"_padded;
+    std::cout << "input size " << json.size() << std::endl;
     simdjson::dom::parser parser;
     size_t count = 0;
     simdjson::dom::document_stream stream;
@@ -430,17 +495,22 @@ namespace document_stream_tests {
         auto doc = *i;
         if(!doc.error()) {
           std::cout << "got full document at " << i.current_index() << std::endl;
+          std::cout << i.source() << std::endl;
           count++;
+        } else {
+          std::cout << "got broken document at " << i.current_index() << std::endl;
         }
     }
     if(count != 2) {
       std::cerr << "Expected to get two full documents " << std::endl;
       return false;
     }
-    size_t index = i.current_index();
-    if(index != 29) {
-      std::cerr << "Expected to stop after the two full documents " << std::endl;
-      std::cerr << "index = " << index << std::endl;
+    if(stream.truncated_bytes() == 0) {
+      std::cerr << "Expected truncation : " << stream.truncated_bytes() << std::endl;
+      return false;
+    }
+    if(stream.truncated_bytes() != 6) {
+      std::cerr << "Expected truncation of 6 bytes got " << stream.truncated_bytes() << std::endl;
       return false;
     }
     return true;
@@ -448,28 +518,79 @@ namespace document_stream_tests {
 
   bool truncated_window_unclosed_string() {
     std::cout << "Running " << __func__ << std::endl;
-    // The last JSON document is intentionally truncated. In this instance, we use
-    // a truncated string which will create trouble since stage 1 will recognize the
-    // JSON as invalid and refuse to even start parsing.
+    // The last JSON document is intentionally truncated.
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} "intentionally unclosed string  )"_padded;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     // We use a window of json.size() though any large value would do.
     ASSERT_SUCCESS( parser.parse_many(json,json.size()).get(stream) );
-    // Rest is ineffective because stage 1 fails.
     auto i = stream.begin();
+    size_t counter{0};
     for(; i != stream.end(); ++i) {
         auto doc = *i;
         if(!doc.error()) {
           std::cout << "got full document at " << i.current_index() << std::endl;
-          return false;
+          std::cout << "the document is " << i.source() << std::endl;
         } else {
+          std::cout << "got broken document at " << i.current_index() << std::endl;
           std::cout << doc.error() << std::endl;
-          return (doc.error() == simdjson::UNCLOSED_STRING);
         }
+        counter++;
     }
-    return false;
+    std::cout << "final index is " << i.current_index() << std::endl;
+    if(counter != 2) {
+      std::cerr << "You should have parsed two documents. I found " << counter << "." << std::endl;
+      return false;
+    }
+    if(stream.truncated_bytes() == 0) {
+      std::cerr << "Expected truncation : " << stream.truncated_bytes() << std::endl;
+      return false;
+    }
+    if(stream.truncated_bytes() != 32) {
+      std::cerr << "Expected truncation of 32 bytes got " << stream.truncated_bytes() << std::endl;
+      return false;
+    }
+    return true;
   }
+
+
+  bool truncated_window_unclosed_string_in_object() {
+    std::cout << "Running " << __func__ << std::endl;
+    // The last JSON document is intentionally truncated.
+    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    // We use a window of json.size() though any large value would do.
+    ASSERT_SUCCESS( parser.parse_many(json,json.size()).get(stream) );
+    auto i = stream.begin();
+    size_t counter{0};
+    for(; i != stream.end(); ++i) {
+        auto doc = *i;
+        if(!doc.error()) {
+          std::cout << "got full document at " << i.current_index() << std::endl;
+          std::cout << "the document is " << i.source() << std::endl;
+        } else {
+          std::cout << "got broken document at " << i.current_index() << std::endl;
+          std::cout << doc.error() << std::endl;
+        }
+        counter++;
+    }
+    std::cout << "final index is " << i.current_index() << std::endl;
+    if(counter != 2) {
+      std::cerr << "You should have parsed two documents. I found " << counter << "." << std::endl;
+      return false;
+    }
+    if(stream.truncated_bytes() == 0) {
+      std::cerr << "Expected truncation : " << stream.truncated_bytes() << std::endl;
+      return false;
+    }
+    if(stream.truncated_bytes() != 39) {
+      std::cerr << "Expected truncation of 39 bytes got " << stream.truncated_bytes() << std::endl;
+      return false;
+    }
+    return true;
+  }
+
   bool small_window() {
     std::cout << "Running " << __func__ << std::endl;
     std::vector<char> input;
@@ -668,11 +789,15 @@ namespace document_stream_tests {
   }
 
   bool run() {
-    return stress_data_race() &&
+    return adversarial_single_document_array() &&
+           adversarial_single_document() &&
+           unquoted_key() &&
+           stress_data_race() &&
            stress_data_race_with_error() &&
            test_leading_spaces() &&
            simple_example() &&
            truncated_window() &&
+           truncated_window_unclosed_string_in_object() &&
            truncated_window_unclosed_string() &&
            issue1307() &&
            issue1308() &&
@@ -728,7 +853,7 @@ int main(int argc, char *argv[]) {
   }
   // We want to know what we are testing.
   std::cout << "Running tests against this implementation: " << simdjson::active_implementation->name();
-  std::cout << "(" << simdjson::active_implementation->description() << ")" << std::endl;
+  std::cout << " (" << simdjson::active_implementation->description() << ")" << std::endl;
   std::cout << "------------------------------------------------------------" << std::endl;
 
   std::cout << "Running document_stream tests." << std::endl;

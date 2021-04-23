@@ -32,7 +32,12 @@ jobs:
           run: |
             export CLANGSUFFIX="-7"
             apt-get -qq update
-            apt-get install -q -y clang-7 libfuzzer-7-dev cmake git wget zip ninja-build
+            apt-get install -q -y clang-7 libfuzzer-7-dev git wget zip ninja-build gnupg software-properties-common
+            wget -q -O - "https://raw.githubusercontent.com/simdjson/debian-ppa/master/key.gpg" | apt-key add -
+            apt-add-repository "deb https://raw.githubusercontent.com/simdjson/debian-ppa/master simdjson main"
+            apt-get -qq update
+            apt-get purge cmake cmake-data
+            apt-get -t simdjson -y install cmake
             mkdir -p build ; cd build
             cmake .. -GNinja \
                   -DCMAKE_CXX_COMPILER=clang++$CLANGSUFFIX \

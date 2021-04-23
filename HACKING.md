@@ -32,6 +32,18 @@ Stage 1 also does unicode validation.
 
 Stage 2 handles all of the rest: number parsings, recognizing atoms like true, false, null, and so forth.
 
+Developer mode
+--------------
+
+Build system targets that are only useful for developers of the simdjson
+library are behind the `SIMDJSON_DEVELOPER_MODE` option. Enabling this option
+makes tests, examples, benchmarks and other developer targets available. Not
+enabling this option means that you are a consumer of simdjson and thus you
+only get the library targets and options.
+
+Developer mode is forced to be on when the `CI` environment variable is set to
+a value that CMake recognizes as "on", which is set to `true` in all of the CI
+workflows used by simdjson.
 
 Directory Structure and Source
 ------------------------------
@@ -74,7 +86,7 @@ Other important files and directories:
   ```bash
   mkdir build
   cd build
-  cmake ..
+  cmake -D SIMDJSON_DEVELOPER_MODE=ON ..
   cmake --build . --config Release
   benchmark/parse ../jsonexamples/twitter.json
   ```
@@ -82,11 +94,11 @@ Other important files and directories:
   ```bash
   mkdir build
   cd build
-  cmake ..
+  cmake -D SIMDJSON_DEVELOPER_MODE=ON ..
   cmake --build . --target bench_parse_call --config Release
   ./benchmark/bench_parse_call
   ```
-  The last line becomes `./benchmark/Release/bench_parse_call.exe` under Windows. Under Windows, you can also build with the clang compiler by adding `-T ClangCL` to the call to `cmake ..`: `cmake .. - TClangCL`.
+  The last line becomes `./benchmark/Release/bench_parse_call.exe` under Windows. Under Windows, you can also build with the clang compiler by adding `-T ClangCL` to the call to `cmake ..`: `cmake -T ClangCL ..`.
 * **fuzz:** The source for fuzz testing. This lets us explore important edge and middle cases
 * **fuzz:** The source for fuzz testing. This lets us explore important edge and middle cases
   automatically, and is run in CI.
@@ -168,7 +180,7 @@ systematically regenerated on releases. To ensure you have the latest code, you 
 ```bash
 mkdir build
 cd build
-cmake ..
+cmake -D SIMDJSON_DEVELOPER_MODE=ON ..
 cmake --build . # needed, because currently dependencies do not work fully for the amalgamate target
 cmake --build . --target amalgamate
 ```
@@ -209,31 +221,31 @@ Building: While in the project repository, do the following:
 ```
 mkdir build
 cd build
-cmake ..
+cmake -D SIMDJSON_DEVELOPER_MODE=ON ..
 cmake --build .
 ctest
 ```
 
-CMake will build a library. By default, it builds a shared library (e.g., libsimdjson.so on Linux).
+CMake will build a library. By default, it builds a static library (e.g., libsimdjson.a on Linux).
 
-You can build a static library:
+You can build a shared library:
 
 ```
-mkdir buildstatic
-cd buildstatic
-cmake -DSIMDJSON_BUILD_STATIC=ON ..
+mkdir buildshared
+cd buildshared
+cmake -D BUILD_SHARED_LIBS=ON -D SIMDJSON_DEVELOPER_MODE=ON ..
 cmake --build .
 ctest
 ```
 
-In some cases, you may want to specify your compiler, especially if the default compiler on your system is too old.  You need to tell cmake which compiler you wish to use by setting the CC and CXX variables. Under bash, you can do so with commands such as `export CC=gcc-7` and `export CXX=g++-7`. You can also do it as part of the `cmake` command: `cmake .. -DCMAKE_CXX_COMPILER=g++`.  You may proceed as follows:
+In some cases, you may want to specify your compiler, especially if the default compiler on your system is too old.  You need to tell cmake which compiler you wish to use by setting the CC and CXX variables. Under bash, you can do so with commands such as `export CC=gcc-7` and `export CXX=g++-7`. You can also do it as part of the `cmake` command: `cmake -DCMAKE_CXX_COMPILER=g++ ..`.  You may proceed as follows:
 
 ```
 brew install gcc@8
 mkdir build
 cd build
 export CXX=g++-8 CC=gcc-8
-cmake ..
+cmake -D SIMDJSON_DEVELOPER_MODE=ON ..
 cmake --build .
 ctest
 ```
@@ -269,7 +281,7 @@ Furthermore, if you have installed LLVM clang on Windows, for example as a compo
 
 - `mkdir build`
 - `cd build`
-- `cmake ..  -T ClangCL`
+- `cmake -T ClangCL ..`
 - `cmake --build . -config Release`
 
 

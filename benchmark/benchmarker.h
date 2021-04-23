@@ -331,7 +331,7 @@ struct benchmarker {
 
     // Stage 1 (find structurals)
     collector.start();
-    error = parser.implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.size(), false);
+    error = parser.implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.size(), stage1_mode::regular);
     event_count stage1_count = collector.end();
     stage1 << stage1_count;
     if (error) {

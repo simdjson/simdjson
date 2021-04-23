@@ -11,7 +11,29 @@ namespace dom {
 class document;
 } // namespace dom
 
+/**
+* This enum is used with the dom_parser_implementation::stage1 function.
+* 1) The regular mode expects a fully formed JSON document.
+* 2) The streaming_partial mode expects a possibly truncated
+* input within a stream on JSON documents.
+* 3) The stream_final mode allows us to truncate final
+* unterminated strings. It is useful in conjunction with streaming_partial.
+*/
+enum class stage1_mode { regular, streaming_partial, streaming_final};
+
+/**
+ * Returns true if mode == streaming_partial or mode == streaming_final
+ */
+inline bool is_streaming(stage1_mode mode) {
+  // performance note: it is probably faster to check that mode is different
+  // from regular than checking that it is either streaming_partial or streaming_final.
+  return (mode != stage1_mode::regular);
+  // return (mode == stage1_mode::streaming_partial || mode == stage1_mode::streaming_final);
+}
+
+
 namespace internal {
+
 
 /**
  * An implementation of simdjson's DOM parser for a particular CPU architecture.
@@ -51,7 +73,7 @@ public:
    * @param streaming Whether this is being called by parser::parse_many.
    * @return The error code, or SUCCESS if there was no error.
    */
-  simdjson_warn_unused virtual error_code stage1(const uint8_t *buf, size_t len, bool streaming) noexcept = 0;
+  simdjson_warn_unused virtual error_code stage1(const uint8_t *buf, size_t len, stage1_mode streaming) noexcept = 0;
 
   /**
    * @private For internal implementation use
