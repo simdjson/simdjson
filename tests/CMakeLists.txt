@@ -8,7 +8,7 @@ add_subdirectory(ondemand)
 # All remaining tests link with simdjson proper
 link_libraries(simdjson)
 
-if(MSVC and BUILD_SHARED_LIBS)
+if(MSVC AND BUILD_SHARED_LIBS)
   # Copy the simdjson dll into the tests directory
   add_custom_command(TARGET unicode_tests POST_BUILD        # Adds a post-build event
     COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake -E copy_if_different..."
