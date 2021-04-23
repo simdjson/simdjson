@@ -25,7 +25,7 @@ if(HAVE_POSIX_FORK AND HAVE_POSIX_WAIT) # assert tests use fork and wait, which 
 endif()
 
 # Copy the simdjson dll into the tests directory
-if(MSVC)
+if(MSVC and BUILD_SHARED_LIBS)
   add_custom_command(TARGET ondemand_parse_api_tests POST_BUILD        # Adds a post-build event
     COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake -E copy_if_different..."
         "$<TARGET_FILE:simdjson>"      # <--this is in-file

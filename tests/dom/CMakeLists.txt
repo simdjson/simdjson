@@ -131,17 +131,7 @@ if(NOT (MSVC AND MSVC_VERSION LESS 1920))
 endif()
 
 
-if(MSVC)
-  add_custom_command(TARGET basictests POST_BUILD        # Adds a post-build event
-    COMMAND ${CMAKE_COMMAND} -E echo "$<TARGET_FILE:simdjson>"
-    COMMAND ${CMAKE_COMMAND} -E echo "$<TARGET_FILE_DIR:basictests>"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake -E copy_if_different..."
-        "$<TARGET_FILE:simdjson>"      # <--this is in-file
-        "$<TARGET_FILE_DIR:basictests>")                 # <--this is out-file path
-endif()
-
-# Copy the simdjson dll into the tests directory
-if(MSVC)
+if(MSVC and BUILD_SHARED_LIBS)
   add_custom_command(TARGET basictests POST_BUILD        # Adds a post-build event
     COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake -E copy_if_different..."
         "$<TARGET_FILE:simdjson>"      # <--this is in-file
