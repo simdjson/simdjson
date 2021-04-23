@@ -48,7 +48,7 @@ c++ myproject.cpp simdjson.cpp
 ```
 
 Note:
-- Users on macOS and other platforms were default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ -std=c++17 myproject.cpp simdjson.cpp`).
+- Users on macOS and other platforms where default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ -std=c++17 myproject.cpp simdjson.cpp`).
 
 Using simdjson with package managers
 ------------------
@@ -66,13 +66,13 @@ include(FetchContent)
 FetchContent_Declare(
   simdjson
   GIT_REPOSITORY https://github.com/simdjson/simdjson.git
-  GIT_TAG  v0.9.0
+  GIT_TAG  v0.9.3
   GIT_SHALLOW TRUE)
 
 FetchContent_MakeAvailable(simdjson)
 ```
 
-You should replace `GIT_TAG  v0.9.0` by the version you need. If you omit `GIT_TAG  v0.9.0`, you will work from the main branch of simdjson: we recommend that if you are working on production code,
+You should replace `GIT_TAG  v0.9.3` by the version you need. If you omit `GIT_TAG  v0.9.3`, you will work from the main branch of simdjson: we recommend that if you are working on production code, you always work from a release.
 
 Elsewhere in your project, you can  declare dependencies on simdjson with lines such as these:
 

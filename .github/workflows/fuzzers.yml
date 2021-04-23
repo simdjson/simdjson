@@ -44,18 +44,24 @@ jobs:
         path: dependencies/.cache
         key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
 
+    - uses: actions/cache@v2
+      id: cache-corpus
+      with:
+        path: out/
+        key: corpus-${{ github.run_id }}
+        restore-keys: corpus-
+    
+    - name: show statistics for the cached corpus
+      run: |
+        echo number of files in github action corpus cache:
+        find out -type f |wc -l
+    
     - name: Create and prepare the initial seed corpus
       run: |
         fuzz/build_corpus.sh
         mv corpus.zip seed_corpus.zip
         mkdir seedcorpus
         unzip -q -d seedcorpus seed_corpus.zip
-
-    - name: Download the corpus from the last run
-      run: |
-        wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
-        tar xf corpus.tar
-        rm corpus.tar
 
     - name: List clang versions
       run: |
@@ -70,7 +76,7 @@ jobs:
       run: |
         set -eux
         for fuzzer in $defaultimplfuzzers $implfuzzers; do
-          mkdir -p out/$fuzzer # in case this is a new fuzzer, or corpus.tar is broken
+          mkdir -p out/$fuzzer # in case this is a new fuzzer, or the github action cached corpus is broken
           # get input from everyone else (corpus cross pollination)
           others=$(find out -type d -not -name $fuzzer -not -name out -not -name cmin)
           build-fast/fuzz/fuzz_$fuzzer out/$fuzzer $others seedcorpus -max_total_time=30 $MAXLEN
@@ -142,15 +148,6 @@ jobs:
         name: valgrindresults
         path: valgrind.tar
         if-no-files-found: ignore
-
-    - name: Upload the corpus and results to bintray if we are on master
-      if: ${{ github.event_name == 'schedule' }} 
-      run: |
-        echo uploading each artifact twice, otherwise it will not be published
-        curl -T corpus.tar -upauldreik:${{ secrets.bintrayApiKey }} https://api.bintray.com/content/pauldreik/simdjson-fuzz-corpus/corpus/0/corpus/corpus.tar";publish=1;override=1"
-        curl -T corpus.tar -upauldreik:${{ secrets.bintrayApiKey }} https://api.bintray.com/content/pauldreik/simdjson-fuzz-corpus/corpus/0/corpus/corpus.tar";publish=1;override=1"
-        curl -T valgrind.tar -upauldreik:${{ secrets.bintrayApiKey }} https://api.bintray.com/content/pauldreik/simdjson-fuzz-corpus/corpus/0/corpus/valgrind.tar";publish=1;override=1"
-        curl -T valgrind.tar -upauldreik:${{ secrets.bintrayApiKey }} https://api.bintray.com/content/pauldreik/simdjson-fuzz-corpus/corpus/0/corpus/valgrind.tar";publish=1;override=1"
 
     - name: Archive any crashes as an artifact
       uses: actions/upload-artifact@v2

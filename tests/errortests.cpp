@@ -7,7 +7,7 @@
 #include <vector>
 #include <cmath>
 #include <set>
-#include <string_view>
+#include <unistd.h>
 
 #include "simdjson.h"
 
@@ -70,7 +70,7 @@ namespace parser_load {
       count++;
       ASSERT_ERROR(doc.error(), TAPE_ERROR);
     }
-    ASSERT_EQUAL(count, 1);
+    ASSERT_EQUAL(count, 0);
     TEST_SUCCEED();
   }
 
@@ -92,7 +92,7 @@ namespace parser_load {
         ASSERT_EQUAL(val, count);
       }
     }
-    ASSERT_EQUAL(count, 3);
+    ASSERT_EQUAL(count, 2);
     TEST_SUCCEED();
   }
 
@@ -188,12 +188,39 @@ namespace adversarial {
   }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+  std::cout << std::unitbuf;
+  int c;
+  while ((c = getopt(argc, argv, "a:")) != -1) {
+    switch (c) {
+    case 'a': {
+      const simdjson::implementation *impl = simdjson::available_implementations[optarg];
+      if (!impl) {
+        fprintf(stderr, "Unsupported architecture value -a %s\n", optarg);
+        return EXIT_FAILURE;
+      }
+      if(!impl->supported_by_runtime_system()) {
+        fprintf(stderr, "The selected implementation does not match your current CPU: -a %s\n", optarg);
+        return EXIT_FAILURE;
+      }
+      simdjson::active_implementation = impl;
+      break;
+    }
+    default:
+      fprintf(stderr, "Unexpected argument %c\n", c);
+      return EXIT_FAILURE;
+    }
+  }
+
   // this is put here deliberately to check that the documentation is correct (README),
   // should this fail to compile, you should update the documentation:
   if (simdjson::active_implementation->name() == "unsupported") {
     printf("unsupported CPU\n");
   }
+  // We want to know what we are testing.
+  std::cout << "Running tests against this implementation: " << simdjson::active_implementation->name();
+  std::cout << " (" << simdjson::active_implementation->description() << ")" << std::endl;
+  std::cout << "------------------------------------------------------------" << std::endl;
   std::cout << "Running error tests." << std::endl;
   if (!(true
         && parser_load::run()

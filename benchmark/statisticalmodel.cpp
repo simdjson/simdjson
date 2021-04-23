@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
   for (uint32_t i = 0; i < iterations; i++) {
     unified.start();
     // The default template is simdjson::architecture::NATIVE.
-    bool isok = (parser.implementation->stage1((const uint8_t *)p.data(), p.size(), false) == simdjson::SUCCESS);
+    bool isok = (parser.implementation->stage1((const uint8_t *)p.data(), p.size(), simdjson::stage1_mode::regular) == simdjson::SUCCESS);
     unified.end(results);
 
     cy1 += results[0];

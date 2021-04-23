@@ -136,7 +136,6 @@ else()
   MESSAGE( STATUS "You either have an old Visual Studio or you are building a DLL, amalgamate_demo test disabled." )
 endif()
 
-install(FILES simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 # Under Windows you should not mix static and dynamic. Pick one. The following test is static.
 if(NOT SIMDJSON_LEGACY_VISUAL_STUDIO AND NOT SIMDJSON_WINDOWS_DLL)
   add_library(simdjson-singleheader STATIC "")
