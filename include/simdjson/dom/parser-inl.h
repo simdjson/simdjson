@@ -100,13 +100,18 @@ inline simdjson_result<element> parser::parse_into_document(document& provided_d
   // Important: It is possible that provided_doc is actually the internal 'doc' within the parser!!!
   error_code _error = ensure_capacity(provided_doc, len);
   if (_error) { return _error; }
-  std::unique_ptr<uint8_t[]> tmp_buf;
   if (realloc_if_needed) {
-    tmp_buf.reset(reinterpret_cast<uint8_t *>( internal::allocate_padded_buffer(len) ));
-    if (tmp_buf.get() == nullptr) { return MEMALLOC; }
-    std::memcpy(static_cast<void *>(tmp_buf.get()), buf, len);
+    // Make sure we have enough capacity to copy len bytes
+    if (!loaded_bytes || _loaded_bytes_capacity < len) {
+      loaded_bytes.reset( internal::allocate_padded_buffer(len) );
+      if (!loaded_bytes) {
+        return MEMALLOC;
+      }
+      _loaded_bytes_capacity = len;
+    }
+    std::memcpy(static_cast<void *>(loaded_bytes.get()), buf, len);
   }
-  _error = implementation->parse(realloc_if_needed ? tmp_buf.get() : buf, len, provided_doc);
+  _error = implementation->parse(realloc_if_needed ? reinterpret_cast<const uint8_t*>(loaded_bytes.get()): buf, len, provided_doc);
 
   if (_error) { return _error; }
 
