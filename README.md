@@ -27,7 +27,6 @@ Table of Contents
 -----------------
 
 * [Quick Start](#quick-start)
-  * [On Demand](#on-demand)
 * [Documentation](#documentation)
 * [Performance results](#performance-results)
 * [Real-world usage](#real-world-usage)
