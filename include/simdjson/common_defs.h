@@ -38,7 +38,7 @@ constexpr size_t SIMDJSON_MAXSIZE_BYTES = 0xFFFFFFFF;
  * the input buf should be readable up to buf + SIMDJSON_PADDING
  * this is a stopgap; there should be a better description of the
  * main loop and its behavior that abstracts over this
- * See https://github.com/lemire/simdjson/issues/174
+ * See https://github.com/simdjson/simdjson/issues/174
  */
 constexpr size_t SIMDJSON_PADDING = 32;
 
