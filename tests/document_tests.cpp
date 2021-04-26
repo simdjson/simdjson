@@ -36,7 +36,7 @@ namespace document_tests {
     return true;
   }
 
-  // adversarial example that once triggred overruns, see https://github.com/lemire/simdjson/issues/345
+  // adversarial example that once triggered overruns, see https://github.com/simdjson/simdjson/issues/345
   bool bad_example() {
     std::cout << __func__ << std::endl;
     simdjson::padded_string badjson = "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"_padded;
