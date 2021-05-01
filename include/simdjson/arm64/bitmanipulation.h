@@ -70,7 +70,7 @@ simdjson_really_inline uint64_t reverse_bits(uint64_t input_num) {
 /**
  * Flips bit at index 63 - lz. Thus if you have 'leading_zeroes' leading zeroes,
  * then this will set to zero the leading bit. It is possible for leading_zeroes to be
- * greating or equal to 63 in which case we trigger undefined behavior, but the ouput
+ * greating or equal to 63 in which case we trigger undefined behavior, but the output
  * of such undefined behavior is never used.
  **/
 NO_SANITIZE_UNDEFINED

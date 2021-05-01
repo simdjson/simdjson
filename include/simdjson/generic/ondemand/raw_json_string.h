@@ -75,7 +75,7 @@ public:
    * long strings.
    *
    * If target is a compile-time constant, and your compiler likes you,
-   * you should be able to do the following without performance penatly...
+   * you should be able to do the following without performance penalty...
    *
    *   static_assert(raw_json_string::is_free_from_unescaped_quote(target), "");
    *   s.unsafe_is_equal(target);
@@ -89,7 +89,7 @@ public:
    * the caller is responsible for this check. See is_free_from_unescaped_quote.
    *
    * If target is a compile-time constant, and your compiler likes you,
-   * you should be able to do the following without performance penatly...
+   * you should be able to do the following without performance penalty...
    *
    *   static_assert(raw_json_string::is_free_from_unescaped_quote(target), "");
    *   s.unsafe_is_equal(target);

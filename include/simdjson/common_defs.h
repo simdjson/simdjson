@@ -161,7 +161,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
      * the regular visual studio or clang under visual
      * studio, you still need to handle these issues.
      *
-     * Non-Windows sytems do not have this complexity.
+     * Non-Windows systems do not have this complexity.
      */
     #if SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY
     // We set SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY when we build a DLL under Windows.
@@ -215,7 +215,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 // now it is safe to trigger the include
 #include <string_view> // though the file is there, it does not follow that we got the implementation
 #if defined(_LIBCPP_STRING_VIEW)
-// Ah! So we under libc++ which under its Library Fundamentals Technical Specification, which preceeded C++17,
+// Ah! So we under libc++ which under its Library Fundamentals Technical Specification, which preceded C++17,
 // included string_view.
 // This means that we have string_view *even though* we may not have C++17.
 #define SIMDJSON_HAS_STRING_VIEW

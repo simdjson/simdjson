@@ -16,7 +16,7 @@ public:
   inline simdjson::error_code append(value element) noexcept;
   /** Append an array to the builder (to be printed) **/
   inline simdjson::error_code append(array value) noexcept;
-  /** Append an objet to the builder (to be printed) **/
+  /** Append an object to the builder (to be printed) **/
   inline simdjson::error_code append(object value) noexcept;
   /** Append a field to the builder (to be printed) **/
   inline simdjson::error_code append(field value) noexcept;
@@ -134,7 +134,7 @@ inline std::ostream& operator<<(std::ostream& out, document& value)  {
  * Print JSON to an output stream.
  *
  * @param out The output stream.
- * @param value The objet.
+ * @param value The object.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
 #if SIMDJSON_EXCEPTIONS

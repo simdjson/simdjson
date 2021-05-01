@@ -536,7 +536,7 @@ public:
 
   /**
    * @private return an error code corresponding to the last parsing attempt, see
-   * simdjson.h will return UNITIALIZED if no parsing was attempted
+   * simdjson.h will return UNINITIALIZED if no parsing was attempted
    */
   [[deprecated("Use the result of parser.parse() instead")]]
   inline int get_error_code() const noexcept;
