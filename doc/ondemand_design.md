@@ -636,7 +636,7 @@ direct raw ASCII comparisons: `key().raw()` provides direct access to the unesca
 You can compare `key()` with unescaped C strings (e.g., `key()=="test"`). It is expected
 that the provided string is a valid JSON string. Importantly,
 the C string must not contain an unescaped quote character (`"`). For speed, the comparison is done byte-by-byte
-without handling the escaped caracters.
+without handling the escaped characters.
 If you occasionally need to access and store the
 unescaped key values, you may use the `unescaped_key()` method. Once you have called `unescaped_key()` method,
 neither the `key()` nor the `unescaped_key()` methods should be called: the current field instance

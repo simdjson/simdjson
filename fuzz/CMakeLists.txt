@@ -25,7 +25,7 @@ if(ENABLE_FUZZING)
   # (note that libFuzzer can also reproduce, just pass it the files)
   #
   # Using this by default, means the fuzzers will be built as a part of the normal
-  # workflow, meaning they wont bitrot and will participate in refactoring etc.
+  # workflow, meaning they won't bitrot and will participate in refactoring etc.
   #
   option(SIMDJSON_FUZZ_LINKMAIN "links a main into fuzz targets for building reproducers" On)
 
