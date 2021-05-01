@@ -76,7 +76,7 @@ if (Git_FOUND AND (GIT_VERSION_STRING VERSION_GREATER  "2.1.4") AND (NOT CMAKE_G
   if (CMAKE_CONFIGURATION_TYPES)
     set(CHECKPERF_PARSE ${SIMDJSON_CHECKPERF_DIR}/build/benchmark/$<CONFIGURATION>/parse)
   else()
-    set(CHECKPERF_PARSE ${SIMDJSON_CHECKPERF_DIR}/build/benchmark/parse)
+    set(CHECKPERF_PARSE ${SIMDJSON_CHECKPERF_DIR}/build/benchmark/dom/parse)
   endif()
   add_custom_target(
     checkperf-parse ALL # TODO is ALL necessary?

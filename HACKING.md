@@ -88,7 +88,7 @@ Other important files and directories:
   cd build
   cmake -D SIMDJSON_DEVELOPER_MODE=ON ..
   cmake --build . --config Release
-  benchmark/parse ../jsonexamples/twitter.json
+  benchmark/dom/parse ../jsonexamples/twitter.json
   ```
   The last line becomes `./benchmark/Release/parse.exe ../jsonexample/twitter.json` under Windows. You may also use Google Benchmark:
   ```bash
