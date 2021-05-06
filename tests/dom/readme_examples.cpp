@@ -268,6 +268,25 @@ void implementation_selection_1() {
   cout << "(" << simdjson::active_implementation->description() << ")" << endl;
 }
 
+void unescaped_key() {
+    auto json = R"({"k\u0065y": 1})"_padded;
+    ondemand::parser parser;
+    auto doc = parser.iterate(json);
+    ondemand::object object = doc.get_object();
+    for(auto field : object) {
+      // parses and writes out the key, after unescaping it,
+      // to a string buffer. This should be expected to be much
+      // more costly than accessing the raw string ("key()").
+      std::string_view keyv = field.unescaped_key();
+      if(keyv == "key") {
+         std::cout << uint64_t(field.value());
+      }
+      // You can access the raw value like so:
+      // ondemand::raw_json_string keyv = field.key();
+      // if(keyv == R"(k\u0065y)") {
+    }
+}
+
 void implementation_selection_2() {
   for (auto implementation : simdjson::available_implementations) {
     cout << implementation->name() << ": " << implementation->description() << endl;
