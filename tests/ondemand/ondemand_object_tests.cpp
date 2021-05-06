@@ -635,7 +635,8 @@ namespace object_tests {
       bool got_key = false;
       ASSERT_SUCCESS( doc_result.get(object) );
       for (auto field : object) {
-        std::string_view keyv = field.unescaped_key();
+        std::string_view keyv;
+        ASSERT_SUCCESS( field.unescaped_key().get(keyv) );
         if(keyv == "key") {
           int64_t value;
           ASSERT_SUCCESS( field.value().get(value) );
@@ -650,7 +651,8 @@ namespace object_tests {
       ASSERT_SUCCESS( doc_result.get(object) );
       bool got_key = false;
       for (auto field : object) {
-        ondemand::raw_json_string keyv = field.key();
+        ondemand::raw_json_string keyv;
+        ASSERT_SUCCESS( field.key().get(keyv) );
         if(keyv == R"(k\u0065y)") {
           int64_t value;
           ASSERT_SUCCESS( field.value().get(value) );
