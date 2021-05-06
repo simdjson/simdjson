@@ -42,8 +42,9 @@ jobs:
             cmake .. -GNinja \
                   -DCMAKE_CXX_COMPILER=clang++$CLANGSUFFIX \
                   -DCMAKE_C_COMPILER=clang$CLANGSUFFIX \
-                  -DSIMDJSON_BUILD_STATIC=Off \
-                  -DENABLE_FUZZING=On \
+                  -DBUILD_SHARED_LIBS=OFF \
+                  -DSIMDJSON_DEVELOPER_MODE=ON \
+                  -DSIMDJSON_ENABLE_FUZZING=On \
                   -DSIMDJSON_COMPETITION=OFF \
                   -DSIMDJSON_GOOGLE_BENCHMARKS=OFF \
                   -DSIMDJSON_DISABLE_DEPRECATED_API=On \
