@@ -16,6 +16,16 @@ jobs:
     name: Build on ubuntu-20.04 ppc64le
     steps:
       - uses: actions/checkout@v2.1.0
+      - uses: actions/cache@v2
+        id: cache-corpus
+        with:
+          path: out/
+          key: corpus-${{ github.run_id }}
+          restore-keys: corpus-
+       - name: show statistics for the cached corpus
+         run: |
+           echo number of files in github action corpus cache:
+           find out -type f |wc -l
       - uses: uraimo/run-on-arch-action@v2.0.5
         name: Run commands
         id: runcmd
@@ -56,8 +66,6 @@ jobs:
             cd ..
             builddir=build
             cmake --build $builddir
-            wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
-            tar xf corpus.tar && rm corpus.tar
             fuzzernames=$(cmake --build $builddir --target print_all_fuzzernames |tail -n1)
             for fuzzer in $fuzzernames ; do
                exe=$builddir/fuzz/$fuzzer
