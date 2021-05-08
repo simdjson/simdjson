@@ -1,11 +1,11 @@
 if(NOT SIMDJSON_LEGACY_VISUAL_STUDIO AND NOT SIMDJSON_WINDOWS_DLL)
-  option(ENABLE_FUZZING "enable building the fuzzers" ON)
+  option(SIMDJSON_ENABLE_FUZZING "enable building the fuzzers" ON)
 else()
-  option(ENABLE_FUZZING "enable building the fuzzers" OFF)
+  option(SIMDJSON_ENABLE_FUZZING "enable building the fuzzers" OFF)
 endif()
 
 
-if(ENABLE_FUZZING)
+if(SIMDJSON_ENABLE_FUZZING)
 
   # First attempt at a fuzzer, using libFuzzer.
   #
@@ -17,7 +17,7 @@ if(ENABLE_FUZZING)
   # export CFLAGS="-fsanitize=fuzzer-no-link,address,undefined"
   # export CXX=clang++
   # export CC=clang++
-  # cmake .. -GNinja -DCMAKE_BUILD_TYPE=Debug -DENABLE_FUZZING=On -DSIMDJSON_FUZZ_LINKMAIN=Off -DSIMDJSON_FUZZ_LDFLAGS=-fsanitize=fuzzer
+  # cmake .. -GNinja -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_ENABLE_FUZZING=On -DSIMDJSON_FUZZ_LINKMAIN=Off -DSIMDJSON_FUZZ_LDFLAGS=-fsanitize=fuzzer
   # ninja
 
   # settings this links in a main. useful for reproducing,
