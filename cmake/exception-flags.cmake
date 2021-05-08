@@ -19,7 +19,7 @@ editing CMAKE_CXX_FLAGS")
     # Here, we disable both with the - argument negation operator
     string(REPLACE "/EHsc" "/EHs-c-" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 
-    # Because we cannot change the flag above on an invidual target (yet), the
+    # Because we cannot change the flag above on an individual target (yet), the
     # definition below must similarly be added globally
     add_definitions(-D_HAS_EXCEPTIONS=0)
   elseif(CMAKE_COMPILER_IS_GNUCC)

@@ -470,7 +470,7 @@ select the value. If your keys contain the characters '/' or '~', they must be e
 '~0' respectively. An empty JSON Path refers to the whole document.
 
 We also extend the JSON Pointer support to include *relative* paths.
-You can apply a JSON path to any node and the path gets interpreted relatively, as if the currrent node were a whole JSON document.
+You can apply a JSON path to any node and the path gets interpreted relatively, as if the current node were a whole JSON document.
 
 Consider the following example:
 
@@ -827,7 +827,7 @@ Unlike `parser.parse`, both `parser.load_many(filename)` and `parser.parse_many(
 document at a time.
 
 1. When calling `parser.load_many(filename)`, the file's content is loaded up in a memory buffer owned by the `parser`'s instance. Thus the file can be safely deleted after calling `parser.load_many(filename)` as the parser instance owns all of the data.
-2. When calling  `parser.parse_many(string)`, no copy is made of the provided string input. The provided memory buffer may be accessed each time a JSON document is parsed.  Calling `parser.parse_many(string)` on a  temporary string buffer (e.g., `docs = parser.parse_many("[1,2,3]"_padded)`) is unsafe (and will not compile) because the  `document_stream` instance needs access to the buffer to return the JSON documents. In constrast, calling `doc = parser.parse("[1,2,3]"_padded)` is safe because `parser.parse` eagerly parses the input.
+2. When calling  `parser.parse_many(string)`, no copy is made of the provided string input. The provided memory buffer may be accessed each time a JSON document is parsed.  Calling `parser.parse_many(string)` on a  temporary string buffer (e.g., `docs = parser.parse_many("[1,2,3]"_padded)`) is unsafe (and will not compile) because the  `document_stream` instance needs access to the buffer to return the JSON documents. In contrast, calling `doc = parser.parse("[1,2,3]"_padded)` is safe because `parser.parse` eagerly parses the input.
 
 
 Both `load_many` and `parse_many` take an optional parameter `size_t batch_size` which defines the window processing size. It is set by default to a large value (`1000000` corresponding to 1 MB). None of your JSON documents should exceed this window size, or else you will get  the error `simdjson::CAPACITY`. You cannot set this window size larger than 4 GB: you will get  the error `simdjson::CAPACITY`. The smaller the window size is, the less memory the function will use. Setting the window size too small (e.g., less than 100 kB) may also impact performance negatively. Leaving it to 1 MB is expected to be a good choice, unless you have some larger documents.

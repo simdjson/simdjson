@@ -8,7 +8,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly 
   commands:
     - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
@@ -29,7 +29,7 @@ steps:
     CC: clang-6.0
     CXX: clang++-6.0
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly 
   commands:
     - scripts/addcmakeppa.sh "$(env -i sh -c '. /etc/os-release; echo $VERSION_CODENAME')"
@@ -50,7 +50,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
@@ -77,7 +77,7 @@ steps:
     CC: clang-6.0
     CXX: clang++-6.0
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - mkdir build
@@ -100,7 +100,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
@@ -122,7 +122,7 @@ steps:
   environment:
     CC: clang-9
     CXX: clang++-9
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
@@ -142,7 +142,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
@@ -213,7 +213,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=arm64;fallback
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_IMPLEMENTATION=arm64;fallback
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
@@ -237,7 +237,7 @@ steps:
   environment:
     CC: clang-6.0
     CXX: clang++-6.0
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure  -LE explicitonly
   commands:
@@ -260,7 +260,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
@@ -281,7 +281,7 @@ steps:
   environment:
     CC: clang-6.0
     CXX: clang++-6.0
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
@@ -302,7 +302,7 @@ steps:
   image: gcc:8
   environment:
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_IMPLEMENTATION=arm64;fallback
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_IMPLEMENTATION=arm64;fallback
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
     CC: gcc
     CXX: g++
@@ -356,7 +356,7 @@ steps:
     CC: clang-9
     CXX: clang++-9
     BUILD_FLAGS: -- -j 4
-    CMAKE_FLAGS: -GNinja -DSIMDJSON_BUILD_STATIC=ON
+    CMAKE_FLAGS: -GNinja -DBUILD_SHARED_LIBS=OFF
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
     CXXFLAGS: -stdlib=libc++
   commands:
@@ -377,7 +377,7 @@ steps:
     CC: clang-9
     CXX: clang++-9
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
     CXXFLAGS: -stdlib=libc++
   commands:
@@ -398,7 +398,7 @@ steps:
     CC: clang-7
     CXX: clang++-7
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
     CXXFLAGS: -stdlib=libc++
   commands:
@@ -429,26 +429,28 @@ steps:
     - cmake $CMAKE_FLAGS ..
     - cmake --build . $BUILD_FLAGS
     - ctest $CTEST_FLAGS
----
-kind: pipeline
-name: arm64-fuzz
-platform: { os: linux, arch: arm64 }
-steps:
-- name: Build and run fuzzers shortly
-  image: ubuntu:20.04
-  environment:
-    CC: clang
-    CXX: clang++
-    DEBIAN_FRONTEND: noninteractive
-    ASAN_OPTIONS: detect_leaks=0
-  commands:
-    - apt-get -qq update
-    - apt-get install -q -y clang cmake git wget zip ninja-build
-    - wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
-    - tar xf corpus.tar && rm corpus.tar
-    - fuzz/build_like_ossfuzz.sh
-    - mkdir -p common_out
-    - for fuzzer in build/fuzz/fuzz_* ; do echo $fuzzer;$fuzzer common_out out/* -max_total_time=40; done
+##############################
+# With bintray gone, it is clear how we should fuzz.
+#---
+#kind: pipeline
+#name: arm64-fuzz
+#platform: { os: linux, arch: arm64 }
+#steps:
+#- name: Build and run fuzzers shortly
+#  image: ubuntu:20.04
+#  environment:
+#    CC: clang
+#    CXX: clang++
+#    DEBIAN_FRONTEND: noninteractive
+#    ASAN_OPTIONS: detect_leaks=0
+#  commands:
+#    - apt-get -qq update
+#    - apt-get install -q -y clang cmake git wget zip ninja-build
+#    - wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
+#    - tar xf corpus.tar && rm corpus.tar
+#    - fuzz/build_like_ossfuzz.sh
+#    - mkdir -p common_out
+#    - for fuzzer in build/fuzz/fuzz_* ; do echo $fuzzer;$fuzzer common_out out/* -max_total_time=40; done
 ---
 kind: pipeline
 name: stylecheck

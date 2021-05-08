@@ -37,7 +37,7 @@ public:
   inline void append(simdjson::dom::element value);
   /** Append an array to the builder (to be printed) **/
   inline void append(simdjson::dom::array value);
-  /** Append an objet to the builder (to be printed) **/
+  /** Append an object to the builder (to be printed) **/
   inline void append(simdjson::dom::object value);
   /** Reset the builder (so that it would print the empty string) **/
   simdjson_really_inline void clear();
@@ -149,7 +149,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
  * Print JSON to an output stream.
  *
  * @param out The output stream.
- * @param value The objet.
+ * @param value The object.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
 inline std::ostream& operator<<(std::ostream& out, simdjson::dom::object value)   {
