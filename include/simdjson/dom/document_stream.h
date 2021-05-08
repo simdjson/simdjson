@@ -123,7 +123,7 @@ public:
     using iterator_category = std::input_iterator_tag;
 
     /**
-     * Default contructor.
+     * Default constructor.
      */
     simdjson_really_inline iterator() noexcept;
     /**

@@ -145,7 +145,7 @@ if(atleastminor):
     sonumber += 1
 
 for line in fileinput.input(cmakefile, inplace=1, backup='.bak'):
-    line = re.sub('    VERSION \d+\.\d+\.\d+','    VERSION '+newmajorversionstring+'.'+mewminorversionstring+'.'+newrevversionstring, line)
+    line = re.sub('    VERSION \d+\.\d+\.\d+','    VERSION '+newmajorversionstring+'.'+mewminorversionstring+'.'+newrevversionstring, line.rstrip())
     line = re.sub('SIMDJSON_LIB_VERSION "\d+','SIMDJSON_LIB_VERSION "'+str(sonumber), line)
     line = re.sub('set\(SIMDJSON_LIB_SOVERSION \"\d+\"','set(SIMDJSON_LIB_SOVERSION \"'+str(sonumber)+'\"', line)
     print(line)

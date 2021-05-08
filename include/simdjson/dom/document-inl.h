@@ -37,7 +37,7 @@ inline error_code document::allocate(size_t capacity) noexcept {
   // need a capacity of at least capacity + 1, but it is also possible to do
   // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"
   //where capacity + 1 tape elements are
-  // generated, see issue https://github.com/lemire/simdjson/issues/345
+  // generated, see issue https://github.com/simdjson/simdjson/issues/345
   size_t tape_capacity = SIMDJSON_ROUNDUP_N(capacity + 3, 64);
   // a document with only zero-length strings... could have capacity/3 string
   // and we would need capacity/3 * 5 bytes on the string buffer

@@ -88,7 +88,7 @@ Other important files and directories:
   cd build
   cmake -D SIMDJSON_DEVELOPER_MODE=ON ..
   cmake --build . --config Release
-  benchmark/parse ../jsonexamples/twitter.json
+  benchmark/dom/parse ../jsonexamples/twitter.json
   ```
   The last line becomes `./benchmark/Release/parse.exe ../jsonexample/twitter.json` under Windows. You may also use Google Benchmark:
   ```bash
@@ -159,7 +159,7 @@ processor.
 
 At this point, we are require to use one of two main strategies.
 
-1. On POSIX systems, the main compilers (LLVM clang, GNU gcc) allow us to use any intrinsic function after including the header, but they fail to inline the resulting instruction if the target processor does not support them. Because we compile for a generic processor, we would not be able to use most intrinsic functions. Thankfully, more recent versions of these compilers allow us to flag a region of code with a specific target, so that we can compile only some of the code with support for advanced instructions. Thus in our C++, one might notice macros like `TARGET_HASWELL`. It is then our responsability, at runtime, to only run the regions of code (that we call kernels) matching the properties of the runtime processor. The benefit of this approach is that the compiler not only let us use intrinsic functions, but it can also optimize the rest of the code in the kernel with advanced instructions we enabled.
+1. On POSIX systems, the main compilers (LLVM clang, GNU gcc) allow us to use any intrinsic function after including the header, but they fail to inline the resulting instruction if the target processor does not support them. Because we compile for a generic processor, we would not be able to use most intrinsic functions. Thankfully, more recent versions of these compilers allow us to flag a region of code with a specific target, so that we can compile only some of the code with support for advanced instructions. Thus in our C++, one might notice macros like `TARGET_HASWELL`. It is then our responsibility, at runtime, to only run the regions of code (that we call kernels) matching the properties of the runtime processor. The benefit of this approach is that the compiler not only let us use intrinsic functions, but it can also optimize the rest of the code in the kernel with advanced instructions we enabled.
 
 2. Under Visual Studio, the problem is somewhat simpler. Visual Studio will not only provide the intrinsic functions, but it will also allow us to use them. They will compile just fine. It is at runtime that they may cause a crash. So we do not need to mark regions of code for compilation toward advanced processors (e.g., with  `TARGET_HASWELL` macros). The downside of the Visual Studio approach is that the compiler is not allowed to use advanced instructions others than those we specify. In principle, this means that Visual Studio has weaker optimization opportunities.
 

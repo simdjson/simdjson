@@ -1,7 +1,7 @@
 Files from https://github.com/plokhotnyuk/jsoniter-scala/tree/master/jsoniter-scala-benchmark/src/main/resources/com/github/plokhotnyuk/jsoniter_scala/benchmark
 
 See issue:
-https://github.com/lemire/simdjson/issues/70
+https://github.com/simdjson/simdjson/issues/70
 
 The files che-*.geo.json are number-parsing stress tests.
 

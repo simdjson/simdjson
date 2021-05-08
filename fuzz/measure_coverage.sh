@@ -23,8 +23,9 @@ if [ ! -d $bdir ] ; then
     cmake .. \
           -GNinja \
           -DCMAKE_BUILD_TYPE=Debug \
-          -DSIMDJSON_BUILD_STATIC=On \
-          -DENABLE_FUZZING=On \
+          -DSIMDJSON_DEVELOPER_MODE=ON \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DSIMDJSON_ENABLE_FUZZING=On \
           -DSIMDJSON_DISABLE_DEPRECATED_API=On \
 	  -DSIMDJSON_FUZZ_LINKMAIN=On
     ninja all_fuzzers
