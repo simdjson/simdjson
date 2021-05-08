@@ -176,7 +176,7 @@ install:
       export ASAN_OPTIONS="detect_leaks=0";
     fi
   - if [[ "${STATIC}" == "on" ]]; then
-      export CMAKE_FLAGS="${CMAKE_FLAGS} -DSIMDJSON_BUILD_STATIC=ON";
+      export CMAKE_FLAGS="${CMAKE_FLAGS} -DBUILD_SHARED_LIBS=OFF";
     fi
   - export CTEST_FLAGS="-j4 --output-on-failure -LE explicitonly"
 

@@ -58,7 +58,7 @@ bool validate(const char *dirname) {
     bool everything_fine = true;
     const char *extension1 = ".ndjson";
     const char *extension2 = ".jsonl";
-    const char *extension3 = ".json"; // bad json files shoud fail
+    const char *extension3 = ".json"; // bad json files should fail
 
     size_t dirlen = std::strlen(dirname);
     struct dirent **entry_list;

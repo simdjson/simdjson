@@ -164,49 +164,49 @@ jobs:
   gcc10-perftest:
     description: Build and run performance tests on GCC 10 and AVX 2 with a cmake static build, this test performance regression
     executor: gcc10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_BUILD_STATIC=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DBUILD_SHARED_LIBS=OFF }
     steps: [ cmake_perftest ]
   gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake static build
     executor: gcc10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DBUILD_SHARED_LIBS=OFF }
     steps: [ cmake_test, cmake_install_test, cmake_installed_test_cxx20 ]
   clang6:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build
     executor: clang6
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DBUILD_SHARED_LIBS=OFF }
     steps: [ cmake_test, cmake_install_test ]
   clang10:
     description: Build and run tests on clang 10 and AVX 2 with a cmake static build
     executor: clang10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON  -DSIMDJSON_BUILD_STATIC=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON  -DBUILD_SHARED_LIBS=OFF }
     steps: [ cmake_test, cmake_install_test, cmake_installed_test_cxx20 ]
   # libcpp
   libcpp-clang10:
     description: Build and run tests on clang 10 and AVX 2 with a cmake static build and libc++
     executor: clang10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_USE_LIBCPP=ON  -DSIMDJSON_BUILD_STATIC=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_USE_LIBCPP=ON  -DBUILD_SHARED_LIBS=OFF }
     steps: [ cmake_test, cmake_install_test, cmake_installed_test_cxx20 ]
   # sanitize
   sanitize-gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake sanitize build
     executor: gcc10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
+    environment: { CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
     steps: [ cmake_test ]
   sanitize-clang10:
     description: Build and run tests on clang 10 and AVX 2 with a cmake sanitize build
     executor: clang10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
+    environment: { CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
     steps: [ cmake_test ]
   threadsanitize-gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake sanitize build
     executor: gcc10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE_THREADS=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
+    environment: { CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON -DSIMDJSON_SANITIZE_THREADS=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
     steps: [ cmake_test ]
   threadsanitize-clang10:
     description: Build and run tests on clang 10 and AVX 2 with a cmake sanitize build
     executor: clang10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE_THREADS=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
+    environment: { CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON -DSIMDJSON_SANITIZE_THREADS=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
     steps: [ cmake_test ]
   nocheckeof-clang10:
     description: Validate that when __SIMDJSON_CHECK_EOF=0, everything still succeeds
@@ -220,12 +220,12 @@ jobs:
   dynamic-gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake dynamic build
     executor: gcc10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
+    environment: { CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON }
     steps: [ cmake_test, cmake_install_test ]
   dynamic-clang10:
     description: Build and run tests on clang 10 and AVX 2 with a cmake dynamic build
     executor: clang10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
+    environment: { CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON }
     steps: [ cmake_test, cmake_install_test ]
 
   # unthreaded
@@ -270,12 +270,12 @@ jobs:
   sanitize-haswell-gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake sanitize build
     executor: gcc10
-    environment: {  CXXFLAGS: -march=haswell, CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
+    environment: {  CXXFLAGS: -march=haswell, CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
     steps: [ cmake_test ]
   sanitize-haswell-clang10:
     description: Build and run tests on clang 10 and AVX 2 with a cmake sanitize build
     executor: clang10
-    environment: { CXXFLAGS: -march=haswell, CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
+    environment: { CXXFLAGS: -march=haswell, CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
     steps: [ cmake_test ]
 
 workflows:

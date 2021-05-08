@@ -161,8 +161,8 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   // Both i and power_of_five_128[index] have their most significant bit set to 1 which
   // implies that the either the most or the second most significant bit of the product
   // is 1. We pack values in this manner for efficiency reasons: it maximizes the use
-  // we make of the product. It also makes it easy to reason aboutthe product: there
-  // 0 or 1 leading zero in the product.
+  // we make of the product. It also makes it easy to reason about the product: there
+  // is 0 or 1 leading zero in the product.
 
   // Unless the least significant 9 bits of the high (64-bit) part of the full
   // product are all 1s, then we know that the most significant 55 bits are
@@ -277,7 +277,7 @@ simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool neg
   mantissa &= ~(1ULL << 52);
   // we have to check that real_exponent is in range, otherwise we bail out
   if (simdjson_unlikely(real_exponent > 2046)) {
-    // We have an infinte value!!! We could actually throw an error here if we could.
+    // We have an infinite value!!! We could actually throw an error here if we could.
     return false;
   }
   d = to_double(mantissa, real_exponent, negative);
@@ -454,7 +454,7 @@ simdjson_really_inline error_code write_float(const uint8_t *const src, bool neg
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
   //
-  // 9999999999999999999 < 2**64 so we can accomodate 19 digits.
+  // 9999999999999999999 < 2**64 so we can accommodate 19 digits.
   // If we have a decimal separator, then digit_count - 1 is the number of digits, but we
   // may not have a decimal separator!
   if (simdjson_unlikely(digit_count > 19 && significant_digits(start_digits, digit_count) > 19)) {

@@ -687,7 +687,7 @@ namespace dom_api_tests {
       return false;
     }
     if (!iter.down()) {
-      printf("Root should not be emtpy\n");
+      printf("Root should not be empty\n");
       return false;
     }
     if (!iter.is_string()) {
@@ -708,7 +708,7 @@ namespace dom_api_tests {
       return false;
     }
     if(!iter.down()) {
-      printf("Image key should not be emtpy\n");
+      printf("Image key should not be empty\n");
       return false;
     }
     if(!iter.next()) {
