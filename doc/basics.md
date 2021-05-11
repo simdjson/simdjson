@@ -732,7 +732,7 @@ std::string_view token = obj["value"].raw_json_token();
 // token has value "12321323213213213213213213213211223"
 ```
 
-The `raw_json_token` method even works when the JSON value is a string. In such cases, it 
+The `raw_json_token` method even works when the JSON value is a string. In such cases, it
 will return the complete string with the quotes and with eventual escaped sequences as in the
 source document.
 
