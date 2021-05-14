@@ -37,4 +37,5 @@ if (TARGET benchmark::benchmark)
   endif()
 endif()
 
-include(checkperf.cmake)
+# deliberately disabling.
+# include(checkperf.cmake)
