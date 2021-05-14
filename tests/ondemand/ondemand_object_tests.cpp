@@ -30,6 +30,36 @@ namespace object_tests {
     return true;
   }
 
+  bool missing_key_continue() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata =  R"({"a":0, "b":1, "c":2})"_padded;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    int64_t num;
+    ASSERT_SUCCESS(doc["a"].get(num));
+    ASSERT_EQUAL(num, 0);
+    ASSERT_SUCCESS(doc["b"].get(num));
+    ASSERT_EQUAL(num, 1);
+    ASSERT_SUCCESS(doc["c"].get(num));
+    ASSERT_EQUAL(num, 2);
+    // Start again, but omit a key
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc["a"].get(num));
+    ASSERT_EQUAL(num, 0);
+    ASSERT_SUCCESS(doc["c"].get(num));
+    ASSERT_EQUAL(num, 2);
+    // Start again, but request a missing key
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    simdjson::ondemand::object obj;
+    ASSERT_SUCCESS(doc.get_object().get(obj));
+    ASSERT_SUCCESS(obj["a"].get(num));
+    ASSERT_EQUAL(num, 0);
+    assert_error(obj["d"].get(num), NO_SUCH_FIELD);
+    ASSERT_SUCCESS(obj["c"].get(num));
+    ASSERT_EQUAL(num, 2);
+    TEST_SUCCEED();
+  }
 
   bool missing_keys() {
     TEST_START();
@@ -1008,6 +1038,7 @@ namespace object_tests {
 
   bool run() {
     return
+           missing_key_continue() &&
            no_missing_keys() &&
            missing_keys() &&
 #if SIMDJSON_EXCEPTIONS
