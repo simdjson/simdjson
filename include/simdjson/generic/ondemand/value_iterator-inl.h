@@ -55,7 +55,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_field_raw(const std::string_view key) noexcept {
   error_code error;
-  logger::log_value(*_json_iter, (std::string("find \"")+std::string(key)+std::string("\"")).c_str());
   bool has_value;
   //
   // Initially, the object can be in one of a few different places:
@@ -66,9 +65,12 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
   //      ^ (depth 2, index 1)
   //    ```
-  //
-  if (at_first_field()) {
-    logger::log_value(*_json_iter, "first field");
+  // If you mix find_field_raw and find_field_unordered_raw, you might
+  // also start from any key:
+  if (*_json_iter->peek() == '"' && *_json_iter->peek(1) == ':') {
+  // But if you do not mix find_field_raw and find_field_unordered_raw then
+  // the only relevant key is the first one:
+  // if (at_first_field()) {
     has_value = true;
 
   //
@@ -82,7 +84,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else if (!is_open()) {
-    logger::log_value(*_json_iter, "not open");
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
     // If we're past the end of the object, we're being iterated out of order.
     // Note: this isn't perfect detection. It's possible the user is inside some other object; if so,
@@ -106,9 +107,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else {
-    logger::log_value(*_json_iter, "value , }");
     if ((error = skip_child() )) { abandon(); return error; }
-    logger::log_value(*_json_iter, "checking ,");
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
     if (_json_iter->start_position(_depth) != _start_position) { return OUT_OF_ORDER_ITERATION; }
@@ -139,7 +138,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     SIMDJSON_TRY( skip_child() ); // Skip the value entirely
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
   }
-  logger::log_value(*_json_iter, "out of fields");
 
   // If the loop ended, we're out of fields to look at.
   return false;
@@ -147,21 +145,22 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_field_unordered_raw(const std::string_view key) noexcept {
   error_code error;
-  logger::log_value(*_json_iter, (std::string("find \"")+std::string(key)+std::string("\"")).c_str());
   bool has_value;
-  //
+  // Next line could be useful:
+  // bool at_first = at_first_field();
+  ///////////////
   // Initially, the object can be in one of a few different places:
   //
-  // 1. The start of the object, at the first field:
+  // 1. At a key:
   //
   //    ```
   //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
   //      ^ (depth 2, index 1)
   //    ```
+  //  Note that we do not always start from the first field. We
+  //  can start from any field.
   //
-  if (at_first_field()) {
-    logger::log_value(*_json_iter, "first field");
-    // If we're at the beginning of the object, we definitely have a field
+  if (*_json_iter->peek() == '"' && *_json_iter->peek(1) == ':') {
     has_value = true;
 
   // 2. When a previous search did not yield a value or the object is empty:
@@ -174,7 +173,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else if (!is_open()) {
-    logger::log_value(*_json_iter, "not open");
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
     // If we're past the end of the object, we're being iterated out of order.
     // Note: this isn't perfect detection. It's possible the user is inside some other object; if so,
@@ -189,22 +187,13 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    // When a field was not fully consumed (or not even touched at all)
   //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
   //           ^ (depth 2)
-  //    // When a field was fully consumed (NO!!!)
-  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
-  //                   ^ (depth 1)
   //    // When the last field was fully consumed
   //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
   //                                   ^ (depth 1)
   //    ```
   //
   } else {
-    // If you are pointing at a comma, you do not want to be calling
-    // has_next_field as it would advance the pointer and seek either
-    // , or }, and it will fail.
-    logger::log_value(*_json_iter, "value or }");
-    // Finish the previous value and see if , or } is next
     if ((error = skip_child() )) { abandon(); return error; }
-    logger::log_value(*_json_iter, "checking ,");
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
     if (_json_iter->start_position(_depth) != _start_position) { return OUT_OF_ORDER_ITERATION; }
@@ -228,7 +217,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   // First, we scan from that point to the end.
   // If we don't find a match, we loop back around, and scan from the beginning to that point.
   token_position search_start = _json_iter->position();
-  logger::log_value(*_json_iter, "search_start");
 
   // Next, we find a match starting from the current position.
   while (has_value) {
@@ -259,13 +247,17 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     SIMDJSON_TRY( skip_child() );
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
   }
+  // Performance note: it maybe wasteful to rewind to the beginning when there might be
+  // no other query following. Indeed, it would require reskipping the whole object.
+  // Instead, you can just stay where you are. If there is a new query, there is always time
+  // to rewind.
+  // if(at_first) { return false; }
 
   // If we reach the end without finding a match, search the rest of the fields starting at the
   // beginning of the object.
   // (We have already run through the object before, so we've already validated its structure. We
   // don't check errors in this bit.)
   _json_iter->reenter_child(_start_position + 1, _depth);
-
   has_value = started_object();
   while (_json_iter->position() < search_start) {
     SIMDJSON_ASSUME(has_value); // we should reach search_start before ever reaching the end of the object
@@ -296,17 +288,8 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     SIMDJSON_TRY( skip_child() );
     error = has_next_field().get(has_value); SIMDJSON_ASSUME(!error);
   }
-  logger::log_value(*_json_iter, "out of fields");
-  // If you sought a key that does not exist, you may end up
-  // pointing at a comma:
-  // Given the input JSON {"a":0, "b":1, "c":2}, if you first search
-  // for "a",  you finish recovering the value in the following state:
-  // |     int64            | 0, "b":1, "c":2}               | , "b":1, " |     2 |  |
-  // If you then search for a missing key, such as 'd', then you will finish as
-  // follows:
-  // |   out of fields      | , "b":1, "c":2}                | "b":1, "c" |     1 |  |
-
-  // If the loop ended, we're out of fields to look at.
+  // If the loop ended, we're out of fields to look at. Note that we can
+  // finish right before any key!
   return false;
 }
 
