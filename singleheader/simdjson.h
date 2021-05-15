@@ -1,4 +1,4 @@
-/* auto-generated on 2021-03-18 11:31:38 -0400. Do not edit! */
+/* auto-generated on 2021-05-14 09:22:48 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -2078,7 +2078,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 0.9.2
+#define SIMDJSON_VERSION 0.9.4
 
 namespace simdjson {
 enum {
@@ -2093,7 +2093,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 2
+  SIMDJSON_VERSION_REVISION = 4
 };
 } // namespace simdjson
 
@@ -21766,16 +21766,6 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child
       _depth--;
       if (depth() <= parent_depth) { return SUCCESS; }
       break;
-    case '"':
-      if(*peek() == ':') {
-        // we are at a key!!! This is
-        // only possible if someone searched
-        // for a key and the key was not found.
-        logger::log_value(*this, "key");
-        advance(); // eat up the ':'
-        break; // important!!!
-      }
-      simdjson_fallthrough;
     // Anything else must be a scalar value
     default:
       // For the first scalar, we will have incremented depth already, so we decrement it here.
@@ -22117,21 +22107,35 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   return false;
 }
 
+
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_field_unordered_raw(const std::string_view key) noexcept {
+  /**
+   * When find_field_unordered_raw is called, we can either be pointing at the
+   * first key, pointing outside (at the closing brace) or if a key was matched
+   * we can be either pointing right afterthe ':' right before the value (that we need skip),
+   * or we may have consumed the value and we might be at a comma or at the
+   * final brace (ready for a call to has_next_field()).
+   */
   error_code error;
   bool has_value;
-  //
+
+  // First, we scan from that point to the end.
+  // If we don't find a match, we may loop back around, and scan from the beginning to that point.
+  token_position search_start = _json_iter->position();
+
+  // We want to know whether we need to go back to the beginning.
+  bool at_first = at_first_field();
+  ///////////////
   // Initially, the object can be in one of a few different places:
   //
-  // 1. The start of the object, at the first field:
+  // 1. At the first key:
   //
   //    ```
   //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
   //      ^ (depth 2, index 1)
   //    ```
   //
-  if (at_first_field()) {
-    // If we're at the beginning of the object, we definitely have a field
+  if (at_first) {
     has_value = true;
 
   // 2. When a previous search did not yield a value or the object is empty:
@@ -22144,14 +22148,16 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else if (!is_open()) {
+
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
     // If we're past the end of the object, we're being iterated out of order.
     // Note: this isn't perfect detection. It's possible the user is inside some other object; if so,
     // this object iterator will blithely scan that object for fields.
     if (_json_iter->depth() < depth() - 1) { return OUT_OF_ORDER_ITERATION; }
 #endif
-    has_value = false;
-
+    _json_iter->reenter_child(_start_position + 1, _depth);
+    at_first = true;
+    has_value = started_object();
   // 3. When a previous search found a field or an iterator yielded a value:
   //
   //    ```
@@ -22167,8 +22173,13 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else {
-    // Finish the previous value and see if , or } is next
+    // If someone queried a key but they did access the value, then we are left pointing
+    // at the ':' and we need to move forward through the value... If the value was
+    // processed then skip_child() does not move the iterator (but may adjust the depth).
     if ((error = skip_child() )) { abandon(); return error; }
+    // The has_next_field() advances the pointer and check that either ',' or '}' is found.
+    // It returns true if ',' is found, false otherwise. If anything other than ',' or '}' is found,
+    // then we are in error and we abort.
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
     if (_json_iter->start_position(_depth) != _start_position) { return OUT_OF_ORDER_ITERATION; }
@@ -22189,10 +22200,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   // ```
   //
 
-  // First, we scan from that point to the end.
-  // If we don't find a match, we loop back around, and scan from the beginning to that point.
-  token_position search_start = _json_iter->position();
-
   // Next, we find a match starting from the current position.
   while (has_value) {
     SIMDJSON_ASSUME( _json_iter->_depth == _depth ); // We must be at the start of a field
@@ -22200,8 +22207,11 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
     // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
-
+    // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
+    // The depth is left unchanged by field_key().
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
+    // field_value() will advance and check that we find a ':' separating the
+    // key and the value. It will also increment the depth by one.
     if ((error = field_value() )) { abandon(); return error; }
 
     // If it matches, stop and return
@@ -22214,31 +22224,44 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // input).
     if (actual_key.unsafe_is_equal(key)) {
       logger::log_event(*this, "match", key, -2);
+      // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
     }
 
     // No match: skip the value and see if , or } is next
     logger::log_event(*this, "no match", key, -2);
+    // The call to skip_child is meant to skip over the value corresponding to the key.
+    // After skip_child(), we are right before the next comma (',') or the final brace ('}').
     SIMDJSON_TRY( skip_child() );
+    // The has_next_field() advances the pointer and check that either ',' or '}' is found.
+    // It returns true if ',' is found, false otherwise. If anything other than ',' or '}' is found,
+    // then we are in error and we abort.
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
   }
+  // Performance note: it maybe wasteful to rewind to the beginning when there might be
+  // no other query following. Indeed, it would require reskipping the whole object.
+  // Instead, you can just stay where you are. If there is a new query, there is always time
+  // to rewind.
+  if(at_first) { return false; }
 
   // If we reach the end without finding a match, search the rest of the fields starting at the
   // beginning of the object.
   // (We have already run through the object before, so we've already validated its structure. We
   // don't check errors in this bit.)
   _json_iter->reenter_child(_start_position + 1, _depth);
-
   has_value = started_object();
-  while (_json_iter->position() < search_start) {
+  while (true) {
     SIMDJSON_ASSUME(has_value); // we should reach search_start before ever reaching the end of the object
     SIMDJSON_ASSUME( _json_iter->_depth == _depth ); // We must be at the start of a field
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
     // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
-
+    // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
+    // The depth is left unchanged by field_key().
     error = field_key().get(actual_key); SIMDJSON_ASSUME(!error);
+    // field_value() will advance and check that we find a ':' separating the
+    // key and the value.  It will also increment the depth by one.
     error = field_value(); SIMDJSON_ASSUME(!error);
 
     // If it matches, stop and return
@@ -22251,16 +22274,28 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // input).
     if (actual_key.unsafe_is_equal(key)) {
       logger::log_event(*this, "match", key, -2);
+      // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
     }
 
     // No match: skip the value and see if , or } is next
     logger::log_event(*this, "no match", key, -2);
+    // The call to skip_child is meant to skip over the value corresponding to the key.
+    // After skip_child(), we are right before the next comma (',') or the final brace ('}').
     SIMDJSON_TRY( skip_child() );
+    // If we reached the end of the key-value pair we started from, then we know
+    // that the key is not there so we return false. We are either right before
+    // the next comma or the final brace.
+    if(_json_iter->position() == search_start) { return false; }
+    // The has_next_field() advances the pointer and check that either ',' or '}' is found.
+    // It returns true if ',' is found, false otherwise. If anything other than ',' or '}' is found,
+    // then we are in error and we abort.
     error = has_next_field().get(has_value); SIMDJSON_ASSUME(!error);
+    // If we make the mistake of exiting here, then we could be left pointing at a key
+    // in the middle of an object. That's not an allowable state.
   }
-
-  // If the loop ended, we're out of fields to look at.
+  // If the loop ended, we're out of fields to look at. The program should
+  // never reach this point.
   return false;
 }
 
