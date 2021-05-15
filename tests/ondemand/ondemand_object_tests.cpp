@@ -58,6 +58,32 @@ namespace object_tests {
     assert_error(obj["d"].get(num), NO_SUCH_FIELD);
     ASSERT_SUCCESS(obj["c"].get(num));
     ASSERT_EQUAL(num, 2);
+    // Start again, but request a missing key first
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_object().get(obj));
+    assert_error(obj["d"].get(num), NO_SUCH_FIELD);
+    ASSERT_SUCCESS(obj["a"].get(num));
+    ASSERT_EQUAL(num, 0);
+    // Start again, but request a missing key twice
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_object().get(obj));
+    ASSERT_SUCCESS(obj["a"].get(num));
+    ASSERT_EQUAL(num, 0);
+    assert_error(obj["d"].get(num), NO_SUCH_FIELD);
+    assert_error(obj["z"].get(num), NO_SUCH_FIELD);
+    // Because we do a full circle, you can query the same
+    // key twice!!!
+    ASSERT_SUCCESS(obj["a"].get(num));
+    ASSERT_EQUAL(num, 0);
+    ASSERT_SUCCESS(obj["b"].get(num));
+    ASSERT_EQUAL(num, 1);
+    ASSERT_SUCCESS(obj["b"].get(num));
+    ASSERT_EQUAL(num, 1);
+    ASSERT_SUCCESS(obj["a"].get(num));
+    ASSERT_EQUAL(num, 0);
+    assert_error(obj["d"].get(num), NO_SUCH_FIELD);
+    ASSERT_SUCCESS(obj["a"].get(num));
+    ASSERT_EQUAL(num, 0);
     TEST_SUCCEED();
   }
 
