@@ -571,6 +571,12 @@ simdjson_really_inline void value_iterator::assert_at_next() const noexcept {
   SIMDJSON_ASSUME( _depth > 0 );
 }
 
+
+ simdjson_really_inline void value_iterator::rewind_array() noexcept {
+   _json_iter->_depth = _depth+1;
+   _json_iter->token.index = _start_position+1;
+ }
+
 simdjson_really_inline void value_iterator::assert_at_child() const noexcept {
   SIMDJSON_ASSUME( _json_iter->token.index > _start_position );
   SIMDJSON_ASSUME( _json_iter->_depth == _depth + 1 );

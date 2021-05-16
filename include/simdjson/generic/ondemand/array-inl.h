@@ -74,17 +74,13 @@ simdjson_really_inline simdjson_result<array_iterator> array::end() noexcept {
 
 simdjson_really_inline simdjson_result<size_t> array::count_elements() noexcept {
   // We rewind
-  auto start_depth = iter._json_iter->_depth;
-  auto start_index = iter._json_iter->token.index;
-  iter._json_iter->_depth = iter._depth+1;
-  iter._json_iter->token.index = iter._start_position+1;
-  array_iterator iterator;
-  auto e = this->begin().get(iterator);
-  if(e) { return e; }
+  iter.rewind_array();
   size_t count{0};
-  for(;iterator != iterator; count++, ++iterator) {}
-  iter._json_iter->_depth = start_depth;
-  iter._json_iter->token.index = start_index;
+  for(simdjson_unused auto v : *this) { count++; }
+  // The above loop will always succeed, but we want to report errors. 
+  if(iter.error()) { return iter.error(); }
+  // We rewind
+  iter.rewind_array();
   return count;
 }
 

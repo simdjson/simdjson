@@ -10,6 +10,8 @@ namespace array_tests {
   bool iterate_array_count() {
     TEST_START();
     const auto json = R"([ 1, 10, 100 ])"_padded;
+    const auto badjson = R"([ 1, 10 100 ])"_padded;
+
     const vector<uint64_t> expected_value = { 1, 10, 100 };
 
     SUBTEST("ondemand::count_elements", test_ondemand_doc(json, [&](auto doc_result) {
@@ -61,6 +63,27 @@ namespace array_tests {
     TEST_SUCCEED();
   }
 
+  bool iterate_bad_array_count() {
+    TEST_START();
+    const auto badjson = R"([ 1, 10 100 ])"_padded;
+
+
+    SUBTEST("ondemand::count_elements", test_ondemand_doc(badjson, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
+      size_t count;
+      auto e = array.count_elements().get(count);
+      if( e != TAPE_ERROR) {
+        std::cout << e << "\n";
+        std::cout << "expected: " << TAPE_ERROR << "\n";
+        std::cout << "count = " << count << "\n";
+        return false;
+      }
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
   bool iterate_document_array() {
     TEST_START();
     const auto json = R"([ 1, 10, 100 ])"_padded;
@@ -395,6 +418,7 @@ namespace array_tests {
 
   bool run() {
     return
+           iterate_bad_array_count() &&
            iterate_array_count() &&
            iterate_array() &&
            iterate_document_array() &&

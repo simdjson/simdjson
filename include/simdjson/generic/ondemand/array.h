@@ -33,7 +33,8 @@ public:
   simdjson_really_inline simdjson_result<array_iterator> end() noexcept;
   /**
     * This method scans the array and counts the number of elements.
-    * The runtime complexity is linear in the size of the array.
+    * The runtime complexity is linear in the size of the array. After
+    * calling this function, the array is 'rewinded' at its beginning.
     */
   simdjson_really_inline simdjson_result<size_t> count_elements() noexcept;
 protected:
