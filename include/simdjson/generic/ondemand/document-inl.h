@@ -84,7 +84,11 @@ simdjson_really_inline document::operator std::string_view() noexcept(false) { r
 simdjson_really_inline document::operator raw_json_string() noexcept(false) { return get_raw_json_string(); }
 simdjson_really_inline document::operator bool() noexcept(false) { return get_bool(); }
 #endif
-
+simdjson_really_inline simdjson_result<size_t> document::count_elements() & noexcept {
+  auto answer = get_array().count_elements();
+  if(answer.error() == SUCCESS) { iter.rewind(); }
+  return answer;
+}
 simdjson_really_inline simdjson_result<array_iterator> document::begin() & noexcept {
   return get_array().begin();
 }
@@ -142,7 +146,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::docume
     )
 {
 }
-
+simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::count_elements() & noexcept {
+  if (error()) { return error(); }
+  return first.count_elements();
+}
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();

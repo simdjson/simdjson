@@ -72,6 +72,23 @@ simdjson_really_inline simdjson_result<array_iterator> array::end() noexcept {
   return array_iterator(iter);
 }
 
+simdjson_really_inline simdjson_result<size_t> array::count_elements() noexcept {
+  // We rewind
+  auto start_depth = iter._json_iter->_depth;
+  auto start_index = iter._json_iter->token.index;
+  iter._json_iter->_depth = iter._depth+1;
+  iter._json_iter->token.index = iter._start_position+1;
+  array_iterator iterator;
+  auto e = this->begin().get(iterator);
+  if(e) { return e; }
+  size_t count{0};
+  for(;iterator != iterator; count++, ++iterator) {}
+  iter._json_iter->_depth = start_depth;
+  iter._json_iter->token.index = start_index;
+  return count;
+}
+
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
@@ -101,5 +118,8 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_
   if (error()) { return error(); }
   return first.end();
 }
-
+simdjson_really_inline  simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::count_elements() noexcept {
+  if (error()) { return error(); }
+  return first.count_elements();
+}
 } // namespace simdjson

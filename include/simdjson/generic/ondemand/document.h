@@ -198,7 +198,11 @@ public:
    */
   simdjson_really_inline operator bool() noexcept(false);
 #endif
-
+  /**
+  * This method scans the array and counts the number of elements.
+  * The runtime complexity is linear in the size of the array.
+  */
+  simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
   /**
    * Begin array iteration.
    *
@@ -362,7 +366,7 @@ public:
   simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string() noexcept(false);
   simdjson_really_inline operator bool() noexcept(false);
 #endif
-
+  simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field(std::string_view key) & noexcept;

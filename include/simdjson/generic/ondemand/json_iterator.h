@@ -49,9 +49,8 @@ public:
   simdjson_really_inline json_iterator() noexcept = default;
   simdjson_really_inline json_iterator(json_iterator &&other) noexcept;
   simdjson_really_inline json_iterator &operator=(json_iterator &&other) noexcept;
-  simdjson_really_inline json_iterator(const json_iterator &other) noexcept = delete;
-  simdjson_really_inline json_iterator &operator=(const json_iterator &other) noexcept = delete;
-
+  simdjson_really_inline explicit json_iterator(const json_iterator &other) noexcept = default;
+  simdjson_really_inline json_iterator &operator=(const json_iterator &other) noexcept = default;
   /**
    * Skips a JSON value, whether it is a scalar, array or object.
    */
@@ -196,6 +195,11 @@ public:
 #endif
 
 protected:
+  /**
+  * Updates this json iterator so that it is back at the beginning of the document,
+  * as if it had just been created.
+  */
+  inline void rewind() noexcept;
   simdjson_really_inline json_iterator(const uint8_t *buf, ondemand::parser *parser) noexcept;
   simdjson_really_inline token_position last_document_position() const noexcept;
 

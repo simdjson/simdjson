@@ -28,6 +28,14 @@ simdjson_really_inline json_iterator::json_iterator(const uint8_t *buf, ondemand
   logger::log_headers();
 }
 
+
+inline void json_iterator::rewind() noexcept {
+   token.index = parser->implementation->structural_indexes.get();
+   logger::log_headers(); // We start again
+   _string_buf_loc = parser->string_buf.get();
+   _depth = 1;
+ }
+ 
 // GCC 7 warns when the first line of this function is inlined away into oblivion due to the caller
 // relating depth and parent_depth, which is a desired effect. The warning does not show up if the
 // skip_child() function is not marked inline).

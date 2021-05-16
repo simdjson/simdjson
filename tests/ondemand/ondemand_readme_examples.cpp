@@ -44,6 +44,24 @@ bool basics_3() {
   TEST_SUCCEED();
 }
 
+bool json_array_count() {
+  TEST_START();
+  ondemand::parser parser;
+  auto cars_json = R"( [ 40.1, 39.9, 37.7, 40.4 ] )"_padded;
+  auto doc = parser.iterate(cars_json);
+  size_t count = doc.count_elements();
+  ASSERT_EQUAL(4, count);
+  std::cout << count << std::endl;
+  count = doc.count_elements();
+  ASSERT_EQUAL(4, count);
+  std::cout << count << std::endl;
+  std::vector<double> values(count);
+  size_t index = 0;
+  for(double x : doc) { values[index++] = x; }
+  ASSERT_EQUAL(index, count);
+  TEST_SUCCEED();
+}
+
 bool using_the_parsed_json_1() {
   TEST_START();
 
@@ -168,6 +186,7 @@ int main() {
     true
 #if SIMDJSON_EXCEPTIONS
 //    && basics_1() // Fails because twitter.json isn't in current directory. Compile test only.
+    && json_array_count()
     && basics_2()
     && using_the_parsed_json_1()
     && using_the_parsed_json_2()

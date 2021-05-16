@@ -284,6 +284,7 @@ public:
   /** @} */
 
 protected:
+  inline simdjson_result<size_t> count_elements_array() noexcept;
   simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept;
 
   simdjson_really_inline bool parse_null(const uint8_t *json) const noexcept;
