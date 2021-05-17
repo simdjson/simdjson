@@ -35,7 +35,7 @@ inline void json_iterator::rewind() noexcept {
    _string_buf_loc = parser->string_buf.get();
    _depth = 1;
  }
- 
+
 // GCC 7 warns when the first line of this function is inlined away into oblivion due to the caller
 // relating depth and parent_depth, which is a desired effect. The warning does not show up if the
 // skip_child() function is not marked inline).
