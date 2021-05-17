@@ -77,7 +77,7 @@ simdjson_really_inline simdjson_result<size_t> array::count_elements() noexcept 
   iter.rewind_array();
   size_t count{0};
   for(simdjson_unused auto v : *this) { count++; }
-  // The above loop will always succeed, but we want to report errors. 
+  // The above loop will always succeed, but we want to report errors.
   if(iter.error()) { return iter.error(); }
   // We rewind
   iter.rewind_array();
