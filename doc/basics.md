@@ -305,7 +305,7 @@ You should not let the array instance go out of scope before consuming it after 
    auto doc = parser.iterate(cars_json);
    auto test_array = doc.find_field("test").get_array();
    size_t count = test_array.count_elements();
-   std::cout <<"Number of elements: " <<  count << std::endl;
+   std::cout << "Number of elements: " <<  count << std::endl;
    for(ondemand::object elem: test_array) {
      std::cout << simdjson::to_string(elem);
    }
