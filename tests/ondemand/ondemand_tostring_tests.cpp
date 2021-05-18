@@ -13,6 +13,8 @@
 #include <vector>
 
 #include "simdjson.h"
+using namespace simdjson;
+
 #include "test_ondemand.h"
 namespace tostring_tests {
 const char *test_files[] = {
@@ -21,6 +23,16 @@ const char *test_files[] = {
 
 #if SIMDJSON_EXCEPTIONS
 
+
+bool minify_demo() {
+  TEST_START();
+  ondemand::parser parser;
+  auto cars_json = R"( { "test": "result"  }  )"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS( parser.iterate(cars_json).get(doc) );
+  std::cout << simdjson::to_string(doc["test"]) << std::endl;
+  TEST_SUCCEED();
+}
 
 /**
  * The general idea of these tests if that if you take a JSON file,
@@ -73,8 +85,9 @@ bool minify_test() {
       return false;
     }
   }
-  return true;
+  TEST_SUCCEED();
 }
+
 #endif // SIMDJSON_EXCEPTIONS
 
 bool load_to_string_exceptionless(const char *filename) {
@@ -136,6 +149,7 @@ bool minify_exceptionless_test() {
 bool run() {
   return
 #if SIMDJSON_EXCEPTIONS
+      minify_demo() &&
       minify_test() &&
 #endif // SIMDJSON_EXCEPTIONS
       minify_exceptionless_test() &&
