@@ -62,6 +62,22 @@ bool json_array_count() {
   TEST_SUCCEED();
 }
 
+bool json_array_count_complex() {
+   ondemand::parser parser;
+   auto cars_json = R"( { "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )"_padded;
+   auto doc = parser.iterate(cars_json);
+   auto test_array = doc.find_field("test").get_array();
+   size_t count = test_array.count_elements();
+   std::cout <<"Number of elements: " <<  count << std::endl;
+   size_t c = 0;
+   for(ondemand::object elem: test_array) {
+     std::cout << simdjson::to_string(elem);
+     c++;
+   }
+   std::cout << std::endl;
+   return c == count;
+}
+
 bool using_the_parsed_json_1() {
   TEST_START();
 
@@ -186,6 +202,7 @@ int main() {
     true
 #if SIMDJSON_EXCEPTIONS
 //    && basics_1() // Fails because twitter.json isn't in current directory. Compile test only.
+    && json_array_count_complex()
     && json_array_count()
     && basics_2()
     && using_the_parsed_json_1()

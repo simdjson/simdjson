@@ -7,6 +7,22 @@ namespace array_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
 
+  bool iterate_complex_array_count() {
+    TEST_START();
+    ondemand::parser parser;
+    auto cars_json = R"( { "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(cars_json).get(doc));
+    ondemand::array myarray;
+    ASSERT_SUCCESS(doc.find_field("test").get_array().get(myarray));
+    size_t count;
+    ASSERT_SUCCESS(myarray.count_elements().get(count));
+    size_t new_count = 0;
+    for(simdjson_unused auto elem: myarray) { new_count++; }
+    ASSERT_EQUAL(count, new_count);
+    TEST_SUCCEED();
+  }
+
   bool iterate_array_count() {
     TEST_START();
     const auto json = R"([ 1, 10, 100 ])"_padded;
@@ -418,6 +434,7 @@ namespace array_tests {
 
   bool run() {
     return
+           iterate_complex_array_count() &&
            iterate_bad_array_count() &&
            iterate_array_count() &&
            iterate_array() &&
