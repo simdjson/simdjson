@@ -206,11 +206,15 @@ add_custom_target(all_tests)
 add_subdirectory(windows)
 add_subdirectory(dependencies) ## This needs to be before tools because of cxxopts
 add_subdirectory(tools)  ## This needs to be before tests because of cxxopts
-add_subdirectory(singleheader)
 
 # Data: jsonexamples is left with only the bare essential.
 # most of the data has been moved to https://github.com/simdjson/simdjson-data
 add_subdirectory(jsonexamples)
+
+
+add_subdirectory(singleheader)
+
+
 
 #
 # Compile tools / tests / benchmarks
