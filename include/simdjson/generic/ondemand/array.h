@@ -36,7 +36,7 @@ public:
     * The runtime complexity is linear in the size of the array. After
     * calling this function, the array is 'rewinded' at its beginning.
     */
-  simdjson_really_inline simdjson_result<size_t> count_elements() noexcept;
+  simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
 protected:
   /**
    * Begin array iteration.
@@ -103,7 +103,7 @@ public:
 
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() noexcept;
-  simdjson_really_inline simdjson_result<size_t> count_elements() noexcept;
+  simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
 };
 
 } // namespace simdjson

@@ -72,7 +72,7 @@ simdjson_really_inline simdjson_result<array_iterator> array::end() noexcept {
   return array_iterator(iter);
 }
 
-simdjson_really_inline simdjson_result<size_t> array::count_elements() noexcept {
+simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcept {
   // We rewind
   iter.rewind_array();
   size_t count{0};
@@ -114,7 +114,7 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_
   if (error()) { return error(); }
   return first.end();
 }
-simdjson_really_inline  simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::count_elements() noexcept {
+simdjson_really_inline  simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::count_elements() & noexcept {
   if (error()) { return error(); }
   return first.count_elements();
 }

@@ -85,7 +85,8 @@ simdjson_really_inline document::operator raw_json_string() noexcept(false) { re
 simdjson_really_inline document::operator bool() noexcept(false) { return get_bool(); }
 #endif
 simdjson_really_inline simdjson_result<size_t> document::count_elements() & noexcept {
-  auto answer = get_array().count_elements();
+  ondemand::array a = get_array();
+  auto answer = a.count_elements();
   if(answer.error() == SUCCESS) { iter.rewind(); }
   return answer;
 }
