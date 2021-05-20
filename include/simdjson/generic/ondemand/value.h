@@ -208,7 +208,18 @@ public:
    * Part of the std::iterable interface.
    */
   simdjson_really_inline simdjson_result<array_iterator> end() & noexcept;
-
+  /**
+   * This method scans the array and counts the number of elements.
+   * The count_elements method should always be called before you have begun
+   * iterating through the array: it is expected that you are pointing at
+   * the beginning of the array.
+   * The runtime complexity is linear in the size of the array. After
+   * calling this function, if successful, the array is 'rewinded' at its
+   * beginning as if it had never been accessed. If the JSON is malformed (e.g.,
+   * there is a missing comma), then an error is returned and it is no longer
+   * safe to continue.
+   */
+  simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
   /**
    * Look up a field by name on an object (order-sensitive).
    *
@@ -383,7 +394,7 @@ public:
   simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string() noexcept(false);
   simdjson_really_inline operator bool() noexcept(false);
 #endif
-
+  simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() & noexcept;
 

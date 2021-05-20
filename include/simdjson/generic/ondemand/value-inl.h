@@ -95,6 +95,10 @@ simdjson_really_inline simdjson_result<array_iterator> value::begin() & noexcept
 simdjson_really_inline simdjson_result<array_iterator> value::end() & noexcept {
   return {};
 }
+simdjson_really_inline simdjson_result<size_t> value::count_elements() & noexcept {
+  auto a = get_array();
+  return a.count_elements();
+}
 
 simdjson_really_inline simdjson_result<value> value::find_field(std::string_view key) noexcept {
   return start_or_resume_object().find_field(key);
@@ -145,7 +149,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
     implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::value>(error)
 {
 }
-
+simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::count_elements() & noexcept {
+  if (error()) { return error(); }
+  return first.count_elements();
+}
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();

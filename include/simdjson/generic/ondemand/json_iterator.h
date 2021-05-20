@@ -195,11 +195,6 @@ public:
 #endif
 
 protected:
-  /**
-  * Updates this json iterator so that it is back at the beginning of the document,
-  * as if it had just been created.
-  */
-  inline void rewind() noexcept;
   simdjson_really_inline json_iterator(const uint8_t *buf, ondemand::parser *parser) noexcept;
   simdjson_really_inline token_position last_document_position() const noexcept;
 

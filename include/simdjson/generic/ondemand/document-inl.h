@@ -86,9 +86,7 @@ simdjson_really_inline document::operator bool() noexcept(false) { return get_bo
 #endif
 simdjson_really_inline simdjson_result<size_t> document::count_elements() & noexcept {
   auto a = get_array();
-  auto answer = a.count_elements();
-  if(answer.error() == SUCCESS) { iter.rewind(); }
-  return answer;
+  return a.count_elements();
 }
 simdjson_really_inline simdjson_result<array_iterator> document::begin() & noexcept {
   return get_array().begin();

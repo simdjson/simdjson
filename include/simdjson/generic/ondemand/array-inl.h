@@ -73,13 +73,16 @@ simdjson_really_inline simdjson_result<array_iterator> array::end() noexcept {
 }
 
 simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcept {
-  // We rewind
+  // The count_elements method should always be called before you have begun
+  // iterating through the array. The rewind_array() method has the convenient
+  // effect of putting us in position to iterate irrespective of depth considerations.
+  SIMDJSON_ASSUME(iter.is_at_container_start());
   iter.rewind_array();
+  // Otherwise, we need to iterator through the array.
   size_t count{0};
   for(simdjson_unused auto v : *this) { count++; }
   // The above loop will always succeed, but we want to report errors.
   if(iter.error()) { return iter.error(); }
-  // We rewind
   iter.rewind_array();
   return count;
 }
