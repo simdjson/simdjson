@@ -18,7 +18,7 @@ An overview of what you need to know to use simdjson, with examples.
 * [Error Handling](#error-handling)
   * [Error Handling Example](#error-handling-example)
   * [Exceptions](#exceptions)
-* [Tree Walking and JSON Element Types](#tree-walking-and-json-element-types)
+* [Direct Access to the Raw String](#direct-access-to-the-raw-string)
 * [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
 * [Thread Safety](#thread-safety)
 * [Standard Compliance](#standard-compliance)
@@ -202,7 +202,19 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   - `field.value()` will get you the value, which you can then use all these other methods on.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index. Instead,
   you will need to iterate through the array and keep an index yourself.
-* **Output to sstrings:** Given a document or an element (or node) out of a JSON document, you can output a string version: `simdjson::to_string(element)` returns a `simdjson::simdjson_result<std::string>` instance. You can cast it to `std::string` and it will throw when an error was encountered (`std::string(simdjson::to_string(element))`). Or else you can do `std::string s; if(simdjson::to_string(element).get(s) == simdjson::SUCCESS) { ... }`. This consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document.
+* **Output to sstrings:** Given a document or an element (or node) out of a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_string(element)` returns a `simdjson::simdjson_result<std::string>` instance. You can cast it to `std::string` and it will throw when an error was encountered (`std::string(simdjson::to_string(element))`). Or else you can do `std::string s; if(simdjson::to_string(element).get(s) == simdjson::SUCCESS) { ... }`. This consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document. The returned string contains a serialized version of the element or document that is suitable to be parsed again. It is also a newly allocated `std::string` that is independent from the simdjson parser. The `to_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes). Th
+  > ```C++
+  > // serialize a JSON to an escaped std::string instance so that it can be parsed again as JSON
+  > auto cars_json = R"( { "test": "result"  }  )"_padded;
+  > ondemand::document doc = parser.iterate(cars_json);
+  > std::cout << simdjson::to_string(doc["test"]) << std::endl;
+  >````
+  > ```C++
+  > // retrieves an unescaped string value as a string_view instance
+  > auto cars_json = R"( { "test": "result"  }  )"_padded;
+  > ondemand::document doc = parser.iterate(cars_json);
+  > std::cout << std::string_view(doc["test"]) << std::endl;
+  >````
 
 ### Examples
 
@@ -739,60 +751,28 @@ int main(void) {
 }
 ```
 
+Direct Access to the Raw String
+--------------------------------
 
-Tree Walking and JSON Element Types
------------------------------------
+The simdjson library makes explicit assumptions about types. For examples, numbers
+must be integers (up to 64-bit integers) or binary64 floating-point numbers. Some users
+have different needs. For example, some users might want to support big integers.
+The library makes this possible by providing a `raw_json_token` method which returns
+a `std::string_view` instance containing the value as a string which you may then
+parse as you see fit.
 
-Sometimes you don't necessarily have a document with a known type, and are trying to generically
-inspect or walk over JSON elements. To do that, you can use iterators and the type() method. For
-example, here's a quick and dirty recursive function that verbosely prints the JSON document as JSON
-(* ignoring nuances like trailing commas and escaping strings, for brevity's sake):
-
-```c++
-void print_json(dom::element element) {
-  switch (element.type()) {
-    case dom::element_type::ARRAY:
-      cout << "[";
-      for (dom::element child : dom::array(element)) {
-        print_json(child);
-        cout << ",";
-      }
-      cout << "]";
-      break;
-    case dom::element_type::OBJECT:
-      cout << "{";
-      for (dom::key_value_pair field : dom::object(element)) {
-        cout << "\"" << field.key << "\": ";
-        print_json(field.value);
-      }
-      cout << "}";
-      break;
-    case dom::element_type::INT64:
-      cout << int64_t(element) << endl;
-      break;
-    case dom::element_type::UINT64:
-      cout << uint64_t(element) << endl;
-      break;
-    case dom::element_type::DOUBLE:
-      cout << double(element) << endl;
-      break;
-    case dom::element_type::STRING:
-      cout << std::string_view(element) << endl;
-      break;
-    case dom::element_type::BOOL:
-      cout << bool(element) << endl;
-      break;
-    case dom::element_type::NULL_VALUE:
-      cout << "null" << endl;
-      break;
-  }
-}
-
-void basics_treewalk_1() {
-  dom::parser parser;
-  print_json(parser.load("twitter.json"));
-}
+```C++
+simdjson::ondemand::parser parser;
+simdjson::padded_string docdata =  R"({"value":12321323213213213213213213213211223})"_padded;
+simdjson::ondemand::document doc = parser.iterate(docdata);
+simdjson::ondemand::object obj = doc.get_object();
+std::string_view token = obj["value"].raw_json_token();
+// token has value "12321323213213213213213213213211223"
 ```
+
+The `raw_json_token` method even works when the JSON value is a string. In such cases, it
+will return the complete string with the quotes and with eventual escaped sequences as in the
+source document.
 
 Newline-Delimited JSON (ndjson) and JSON lines
 ----------------------------------------------

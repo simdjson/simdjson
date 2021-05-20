@@ -110,6 +110,29 @@ bool using_the_parsed_json_2() {
   TEST_SUCCEED();
 }
 
+  bool big_integer() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata =  R"({"value":12321323213213213213213213213211223})"_padded;
+    simdjson::ondemand::document doc = parser.iterate(docdata);
+    simdjson::ondemand::object obj = doc.get_object();
+    string_view token = obj["value"].raw_json_token();
+    std::cout << token << std::endl;
+    // token == "12321323213213213213213213213211223"
+    TEST_SUCCEED();
+  }
+
+  bool big_integer_in_string() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata =  R"({"value":"12321323213213213213213213213211223"})"_padded;
+    simdjson::ondemand::document doc = parser.iterate(docdata);
+    simdjson::ondemand::object obj = doc.get_object();
+    string_view token = obj["value"].raw_json_token();
+    std::cout << token << std::endl;
+    // token == "\"12321323213213213213213213213211223\""
+    TEST_SUCCEED();
+  }
 bool using_the_parsed_json_3() {
   TEST_START();
 
@@ -207,6 +230,8 @@ int main() {
     && basics_2()
     && using_the_parsed_json_1()
     && using_the_parsed_json_2()
+    && big_integer()
+    && big_integer_in_string()
     && using_the_parsed_json_3()
     && using_the_parsed_json_4()
     && using_the_parsed_json_5()
