@@ -202,7 +202,19 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   - `field.value()` will get you the value, which you can then use all these other methods on.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index. Instead,
   you will need to iterate through the array and keep an index yourself.
-* **Output to sstrings:** Given a document or an element (or node) out of a JSON document, you can output a string version: `simdjson::to_string(element)` returns a `simdjson::simdjson_result<std::string>` instance. You can cast it to `std::string` and it will throw when an error was encountered (`std::string(simdjson::to_string(element))`). Or else you can do `std::string s; if(simdjson::to_string(element).get(s) == simdjson::SUCCESS) { ... }`. This consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document.
+* **Output to sstrings:** Given a document or an element (or node) out of a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_string(element)` returns a `simdjson::simdjson_result<std::string>` instance. You can cast it to `std::string` and it will throw when an error was encountered (`std::string(simdjson::to_string(element))`). Or else you can do `std::string s; if(simdjson::to_string(element).get(s) == simdjson::SUCCESS) { ... }`. This consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document. The returned string contains a serialized version of the element or document that is suitable to be parsed again. It is also a newly allocated `std::string` that is independent from the simdjson parser. The `to_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes). Th
+  > ```C++
+  > // serialize a JSON to an escaped std::string instance so that it can be parsed again as JSON
+  > auto cars_json = R"( { "test": "result"  }  )"_padded;
+  > ondemand::document doc = parser.iterate(cars_json);
+  > std::cout << simdjson::to_string(doc["test"]) << std::endl;
+  >````
+  > ```C++
+  > // retrieves an unescaped string value as a string_view instance
+  > auto cars_json = R"( { "test": "result"  }  )"_padded;
+  > ondemand::document doc = parser.iterate(cars_json);
+  > std::cout << std::string_view(doc["test"]) << std::endl;
+  >````
 
 ### Examples
 
