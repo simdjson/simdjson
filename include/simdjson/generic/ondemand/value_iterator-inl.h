@@ -368,6 +368,13 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   return result;
 }
 
+inline std::string value_iterator::to_string() const noexcept {
+  auto answer = std::string("value_iterator [ depth : ") + std::to_string(_depth) + std::string(", ");
+  if(_json_iter != nullptr) { answer +=  _json_iter->to_string(); }
+  answer += std::string(" ]");
+  return answer;
+}
+
 simdjson_warn_unused simdjson_really_inline bool value_iterator::started_array() noexcept {
   assert_at_container_start();
   if (*_json_iter->peek() == ']') {
@@ -624,9 +631,14 @@ inline void value_iterator::assert_at_next() const noexcept {
 }
 
 
-simdjson_really_inline void value_iterator::rewind_array() noexcept {
-  _json_iter->_depth = _depth+1;
-  _json_iter->token.index = _start_position+1;
+simdjson_really_inline void value_iterator::enter_at_container_start() noexcept {
+  _json_iter->_depth = _depth + 1;
+  _json_iter->token.index = _start_position + 1;
+}
+
+simdjson_really_inline void value_iterator::move_at_start() noexcept {
+    _json_iter->_depth = _depth;
+  _json_iter->token.index = _start_position;
 }
 
 inline void value_iterator::assert_at_child() const noexcept {

@@ -193,7 +193,8 @@ public:
   simdjson_really_inline token_position start_position(depth_t depth) const noexcept;
   simdjson_really_inline void set_start_position(depth_t depth, token_position position) noexcept;
 #endif
-
+  /* Useful for debugging and logging purposes. */
+  inline std::string to_string() const noexcept;
 protected:
   simdjson_really_inline json_iterator(const uint8_t *buf, ondemand::parser *parser) noexcept;
   simdjson_really_inline token_position last_document_position() const noexcept;
