@@ -115,11 +115,11 @@ inline padded_string::operator padded_string_view() const noexcept {
   return padded_string_view(data(), length(), length() + SIMDJSON_PADDING);
 }
 
-inline simdjson_result<padded_string> padded_string::load(const std::string &filename) noexcept {
+inline simdjson_result<padded_string> padded_string::load(std::string_view filename) noexcept {
   // Open the file
   SIMDJSON_PUSH_DISABLE_WARNINGS
   SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
-  std::FILE *fp = std::fopen(filename.c_str(), "rb");
+  std::FILE *fp = std::fopen(filename.data(), "rb");
   SIMDJSON_POP_DISABLE_WARNINGS
 
   if (fp == nullptr) {
