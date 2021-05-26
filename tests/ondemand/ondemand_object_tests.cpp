@@ -107,6 +107,21 @@ namespace object_tests {
     return true;
   }
 
+  bool missing_keys_for_empty_top_level_object() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata = "{}"_padded;
+    simdjson::ondemand::document doc;
+    auto error = parser.iterate(docdata).get(doc);
+    if(error != simdjson::SUCCESS) { return false; }
+    error = doc.find_field_unordered("keynotfound").error();
+    if(error != simdjson::NO_SUCH_FIELD) {
+      std::cout << error << std::endl;
+      return false;
+    }
+    return true;
+  }
+
 #if SIMDJSON_EXCEPTIONS
   // used in issue_1521
   // difficult to use as a lambda because it is recursive.
@@ -1067,6 +1082,7 @@ namespace object_tests {
            missing_key_continue() &&
            no_missing_keys() &&
            missing_keys() &&
+           missing_keys_for_empty_top_level_object() &&
 #if SIMDJSON_EXCEPTIONS
            fixed_broken_issue_1521() &&
            issue_1521() &&
