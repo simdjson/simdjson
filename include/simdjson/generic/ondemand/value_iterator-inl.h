@@ -202,7 +202,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 #endif
     _json_iter->reenter_child(_start_position + 1, _depth);
     at_first = true;
-    has_value = started_object();
+    SIMDJSON_TRY( started_object().get(has_value) );
   // 3. When a previous search found a field or an iterator yielded a value:
   //
   //    ```
