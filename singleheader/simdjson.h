@@ -1,4 +1,4 @@
-/* auto-generated on 2021-05-14 09:22:48 -0400. Do not edit! */
+/* auto-generated on 2021-05-27 16:20:07 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -2078,7 +2078,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 0.9.4
+#define SIMDJSON_VERSION 0.9.5
 
 namespace simdjson {
 enum {
@@ -2093,7 +2093,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 4
+  SIMDJSON_VERSION_REVISION = 5
 };
 } // namespace simdjson
 
@@ -22177,6 +22177,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // at the ':' and we need to move forward through the value... If the value was
     // processed then skip_child() does not move the iterator (but may adjust the depth).
     if ((error = skip_child() )) { abandon(); return error; }
+    search_start = _json_iter->position();
     // The has_next_field() advances the pointer and check that either ',' or '}' is found.
     // It returns true if ',' is found, false otherwise. If anything other than ',' or '}' is found,
     // then we are in error and we abort.
