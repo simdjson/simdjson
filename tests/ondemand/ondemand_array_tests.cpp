@@ -53,7 +53,7 @@ namespace array_tests {
     ]
 })"_padded;
     // we query 'rotation', 'scale', 'translation' in sequence
-    const bool expected_value[][3] = { {true, false, true}, 
+    const bool expected_value[][3] = { {true, false, true},
       {true, false, false}, {false, false, true}, {false, true, false} };
 
     SUBTEST("ondemand::issue1588::sequence", test_ondemand_doc(json, [&](auto doc_result) {
