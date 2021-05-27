@@ -209,6 +209,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // at the ':' and we need to move forward through the value... If the value was
     // processed then skip_child() does not move the iterator (but may adjust the depth).
     if ((error = skip_child() )) { abandon(); return error; }
+    search_start = _json_iter->position();
     // The has_next_field() advances the pointer and check that either ',' or '}' is found.
     // It returns true if ',' is found, false otherwise. If anything other than ',' or '}' is found,
     // then we are in error and we abort.
