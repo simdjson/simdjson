@@ -5,9 +5,12 @@
 # checkperf-repo: initialize and sync reference repository (first time only)
 # TEST checkperf: runs the actual checkperf test
 
+option(SIMDJSON_ENABLE_DOM_CHECKPERF "Enable DOM performance comparison with main branch" OFF)
+
+
 # Clone the repository if it's not there
 find_package(Git QUIET)
-if (Git_FOUND AND (GIT_VERSION_STRING VERSION_GREATER  "2.1.4") AND (NOT CMAKE_GENERATOR MATCHES Ninja) AND (NOT MSVC) ) # We use "-C" which requires a recent git
+if (SIMDJSON_ENABLE_DOM_CHECKPERF AND Git_FOUND AND (GIT_VERSION_STRING VERSION_GREATER  "2.1.4") AND (NOT CMAKE_GENERATOR MATCHES Ninja) AND (NOT MSVC) ) # We use "-C" which requires a recent git
   message(STATUS "Git is available and it is recent. We are enabling checkperf targets.")
   # sync_git_repository(myrepo ...) creates two targets:
   # myrepo - if the repo does not exist, creates and syncs it against the origin branch

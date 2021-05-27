@@ -129,7 +129,7 @@ commands:
     steps:
       - cmake_build_cache
       - run: |
-          cmake --build  build --target checkperf &&
+          cmake -DSIMDJSON_ENABLE_DOM_CHECKPERF=ON --build  build --target checkperf &&
           cd build && 
           ctest --output-on-failure -R checkperf
 

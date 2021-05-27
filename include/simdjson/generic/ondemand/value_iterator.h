@@ -312,12 +312,12 @@ protected:
   simdjson_really_inline bool is_at_start() const noexcept;
   simdjson_really_inline bool is_at_container_start() const noexcept;
   simdjson_really_inline bool is_at_iterator_start() const noexcept;
-  simdjson_really_inline void assert_at_start() const noexcept;
-  simdjson_really_inline void assert_at_container_start() const noexcept;
-  simdjson_really_inline void assert_at_root() const noexcept;
-  simdjson_really_inline void assert_at_child() const noexcept;
-  simdjson_really_inline void assert_at_next() const noexcept;
-  simdjson_really_inline void assert_at_non_root_start() const noexcept;
+  inline void assert_at_start() const noexcept;
+  inline void assert_at_container_start() const noexcept;
+  inline void assert_at_root() const noexcept;
+  inline void assert_at_child() const noexcept;
+  inline void assert_at_next() const noexcept;
+  inline void assert_at_non_root_start() const noexcept;
 
   /** Get the starting position of this value */
   simdjson_really_inline token_position start_position() const noexcept;

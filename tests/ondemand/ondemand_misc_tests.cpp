@@ -5,7 +5,32 @@ using namespace simdjson;
 
 namespace misc_tests {
   using namespace std;
-
+  simdjson_warn_unused bool big_integer() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata =  R"({"value":12321323213213213213213213213211223})"_padded;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    simdjson::ondemand::object o;
+    ASSERT_SUCCESS(doc.get_object().get(o));
+    string_view token;
+    ASSERT_SUCCESS(o["value"].raw_json_token().get(token));
+    ASSERT_EQUAL(token, "12321323213213213213213213213211223");
+    return true;
+  }
+  simdjson_warn_unused bool big_integer_in_string() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata =  R"({"value":"12321323213213213213213213213211223"})"_padded;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    simdjson::ondemand::object o;
+    ASSERT_SUCCESS(doc.get_object().get(o));
+    string_view token;
+    ASSERT_SUCCESS(o["value"].raw_json_token().get(token));
+    ASSERT_EQUAL(token, "\"12321323213213213213213213213211223\"");
+    return true;
+  }
   simdjson_warn_unused bool test_raw_json_token(string_view json, string_view expected_token, int expected_start_index = 0) {
     string title = "'";
     title.append(json.data(), json.length());
@@ -64,6 +89,8 @@ namespace misc_tests {
 
   bool run() {
     return
+           big_integer_in_string() &&
+           big_integer() &&
            raw_json_token() &&
            true;
   }

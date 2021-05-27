@@ -201,4 +201,26 @@ inline simdjson::simdjson_result<std::string> to_string(simdjson::SIMDJSON_IMPLE
     return std::string(answer.data(), answer.size());
 }
 
+#if SIMDJSON_EXCEPTIONS
+
+inline std::string to_string(simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document> x) {
+    if (x.error()) { throw simdjson_error(x.error()); }
+    return to_string(x.value());
+}
+
+inline std::string to_string(simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> x) {
+    if (x.error()) { throw simdjson_error(x.error()); }
+    return to_string(x.value());
+}
+
+inline std::string to_string(simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object> x) {
+    if (x.error()) { throw simdjson_error(x.error()); }
+    return to_string(x.value());
+}
+
+inline std::string to_string(simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array> x) {
+    if (x.error()) { throw simdjson_error(x.error()); }
+    return to_string(x.value());
+}
+#endif
 } // namespace simdjson
