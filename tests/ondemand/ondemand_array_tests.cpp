@@ -6,6 +6,135 @@ using namespace simdjson;
 namespace array_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
+  bool issue1588() {
+    TEST_START();
+    const auto json = R"({
+    "nodes" : [
+        {
+            "rotation" : [
+                0.16907575726509094,
+                0.7558803558349609,
+                -0.27217137813568115,
+                0.570947527885437
+            ],
+            "translation" : [
+                4.076245307922363,
+                5.903861999511719,
+                -1.0054539442062378
+            ]
+        },
+        {
+            "camera" : 0,
+            "rotation" : [
+                -0.7071067690849304,
+                0,
+                0,
+                0.7071067690849304
+            ]
+        },
+        {
+            "children" : [
+                1
+            ],
+            "translation" : [
+                7.358891487121582,
+                4.958309173583984,
+                6.925790786743164
+            ]
+        },
+        {
+            "mesh" : 1,
+            "scale" : [
+                4.7498908042907715,
+                4.7498908042907715,
+                4.7498908042907715
+            ]
+        }
+    ]
+})"_padded;
+    // we query 'rotation', 'scale', 'translation' in sequence
+    const bool expected_value[][3] = { {true, false, true},
+      {true, false, false}, {false, false, true}, {false, true, false} };
+
+    SUBTEST("ondemand::issue1588::sequence", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_SUCCESS( doc_result["nodes"].get(array) );
+
+      size_t i=0;
+      for (auto value : array) {
+        ondemand::object current_object;
+        ASSERT_SUCCESS( value.get_object().get(current_object) );
+        std::cout << "[ondemand::issue1588::sequence] acquired a new object ==========" << std::endl;
+
+        simdjson::ondemand::array rotation;
+        if(expected_value[i][0]) {
+          ASSERT_SUCCESS( current_object["rotation"].get(rotation) );
+          std::cout << "[ondemand::issue1588::sequence] found 'rotation' " << std::endl;
+        } else {
+          ASSERT_ERROR( current_object["rotation"].get(rotation), NO_SUCH_FIELD );
+          std::cout << "[ondemand::issue1588::sequence] rotation not found" << std::endl;
+        }
+        simdjson::ondemand::array scale;
+        if(expected_value[i][1]) {
+          ASSERT_SUCCESS( current_object["scale"].get(scale) );
+          std::cout << "[ondemand::issue1588::sequence] found 'scale' " << std::endl;
+        } else {
+          ASSERT_ERROR( current_object["scale"].get(scale), NO_SUCH_FIELD );
+          std::cout << "[ondemand::issue1588::sequence] scale not found" << std::endl;
+        }
+        simdjson::ondemand::array translation;
+        if(expected_value[i][2]) {
+          ASSERT_SUCCESS( current_object["translation"].get(translation) );
+          std::cout << "[ondemand::issue1588::sequence] found 'translation' " << std::endl;
+        } else {
+          ASSERT_ERROR( current_object["translation"].get(translation), NO_SUCH_FIELD );
+          std::cout << "[ondemand::issue1588::sequence] translation not found" << std::endl;
+        }
+        i++;
+      }
+      ASSERT_EQUAL(i, 4);
+      return true;
+    }));
+    SUBTEST("ondemand::issue1588::originalcode", test_ondemand_doc(json, [&](auto doc_result) {
+      int count_nodes = 0;
+      simdjson::ondemand::array doc_nodes;
+      auto error = doc_result["nodes"].get(doc_nodes);
+      ASSERT_SUCCESS( error );
+      for (auto node_iterator : doc_nodes) {
+        ondemand::object node_obj;
+        ASSERT_SUCCESS( node_iterator.get_object().get(node_obj) );
+        simdjson::ondemand::array rotation;
+        std::cout << "checking rotation" << std::endl;
+        if(expected_value[count_nodes][0]) {
+          ASSERT_SUCCESS( node_obj["rotation"].get(rotation) );
+        } else {
+          ASSERT_ERROR( node_obj["rotation"].get(rotation), NO_SUCH_FIELD );
+        }
+
+        simdjson::ondemand::array scale;
+        std::cout << "checking scale" << std::endl;
+        if(expected_value[count_nodes][1]) {
+          ASSERT_SUCCESS( node_obj["scale"].get(scale) );
+        } else {
+          ASSERT_ERROR( node_obj["scale"].get(scale), NO_SUCH_FIELD );
+        }
+
+        simdjson::ondemand::array translation;
+        std::cout << "checking translation" << std::endl;
+        if (!error) { std::cout << "translation!\n"; }
+         if(expected_value[count_nodes][2]) {
+          ASSERT_SUCCESS( node_obj["translation"].get(translation) );
+        } else {
+          ASSERT_ERROR( node_obj["translation"].get(translation), NO_SUCH_FIELD );
+        }
+
+        ++count_nodes;
+      }
+      ASSERT_EQUAL(count_nodes, 4);
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
 
   bool iterate_document_array() {
     TEST_START();
@@ -341,6 +470,7 @@ namespace array_tests {
 
   bool run() {
     return
+           issue1588() &&
            iterate_array() &&
            iterate_document_array() &&
            iterate_empty_array() &&

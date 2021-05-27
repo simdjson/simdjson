@@ -129,6 +129,15 @@ simdjson_really_inline bool json_iterator::at_eof() const noexcept {
   return token.index == &parser->implementation->structural_indexes[parser->implementation->n_structural_indexes];
 }
 
+inline std::string json_iterator::to_string() const noexcept {
+  if( !is_alive() ) { return "dead json_iterator instance"; }
+  const char * current_structural = reinterpret_cast<const char *>(token.peek());
+  return std::string("json_iterator [ depth : ") + std::to_string(_depth)
+          + std::string(", structural : '") + std::string(current_structural,1)
+          + std::string("', offset : ") + std::to_string(token.current_offset())
+          + std::string(" ]");
+}
+
 simdjson_really_inline bool json_iterator::is_alive() const noexcept {
   return parser;
 }
