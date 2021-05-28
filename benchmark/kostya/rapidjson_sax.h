@@ -18,7 +18,7 @@ struct rapidjson_sax {
 
         Handler(std::vector<point> &r) { result=&r; }
 
-        bool Key(const char* key, SizeType length, bool copy)
+        bool Key(const char* key, SizeType length, bool copy) {
             switch(key[0]) {
             case 'x':
                 k = 0;
