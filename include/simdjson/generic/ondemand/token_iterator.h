@@ -25,7 +25,10 @@ public:
    * Advance to the next token (returning the current one).
    */
   simdjson_really_inline const uint8_t *advance() noexcept;
-
+  /**
+   * Reports the current offset in bytes from the start of the underlying buffer.
+   */
+  simdjson_really_inline uint32_t current_offset() const noexcept;
   /**
    * Get the JSON text for a given token (relative).
    *

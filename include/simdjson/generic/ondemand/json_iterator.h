@@ -49,7 +49,7 @@ public:
   simdjson_really_inline json_iterator() noexcept = default;
   simdjson_really_inline json_iterator(json_iterator &&other) noexcept;
   simdjson_really_inline json_iterator &operator=(json_iterator &&other) noexcept;
-  simdjson_really_inline json_iterator(const json_iterator &other) noexcept = delete;
+  simdjson_really_inline explicit json_iterator(const json_iterator &other) noexcept = default;
   simdjson_really_inline json_iterator &operator=(const json_iterator &other) noexcept = delete;
 
   /**
@@ -222,6 +222,8 @@ public:
   simdjson_really_inline token_position start_position(depth_t depth) const noexcept;
   simdjson_really_inline void set_start_position(depth_t depth, token_position position) noexcept;
 #endif
+ /* Useful for debugging and logging purposes. */
+  inline std::string to_string() const noexcept;
 
 protected:
   simdjson_really_inline json_iterator(const uint8_t *buf, ondemand::parser *parser) noexcept;
