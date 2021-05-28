@@ -16,16 +16,12 @@ struct rapidjson_sax {
         Handler(std::vector<uint64_t> &r) { result=&r; }
 
         bool Key(const char* key, SizeType length, bool copy) {
-            if (strcmp(key,"user") == 0) {  // Checking if entering user object
-                user = true;
-            }
-            if (user && strcmp(key,"id") == 0) { // Checking if in an user object and accessing id field
-                user_id = true;
-            }
+            if (strcmp(key,"user") == 0) { user = true; } // Checking if entering user object
+            else if (user && strcmp(key,"id") == 0) { user_id = true; } // Checking if in an user object and accessing id field
             return true;
         }
         bool Uint(unsigned i) {
-            if (user_id) {  // Getting id if previous key was a user id
+            if (user_id) {  // Getting id if previous key was "id" for a user
                 (*result).emplace_back(i);
                 user_id=false;
                 user = false;
@@ -58,6 +54,6 @@ struct rapidjson_sax {
 
 }; // rapid_jason_sax
 BENCHMARK_TEMPLATE(distinct_user_id, rapidjson_sax)->UseManualTime();
-} // namespace kostyacd
+} // namespace distinct_user_id
 
 #endif // SIMDJSON_COMPETITION_RAPIDJSON
