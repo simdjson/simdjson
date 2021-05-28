@@ -46,7 +46,9 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "kostya/yyjson.h"
 #include "kostya/sajson.h"
 #include "kostya/rapidjson.h"
+#include "kostya/rapidjson_sax.h"
 #include "kostya/nlohmann_json.h"
+#include "kostya/nlohmann_json_sax.h"
 
 #include "distinct_user_id/simdjson_dom.h"
 #include "distinct_user_id/simdjson_ondemand.h"
