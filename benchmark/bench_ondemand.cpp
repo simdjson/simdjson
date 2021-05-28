@@ -53,6 +53,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "distinct_user_id/yyjson.h"
 #include "distinct_user_id/sajson.h"
 #include "distinct_user_id/rapidjson.h"
+#include "distinct_user_id/rapidjson_sax.h"
 #include "distinct_user_id/nlohmann_json.h"
 
 #include "find_tweet/simdjson_dom.h"
