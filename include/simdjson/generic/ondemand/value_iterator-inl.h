@@ -28,6 +28,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::started_object() noexcept {
   assert_at_container_start();
+  #ifdef SIMDJSON_DEVELOPMENT_CHECKS
+  _json_iter->set_start_position(_depth, start_position());
+  #endif
   SIMDJSON_TRY( _json_iter->require_tokens(1) );
   if (*_json_iter->peek() == '}') {
     logger::log_value(*_json_iter, "empty object");
@@ -37,9 +40,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   }
   SIMDJSON_TRY( _json_iter->require_tokens(3) ); // Make sure we have three tokens: "x" : value
   logger::log_start_value(*_json_iter, "object");
-  #ifdef SIMDJSON_DEVELOPMENT_CHECKS
-  _json_iter->set_start_position(_depth, start_position());
-  #endif
   return true;
 }
 
