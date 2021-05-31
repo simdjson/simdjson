@@ -75,20 +75,23 @@ simdjson_really_inline simdjson_result<array_iterator> array::end() noexcept {
 simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcept {
   // The count_elements method should always be called before you have begun
   // iterating through the array.
-  const bool at_start{iter.is_at_container_start()};
-  SIMDJSON_ASSUME(at_start); // we do not want SIMDJSON_ASSUME to have side-effects.
+  // To open a new array you need to be at a `[`.
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+  // array::begin() makes the same check.
+  if(!iter.is_at_container_start()) { return OUT_OF_ORDER_ITERATION; }
+#endif
   // Otherwise, we need to iterate through the array.
-  iter.enter_at_container_start();
+  iter.enter_at_container_start(); // sets the depth to indicate that we are inside the container and accesses the first element
   size_t count{0};
   // Important: we do not consume any of the values.
   for(simdjson_unused auto v : *this) { count++; }
   // The above loop will always succeed, but we want to report errors.
   if(iter.error()) { return iter.error(); }
-  // We need to move back at the start:
-  iter.enter_at_container_start();
+  // We need to move back at the start because we expect users to iterator through
+  // the array after counting the number of elements.
+  iter.enter_at_container_start(); // sets the depth to indicate that we are inside the container and accesses the first element
   return count;
 }
-
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

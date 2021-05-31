@@ -100,7 +100,8 @@ simdjson_really_inline simdjson_result<size_t> value::count_elements() & noexcep
   auto a = get_array();
   answer = a.count_elements();
   // count_elements leaves you pointing inside the array, at the first element.
-  // We need to move back.
+  // We need to move back so that the user can create a new array (which requires that
+  // we point at '[').
   iter.move_at_start();
   return answer;
 }

@@ -286,7 +286,7 @@ protected:
 
   /* updates the index so that at_start() is true and syncs the depth. */
   simdjson_really_inline void move_at_start() noexcept;
-  /* enter_at_container_start is similar to is_at_container_start() except that it sets the depth inside the container and accesses the first element */
+  /* enter_at_container_start is similar to is_at_container_start() except that it sets the depth to indicate that we are inside the container and accesses the first element */
   simdjson_really_inline void enter_at_container_start() noexcept;
   /* Useful for debugging and logging purposes. */
   inline std::string to_string() const noexcept;
