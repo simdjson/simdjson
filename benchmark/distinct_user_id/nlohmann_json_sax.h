@@ -11,19 +11,20 @@ using json = nlohmann::json;
 struct nlohmann_json_sax {
     struct Handler : json::json_sax_t
     {
-        std::vector<uint64_t>* result;
+        std::vector<uint64_t>& result;
         bool user = false;
         bool user_id = false;
-        Handler(std::vector<uint64_t> &r) { result=&r; }
+        Handler(std::vector<uint64_t> &r) : result(r) { }
 
         bool key(string_t& val) override {
+            // Assume that valid user/id pairs are only in user objects
             if (val.compare("user") == 0) { user = true; }
             else if (user && val.compare("id") == 0) { user_id = true; }
             return true;
         }
         bool number_unsigned(number_unsigned_t val) override {
             if (user_id) {
-                (*result).emplace_back(val);
+                result.emplace_back(val);
                 user = false;
                 user_id = false;
             }

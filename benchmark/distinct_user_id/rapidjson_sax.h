@@ -10,20 +10,21 @@ using namespace rapidjson;
 
 struct rapidjson_sax {
     struct Handler {
-        std::vector<uint64_t>* result;
+        std::vector<uint64_t>& result;
         bool user = false;
-        bool user_id =false;
-        Handler(std::vector<uint64_t> &r) { result=&r; }
+        bool user_id = false;
+        Handler(std::vector<uint64_t> &r) : result(r) { }
 
         bool Key(const char* key, SizeType length, bool copy) {
+            // Assume that valid user/id pairs are only in user objects
             if (strcmp(key,"user") == 0) { user = true; } // Checking if entering user object
-            else if (user && strcmp(key,"id") == 0) { user_id = true; } // Checking if in an user object and accessing id field
+            else if (user && strcmp(key,"id") == 0) { user_id = true; } // Checking if in a user object and accessing id field
             return true;
         }
         bool Uint(unsigned i) {
             if (user_id) {  // Getting id if previous key was "id" for a user
-                (*result).emplace_back(i);
-                user_id=false;
+                result.emplace_back(i);
+                user_id = false;
                 user = false;
             }
             return true;
