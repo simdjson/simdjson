@@ -46,8 +46,8 @@ struct rapidjson_sax {
     bool run(simdjson::padded_string &json, std::vector<uint64_t> &result) {
         Reader reader;
         Handler handler(result);
-        StringStream ss(json.data());
-        reader.Parse(ss,handler);
+        InsituStringStream ss(json.data());
+        reader.Parse<kParseInsituFlag | kParseValidateEncodingFlag | kParseFullPrecisionFlag>(ss,handler);
 
         return true;
     }
