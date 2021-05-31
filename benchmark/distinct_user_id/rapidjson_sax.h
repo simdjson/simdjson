@@ -47,7 +47,7 @@ struct rapidjson_sax {
         Reader reader;
         Handler handler(result);
         StringStream ss(json.data());
-        reader.Parse(ss,handler);
+        reader.Parse<kParseInsituFlag| kParseValidateEncodingFlag| kParseFullPrecisionFlag>(ss,handler);
 
         return true;
     }
