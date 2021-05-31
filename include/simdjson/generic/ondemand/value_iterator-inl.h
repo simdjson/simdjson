@@ -25,6 +25,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
 simdjson_warn_unused simdjson_really_inline bool value_iterator::started_object() noexcept {
   assert_at_container_start();
+#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+  _json_iter->set_start_position(_depth, _start_position);
+#endif
   if (*_json_iter->peek() == '}') {
     logger::log_value(*_json_iter, "empty object");
     _json_iter->advance();
@@ -32,9 +35,6 @@ simdjson_warn_unused simdjson_really_inline bool value_iterator::started_object(
     return false;
   }
   logger::log_start_value(*_json_iter, "object");
-#ifdef SIMDJSON_DEVELOPMENT_CHECKS
-  _json_iter->set_start_position(_depth, _start_position);
-#endif
   return true;
 }
 
@@ -216,6 +216,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // at the ':' and we need to move forward through the value... If the value was
     // processed then skip_child() does not move the iterator (but may adjust the depth).
     if ((error = skip_child() )) { abandon(); return error; }
+    search_start = _json_iter->position();
     // The has_next_field() advances the pointer and check that either ',' or '}' is found.
     // It returns true if ',' is found, false otherwise. If anything other than ',' or '}' is found,
     // then we are in error and we abort.

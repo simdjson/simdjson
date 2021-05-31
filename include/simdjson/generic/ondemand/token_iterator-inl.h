@@ -7,6 +7,11 @@ simdjson_really_inline token_iterator::token_iterator(const uint8_t *_buf, token
 {
 }
 
+simdjson_really_inline uint32_t token_iterator::current_offset() const noexcept {
+  return *(index);
+}
+
+
 simdjson_really_inline const uint8_t *token_iterator::advance() noexcept {
   return &buf[*(index++)];
 }
