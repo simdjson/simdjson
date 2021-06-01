@@ -31,6 +31,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "partial_tweets/yyjson.h"
 #include "partial_tweets/sajson.h"
 #include "partial_tweets/rapidjson.h"
+#include "partial_tweets/rapidjson_sax.h"
 #include "partial_tweets/nlohmann_json.h"
 
 #include "large_random/simdjson_dom.h"
