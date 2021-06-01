@@ -17,9 +17,11 @@ struct nlohmann_json_sax {
         Handler(std::vector<uint64_t> &r) : result(r) { }
 
         bool key(string_t& val) override {
-            // Assume that valid user/id pairs are only in user objects
-            if (val.compare("user") == 0) { user = true; }
-            else if (user && val.compare("id") == 0) { user_id = true; }
+            // Assume that valid user/id pairs appear only once in main array of user objects
+            if (user) { // If already found user object, find id key
+                if (val.compare("id") == 0) { user_id = true; }
+            }
+            else if (val.compare("user") == 0) { user = true; } // Otherwise, find user object
             return true;
         }
         bool number_unsigned(number_unsigned_t val) override {
@@ -29,8 +31,7 @@ struct nlohmann_json_sax {
                 user_id = false;
             }
             return true;
-            }
-
+        }
         // Irrelevant events
         bool null() override { return true; }
         bool boolean(bool val) override { return true; }

@@ -16,12 +16,14 @@ struct rapidjson_sax {
         Handler(std::vector<uint64_t> &r) : result(r) { }
 
         bool Key(const char* key, SizeType length, bool copy) {
-            // Assume that valid user/id pairs are only in user objects
-            if (strcmp(key,"user") == 0) { user = true; } // Checking if entering user object
-            else if (user && strcmp(key,"id") == 0) { user_id = true; } // Checking if in a user object and accessing id field
+            // Assume that valid user/id pairs appear only once in main array of user objects
+            if (user) { // If already found user object, find id key
+                if (strcmp(key,"id") == 0) { user_id = true; }
+            }
+            else if (strcmp(key,"user") == 0) { user = true; } // Otherwise, find user object
             return true;
         }
-        bool Uint(unsigned i) {
+        bool Uint(unsigned i) {     // id values are treated as Uint (not Uint64) by the reader
             if (user_id) {  // Getting id if previous key was "id" for a user
                 result.emplace_back(i);
                 user_id = false;
@@ -48,7 +50,7 @@ struct rapidjson_sax {
         Reader reader;
         Handler handler(result);
         InsituStringStream ss(json.data());
-        reader.Parse<kParseInsituFlag | kParseValidateEncodingFlag | kParseFullPrecisionFlag>(ss,handler);
+        reader.Parse<kParseInsituFlag | kParseValidateEncodingFlag | kParseFullPrecisionFlag>(ss,handler);;
 
         return true;
     }
