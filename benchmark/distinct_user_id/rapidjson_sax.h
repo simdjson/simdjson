@@ -18,9 +18,9 @@ struct rapidjson_sax {
         bool Key(const char* key, SizeType length, bool copy) {
             // Assume that valid user/id pairs appear only once in main array of user objects
             if (user) { // If already found user object, find id key
-                if (strcmp(key,"id") == 0) { user_id = true; }
+                if ((length == 2) && memcmp(key,"id",2) == 0) { user_id = true; }
             }
-            else if (strcmp(key,"user") == 0) { user = true; } // Otherwise, find user object
+            else if ((length == 4) && memcmp(key,"user",4) == 0) { user = true; } // Otherwise, find user object
             return true;
         }
         bool Uint(unsigned i) {     // id values are treated as Uint (not Uint64) by the reader
@@ -50,8 +50,7 @@ struct rapidjson_sax {
         Reader reader;
         Handler handler(result);
         InsituStringStream ss(json.data());
-        reader.Parse<kParseInsituFlag | kParseValidateEncodingFlag | kParseFullPrecisionFlag>(ss,handler);;
-
+        reader.Parse<kParseInsituFlag | kParseValidateEncodingFlag | kParseFullPrecisionFlag>(ss,handler);
         return true;
     }
 
