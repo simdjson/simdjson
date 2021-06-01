@@ -120,7 +120,7 @@ We recommend Visual Studio 2019 or better on a 64-bit system.")
     # https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4714?view=vs-2019
     target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl /w34714)
     if(MSVC_VERSION GREATER 1910)
-      target_compile_options(simdjson-internal-flags INTERFACE /permissive-")
+      target_compile_options(simdjson-internal-flags INTERFACE /permissive-)
     endif()
   endif()
   if(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING)
