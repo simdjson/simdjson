@@ -13,16 +13,24 @@ using namespace rapidjson;
 struct rapidjson_sax {
     using StringType=std::string_view;
 
+    // 8 keys to parse for each tweet (in order of appearance): "created_at", "id", "text", "in_reply_status_id", "id"(user),
+    // "screen_name"(user), "retweet_count" and "favorite_count".
+    // Assume that the first valid key encountered will be the correct key to parse.
+    // Assume that each tweet/retweet start with a key "metadata" and has a key "retweeted" towards the end
+    // The previous assumption will be used to check for the beginning of a new tweet and the end of a retweet
     struct Handler {
-        bool keys[9] = { false };
-        bool values[9] = { false };
-        uint64_t user_id = 0;
-        uint64_t id = 0;
-        uint64_t rt = 0;
-        uint64_t fav = 0;
-        uint64_t reply_status = 0;
-        bool inretweet = false;
-        char* name;
+        bool keys[8] = { false };   // Stores if previous parsed key was a valid key (in same order as above)
+        bool found[8] = { false }; // Stores if ith key has already been found once
+        bool userobject_id = false; // If in a user object (to find user.id)
+        bool userobject_screen_name = false;    // If in a user object (to find user.screen_name)
+        bool inretweet = false; // If in a retweet (all keys irrelevant in retweet object)
+        // Fields to store partial tweet info
+        uint64_t user_id;
+        uint64_t id;
+        uint64_t rt;
+        uint64_t fav;
+        uint64_t reply_status;
+        char* screen_name;
         char* date;
         char* text;
         std::vector<tweet<std::string_view>>& result;
@@ -30,97 +38,87 @@ struct rapidjson_sax {
         Handler(std::vector<tweet<std::string_view>> &r) : result(r) { }
 
         bool Key(const char* key, SizeType length, bool copy) {
-            if (!inretweet) {
-                if (strcmp(key,"retweeted_status") == 0) { inretweet = true; }
-                else if (strcmp(key,"metadata") == 0) {
-                    values[0] = values[1] = values[2] = values[3] = values[4] = values[5] = values[6] = values[7] = values[8] = false;
+            if (!inretweet) {   // If not in a retweet object, find relevant keys
+                if ((length == 16) && (memcmp(key,"retweeted_status",16) == 0)) { inretweet = true; }   // Check if entering retweet
+                else if ((length == 8) && (memcmp(key,"metadata",8) == 0)) {    // Reset at beginning of tweet
+                    found[0] = found[1] = found[2] = found[3] = found[4] = found[5] = found[6] = found[7] = found[8] = false;
                     keys[0] = keys[1] = keys[2] = keys[3] = keys[4] = keys[5] = keys[6] = keys[7] = keys[8] = false;
                 }
-                else if (strcmp(key,"user") == 0) { keys[0] = true; }
-                else if (keys[0] && strcmp(key,"id") == 0) { keys[1] = true; }
-                else if (keys[0] && strcmp(key,"screen_name") == 0) { keys[2] = true; }
-                else if (strcmp(key,"created_at") == 0) { keys[3] = true; }
-                else if (strcmp(key,"id") == 0) { keys[4] = true; }
-                else if (strcmp(key,"text") == 0) { keys[5] = true; }
-                else if (strcmp(key,"in_reply_to_status_id") == 0) { keys[6] = true; }
-                else if (strcmp(key,"retweet_count") == 0) { keys[7] = true; }
-                else if (strcmp(key,"favorite_count") == 0) { keys[8] = true; }
+                // Check if key has been found and if key matches a valid key
+                else if (!found[0] && (length == 10) && (memcmp(key,"created_at",10) == 0)) { keys[0] = true; }
+                // Must also check if not in a user object
+                else if (!found[1] && !userobject_id && (length == 2) && (memcmp(key,"id",2) == 0)) { keys[1] = true; }
+                else if (!found[2] && (length == 4) && (memcmp(key,"text",4) == 0)) { keys[2] = true; }
+                else if (!found[3] && (length == 21) && (memcmp(key,"in_reply_to_status_id",21) == 0)) { keys[3] = true; }
+                // Check if entering user object
+                else if (!found[4] && (length == 4) && (memcmp(key,"user",4) == 0)) { userobject_id = userobject_screen_name = true; }
+                // Must also check if in a user object
+                else if (!found[5] && userobject_id && (length == 2) && (memcmp(key,"id",2) == 0)) { keys[4] = true; }
+                // Must also check if in a user object
+                else if (!found[6] && userobject_screen_name && (length == 11) && (memcmp(key,"screen_name",11) == 0)) { keys[5] = true; }
+                else if (!found[7] && (length == 13) && (memcmp(key,"retweet_count",13) == 0)) { keys[6] = true; }
+                else if (!found[8] && (length == 14) && (memcmp(key,"favorite_count",14) == 0)) { keys[7] = true; }
             }
-
-            // Assume that a tweet/retweet always finishes with a unique key "retweeted"
-            else if (strcmp(key,"retweeted") == 0) { inretweet = false; }
+            else if ((length == 9) && (memcmp(key,"retweeted",9) == 0)) { inretweet = false; }  // Check if end of retweet
             return true;
         }
         bool Uint(unsigned i) {
-            if (!values[1] && keys[1]) {
+            if (!found[4] && keys[4]) {    // user.id
                 user_id = i;
-                //std::cout << user_id << std::endl;
-                keys[1] = false;
-                values[1] = true;
+                userobject_id = keys[4] = false;
+                found[4] = true;
             }
-            else if (!values[7] && keys[7]) {
+            else if (!found[6] && keys[6]) {   // retweet_count
                 rt = i;
-                //std::cout << rt << std::endl;
-                keys[7] = false;
-                values[7] = true;
+                keys[6] = false;
+                found[6] = true;
             }
-            else if (!values[8] && keys[8]) {
+            else if (!found[7] && keys[7]) {   // favorite_count
                 fav = i;
-                //std::cout << fav << std::endl;
-                keys[8] = false;
-                values[8] = true;
-
-                // Reset
+                keys[7] = false;
+                found[7] = true;
+                // Assume that this is last key required, so add the partial_tweet to result
                 result.emplace_back(partial_tweets::tweet<std::string_view>{
-                date,id,text,reply_status,{user_id,name},rt,fav});
-                //std::cout << date << ' ' << id << std::endl << text << std::endl << reply_status << ' ' << user_id << ' ' << name << std::endl;
-                //std::cout << rt << ' ' << fav << std::endl;
+                date,id,text,reply_status,{user_id,screen_name},rt,fav});
             }
             return true;
         }
         bool Uint64(uint64_t i) {
-            if (!values[4] && keys[4]) {
+            if (!found[1] && keys[1]) {    // id
                 id = i;
-                //std::cout << i << std::endl;
-                keys[4] = false;
-                values[4] = true;
+                keys[1] = false;
+                found[1] = true;
             }
-            else if (!values[6] && keys[6]) {
+            else if (!found[3] && keys[3]) {   // in_reply_status_id
                 reply_status = i;
-                //std::cout << i << std::endl;
-                values[6] = true;
-                keys[6] = false;
+                found[3] = true;
+                keys[3] = false;
             }
             return true;
         }
         bool String(const char* str, SizeType length, bool copy) {
-            if (!values[2] && keys[2]) {
-                name = strdup(str);
-                //std::cout << name << std::endl;
-                keys[0] = keys[2] = false;
-                values[2] = true;
+            if (!found[5] && keys[5]) {    // user.screen_name
+                screen_name = strdup(str);
+                userobject_screen_name = keys[5] = false;
+                found[5] = true;
             }
-            else if (!values[3] && keys[3]) {
+            else if (!found[0] && keys[0]) {   //  created_at
                 date = strdup(str);
-                //std::cout << date << std::endl;
-                keys[3] = false;
-                values[3] = true;
+                keys[0] = false;
+                found[0] = true;
             }
-            else if (!values[5] && keys[5]) {
-                //text = str;
+            else if (!found[2] && keys[2]) {   // text
                 text = strdup(str);
-                //std::cout << text << std::endl;
-                keys[5] = false;
-                values[5] = true;
+                keys[2] = false;
+                found[2] = true;
             }
             return true;
         }
         bool Null() {
-            if (!values[6] && keys[6]) {
+            if (!found[3] && keys[3]) {    // in_reply_status (null case)
                 reply_status = 0;
-                //std::cout << reply_status << std::endl;
-                values[6] = true;
-                keys[6] = false;
+                found[3] = true;
+                keys[3] = false;
             }
             return true;
         }
@@ -139,8 +137,8 @@ struct rapidjson_sax {
     bool run(simdjson::padded_string &json, std::vector<tweet<std::string_view>> &result) {
         Reader reader;
         Handler handler(result);
-        StringStream ss(json.data());
-        reader.Parse(ss,handler);
+        InsituStringStream ss(json.data());
+        reader.Parse<kParseInsituFlag | kParseValidateEncodingFlag | kParseFullPrecisionFlag>(ss,handler);
         return true;
     }
 
