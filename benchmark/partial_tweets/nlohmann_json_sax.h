@@ -58,46 +58,46 @@ struct nlohmann_json_sax {
                 if (val.compare("retweeted_status") == 0) { inretweet = true; }   // Check if entering retweet
                 else if (val.compare("metadata") == 0) { values = 0; }  // Reset
                 // Check if key has been found and if key matches a valid key
-                else if (!(values &(found_date)) && (val.compare("created_at") == 0)) { values |= (key_date); }
+                else if (!(values & found_date) && (val.compare("created_at") == 0)) { values |= (key_date); }
                 // Must also check if not in a user object
-                else if (!(values &(found_id)) && !userobject_id && (val.compare("id") == 0)) { values |= (key_id); }
-                else if (!(values &(found_text)) && (val.compare("text") == 0)) { values |= (key_text); }
-                else if (!(values &(found_reply)) && (val.compare("in_reply_to_status_id") == 0)) { values |= (key_reply); }
+                else if (!(values & found_id) && !userobject_id && (val.compare("id") == 0)) { values |= (key_id); }
+                else if (!(values & found_text) && (val.compare("text") == 0)) { values |= (key_text); }
+                else if (!(values & found_reply) && (val.compare("in_reply_to_status_id") == 0)) { values |= (key_reply); }
                 // Check if entering user object
                 else if ((val.compare("user") == 0)) { userobject_id = userobject_screen_name = true; }
                 // Must also check if in a user object
-                else if (!(values &(found_userid)) && userobject_id && (val.compare("id") == 0)) { values |= (key_userid); }
+                else if (!(values & found_userid) && userobject_id && (val.compare("id") == 0)) { values |= (key_userid); }
                 // Must also check if in a user object
-                else if (!(values &(found_screenname)) && userobject_screen_name && (val.compare("screen_name") == 0)) { values |= (key_screenname); }
-                else if (!(values &(found_rt)) && (val.compare("retweet_count") == 0)) { values |= (key_rt); }
-                else if (!(values &(found_fav)) && (val.compare("favorite_count") == 0)) { values |= (key_fav); }
+                else if (!(values & found_screenname) && userobject_screen_name && (val.compare("screen_name") == 0)) { values |= (key_screenname); }
+                else if (!(values & found_rt) && (val.compare("retweet_count") == 0)) { values |= (key_rt); }
+                else if (!(values & found_fav) && (val.compare("favorite_count") == 0)) { values |= (key_fav); }
             }
             else if (val.compare("retweeted") == 0) { inretweet = false; }  // Check if end of retweet
             return true;
         }
         bool number_unsigned(number_unsigned_t val) override {
-            if ((values &(key_id)) && !(values &(found_id))) {    // id
+            if (values & key_id && !(values & found_id)) {    // id
                 id = val;
                 values &= ~(key_id);
                 values |= (found_id);
             }
-            else if (!(values &(found_reply)) && (values &(key_reply))) {   // in_reply_status_id
+            else if (values & key_reply && !(values & found_reply)) {   // in_reply_status_id
                 reply_status = val;
                 values &= ~(key_reply);
                 values |= (found_reply);
             }
-            else if (!(values &(found_userid)) && (values &(key_userid))) {    // user.id
+            else if (values & key_userid && !(values & found_userid)) {    // user.id
                 user_id = val;
                 userobject_id = false;
                 values &= ~(key_userid);
                 values |= (found_userid);
             }
-            else if (!(values &(found_rt)) && (values &(key_rt))) {   // retweet_count
+            else if (values & key_rt && !(values & found_rt)) {   // retweet_count
                 rt = val;
                 values &= ~(key_rt);
                 values |= (found_rt);
             }
-            else if ((values &(key_fav)) && !(values &(found_fav))) {   // favorite_count
+            else if (values & key_fav && !(values & found_fav)) {   // favorite_count
                 fav = val;
                 values &= ~(key_fav);
                 values |= (found_fav);
@@ -108,17 +108,17 @@ struct nlohmann_json_sax {
             return true;
         }
         bool string(string_t& val) override {
-            if (!(values &(found_date)) && (values &(key_date))) {   //  created_at
+            if (values & key_date && !(values & found_date)) {   //  created_at
                 date = val;
                 values &= ~(key_date);
                 values |= (found_date);
             }
-            else if (!(values &(found_text)) && (values &(key_text))) {   // text
+            else if (values & key_text && !(values & found_text)) {   // text
                 text = val;
                 values &= ~(key_text);
                 values |= (found_text);
             }
-            else if (!(values &(found_screenname)) && (values &(key_screenname))) {    // user.screen_name
+            else if (values & key_screenname && !(values & found_screenname)) {    // user.screen_name
                 screen_name = val;
                 userobject_screen_name = false;
                 values &= ~(key_screenname);
@@ -127,7 +127,7 @@ struct nlohmann_json_sax {
             return true;
         }
         bool null() override {
-            if (!(values &(found_reply)) && (values &(key_reply))) {    // in_reply_status (null case)
+            if (values & key_reply && !(values & found_reply)) {    // in_reply_status (null case)
                 reply_status = 0;
                 values &= ~(key_reply);
                 values |= (found_reply);

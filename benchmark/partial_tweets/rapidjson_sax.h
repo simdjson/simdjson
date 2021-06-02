@@ -47,9 +47,9 @@ struct rapidjson_sax {
         uint64_t rt;
         uint64_t fav;
         uint64_t reply_status;
-        char* screen_name;
-        char* date;
-        char* text;
+        std::string_view screen_name;
+        std::string_view date;
+        std::string_view text;
         std::vector<tweet<std::string_view>>& result;
 
         Handler(std::vector<tweet<std::string_view>> &r) : result(r) { }
@@ -59,36 +59,36 @@ struct rapidjson_sax {
                 if ((length == 16) && (memcmp(key,"retweeted_status",16) == 0)) { inretweet = true; }   // Check if entering retweet
                 else if ((length == 8) && (memcmp(key,"metadata",8) == 0)) { values = 0; }  // Reset
                 // Check if key has been found and if key matches a valid key
-                else if (!(values &(found_date)) && (length == 10) && (memcmp(key,"created_at",10) == 0)) { values |= (key_date); }
+                else if (!(values & found_date) && (length == 10) && (memcmp(key,"created_at",10) == 0)) { values |= (key_date); }
                 // Must also check if not in a user object
-                else if (!(values &(found_id)) && !userobject_id && (length == 2) && (memcmp(key,"id",2) == 0)) { values |= (key_id); }
-                else if (!(values &(found_text)) && (length == 4) && (memcmp(key,"text",4) == 0)) { values |= (key_text); }
-                else if (!(values &(found_reply)) && (length == 21) && (memcmp(key,"in_reply_to_status_id",21) == 0)) { values |= (key_reply); }
+                else if (!(values & found_id) && !userobject_id && (length == 2) && (memcmp(key,"id",2) == 0)) { values |= (key_id); }
+                else if (!(values & found_text) && (length == 4) && (memcmp(key,"text",4) == 0)) { values |= (key_text); }
+                else if (!(values & found_reply) && (length == 21) && (memcmp(key,"in_reply_to_status_id",21) == 0)) { values |= (key_reply); }
                 // Check if entering user object
                 else if ((length == 4) && (memcmp(key,"user",4) == 0)) { userobject_id = userobject_screen_name = true; }
                 // Must also check if in a user object
-                else if (!(values &(found_userid)) && userobject_id && (length == 2) && (memcmp(key,"id",2) == 0)) { values |= (key_userid); }
+                else if (!(values & found_userid) && userobject_id && (length == 2) && (memcmp(key,"id",2) == 0)) { values |= (key_userid); }
                 // Must also check if in a user object
-                else if (!(values &(found_screenname)) && userobject_screen_name && (length == 11) && (memcmp(key,"screen_name",11) == 0)) { values |= (key_screenname); }
-                else if (!(values &(found_rt)) && (length == 13) && (memcmp(key,"retweet_count",13) == 0)) { values |= (key_rt); }
-                else if (!(values &(found_fav)) && (length == 14) && (memcmp(key,"favorite_count",14) == 0)) { values |= (key_fav); }
+                else if (!(values & found_screenname) && userobject_screen_name && (length == 11) && (memcmp(key,"screen_name",11) == 0)) { values |= (key_screenname); }
+                else if (!(values & found_rt) && (length == 13) && (memcmp(key,"retweet_count",13) == 0)) { values |= (key_rt); }
+                else if (!(values & found_fav) && (length == 14) && (memcmp(key,"favorite_count",14) == 0)) { values |= (key_fav); }
             }
             else if ((length == 9) && (memcmp(key,"retweeted",9) == 0)) { inretweet = false; }  // Check if end of retweet
             return true;
         }
         bool Uint(unsigned i) {
-            if ((values &(key_userid)) && !(values &(found_userid))) {    // user.id
+            if (values & key_userid && !(values & found_userid)) {    // user.id
                 user_id = i;
                 userobject_id = false;
                 values &= ~(key_userid);
                 values |= (found_userid);
             }
-            else if ((values &(key_rt)) && !(values &(found_rt))) {   // retweet_count
+            else if (values & key_rt && !(values & found_rt)) {   // retweet_count
                 rt = i;
                 values &= ~(key_rt);
                 values |= (found_rt);
             }
-            else if ((values &(key_fav)) && !(values &(found_fav))) {   // favorite_count
+            else if (values & key_fav && !(values & found_fav)) {   // favorite_count
                 fav = i;
                 values &= ~(key_fav);
                 values |= (found_fav);
@@ -99,12 +99,12 @@ struct rapidjson_sax {
             return true;
         }
         bool Uint64(uint64_t i) {
-            if ((values &(key_id)) && !(values &(found_id))) {    // id
+            if (values & key_id && !(values & found_id)) {    // id
                 id = i;
                 values &= ~(key_id);
                 values |= (found_id);
             }
-            else if ((values &(key_reply)) && !(values &(found_reply))) {   // in_reply_status_id
+            else if (values & key_reply && !(values & found_reply)) {   // in_reply_status_id
                 reply_status = i;
                 values &= ~(key_reply);
                 values |= (found_reply);
@@ -112,18 +112,18 @@ struct rapidjson_sax {
             return true;
         }
         bool String(const char* str, SizeType length, bool copy) {
-            if ((values &(key_date)) & !(values &(found_date))) {   //  created_at
-                date = strdup(str);
+            if (values & key_date && !(values & found_date)) {   //  created_at
+                date = str;
                 values &= ~(key_date);
                 values |= (found_date);
             }
-            else if ((values &(key_text)) && !(values &(found_text))) {   // text
-                text = strdup(str);
+            else if (values & key_text && !(values & found_text)) {   // text
+                text = str;
                 values &= ~(key_text);
                 values |= (found_text);
             }
-            else if ((values &(key_screenname)) && !(values &(found_screenname))) {    // user.screen_name
-                screen_name = strdup(str);
+            else if (values & key_screenname && !(values & found_screenname)) {    // user.screen_name
+                screen_name = str;
                 userobject_screen_name = false;
                 values &= ~(key_screenname);
                 values |= (found_screenname);
@@ -131,7 +131,7 @@ struct rapidjson_sax {
             return true;
         }
         bool Null() {
-            if ((values &(key_reply)) && !(values &(found_reply))) {    // in_reply_status (null case)
+            if (values & key_reply && !(values & found_reply)) {    // in_reply_status (null case)
                 reply_status = 0;
                 values &= ~(key_reply);
                 values |= (found_reply);
