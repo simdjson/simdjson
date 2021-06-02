@@ -1,9 +1,6 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
-inline void object::rewind() noexcept {
-  iter.rewind_object();
-}
 
 simdjson_really_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
   bool has_value;

@@ -625,17 +625,6 @@ inline void value_iterator::assert_at_container_start() const noexcept {
   SIMDJSON_ASSUME( _depth > 0 );
 }
 
-inline void value_iterator::rewind_object() noexcept {
-  _json_iter->_depth = _depth;
-  _json_iter->token.index = _start_position+1;
-  assert_at_container_start();
-}
-
-inline void value_iterator::rewind_array() noexcept {
-  _json_iter->_depth = _depth+1;
-  _json_iter->token.index = _start_position+1;
-}
-
 inline void value_iterator::assert_at_next() const noexcept {
   SIMDJSON_ASSUME( _json_iter->token.index > _start_position );
   SIMDJSON_ASSUME( _json_iter->_depth == _depth );

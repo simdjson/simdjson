@@ -282,11 +282,6 @@ public:
   /** @} */
 
 protected:
-  /**
-   * When the value is an array or an object, we reset it to its beginning.
-   */
-  inline void rewind_object() noexcept;
-  inline void rewind_array() noexcept;
 
   /* Useful for debugging and logging purposes. */
    inline std::string to_string() const noexcept;

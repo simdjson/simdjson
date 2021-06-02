@@ -20,11 +20,6 @@ public:
   simdjson_really_inline array() noexcept = default;
 
   /**
-   * Reset the iterator inside the array instance so we are pointing back at the
-   * beginning of the array, as if it had just been created.
-   */
-  inline void rewind() noexcept;
-  /**
    * Begin array iteration.
    *
    * Part of the std::iterable interface.
