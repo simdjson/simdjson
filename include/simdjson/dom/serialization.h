@@ -92,7 +92,7 @@ public:
   /** Clears out the content. **/
   simdjson_really_inline void clear();
   /**
-   * Get access to the buffer, it is own by the instance, but
+   * Get access to the buffer, it is owned by the instance, but
    * the user can make a copy.
    **/
   simdjson_really_inline std::string_view str() const;

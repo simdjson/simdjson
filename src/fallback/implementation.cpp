@@ -10,8 +10,10 @@ simdjson_warn_unused error_code implementation::create_dom_parser_implementation
 ) const noexcept {
   dst.reset( new (std::nothrow) dom_parser_implementation() );
   if (!dst) { return MEMALLOC; }
-  dst->set_capacity(capacity);
-  dst->set_max_depth(max_depth);
+  if (auto err = dst->set_capacity(capacity))
+    return err;
+  if (auto err = dst->set_max_depth(max_depth))
+    return err;
   return SUCCESS;
 }
 

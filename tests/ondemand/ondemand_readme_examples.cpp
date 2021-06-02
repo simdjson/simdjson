@@ -76,6 +76,29 @@ bool using_the_parsed_json_2() {
   TEST_SUCCEED();
 }
 
+  bool big_integer() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata =  R"({"value":12321323213213213213213213213211223})"_padded;
+    simdjson::ondemand::document doc = parser.iterate(docdata);
+    simdjson::ondemand::object obj = doc.get_object();
+    string_view token = obj["value"].raw_json_token();
+    std::cout << token << std::endl;
+    // token == "12321323213213213213213213213211223"
+    TEST_SUCCEED();
+  }
+
+  bool big_integer_in_string() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata =  R"({"value":"12321323213213213213213213213211223"})"_padded;
+    simdjson::ondemand::document doc = parser.iterate(docdata);
+    simdjson::ondemand::object obj = doc.get_object();
+    string_view token = obj["value"].raw_json_token();
+    std::cout << token << std::endl;
+    // token == "\"12321323213213213213213213213211223\""
+    TEST_SUCCEED();
+  }
 bool using_the_parsed_json_3() {
   TEST_START();
 
@@ -120,9 +143,9 @@ bool using_the_parsed_json_rewind() {
   auto doc = parser.iterate(cars_json);
   size_t count = 0;
   for (simdjson_unused ondemand::object car : doc) {
-    count++;
+    if(car["make"] == "Toyota") { count++; }
   }
-  std::cout << "We have " << count << " cars.\n";
+  std::cout << "We have " << count << " Toyota cars.\n";
   doc.rewind();
   for (ondemand::object car : doc) {
     cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
@@ -144,10 +167,10 @@ bool using_the_parsed_json_rewind_array() {
   auto doc = parser.iterate(cars_json);
   ondemand::array doc_array = doc;
   size_t count = 0;
-  for (simdjson_unused ondemand::object car : doc_array) {
-    count++;
+  for (simdjson_unused ondemand::object car : doc) {
+    if(car["make"] == "Toyota") { count++; }
   }
-  std::cout << "We have " << count << " cars.\n";
+  std::cout << "We have " << count << " Toyota cars.\n";
   doc_array.rewind();
   for (ondemand::object car : doc_array) {
     cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
@@ -217,9 +240,13 @@ int main() {
     true
 #if SIMDJSON_EXCEPTIONS
 //    && basics_1() // Fails because twitter.json isn't in current directory. Compile test only.
+    && using_the_parsed_json_rewind()
+    && using_the_parsed_json_rewind_array()
     && basics_2()
     && using_the_parsed_json_1()
     && using_the_parsed_json_2()
+    && big_integer()
+    && big_integer_in_string()
     && using_the_parsed_json_3()
     && using_the_parsed_json_4()
     && using_the_parsed_json_5()

@@ -18,8 +18,8 @@ An overview of what you need to know to use simdjson, with examples.
 * [Error Handling](#error-handling)
   * [Error Handling Example](#error-handling-example)
   * [Exceptions](#exceptions)
-* [Tree Walking and JSON Element Types](#tree-walking-and-json-element-types)
 * [Rewinding](#rewinding)
+* [Direct Access to the Raw String](#direct-access-to-the-raw-string)
 * [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
 * [Thread Safety](#thread-safety)
 * [Standard Compliance](#standard-compliance)
@@ -203,7 +203,19 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   - `field.value()` will get you the value, which you can then use all these other methods on.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index. Instead,
   you will need to iterate through the array and keep an index yourself.
-* **Output to sstrings:** Given a document or an element (or node) out of a JSON document, you can output a string version: `simdjson::to_string(element)` returns a `simdjson::simdjson_result<std::string>` instance. You can cast it to `std::string` and it will throw when an error was encountered (`std::string(simdjson::to_string(element))`). Or else you can do `std::string s; if(simdjson::to_string(element).get(s) == simdjson::SUCCESS) { ... }`. This consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document.
+* **Output to sstrings:** Given a document or an element (or node) out of a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_string(element)` returns a `simdjson::simdjson_result<std::string>` instance. You can cast it to `std::string` and it will throw when an error was encountered (`std::string(simdjson::to_string(element))`). Or else you can do `std::string s; if(simdjson::to_string(element).get(s) == simdjson::SUCCESS) { ... }`. This consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document. The returned string contains a serialized version of the element or document that is suitable to be parsed again. It is also a newly allocated `std::string` that is independent from the simdjson parser. The `to_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes). Th
+  > ```C++
+  > // serialize a JSON to an escaped std::string instance so that it can be parsed again as JSON
+  > auto cars_json = R"( { "test": "result"  }  )"_padded;
+  > ondemand::document doc = parser.iterate(cars_json);
+  > std::cout << simdjson::to_string(doc["test"]) << std::endl;
+  >````
+  > ```C++
+  > // retrieves an unescaped string value as a string_view instance
+  > auto cars_json = R"( { "test": "result"  }  )"_padded;
+  > ondemand::document doc = parser.iterate(cars_json);
+  > std::cout << std::string_view(doc["test"]) << std::endl;
+  >````
 
 ### Examples
 
@@ -715,66 +727,12 @@ int main(void) {
 ```
 
 
-Tree Walking and JSON Element Types
------------------------------------
-
-Sometimes you don't necessarily have a document with a known type, and are trying to generically
-inspect or walk over JSON elements. To do that, you can use iterators and the type() method. For
-example, here's a quick and dirty recursive function that verbosely prints the JSON document as JSON
-(* ignoring nuances like trailing commas and escaping strings, for brevity's sake):
-
-```c++
-void print_json(dom::element element) {
-  switch (element.type()) {
-    case dom::element_type::ARRAY:
-      cout << "[";
-      for (dom::element child : dom::array(element)) {
-        print_json(child);
-        cout << ",";
-      }
-      cout << "]";
-      break;
-    case dom::element_type::OBJECT:
-      cout << "{";
-      for (dom::key_value_pair field : dom::object(element)) {
-        cout << "\"" << field.key << "\": ";
-        print_json(field.value);
-      }
-      cout << "}";
-      break;
-    case dom::element_type::INT64:
-      cout << int64_t(element) << endl;
-      break;
-    case dom::element_type::UINT64:
-      cout << uint64_t(element) << endl;
-      break;
-    case dom::element_type::DOUBLE:
-      cout << double(element) << endl;
-      break;
-    case dom::element_type::STRING:
-      cout << std::string_view(element) << endl;
-      break;
-    case dom::element_type::BOOL:
-      cout << bool(element) << endl;
-      break;
-    case dom::element_type::NULL_VALUE:
-      cout << "null" << endl;
-      break;
-  }
-}
-
-void basics_treewalk_1() {
-  dom::parser parser;
-  print_json(parser.load("twitter.json"));
-}
-```
-
 Rewinding
 ----------
 
 In some instances, you may need to go through a document more than once. For that purpose, you may
 call the `rewind()` method on the document instance. It allows you to restart processing from the beginning without rescanning all of the input data again. It invalidates all values, objects and arrays
-that you have created so far.
+that you have created so far (including unescaped strings).
 
 In the following example, we print on the screen the number of cars in the JSON input file
 before printout the data.
@@ -788,11 +746,10 @@ before printout the data.
   ] )"_padded;
 
   auto doc = parser.iterate(cars_json);
-  size_t count = 0;
   for (simdjson_unused ondemand::object car : doc) {
-    count++;
+    if(car["make"] == "Toyota") { count++; }
   }
-  std::cout << "We have " << count << " cars.\n";
+  std::cout << "We have " << count << " Toyota cars.\n";
   doc.rewind();
   for (ondemand::object car : doc) {
     cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
@@ -805,18 +762,40 @@ You may also rewind arrays and objects, as in the following example:
   auto doc = parser.iterate(cars_json);
   ondemand::array doc_array = doc;
   size_t count = 0;
-  for (simdjson_unused ondemand::object car : doc_array) {
-    count++;
+  for (simdjson_unused ondemand::object car : doc) {
+    if(car["make"] == "Toyota") { count++; }
   }
-  std::cout << "We have " << count << " cars.\n";
+  std::cout << "We have " << count << " Toyota cars.\n";
   doc_array.rewind();
   for (ondemand::object car : doc_array) {
     cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
   }
 ```
 
+Direct Access to the Raw String
+--------------------------------
+
+The simdjson library makes explicit assumptions about types. For examples, numbers
+must be integers (up to 64-bit integers) or binary64 floating-point numbers. Some users
+have different needs. For example, some users might want to support big integers.
+The library makes this possible by providing a `raw_json_token` method which returns
+a `std::string_view` instance containing the value as a string which you may then
+parse as you see fit.
+
+```C++
+simdjson::ondemand::parser parser;
+simdjson::padded_string docdata =  R"({"value":12321323213213213213213213213211223})"_padded;
+simdjson::ondemand::document doc = parser.iterate(docdata);
+simdjson::ondemand::object obj = doc.get_object();
+std::string_view token = obj["value"].raw_json_token();
+// token has value "12321323213213213213213213213211223"
+```
+
 Performance note: the On Demand front-end does not materialize the parsed numbers and other values. If you are accessing everything twice, you may need to parse them twice. Thus the rewind functionality is
 best suited for cases where the first pass only scans the structure of the document.
+The `raw_json_token` method even works when the JSON value is a string. In such cases, it
+will return the complete string with the quotes and with eventual escaped sequences as in the
+source document.
 
 Newline-Delimited JSON (ndjson) and JSON lines
 ----------------------------------------------
@@ -900,8 +879,8 @@ The simdjson library is fully compliant with  the [RFC 8259](https://www.tbray.o
 - A single string or a single number is considered to be a valid JSON document.
 - We fully validate the numbers according to the JSON specification. For example,  the string `01` is not valid JSON document since the specification states that *leading zeros are not allowed*.
 - The specification allows implementations to set limits on the range and precision of numbers accepted.  We support 64-bit floating-point numbers as well as integer values.
-  - We parse integers and floating-point numbers as separate types which allows us to support all signed (two complement's) 64-bit integers, like a Java `long` or a C/C++ `long long` and all 64-bit unsigned integers. When we cannot represent exactly an integer as a signed or unsigned 64-bit value, we reject the JSON document.
-  - We support the full range of 64-bit floating-point numbers (binary64). The values range from `std::numeric_limits<double>::lowest()`  to `std::numeric_limits<double>::max()`, so from -1.7976e308 all the way to 1.7975e308. Extreme values (less or equal to -1e308, greater or equal to 1e308) are rejected: we refuse to parse the input document. Numbers are parsed with with a perfect accuracy (ULP 0): the nearest floating-point value is chosen, rounding to even when needed. If you serialized your floating-point numbers with 17 significant digits in a standard compliant manner, the simdjson library is guaranteed to recovere the example same numbers, exactly.
+  - We parse integers and floating-point numbers as separate types which allows us to support all signed (two's complement) 64-bit integers, like a Java `long` or a C/C++ `long long` and all 64-bit unsigned integers. When we cannot represent exactly an integer as a signed or unsigned 64-bit value, we reject the JSON document.
+  - We support the full range of 64-bit floating-point numbers (binary64). The values range from `std::numeric_limits<double>::lowest()`  to `std::numeric_limits<double>::max()`, so from -1.7976e308 all the way to 1.7975e308. Extreme values (less or equal to -1e308, greater or equal to 1e308) are rejected: we refuse to parse the input document. Numbers are parsed with a perfect accuracy (ULP 0): the nearest floating-point value is chosen, rounding to even when needed. If you serialized your floating-point numbers with 17 significant digits in a standard compliant manner, the simdjson library is guaranteed to recover the same numbers, exactly.
 - The specification states that JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8. The simdjson library does full UTF-8 validation as part of the parsing. The specification states that implementations MUST NOT add a byte order mark: the simdjson library rejects documents starting with a  byte order mark.
 - The simdjson library validates string content for unescaped characters. Unescaped line breaks and tabs in strings are not allowed.
 - The simdjson library accepts objects with repeated keys: all of the name/value pairs, including duplicates, are reported. We do not enforce key uniqueness.

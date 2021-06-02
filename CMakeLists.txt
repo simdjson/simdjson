@@ -59,6 +59,8 @@ include(cmake/handle-deprecations.cmake)
 
 if(SIMDJSON_DEVELOPER_MODE)
   include(cmake/developer-options.cmake)
+else()
+  message(STATUS "Building only the library. Advanced users may want to turn SIMDJSON_DEVELOPER_MODE to ON, e.g., via -D SIMDJSON_DEVELOPER_MODE=ON.")
 endif()
 
 # ---- simdjson library ----

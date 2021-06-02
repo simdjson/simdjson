@@ -288,6 +288,8 @@ protected:
   inline void rewind_object() noexcept;
   inline void rewind_array() noexcept;
 
+  /* Useful for debugging and logging purposes. */
+   inline std::string to_string() const noexcept;
   simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept;
 
   simdjson_really_inline bool parse_null(const uint8_t *json) const noexcept;
@@ -305,12 +307,12 @@ protected:
   simdjson_really_inline bool is_at_start() const noexcept;
   simdjson_really_inline bool is_at_container_start() const noexcept;
   simdjson_really_inline bool is_at_iterator_start() const noexcept;
-  simdjson_really_inline void assert_at_start() const noexcept;
-  simdjson_really_inline void assert_at_container_start() const noexcept;
-  simdjson_really_inline void assert_at_root() const noexcept;
-  simdjson_really_inline void assert_at_child() const noexcept;
-  simdjson_really_inline void assert_at_next() const noexcept;
-  simdjson_really_inline void assert_at_non_root_start() const noexcept;
+  inline void assert_at_start() const noexcept;
+  inline void assert_at_container_start() const noexcept;
+  inline void assert_at_root() const noexcept;
+  inline void assert_at_child() const noexcept;
+  inline void assert_at_next() const noexcept;
+  inline void assert_at_non_root_start() const noexcept;
 
   friend class document;
   friend class object;
