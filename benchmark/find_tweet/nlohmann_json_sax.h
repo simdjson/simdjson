@@ -14,6 +14,7 @@ struct nlohmann_json_sax {
     struct Handler : json::json_sax_t
     {
         bool text_key = false;
+        bool id_key = false;
         bool found_id = false;
         uint64_t find_id;
         std::string &result;
@@ -25,10 +26,11 @@ struct nlohmann_json_sax {
             if (found_id) { // If have found id, find text key
                 if (val.compare("text") == 0) { text_key = true; }
             }
+            else if (val.compare("id") == 0) { id_key = true; } // Otherwise, find id key
             return true;
         }
         bool number_unsigned(number_unsigned_t val) override {
-            if (val == find_id) {  // Looking for find_id
+            if (id_key && (val == find_id)) {  // If id key, check if id value matches find_id
                 found_id = true;
             }
             return true;

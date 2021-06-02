@@ -14,6 +14,7 @@ using StringType=std::string_view;
 
 struct Handler {
         bool text_key = false;
+        bool id_key = false;
         bool found_id = false;
         uint64_t find_id;
         std::string_view &result;
@@ -25,10 +26,11 @@ struct Handler {
             if (found_id) { // If have found id, find text key
                 if ((length == 4) && (memcmp(key,"text",4) == 0)) { text_key = true; }
             }
+            else if ((length == 2) && (memcmp(key,"id",2) == 0)) { id_key = true; } // Otherwise, find id key
             return true;
         }
         bool Uint64(uint64_t i) {
-            if (i == find_id) {  // Looking for find_id
+            if (id_key && (i == find_id)) {  // If id key, check if id value matches find_id
                 found_id = true;
             }
             return true;
