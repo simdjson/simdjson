@@ -10,7 +10,7 @@ namespace find_tweet {
 using namespace rapidjson;
 
 struct rapidjson_sax {
-  using StringType=std::string_view;
+using StringType=std::string_view;
 
 struct Handler {
         bool text_key = false;
@@ -20,6 +20,7 @@ struct Handler {
 
         Handler(std::string_view &r,uint64_t id): result(r), find_id(id) { }
 
+        // We assume id is found before text
         bool Key(const char* key, SizeType length, bool copy) {
             if (found_id) { // If have found id, find text key
                 if ((length == 4) && (memcmp(key,"text",4) == 0)) { text_key = true; }
@@ -33,7 +34,7 @@ struct Handler {
             return true;
         }
         bool String(const char* str, SizeType length, bool copy) {
-            if (found_id && text_key) {
+            if (text_key) {
                 result = {str,length};
                 return false;   // End parsing
             }
