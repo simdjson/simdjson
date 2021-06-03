@@ -343,9 +343,9 @@ void recursive_print_json(T&& element) {
       if (add_comma) {
         cout << ",";
       }
-      // key() returns the unescaped key, if we
-      // want the unescaped key, we should do
-      // field.unescaped_key().
+      // key() returns the key as it appears in the raw
+      // JSON document, if we want the unescaped key,
+      // we should do field.unescaped_key().
       cout << "\"" << field.key() << "\": ";
       recursive_print_json(field.value());
       add_comma = true;
