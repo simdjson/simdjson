@@ -2,33 +2,43 @@
 
 #ifdef SIMDJSON_COMPETITION_NLOHMANN_JSON
 
-#include "distinct_user_id.h"
+#include "find_tweet.h"
 
-namespace distinct_user_id {
+namespace find_tweet {
 
 using json = nlohmann::json;
 
 struct nlohmann_json_sax {
+    using StringType=std::string;
+
     struct Handler : json::json_sax_t
     {
-        std::vector<uint64_t>& result;
-        bool user = false;
-        bool user_id = false;
-        Handler(std::vector<uint64_t> &r) : result(r) { }
+        bool text_key = false;
+        bool id_key = false;
+        bool found_id = false;
+        uint64_t find_id;
+        std::string &result;
 
+        Handler(std::string &r,uint64_t id): result(r), find_id(id) { }
+
+        // We assume id is found before text
         bool key(string_t& val) override {
-            // Assume that valid user/id pairs appear only once in main array of user objects
-            if (user) { // If already found user object, find id key
-                if (val.compare("id") == 0) { user_id = true; }
+            if (found_id) { // If have found id, find text key
+                if (val.compare("text") == 0) { text_key = true; }
             }
-            else if (val.compare("user") == 0) { user = true; } // Otherwise, find user object
+            else if (val.compare("id") == 0) { id_key = true; } // Otherwise, find id key
             return true;
         }
         bool number_unsigned(number_unsigned_t val) override {
-            if (user_id) {
-                result.emplace_back(val);
-                user = false;
-                user_id = false;
+            if (id_key && (val == find_id)) {  // If id key, check if id value matches find_id
+                found_id = true;
+            }
+            return true;
+        }
+        bool string(string_t& val) override {
+            if (text_key) {
+                result = val;
+                return false;   // End parsing
             }
             return true;
         }
@@ -37,7 +47,6 @@ struct nlohmann_json_sax {
         bool boolean(bool val) override { return true; }
         bool number_float(number_float_t val, const string_t& s) override { return true; }
         bool number_integer(number_integer_t val) override { return true; }
-        bool string(string_t& val) override { return true; }
         bool start_object(std::size_t elements) override { return true; }
         bool end_object() override { return true; }
         bool start_array(std::size_t elements) override { return true; }
@@ -46,14 +55,14 @@ struct nlohmann_json_sax {
         bool parse_error(std::size_t position, const std::string& last_token, const json::exception& ex) override { return false; }
     }; // Handler
 
-    bool run(simdjson::padded_string &json, std::vector<uint64_t> &result) {
-        Handler handler(result);
+    bool run(simdjson::padded_string &json, uint64_t find_id, std::string &result) {
+        Handler handler(result,find_id);
         json::sax_parse(json.data(), &handler);
 
         return true;
     }
 }; // nlohmann_json_sax
-BENCHMARK_TEMPLATE(distinct_user_id, nlohmann_json_sax)->UseManualTime();
-} // namespace distinct_user_id
+BENCHMARK_TEMPLATE(find_tweet, nlohmann_json_sax)->UseManualTime();
+} // namespace find_tweet
 
 #endif // SIMDJSON_COMPETITION_NLOHMANN_JSON
