@@ -113,17 +113,17 @@ struct rapidjson_sax {
         }
         bool String(const char* str, SizeType length, bool copy) {
             if (values & key_date && !(values & found_date)) {   //  created_at
-                date = str;
+                date = {str,length};
                 values &= ~(key_date);
                 values |= (found_date);
             }
             else if (values & key_text && !(values & found_text)) {   // text
-                text = str;
+                text = {str,length};
                 values &= ~(key_text);
                 values |= (found_text);
             }
             else if (values & key_screenname && !(values & found_screenname)) {    // user.screen_name
-                screen_name = str;
+                screen_name = {str,length};
                 userobject_screen_name = false;
                 values &= ~(key_screenname);
                 values |= (found_screenname);
