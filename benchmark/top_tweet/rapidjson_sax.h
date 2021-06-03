@@ -12,6 +12,8 @@ using namespace rapidjson;
 struct rapidjson_sax {
     using StringType=std::string_view;
     struct Handler {
+        // Assume every tweet/retweet starts with "metadata" key and ends with "retweeted" key. Ignore everything in a retweet.
+        // Assume that the first valid key encountered outside a retweet is the correct key.
         enum state {    // Bit set to keep track of state of search for keys
             key_text = (1<<0),
             key_screen_name = (1<<1),
@@ -25,19 +27,19 @@ struct rapidjson_sax {
         StringType text;
         StringType screen_name;
         bool inretweet = false;
+        bool userobject = false;
         top_tweet_result<StringType>& result;
         int64_t max_rt;
 
         Handler(top_tweet_result<StringType> &r,int64_t m) : result(r), max_rt(m) { }
 
-        // Assume every tweet/retweet starts with "metadata" key and ends with "retweeted" key. Ignore everything in a retweet.
-        // Assume that the first valid key encountered outside a retweet is the correct key.
         bool Key(const char* key, SizeType length, bool copy) {
             if (!inretweet) {
                 if ((length == 16) && (memcmp(key,"retweeted_status",16) == 0)) { inretweet = true; }   // Check if entering retweet
                 else if ((length == 8) && (memcmp(key,"metadata",8) == 0)) { values = 0; }  // Reset
-                else if (!(values & found_text) && (length == 4) && memcmp(key,"text",4) == 0) { values |= (key_text); }
-                else if (!(values & found_screen_name) && (length == 11) && memcmp(key,"screen_name",11) == 0) { values |= (key_screen_name); }
+                else if (!(values & found_text) && (length == 4) && (memcmp(key,"text",4) == 0)) { values |= (key_text); }
+                else if ((length == 4) && (memcmp(key,"user",4) == 0)) { userobject = true; }
+                else if (!(values & found_screen_name) && userobject && (length == 11) && memcmp(key,"screen_name",11) == 0) { values |= (key_screen_name); }
                 else if (!(values & found_rt) && (length == 13) && (memcmp(key,"retweet_count",13) == 0)) { values |= (key_rt); }
             }
             else if ((length == 9) && (memcmp(key,"retweeted",9) == 0)) { inretweet = false; }  // Check if end of retweet
@@ -53,6 +55,7 @@ struct rapidjson_sax {
                 screen_name = str;
                 values &= ~(key_screen_name);
                 values |= (found_screen_name);
+                userobject = false;
             }
             return true;
         }
@@ -61,7 +64,7 @@ struct rapidjson_sax {
                 rt = i;
                 values &= ~(key_rt);
                 values |= (found_rt);
-                if (rt <= max_rt && i >= result.retweet_count) {    // Check if current tweet has more retweet than previous top tweet
+                if (rt <= max_rt && rt >= result.retweet_count) {    // Check if current tweet has more retweet than previous top tweet
                     result.retweet_count = rt;
                     result.text = text;
                     result.screen_name  = screen_name;
