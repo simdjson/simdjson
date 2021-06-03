@@ -39,7 +39,9 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "large_random/yyjson.h"
 #include "large_random/sajson.h"
 #include "large_random/rapidjson.h"
+#include "large_random/rapidjson_sax.h"
 #include "large_random/nlohmann_json.h"
+#include "large_random/nlohmann_json_sax.h"
 
 #include "kostya/simdjson_dom.h"
 #include "kostya/simdjson_ondemand.h"

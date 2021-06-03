@@ -2,9 +2,9 @@
 
 #ifdef SIMDJSON_COMPETITION_NLOHMANN_JSON
 
-#include "kostya.h"
+#include "large_random.h"
 
-namespace kostya {
+namespace large_random {
 
 using json = nlohmann::json;
 
@@ -17,7 +17,7 @@ struct nlohmann_json_sax {
         double buffer[3];
         std::vector<point>& result;
 
-        Handler(std::vector<point>& r) : result(r) { }
+        Handler(std::vector<point> &r) : result(r) {  }
 
         bool key(string_t& val) override {
             switch(val[0]) {
@@ -33,7 +33,7 @@ struct nlohmann_json_sax {
             }
             return true;
         }
-        bool number_float(number_float_t val, const string_t& s) override {
+        bool number_unsigned(number_unsigned_t val) override {
             buffer[k] = val;
             if (k == 2) {
                 result.emplace_back(json_benchmark::point{buffer[0],buffer[1],buffer[2]});
@@ -41,7 +41,7 @@ struct nlohmann_json_sax {
             }
             return true;
         }
-        bool number_unsigned(number_unsigned_t val) override {  // Need this event because coordinate value can be equal to 1
+        bool number_float(number_float_t val, const string_t& s) override {
             buffer[k] = val;
             if (k == 2) {
                 result.emplace_back(json_benchmark::point{buffer[0],buffer[1],buffer[2]});
@@ -68,7 +68,6 @@ struct nlohmann_json_sax {
         return true;
     }
 }; // nlohmann_json_sax
-BENCHMARK_TEMPLATE(kostya, nlohmann_json_sax)->UseManualTime();
-} // namespace kostya
-
+BENCHMARK_TEMPLATE(large_random, nlohmann_json_sax)->UseManualTime();
+} // namespace large_random
 #endif // SIMDJSON_COMPETITION_NLOHMANN_JSON
