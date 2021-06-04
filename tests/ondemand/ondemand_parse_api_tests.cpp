@@ -10,6 +10,90 @@ namespace parse_api_tests {
   const padded_string BASIC_NDJSON = "[1,2,3]\n[4,5,6]"_padded;
   const padded_string EMPTY_NDJSON = ""_padded;
 
+  bool parser_document_reuse() {
+    TEST_START();
+    ondemand::document doc;
+    // A document spans about 40 bytes. Nevertheless, some users
+    // would rather reuse them.
+    std::cout << sizeof(doc) << std::endl;
+    auto json = R"({"key": "value"})"_padded;
+    auto jsonbad = R"({"key": "value")"_padded; // deliberaty broken
+    auto jsonunclosedstring = "{\"coordinates:[{\"x\":1.1,\"y\":2.2,\"z\":3.3}]}"_padded;
+    std::string output;
+
+    ondemand::parser parser;
+    std::cout << "correct document (1)" << std::endl;
+
+    ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+
+    ASSERT_SUCCESS(simdjson::to_string(doc).get(output));
+    std::cout << output << std::endl;
+  
+    std::cout << "correct document (2)" << std::endl;
+
+    ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+    for(ondemand::field field : doc.get_object() ) {
+      std::cout << "field: " << field.key() << std::endl;
+    }
+    std::cout << "unclosed string document " << std::endl;
+
+    ASSERT_EQUAL( parser.iterate(jsonunclosedstring).get(doc),UNCLOSED_STRING);
+
+    std::cout << "truncated document " << std::endl;
+
+    ASSERT_SUCCESS( parser.iterate(jsonbad).get(doc) );
+
+    ASSERT_EQUAL( simdjson::to_string(doc).get(output), TAPE_ERROR );
+
+    std::cout << "correct document with new doc" << std::endl;
+    ondemand::document doc2;
+    ASSERT_SUCCESS( parser.iterate(json).get(doc2) );
+    for(ondemand::field field : doc2.get_object() ) {
+      std::cout << "field: " << field.key() << std::endl;
+    }
+    std::cout << "correct document (3): " << doc.to_debug_string() << std::endl;
+
+    std::cout << "correct document (3)" << std::endl;
+    ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+    std::cout << doc.to_debug_string() << std::endl;
+    for(ondemand::field field : doc.get_object() ) {
+      std::cout << "field: " << field.key() << std::endl;
+    }
+
+    std::cout << "unclosed string document " << std::endl;
+
+    ASSERT_SUCCESS( parser.iterate(jsonbad).get(doc) );
+    ASSERT_EQUAL( simdjson::to_string(doc).get(output), TAPE_ERROR );
+
+    // next two lines are terrible code.
+    doc.~document();
+    doc = ondemand::document();
+    //
+
+    std::cout << "correct document (4)" << std::endl;
+
+    ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+    ASSERT_SUCCESS( simdjson::to_string(doc).get(output) );
+    std::cout << output << std::endl;
+
+    std::cout << "unclosed string document " << std::endl;
+
+    ASSERT_EQUAL( parser.iterate(jsonunclosedstring).get(doc),UNCLOSED_STRING);
+
+
+    // next two lines are terrible code.
+    doc.~document();
+    doc = ondemand::document();
+    //
+    std::cout << "correct document (5)" << std::endl;
+
+    ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+    ASSERT_SUCCESS( simdjson::to_string(doc).get(output) );
+    std::cout << output << std::endl;
+
+    TEST_SUCCEED();
+  }
+
   bool parser_iterate_empty() {
     TEST_START();
     FILE *p;
@@ -31,7 +115,7 @@ namespace parse_api_tests {
       std::cout << "Warning: I could not create temporary file " << tmpfilename << std::endl;
       std::cout << "We omit testing the empty file case." << std::endl;
     }
-    return true;
+    TEST_SUCCEED();
   }
 
   bool parser_iterate() {
@@ -165,7 +249,8 @@ namespace parse_api_tests {
 #endif // SIMDJSON_EXCEPTIONS
 
   bool run() {
-    return parser_iterate_empty() &&
+    return parser_document_reuse() &&
+           parser_iterate_empty() &&
            parser_iterate() &&
            parser_iterate_padded() &&
            parser_iterate_padded_string_view() &&
