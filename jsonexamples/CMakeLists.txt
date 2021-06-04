@@ -1,4 +1,4 @@
-set(SIMDJSON_BENCHMARK_DATA_DIR ${CMAKE_CURRENT_BINARY_DIR} PARENT_SCOPE)
+# The bulk of our data files is found in https://github.com/simdjson/simdjson-data
 set(EXAMPLE_JSON ${CMAKE_CURRENT_BINARY_DIR}/twitter.json PARENT_SCOPE)
 set(EXAMPLE_NDJSON ${CMAKE_CURRENT_BINARY_DIR}/amazon_cellphones.ndjson PARENT_SCOPE)
 
@@ -7,10 +7,3 @@ file(GLOB_RECURSE example_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.json *.nd
 foreach(example_file ${example_files})
   configure_file(${example_file} ${example_file} COPYONLY)
 endforeach(example_file)
-
-add_subdirectory(generated)
-
-add_library(jsonexamples-data INTERFACE)
-target_compile_definitions(jsonexamples-data INTERFACE SIMDJSON_BENCHMARK_DATA_DIR="${CMAKE_CURRENT_BINARY_DIR}/")
-add_dependencies(jsonexamples-data ${example_files})
-add_dependencies(jsonexamples-data generated-data)

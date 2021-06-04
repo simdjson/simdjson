@@ -64,6 +64,6 @@ struct rapidjson_insitu : rapidjson_base {
 };
 BENCHMARK_TEMPLATE(top_tweet, rapidjson_insitu)->UseManualTime();
 
-} // namespace partial_tweets
+} // namespace top_tweet
 
 #endif // SIMDJSON_COMPETITION_RAPIDJSON

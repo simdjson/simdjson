@@ -25,8 +25,6 @@ protected:
   depth_t _depth{};
   /**
    * The starting token index for this value
-   *
-   * PERF NOTE: this is a safety check; we expect this to be elided in release builds.
    */
   token_position _start_position{};
 
@@ -286,6 +284,7 @@ public:
   /** @} */
 
 protected:
+
   /* Useful for debugging and logging purposes. */
    inline std::string to_string() const noexcept;
   simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept;

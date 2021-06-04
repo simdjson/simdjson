@@ -212,6 +212,31 @@ namespace object_tests {
       ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
       return true;
     }));
+    SUBTEST("ondemand::object-document-rewind", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_RESULT( doc_result.type(), json_type::object );
+      ASSERT_SUCCESS( doc_result.get(object) );
+      size_t i = 0;
+      for (auto [ field, error ] : object) {
+        ASSERT_SUCCESS(error);
+        ASSERT_EQUAL( field.key(), expected_key[i]);
+        ASSERT_EQUAL( field.value().get_uint64().value_unsafe(), expected_value[i] );
+        i++;
+      }
+      ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
+      doc_result.rewind();
+      ASSERT_RESULT( doc_result.type(), json_type::object );
+      ASSERT_SUCCESS( doc_result.get(object) );
+      i = 0;
+      for (auto [ field, error ] : object) {
+        ASSERT_SUCCESS(error);
+        ASSERT_EQUAL( field.key(), expected_key[i]);
+        ASSERT_EQUAL( field.value().get_uint64().value_unsafe(), expected_value[i] );
+        i++;
+      }
+      ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
+      return true;
+    }));
     SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::object> object_result = doc_result.get_object();
       size_t i = 0;
@@ -403,6 +428,124 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
+  bool object_index() {
+    TEST_START();
+    auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
+    SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object["c/d"].get_uint64().value_unsafe(), 3 );
+
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<ondemand::object> object;
+      object = doc_result.get_object();
+
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object["c/d"].get_uint64().value_unsafe(), 3 );
+
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+  bool document_object_index() {
+    TEST_START();
+    auto json = R"({ "a": 1, "b": 2, "c/d": 3})"_padded;
+    SUBTEST("ondemand::document", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::document doc;
+      ASSERT_SUCCESS( std::move(doc_result).get(doc) );
+      ASSERT_EQUAL( doc["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( doc["b"].get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( doc["c/d"].get_uint64().value_unsafe(), 3 );
+
+      ASSERT_EQUAL( doc["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_ERROR( doc["d"], NO_SUCH_FIELD );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](auto doc_result) {
+      ASSERT_EQUAL( doc_result["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( doc_result["b"].get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( doc_result["c/d"].get_uint64().value_unsafe(), 3 );
+
+      ASSERT_EQUAL( doc_result["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_ERROR( doc_result["d"], NO_SUCH_FIELD );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+  bool value_search_unescaped_key() {
+    TEST_START();
+    auto json = R"({"k\u0065y": 1})"_padded;
+    SUBTEST("ondemand::unescapedkey", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      bool got_key = false;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      for (auto field : object) {
+        std::string_view keyv;
+        ASSERT_SUCCESS( field.unescaped_key().get(keyv) );
+        if(keyv == "key") {
+          int64_t value;
+          ASSERT_SUCCESS( field.value().get(value) );
+          ASSERT_EQUAL( value, 1);
+          got_key = true;
+        }
+      }
+      return got_key;
+    }));
+    SUBTEST("ondemand::rawkey", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      bool got_key = false;
+      for (auto field : object) {
+        ondemand::raw_json_string keyv;
+        ASSERT_SUCCESS( field.key().get(keyv) );
+        if(keyv == R"(k\u0065y)") {
+          int64_t value;
+          ASSERT_SUCCESS( field.value().get(value) );
+          ASSERT_EQUAL( value, 1);
+          got_key = true;
+        }
+      }
+      return got_key;
+    }));
+    TEST_SUCCEED();
+  }
+  bool value_object_index() {
+    TEST_START();
+    auto json = R"({ "outer": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
+    SUBTEST("ondemand::value", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::value object;
+      ASSERT_SUCCESS( doc_result["outer"].get(object) );
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object["c/d"].get_uint64().value_unsafe(), 3 );
+
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
+      return true;
+    }));
+    SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc_result) {
+      simdjson_result<ondemand::value> object = doc_result["outer"];
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );
+      ASSERT_EQUAL( object["c/d"].get_uint64().value_unsafe(), 3 );
+
+      ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
+      ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
   bool issue_1480() {
     TEST_START();
     auto json = R"({ "name"  : "something", "version": "0.13.2", "version_major": 0})"_padded;
@@ -508,6 +651,27 @@ namespace object_tests {
       }
       return true;
     }));
+    SUBTEST("ondemand::object-document-rewind", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_RESULT( doc_result.type(), json_type::object );
+      ASSERT_SUCCESS( doc_result.get(object) );
+      size_t i = 0;
+      for (auto [ field, error ] : object) {
+        (void)field;
+        (void)error;
+        i++;
+      }
+      ASSERT_EQUAL( i, 0 );
+      doc_result.rewind();
+      i = 0;
+      for (auto [ field, error ] : object) {
+        (void)field;
+        (void)error;
+        i++;
+      }
+      ASSERT_EQUAL( i, 0 );
+      return true;
+    }));
 
     TEST_SUCCEED();
   }
@@ -516,6 +680,7 @@ namespace object_tests {
 
   bool run() {
     return
+           value_search_unescaped_key() &&
            missing_key_continue() &&
            no_missing_keys() &&
            missing_keys() &&
