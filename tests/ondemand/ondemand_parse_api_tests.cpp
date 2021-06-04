@@ -28,7 +28,7 @@ namespace parse_api_tests {
 
     ASSERT_SUCCESS(simdjson::to_string(doc).get(output));
     std::cout << output << std::endl;
-  
+
     std::cout << "correct document (2)" << std::endl;
 
     ASSERT_SUCCESS( parser.iterate(json).get(doc) );
