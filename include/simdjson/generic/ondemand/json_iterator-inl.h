@@ -6,7 +6,7 @@ simdjson_really_inline json_iterator::json_iterator(json_iterator &&other) noexc
   : token(std::forward<token_iterator>(other.token)),
     parser{other.parser},
     _string_buf_loc{other._string_buf_loc},
-    error{other.error}, // For some reason this was not included initially? This made the error code sticky.
+    error{other.error},
     _depth{other._depth}
 {
   other.parser = nullptr;
@@ -15,7 +15,7 @@ simdjson_really_inline json_iterator &json_iterator::operator=(json_iterator &&o
   token = other.token;
   parser = other.parser;
   _string_buf_loc = other._string_buf_loc;
-  error = other.error; // For some reason this was not included initially? This made the error code sticky.
+  error = other.error;
   _depth = other._depth;
   other.parser = nullptr;
   return *this;
