@@ -698,6 +698,43 @@ namespace object_tests {
     }));
     TEST_SUCCEED();
   }
+  bool value_search_unescaped_key() {
+    TEST_START();
+    auto json = R"({"k\u0065y": 1})"_padded;
+    SUBTEST("ondemand::unescapedkey", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      bool got_key = false;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      for (auto field : object) {
+        std::string_view keyv;
+        ASSERT_SUCCESS( field.unescaped_key().get(keyv) );
+        if(keyv == "key") {
+          int64_t value;
+          ASSERT_SUCCESS( field.value().get(value) );
+          ASSERT_EQUAL( value, 1);
+          got_key = true;
+        }
+      }
+      return got_key;
+    }));
+    SUBTEST("ondemand::rawkey", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      bool got_key = false;
+      for (auto field : object) {
+        ondemand::raw_json_string keyv;
+        ASSERT_SUCCESS( field.key().get(keyv) );
+        if(keyv == R"(k\u0065y)") {
+          int64_t value;
+          ASSERT_SUCCESS( field.value().get(value) );
+          ASSERT_EQUAL( value, 1);
+          got_key = true;
+        }
+      }
+      return got_key;
+    }));
+    TEST_SUCCEED();
+  }
   bool value_object_index() {
     TEST_START();
     auto json = R"({ "outer": { "a": 1, "b": 2, "c/d": 3 } })"_padded;
@@ -1079,6 +1116,7 @@ namespace object_tests {
 
   bool run() {
     return
+           value_search_unescaped_key() &&
            missing_key_continue() &&
            no_missing_keys() &&
            missing_keys() &&
