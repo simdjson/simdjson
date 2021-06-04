@@ -1,9 +1,0 @@
-{
-    "a": "b",
-    "b": true,
-    "obj": { "a": "c" },
-    "undef": null,
-    "c": false,
-    "int": -1,
-    "Uist": [1, 2, 0,    3,
-"     

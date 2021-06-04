@@ -204,15 +204,19 @@ add_custom_target(
 enable_testing()
 # So we can build just tests with "make all_tests"
 add_custom_target(all_tests)
-add_subdirectory(jsonchecker)
-add_subdirectory(jsonexamples)
-add_library(test-data INTERFACE)
-target_link_libraries(test-data INTERFACE jsonchecker-data jsonchecker-minefield-data jsonexamples-data)
 
 add_subdirectory(windows)
 add_subdirectory(dependencies) ## This needs to be before tools because of cxxopts
 add_subdirectory(tools)  ## This needs to be before tests because of cxxopts
+
+# Data: jsonexamples is left with only the bare essential.
+# most of the data has been moved to https://github.com/simdjson/simdjson-data
+add_subdirectory(jsonexamples)
+
+
 add_subdirectory(singleheader)
+
+
 
 #
 # Compile tools / tests / benchmarks

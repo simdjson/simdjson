@@ -18,6 +18,10 @@ if(SIMDJSON_GOOGLE_BENCHMARKS)
   add_dependency(google_benchmarks)
 endif()
 
+# The bulk of our benchmarking and testing data has been moved simdjson/simdjson-data
+import_dependency(simdjson-data simdjson/simdjson-data a5b13babe65c1bba7186b41b43d4cbdc20a5c470)
+add_dependency(simdjson-data)
+
 # This prevents variables declared with set() from unnecessarily escaping and
 # should not be called more than once
 function(competition_scope_)
