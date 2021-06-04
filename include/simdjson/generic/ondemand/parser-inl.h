@@ -2,7 +2,12 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+simdjson_really_inline parser::parser(size_t max_capacity) noexcept
+  : _max_capacity{max_capacity} {
+}
+
 simdjson_warn_unused simdjson_really_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
+  if (new_capacity >= max_capacity()) { return CAPACITY; }
   if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
@@ -82,10 +87,20 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<json_iterator> parse
 simdjson_really_inline size_t parser::capacity() const noexcept {
   return _capacity;
 }
+simdjson_really_inline size_t parser::max_capacity() const noexcept {
+  return _max_capacity;
+}
 simdjson_really_inline size_t parser::max_depth() const noexcept {
   return _max_depth;
 }
 
+simdjson_really_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
+  if(max_capacity < MINIMAL_DOCUMENT_CAPACITY) {
+    _max_capacity = max_capacity;
+  } else {
+    _max_capacity = MINIMAL_DOCUMENT_CAPACITY;
+  }
+}
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

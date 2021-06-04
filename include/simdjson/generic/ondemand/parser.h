@@ -21,7 +21,7 @@ public:
    *
    * The new parser will have zero capacity.
    */
-  inline parser() noexcept = default;
+  inline explicit parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
 
   inline parser(parser &&other) noexcept = default;
   simdjson_really_inline parser(const parser &other) = delete;
@@ -122,6 +122,9 @@ public:
 
   /** The capacity of this parser (the largest document it can process). */
   simdjson_really_inline size_t capacity() const noexcept;
+  /** The maximum capacity of this parser (the largest document it is allowed to process). */
+  simdjson_really_inline size_t max_capacity() const noexcept;
+  simdjson_really_inline void set_max_capacity(size_t max_capacity) noexcept;
   /** The maximum depth of this parser (the most deeply nested objects and arrays it can process). */
   simdjson_really_inline size_t max_depth() const noexcept;
 
@@ -129,6 +132,7 @@ private:
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<internal::dom_parser_implementation> implementation{};
   size_t _capacity{0};
+  size_t _max_capacity;
   size_t _max_depth{DEFAULT_MAX_DEPTH};
   std::unique_ptr<uint8_t[]> string_buf{};
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
