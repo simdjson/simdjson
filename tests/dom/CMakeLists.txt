@@ -54,7 +54,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
   #
   add_test(
     NAME testjson2json
-    COMMAND ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/testjson2json.sh
+    COMMAND ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/testjson2json.sh ${PROJECT_BINARY_DIR}
     WORKING_DIRECTORY $<TARGET_FILE_DIR:minify>
   )
   set_property(TEST testjson2json APPEND PROPERTY DEPENDS minify json2json)
@@ -71,7 +71,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
     add_dependencies(per_implementation_tests allparserscheckfile)
     target_link_libraries(allparserscheckfile PRIVATE competition-all)
 
-    add_test(issue150 ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/issue150.sh)
+    add_test(issue150 ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/issue150.sh ${PROJECT_BINARY_DIR})
     set_property(TEST issue150 APPEND PROPERTY LABELS per_implementation competition)
     add_dependencies(all_tests allparserscheckfile)
   endif()

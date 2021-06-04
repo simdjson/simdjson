@@ -8,8 +8,10 @@ trap "rm -rf $TMPDIR1 $TMPDIR2" EXIT
 
 echo "running json2json on jsonexamples and jsonchecker files (prints test successful on success) ..."
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
-JSONEXAMPLES=$SCRIPTPATH/../jsonexamples
-JSONCHECKER=$SCRIPTPATH/../jsonchecker
+DATADIR="$1/_deps/simdjson-data"
+
+JSONEXAMPLES=$DATADIR/jsonexamples
+JSONCHECKER=$DATADIR/jsonchecker
 for i in `cd $JSONEXAMPLES && ls -1 *.json`; do
   echo $i
   ./json2json $JSONEXAMPLES/$i > $TMPDIR1/$i

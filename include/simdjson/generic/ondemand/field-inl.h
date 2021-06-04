@@ -22,7 +22,7 @@ simdjson_really_inline simdjson_result<field> field::start(const value_iterator 
 }
 
 simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> field::unescaped_key() noexcept {
-  SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
+  SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() but Visual Studio won't let us.
   simdjson_result<std::string_view> answer = first.unescape(second.iter.string_buf_loc());
   first.consume();
   return answer;

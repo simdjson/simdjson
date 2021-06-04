@@ -238,14 +238,41 @@ namespace array_tests {
       ASSERT_RESULT( doc_result.type(), json_type::array );
       ASSERT_SUCCESS( doc_result.get(array) );
 
-      size_t i=0;
+      size_t i = 0;
       for (auto value : array) {
         int64_t actual;
         ASSERT_SUCCESS( value.get(actual) );
         ASSERT_EQUAL(actual, expected_value[i]);
         i++;
       }
+      ASSERT_EQUAL(i*sizeof(int64_t), sizeof(expected_value));
+      return true;
+    }));
+
+    SUBTEST("ondemand::array-document-rewind", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
+
+      size_t i = 0;
+      for (auto value : array) { (void)value; i++; }
       ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
+      std::vector<int64_t> container(i); // container of size 'i'.
+
+      doc_result.rewind();
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
+      i = 0;
+      for (auto value : array) {
+        int64_t actual;
+        ASSERT_SUCCESS( value.get(actual) );
+        container[i] = actual;
+        i++;
+      }
+      ASSERT_EQUAL(i * sizeof(int64_t), sizeof(expected_value));
+      for(size_t j = 0; j < sizeof(expected_value)/sizeof(int64_t); j++) {
+        ASSERT_EQUAL(container[j], expected_value[j]);
+      }
       return true;
     }));
 
@@ -513,9 +540,25 @@ namespace array_tests {
       for (simdjson_unused auto value : doc_result) { TEST_FAIL("Unexpected value"); }
       return true;
     }));
+    SUBTEST("ondemand::array-document-rewind", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
+
+      size_t i = 0;
+      for (auto value : array) { (void) value; i++; }
+      ASSERT_EQUAL(i, 0);
+
+      doc_result.rewind();
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
+      i = 0;
+      for (auto value : array) { (void) value; i++; }
+      ASSERT_EQUAL(i, 0);
+      return true;
+    }));
     TEST_SUCCEED();
   }
-
 #if SIMDJSON_EXCEPTIONS
 
   bool iterate_array_exception() {

@@ -2,48 +2,39 @@
 
 #ifdef SIMDJSON_COMPETITION_RAPIDJSON
 
-#include "kostya.h"
-
-namespace kostya {
+#include "distinct_user_id.h"
+#include <string.h>
+namespace distinct_user_id {
 
 using namespace rapidjson;
 
 struct rapidjson_sax {
-    static constexpr diff_flags DiffFlags = diff_flags::NONE;
-
     struct Handler {
-        size_t k{0};
-        double buffer[3];
-        std::vector<point>& result;
-
-        Handler(std::vector<point> &r) : result(r) { }
+        std::vector<uint64_t>& result;
+        bool user = false;
+        bool user_id = false;
+        Handler(std::vector<uint64_t> &r) : result(r) { }
 
         bool Key(const char* key, SizeType length, bool copy) {
-            switch(key[0]) {
-            case 'x':
-                k = 0;
-                break;
-            case 'y':
-                k = 1;
-                break;
-            case 'z':
-                k = 2;
-                break;
+            // Assume that valid user/id pairs appear only once in main array of user objects
+            if (user) { // If already found user object, find id key
+                if ((length == 2) && memcmp(key,"id",2) == 0) { user_id = true; }
+            }
+            else if ((length == 4) && memcmp(key,"user",4) == 0) { user = true; } // Otherwise, find user object
+            return true;
+        }
+        bool Uint(unsigned i) {     // id values are treated as Uint (not Uint64) by the reader
+            if (user_id) {  // Getting id if previous key was "id" for a user
+                result.emplace_back(i);
+                user_id = false;
+                user = false;
             }
             return true;
         }
-        bool Double(double d) {
-            buffer[k] = d;
-            if (k == 2) {
-                result.emplace_back(json_benchmark::point{buffer[0],buffer[1],buffer[2]});
-                k = 0;
-            }
-            return true;
-        }
-        bool Uint(unsigned i) {  return Double(i); }   // Need this event because coordinate value can be equal to 1
         // Irrelevant events
         bool Null() { return true; }
         bool Bool(bool b) { return true; }
+        bool Double(double d) { return true; }
         bool Int(int i) { return true; }
         bool Int64(int64_t i) { return true; }
         bool Uint64(uint64_t i) { return true; }
@@ -55,7 +46,7 @@ struct rapidjson_sax {
         bool EndArray(SizeType elementCount) { return true; }
     }; // handler
 
-    bool run(simdjson::padded_string &json, std::vector<point> &result) {
+    bool run(simdjson::padded_string &json, std::vector<uint64_t> &result) {
         Reader reader;
         Handler handler(result);
         InsituStringStream ss(json.data());
@@ -64,7 +55,7 @@ struct rapidjson_sax {
     }
 
 }; // rapid_jason_sax
-BENCHMARK_TEMPLATE(kostya, rapidjson_sax)->UseManualTime();
-} // namespace kostya
+BENCHMARK_TEMPLATE(distinct_user_id, rapidjson_sax)->UseManualTime();
+} // namespace distinct_user_id
 
 #endif // SIMDJSON_COMPETITION_RAPIDJSON

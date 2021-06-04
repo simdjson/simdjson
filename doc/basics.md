@@ -18,6 +18,7 @@ An overview of what you need to know to use simdjson, with examples.
 * [Error Handling](#error-handling)
   * [Error Handling Example](#error-handling-example)
   * [Exceptions](#exceptions)
+* [Rewinding](#rewinding)
 * [Direct Access to the Raw String](#direct-access-to-the-raw-string)
 * [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
 * [Thread Safety](#thread-safety)
@@ -166,11 +167,26 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 
   > NOTE: simdjson does *not* unescape keys when matching. This is not generally a problem for
   > applications with well-defined key names (which generally do not use escapes). If you do need this
-  > support, it's best to iterate through the object fields to find the field you are looking for.
+  > support, it's best to iterate through the object fields to find the field you are looking for. The
+  > method `unescaped_key()` provides the desired unescaped keys by parsing and writing out the
+  > unescaped keys to a string buffer and returning a `std::string_view` instance. You should expect
+  > a performance penalty when using `unescaped_key()`.
+  > ```c++
+  > auto json = R"({"k\u0065y": 1})"_padded;
+  > ondemand::parser parser;
+  > auto doc = parser.iterate(json);
+  > ondemand::object object = doc.get_object();
+  > for(auto field : object) {
+  >    // parses and writes out the key, after unescaping it,
+  >    // to a string buffer.
+  >    std::string_view keyv = field.unescaped_key();
+  >    if(keyv == "key") { std::cout << uint64_t(field.value()); }
+  >  }
+  > ```
   >
   > By default, field lookup is order-insensitive, so you can look up values in any order. However,
   > we still encourage you to look up fields in the order you expect them in the JSON, as it is still
-  > much faster.
+  > faster.
   >
   > If you want to enforce finding fields in order, you can use `object.find_field("foo")` instead.
   > This will only look forward, and will fail to find fields in the wrong order: for example, this
@@ -198,7 +214,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 
   If you know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`.
 * **Object Iteration:** You can iterate through an object's fields, as well: `for (auto field : object) { ... }`
-  - `field.unescaped_key()` will get you the key string.
+  - `field.unescaped_key()` will get you the unescaped key string.
   - `field.value()` will get you the value, which you can then use all these other methods on.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index. Instead,
   you will need to iterate through the array and keep an index yourself.
@@ -354,9 +370,9 @@ void recursive_print_json(T&& element) {
       if (add_comma) {
         cout << ",";
       }
-      // key() returns the unescaped key, if we
-      // want the escaped key, we should do
-      // field.unescaped_key().
+      // key() returns the key as it appears in the raw
+      // JSON document, if we want the unescaped key,
+      // we should do field.unescaped_key().
       cout << "\"" << field.key() << "\": ";
       recursive_print_json(field.value());
       add_comma = true;
@@ -751,6 +767,52 @@ int main(void) {
 }
 ```
 
+
+Rewinding
+----------
+
+In some instances, you may need to go through a document more than once. For that purpose, you may
+call the `rewind()` method on the document instance. It allows you to restart processing from the beginning without rescanning all of the input data again. It invalidates all values, objects and arrays
+that you have created so far (including unescaped strings).
+
+In the following example, we print on the screen the number of cars in the JSON input file
+before printout the data.
+
+```C++
+  ondemand::parser parser;
+  auto cars_json = R"( [
+    { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+    { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+    { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  ] )"_padded;
+
+  auto doc = parser.iterate(cars_json);
+  for (simdjson_unused ondemand::object car : doc) {
+    if(car["make"] == "Toyota") { count++; }
+  }
+  std::cout << "We have " << count << " Toyota cars.\n";
+  doc.rewind();
+  for (ondemand::object car : doc) {
+    cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
+  }
+```
+
+You may also rewind arrays and objects, as in the following example:
+
+```C++
+  auto doc = parser.iterate(cars_json);
+  ondemand::array doc_array = doc;
+  size_t count = 0;
+  for (simdjson_unused ondemand::object car : doc) {
+    if(car["make"] == "Toyota") { count++; }
+  }
+  std::cout << "We have " << count << " Toyota cars.\n";
+  doc_array.rewind();
+  for (ondemand::object car : doc_array) {
+    cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
+  }
+```
+
 Direct Access to the Raw String
 --------------------------------
 
@@ -770,6 +832,8 @@ std::string_view token = obj["value"].raw_json_token();
 // token has value "12321323213213213213213213213211223"
 ```
 
+Performance note: the On Demand front-end does not materialize the parsed numbers and other values. If you are accessing everything twice, you may need to parse them twice. Thus the rewind functionality is
+best suited for cases where the first pass only scans the structure of the document.
 The `raw_json_token` method even works when the JSON value is a string. In such cases, it
 will return the complete string with the quotes and with eventual escaped sequences as in the
 source document.

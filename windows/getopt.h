@@ -112,13 +112,8 @@ char    *optarg;		/* argument associated with option */
 extern char __declspec(dllimport) *__progname;
 #endif
 
-// D. Lemire (April 2020): adding __clang__
-// D. Lemire (June 2020): adding __MINGW32__ and __MINGW64__
-#if defined(__CYGWIN__) || defined(__clang__) || defined(__MINGW32__) || defined(__MINGW64__)
+// next line modified D. Lemire (last modified on June 1st 2021)
 static char EMSG[] = "";
-#else
-#define	EMSG		""
-#endif
 
 static int getopt_internal(int, char * const *, const char *,
 			   const struct option *, int *, int);
