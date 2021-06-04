@@ -18,6 +18,7 @@ An overview of what you need to know to use simdjson, with examples.
 * [Error Handling](#error-handling)
   * [Error Handling Example](#error-handling-example)
   * [Exceptions](#exceptions)
+* [Rewinding](#rewinding)
 * [Direct Access to the Raw String](#direct-access-to-the-raw-string)
 * [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
 * [Thread Safety](#thread-safety)
@@ -740,6 +741,52 @@ int main(void) {
 }
 ```
 
+
+Rewinding
+----------
+
+In some instances, you may need to go through a document more than once. For that purpose, you may
+call the `rewind()` method on the document instance. It allows you to restart processing from the beginning without rescanning all of the input data again. It invalidates all values, objects and arrays
+that you have created so far (including unescaped strings).
+
+In the following example, we print on the screen the number of cars in the JSON input file
+before printout the data.
+
+```C++
+  ondemand::parser parser;
+  auto cars_json = R"( [
+    { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+    { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+    { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  ] )"_padded;
+
+  auto doc = parser.iterate(cars_json);
+  for (simdjson_unused ondemand::object car : doc) {
+    if(car["make"] == "Toyota") { count++; }
+  }
+  std::cout << "We have " << count << " Toyota cars.\n";
+  doc.rewind();
+  for (ondemand::object car : doc) {
+    cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
+  }
+```
+
+You may also rewind arrays and objects, as in the following example:
+
+```C++
+  auto doc = parser.iterate(cars_json);
+  ondemand::array doc_array = doc;
+  size_t count = 0;
+  for (simdjson_unused ondemand::object car : doc) {
+    if(car["make"] == "Toyota") { count++; }
+  }
+  std::cout << "We have " << count << " Toyota cars.\n";
+  doc_array.rewind();
+  for (ondemand::object car : doc_array) {
+    cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
+  }
+```
+
 Direct Access to the Raw String
 --------------------------------
 
@@ -759,6 +806,8 @@ std::string_view token = obj["value"].raw_json_token();
 // token has value "12321323213213213213213213213211223"
 ```
 
+Performance note: the On Demand front-end does not materialize the parsed numbers and other values. If you are accessing everything twice, you may need to parse them twice. Thus the rewind functionality is
+best suited for cases where the first pass only scans the structure of the document.
 The `raw_json_token` method even works when the JSON value is a string. In such cases, it
 will return the complete string with the quotes and with eventual escaped sequences as in the
 source document.

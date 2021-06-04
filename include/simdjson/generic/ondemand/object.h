@@ -18,7 +18,6 @@ public:
 
   simdjson_really_inline simdjson_result<object_iterator> begin() noexcept;
   simdjson_really_inline simdjson_result<object_iterator> end() noexcept;
-
   /**
    * Look up a field by name on an object (order-sensitive).
    *
