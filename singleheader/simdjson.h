@@ -1,4 +1,4 @@
-/* auto-generated on 2021-05-27 16:20:07 -0400. Do not edit! */
+/* auto-generated on 2021-06-04 17:09:21 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -2078,7 +2078,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 0.9.5
+#define SIMDJSON_VERSION 0.9.6
 
 namespace simdjson {
 enum {
@@ -2093,7 +2093,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 5
+  SIMDJSON_VERSION_REVISION = 6
 };
 } // namespace simdjson
 
@@ -21714,6 +21714,7 @@ simdjson_really_inline json_iterator::json_iterator(json_iterator &&other) noexc
   : token(std::forward<token_iterator>(other.token)),
     parser{other.parser},
     _string_buf_loc{other._string_buf_loc},
+    error{other.error},
     _depth{other._depth}
 {
   other.parser = nullptr;
@@ -21722,6 +21723,7 @@ simdjson_really_inline json_iterator &json_iterator::operator=(json_iterator &&o
   token = other.token;
   parser = other.parser;
   _string_buf_loc = other._string_buf_loc;
+  error = other.error;
   _depth = other._depth;
   other.parser = nullptr;
   return *this;
