@@ -190,8 +190,14 @@ namespace parse_api_tests {
       std::cout << "field: " << field.key() << std::endl;
     }
     std::cout << "unclosed string document " << std::endl;
-
-    ASSERT_EQUAL( parser.iterate(jsonunclosedstring).get(doc),UNCLOSED_STRING);
+    simdjson::error_code error;
+    if((error = parser.iterate(jsonunclosedstring).get(doc)) == SUCCESS) {
+      // fallback kernel:
+      ASSERT_EQUAL( doc.get_object().find_field("coordinates").error(), TAPE_ERROR );
+    } else {
+      // regular kernels:
+      ASSERT_EQUAL( error, UNCLOSED_STRING );
+    }
 
     std::cout << "truncated document " << std::endl;
 
@@ -215,7 +221,6 @@ namespace parse_api_tests {
     }
 
     std::cout << "unclosed string document " << std::endl;
-
     ASSERT_SUCCESS( parser.iterate(jsonbad).get(doc) );
     ASSERT_EQUAL( simdjson::to_string(doc).get(output), TAPE_ERROR );
 
@@ -232,7 +237,13 @@ namespace parse_api_tests {
 
     std::cout << "unclosed string document " << std::endl;
 
-    ASSERT_EQUAL( parser.iterate(jsonunclosedstring).get(doc),UNCLOSED_STRING);
+    if((error = parser.iterate(jsonunclosedstring).get(doc)) == SUCCESS) {
+      // fallback kernel:
+      ASSERT_EQUAL( doc.get_object().find_field("coordinates").error(), TAPE_ERROR );
+    } else {
+      // regular kernels:
+      ASSERT_EQUAL( error, UNCLOSED_STRING );
+    }
 
 
     // next two lines are terrible code.
