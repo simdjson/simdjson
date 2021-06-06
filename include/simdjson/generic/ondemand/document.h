@@ -304,7 +304,10 @@ public:
    * beginning of the document, as if it had just been created.
    */
   inline void rewind() noexcept;
-
+  /**
+   * Returns debugging information.
+   */
+  inline std::string to_debug_string() noexcept;
 protected:
   simdjson_really_inline document(ondemand::json_iterator &&iter) noexcept;
   simdjson_really_inline const uint8_t *text(uint32_t idx) const noexcept;
@@ -320,7 +323,6 @@ protected:
   json_iterator iter{}; ///< Current position in the document
   static constexpr depth_t DOCUMENT_DEPTH = 0; ///< document depth is always 0
 
-  friend struct simdjson_result<document>;
   friend class array_iterator;
   friend class value;
   friend class ondemand::parser;
