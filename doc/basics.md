@@ -311,7 +311,33 @@ cout << doc["str"]["123"]["abc"].get_double() << endl; // Prints 3.14
   cout << value << endl; // Prints 3.14
   ```
 
+Sometimes it is useful to scan an array to determine its length prior to parsing it.
+For this purpose, `array` instances have a `count_elements` method. Users should be
+aware that the `count_elements` method can be costly since it requires scanning the
+whole array. You may use it as follows if your document is itself an array:
 
+```C++
+  auto cars_json = R"( [ 40.1, 39.9, 37.7, 40.4 ] )"_padded;
+  auto doc = parser.iterate(cars_json);
+  size_t count = doc.count_elements();
+  std::vector<double> values(count);
+  size_t index = 0;
+  for(double x : doc) { values[index++] = x; }
+```
+
+If you access an array inside a document, you can use the `count_elements` method as follow.
+You should not let the array instance go out of scope before consuming it after calling the `count_elements` method:
+``` C++
+   ondemand::parser parser;
+   auto cars_json = R"( { "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )"_padded;
+   auto doc = parser.iterate(cars_json);
+   auto test_array = doc.find_field("test").get_array();
+   size_t count = test_array.count_elements();
+   std::cout << "Number of elements: " <<  count << std::endl;
+   for(ondemand::object elem: test_array) {
+     std::cout << simdjson::to_string(elem);
+   }
+```
 
 Tree Walking and JSON Element Types: Sometimes you don't necessarily have a document with a known type, and are trying to generically inspect or walk over JSON elements. To do that, you can use iterators and the type() method. For example, here's a quick and dirty recursive function that verbosely prints the JSON document as JSON:
 
