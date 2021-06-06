@@ -30,7 +30,7 @@ simdjson_really_inline json_iterator::json_iterator(const uint8_t *buf, ondemand
 }
 
 inline void json_iterator::rewind() noexcept {
-  token.index = parser->implementation->structural_indexes.get();
+  token.set_position(parser->implementation->structural_indexes.get());
   logger::log_headers(); // We start again
   _string_buf_loc = parser->string_buf.get();
   _depth = 1;
