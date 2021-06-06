@@ -164,25 +164,10 @@ simdjson_warn_unused simdjson_really_inline error_code tape_builder::visit_numbe
 }
 
 simdjson_warn_unused simdjson_really_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
-  //
-  // We need to make a copy to make sure that the string is space terminated.
-  // This is not about padding the input, which should already padded up
-  // to len + SIMDJSON_PADDING. However, we have no control at this stage
-  // on how the padding was done. What if the input string was padded with nulls?
-  // It is quite common for an input string to have an extra null character (C string).
-  // We do not want to allow 9\0 (where \0 is the null character) inside a JSON
-  // document, but the string "9\0" by itself is fine. So we make a copy and
-  // pad the input with spaces when we know that there is just one input element.
-  // This copy is relatively expensive, but it will almost never be called in
-  // practice unless you are in the strange scenario where you have many JSON
-  // documents made of single atoms.
-  //
-  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
-  if (copy.get() == nullptr) { return MEMALLOC; }
-  std::memcpy(copy.get(), value, iter.remaining_len());
-  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
-  error_code error = visit_number(iter, copy.get());
-  return error;
+  // Root numbers will not have another token after them, so we need to be careful not to step
+  // off the edge of the buffer.
+  iter.log_value("number");
+  return numberparsing::parse_number(value, tape, value + iter.remaining_len());
 }
 
 simdjson_warn_unused simdjson_really_inline error_code tape_builder::visit_true_atom(json_iterator &iter, const uint8_t *value) noexcept {
