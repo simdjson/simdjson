@@ -16,6 +16,10 @@ inline void document::rewind() noexcept {
   iter.rewind();
 }
 
+inline std::string document::to_debug_string() noexcept {
+  return iter.to_string();
+}
+
 simdjson_really_inline value_iterator document::resume_value_iterator() noexcept {
   return value_iterator(&iter, 1, iter.root_checkpoint());
 }
