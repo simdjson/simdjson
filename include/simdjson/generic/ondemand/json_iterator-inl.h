@@ -286,34 +286,6 @@ simdjson_really_inline error_code json_iterator::optional_error(error_code _erro
   return _error;
 }
 
-template<int N>
-simdjson_warn_unused simdjson_really_inline bool json_iterator::copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t (&tmpbuf)[N]) noexcept {
-  // Truncate whitespace to fit the buffer.
-  if (max_len > N-1) {
-    if (jsoncharutils::is_not_structural_or_whitespace(json[N-1])) { return false; }
-    max_len = N-1;
-  }
-
-  // Copy to the buffer.
-  std::memcpy(tmpbuf, json, max_len);
-  tmpbuf[max_len] = ' ';
-  return true;
-}
-
-template<int N>
-simdjson_warn_unused simdjson_really_inline bool json_iterator::peek_to_buffer(uint8_t (&tmpbuf)[N]) noexcept {
-  auto max_len = token.peek_length();
-  auto json = token.peek();
-  return copy_to_buffer(json, max_len, tmpbuf);
-}
-
-template<int N>
-simdjson_warn_unused simdjson_really_inline bool json_iterator::advance_to_buffer(uint8_t (&tmpbuf)[N]) noexcept {
-  auto max_len = peek_length();
-  auto json = advance();
-  return copy_to_buffer(json, max_len, tmpbuf);
-}
-
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

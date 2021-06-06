@@ -289,9 +289,6 @@ protected:
    inline std::string to_string() const noexcept;
   simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept;
 
-  simdjson_really_inline bool parse_null(const uint8_t *json) const noexcept;
-  simdjson_really_inline simdjson_result<bool> parse_bool(const uint8_t *json) const noexcept;
-
   simdjson_really_inline const uint8_t *peek_start() const noexcept;
   simdjson_really_inline uint32_t peek_start_length() const noexcept;
   simdjson_really_inline const uint8_t *advance_start(const char *type) noexcept;

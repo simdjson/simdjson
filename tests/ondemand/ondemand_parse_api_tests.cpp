@@ -108,13 +108,6 @@ namespace parse_api_tests {
       ASSERT_SUCCESS( doc.get_double() );
     }
 
-    {
-      cout << "- padded_string_view(string_view(char*))" << endl;
-      padded_string_view json(json_str, sizeof(json_str));
-      auto doc = parser.iterate(json);
-      ASSERT_SUCCESS( doc.get_double() );
-    }
-
     TEST_SUCCEED();
   }
 
