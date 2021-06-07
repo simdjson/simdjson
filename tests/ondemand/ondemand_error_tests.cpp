@@ -19,7 +19,7 @@ namespace error_tests {
     ondemand::parser parser(1); // max_capacity set to 1 byte
     padded_string json;
     ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
-    auto error = parser.iterate(json).error();
+    auto error = parser.iterate(json);
     ASSERT_ERROR(error,CAPACITY);
     TEST_SUCCEED();
   }
