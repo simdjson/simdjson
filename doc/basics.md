@@ -7,6 +7,7 @@ An overview of what you need to know to use simdjson, with examples.
 * [Including simdjson](#including-simdjson)
 * [Using simdjson with package managers](#using-simdjson-with-package-managers)
 * [Using simdjson as a CMake dependency](#using-simdjson-as-a-cmake-dependency)
+* [Versions](#versions)
 * [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents)
 * [Documents Are Iterators](#documents-are-iterators)
 * [Using the Parsed JSON](#using-the-parsed-json)
@@ -89,6 +90,34 @@ See [our CMake demonstration](https://github.com/simdjson/cmake_demo_single_file
 
 
 The CMake build in simdjson can be taylored with a few variables. You can see the available variables and their default values by entering the `cmake -LA` command.
+
+
+Versions
+------------------
+
+Our releases are tagged using semantic versioning: the tags are made of  three numbers prefixed by the letter `v` and separated by periods.
+
+Users are discouraged from building production code from the project's main branch. The main branch is used for development:
+it may contain new features but also additional bugs. Similarly, users should access the documentation matching the release that
+they have chosen.
+
+You can always find the latest release at the following hyperlink:
+
+https://github.com/simdjson/simdjson/releases/latest/
+
+The archive you download at this location contains its own corresponding documentation. If you click on the tag icon from
+this hyperlink, you browse the code and the documentation of that release.
+
+You can also choose to browse a specific version
+of the documentation and the code using GitHub,
+by appending the version number to the hyperlink, like so:
+
+https://github.com/simdjson/simdjson/blob/vx.y.z/doc/basics.md
+
+where `x.y.z` should correspond to the version number you have
+chosen.
+
+Furthermore, GitHub's web UI also allows you to specific tag (e.g., one that corresponds to `vx.y.z`).
 
 
 The Basics: Loading and Parsing JSON Documents
