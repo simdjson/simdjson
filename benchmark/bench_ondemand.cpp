@@ -31,7 +31,9 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "partial_tweets/yyjson.h"
 #include "partial_tweets/sajson.h"
 #include "partial_tweets/rapidjson.h"
+#include "partial_tweets/rapidjson_sax.h"
 #include "partial_tweets/nlohmann_json.h"
+#include "partial_tweets/nlohmann_json_sax.h"
 
 #include "large_random/simdjson_dom.h"
 #include "large_random/simdjson_ondemand.h"
@@ -39,7 +41,9 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "large_random/yyjson.h"
 #include "large_random/sajson.h"
 #include "large_random/rapidjson.h"
+#include "large_random/rapidjson_sax.h"
 #include "large_random/nlohmann_json.h"
+#include "large_random/nlohmann_json_sax.h"
 
 #include "kostya/simdjson_dom.h"
 #include "kostya/simdjson_ondemand.h"
@@ -64,13 +68,17 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "find_tweet/yyjson.h"
 #include "find_tweet/sajson.h"
 #include "find_tweet/rapidjson.h"
+#include "find_tweet/rapidjson_sax.h"
 #include "find_tweet/nlohmann_json.h"
+#include "find_tweet/nlohmann_json_sax.h"
 
 #include "top_tweet/simdjson_dom.h"
 #include "top_tweet/simdjson_ondemand.h"
 #include "top_tweet/yyjson.h"
 #include "top_tweet/sajson.h"
 #include "top_tweet/rapidjson.h"
+#include "top_tweet/rapidjson_sax.h"
 #include "top_tweet/nlohmann_json.h"
+#include "top_tweet/nlohmann_json_sax.h"
 
 BENCHMARK_MAIN();

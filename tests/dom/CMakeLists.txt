@@ -1,26 +1,4 @@
 
-#
-# These tests explicitly do #include "simdjson.cpp" so they can override stuff
-#
-if(NOT SIMDJSON_LEGACY_VISUAL_STUDIO AND NOT SIMDJSON_WINDOWS_DLL)
-  add_cpp_test(numberparsingcheck LABELS acceptance per_implementation)
-  simdjson_apply_props(numberparsingcheck)
-  target_link_libraries(numberparsingcheck PRIVATE simdjson-windows-headers)
-  target_compile_definitions(numberparsingcheck PRIVATE NOMINMAX)
-  target_include_directories(
-      numberparsingcheck
-      PRIVATE "${PROJECT_SOURCE_DIR}/src"
-  )
-  add_cpp_test(stringparsingcheck LABELS acceptance per_implementation)
-  simdjson_apply_props(numberparsingcheck)
-  target_link_libraries(stringparsingcheck PRIVATE simdjson-windows-headers)
-  target_compile_definitions(stringparsingcheck PRIVATE NOMINMAX)
-  target_include_directories(
-      stringparsingcheck
-      PRIVATE "${PROJECT_SOURCE_DIR}/src"
-  )
-endif()
-
 link_libraries(simdjson)
 include_directories(..)
 
@@ -35,8 +13,10 @@ add_cpp_test(extracting_values_example  LABELS dom acceptance per_implementation
 add_cpp_test(integer_tests              LABELS dom acceptance per_implementation)
 add_cpp_test(jsoncheck                  LABELS dom acceptance per_implementation)
 add_cpp_test(minefieldcheck             LABELS dom acceptance per_implementation)
+add_cpp_test(numberparsingcheck         LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
 add_cpp_test(parse_many_test            LABELS dom acceptance per_implementation)
 add_cpp_test(pointercheck               LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
+add_cpp_test(stringparsingcheck         LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
 add_cpp_test(trivially_copyable_test    LABELS dom acceptance per_implementation)
 
 
@@ -54,7 +34,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
   #
   add_test(
     NAME testjson2json
-    COMMAND ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/testjson2json.sh
+    COMMAND ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/testjson2json.sh ${PROJECT_BINARY_DIR}
     WORKING_DIRECTORY $<TARGET_FILE_DIR:minify>
   )
   set_property(TEST testjson2json APPEND PROPERTY DEPENDS minify json2json)
@@ -71,7 +51,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
     add_dependencies(per_implementation_tests allparserscheckfile)
     target_link_libraries(allparserscheckfile PRIVATE competition-all)
 
-    add_test(issue150 ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/issue150.sh)
+    add_test(issue150 ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/issue150.sh ${PROJECT_BINARY_DIR})
     set_property(TEST issue150 APPEND PROPERTY LABELS per_implementation competition)
     add_dependencies(all_tests allparserscheckfile)
   endif()

@@ -12,6 +12,14 @@ simdjson_really_inline document document::start(json_iterator &&iter) noexcept {
   return document(std::forward<json_iterator>(iter));
 }
 
+inline void document::rewind() noexcept {
+  iter.rewind();
+}
+
+inline std::string document::to_debug_string() noexcept {
+  return iter.to_string();
+}
+
 simdjson_really_inline value_iterator document::resume_value_iterator() noexcept {
   return value_iterator(&iter, 1, iter.root_checkpoint());
 }
@@ -84,7 +92,13 @@ simdjson_really_inline document::operator std::string_view() noexcept(false) { r
 simdjson_really_inline document::operator raw_json_string() noexcept(false) { return get_raw_json_string(); }
 simdjson_really_inline document::operator bool() noexcept(false) { return get_bool(); }
 #endif
-
+simdjson_really_inline simdjson_result<size_t> document::count_elements() & noexcept {
+  auto a = get_array();
+  simdjson_result<size_t> answer = a.count_elements();
+  /* If there was an array, we are now left pointing at its first element. */
+  if(answer.error() == SUCCESS) { iter._depth -= 1 ; /* undoing the increment so we go back at the doc depth.*/ }
+  return answer;
+}
 simdjson_really_inline simdjson_result<array_iterator> document::begin() & noexcept {
   return get_array().begin();
 }
@@ -142,7 +156,15 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::docume
     )
 {
 }
-
+simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::count_elements() & noexcept {
+  if (error()) { return error(); }
+  return first.count_elements();
+}
+simdjson_really_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::rewind() noexcept {
+  if (error()) { return error(); }
+  first.rewind();
+  return SUCCESS;
+}
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();

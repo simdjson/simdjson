@@ -44,6 +44,88 @@ bool basics_3() {
   TEST_SUCCEED();
 }
 
+
+bool json_array_with_array_count() {
+  TEST_START();
+  ondemand::parser parser;
+  auto cars_json = R"( [ 40.1, 39.9, 37.7, 40.4 ] )"_padded;
+  auto doc = parser.iterate(cars_json);
+  auto arr = doc.get_array();
+  size_t count = arr.count_elements();
+  ASSERT_EQUAL(4, count);
+  std::cout << count << std::endl;
+  // We deliberately do it twice:
+  count = arr.count_elements();
+  ASSERT_EQUAL(4, count);
+  std::cout << count << std::endl;
+  // Next, we check whether we can iterate normally:
+  std::vector<double> values(count);
+  size_t index = 0;
+  for(double x : arr) { values[index++] = x; }
+  ASSERT_EQUAL(index, count);
+  TEST_SUCCEED();
+}
+
+bool json_value_with_array_count() {
+  TEST_START();
+  ondemand::parser parser;
+  auto cars_json = R"( {"array":[ 40.1, 39.9, 37.7, 40.4 ]} )"_padded;
+  auto doc = parser.iterate(cars_json);
+  auto val = doc["array"];
+  size_t count = val.count_elements();
+  ASSERT_EQUAL(4, count);
+  std::cout << count << std::endl;
+  // We deliberately do it twice:
+  count = val.count_elements();
+  ASSERT_EQUAL(4, count);
+  std::cout << count << std::endl;
+  std::vector<double> values(count);
+  // Next, we check whether we can iterate normally:
+  size_t index = 0;
+  for(double x : val) { values[index++] = x; }
+  ASSERT_EQUAL(index, count);
+  TEST_SUCCEED();
+}
+
+
+bool json_array_count() {
+  TEST_START();
+  ondemand::parser parser;
+  auto cars_json = R"( [ 40.1, 39.9, 37.7, 40.4 ] )"_padded;
+  auto doc = parser.iterate(cars_json);
+  size_t count = doc.count_elements();
+  ASSERT_EQUAL(4, count);
+  std::cout << count << std::endl;
+  // We deliberately do it twice:
+  count = doc.count_elements();
+  ASSERT_EQUAL(4, count);
+  std::cout << count << std::endl;
+  std::vector<double> values(count);
+  size_t index = 0;
+  for(double x : doc) { values[index++] = x; }
+  ASSERT_EQUAL(index, count);
+  TEST_SUCCEED();
+}
+
+bool json_array_count_complex() {
+  TEST_START();
+  ondemand::parser parser;
+  auto cars_json = R"( { "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )"_padded;
+  auto doc = parser.iterate(cars_json);
+  auto test_array = doc.find_field("test").get_array();
+  size_t count = test_array.count_elements();
+  std::cout << "Number of elements: " <<  count << std::endl;
+  size_t c = 0;
+  for(ondemand::object elem : test_array) {
+    std::cout << simdjson::to_string(elem);
+    c++;
+  }
+  std::cout << std::endl;
+  ASSERT_EQUAL(c, count);
+  TEST_SUCCEED();
+
+}
+
 bool using_the_parsed_json_1() {
   TEST_START();
 
@@ -129,6 +211,30 @@ bool using_the_parsed_json_3() {
   TEST_SUCCEED();
 }
 
+
+bool using_the_parsed_json_rewind() {
+  TEST_START();
+
+  ondemand::parser parser;
+  auto cars_json = R"( [
+    { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+    { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+    { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  ] )"_padded;
+
+  auto doc = parser.iterate(cars_json);
+  size_t count = 0;
+  for (simdjson_unused ondemand::object car : doc) {
+    if(car["make"] == "Toyota") { count++; }
+  }
+  std::cout << "We have " << count << " Toyota cars.\n";
+  doc.rewind();
+  for (ondemand::object car : doc) {
+    cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
+  }
+  TEST_SUCCEED();
+}
+
 bool using_the_parsed_json_4() {
   TEST_START();
 
@@ -191,6 +297,11 @@ int main() {
     true
 #if SIMDJSON_EXCEPTIONS
 //    && basics_1() // Fails because twitter.json isn't in current directory. Compile test only.
+    && json_value_with_array_count()
+    && json_array_with_array_count()
+    && json_array_count_complex()
+    && json_array_count()
+    && using_the_parsed_json_rewind()
     && basics_2()
     && using_the_parsed_json_1()
     && using_the_parsed_json_2()

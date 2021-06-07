@@ -2,9 +2,9 @@
 
 #ifdef SIMDJSON_COMPETITION_RAPIDJSON
 
-#include "kostya.h"
+#include "large_random.h"
 
-namespace kostya {
+namespace large_random {
 
 using namespace rapidjson;
 
@@ -40,7 +40,7 @@ struct rapidjson_sax {
             }
             return true;
         }
-        bool Uint(unsigned i) {  return Double(i); }   // Need this event because coordinate value can be equal to 1
+        bool Uint(unsigned i) { return Double(i); }   // Need this event because coordinate value can be equal to 1
         // Irrelevant events
         bool Null() { return true; }
         bool Bool(bool b) { return true; }
@@ -62,9 +62,8 @@ struct rapidjson_sax {
         reader.Parse<kParseInsituFlag | kParseValidateEncodingFlag | kParseFullPrecisionFlag>(ss,handler);
         return true;
     }
-
 }; // rapid_jason_sax
-BENCHMARK_TEMPLATE(kostya, rapidjson_sax)->UseManualTime();
-} // namespace kostya
+BENCHMARK_TEMPLATE(large_random, rapidjson_sax)->UseManualTime();
+} // namespace large_random
 
 #endif // SIMDJSON_COMPETITION_RAPIDJSON

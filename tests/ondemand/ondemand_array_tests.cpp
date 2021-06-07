@@ -136,6 +136,98 @@ namespace array_tests {
     TEST_SUCCEED();
   }
 
+  bool iterate_complex_array_count() {
+    TEST_START();
+    ondemand::parser parser;
+    auto cars_json = R"( { "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(cars_json).get(doc));
+    ondemand::array myarray;
+    ASSERT_SUCCESS(doc.find_field("test").get_array().get(myarray));
+    size_t count;
+    ASSERT_SUCCESS(myarray.count_elements().get(count));
+    size_t new_count = 0;
+    for(simdjson_unused auto elem: myarray) { new_count++; }
+    ASSERT_EQUAL(count, new_count);
+    TEST_SUCCEED();
+  }
+
+  bool iterate_sub_array_count() {
+    TEST_START();
+    ondemand::parser parser;
+    auto key_value_json = R"( { "test":[ 1,2,3], "joe": [1,2] }   )"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(key_value_json).get(doc));
+    ondemand::object obj;
+    ASSERT_SUCCESS(doc.get_object().get(obj));
+    ondemand::value v;
+    ASSERT_SUCCESS(doc.find_field("test").get(v));
+    size_t count;
+    ASSERT_SUCCESS(v.count_elements().get(count));
+    ASSERT_EQUAL(count, 3);
+    ASSERT_SUCCESS(doc.find_field("joe").get(v));
+    ASSERT_SUCCESS(v.count_elements().get(count));
+    ASSERT_EQUAL(count, 2);
+    TEST_SUCCEED();
+  }
+
+  bool iterate_array_count() {
+    TEST_START();
+    const auto json = R"([ 1, 10, 100 ])"_padded;
+    const auto badjson = R"([ 1, 10 100 ])"_padded;
+    const vector<uint64_t> expected_value = { 1, 10, 100 };
+
+    SUBTEST("ondemand::count_elements", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
+      size_t count;
+      ASSERT_SUCCESS( array.count_elements().get(count) );
+      ASSERT_EQUAL(count, expected_value.size());
+      return true;
+    }));
+    SUBTEST("ondemand::count_elements_and_decode", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
+      size_t count;
+      ASSERT_SUCCESS( array.count_elements().get(count) );
+      ASSERT_EQUAL(count, expected_value.size());
+      size_t i = 0;
+      std::vector<uint64_t> receiver(count);
+      for (auto value : array) {
+        uint64_t actual;
+        ASSERT_SUCCESS( value.get(actual) );
+        ASSERT_EQUAL(actual, expected_value[i]);
+        receiver[i] = actual;
+        i++;
+      }
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+  bool iterate_bad_array_count() {
+    TEST_START();
+    const auto badjson = R"([ 1, 10 100 ])"_padded;
+
+
+    SUBTEST("ondemand::count_elements", test_ondemand_doc(badjson, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
+      size_t count;
+      auto e = array.count_elements().get(count);
+      if( e != TAPE_ERROR) {
+        std::cout << e << "\n";
+        std::cout << "expected: " << TAPE_ERROR << "\n";
+        std::cout << "count = " << count << "\n";
+        return false;
+      }
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
   bool iterate_document_array() {
     TEST_START();
     const auto json = R"([ 1, 10, 100 ])"_padded;
@@ -146,14 +238,41 @@ namespace array_tests {
       ASSERT_RESULT( doc_result.type(), json_type::array );
       ASSERT_SUCCESS( doc_result.get(array) );
 
-      size_t i=0;
+      size_t i = 0;
       for (auto value : array) {
         int64_t actual;
         ASSERT_SUCCESS( value.get(actual) );
         ASSERT_EQUAL(actual, expected_value[i]);
         i++;
       }
+      ASSERT_EQUAL(i*sizeof(int64_t), sizeof(expected_value));
+      return true;
+    }));
+
+    SUBTEST("ondemand::array-document-rewind", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
+
+      size_t i = 0;
+      for (auto value : array) { (void)value; i++; }
       ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
+      std::vector<int64_t> container(i); // container of size 'i'.
+
+      doc_result.rewind();
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
+      i = 0;
+      for (auto value : array) {
+        int64_t actual;
+        ASSERT_SUCCESS( value.get(actual) );
+        container[i] = actual;
+        i++;
+      }
+      ASSERT_EQUAL(i * sizeof(int64_t), sizeof(expected_value));
+      for(size_t j = 0; j < sizeof(expected_value)/sizeof(int64_t); j++) {
+        ASSERT_EQUAL(container[j], expected_value[j]);
+      }
       return true;
     }));
 
@@ -421,9 +540,25 @@ namespace array_tests {
       for (simdjson_unused auto value : doc_result) { TEST_FAIL("Unexpected value"); }
       return true;
     }));
+    SUBTEST("ondemand::array-document-rewind", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
+
+      size_t i = 0;
+      for (auto value : array) { (void) value; i++; }
+      ASSERT_EQUAL(i, 0);
+
+      doc_result.rewind();
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
+      i = 0;
+      for (auto value : array) { (void) value; i++; }
+      ASSERT_EQUAL(i, 0);
+      return true;
+    }));
     TEST_SUCCEED();
   }
-
 #if SIMDJSON_EXCEPTIONS
 
   bool iterate_array_exception() {
@@ -470,6 +605,10 @@ namespace array_tests {
 
   bool run() {
     return
+           iterate_sub_array_count() &&
+           iterate_complex_array_count() &&
+           iterate_bad_array_count() &&
+           iterate_array_count() &&
            issue1588() &&
            iterate_array() &&
            iterate_document_array() &&
