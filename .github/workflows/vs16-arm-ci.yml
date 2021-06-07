@@ -17,5 +17,5 @@ jobs:
          uses: actions/checkout@v2
        - name: Use cmake
          run: |
-           cmake -A ${{ matrix.arch }} -DCMAKE_CROSSCOMPILING=1 -DSIMDJSON_DEVELOPER_MODE=ON -B build  &&
+           cmake -A ${{ matrix.arch }} -DCMAKE_CROSSCOMPILING=1 -DSIMDJSON_DEVELOPER_MODE=ON -D SIMDJSON_GOOGLE_BENCHMARKS=OFF  -B build  &&
            cmake --build build --verbose
