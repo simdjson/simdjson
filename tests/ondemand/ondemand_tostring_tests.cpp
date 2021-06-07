@@ -22,7 +22,16 @@ const char *test_files[] = {
     MESH_JSON,    APACHE_JSON,           GSOC_JSON};
 
 #if SIMDJSON_EXCEPTIONS
-
+bool issue1607() {
+  TEST_START();
+  auto cars_json = R"( { "test": "result"  }  )"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(cars_json);
+  std::string expected = R"("result")";
+  std::string result = simdjson::to_string(doc["test"]);
+  ASSERT_EQUAL(result, expected);
+  TEST_SUCCEED();
+}
 
 bool minify_demo() {
   TEST_START();
@@ -159,6 +168,7 @@ bool minify_exceptionless_test() {
 bool run() {
   return
 #if SIMDJSON_EXCEPTIONS
+      issue1607() &&
       minify_demo() &&
       minify_demo2() &&
       minify_test() &&
