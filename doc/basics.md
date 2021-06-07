@@ -247,12 +247,12 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   - `field.value()` will get you the value, which you can then use all these other methods on.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index. Instead,
   you will need to iterate through the array and keep an index yourself.
-* **Output to sstrings:** Given a document or an element (or node) out of a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_string(element)` returns a `simdjson::simdjson_result<std::string>` instance. You can cast it to `std::string` and it will throw when an error was encountered (`std::string(simdjson::to_string(element))`). Or else you can do `std::string s; if(simdjson::to_string(element).get(s) == simdjson::SUCCESS) { ... }`. This consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document. The returned string contains a serialized version of the element or document that is suitable to be parsed again. It is also a newly allocated `std::string` that is independent from the simdjson parser. The `to_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes). Th
+* **Output to strings (simdjson 1.0 or better):** Given a document or an element (or node) out of a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_string(element)` returns a `simdjson::simdjson_result<std::string>` instance. You can cast it to `std::string` and it will throw when an error was encountered (`std::string(simdjson::to_string(element))`). Or else you can do `std::string s; if(simdjson::to_string(element).get(s) == simdjson::SUCCESS) { ... }`. This consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document. The returned string contains a serialized version of the element or document that is suitable to be parsed again. It is also a newly allocated `std::string` that is independent from the simdjson parser. The `to_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes). Th
   > ```C++
   > // serialize a JSON to an escaped std::string instance so that it can be parsed again as JSON
   > auto cars_json = R"( { "test": "result"  }  )"_padded;
   > ondemand::document doc = parser.iterate(cars_json);
-  > std::cout << simdjson::to_string(doc["test"]) << std::endl;
+  > std::cout << simdjson::to_string(doc["test"]) << std::endl; // Requires simdjson 1.0 or better
   >````
   > ```C++
   > // retrieves an unescaped string value as a string_view instance
@@ -348,7 +348,7 @@ whole array. You may use it as follows if your document is itself an array:
 ```C++
   auto cars_json = R"( [ 40.1, 39.9, 37.7, 40.4 ] )"_padded;
   auto doc = parser.iterate(cars_json);
-  size_t count = doc.count_elements();
+  size_t count = doc.count_elements(); // requires simdjson 1.0 or better
   std::vector<double> values(count);
   size_t index = 0;
   for(double x : doc) { values[index++] = x; }
@@ -361,7 +361,7 @@ You should not let the array instance go out of scope before consuming it after 
    auto cars_json = R"( { "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )"_padded;
    auto doc = parser.iterate(cars_json);
    auto test_array = doc.find_field("test").get_array();
-   size_t count = test_array.count_elements();
+   size_t count = test_array.count_elements(); // requires simdjson 1.0 or better
    std::cout << "Number of elements: " <<  count << std::endl;
    for(ondemand::object elem: test_array) {
      std::cout << simdjson::to_string(elem);
@@ -801,7 +801,8 @@ Rewinding
 ----------
 
 In some instances, you may need to go through a document more than once. For that purpose, you may
-call the `rewind()` method on the document instance. It allows you to restart processing from the beginning without rescanning all of the input data again. It invalidates all values, objects and arrays
+call the `rewind()` method on the document instance. It allows you to restart processing from the 
+beginning without rescanning all of the input data again. It invalidates all values, objects and arrays
 that you have created so far (including unescaped strings).
 
 In the following example, we print on the screen the number of cars in the JSON input file
@@ -820,27 +821,12 @@ before printout the data.
     if(car["make"] == "Toyota") { count++; }
   }
   std::cout << "We have " << count << " Toyota cars.\n";
-  doc.rewind();
+  doc.rewind(); // requires simdjson 1.0 or better
   for (ondemand::object car : doc) {
     cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
   }
 ```
 
-You may also rewind arrays and objects, as in the following example:
-
-```C++
-  auto doc = parser.iterate(cars_json);
-  ondemand::array doc_array = doc;
-  size_t count = 0;
-  for (simdjson_unused ondemand::object car : doc) {
-    if(car["make"] == "Toyota") { count++; }
-  }
-  std::cout << "We have " << count << " Toyota cars.\n";
-  doc_array.rewind();
-  for (ondemand::object car : doc_array) {
-    cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
-  }
-```
 
 Direct Access to the Raw String
 --------------------------------
