@@ -128,6 +128,16 @@ public:
   /** The maximum depth of this parser (the most deeply nested objects and arrays it can process). */
   simdjson_really_inline size_t max_depth() const noexcept;
 
+  /**
+   * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
+   * and `max_depth` depth.
+   *
+   * @param capacity The new capacity.
+   * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
+   * @return The error, if there is one.
+   */
+  simdjson_warn_unused error_code allocate(size_t capacity, size_t max_depth=DEFAULT_MAX_DEPTH) noexcept;
+
 private:
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<internal::dom_parser_implementation> implementation{};
@@ -139,15 +149,6 @@ private:
   std::unique_ptr<token_position[]> start_positions{};
 #endif
 
-  /**
-   * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
-   * and `max_depth` depth.
-   *
-   * @param capacity The new capacity.
-   * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
-   * @return The error, if there is one.
-   */
-  simdjson_warn_unused error_code allocate(size_t capacity, size_t max_depth=DEFAULT_MAX_DEPTH) noexcept;
 
   friend class json_iterator;
 };

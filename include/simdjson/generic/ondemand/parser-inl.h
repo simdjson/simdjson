@@ -7,7 +7,7 @@ simdjson_really_inline parser::parser(size_t max_capacity) noexcept
 }
 
 simdjson_warn_unused simdjson_really_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
-  if (new_capacity >= max_capacity()) { return CAPACITY; }
+  if (new_capacity > max_capacity()) { return CAPACITY; }
   if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
