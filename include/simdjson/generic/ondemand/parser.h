@@ -149,7 +149,6 @@ private:
   std::unique_ptr<token_position[]> start_positions{};
 #endif
 
-
   friend class json_iterator;
 };
 
