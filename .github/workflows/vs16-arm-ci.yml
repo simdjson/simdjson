@@ -1,8 +1,8 @@
 name: VS16-ARM-CI
 
- on: [push, pull_request]
+on: [push, pull_request]
 
- jobs:
+jobs:
    ci:
      name: windows-vs16
      runs-on: windows-latest
