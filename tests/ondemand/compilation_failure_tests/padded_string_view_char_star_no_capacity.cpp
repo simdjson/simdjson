@@ -4,11 +4,11 @@
 using namespace simdjson;
 
 int main() {
-    auto json = "1                                                                                          ";
-#if COMPILATION_TEST_USE_FAILING_CODE;
-    simdjson_unused padded_string_view p{json, 1};
+    auto json_chars = "1                                                                                          ";
+#if COMPILATION_TEST_USE_FAILING_CODE
+    simdjson_unused padded_string_view p{json_chars, 1};
 #else
-    simdjson_unused padded_string_view p{json, 1, strlen(json)};
+    simdjson_unused padded_string_view p{json_chars, 1, strlen(json_chars)};
 #endif
     ondemand::parser parser;
 #if COMPILATION_TEST_USE_FAILING_CODE
