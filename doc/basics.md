@@ -55,12 +55,12 @@ Note:
 Using simdjson with package managers
 ------------------
 
-You can install the simdjson library on your system or in your project using multiple package managers such as  MSYS2, the conan package manager, vcpkg, brew, the apt package manager (debian-based Linux systems), the FreeBSD package manager (FreeBSD), and so on. [Visit our wiki for more details](https://github.com/simdjson/simdjson/wiki/Installing-simdjson-with-a-package-manager).
+You can install the simdjson library on your system or in your project using multiple package managers such as MSYS2, the conan package manager, vcpkg, brew, the apt package manager (debian-based Linux systems), the FreeBSD package manager (FreeBSD), and so on. [Visit our wiki for more details](https://github.com/simdjson/simdjson/wiki/Installing-simdjson-with-a-package-manager).
 
 Using simdjson as a CMake dependency
 ------------------
 
-You can include the  simdjson as a CMake dependency by including the following lines in your `CMakeLists.txt`:
+You can include the simdjson library as a CMake dependency by including the following lines in your `CMakeLists.txt`:
 
 ```cmake
 include(FetchContent)
@@ -76,7 +76,7 @@ FetchContent_MakeAvailable(simdjson)
 
 You should replace `GIT_TAG  v0.9.3` by the version you need. If you omit `GIT_TAG  v0.9.3`, you will work from the main branch of simdjson: we recommend that if you are working on production code, you always work from a release.
 
-Elsewhere in your project, you can  declare dependencies on simdjson with lines such as these:
+Elsewhere in your project, you can declare dependencies on simdjson with lines such as these:
 
 ```cmake
 add_executable(myprogram myprogram.cpp)
@@ -87,26 +87,29 @@ We recommend CMake version 3.15 or better.
 
 See [our CMake demonstration](https://github.com/simdjson/cmake_demo_single_file). It works under Linux, FreeBSD, macOS and Windows (including Visual Studio).
 
-
-
 The CMake build in simdjson can be taylored with a few variables. You can see the available variables and their default values by entering the `cmake -LA` command.
 
 
 Versions
 ------------------
 
-Our releases are tagged using semantic versioning: the tags are made of  three numbers prefixed by the letter `v` and separated by periods.
+Users are discouraged from building production code from the
+project's main branch. The main branch is used for development:
+it may contain new features but also additional bugs.
 
-Users are discouraged from building production code from the project's main branch. The main branch is used for development:
-it may contain new features but also additional bugs. Similarly, users should access the documentation matching the release that
-they have chosen.
+Users should pick a release. They should also access the
+documentation matching the release that they have chosen.
+Note that new features may be added over time.
+
+Our releases are tagged using semantic versioning: the tags
+are made of three numbers prefixed by the letter `v` and separated by periods.
 
 You can always find the latest release at the following hyperlink:
 
 https://github.com/simdjson/simdjson/releases/latest/
 
-The archive you download at this location contains its own corresponding documentation. If you click on the tag icon from
-this hyperlink, you browse the code and the documentation of that release.
+The archive you download at this location contains its own corresponding
+documentation.
 
 You can also choose to browse a specific version
 of the documentation and the code using GitHub,
@@ -116,9 +119,6 @@ https://github.com/simdjson/simdjson/blob/vx.y.z/doc/basics.md
 
 where `x.y.z` should correspond to the version number you have
 chosen.
-
-Furthermore, GitHub's web UI also allows you to specific tag (e.g., one that corresponds to `vx.y.z`).
-
 
 The Basics: Loading and Parsing JSON Documents
 ----------------------------------------------
