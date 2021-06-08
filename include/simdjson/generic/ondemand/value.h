@@ -314,6 +314,8 @@ public:
    */
   simdjson_really_inline std::string_view raw_json_token() noexcept;
 
+  //simdjson_really_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
+
 protected:
   /**
    * Create a value.
@@ -459,6 +461,8 @@ public:
 
   /** @copydoc simdjson_really_inline std::string_view value::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+
+  //simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
 };
 
 } // namespace simdjson

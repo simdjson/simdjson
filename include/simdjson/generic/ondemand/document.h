@@ -318,6 +318,9 @@ public:
    * Returns debugging information.
    */
   inline std::string to_debug_string() noexcept;
+
+  simdjson_really_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
+
 protected:
   simdjson_really_inline document(ondemand::json_iterator &&iter) noexcept;
   simdjson_really_inline const uint8_t *text(uint32_t idx) const noexcept;
@@ -396,6 +399,8 @@ public:
 
   /** @copydoc simdjson_really_inline std::string_view document::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
 };
 
 } // namespace simdjson
