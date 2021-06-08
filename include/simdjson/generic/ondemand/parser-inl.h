@@ -95,6 +95,7 @@ simdjson_really_inline size_t parser::max_depth() const noexcept {
 }
 
 simdjson_really_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
+  size_t MINIMAL_DOCUMENT_CAPACITY = 32;
   if(max_capacity < MINIMAL_DOCUMENT_CAPACITY) {
     _max_capacity = max_capacity;
   } else {
