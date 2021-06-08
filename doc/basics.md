@@ -801,7 +801,7 @@ Rewinding
 ----------
 
 In some instances, you may need to go through a document more than once. For that purpose, you may
-call the `rewind()` method on the document instance. It allows you to restart processing from the 
+call the `rewind()` method on the document instance. It allows you to restart processing from the
 beginning without rescanning all of the input data again. It invalidates all values, objects and arrays
 that you have created so far (including unescaped strings).
 
