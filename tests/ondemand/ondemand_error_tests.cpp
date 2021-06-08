@@ -14,6 +14,16 @@ namespace error_tests {
     TEST_SUCCEED();
   }
 
+  bool parser_max_capacity() {
+    TEST_START();
+    ondemand::parser parser(1); // max_capacity set to 1 byte
+    padded_string json;
+    ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
+    auto error = parser.iterate(json);
+    ASSERT_ERROR(error,CAPACITY);
+    TEST_SUCCEED();
+  }
+
   bool get_fail_then_succeed_bool() {
     TEST_START();
     auto json = std::string_view(R"({ "val" : true })");
@@ -194,6 +204,7 @@ namespace error_tests {
   bool run() {
     return
            empty_document_error() &&
+           parser_max_capacity() &&
            get_fail_then_succeed_bool() &&
            get_fail_then_succeed_null() &&
            invalid_type() &&
