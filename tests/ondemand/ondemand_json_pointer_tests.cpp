@@ -12,8 +12,11 @@ namespace json_pointer_tests {
         { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
         { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
         ] )"_padded;
-        auto cars = parser.iterate(cars_json);
-        double x = cars.at_pointer("/0/tire_pressure/1");
+
+        ondemand::document cars;
+        double x;
+        ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
+        ASSERT_SUCCESS(cars.at_pointer("/0/tire_pressure/1").get(x));
         ASSERT_EQUAL(x,39.9);
         TEST_SUCCEED();
     }
@@ -26,12 +29,16 @@ namespace json_pointer_tests {
         { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
         { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
         ] )"_padded;
-        auto cars = parser.iterate(cars_json);
+
+        ondemand::document cars;
         std::vector<double> measured;
+        ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
         for (auto car_element : cars) {
-            double x = car_element.at_pointer("/tire_pressure/1");
+            double x;
+            ASSERT_SUCCESS(car_element.at_pointer("/tire_pressure/1").get(x));
             measured.push_back(x);
         }
+
         std::vector<double> expected = {39.9, 31, 30};
         if (measured != expected) { return false; }
         TEST_SUCCEED();
