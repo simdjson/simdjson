@@ -68,7 +68,7 @@ simdjson_really_inline simdjson_result<object_iterator> object::end() noexcept {
   return object_iterator(iter);
 }
 
-simdjson_really_inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) noexcept {
+inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) noexcept {
   json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
@@ -101,9 +101,9 @@ simdjson_really_inline simdjson_result<value> object::at_pointer(std::string_vie
     return child; // we do not continue if there was an error
   }
   // If there is a /, we have to recurse and look up more of the path
-  /*if (slash != std::string_view::npos) {
+  if (slash != std::string_view::npos) {
     child = child.at_pointer(json_pointer.substr(slash));
-  }*/
+  }
   return child;
 }
 

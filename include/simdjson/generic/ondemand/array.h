@@ -44,7 +44,7 @@ public:
    */
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
 
-  simdjson_really_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
+  inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_really_inline simdjson_result<value> at(size_t index) noexcept;
 
 protected:

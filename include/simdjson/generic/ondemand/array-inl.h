@@ -93,7 +93,7 @@ simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcep
   return count;
 }
 
-simdjson_really_inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
+inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -115,17 +115,17 @@ simdjson_really_inline simdjson_result<value> array::at_pointer(std::string_view
   // Empty string is invalid; so is a "/" with no digits before it
   if (i == 0) { return INVALID_JSON_POINTER; } // "Empty string in JSON pointer array index"
   // Get the child
-    auto child = array(*this).at(array_index);
-    // If there is an error, it ends here
-    if(child.error()) {
-      return child;
-    }
-
-    // If there is a /, we're not done yet, call recursively.
-    if (i < json_pointer.length()) {
-      //child = child.at_pointer(json_pointer.substr(i));
-    }
+  auto child = array(*this).at(array_index);
+  // If there is an error, it ends here
+  if(child.error()) {
     return child;
+  }
+
+  // If there is a /, we're not done yet, call recursively.
+  if (i < json_pointer.length()) {
+    child = child.at_pointer(json_pointer.substr(i));
+  }
+  return child;
 }
 
 simdjson_really_inline simdjson_result<value> array::at(size_t index) noexcept {
