@@ -74,6 +74,8 @@ public:
   /** @overload simdjson_really_inline simdjson_result<value> find_field_unordered(std::string_view key) & noexcept; */
   simdjson_really_inline simdjson_result<value> operator[](std::string_view key) && noexcept;
 
+  simdjson_really_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
+
 protected:
   static simdjson_really_inline simdjson_result<object> start(value_iterator &iter) noexcept;
   static simdjson_really_inline simdjson_result<object> start_root(value_iterator &iter) noexcept;
@@ -111,6 +113,7 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) && noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) && noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
 };
 
 } // namespace simdjson

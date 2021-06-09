@@ -135,7 +135,14 @@ simdjson_really_inline simdjson_result<std::string_view> document::raw_json_toke
 }
 
 simdjson_really_inline simdjson_result<value> document::at_pointer(std::string_view json_pointer) noexcept {
-  return array(*this).at_pointer(json_pointer);
+  switch ((*this).type()) {
+    case json_type::array:
+      return array(*this).at_pointer(json_pointer);
+    case json_type::object:
+      return object(*this).at_pointer(json_pointer);
+    default:
+      return INVALID_JSON_POINTER;
+  }
 }
 
 } // namespace ondemand
