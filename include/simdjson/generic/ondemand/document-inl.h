@@ -135,6 +135,9 @@ simdjson_really_inline simdjson_result<std::string_view> document::raw_json_toke
 }
 
 simdjson_really_inline simdjson_result<value> document::at_pointer(std::string_view json_pointer) noexcept {
+  if (json_pointer.empty()) {
+    return this->resume_value();
+  }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t)

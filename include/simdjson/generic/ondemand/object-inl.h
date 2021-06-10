@@ -69,6 +69,7 @@ simdjson_really_inline simdjson_result<object_iterator> object::end() noexcept {
 }
 
 inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) noexcept {
+  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);

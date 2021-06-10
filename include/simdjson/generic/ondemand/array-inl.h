@@ -94,6 +94,7 @@ simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcep
 }
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
+  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
