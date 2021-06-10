@@ -6,13 +6,13 @@ using namespace simdjson;
 namespace json_pointer_tests {
     bool easytest() {
         TEST_START();
-        ondemand::parser parser;
         auto cars_json = R"( [
         { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
         { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
         { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
         ] )"_padded;
 
+        ondemand::parser parser;
         ondemand::document cars;
         double x;
         ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
@@ -23,13 +23,13 @@ namespace json_pointer_tests {
 
     bool relative_path() {
         TEST_START();
-        ondemand::parser parser;
         auto cars_json = R"( [
         { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
         { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
         { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
         ] )"_padded;
 
+        ondemand::parser parser;
         ondemand::document cars;
         std::vector<double> measured;
         ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));

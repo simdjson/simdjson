@@ -136,11 +136,14 @@ simdjson_really_inline std::string_view value::raw_json_token() noexcept {
 }
 
 simdjson_really_inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
-  switch ((*this).type()) {
+  json_type t;
+  SIMDJSON_TRY(type().get(t));
+  switch (t)
+  {
     case json_type::array:
-      return array(*this).at_pointer(json_pointer);
+      return (*this).get_array().at_pointer(json_pointer);
     case json_type::object:
-      return object(*this).at_pointer(json_pointer);
+      return (*this).get_object().at_pointer(json_pointer);
     default:
       return INVALID_JSON_POINTER;
   }
