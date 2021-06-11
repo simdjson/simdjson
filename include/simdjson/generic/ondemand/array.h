@@ -43,6 +43,27 @@ public:
    * safe to continue.
    */
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+
+  /**
+   * Get the value associated with the given JSON pointer.  We use the RFC 6901
+   * https://tools.ietf.org/html/rfc6901 standard, interpreting the current node
+   * as the root of its own JSON document.
+   *
+   *   ondemand::parser parser;
+   *   auto json = R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])"_padded;
+   *   auto doc = parser.iterate(json);
+   *   doc.at_pointer("/0/foo/a/1") == 20
+   *
+   * Note that at_pointer() does not automatically rewind between each call (call rewind() to reset).
+   * Also note that at_pointer() relies on find_field() which implies that we do not unescape keys when matching.
+   * @return The value associated with the given JSON pointer, or:
+   *         - NO_SUCH_FIELD if a field does not exist in an object
+   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
+   *         - INCORRECT_TYPE if a non-integer is used to access an array
+   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
+   */
+  inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
+
 protected:
   /**
    * Begin array iteration.
@@ -81,6 +102,15 @@ protected:
   simdjson_really_inline array(const value_iterator &iter) noexcept;
 
   /**
+   * Get the value at the given index. This function has linear-time complexity.
+   * This function should only be called once as the array iterator is not reset between each call.
+   *
+   * @return The value at the given index, or:
+   *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
+   */
+  simdjson_really_inline simdjson_result<value> at(size_t index) noexcept;
+
+  /**
    * Iterator marking current position.
    *
    * iter.is_alive() == false indicates iteration is complete.
@@ -110,6 +140,7 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() noexcept;
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
 };
 
 } // namespace simdjson
