@@ -93,6 +93,51 @@ simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcep
   return count;
 }
 
+inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
+  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  json_pointer = json_pointer.substr(1);
+  // - means "the append position" or "the element after the end of the array"
+  // We don't support this, because we're returning a real element, not a position.
+  if (json_pointer == "-") { return INDEX_OUT_OF_BOUNDS; }
+
+  // Read the array index
+  size_t array_index = 0;
+  size_t i;
+  for (i = 0; i < json_pointer.length() && json_pointer[i] != '/'; i++) {
+    uint8_t digit = uint8_t(json_pointer[i] - '0');
+    // Check for non-digit in array index. If it's there, we're trying to get a field in an object
+    if (digit > 9) { return INCORRECT_TYPE; }
+    array_index = array_index*10 + digit;
+  }
+
+  // 0 followed by other digits is invalid
+  if (i > 1 && json_pointer[0] == '0') { return INVALID_JSON_POINTER; } // "JSON pointer array index has other characters after 0"
+
+  // Empty string is invalid; so is a "/" with no digits before it
+  if (i == 0) { return INVALID_JSON_POINTER; } // "Empty string in JSON pointer array index"
+  // Get the child
+  auto child = at(array_index);
+  // If there is an error, it ends here
+  if(child.error()) {
+    return child;
+  }
+
+  // If there is a /, we're not done yet, call recursively.
+  if (i < json_pointer.length()) {
+    child = child.at_pointer(json_pointer.substr(i));
+  }
+  return child;
+}
+
+simdjson_really_inline simdjson_result<value> array::at(size_t index) noexcept {
+  size_t i=0;
+  for (auto value : *this) {
+    if (i == index) { return value; }
+    i++;
+  }
+  return INDEX_OUT_OF_BOUNDS;
+}
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
@@ -125,5 +170,9 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_
 simdjson_really_inline  simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::count_elements() & noexcept {
   if (error()) { return error(); }
   return first.count_elements();
+}
+simdjson_really_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at_pointer(std::string_view json_pointer) noexcept {
+  if (error()) { return error(); }
+  return first.at_pointer(json_pointer);
 }
 } // namespace simdjson
