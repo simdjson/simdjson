@@ -523,8 +523,12 @@ JSON Pointer
 ------------
 
 The simdjson library also supports [JSON pointer](https://tools.ietf.org/html/rfc6901) through the
-`at_pointer()` method, letting you reach further down into the document in a single call:
+`at_pointer()` method, letting you reach further down into the document in a single call. JSON pointer is supported by both the DOM approach as well
+as the On Demand approach.
 
+**Note:** The On Demand implementation of JSON pointer relies on `find_field` which implies that it does not unescape keys when matching.
+
+* DOM:
 ```c++
 auto cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
@@ -533,6 +537,18 @@ auto cars_json = R"( [
 ] )"_padded;
 dom::parser parser;
 dom::element cars = parser.parse(cars_json);
+cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
+```
+
+* On Demand:
+```c++
+auto cars_json = R"( [
+  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+] )"_padded;
+ondemand::parser parser;
+auto cars = parser.iterate(cars_json);
 cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
 ```
 
@@ -546,6 +562,7 @@ You can apply a JSON path to any node and the path gets interpreted relatively, 
 
 Consider the following example:
 
+* DOM:
 ```c++
 auto cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
@@ -561,6 +578,63 @@ for (dom::element car_element : cars) {
     if ((error = car_element.get(car))) { std::cerr << error << std::endl; return; }
     double x = car.at_pointer("/tire_pressure/1");
     cout << x << endl; // Prints 39.9, 31 and 30
+}
+```
+
+* On Demand:
+```c++
+auto cars_json = R"( [
+  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+] )"_padded;
+ondemand::parser parser;
+auto cars = parser.iterate(cars_json);
+for (auto car_element : cars) {
+    simdjson::error_code error;
+    double x;
+    if ((error = car_element.at_pointer("/tire_pressure/1").get(x))) { std::cerr << error << std::endl; return; }
+    std::cout << x << std::endl; // Prints 39.9, 31 and 30
+}
+```
+
+For multiple JSON pointer queries, one can call `at_pointer` multiple times with DOM. However, with On Demand, `rewind` should be called
+on the document between each `at_pointer` call to reset the iterator to point at the beggining at of the document:
+
+* DOM:
+```c++
+auto cars_json = R"( [
+  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+] )"_padded;
+dom::parser parser;
+dom::element cars = parser.parse(cars_json);
+size_t size = array(cars).size();
+
+for (size_t i = 0; i < size; i++) {
+    std::string json_pointer = "/" + std::to_string(i) + "/tire_pressure/1";
+    double x = cars.at_pointer(json_pointer);
+    std::cout << x << std::endl; // Prints 39.9, 31 and 30
+}
+```
+
+* On Demand:
+```c++
+auto cars_json = R"( [
+  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+] )"_padded;
+ondemand::parser parser;
+auto cars = parser.iterate(cars_json);
+size_t size = cars.count_elements();
+
+for (size_t i = 0; i < size; i++) {
+    std::string json_pointer = "/" + std::to_string(i) + "/tire_pressure/1";
+    double x = cars.at_pointer(json_pointer);
+    std::cout << x << std::endl; // Prints 39.9, 31 and 30
+    cars.rewind();
 }
 ```
 
