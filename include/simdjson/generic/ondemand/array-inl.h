@@ -116,7 +116,7 @@ inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) n
   // Empty string is invalid; so is a "/" with no digits before it
   if (i == 0) { return INVALID_JSON_POINTER; } // "Empty string in JSON pointer array index"
   // Get the child
-  auto child = array(*this).at(array_index);
+  auto child = at(array_index);
   // If there is an error, it ends here
   if(child.error()) {
     return child;

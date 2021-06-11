@@ -94,9 +94,9 @@ inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) 
       }
       escape = unescaped.find('~', escape+1);
     } while (escape != std::string::npos);
-    child = object(*this).find_field(unescaped);
+    child = find_field(unescaped);  // Take note find_field does not unescape keys when matching
   } else {
-    child = object(*this).find_field(key);
+    child = find_field(key);
   }
   if(child.error()) {
     return child; // we do not continue if there was an error

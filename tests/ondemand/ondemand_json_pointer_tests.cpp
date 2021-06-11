@@ -1,5 +1,6 @@
 #include "simdjson.h"
 #include "test_ondemand.h"
+#include <string>
 
 using namespace simdjson;
 
@@ -99,6 +100,31 @@ namespace json_pointer_tests {
         TEST_SUCCEED();
     }
 
+    bool many_json_pointers() {
+        TEST_START();
+        auto cars_json = R"( [
+        { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+        { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+        { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+        ] )"_padded;
+
+        ondemand::parser parser;
+        ondemand::document cars;
+        std::vector<double> measured;
+        ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
+        for (int i = 0; i < 3; i++) {
+            double x;
+            std::string json_pointer = "/" + std::to_string(i) + "/tire_pressure/1";
+            ASSERT_SUCCESS(cars.at_pointer(json_pointer).get(x));
+            measured.push_back(x);
+            cars.rewind();
+        }
+
+        std::vector<double> expected = {39.9, 31, 30};
+        if (measured != expected) { return false; }
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return
                 demo_test() &&
@@ -132,6 +158,7 @@ namespace json_pointer_tests {
                 run_failure_test(TEST_JSON, "/~1~001abc/01", INVALID_JSON_POINTER) &&
                 run_failure_test(TEST_JSON, "/~1~001abc/", INVALID_JSON_POINTER) &&
                 run_failure_test(TEST_JSON, "/~1~001abc/-", INDEX_OUT_OF_BOUNDS) &&
+                many_json_pointers() &&
                 true;
     }
 }   // json_pointer_tests
