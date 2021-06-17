@@ -184,6 +184,10 @@ Once you have a document, you can navigate it with idiomatic C++ iterators, oper
 The following show how to use the JSON when exceptions are enabled, but simdjson has full, idiomatic
 support for users who avoid exceptions. See [the simdjson error handling documentation](basics.md#error-handling) for more.
 
+* **Validate What You Use:** When calling `iterate`, the document is quickly indexed. If it is 
+  not a valid UTF-8 string or if there is an unclosed string, an error may be reported right away.
+  However, it is not fully validated. On Demand only fully validates the values you use and the 
+  structure leading to it.
 * **Extracting Values:** You can cast a JSON element to a native type:
   `double(element)` or `double x = json_element`. This works for double, uint64_t, int64_t, bool,
   ondemand::object and ondemand::array. At this point, the number, string or boolean will be parsed,
@@ -192,14 +196,16 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > IMPORTANT NOTE: values can only be parsed once. Since documents are *iterators*, once you have
   > parsed a value (such as by casting to double), you cannot get at it again.
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
-  scan through the object looking for the field with the matching string.
+  scan through the object looking for the field with the matching string, doing a character-by-character
+  comparison.
 
-  > NOTE: simdjson does *not* unescape keys when matching. This is not generally a problem for
-  > applications with well-defined key names (which generally do not use escapes). If you do need this
-  > support, it's best to iterate through the object fields to find the field you are looking for. The
-  > method `unescaped_key()` provides the desired unescaped keys by parsing and writing out the
-  > unescaped keys to a string buffer and returning a `std::string_view` instance. You should expect
-  > a performance penalty when using `unescaped_key()`.
+  > NOTE: JSON allows you to escape characters in keys. E.g., the key `"date"` may be written as
+  > `"\u0064\u0061\u0074\u0065"`. By default, simdjson does *not* unescape keys when matching by default. 
+  > Thus if you search for the key `"date"` and the JSON document uses `"\u0064\u0061\u0074\u0065"`
+  > as a key, it will not be recognized. This is not generally a problem.  Nevertheless, if you do need 
+  > to support escaped keys, the method `unescaped_key()` provides the desired unescaped keys by 
+  > parsing and writing out the unescaped keys to a string buffer and returning a `std::string_view`
+  > instance. You should expect a performance penalty when using `unescaped_key()`.
   > ```c++
   > auto json = R"({"k\u0065y": 1})"_padded;
   > ondemand::parser parser;
@@ -207,7 +213,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > ondemand::object object = doc.get_object();
   > for(auto field : object) {
   >    // parses and writes out the key, after unescaping it,
-  >    // to a string buffer.
+  >    // to a string buffer. It causes a performance penalty.
   >    std::string_view keyv = field.unescaped_key();
   >    if(keyv == "key") { std::cout << uint64_t(field.value()); }
   >  }
