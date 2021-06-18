@@ -184,9 +184,9 @@ Once you have a document, you can navigate it with idiomatic C++ iterators, oper
 The following show how to use the JSON when exceptions are enabled, but simdjson has full, idiomatic
 support for users who avoid exceptions. See [the simdjson error handling documentation](basics.md#error-handling) for more.
 
-* **Validate What You Use:** When calling `iterate`, the document is quickly indexed. If it is 
+* **Validate What You Use:** When calling `iterate`, the document is quickly indexed. If it is
   not a valid UTF-8 string or if there is an unclosed string, an error may be reported right away.
-  However, it is not fully validated. On Demand only fully validates the values you use and the 
+  However, it is not fully validated. On Demand only fully validates the values you use and the
   structure leading to it.
 * **Extracting Values:** You can cast a JSON element to a native type:
   `double(element)` or `double x = json_element`. This works for double, uint64_t, int64_t, bool,
@@ -200,10 +200,10 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   comparison.
 
   > NOTE: JSON allows you to escape characters in keys. E.g., the key `"date"` may be written as
-  > `"\u0064\u0061\u0074\u0065"`. By default, simdjson does *not* unescape keys when matching by default. 
+  > `"\u0064\u0061\u0074\u0065"`. By default, simdjson does *not* unescape keys when matching by default.
   > Thus if you search for the key `"date"` and the JSON document uses `"\u0064\u0061\u0074\u0065"`
-  > as a key, it will not be recognized. This is not generally a problem.  Nevertheless, if you do need 
-  > to support escaped keys, the method `unescaped_key()` provides the desired unescaped keys by 
+  > as a key, it will not be recognized. This is not generally a problem.  Nevertheless, if you do need
+  > to support escaped keys, the method `unescaped_key()` provides the desired unescaped keys by
   > parsing and writing out the unescaped keys to a string buffer and returning a `std::string_view`
   > instance. You should expect a performance penalty when using `unescaped_key()`.
   > ```c++
