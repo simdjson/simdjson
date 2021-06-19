@@ -445,36 +445,32 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 }
 
 simdjson_really_inline simdjson_result<bool> value_iterator::parse_bool(uint32_t max_len, const uint8_t *json) const noexcept {
-  // If we're almost at the end of the document, we can't do our special algorithm
-  if (simdjson_unlikely(max_len <= 5)) {
-    if (max_len >= 4) {
-      if (!atomparsing::str4ncmp(json, "fals") && (max_len == 5 && json[4] == 'e')) {
-        return simdjson_result<bool>(false);
-      }
-      if (!atomparsing::str4ncmp(json, "true") && (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[4]))) {
+  if (max_len >= 4) {
+    if (!atomparsing::str4ncmp(json, "true")) {
+      if (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[4])) {
         return simdjson_result<bool>(true);
       }
+    } else if (!atomparsing::str4ncmp(json, "fals") && max_len >= 5 && json[4] == 'e') {
+      if (max_len == 5 || jsoncharutils::is_structural_or_whitespace(json[5])) {
+        return simdjson_result<bool>(false);
+      }
     }
-    return incorrect_type_error("Not a boolean");
   }
-
-  // Otherwise we use a less branchy algorithm
-  auto not_true = atomparsing::str4ncmp(json, "true");
-  auto not_false = atomparsing::str4ncmp(json, "fals") | (json[4] ^ 'e');
-  if ((not_true && not_false) || jsoncharutils::is_not_structural_or_whitespace(json[not_true ? 5 : 4])) {
-    return incorrect_type_error("Not a boolean");
-  }
-  return simdjson_result<bool>(!not_true);
+  return incorrect_type_error("Not a boolean");
 }
 simdjson_really_inline bool value_iterator::is_null() noexcept {
   return parse_null(peek_start_length(), advance_non_root_scalar("null"));
 }
 
 simdjson_really_inline bool value_iterator::parse_null(uint32_t max_len, const uint8_t *json) const noexcept {
-  if (simdjson_unlikely(max_len <= 4)) {
-    return max_len == 4 && !atomparsing::str4ncmp(json, "null");
+  if (max_len >= 4) {
+    if (!atomparsing::str4ncmp(json, "null")) {
+      if (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[4])) {
+        return true;
+      }
+    };
   }
-  return !atomparsing::str4ncmp(json, "null") && jsoncharutils::is_structural_or_whitespace(json[4]);
+  return false;
 }
 
 constexpr const uint32_t MAX_INT_LENGTH = 1024;
