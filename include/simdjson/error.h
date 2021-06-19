@@ -36,7 +36,6 @@ enum error_code {
   UNEXPECTED_ERROR,         ///< indicative of a bug in simdjson
   PARSER_IN_USE,            ///< parser is already in use.
   OUT_OF_ORDER_ITERATION,   ///< tried to iterate an array or object out of order
-  INSUFFICIENT_PADDING,     ///< The JSON doesn't have enough padding for simdjson to safely parse it.
   NUM_ERROR_CODES
 };
 

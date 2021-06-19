@@ -220,7 +220,7 @@ public:
    *
    * ```c++
    * simdjson::ondemand::parser parser;
-   * auto obj = parser.parse(R"( { "x": 1, "y": 2, "z": 3 } )"_padded);
+   * auto obj = parser.parse(R"( { "x": 1, "y": 2, "z": 3 } )");
    * double z = obj.find_field("z");
    * double y = obj.find_field("y");
    * double x = obj.find_field("x");
@@ -285,7 +285,8 @@ public:
    * followed by a number of spaces.
    *
    * The string_view is *not* null-terminated. If this is a scalar (string, number,
-   * boolean, or null), the character after the end of the string_view may be the padded buffer.
+   * boolean, or null), the character after the end of the string_view may be past the end of
+   * the buffer.
    *
    * Tokens include:
    * - {

@@ -217,7 +217,7 @@ public:
    *
    * ```c++
    * simdjson::ondemand::parser parser;
-   * auto obj = parser.parse(R"( { "x": 1, "y": 2, "z": 3 } )"_padded);
+   * auto obj = parser.parse(std::string_view(R"( { "x": 1, "y": 2, "z": 3 } )"));
    * double z = obj.find_field("z");
    * double y = obj.find_field("y");
    * double x = obj.find_field("x");
@@ -395,7 +395,7 @@ public:
    *
    * ```c++
    * simdjson::ondemand::parser parser;
-   * auto obj = parser.parse(R"( { "x": 1, "y": 2, "z": 3 } )"_padded);
+   * auto obj = parser.parse(std::string_view(R"( { "x": 1, "y": 2, "z": 3 } )"));
    * double z = obj.find_field("z");
    * double y = obj.find_field("y");
    * double x = obj.find_field("x");

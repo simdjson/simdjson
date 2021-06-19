@@ -23,9 +23,7 @@ simdjson_warn_unused simdjson_really_inline error_code parser::allocate(size_t n
   return SUCCESS;
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(padded_string_view json) & noexcept {
-  if (json.padding() < SIMDJSON_PADDING) { return INSUFFICIENT_PADDING; }
-
+simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(std::string_view json) & noexcept {
   // Allocate if needed
   if (capacity() < json.length() || !string_buf) {
     SIMDJSON_TRY( allocate(json.length(), max_depth()) );
@@ -36,20 +34,16 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
   return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this });
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const char *json, size_t len, size_t allocated) & noexcept {
-  return iterate(padded_string_view(json, len, allocated));
+simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const char *json, size_t len) & noexcept {
+  return iterate(std::string_view(json, len));
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const uint8_t *json, size_t len, size_t allocated) & noexcept {
-  return iterate(padded_string_view(json, len, allocated));
-}
-
-simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(std::string_view json, size_t allocated) & noexcept {
-  return iterate(padded_string_view(json, allocated));
+simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const uint8_t *json, size_t len) & noexcept {
+  return iterate(std::string_view((const char *)json, len));
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const std::string &json) & noexcept {
-  return iterate(padded_string_view(json));
+  return iterate(std::string_view(json));
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string_view> &result) & noexcept {
@@ -66,9 +60,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
   return iterate(json);
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<json_iterator> parser::iterate_raw(padded_string_view json) & noexcept {
-  if (json.padding() < SIMDJSON_PADDING) { return INSUFFICIENT_PADDING; }
-
+simdjson_warn_unused simdjson_really_inline simdjson_result<json_iterator> parser::iterate_raw(std::string_view json) & noexcept {
   // Allocate if needed
   if (capacity() < json.length()) {
     SIMDJSON_TRY( allocate(json.length(), max_depth()) );

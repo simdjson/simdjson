@@ -9,14 +9,14 @@ namespace error_tests {
   bool empty_document_error() {
     TEST_START();
     ondemand::parser parser;
-    auto json = ""_padded;
+    auto json = std::string_view("");
     ASSERT_ERROR( parser.iterate(json), EMPTY );
     TEST_SUCCEED();
   }
 
   bool get_fail_then_succeed_bool() {
     TEST_START();
-    auto json = R"({ "val" : true })"_padded;
+    auto json = std::string_view(R"({ "val" : true })");
     SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc) {
       simdjson_result<ondemand::value> val = doc["val"];
       // Get everything that can fail in both forward and backwards order
@@ -56,7 +56,7 @@ namespace error_tests {
       ASSERT_SUCCESS( val.get_bool() );
       TEST_SUCCEED();
     }));
-    json = R"(true)"_padded;
+    json = std::string_view(R"(true)");
     SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](simdjson_result<ondemand::document> val) {
       // Get everything that can fail in both forward and backwards order
       ASSERT_EQUAL( val.is_null(), false );
@@ -100,7 +100,7 @@ namespace error_tests {
 
   bool get_fail_then_succeed_null() {
     TEST_START();
-    auto json = R"({ "val" : null })"_padded;
+    auto json = std::string_view(R"({ "val" : null })");
     SUBTEST("simdjson_result<ondemand::value>", test_ondemand_doc(json, [&](auto doc) {
       simdjson_result<ondemand::value> val = doc["val"];
       // Get everything that can fail in both forward and backwards order
@@ -140,7 +140,7 @@ namespace error_tests {
       ASSERT_EQUAL( val.is_null(), true );
       TEST_SUCCEED();
     }));
-    json = R"(null)"_padded;
+    json = std::string_view(R"(null)");
     SUBTEST("simdjson_result<ondemand::document>", test_ondemand_doc(json, [&](simdjson_result<ondemand::document> val) {
       // Get everything that can fail in both forward and backwards order
       ASSERT_ERROR( val.get_bool(), INCORRECT_TYPE );

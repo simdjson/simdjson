@@ -27,7 +27,7 @@ const char *test_files[] = {
 bool minify_demo() {
   TEST_START();
   ondemand::parser parser;
-  auto cars_json = R"( { "test": "result"  }  )"_padded;
+  auto cars_json = std::string_view(R"( { "test": "result"  }  )");
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(cars_json).get(doc) );
   std::cout << simdjson::to_string(doc["test"]) << std::endl;
@@ -37,7 +37,7 @@ bool minify_demo() {
 bool minify_demo2() {
   TEST_START();
   ondemand::parser parser;
-  auto cars_json = R"( { "test": "result"  }  )"_padded;
+  auto cars_json = std::string_view(R"( { "test": "result"  }  )");
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(cars_json).get(doc) );
   std::cout << std::string_view(doc["test"]) << std::endl;
