@@ -424,7 +424,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> value_iterator::get_string() noexcept {
-  return get_raw_json_string().unescape(_json_iter->string_buf_loc());
+  return get_raw_json_string().unescape(*_json_iter);
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::get_raw_json_string() noexcept {
   auto json = advance_start("string");

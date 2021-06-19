@@ -233,8 +233,10 @@ protected:
   /// The token *at* the end. This points at gibberish and should only be used for comparison.
   simdjson_really_inline token_position end_position() const noexcept;
   /// The end of the buffer.
-  simdjson_really_inline token_position end() const noexcept;
-
+  simdjson_really_inline const uint8_t *end() const noexcept;
+  // The dom_parser_implementation (cast to our local type)
+  simdjson_really_inline dom_parser_implementation *implementation() const noexcept;
+  
   friend class document;
   friend class object;
   friend class array;
