@@ -135,6 +135,7 @@ simdjson_really_inline simdjson_result<std::string_view> document::raw_json_toke
 }
 
 simdjson_really_inline simdjson_result<value> document::at_pointer(std::string_view json_pointer) noexcept {
+  rewind(); // Rewind the document each time at_pointer is called
   if (json_pointer.empty()) {
     return this->resume_value();
   }

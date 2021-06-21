@@ -54,7 +54,7 @@ public:
    *   auto doc = parser.iterate(json);
    *   doc.at_pointer("/0/foo/a/1") == 20
    *
-   * Note that at_pointer() does not automatically rewind between each call (call rewind() to reset).
+   * Note that at_pointer() automatically calls rewind between each call.
    * Also note that at_pointer() relies on find_field() which implies that we do not unescape keys when matching.
    * @return The value associated with the given JSON pointer, or:
    *         - NO_SUCH_FIELD if a field does not exist in an object
