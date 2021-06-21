@@ -117,7 +117,6 @@ namespace json_pointer_tests {
             std::string json_pointer = "/" + std::to_string(i) + "/tire_pressure/1";
             ASSERT_SUCCESS(cars.at_pointer(json_pointer).get(x));
             measured.push_back(x);
-            cars.rewind();
         }
 
         std::vector<double> expected = {39.9, 31, 30};
