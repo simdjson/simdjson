@@ -178,6 +178,13 @@ protected:
    */
   size_t _max_depth{0};
 
+public:
+  /** Buffer passed to stage 1 */
+  const uint8_t *buf{};
+  /** Length passed to stage 1 */
+  size_t len{0};
+
+protected:
   // Declaring these so that subclasses can use them to implement their constructors.
   simdjson_really_inline dom_parser_implementation() noexcept;
   simdjson_really_inline dom_parser_implementation(dom_parser_implementation &&other) noexcept;

@@ -18,10 +18,6 @@ public:
   std::unique_ptr<open_container[]> open_containers{};
   /** Whether each open container is a [ or { */
   std::unique_ptr<bool[]> is_array{};
-  /** Buffer passed to stage 1 */
-  const uint8_t *buf{};
-  /** Length passed to stage 1 */
-  size_t len{0};
   /** Document passed to stage 2 */
   dom::document *doc{};
 
