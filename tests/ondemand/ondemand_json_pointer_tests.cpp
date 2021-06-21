@@ -164,7 +164,7 @@ namespace json_pointer_tests {
             ondemand::array arr;
             ASSERT_SUCCESS(obj["tire_pressure"].get(arr));
             std::vector<double> values;
-            for(ondemand::value x : arr) {
+            for(auto x : arr) {
                 double value_double;
                 ASSERT_SUCCESS(x.get(value_double));
                 values.push_back(value_double);
