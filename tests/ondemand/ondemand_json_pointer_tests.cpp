@@ -124,8 +124,65 @@ namespace json_pointer_tests {
         TEST_SUCCEED();
     }
 
+    struct car_type {
+        std::string make;
+        std::string model;
+        uint64_t year;
+        std::vector<double> tire_pressure;
+        car_type(std::string_view _make, std::string_view _model, uint64_t _year,
+          std::vector<double>&& _tire_pressure) :
+          make{_make}, model{_model}, year(_year), tire_pressure(_tire_pressure) {}
+    };
+
+    bool json_pointer_invalidation() {
+        TEST_START();
+        auto cars_json = R"( [
+        { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+        { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+        { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+        ] )"_padded;
+
+        ondemand::parser parser;
+        ondemand::document cars;
+        std::vector<double> measured;
+        ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
+        std::vector<car_type> content;
+        for (int i = 0; i < 3; i++) {
+            ondemand::object obj;
+            std::string json_pointer = "/" + std::to_string(i);
+            // Each successive at_pointer call invalidates
+            // previously parsed values, strings, objects and array.
+            ASSERT_SUCCESS(cars.at_pointer(json_pointer).get(obj));
+            // We materialize the object.
+            std::string_view make;
+            ASSERT_SUCCESS(obj["make"].get(make));
+            std::string_view model;
+            ASSERT_SUCCESS(obj["model"].get(model));
+            uint64_t year;
+            ASSERT_SUCCESS(obj["year"].get(year));
+            // We materialize the array.
+            ondemand::array arr;
+            ASSERT_SUCCESS(obj["tire_pressure"].get(arr));
+            std::vector<double> values;
+            for(auto x : arr) {
+                double value_double;
+                ASSERT_SUCCESS(x.get(value_double));
+                values.push_back(value_double);
+            }
+            content.emplace_back(make, model, year, std::move(values));
+        }
+        std::string expected[] = {"Toyota", "Kia", "Toyota"};
+        int i = 0;
+        for (car_type c : content) {
+            std::cout << c.make << " " << c.model << " " << c.year << "\n";
+            ASSERT_EQUAL(expected[i++], c.make);
+        }
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return
+                json_pointer_invalidation() &&
                 demo_test() &&
                 demo_relative_path() &&
                 run_success_test(TEST_RFC_JSON,"",R"({"foo":["bar","baz"],"":0,"a/b":1,"c%d":2,"e^f":3,"g|h":4,"i\\j":5,"k\"l":6," ":7,"m~n":8})") &&
