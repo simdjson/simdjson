@@ -563,59 +563,72 @@ for (size_t i = 0; i < size; i++) {
 }
 ```
 
-It is important to note that `at_pointer` calls `rewind` only  at the start of every call, before parsing along the JSON path (this is what allows to make multiple JSON pointer queries without manually resetting the parser to point at the beginning of the document). See more about rewind [here](https://github.com/simdjson/simdjson/blob/master/doc/basics.md#rewinding). For example, the following would not work:
+Note that `at_pointer` calls [`rewind`](#rewind) to reset the parser at the beginning of the document. Hence, it invalidates all previously parsed values, objects and arrays: make sure to consume the values between each call to  `at_pointer`. Consider the following example where one wants to store each object from the JSON into a vector of `struct car_type`:
 
 ```c++
-auto json = R"( {
-  "k0": 27,
-  "k1": [13,26],
-  "k2": true
-} )"_padded;
-ondemand::parser parser;
-auto doc = parser.iterate(json);
+struct car_type {
+    std::string make;
+    std::string model;
+    uint64_t year;
+    std::vector<double> tire_pressure;
+    car_type(std::string_view _make, std::string_view _model, uint64_t _year,
+      std::vector<double>&& _tire_pressure) :
+      make{_make}, model{_model}, year(_year), tire_pressure(_tire_pressure) {}
+};
 
-std::cout << doc.at_pointer("/k1/1") << std::endl; // Prints 26
-std::cout << doc.at_pointer("/k2") << std::endl; // Prints true
-std::cout << doc.find_field("k0") << std::endl; // Does not work because doc is not rewinded
-```
-But the following would work:
-```c++
-auto json = R"( {
-  "k0": 27,
-  "k1": [13,26],
-  "k2": true
-} )"_padded;
-ondemand::parser parser;
-auto doc = parser.iterate(json);
-
-std::cout << doc.at_pointer("/k1/1") << std::endl; // Prints 26
-std::cout << doc.at_pointer("/k2") << std::endl; // Prints true
-doc.rewind();
-std::cout << doc.find_field("k0") << std::endl; // Prints 27
-```
-
-We also extend the JSON Pointer support to include *relative* paths.
-You can apply a JSON path to any node and the path gets interpreted relatively, as if the current node were a whole JSON document.
-
-Consider the following example:
-
-```c++
 auto cars_json = R"( [
-  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
-  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
-  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+{ "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+{ "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+{ "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
 ] )"_padded;
+
 ondemand::parser parser;
-auto cars = parser.iterate(cars_json);
-for (auto car_element : cars) {
-    simdjson::error_code error;
-    double x;
-    if ((error = car_element.at_pointer("/tire_pressure/1").get(x))) { std::cerr << error << std::endl; return; }
-    std::cout << x << std::endl; // Prints 39.9, 31 and 30
+ondemand::document cars;
+std::vector<double> measured;
+parser.iterate(cars_json).get(cars);
+std::vector<car_type> content;
+for (int i = 0; i < 3; i++) {
+    ondemand::object obj;
+    std::string json_pointer = "/" + std::to_string(i);
+    // Each successive at_pointer call invalidates
+    // previously parsed values, strings, objects and array.
+    cars.at_pointer(json_pointer).get(obj);
+    // We materialize the object.
+    std::string_view make;
+    ASSERT_SUCCESS(obj["make"].get(make));
+    std::string_view model;
+    ASSERT_SUCCESS(obj["model"].get(model));
+    uint64_t year;
+    ASSERT_SUCCESS(obj["year"].get(year));
+    // We materialize the array.
+    ondemand::array arr;
+    ASSERT_SUCCESS(obj["tire_pressure"].get(arr));
+    std::vector<double> values;
+    for(auto x : arr) {
+        double value_double;
+        ASSERT_SUCCESS(x.get(value_double));
+        values.push_back(value_double);
+    }
+    content.emplace_back(make, model, year, std::move(values));
 }
 ```
 
-Also, unlike when making multiple JSON pointer queries on a document, one cannot do multiple JSON pointer queries from a relative node since `rewind` can only be called on a document.
+Furthermore, `at_pointer` calls `rewind` at the beginning of the call (i.e. the document is not reset after `at_pointer`). Consider the following example,
+
+```c++
+auto json = R"( {
+  "k0": 27,
+  "k1": [13,26],
+  "k2": true
+} )"_padded;
+ondemand::parser parser;
+auto doc = parser.iterate(json);
+std::cout << doc.at_pointer("/k1/1") << std::endl; // Prints 26
+std::cout << doc.at_pointer("/k2") << std::endl; // Prints true
+doc.rewind();	// Need to manually rewind to be able to use find_field properly from start of document
+std::cout << doc.find_field("k0") << std::endl; // Prints 27
+```
+
 
 
 Error Handling
