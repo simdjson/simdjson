@@ -140,13 +140,13 @@ namespace json_pointer_tests {
         std::string json_pointer = "/success";
         std::cout << "\t- invalid_escape_key" << std::endl;
         ASSERT_SUCCESS(parser.iterate(invalid_escape_key).get(doc));
-        ASSERT_ERROR(doc.at_pointer(json_pointer).get(val), simdjson::SUCCESS);
+        ASSERT_SUCCESS(doc.at_pointer(json_pointer).get(val));
         std::cout << "\t- invalid_escape_value" << std::endl;
         ASSERT_SUCCESS(parser.iterate(invalid_escape_value).get(doc));
-        ASSERT_ERROR(doc.at_pointer(json_pointer).get(val), simdjson::SUCCESS);
+        ASSERT_SUCCESS(doc.at_pointer(json_pointer).get(val));
         std::cout << "\t- invalid_escape_value_at_jp_nomat" << std::endl;
         ASSERT_SUCCESS(parser.iterate(invalid_escape_value_at_jp).get(doc));
-        ASSERT_ERROR(doc.at_pointer(json_pointer).get(v), simdjson::SUCCESS);
+        ASSERT_SUCCESS(doc.at_pointer(json_pointer).get(v));
         std::cout << "\t- invalid_escape_value_at_jp" << std::endl;
         ASSERT_SUCCESS(parser.iterate(invalid_escape_value_at_jp).get(doc));
         ASSERT_ERROR(doc.at_pointer(json_pointer).get(val), simdjson::STRING_ERROR);
@@ -158,8 +158,7 @@ namespace json_pointer_tests {
         ASSERT_ERROR(doc.at_pointer(json_pointer).get(val), simdjson::TAPE_ERROR);
         std::cout << "\t- missing_bracket_after" << std::endl;
         ASSERT_SUCCESS(parser.iterate(missing_bracket_after).get(doc));
-        ASSERT_ERROR(doc.at_pointer(json_pointer).get(val), simdjson::SUCCESS);
-
+        ASSERT_SUCCESS(doc.at_pointer(json_pointer).get(val));
         TEST_SUCCEED();
     }
 
