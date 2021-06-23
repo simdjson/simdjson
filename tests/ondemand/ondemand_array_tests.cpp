@@ -139,14 +139,21 @@ namespace array_tests {
   bool iterate_complex_array_count() {
     TEST_START();
     ondemand::parser parser;
-    auto cars_json = R"( { "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )"_padded;
+    auto cars_json = R"( { "zero":[], "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )"_padded;
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(cars_json).get(doc));
     ondemand::array myarray;
-    ASSERT_SUCCESS(doc.find_field("test").get_array().get(myarray));
-    size_t count;
+    ASSERT_SUCCESS(doc.find_field("zero").get_array().get(myarray));
+    size_t count{0};
     ASSERT_SUCCESS(myarray.count_elements().get(count));
-    size_t new_count = 0;
+    ASSERT_EQUAL(count, 0);
+    size_t new_count{0};
+    for(simdjson_unused auto elem: myarray) { new_count++; }
+    ASSERT_EQUAL(new_count, 0);
+    ASSERT_SUCCESS(doc.find_field("test").get_array().get(myarray));
+    ASSERT_SUCCESS(myarray.count_elements().get(count));
+    ASSERT_EQUAL(count, 2);
+    new_count = 0;
     for(simdjson_unused auto elem: myarray) { new_count++; }
     ASSERT_EQUAL(count, new_count);
     TEST_SUCCEED();
