@@ -54,12 +54,13 @@ public:
    *   auto doc = parser.iterate(json);
    *   doc.at_pointer("/0/foo/a/1") == 20
    *
-   * Note that at_pointer() called on the document automatically calls the document's rewind 
+   * Note that at_pointer() called on the document automatically calls the document's rewind
    * method between each call. It invalidates all previously accessed arrays, objects and values
-   * that have not been consumed.
-   * 
+   * that have not been consumed. Yet it is not the case when calling at_pointer on an array
+   * instance: there is no rewind and no invalidation.
+   *
    * You may only call at_pointer on an array after it has been created, but before it has
-   * been first accessed. When calling at_pointer on an array, the pointer is advanced to 
+   * been first accessed. When calling at_pointer on an array, the pointer is advanced to
    * the location indicated by the JSON pointer (in case of success). It is no longer possible
    * to call at_pointer on the same array.
    *
