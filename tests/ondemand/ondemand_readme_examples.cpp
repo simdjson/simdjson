@@ -326,6 +326,29 @@ bool json_pointer_multiple() {
 	TEST_SUCCEED();
 }
 
+bool json_pointer_rewind() {
+  TEST_START();
+  auto json = R"( {
+  "k0": 27,
+  "k1": [13,26],
+  "k2": true
+  } )"_padded;
+
+  ondemand::parser parser;
+  ondemand::document doc;
+  uint64_t i;
+  bool b;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
+  ASSERT_SUCCESS(doc.at_pointer("/k1/1").get(i));
+  ASSERT_EQUAL(i,26);
+  ASSERT_SUCCESS(doc.at_pointer("/k2").get(b));
+  ASSERT_EQUAL(b,true);
+  doc.rewind();	// Need to manually rewind to be able to use find_field properly from start of document
+  ASSERT_SUCCESS(doc.find_field("k0").get(i));
+  ASSERT_EQUAL(i,27);
+  TEST_SUCCEED();
+}
+
 int main() {
   if (
     true
@@ -346,8 +369,9 @@ int main() {
     && using_the_parsed_json_5()
 #endif
     && using_the_parsed_json_6()
-	&& json_pointer_simple()
-	&& json_pointer_multiple()
+    && json_pointer_simple()
+    && json_pointer_multiple()
+    && json_pointer_rewind()
   ) {
     return 0;
   } else {
