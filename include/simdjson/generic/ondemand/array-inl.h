@@ -73,31 +73,17 @@ simdjson_really_inline simdjson_result<array_iterator> array::end() noexcept {
 }
 
 simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcept {
-///
-// remote debugging for msys2 : delete
-std::cout << "array::count_elements " << iter.to_string() << std::endl;
-///
+  // If the array is empty (i.e., we already scanned past it), then we use a
+  // fast path and return 0.
+  if(!iter.is_open()) { return 0; }
   // The count_elements method should always be called before you have begun
   // iterating through the array.
   // To open a new array you need to be at a `[`.
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
   // array::begin() makes the same check.
-  if(!iter.is_at_container_start()) { 
-
-// remote debugging for msys2 : delete
-std::cout << "not is_at_container_start " << iter.to_string() << std::endl;
-///
-    
-    return OUT_OF_ORDER_ITERATION; }
+  if(!iter.is_at_container_start()) { return OUT_OF_ORDER_ITERATION; }
 #endif
-  // We cannot just simply 're-enter' into an empty array. So if the
-  // array is empty (i.e., we already scanned past it), then we use a
-  // fast path and return 0.
-  if(!iter.is_open()) { return 0; }
   size_t count{0};
-// remote debugging for msys2 : delete
-std::cout << "about to iterate " << iter.to_string() << std::endl;
-///
   // Important: we do not consume any of the values.
   for(simdjson_unused auto v : *this) { count++; }
   // The above loop will always succeed, but we want to report errors.
@@ -105,13 +91,7 @@ std::cout << "about to iterate " << iter.to_string() << std::endl;
   // We need to move back at the start because we expect users to iterate through
   // the array after counting the number of elements.
   // enter_at_container_start is safe here because we know that we do not have an empty array.
-// remote debugging for msys2 : delete
-std::cout << "about to enter_at_container_start " << iter.to_string() << std::endl;
-///
   iter.enter_at_container_start(); // sets the depth to indicate that we are inside the container and accesses the first element
-// remote debugging for msys2 : delete
-std::cout << "finnal to enter_at_container_start " << iter.to_string() << std::endl;
-///
   return count;
 }
 
