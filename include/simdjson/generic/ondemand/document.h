@@ -311,7 +311,8 @@ public:
 
   /**
    * Reset the iterator inside the document instance so we are pointing back at the
-   * beginning of the document, as if it had just been created.
+   * beginning of the document, as if it had just been created. It invalidates all
+   * values, objects and arrays that you have created so far (including unescaped strings).
    */
   inline void rewind() noexcept;
   /**
@@ -335,7 +336,12 @@ public:
    *   auto doc = parser.iterate(json);
    *   doc.at_pointer("//a/1") == 20
    *
-   * Note that at_pointer() automatically calls rewind between each call.
+   * Note that at_pointer() automatically calls rewind between each call. Thus
+   * all values, objects and arrays that you have created so far (including unescaped strings)
+   * are invalidated. After calling at_pointer, you need to consume the result: string values
+   * should be stored in your own variables, arrays should be decoded and stored in your own array-like
+   * structures and so forth.
+   *
    * Also note that at_pointer() relies on find_field() which implies that we do not unescape keys when matching
    *
    * @return The value associated with the given JSON pointer, or:
