@@ -29,7 +29,8 @@ public:
   uint32_t quote_bits;
 }; // struct backslash_and_quote
 
-simdjson_really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst, const uint8_t *last_full_buf) {
+simdjson_really_inline backslash_and_quote
+backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst, const uint8_t *last_full_buf) {
   // If we don't have enough memory left to load a whole simd register, copy it first.
   uint8_t tmpbuf[BYTES_PROCESSED];
   if (simdjson_unlikely(src > last_full_buf)) {
@@ -41,7 +42,8 @@ simdjson_really_inline backslash_and_quote backslash_and_quote::copy_and_find(co
   return copy_and_find(src, dst);
 }
 
-simdjson_really_inline backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
+simdjson_really_inline backslash_and_quote
+backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   simd8<uint8_t> v0(src);
   simd8<uint8_t> v1(src + sizeof(v0));
   v0.store(dst);
