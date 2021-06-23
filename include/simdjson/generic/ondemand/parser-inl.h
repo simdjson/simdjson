@@ -44,7 +44,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const uint8_t *json, size_t len) & noexcept {
-  return iterate(std::string_view((const char *)json, len));
+  return iterate(std::string_view(reinterpret_cast<const char *>(json), len));
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const std::string &json) & noexcept {
