@@ -130,7 +130,7 @@ inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) n
 }
 
 simdjson_really_inline simdjson_result<value> array::at(size_t index) noexcept {
-  size_t i=0;
+  size_t i = 0;
   for (auto value : *this) {
     if (i == index) { return value; }
     i++;

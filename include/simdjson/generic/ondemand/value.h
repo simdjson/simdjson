@@ -330,7 +330,24 @@ public:
    *   auto doc = parser.iterate(json);
    *   doc.at_pointer("//a/1") == 20
    *
-   * Note that at_pointer() automatically calls rewind between each call.
+   * Note that at_pointer() called on the document automatically calls the document's rewind 
+   * method between each call. It invalidates all previously accessed arrays, objects and values
+   * that have not been consumed.
+   *
+   * Calling at_pointer() on non-document instances (e.g., arrays and objects) is not
+   * standardized (by RFC 6901). We provide some experimental support for JSON pointers
+   * on non-document instances.  Yet it is not the case when calling at_pointer on an array
+   * or an object instance: there is no rewind and no invalidation.
+   * 
+   * You may only call at_pointer on an array after it has been created, but before it has
+   * been first accessed. When calling at_pointer on an array, the pointer is advanced to 
+   * the location indicated by the JSON pointer (in case of success). It is no longer possible
+   * to call at_pointer on the same array.
+   * 
+   * You may call at_pointer more than once on an object, but each time the pointer is advanced
+   * to be within the value matched by the key indicated by the JSON pointer query. Thus any preceeding
+   * key (as well as the current key) can no longer be used with following JSON pointer calls.
+   *
    * Also note that at_pointer() relies on find_field() which implies that we do not unescape keys when matching
    *
    * @return The value associated with the given JSON pointer, or:
