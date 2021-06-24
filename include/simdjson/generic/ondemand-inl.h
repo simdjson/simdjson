@@ -6,6 +6,7 @@
 #include "simdjson/generic/ondemand/value_iterator-inl.h"
 #include "simdjson/generic/ondemand/array_iterator-inl.h"
 #include "simdjson/generic/ondemand/object_iterator-inl.h"
+#include "simdjson/generic/ondemand/document_stream-inl.h"
 #include "simdjson/generic/ondemand/array-inl.h"
 #include "simdjson/generic/ondemand/document-inl.h"
 #include "simdjson/generic/ondemand/value-inl.h"

@@ -9,6 +9,18 @@ class object;
 class value;
 class raw_json_string;
 
+/** The default batch size for parser.parse_many() and parser.load_many() */
+static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
+/**
+ * Some adversary might try to set the batch size to 0 or 1, which might cause problems.
+ * We set a minimum of 32B since anything else is highly likely to be an error. In practice,
+ * most users will want a much larger batch size.
+ *
+ * All non-negative MINIMAL_BATCH_SIZE values should be 'safe' except that, obviously, no JSON
+ * document can ever span 0 or 1 byte and that very large values would create memory allocation issues.
+ */
+static constexpr size_t MINIMAL_BATCH_SIZE = 32;
+
 /**
  * A JSON fragment iterator.
  *
@@ -119,6 +131,19 @@ public:
    *         - UNCLOSED_STRING if there is an unclosed string in the document.
    */
   simdjson_warn_unused simdjson_result<json_iterator> iterate_raw(padded_string_view json) & noexcept;
+
+  inline simdjson_result<document_stream> iterate_many(const uint8_t *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
+  inline simdjson_result<document_stream> iterate_many(const char *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
+  inline simdjson_result<document_stream> iterate_many(const std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> iterate_many(const std::string &&s, size_t batch_size) = delete;// unsafe
+  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
+  inline simdjson_result<document_stream> iterate_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> iterate_many(const padded_string &&s, size_t batch_size) = delete;// unsafe
+
+  /** @private We do not want to allow implicit conversion from C string to std::string. */
+  simdjson_result<document_stream> iterate_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
 
   /** The capacity of this parser (the largest document it can process). */
   simdjson_really_inline size_t capacity() const noexcept;

@@ -23,6 +23,7 @@ using depth_t = int32_t;
 #include "simdjson/generic/ondemand/value_iterator.h"
 #include "simdjson/generic/ondemand/array_iterator.h"
 #include "simdjson/generic/ondemand/object_iterator.h"
+#include "simdjson/generic/ondemand/document_stream.h"
 #include "simdjson/generic/ondemand/array.h"
 #include "simdjson/generic/ondemand/document.h"
 #include "simdjson/generic/ondemand/value.h"
