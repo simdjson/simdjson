@@ -70,10 +70,6 @@ int test_main(int argc, char *argv[], const F& test_function) {
     std::abort();
   }
   // We want to know what we are testing.
-  // Next line would be the runtime dispatched implementation but that's not necessarily what gets tested.
-  // std::cout << "Running tests against this implementation: " << simdjson::active_implementation->name();
-  // Rather, we want to display builtin_implementation()->name().
-  // In practice, by default, we often end up testing against fallback.
   std::cout << "builtin_implementation -- " << simdjson::builtin_implementation()->name() << std::endl;
   std::cout << "------------------------------------------------------------" << std::endl;
 
