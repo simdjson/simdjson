@@ -2,6 +2,29 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+
+struct frozen_value_iterator {
+  json_iterator _json_iter_value{};
+  depth_t _depth{};
+  token_position _start_position{};
+  frozen_value_iterator(const json_iterator & i, depth_t d, token_position t) :
+    _json_iter_value{i}, _depth(d), _start_position(t) {}
+};
+
+// no need to make as simdjson_really_inline since this should
+// never be called 'often'.
+inline void value_iterator::deep_reset(const frozen_value_iterator &o) noexcept {
+  *(_json_iter) = o._json_iter_value; // hard copy
+  _depth = o._depth;
+  _start_position = o._start_position;
+}
+
+// no need to make as simdjson_really_inline since this should
+// never be called 'often'.
+inline frozen_value_iterator value_iterator::make_deep_copy() const noexcept {
+  return frozen_value_iterator(*(_json_iter), _depth, _start_position);
+}
+
 simdjson_really_inline value_iterator::value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept
   : _json_iter{json_iter},
     _depth{depth},

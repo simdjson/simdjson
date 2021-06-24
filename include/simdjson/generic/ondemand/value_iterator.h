@@ -9,6 +9,13 @@ class value;
 class raw_json_string;
 class parser;
 
+
+/**
+ * A frozen_value_iterator can capture the state of value_iterator.
+ * @private This is not intended for external use.
+ */
+struct frozen_value_iterator;
+
 /**
  * Iterates through a single JSON value at a particular depth.
  *
@@ -281,6 +288,20 @@ public:
 
   /** @} */
 protected:
+  /**
+   * Reset the value of this value_iterator so that it matches
+   * the value of the frozen_value_iterator. Note that this will
+   * modify the json_iterator (which typically belongs to the document),
+   * so that it affects more than just this value_iterator instance.
+   */
+  inline void deep_reset(const frozen_value_iterator &o) noexcept;
+
+  /**
+   * Save the state of the value_iterator (including the full state of
+   * the json_iterator) and returns it as a frozen_value_iterator instance.
+   */
+  inline frozen_value_iterator make_deep_copy() const noexcept;
+
   /* updates the index so that at_start() is true and syncs the depth. */
    simdjson_really_inline void move_at_start() noexcept;
   /**
