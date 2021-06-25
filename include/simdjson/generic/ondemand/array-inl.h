@@ -80,7 +80,7 @@ simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcep
   if(iter.error()) { return iter.error(); }
   // We need to move back at the start because we expect users to iterate through
   // the array after counting the number of elements.
-  simdjson_unused bool has_content = iter.reset_array();
+  iter.reset_array();
   return count;
 }
 
