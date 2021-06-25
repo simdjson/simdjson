@@ -195,6 +195,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     if (_json_iter->depth() < depth() - 1) { return OUT_OF_ORDER_ITERATION; }
 #endif
     has_value = reset_object();
+    at_first = true;
   // 3. When a previous search found a field or an iterator yielded a value:
   //
   //    ```
