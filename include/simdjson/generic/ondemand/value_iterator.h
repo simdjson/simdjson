@@ -296,9 +296,17 @@ protected:
    * the container. It updates the index so that at_start() is true and it
    * syncs the depth. The user can then create a new container instance.
    *
+   * Usage: used with value::count_elements().
+   **/
+  simdjson_really_inline void move_at_start() noexcept;
+
+  /**
+   * move_at_container_start(): moves us so that we are pointing at the beginning of
+   * the container so that assert_at_container_start() passes.
+   *
    * Usage: used with reset_array() and reset_object().
    **/
-   simdjson_really_inline void move_at_start() noexcept;
+   simdjson_really_inline void move_at_container_start() noexcept;
   /* Useful for debugging and logging purposes. */
   inline std::string to_string() const noexcept;
   simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept;

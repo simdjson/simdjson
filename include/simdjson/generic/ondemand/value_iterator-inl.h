@@ -630,14 +630,19 @@ simdjson_really_inline void value_iterator::move_at_start() noexcept {
   _json_iter->token.index = _start_position;
 }
 
+simdjson_really_inline void value_iterator::move_at_container_start() noexcept {
+  _json_iter->_depth = _depth;
+  _json_iter->token.index = _start_position + 1;
+}
+
 simdjson_really_inline bool value_iterator::reset_array() noexcept {
-  move_at_start();
+  move_at_container_start();
   return started_array();
 }
 
 simdjson_really_inline bool value_iterator::reset_object() noexcept {
-  move_at_start();
-  return  started_object();
+  move_at_container_start();
+  return started_object();
 }
 
 inline void value_iterator::assert_at_child() const noexcept {
