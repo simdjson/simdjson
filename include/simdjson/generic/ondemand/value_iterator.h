@@ -306,7 +306,12 @@ protected:
   simdjson_really_inline error_code incorrect_type_error(const char *message) const noexcept;
 
   simdjson_really_inline bool is_at_start() const noexcept;
-  simdjson_really_inline bool is_at_container_start() const noexcept;
+  /**
+   * is_at_iterator_start() returns true on an array or object after it has just been
+   * created, whether the instance is empty or not.
+   *
+   * Usage: used by array::begin() in debug mode (SIMDJSON_DEVELOPMENT_CHECKS)
+   */
   simdjson_really_inline bool is_at_iterator_start() const noexcept;
   inline void assert_at_start() const noexcept;
   inline void assert_at_container_start() const noexcept;
