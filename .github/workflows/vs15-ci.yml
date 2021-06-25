@@ -33,10 +33,14 @@ jobs:
       run: cmake --build build --config Debug --verbose
     - name: Build Release
       run: cmake --build build --config Release --verbose
-    - name: Run tests
+    - name: Run Release tests
       run: |
         cd build
         ctest -C Release  -LE explicitonly  --output-on-failure
+    - name: Run Debug tests
+      run: |
+        cd build
+        ctest -C Debug  -LE explicitonly  --output-on-failure
     - name: Install
       run: |
         cmake --install build --config Release

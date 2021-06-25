@@ -604,9 +604,6 @@ simdjson_really_inline error_code value_iterator::incorrect_type_error(const cha
 simdjson_really_inline bool value_iterator::is_at_start() const noexcept {
   return _json_iter->token.index == _start_position;
 }
-simdjson_really_inline bool value_iterator::is_at_container_start() const noexcept {
-  return _json_iter->token.index == _start_position + 1;
-}
 simdjson_really_inline bool value_iterator::is_at_iterator_start() const noexcept {
   // We can legitimately be either at the first value ([1]), or after the array if it's empty ([]).
   auto delta = _json_iter->token.index - _start_position;

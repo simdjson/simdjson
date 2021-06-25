@@ -281,12 +281,22 @@ public:
 
   /** @} */
 protected:
-  /* updates the index so that at_start() is true and syncs the depth. */
+  /**
+   * move_at_start(): moves us so that we are pointing at the beginning of
+   * the container. It updates the index so that at_start() is true and it
+   * syncs the depth. The user can then create a new container instance.
+   *
+   * Usage: used with value::count_elements()
+   **/
    simdjson_really_inline void move_at_start() noexcept;
   /**
-   * enter_at_container_start is similar to move_at_start()
-   * except that it sets the depth to indicate that we are inside the
-   * container and then it accesses the first element
+   * enter_at_container_start moves at the beginning of the container
+   * and sets the depth to indicate that we are inside the
+   * container and ready to access the first element. It is only
+   * safely used with non-empty containers. The caller is responsible
+   * to ensure that the container is not empty!
+   *
+   * Usage: used with array::count_elements().
    **/
   simdjson_really_inline void enter_at_container_start() noexcept;
   /* Useful for debugging and logging purposes. */
@@ -306,7 +316,12 @@ protected:
   simdjson_really_inline error_code incorrect_type_error(const char *message) const noexcept;
 
   simdjson_really_inline bool is_at_start() const noexcept;
-  simdjson_really_inline bool is_at_container_start() const noexcept;
+  /**
+   * is_at_iterator_start() returns true on an array or object after it has just been
+   * created, whether the instance is empty or not.
+   *
+   * Usage: used by array::begin() in debug mode (SIMDJSON_DEVELOPMENT_CHECKS)
+   */
   simdjson_really_inline bool is_at_iterator_start() const noexcept;
   inline void assert_at_start() const noexcept;
   inline void assert_at_container_start() const noexcept;
