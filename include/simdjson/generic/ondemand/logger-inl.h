@@ -72,7 +72,20 @@ inline void log_error(const value_iterator &iter, const char *error, const char 
 
 inline void log_headers() noexcept {
   if (LOG_ENABLED) {
+    // Technically a static variable is not thread-safe, but if you are using threads
+    // and logging... well...
+    static bool displayed_hint{false};
     log_depth = 0;
+    printf("\n");
+    if(!displayed_hint) {
+      // We only print this helpful header once.
+      printf("# Logging provides the depth and position of the iterator user-visible steps\n");
+      printf("# +array says 'this is where we were when we discovered the start array'\n");
+      printf("# -array says 'this is where we were when we ended the array'\n");
+      printf("# skip says 'this is a structural or value I am skipping'\n");
+      printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
+      displayed_hint = true;
+    }
     printf("\n");
     printf("| %-*s ", LOG_EVENT_LEN,        "Event");
     printf("| %-*s ", LOG_BUFFER_LEN,       "Buffer");
