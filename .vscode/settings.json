@@ -5,6 +5,8 @@
     ],
     "files.trimTrailingWhitespace": true,
     "files.associations": {
-        "array": "cpp"
+        "array": "cpp",
+        "iterator": "cpp",
+        "chrono": "cpp"
     }
 }
