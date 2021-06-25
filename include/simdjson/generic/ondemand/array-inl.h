@@ -76,13 +76,6 @@ simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcep
   // If the array is empty (i.e., we already scanned past it), then we use a
   // fast path and return 0.
   if(!iter.is_open()) { return 0; }
-  // The count_elements method should always be called before you have begun
-  // iterating through the array.
-  // To open a new array you need to be at a `[`.
-#ifdef SIMDJSON_DEVELOPMENT_CHECKS
-  // array::begin() makes the same check.
-  if(!iter.is_at_container_start()) { return OUT_OF_ORDER_ITERATION; }
-#endif
   size_t count{0};
   // Important: we do not consume any of the values.
   for(simdjson_unused auto v : *this) { count++; }
