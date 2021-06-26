@@ -292,6 +292,63 @@ bool using_the_parsed_json_6() {
   TEST_SUCCEED();
 }
 
+const padded_string cars_json = R"( [
+  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+] )"_padded;
+
+bool json_pointer_simple() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document cars;
+    double x;
+    ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
+    ASSERT_SUCCESS(cars.at_pointer("/0/tire_pressure/1").get(x));
+    ASSERT_EQUAL(x,39.9);
+    TEST_SUCCEED();
+}
+
+bool json_pointer_multiple() {
+	TEST_START();
+	ondemand::parser parser;
+	ondemand::document cars;
+	size_t size;
+	ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
+	ASSERT_SUCCESS(cars.count_elements().get(size));
+	double expected[] = {39.9, 31, 30};
+	for (size_t i = 0; i < size; i++) {
+		std::string json_pointer = "/" + std::to_string(i) + "/tire_pressure/1";
+		double x;
+		ASSERT_SUCCESS(cars.at_pointer(json_pointer).get(x));
+		ASSERT_EQUAL(x,expected[i]);
+	}
+	TEST_SUCCEED();
+}
+
+bool json_pointer_rewind() {
+  TEST_START();
+  auto json = R"( {
+  "k0": 27,
+  "k1": [13,26],
+  "k2": true
+  } )"_padded;
+
+  ondemand::parser parser;
+  ondemand::document doc;
+  uint64_t i;
+  bool b;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
+  ASSERT_SUCCESS(doc.at_pointer("/k1/1").get(i));
+  ASSERT_EQUAL(i,26);
+  ASSERT_SUCCESS(doc.at_pointer("/k2").get(b));
+  ASSERT_EQUAL(b,true);
+  doc.rewind();	// Need to manually rewind to be able to use find_field properly from start of document
+  ASSERT_SUCCESS(doc.find_field("k0").get(i));
+  ASSERT_EQUAL(i,27);
+  TEST_SUCCEED();
+}
+
 int main() {
   if (
     true
@@ -312,6 +369,9 @@ int main() {
     && using_the_parsed_json_5()
 #endif
     && using_the_parsed_json_6()
+    && json_pointer_simple()
+    && json_pointer_multiple()
+    && json_pointer_rewind()
   ) {
     return 0;
   } else {

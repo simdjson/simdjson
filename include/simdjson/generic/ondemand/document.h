@@ -341,6 +341,7 @@ public:
    * are invalidated. After calling at_pointer, you need to consume the result: string values
    * should be stored in your own variables, arrays should be decoded and stored in your own array-like
    * structures and so forth.
+   *
    * Also note that at_pointer() relies on find_field() which implies that we do not unescape keys when matching
    *
    * @return The value associated with the given JSON pointer, or:
