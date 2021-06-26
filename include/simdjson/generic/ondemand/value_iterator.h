@@ -282,23 +282,31 @@ public:
   /** @} */
 protected:
   /**
+   * Restarts an array iteration.
+   * @returns Whether the array has any elements (returns false for empty).
+   */
+  simdjson_really_inline bool reset_array() noexcept;
+  /**
+   * Restarts an object iteration.
+   * @returns Whether the object has any fields (returns false for empty).
+   */
+  simdjson_really_inline bool reset_object() noexcept;
+  /**
    * move_at_start(): moves us so that we are pointing at the beginning of
    * the container. It updates the index so that at_start() is true and it
    * syncs the depth. The user can then create a new container instance.
    *
-   * Usage: used with value::count_elements()
+   * Usage: used with value::count_elements().
    **/
-   simdjson_really_inline void move_at_start() noexcept;
+  simdjson_really_inline void move_at_start() noexcept;
+
   /**
-   * enter_at_container_start moves at the beginning of the container
-   * and sets the depth to indicate that we are inside the
-   * container and ready to access the first element. It is only
-   * safely used with non-empty containers. The caller is responsible
-   * to ensure that the container is not empty!
+   * move_at_container_start(): moves us so that we are pointing at the beginning of
+   * the container so that assert_at_container_start() passes.
    *
-   * Usage: used with array::count_elements().
+   * Usage: used with reset_array() and reset_object().
    **/
-  simdjson_really_inline void enter_at_container_start() noexcept;
+   simdjson_really_inline void move_at_container_start() noexcept;
   /* Useful for debugging and logging purposes. */
   inline std::string to_string() const noexcept;
   simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept;

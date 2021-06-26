@@ -73,9 +73,6 @@ simdjson_really_inline simdjson_result<array_iterator> array::end() noexcept {
 }
 
 simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcept {
-  // If the array is empty (i.e., we already scanned past it), then we use a
-  // fast path and return 0.
-  if(!iter.is_open()) { return 0; }
   size_t count{0};
   // Important: we do not consume any of the values.
   for(simdjson_unused auto v : *this) { count++; }
@@ -83,8 +80,7 @@ simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcep
   if(iter.error()) { return iter.error(); }
   // We need to move back at the start because we expect users to iterate through
   // the array after counting the number of elements.
-  // enter_at_container_start is safe here because we know that we do not have an empty array.
-  iter.enter_at_container_start(); // sets the depth to indicate that we are inside the container and accesses the first element
+  iter.reset_array();
   return count;
 }
 
