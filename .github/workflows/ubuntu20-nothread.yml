@@ -22,6 +22,12 @@ jobs:
           key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
       - name: Use cmake
         run: |
+          mkdir builddebug &&
+          cd builddebug &&
+          cmake -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF  -DSIMDJSON_ENABLE_THREADS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF ..  &&
+          cmake --build .   &&
+          ctest -j --output-on-failure -LE explicitonly   &&
+          cd .. &&
           mkdir build &&
           cd build &&
           cmake  -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_ENABLE_THREADS=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
