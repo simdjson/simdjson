@@ -25,9 +25,19 @@ inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION:
   switch (t)
   {
     case json_type::array:
-      return to_json_string(x.get_array());
+    {
+      SIMDJSON_IMPLEMENTATION::ondemand::array array;
+      error = x.get_array().get(array);
+      if(error) { return error; }
+      return to_json_string(array);
+    }
     case json_type::object:
-      return to_json_string(x.get_object());
+    {
+      SIMDJSON_IMPLEMENTATION::ondemand::object object;
+      error = x.get_object().get(object);
+      if(error) { return error; }
+      return to_json_string(object);
+    }
     default:
       return trim(x.raw_json_token());
   }
@@ -41,9 +51,19 @@ inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION:
   switch (t)
   {
     case json_type::array:
-      return to_json_string(x.get_array());
+    {
+      SIMDJSON_IMPLEMENTATION::ondemand::array array;
+      error = x.get_array().get(array);
+      if(error) { return error; }
+      return to_json_string(array);
+    }
     case json_type::object:
-      return to_json_string(x.get_object());
+    {
+      SIMDJSON_IMPLEMENTATION::ondemand::object object;
+      error = x.get_object().get(object);
+      if(error) { return error; }
+      return to_json_string(object);
+    }
     default:
       return trim(x.raw_json_token());
   }
@@ -56,6 +76,8 @@ inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION:
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::array& x) {
     return trim(x.raw_json_token());
 }
+
+#if SIMDJSON_EXCEPTIONS
 
 inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> x) {
     if (x.error()) { return x.error(); }
@@ -76,6 +98,7 @@ inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON
     if (x.error()) { return x.error(); }
     return to_json_string(x.value());
 }
+#endif
 } // namespace simdjson
 
 
