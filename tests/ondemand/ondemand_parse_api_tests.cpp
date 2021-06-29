@@ -173,7 +173,7 @@ namespace parse_api_tests {
     auto json = R"({"key": "value"})"_padded;
     auto jsonbad = R"({"key": "value")"_padded; // deliberaty broken
     auto jsonunclosedstring = "{\"coordinates:[{\"x\":1.1,\"y\":2.2,\"z\":3.3}]}"_padded;
-    std::string output;
+    std::string_view output;
 
     ondemand::parser parser;
     std::cout << "correct document (1)" << std::endl;
@@ -200,9 +200,7 @@ namespace parse_api_tests {
     }
 
     std::cout << "truncated document " << std::endl;
-
     ASSERT_SUCCESS( parser.iterate(jsonbad).get(doc) );
-
     ASSERT_EQUAL( simdjson::to_json_string(doc).get(output), TAPE_ERROR );
 
     std::cout << "correct document with new doc" << std::endl;

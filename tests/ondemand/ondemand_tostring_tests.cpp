@@ -27,8 +27,9 @@ bool issue1607() {
   auto cars_json = R"( { "test": "result"  }  )"_padded;
   ondemand::parser parser;
   ondemand::document doc = parser.iterate(cars_json);
-  std::string expected = R"("result")";
-  std::string result = simdjson::to_json_string(doc["test"]);
+  std::string_view expected = R"("result")";
+  std::string_view result = simdjson::to_json_string(doc["test"]);
+  std::cout << "'"<< result << "'" << std::endl;
   ASSERT_EQUAL(result, expected);
   TEST_SUCCEED();
 }
@@ -78,15 +79,14 @@ bool load_to_string(const char *filename) {
     return false;
   }
   std::cout << "serializing once." << std::endl;
-  std::string serial1 = simdjson::to_json_string(doc);
-  serial1.reserve(serial1.size() + simdjson::SIMDJSON_PADDING);
-  error = parser.iterate(serial1).get(doc);
+  std::string_view serial1 = simdjson::to_json_string(doc);
+  error = parser.iterate(serial1, serial1.size() + simdjson::SIMDJSON_PADDING).get(doc);
   if (error) {
     std::cerr << error << std::endl;
     return false;
   }
   std::cout << "serializing twice." << std::endl;
-  std::string serial2 = simdjson::to_json_string(doc);
+  std::string_view serial2 = simdjson::to_json_string(doc);
   bool match = (serial1 == serial2);
   if (match) {
     std::cout << "Parsing to_string and calling to_string again results in the "
@@ -126,20 +126,19 @@ bool load_to_string_exceptionless(const char *filename) {
     return false;
   }
   std::cout << "serializing once." << std::endl;
-  std::string serial1;
+  std::string_view serial1;
   error = simdjson::to_json_string(doc).get(serial1);
   if (error) {
     std::cerr << error << std::endl;
     return false;
   }
-  serial1.reserve(serial1.size() + simdjson::SIMDJSON_PADDING);
-  error = parser.iterate(serial1).get(doc);
+  error = parser.iterate(serial1, serial1.size() + simdjson::SIMDJSON_PADDING).get(doc);
   if (error) {
     std::cerr << error << std::endl;
     return false;
   }
   std::cout << "serializing twice." << std::endl;
-  std::string serial2;
+  std::string_view serial2;
   error = simdjson::to_json_string(doc).get(serial2);
   if (error) {
     std::cerr << error << std::endl;

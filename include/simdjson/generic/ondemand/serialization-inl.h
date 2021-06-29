@@ -1,184 +1,184 @@
 
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
-namespace ondemand {
 
+inline std::string_view trim(const std::string_view str) {
+    // We can almost surely do better by rolling our own find_first_not_of function.
+    size_t first = str.find_first_not_of(" \t\n\r");
+    if (std::string_view ::npos == first) {
+        return str;
+    }
+    size_t last = str.find_last_not_of(" \t\n\r");
+    return str.substr(first, (last - first + 1));
+}
 
+inline simdjson_result<std::string_view> trim(simdjson_result<std::string_view> x) {
+    if (x.error()) { return x; }
+    return trim(x.value());
+}
 
-template <class serializer>
-inline simdjson::error_code string_builder<serializer>::append(document& element) noexcept {
+inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::document& x) {
+  using namespace SIMDJSON_IMPLEMENTATION::ondemand;
   json_type t;
-  auto e = element.type().get(t);
-  if(e != simdjson::SUCCESS) { return e; }
-  switch (t) {
-    case ondemand::json_type::array:
-      {
-        array x;
-        simdjson::error_code error = element.get_array().get(x);
-        if(error == simdjson::SUCCESS) {
-          append(x);
-        }
-        return error;
-      }
-    case ondemand::json_type::object:
-      {
-        object x;
-        simdjson::error_code error = element.get_object().get(x);
-        if(error == simdjson::SUCCESS) {
-          append(x);
-        }
-        return error;
-      }
-    case ondemand::json_type::number:
-      // Assume it fits in a double. We do not detect integer types. This could be improved.
-      {
-        double x;
-        simdjson::error_code error = element.get_double().get(x);
-        if(error == simdjson::SUCCESS) {
-          format.number(x);
-        }
-        return error;
-      }
-    case ondemand::json_type::string:
-      {
-        std::string_view x;
-        simdjson::error_code error = element.get_string().get(x);
-        if(error == simdjson::SUCCESS) {
-          format.string(x);
-        }
-        return error;
-      }
-    case ondemand::json_type::boolean:
-      {
-        bool x;
-        simdjson::error_code error = element.get_bool().get(x);
-        if(error == simdjson::SUCCESS) {
-          x ? format.true_atom() : format.false_atom();
-        }
-        return error;
-      }
-    case ondemand::json_type::null:
-      format.null_atom();
-      return simdjson::SUCCESS;
+  auto error = x.type().get(t);
+  if(error != SUCCESS) { return error; }
+  switch (t)
+  {
+    case json_type::array:
+      return to_json_string(x.get_array());
+    case json_type::object:
+      return to_json_string(x.get_object());
+    default:
+      return trim(x.raw_json_token());
   }
-  return simdjson::INCORRECT_TYPE;
 }
 
-template <class serializer>
-inline simdjson::error_code string_builder<serializer>::append(value element) noexcept {
-  json_type t;
-  auto e = element.type().get(t);
-  if(e != simdjson::SUCCESS) { return e; }
-  switch (t) {
-    case ondemand::json_type::array:
-      {
-        array x;
-        simdjson::error_code error = element.get_array().get(x);
-        if(error == simdjson::SUCCESS) {
-          append(x);
-        }
-        return error;
-      }
-    case ondemand::json_type::object:
-      {
-        object x;
-        simdjson::error_code error = element.get_object().get(x);
-        if(error == simdjson::SUCCESS) {
-          append(x);
-        }
-        return error;
-      }
-    case ondemand::json_type::number:
-      // Assume it fits in a double. We do not detect integer types. This could be improved.
-      {
-        double x;
-        simdjson::error_code error = element.get_double().get(x);
-        if(error == simdjson::SUCCESS) {
-          format.number(x);
-        }
-        return error;
-      }
-    case ondemand::json_type::string:
-      {
-        std::string_view x;
-        simdjson::error_code error = element.get_string().get(x);
-        if(error == simdjson::SUCCESS) {
-          format.string(x);
-        }
-        return error;
-      }
-      break;
-    case ondemand::json_type::boolean:
-      {
-        bool x;
-        simdjson::error_code error = element.get_bool().get(x);
-        if(error == simdjson::SUCCESS) {
-          x ? format.true_atom() : format.false_atom();
-        }
-        return error;
-      }
-    case ondemand::json_type::null:
-      format.null_atom();
-      return simdjson::SUCCESS;
+inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::value& x) {
+  using namespace SIMDJSON_IMPLEMENTATION::ondemand;
+  SIMDJSON_IMPLEMENTATION::ondemand::json_type t;
+  auto error = x.type().get(t);
+  if(error != SUCCESS) { return error; }
+  switch (t)
+  {
+    case json_type::array:
+      return to_json_string(x.get_array());
+    case json_type::object:
+      return to_json_string(x.get_object());
+    default:
+      return trim(x.raw_json_token());
   }
-  return simdjson::INCORRECT_TYPE;
 }
 
-template <class serializer>
-inline simdjson::error_code string_builder<serializer>::append(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::field x) noexcept {
-  // Performance note: There is a sizeable performance opportunity here to avoid unescaping
-  // and the re-escaping the key!!!!
-  std::string_view v;
-  auto error = x.unescaped_key().get(v);
-  if (error) { return error; }
-  format.key(v);
-  return append(x.value());
+inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::object& x) {
+    return trim(x.raw_json_token());
 }
 
-
-template <class serializer>
-inline simdjson::error_code string_builder<serializer>::append(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array x) noexcept {
-  format.start_array();
-  bool first{true};
-  for(simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> v: x) {
-    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value element;
-    simdjson::error_code error = std::move(v).get(element);
-    if(error != simdjson::SUCCESS) { return error; }
-    if(first) { first = false; }  else { format.comma(); };
-    error = append(element);
-    if(error != simdjson::SUCCESS) { return error; }
-  }
-  format.end_array();
-  return simdjson::SUCCESS;
+inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::array& x) {
+    return trim(x.raw_json_token());
 }
 
-template <class serializer>
-inline simdjson::error_code string_builder<serializer>::append(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object x) noexcept {
-  format.start_object();
-  bool first{true};
-  for(simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::field> r: x) {
-    simdjson::SIMDJSON_IMPLEMENTATION::ondemand::field element;
-    simdjson::error_code error = std::move(r).get(element);
-    if(error != simdjson::SUCCESS) { return error; }
-    if(first) { first = false; }  else { format.comma(); };
-    error = append(element);
-    if(error != simdjson::SUCCESS) { return error; }
-  }
-  format.end_object();
-  return simdjson::SUCCESS;
+inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> x) {
+    if (x.error()) { return x.error(); }
+    return to_json_string(x.value());
 }
 
-template <class serializer>
-simdjson_really_inline void string_builder<serializer>::clear() {
-  format.clear();
+inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> x) {
+    if (x.error()) { return x.error(); }
+    return to_json_string(x.value());
 }
 
-template <class serializer>
-simdjson_really_inline std::string_view string_builder<serializer>::str() const {
-  return format.str();
+inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> x) {
+    if (x.error()) { return x.error(); }
+    return to_json_string(x.value());
 }
 
-} // namespace ondemand
-} // namespace SIMDJSON_IMPLEMENTATION
+inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> x) {
+    if (x.error()) { return x.error(); }
+    return to_json_string(x.value());
+}
 } // namespace simdjson
+
+
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value x) {
+    std::string_view v;
+    auto error = simdjson::to_json_string(x).get(v);
+    if(error == simdjson::SUCCESS) {
+      return (out << v);
+    } else {
+      throw simdjson::simdjson_error(error);
+    }
+}
+inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> x) {
+    if (x.error()) { throw simdjson::simdjson_error(x.error()); }
+    return (out << x.value());
+}
+#else
+inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value x) {
+    std::string_view v;
+    auto error = simdjson::to_json_string(x).get(v);
+    if(error == simdjson::SUCCESS) {
+      return (out << v);
+    } else {
+      return (out << error);
+    }
+}
+#endif
+
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array value) {
+    std::string_view v;
+    auto error = simdjson::to_json_string(value).get(v);
+    if(error == simdjson::SUCCESS) {
+      return (out << v);
+    } else {
+      throw simdjson::simdjson_error(error);
+    }
+}
+inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array> x) {
+    if (x.error()) { throw simdjson::simdjson_error(x.error()); }
+    return (out << x.value());
+}
+#else
+inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array value) {
+    std::string_view v;
+    auto error = simdjson::to_json_string(value).get(v);
+    if(error == simdjson::SUCCESS) {
+      return (out << v);
+    } else {
+      return (out << error);
+    }
+}
+#endif
+
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document& value)  {
+    std::string_view v;
+    auto error = simdjson::to_json_string(value).get(v);
+    if(error == simdjson::SUCCESS) {
+      return (out << v);
+    } else {
+      throw simdjson::simdjson_error(error);
+    }
+}
+inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document> x) {
+    if (x.error()) { throw simdjson::simdjson_error(x.error()); }
+    return (out << x.value());
+}
+#else
+inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document& value)  {
+    std::string_view v;
+    auto error = simdjson::to_json_string(value).get(v);
+    if(error == simdjson::SUCCESS) {
+      return (out << v);
+    } else {
+      return (out << error);
+    }
+}
+#endif
+
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object value) {
+    std::string_view v;
+    auto error = simdjson::to_json_string(value).get(v);
+    if(error == simdjson::SUCCESS) {
+      return (out << v);
+    } else {
+      throw simdjson::simdjson_error(error);
+    }
+}
+inline std::ostream& operator<<(std::ostream& out,  simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object> x) {
+    if (x.error()) { throw  simdjson::simdjson_error(x.error()); }
+    return (out << x.value());
+}
+#else
+inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object value) {
+    std::string_view v;
+    auto error = simdjson::to_json_string(value).get(v);
+    if(error == simdjson::SUCCESS) {
+      return (out << v);
+    } else {
+      return (out << error);
+    }
+}
+#endif

@@ -45,6 +45,14 @@ simdjson_really_inline simdjson_result<object> object::start_root(value_iterator
   SIMDJSON_TRY( iter.start_root_object().get(has_value) );
   return object(iter);
 }
+simdjson_really_inline simdjson_result<std::string_view> object::raw_json_token() noexcept {
+  const uint8_t * starting_point{iter.peek_start()};
+  for (simdjson_unused auto field : *this) {}
+  if(iter.error()) { return iter.error(); }
+  const uint8_t * final_point{iter._json_iter->peek(0)};
+  return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
+}
+
 simdjson_really_inline object object::started(value_iterator &iter) noexcept {
   simdjson_unused bool has_value = iter.started_object();
   return iter;

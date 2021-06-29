@@ -313,7 +313,6 @@ protected:
 
   simdjson_really_inline bool parse_null(const uint8_t *json) const noexcept;
   simdjson_really_inline simdjson_result<bool> parse_bool(const uint8_t *json) const noexcept;
-
   simdjson_really_inline const uint8_t *peek_start() const noexcept;
   simdjson_really_inline uint32_t peek_start_length() const noexcept;
   simdjson_really_inline const uint8_t *advance_start(const char *type) const noexcept;

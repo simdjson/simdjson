@@ -73,6 +73,13 @@ public:
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
   inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
+  /**
+   * Consumes the array and return a string_view instance corresponding to the
+   * array as represented in JSON. It points inside the original document. The
+   * array must not have been previously accessed: we must still point at the
+   * beginning.
+   */
+  simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
 
 protected:
   /**

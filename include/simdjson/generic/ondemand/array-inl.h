@@ -72,6 +72,14 @@ simdjson_really_inline simdjson_result<array_iterator> array::end() noexcept {
   return array_iterator(iter);
 }
 
+simdjson_really_inline simdjson_result<std::string_view> array::raw_json_token() noexcept {
+  const uint8_t * starting_point{iter.peek_start()};
+  for(simdjson_unused auto v : *this) {}
+  if(iter.error()) { return iter.error(); }
+  const uint8_t * final_point{iter._json_iter->peek(0)};
+  return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
+}
+
 simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcept {
   size_t count{0};
   // Important: we do not consume any of the values.
