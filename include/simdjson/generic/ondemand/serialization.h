@@ -169,7 +169,7 @@ inline std::ostream& operator<<(std::ostream& out, object value) {
 
 namespace simdjson {
 
-inline simdjson::simdjson_result<std::string> to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document& x) {
+inline simdjson::simdjson_result<std::string> to_json_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document& x) {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
     auto error = sb.append(x);
     if(error != simdjson::SUCCESS) { return error; }
@@ -177,7 +177,7 @@ inline simdjson::simdjson_result<std::string> to_string(simdjson::SIMDJSON_IMPLE
     return std::string(answer.data(), answer.size());
 }
 
-inline simdjson::simdjson_result<std::string> to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value& x) {
+inline simdjson::simdjson_result<std::string> to_json_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value& x) {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
     auto error = sb.append(x);
     if(error != simdjson::SUCCESS) { return error; }
@@ -185,7 +185,7 @@ inline simdjson::simdjson_result<std::string> to_string(simdjson::SIMDJSON_IMPLE
     return std::string(answer.data(), answer.size());
 }
 
-inline simdjson::simdjson_result<std::string> to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object& x) {
+inline simdjson::simdjson_result<std::string> to_json_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object& x) {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
     auto error = sb.append(x);
     if(error != simdjson::SUCCESS) { return error; }
@@ -193,7 +193,7 @@ inline simdjson::simdjson_result<std::string> to_string(simdjson::SIMDJSON_IMPLE
     return std::string(answer.data(), answer.size());
 }
 
-inline simdjson::simdjson_result<std::string> to_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array& x) {
+inline simdjson::simdjson_result<std::string> to_json_string(simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array& x) {
     simdjson::SIMDJSON_IMPLEMENTATION::ondemand::string_builder<> sb;
     auto error = sb.append(x);
     if(error != simdjson::SUCCESS) { return error; }
@@ -203,24 +203,24 @@ inline simdjson::simdjson_result<std::string> to_string(simdjson::SIMDJSON_IMPLE
 
 #if SIMDJSON_EXCEPTIONS
 
-inline std::string to_string(simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document> x) {
+inline std::string to_json_string(simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document> x) {
     if (x.error()) { throw simdjson_error(x.error()); }
-    return to_string(x.value());
+    return to_json_string(x.value());
 }
 
-inline std::string to_string(simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> x) {
+inline std::string to_json_string(simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> x) {
     if (x.error()) { throw simdjson_error(x.error()); }
-    return to_string(x.value());
+    return to_json_string(x.value());
 }
 
-inline std::string to_string(simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object> x) {
+inline std::string to_json_string(simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object> x) {
     if (x.error()) { throw simdjson_error(x.error()); }
-    return to_string(x.value());
+    return to_json_string(x.value());
 }
 
-inline std::string to_string(simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array> x) {
+inline std::string to_json_string(simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array> x) {
     if (x.error()) { throw simdjson_error(x.error()); }
-    return to_string(x.value());
+    return to_json_string(x.value());
 }
 #endif
 } // namespace simdjson

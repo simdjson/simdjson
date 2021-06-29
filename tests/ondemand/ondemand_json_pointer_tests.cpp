@@ -46,7 +46,7 @@ namespace json_pointer_tests {
         std::string actual;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
         ASSERT_SUCCESS(doc.at_pointer(json_pointer).get(val));
-        ASSERT_SUCCESS(simdjson::to_string(val).get(actual));
+        ASSERT_SUCCESS(simdjson::to_json_string(val).get(actual));
         ASSERT_EQUAL(actual,expected);
         TEST_SUCCEED();
     }

@@ -28,7 +28,7 @@ bool issue1607() {
   ondemand::parser parser;
   ondemand::document doc = parser.iterate(cars_json);
   std::string expected = R"("result")";
-  std::string result = simdjson::to_string(doc["test"]);
+  std::string result = simdjson::to_json_string(doc["test"]);
   ASSERT_EQUAL(result, expected);
   TEST_SUCCEED();
 }
@@ -39,7 +39,7 @@ bool minify_demo() {
   auto cars_json = R"( { "test": "result"  }  )"_padded;
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(cars_json).get(doc) );
-  std::cout << simdjson::to_string(doc["test"]) << std::endl;
+  std::cout << simdjson::to_json_string(doc["test"]) << std::endl;
   TEST_SUCCEED();
 }
 
@@ -78,7 +78,7 @@ bool load_to_string(const char *filename) {
     return false;
   }
   std::cout << "serializing once." << std::endl;
-  std::string serial1 = simdjson::to_string(doc);
+  std::string serial1 = simdjson::to_json_string(doc);
   serial1.reserve(serial1.size() + simdjson::SIMDJSON_PADDING);
   error = parser.iterate(serial1).get(doc);
   if (error) {
@@ -86,7 +86,7 @@ bool load_to_string(const char *filename) {
     return false;
   }
   std::cout << "serializing twice." << std::endl;
-  std::string serial2 = simdjson::to_string(doc);
+  std::string serial2 = simdjson::to_json_string(doc);
   bool match = (serial1 == serial2);
   if (match) {
     std::cout << "Parsing to_string and calling to_string again results in the "
@@ -127,7 +127,7 @@ bool load_to_string_exceptionless(const char *filename) {
   }
   std::cout << "serializing once." << std::endl;
   std::string serial1;
-  error = simdjson::to_string(doc).get(serial1);
+  error = simdjson::to_json_string(doc).get(serial1);
   if (error) {
     std::cerr << error << std::endl;
     return false;
@@ -140,7 +140,7 @@ bool load_to_string_exceptionless(const char *filename) {
   }
   std::cout << "serializing twice." << std::endl;
   std::string serial2;
-  error = simdjson::to_string(doc).get(serial2);
+  error = simdjson::to_json_string(doc).get(serial2);
   if (error) {
     std::cerr << error << std::endl;
     return false;
