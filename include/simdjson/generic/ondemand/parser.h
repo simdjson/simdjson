@@ -38,6 +38,11 @@ public:
    *   ondemand::parser parser;
    *   document doc = parser.iterate(json);
    *
+   * ### IMPORTANT: Validate what you use
+   *
+   * Calling iterate on an invalid JSON document may not immediately trigger an error. The call to
+   * iterate does not parse and validate the whole document.
+   *
    * ### IMPORTANT: Buffer Lifetime
    *
    * Because parsing is done while you iterate, you *must* keep the JSON buffer around at least as

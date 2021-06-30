@@ -72,7 +72,35 @@ inline void log_error(const value_iterator &iter, const char *error, const char 
 
 inline void log_headers() noexcept {
   if (LOG_ENABLED) {
+    // Technically a static variable is not thread-safe, but if you are using threads
+    // and logging... well...
+    static bool displayed_hint{false};
     log_depth = 0;
+    printf("\n");
+    if(!displayed_hint) {
+      // We only print this helpful header once.
+      printf("# Logging provides the depth and position of the iterator user-visible steps:\n");
+      printf("# +array says 'this is where we were when we discovered the start array'\n");
+      printf("# -array says 'this is where we were when we ended the array'\n");
+      printf("# skip says 'this is a structural or value I am skipping'\n");
+      printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
+      printf("#\n");
+      printf("# The identation of the terms (array, string,...) indicates the depth,\n");
+      printf("# in addition to the depth being displayed.\n");
+      printf("#\n");
+      printf("# Every token in the document has a single depth determined by the tokens before it,\n");
+      printf("# and is not affected by what the token actually is.\n");
+      printf("#\n");
+      printf("# Not all structural elements are presented as tokens in the logs.\n");
+      printf("#\n");
+      printf("# We never give control to the user within an empty array or an empty object.\n");
+      printf("#\n");
+      printf("# Inside an array, having a depth greater than the array's depth means that\n");
+      printf("# we are pointing inside a value.\n");
+      printf("# Having a depth equal to the array means that we are pointing right before a value.\n");
+      printf("# Having a depth smaller than the array means that we have moved beyond the array.\n");
+      displayed_hint = true;
+    }
     printf("\n");
     printf("| %-*s ", LOG_EVENT_LEN,        "Event");
     printf("| %-*s ", LOG_BUFFER_LEN,       "Buffer");

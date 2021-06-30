@@ -53,6 +53,7 @@ namespace json_pointer_tests {
 
     bool run_failure_test(const padded_string & json,std::string_view json_pointer,error_code expected) {
         TEST_START();
+        std::cout << "json_pointer: " << json_pointer << std::endl;
         ondemand::parser parser;
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
@@ -123,7 +124,92 @@ namespace json_pointer_tests {
         if (measured != expected) { return false; }
         TEST_SUCCEED();
     }
+    bool run_broken_tests() {
+        TEST_START();
+        ondemand::parser parser;
+        ondemand::document doc;
+        ondemand::value v;
+        std::string_view val;
 
+        auto invalid_escape_key = R"( {"hello": [0,1,2,3], "te\est": "foo", "bool": true, "num":1234, "success":"yes"} )"_padded;
+        auto invalid_escape_value = R"( {"hello": [0,1,2,3], "test": "fo\eo", "bool": true, "num":1234, "success":"yes"} )"_padded;
+        auto invalid_escape_value_at_jp = R"( {"hello": [0,1,2,3], "test": "foo", "bool": true, "num":1234, "success":"y\es"} )"_padded;
+        auto unclosed_object = R"( {"test": "foo", "bool": true, "num":1234, "success":"yes" )"_padded;
+        auto missing_bracket_before = R"( {"hello": [0,1,2,3, "test": "foo", "bool": true, "num":1234, "success":"yes"} )"_padded;
+        auto missing_bracket_after = R"( {"test": "foo", "bool": true, "num":1234, "success":"yes", "hello":[0,1,2,3} )"_padded;
+
+        std::string json_pointer = "/success";
+        std::cout << "\t- invalid_escape_key" << std::endl;
+        ASSERT_SUCCESS(parser.iterate(invalid_escape_key).get(doc));
+        ASSERT_SUCCESS(doc.at_pointer(json_pointer).get(val));
+        std::cout << "\t- invalid_escape_value" << std::endl;
+        ASSERT_SUCCESS(parser.iterate(invalid_escape_value).get(doc));
+        ASSERT_SUCCESS(doc.at_pointer(json_pointer).get(val));
+        std::cout << "\t- invalid_escape_value_at_jp_nomat" << std::endl;
+        ASSERT_SUCCESS(parser.iterate(invalid_escape_value_at_jp).get(doc));
+        ASSERT_SUCCESS(doc.at_pointer(json_pointer).get(v));
+        std::cout << "\t- invalid_escape_value_at_jp" << std::endl;
+        ASSERT_SUCCESS(parser.iterate(invalid_escape_value_at_jp).get(doc));
+        ASSERT_ERROR(doc.at_pointer(json_pointer).get(val), simdjson::STRING_ERROR);
+        std::cout << "\t- unclosed_object" << std::endl;
+        ASSERT_SUCCESS(parser.iterate(unclosed_object).get(doc));
+        ASSERT_ERROR(doc.at_pointer(json_pointer).get(val), simdjson::TAPE_ERROR);
+        std::cout << "\t- missing_bracket_before" << std::endl;
+        ASSERT_SUCCESS(parser.iterate(missing_bracket_before).get(doc));
+        ASSERT_ERROR(doc.at_pointer(json_pointer).get(val), simdjson::TAPE_ERROR);
+        std::cout << "\t- missing_bracket_after" << std::endl;
+        ASSERT_SUCCESS(parser.iterate(missing_bracket_after).get(doc));
+        ASSERT_SUCCESS(doc.at_pointer(json_pointer).get(val));
+        TEST_SUCCEED();
+    }
+
+
+    bool many_json_pointers_object_array() {
+        TEST_START();
+        auto dogcatpotato = R"( { "dog" : [1,2,3], "cat" : [5, 6, 7], "potato" : [1234]})"_padded;
+
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(dogcatpotato).get(doc));
+        ondemand::object obj;
+        ASSERT_SUCCESS(doc.get_object().get(obj));
+        int64_t x;
+        ASSERT_SUCCESS(obj.at_pointer("/dog/1").get(x));
+        ASSERT_EQUAL(x, 2);
+        ASSERT_SUCCESS(obj.at_pointer("/potato/0").get(x));
+        ASSERT_EQUAL(x, 1234);
+        TEST_SUCCEED();
+    }
+    bool many_json_pointers_object() {
+        TEST_START();
+        auto cfoofoo2 = R"( { "c" :{ "foo": { "a": [ 10, 20, 30 ] }}, "d": { "foo2": { "a": [ 10, 20, 30 ] }} , "e": 120 })"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(cfoofoo2).get(doc));
+        ondemand::object obj;
+        ASSERT_SUCCESS(doc.get_object().get(obj));
+        int64_t x;
+        ASSERT_SUCCESS(obj.at_pointer("/c/foo/a/1").get(x));
+        ASSERT_EQUAL(x, 20);
+        ASSERT_SUCCESS(obj.at_pointer("/d/foo2/a/2").get(x));
+        ASSERT_EQUAL(x, 30);
+        ASSERT_SUCCESS(obj.at_pointer("/e").get(x));
+        ASSERT_EQUAL(x, 120);
+        TEST_SUCCEED();
+    }
+    bool many_json_pointers_array() {
+        TEST_START();
+        auto cfoofoo2 = R"( [ 111, 2, 3, { "foo": { "a": [ 10, 20, 33 ] }}, { "foo2": { "a": [ 10, 20, 30 ] }}, 1001 ])"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(cfoofoo2).get(doc));
+        ondemand::array arr;
+        ASSERT_SUCCESS(doc.get_array().get(arr));
+        int64_t x;
+        ASSERT_SUCCESS(arr.at_pointer("/3/foo/a/1").get(x));
+        ASSERT_EQUAL(x, 20);
+        TEST_SUCCEED();
+    }
     struct car_type {
         std::string make;
         std::string model;
@@ -182,6 +268,10 @@ namespace json_pointer_tests {
 
     bool run() {
         return
+                many_json_pointers_array() &&
+                many_json_pointers_object() &&
+                many_json_pointers_object_array() &&
+                run_broken_tests() &&
                 json_pointer_invalidation() &&
                 demo_test() &&
                 demo_relative_path() &&

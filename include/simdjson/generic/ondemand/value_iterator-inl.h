@@ -194,9 +194,8 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // this object iterator will blithely scan that object for fields.
     if (_json_iter->depth() < depth() - 1) { return OUT_OF_ORDER_ITERATION; }
 #endif
-    _json_iter->reenter_child(_start_position + 1, _depth);
+    has_value = reset_object();
     at_first = true;
-    has_value = started_object();
   // 3. When a previous search found a field or an iterator yielded a value:
   //
   //    ```
@@ -288,8 +287,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   // beginning of the object.
   // (We have already run through the object before, so we've already validated its structure. We
   // don't check errors in this bit.)
-  _json_iter->reenter_child(_start_position + 1, _depth);
-  has_value = started_object();
+  has_value = reset_object();
   while (true) {
     SIMDJSON_ASSUME(has_value); // we should reach search_start before ever reaching the end of the object
     SIMDJSON_ASSUME( _json_iter->_depth == _depth ); // We must be at the start of a field
@@ -604,9 +602,6 @@ simdjson_really_inline error_code value_iterator::incorrect_type_error(const cha
 simdjson_really_inline bool value_iterator::is_at_start() const noexcept {
   return _json_iter->token.index == _start_position;
 }
-simdjson_really_inline bool value_iterator::is_at_container_start() const noexcept {
-  return _json_iter->token.index == _start_position + 1;
-}
 simdjson_really_inline bool value_iterator::is_at_iterator_start() const noexcept {
   // We can legitimately be either at the first value ([1]), or after the array if it's empty ([]).
   auto delta = _json_iter->token.index - _start_position;
@@ -631,15 +626,24 @@ inline void value_iterator::assert_at_next() const noexcept {
   SIMDJSON_ASSUME( _depth > 0 );
 }
 
+simdjson_really_inline void value_iterator::move_at_start() noexcept {
+  _json_iter->_depth = _depth;
+  _json_iter->token.index = _start_position;
+}
 
-simdjson_really_inline void value_iterator::enter_at_container_start() noexcept {
-  _json_iter->_depth = _depth + 1;
+simdjson_really_inline void value_iterator::move_at_container_start() noexcept {
+  _json_iter->_depth = _depth;
   _json_iter->token.index = _start_position + 1;
 }
 
-simdjson_really_inline void value_iterator::move_at_start() noexcept {
-    _json_iter->_depth = _depth;
-  _json_iter->token.index = _start_position;
+simdjson_really_inline bool value_iterator::reset_array() noexcept {
+  move_at_container_start();
+  return started_array();
+}
+
+simdjson_really_inline bool value_iterator::reset_object() noexcept {
+  move_at_container_start();
+  return started_object();
 }
 
 inline void value_iterator::assert_at_child() const noexcept {

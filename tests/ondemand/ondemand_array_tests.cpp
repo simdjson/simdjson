@@ -64,31 +64,23 @@ namespace array_tests {
       for (auto value : array) {
         ondemand::object current_object;
         ASSERT_SUCCESS( value.get_object().get(current_object) );
-        std::cout << "[ondemand::issue1588::sequence] acquired a new object ==========" << std::endl;
-
         simdjson::ondemand::array rotation;
         if(expected_value[i][0]) {
           ASSERT_SUCCESS( current_object["rotation"].get(rotation) );
-          std::cout << "[ondemand::issue1588::sequence] found 'rotation' " << std::endl;
         } else {
           ASSERT_ERROR( current_object["rotation"].get(rotation), NO_SUCH_FIELD );
-          std::cout << "[ondemand::issue1588::sequence] rotation not found" << std::endl;
         }
         simdjson::ondemand::array scale;
         if(expected_value[i][1]) {
           ASSERT_SUCCESS( current_object["scale"].get(scale) );
-          std::cout << "[ondemand::issue1588::sequence] found 'scale' " << std::endl;
         } else {
           ASSERT_ERROR( current_object["scale"].get(scale), NO_SUCH_FIELD );
-          std::cout << "[ondemand::issue1588::sequence] scale not found" << std::endl;
         }
         simdjson::ondemand::array translation;
         if(expected_value[i][2]) {
           ASSERT_SUCCESS( current_object["translation"].get(translation) );
-          std::cout << "[ondemand::issue1588::sequence] found 'translation' " << std::endl;
         } else {
           ASSERT_ERROR( current_object["translation"].get(translation), NO_SUCH_FIELD );
-          std::cout << "[ondemand::issue1588::sequence] translation not found" << std::endl;
         }
         i++;
       }
@@ -139,15 +131,23 @@ namespace array_tests {
   bool iterate_complex_array_count() {
     TEST_START();
     ondemand::parser parser;
-    auto cars_json = R"( { "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )"_padded;
+    auto cars_json = R"( { "zero":[], "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )"_padded;
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(cars_json).get(doc));
-    ondemand::array myarray;
-    ASSERT_SUCCESS(doc.find_field("test").get_array().get(myarray));
-    size_t count;
-    ASSERT_SUCCESS(myarray.count_elements().get(count));
-    size_t new_count = 0;
-    for(simdjson_unused auto elem: myarray) { new_count++; }
+    ondemand::array firstmyarray;
+    ondemand::array secondmyarray;
+    ASSERT_SUCCESS(doc.find_field("zero").get_array().get(firstmyarray));
+    size_t count{0};
+    ASSERT_SUCCESS(firstmyarray.count_elements().get(count));
+    ASSERT_EQUAL(count, 0);
+    size_t new_count{0};
+    for(simdjson_unused auto elem: firstmyarray) { new_count++; }
+    ASSERT_EQUAL(new_count, 0);
+    ASSERT_SUCCESS(doc.find_field("test").get_array().get(secondmyarray));
+    ASSERT_SUCCESS(secondmyarray.count_elements().get(count));
+    ASSERT_EQUAL(count, 2);
+    new_count = 0;
+    for(simdjson_unused auto elem: secondmyarray) { new_count++; }
     ASSERT_EQUAL(count, new_count);
     TEST_SUCCEED();
   }
