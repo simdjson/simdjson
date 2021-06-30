@@ -15,7 +15,7 @@ class parser;
  * @private This is not intended for external use.
  */
 class json_iterator {
-protected:
+public:
   token_iterator token{};
   ondemand::parser *parser{};
   /**
@@ -155,8 +155,8 @@ public:
    *
    * @param child_depth the expected child depth.
    */
-  simdjson_really_inline void descend_to(depth_t parent_depth) noexcept;
-  simdjson_really_inline void descend_to(depth_t parent_depth, int32_t delta) noexcept;
+  simdjson_really_inline void descend_to(depth_t child_depth) noexcept;
+  simdjson_really_inline void descend_to(depth_t child_depth, int32_t delta) noexcept;
 
   /**
    * Get current depth.
@@ -205,6 +205,7 @@ protected:
   simdjson_really_inline token_position last_document_position() const noexcept;
 
   friend class document;
+  friend class document_stream;
   friend class object;
   friend class array;
   friend class value;
