@@ -115,13 +115,20 @@ inline void document_stream::start() noexcept {
 inline void document_stream::next() noexcept {
   // We always enter at once once in an error condition.
   if (error) { return; }
-  /** This does not work, but this is the idea
+  // This does not work, but this is the idea
+  iter.advance();
   do {
-    iter.skip_child(0);
+    switch (*iter.advance()) {
+      case '[': case '{':
+        iter._depth++;
+        break;
+      case ']': case '}':
+        iter._depth--;
+        break;
+    }
   } while(iter._depth != 0);
   iter._depth = 1;
   if (error) { return; }
-  */
   //doc_index = batch_start + parser->implementation->structural_indexes[parser->implementation->next_structural_index];
 
   // If that was the last document in the batch, load another batch (if available)
