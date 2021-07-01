@@ -44,6 +44,12 @@ protected:
    * - 3 = key or value inside root array/object.
    */
   depth_t _depth{};
+  /**
+   * Beginning of the document indexes.
+   * Normally we have root == parser->implementation->structural_indexes.get()
+   * but this may differ.
+   */
+  token_position _root{};
 
 public:
   simdjson_really_inline json_iterator() noexcept = default;

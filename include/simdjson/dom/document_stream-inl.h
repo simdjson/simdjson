@@ -126,8 +126,6 @@ simdjson_really_inline document_stream::iterator::iterator() noexcept
 }
 
 simdjson_really_inline document_stream::iterator document_stream::begin() noexcept {
-    printf("document_stream::begin()\n");
-
   start();
   // If there are no documents, we're finished.
   return iterator(this, error == EMPTY);
@@ -183,7 +181,6 @@ simdjson_really_inline bool document_stream::iterator::operator!=(const document
 }
 
 inline void document_stream::start() noexcept {
-  printf("calling start();\n");
   if (error) { return; }
   error = parser->ensure_capacity(batch_size);
   if (error) { return; }
@@ -191,7 +188,6 @@ inline void document_stream::start() noexcept {
   batch_start = 0;
   error = run_stage1(*parser, batch_start);
   if(error == EMPTY) {
-    printf("calling start():EMPOTY\n");
     // In exceptional cases, we may start with an empty block
     batch_start = next_batch_start();
     if (batch_start >= len) { return; }
@@ -208,7 +204,6 @@ inline void document_stream::start() noexcept {
     if (error) { return; }
   }
 #endif // SIMDJSON_THREADS_ENABLED
-    printf("calling start()... Ok\n");
 
   next();
 }
@@ -231,7 +226,6 @@ simdjson_really_inline std::string_view document_stream::iterator::source() cons
 
 
 inline void document_stream::next() noexcept {
-  printf("document_stream::next()\n");
   // We always enter at once once in an error condition.
   if (error) { return; }
 
@@ -240,7 +234,6 @@ inline void document_stream::next() noexcept {
   error = parser->implementation->stage2_next(parser->doc);
   // If that was the last document in the batch, load another batch (if available)
   while (error == EMPTY) {
-    printf("document_stream::next() emtpy\n");
     batch_start = next_batch_start();
     if (batch_start >= len) { break; }
 

@@ -53,7 +53,7 @@ public:
     /**
      * Get the current document (or error).
      */
-    simdjson_really_inline simdjson_result<ondemand::document> operator*() noexcept;
+    simdjson_really_inline ondemand::document& operator*() noexcept;
     /**
      * Advance to the next document (prefix).
      */
@@ -161,8 +161,12 @@ public:
   const uint8_t *buf;
   size_t len;
   size_t batch_size;
-  ondemand::json_iterator iter{};
-  simdjson_result<ondemand::document>* current_document{nullptr};
+  /**
+   * We are going to use just one document instance. The document owns
+   * the json_iterator. It implies that we only ever pass a reference
+   * to the document to the users.
+   */
+  document doc{};
   /** The error (or lack thereof) from the current document. */
   error_code error;
   size_t batch_start{0};

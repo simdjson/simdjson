@@ -7,18 +7,18 @@ simdjson_really_inline json_iterator::json_iterator(json_iterator &&other) noexc
     parser{other.parser},
     _string_buf_loc{other._string_buf_loc},
     error{other.error},
-    _depth{other._depth}
+    _depth{other._depth},
+    _root{other._root}
 {
-  printf("json_iterator MOVE\n");
   other.parser = nullptr;
 }
 simdjson_really_inline json_iterator &json_iterator::operator=(json_iterator &&other) noexcept {
-    printf("json_iterator ASSIGN\n");
   token = other.token;
   parser = other.parser;
   _string_buf_loc = other._string_buf_loc;
   error = other.error;
   _depth = other._depth;
+  _root = other._root;
   other.parser = nullptr;
   return *this;
 }
@@ -27,13 +27,14 @@ simdjson_really_inline json_iterator::json_iterator(const uint8_t *buf, ondemand
   : token(buf, _parser->implementation->structural_indexes.get()),
     parser{_parser},
     _string_buf_loc{parser->string_buf.get()},
-    _depth{1}
+    _depth{1},
+    _root{parser->implementation->structural_indexes.get()}
 {
   logger::log_headers();
 }
 
 inline void json_iterator::rewind() noexcept {
-  token.index = parser->implementation->structural_indexes.get();
+  token.index = _root;
   logger::log_headers(); // We start again
   _string_buf_loc = parser->string_buf.get();
   _depth = 1;
@@ -125,14 +126,14 @@ simdjson_really_inline bool json_iterator::at_root() const noexcept {
 }
 
 simdjson_really_inline token_position json_iterator::root_checkpoint() const noexcept {
-  return parser->implementation->structural_indexes.get();
+  return _root;
 }
 
 simdjson_really_inline void json_iterator::assert_at_root() const noexcept {
   SIMDJSON_ASSUME( _depth == 1 );
   // Visual Studio Clang treats unique_ptr.get() as "side effecting."
 #ifndef SIMDJSON_CLANG_VISUAL_STUDIO
-  SIMDJSON_ASSUME( token.index == parser->implementation->structural_indexes.get() );
+  SIMDJSON_ASSUME( token.index == _root );
 #endif
 }
 
@@ -155,7 +156,6 @@ simdjson_really_inline bool json_iterator::is_alive() const noexcept {
 }
 
 simdjson_really_inline void json_iterator::abandon() noexcept {
-  std::cout << "=== json_iterator::abandon() " << std::endl;
   parser = nullptr;
   _depth = 0;
 }

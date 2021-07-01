@@ -17,20 +17,15 @@ namespace document_stream_tests {
         ondemand::parser parser;
         ondemand::document_stream stream;
         ondemand::document_stream::iterator i;
-        ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
         i = stream.begin();
-        ASSERT_SUCCESS((*i).get(doc));
-        ASSERT_EQUAL(my_string(doc), "[1,[1,2]]");
+        ASSERT_EQUAL(my_string(*i), "[1,[1,2]]");
         ++i;
-        ASSERT_SUCCESS((*i).get(doc));
-        ASSERT_EQUAL(my_string(doc), "{\"a\":1,\"b\":2}");
+        ASSERT_EQUAL(my_string(*i), "{\"a\":1,\"b\":2}");
         ++i;
-        ASSERT_SUCCESS((*i).get(doc));
-        ASSERT_EQUAL(my_string(doc), "{\"o\":{\"1\":1,\"2\":2}}");
+        ASSERT_EQUAL(my_string(*i), "{\"o\":{\"1\":1,\"2\":2}}");
         ++i;
-        ASSERT_SUCCESS((*i).get(doc));
-        ASSERT_EQUAL(my_string(doc), "[1,2,3]");
+        ASSERT_EQUAL(my_string(*i), "[1,2,3]");
         TEST_SUCCEED();
     }
 

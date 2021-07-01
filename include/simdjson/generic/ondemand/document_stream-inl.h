@@ -43,13 +43,8 @@ simdjson_really_inline document_stream::iterator::iterator(document_stream* _str
   : stream{_stream}, finished{is_end} {
 }
 
-simdjson_really_inline simdjson_result<ondemand::document> document_stream::iterator::operator*() noexcept {
-  // Note that in case of error, we do not yet mark
-  // the iterator as "finished": this detection is done
-  // in the operator++ function since it is possible
-  // to call operator++ repeatedly while omitting
-  // calls to operator*.
-  return document::start(std::move(stream->iter));
+simdjson_really_inline ondemand::document& document_stream::iterator::operator*() noexcept {
+  return stream->doc;
 }
 
 simdjson_really_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {
@@ -94,8 +89,6 @@ simdjson_really_inline document_stream::iterator document_stream::end() noexcept
 }
 
 inline void document_stream::start() noexcept {
-      printf("document_stream::start()\n");
-
   if (error) { return; }
   error = parser->allocate(batch_size);
   if (error) { return; }
@@ -109,37 +102,42 @@ inline void document_stream::start() noexcept {
     error = run_stage1(*parser, batch_start);
   }
   if (error) { return; }
-        printf("document_stream::start() assigning json_iterator\n");
-
-  iter = json_iterator(buf, parser);
-          printf("document_stream::start() assigning json_iterator OK\n");
-
+  doc = document(json_iterator(buf, parser));
 }
 
 inline void document_stream::next() noexcept {
-            printf("document_stream::next()\n");
-
   // We always enter at once once in an error condition.
   if (error) { return; }
-  // This does not work, but this is the idea
-  iter.advance();
-  do {
-    switch (*iter.advance()) {
+  // If we have not made it to the end, then just skip the rest of the document.
+  ///////////////
+  // TODO: the next few lines should probably not be written in this manner as it
+  // is not modular code.
+  ///////////////
+  while(doc.iter._depth != 0) {
+    switch (*doc.iter.advance()) {
       case '[': case '{':
-        iter._depth++;
+        doc.iter._depth++;
         break;
       case ']': case '}':
-        iter._depth--;
+        doc.iter._depth--;
         break;
     }
-  } while(iter._depth != 0);
-  iter._depth = 1;
-  if (error) { return; }
-  std::cout << "iter is at  " << iter.to_string() << std::endl;
+  }
+  doc.iter._depth = 1;
+  // resets the string buffer at the beginning, thus invalidating the strings.
+  doc.iter._string_buf_loc = parser->string_buf.get();
+  doc.iter._root = doc.iter.token.position();
+  /////////////////////////////////
+  // TODO: fix doc_index!!!
   //doc_index = batch_start + parser->implementation->structural_indexes[parser->implementation->next_structural_index];
+  /////////////////////////////////
 
+  // TODO: Fix me as this is almost surely junk.
+  if(doc.iter._root > doc.iter.last_document_position()) {
+    error = EMPTY;
+  }
+  // TODO: this is almost certainly junk code.
   // If that was the last document in the batch, load another batch (if available)
-  /*
   while (error == EMPTY) {
     batch_start = next_batch_start();
     if (batch_start >= len) { break; }
@@ -149,7 +147,7 @@ inline void document_stream::next() noexcept {
     if (error) { continue; } // If the error was EMPTY, we may want to load another batch.
     // Run stage 2 on the first document in the batch
     doc_index = batch_start + parser->implementation->structural_indexes[parser->implementation->next_structural_index];
-  }*/
+  }
 }
 
 inline size_t document_stream::next_batch_start() const noexcept {
