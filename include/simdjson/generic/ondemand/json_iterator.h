@@ -15,7 +15,7 @@ class parser;
  * @private This is not intended for external use.
  */
 class json_iterator {
-public:
+protected:
   token_iterator token{};
   ondemand::parser *parser{};
   /**

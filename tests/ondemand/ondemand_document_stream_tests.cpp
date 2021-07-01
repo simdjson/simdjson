@@ -4,6 +4,13 @@
 using namespace simdjson;
 
 namespace document_stream_tests {
+
+    std::string my_string(ondemand::document& doc) {
+        std::stringstream ss;
+        ss << doc;
+        return ss.str();
+    }
+
     bool testing() {
         TEST_START();
         auto json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3])"_padded;
@@ -13,39 +20,23 @@ namespace document_stream_tests {
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
         i = stream.begin();
-        doc = *i;
-        std::cout << doc.iter.peek() << std::endl;  // Prints [1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3]
+        ASSERT_SUCCESS((*i).get(doc));
+        ASSERT_EQUAL(my_string(doc), "[1,[1,2]]");
         ++i;
-        doc = *i;
-        std::cout << doc.iter.peek() << std::endl;  // Prints {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3]
+        ASSERT_SUCCESS((*i).get(doc));
+        ASSERT_EQUAL(my_string(doc), "{\"a\":1,\"b\":2}");
         ++i;
-        doc = *i;
-        std::cout << doc.iter.peek() << std::endl;  // Prints {"o":{"1":1,"2":2}} [1,2,3]
+        ASSERT_SUCCESS((*i).get(doc));
+        ASSERT_EQUAL(my_string(doc), "{\"o\":{\"1\":1,\"2\":2}}");
         ++i;
-        doc = *i;
-        std::cout << doc.iter.peek() << std::endl;  // Prints [1,2,3]
+        ASSERT_SUCCESS((*i).get(doc));
+        ASSERT_EQUAL(my_string(doc), "[1,2,3]");
         TEST_SUCCEED();
-    }
-
-    bool actual() {
-        TEST_START();
-        auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
-        dom::parser parser;
-        dom::document_stream stream;
-        dom::document_stream::iterator i;
-        ASSERT_SUCCESS(parser.parse_many(json).get(stream));
-        i = stream.begin();
-        auto doc = *i;
-        std::cout << doc << std::endl;
-        //std::cout << i.stream->doc_index << std::endl;
-        //std::cout << i.stream->parser->implementation->next_structural_index << std::endl;
-        TEST_SUCCEED()
     }
 
     bool run() {
         return
                 testing() &&
-                actual() &&
                 true;
     }
 } // document_stream_tests

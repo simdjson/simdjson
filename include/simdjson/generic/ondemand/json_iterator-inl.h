@@ -9,9 +9,11 @@ simdjson_really_inline json_iterator::json_iterator(json_iterator &&other) noexc
     error{other.error},
     _depth{other._depth}
 {
+  printf("json_iterator MOVE\n");
   other.parser = nullptr;
 }
 simdjson_really_inline json_iterator &json_iterator::operator=(json_iterator &&other) noexcept {
+    printf("json_iterator ASSIGN\n");
   token = other.token;
   parser = other.parser;
   _string_buf_loc = other._string_buf_loc;
@@ -153,6 +155,7 @@ simdjson_really_inline bool json_iterator::is_alive() const noexcept {
 }
 
 simdjson_really_inline void json_iterator::abandon() noexcept {
+  std::cout << "=== json_iterator::abandon() " << std::endl;
   parser = nullptr;
   _depth = 0;
 }

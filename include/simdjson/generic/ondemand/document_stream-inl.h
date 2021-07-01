@@ -49,8 +49,6 @@ simdjson_really_inline simdjson_result<ondemand::document> document_stream::iter
   // in the operator++ function since it is possible
   // to call operator++ repeatedly while omitting
   // calls to operator*.
-  if (stream->error) { return stream->error; }
-
   return document::start(std::move(stream->iter));
 }
 
@@ -96,6 +94,8 @@ simdjson_really_inline document_stream::iterator document_stream::end() noexcept
 }
 
 inline void document_stream::start() noexcept {
+      printf("document_stream::start()\n");
+
   if (error) { return; }
   error = parser->allocate(batch_size);
   if (error) { return; }
@@ -109,10 +109,16 @@ inline void document_stream::start() noexcept {
     error = run_stage1(*parser, batch_start);
   }
   if (error) { return; }
-  iter = json_iterator(buf,parser);
+        printf("document_stream::start() assigning json_iterator\n");
+
+  iter = json_iterator(buf, parser);
+          printf("document_stream::start() assigning json_iterator OK\n");
+
 }
 
 inline void document_stream::next() noexcept {
+            printf("document_stream::next()\n");
+
   // We always enter at once once in an error condition.
   if (error) { return; }
   // This does not work, but this is the idea
@@ -129,6 +135,7 @@ inline void document_stream::next() noexcept {
   } while(iter._depth != 0);
   iter._depth = 1;
   if (error) { return; }
+  std::cout << "iter is at  " << iter.to_string() << std::endl;
   //doc_index = batch_start + parser->implementation->structural_indexes[parser->implementation->next_structural_index];
 
   // If that was the last document in the batch, load another batch (if available)

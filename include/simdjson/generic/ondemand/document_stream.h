@@ -162,6 +162,7 @@ public:
   size_t len;
   size_t batch_size;
   ondemand::json_iterator iter{};
+  simdjson_result<ondemand::document>* current_document{nullptr};
   /** The error (or lack thereof) from the current document. */
   error_code error;
   size_t batch_start{0};
