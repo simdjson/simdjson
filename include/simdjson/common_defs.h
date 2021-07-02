@@ -49,6 +49,24 @@ constexpr size_t SIMDJSON_PADDING = 32;
  */
 constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
+/** The default batch size for parser.iterate_many, parser.parse_many() and parser.load_many() */
+static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
+
+/**
+ * Some adversary might try to set the batch size to 0 or 1, which might cause problems.
+ * We set a minimum of 32B since anything else is highly likely to be an error. In practice,
+ * most users will want a much larger batch size.
+ *
+ * All non-negative MINIMAL_BATCH_SIZE values should be 'safe' except that, obviously, no JSON
+ * document can ever span 0 or 1 byte and that very large values would create memory allocation issues.
+ */
+static constexpr size_t MINIMAL_BATCH_SIZE = 4; // DEFAULT: 32
+
+/**
+ * It is wasteful to allocate memory for tiny documents (e.g., 4 bytes).
+ */
+static constexpr size_t MINIMAL_DOCUMENT_CAPACITY = 32;
+
 } // namespace simdjson
 
 #if defined(__GNUC__)

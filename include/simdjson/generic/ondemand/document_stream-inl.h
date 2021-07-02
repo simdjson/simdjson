@@ -14,7 +14,7 @@ simdjson_really_inline document_stream::document_stream(
   : parser{&_parser},
     buf{_buf},
     len{_len},
-    batch_size{_batch_size <= MINIMAL_BATCH_SIZE ? MINIMAL_BATCH_SIZE : _batch_size},
+    batch_size{_batch_size <= simdjson::MINIMAL_BATCH_SIZE ? simdjson::MINIMAL_BATCH_SIZE : _batch_size},
     error{SUCCESS}
 {}
 
@@ -110,23 +110,24 @@ inline void document_stream::next() noexcept {
   if (error) { return; }
   next_document();
   if (error) { return; }
-
   doc_index = batch_start + parser->implementation->structural_indexes[doc.iter._root - parser->implementation->structural_indexes.get()];
-  // TODO: Fix me as this is almost surely junk.
-  if(doc.iter._root > doc.iter.last_document_position()) {
+
+  // Check if at end of structural indexes (i.e. at end of batch)
+  if(doc.iter._root - parser->implementation->structural_indexes.get() >= parser->implementation->n_structural_indexes) {
     error = EMPTY;
-  }
-  // TODO: this is almost certainly junk code.
-  // If that was the last document in the batch, load another batch (if available)
-  while (error == EMPTY) {
-    batch_start = next_batch_start();
-    if (batch_start >= len) { break; }
+    //std::cout << "LOADING NEW BATCH" << std::endl;
+    // Load another batch (if available)
+    while (error == EMPTY) {
+      batch_start = next_batch_start();
+      if (batch_start >= len) { break; }
 
-    error = run_stage1(*parser, batch_start);
+      std::cout << "FINE: " << doc.iter.peek() <<std::endl;
+      error = run_stage1(*parser, batch_start);
+      std::cout << "BROKEN: " << doc.iter.peek() <<std::endl;
 
-    if (error) { continue; } // If the error was EMPTY, we may want to load another batch.
-    // Run stage 2 on the first document in the batch
-    doc_index = batch_start + parser->implementation->structural_indexes[parser->implementation->next_structural_index];
+      if (error) { continue; } // If the error was EMPTY, we may want to load another batch.
+      doc_index = batch_start;
+    }
   }
 }
 
