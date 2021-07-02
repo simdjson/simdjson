@@ -108,30 +108,10 @@ inline void document_stream::start() noexcept {
 inline void document_stream::next() noexcept {
   // We always enter at once once in an error condition.
   if (error) { return; }
-  // If we have not made it to the end, then just skip the rest of the document.
-  ///////////////
-  // TODO: the next few lines should probably not be written in this manner as it
-  // is not modular code.
-  ///////////////
-  while(doc.iter._depth != 0) {
-    switch (*doc.iter.advance()) {
-      case '[': case '{':
-        doc.iter._depth++;
-        break;
-      case ']': case '}':
-        doc.iter._depth--;
-        break;
-    }
-  }
-  doc.iter._depth = 1;
-  // resets the string buffer at the beginning, thus invalidating the strings.
-  doc.iter._string_buf_loc = parser->string_buf.get();
-  doc.iter._root = doc.iter.token.position();
-  /////////////////////////////////
-  // TODO: fix doc_index!!!
-  //doc_index = batch_start + parser->implementation->structural_indexes[parser->implementation->next_structural_index];
-  /////////////////////////////////
+  next_document();
+  if (error) { return; }
 
+  doc_index = batch_start + parser->implementation->structural_indexes[doc.iter._root - parser->implementation->structural_indexes.get()];
   // TODO: Fix me as this is almost surely junk.
   if(doc.iter._root > doc.iter.last_document_position()) {
     error = EMPTY;
@@ -148,6 +128,17 @@ inline void document_stream::next() noexcept {
     // Run stage 2 on the first document in the batch
     doc_index = batch_start + parser->implementation->structural_indexes[parser->implementation->next_structural_index];
   }
+}
+
+inline void document_stream::next_document() noexcept {
+  // Go to next place where depth=0 (document depth)
+  error = doc.iter.skip_child(0);
+  if (error) { return; }
+  // Always set depth=1 at the start of document
+  doc.iter._depth = 1;
+  // Resets the string buffer at the beginning, thus invalidating the strings.
+  doc.iter._string_buf_loc = parser->string_buf.get();
+  doc.iter._root = doc.iter.position();
 }
 
 inline size_t document_stream::next_batch_start() const noexcept {

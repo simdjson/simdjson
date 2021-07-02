@@ -150,6 +150,9 @@ public:
    */
   inline void next() noexcept;
 
+  /** Move the json_iterator of the document to the location of the next document in the stream. */
+  inline void next_document() noexcept;
+
   /** Get the next document index. */
   inline size_t next_batch_start() const noexcept;
 

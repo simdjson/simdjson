@@ -29,9 +29,31 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool doc_index() {
+        TEST_START();
+        // TODO: Check if works when multiple batches are loaded
+        auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ondemand::document_stream::iterator i;
+        size_t index;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+        i = stream.begin();
+        index = i.current_index();
+        ASSERT_EQUAL(index,0);
+        ++i;
+        index = i.current_index();
+        ASSERT_EQUAL(index,9);
+        ++i;
+        index = i.current_index();
+        ASSERT_EQUAL(index,29);
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return
                 testing() &&
+                doc_index() &&
                 true;
     }
 } // document_stream_tests
