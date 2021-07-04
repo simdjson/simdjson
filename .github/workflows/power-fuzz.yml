@@ -56,6 +56,8 @@ jobs:
             cd ..
             builddir=build
             cmake --build $builddir
+            wget -O corpus.tar.gz https://readonly:readonly@www.pauldreik.se/fuzzdata/index.php?project=simdjson
+            tar xf corpus.tar.gz
             fuzzernames=$(cmake --build $builddir --target print_all_fuzzernames |tail -n1)
             for fuzzer in $fuzzernames ; do
                exe=$builddir/fuzz/$fuzzer
