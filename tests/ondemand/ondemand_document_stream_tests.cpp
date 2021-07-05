@@ -37,7 +37,7 @@ namespace document_stream_tests {
         ondemand::parser parser;
         ondemand::document_stream stream;
         size_t counter{0};
-        ASSERT_SUCCESS(parser.iterate_many(json,25).get(stream));
+        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
         for(auto i = stream.begin(); i != stream.end(); ++i) {
             ASSERT_TRUE(counter < 5);
             ASSERT_EQUAL(i.current_index(), expected_indexes[counter]);
@@ -49,10 +49,26 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool testing_source() {
+        TEST_START();
+        // TODO: Add test where source is called after document is parsed
+        auto json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3] )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+        std::string_view expected[4] = {"[1,[1,2]]", "{\"a\":1,\"b\":2}", "{\"o\":{\"1\":1,\"2\":2}}", "[1,2,3]"};
+        size_t counter{0};
+        for (auto i = stream.begin(); i != stream.end(); ++i) {
+            ASSERT_EQUAL(i.source(), expected[counter++]);
+        }
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return
             testing_document_iteration() &&
             doc_index() &&
+            testing_source() &&
             true;
     }
 } // document_stream_tests

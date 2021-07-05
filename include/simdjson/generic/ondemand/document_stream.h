@@ -96,6 +96,27 @@ public:
      */
      simdjson_really_inline size_t current_index() const noexcept;
 
+     /**
+     * @private
+     *
+     * Gives a view of the current document at the current position.
+     *
+     *   document_stream stream = parser.iterate_many(json,window);
+     *   for(auto i = stream.begin(); i != stream.end(); ++i) {
+     *      std::string_view v = i.source();
+     *   }
+     *
+     * The returned string_view instance is simply a map to the (unparsed)
+     * source string: it may thus include white-space characters and all manner
+     * of padding.
+     *
+     * This function (source()) is experimental and the usage
+     * may change in future versions of simdjson: we find the API somewhat
+     * awkward and we would like to offer something friendlier.
+     *
+     */
+     simdjson_really_inline std::string_view source() const noexcept;
+
   //private:
     simdjson_really_inline iterator(document_stream *s, bool finished) noexcept;
     /** The document_stream we're iterating through. */

@@ -195,6 +195,25 @@ simdjson_really_inline size_t document_stream::iterator::current_index() const n
   return stream->doc_index;
 }
 
+simdjson_really_inline std::string_view document_stream::iterator::source() const noexcept {
+  auto depth = stream->doc.iter.depth();
+  auto i = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
+  // If at root, depth = 1 even though not yet in the document
+  if (stream->doc.iter.at_root()) { depth--; }
+  do {
+    switch (stream->buf[stream->parser->implementation->structural_indexes[i]]) {
+      case '{': case '[':
+        depth++;
+        break;
+      case '}': case ']':
+        depth--;
+        break;
+    }
+    i++;
+  } while (depth != 0 || i > stream->parser->implementation->n_structural_indexes);
+  return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->parser->implementation->structural_indexes[i] - current_index() - 1);
+}
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
