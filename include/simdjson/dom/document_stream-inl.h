@@ -187,7 +187,7 @@ inline void document_stream::start() noexcept {
   // Always run the first stage 1 parse immediately
   batch_start = 0;
   error = run_stage1(*parser, batch_start);
-  if(error == EMPTY) {
+  while(error == EMPTY) {
     // In exceptional cases, we may start with an empty block
     batch_start = next_batch_start();
     if (batch_start >= len) { return; }
@@ -204,7 +204,6 @@ inline void document_stream::start() noexcept {
     if (error) { return; }
   }
 #endif // SIMDJSON_THREADS_ENABLED
-
   next();
 }
 
@@ -226,7 +225,7 @@ simdjson_really_inline std::string_view document_stream::iterator::source() cons
 
 
 inline void document_stream::next() noexcept {
-  // We always enter at once once in an error condition.
+  // We always exit at once, once in an error condition.
   if (error) { return; }
 
   // Load the next document from the batch

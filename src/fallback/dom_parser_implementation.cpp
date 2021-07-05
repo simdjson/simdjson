@@ -164,7 +164,16 @@ simdjson_really_inline error_code scan() {
     // We truncate the input to the end of the last complete document (or zero).
     auto new_structural_indexes = find_next_document_index(parser);
     if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
-      return CAPACITY; // If the buffer is partial but the document is incomplete, it's too big to parse.
+      if(parser.structural_indexes[0] == 0) {
+        // If the buffer is partial and we started at index 0 but the document is
+        // incomplete, it's too big to parse.
+        return CAPACITY;
+      } else {
+        // It is possible that the document could be parsed, we just had a lot
+        // of white space.
+        parser.n_structural_indexes = 0;
+        return EMPTY;
+      }
     }
     parser.n_structural_indexes = new_structural_indexes;
   } else if(partial == stage1_mode::streaming_final) {

@@ -103,6 +103,7 @@ inline void document_stream::start() noexcept {
   }
   if (error) { return; }
   doc = document(json_iterator(buf, parser));
+  doc.iter._streaming = true;
 }
 
 inline void document_stream::next() noexcept {

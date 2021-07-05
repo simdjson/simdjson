@@ -47,9 +47,17 @@ protected:
   /**
    * Beginning of the document indexes.
    * Normally we have root == parser->implementation->structural_indexes.get()
-   * but this may differ.
+   * but this may differ, especially in streaming mode (where we have several
+   * documents);
    */
   token_position _root{};
+  /**
+   * Normally, a json_iterator operates over a single document, but in
+   * some cases, we may have a stream of documents. This attribute is meant
+   * as meta-data: the json_iterator works the same irrespective of the
+   * value of this attribute.
+   */
+  bool _streaming{false};
 
 public:
   simdjson_really_inline json_iterator() noexcept = default;
@@ -66,6 +74,14 @@ public:
    * Tell whether the iterator is still at the start
    */
   simdjson_really_inline bool at_root() const noexcept;
+
+  /**
+   * Tell whether we should be expected to run in streaming
+   * mode (iterating over many documents). It is pure metadata
+   * that does not affect how the iterator works. It is used by
+   * start_root_array() and start_root_object().
+   */
+  simdjson_really_inline bool streaming() const noexcept;
 
   /**
    * Get the root value iterator

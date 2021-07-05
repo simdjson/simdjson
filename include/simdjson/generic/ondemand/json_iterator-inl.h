@@ -8,7 +8,8 @@ simdjson_really_inline json_iterator::json_iterator(json_iterator &&other) noexc
     _string_buf_loc{other._string_buf_loc},
     error{other.error},
     _depth{other._depth},
-    _root{other._root}
+    _root{other._root},
+    _streaming{other._streaming}
 {
   other.parser = nullptr;
 }
@@ -19,6 +20,7 @@ simdjson_really_inline json_iterator &json_iterator::operator=(json_iterator &&o
   error = other.error;
   _depth = other._depth;
   _root = other._root;
+  _streaming = other._streaming;
   other.parser = nullptr;
   return *this;
 }
@@ -28,7 +30,9 @@ simdjson_really_inline json_iterator::json_iterator(const uint8_t *buf, ondemand
     parser{_parser},
     _string_buf_loc{parser->string_buf.get()},
     _depth{1},
-    _root{parser->implementation->structural_indexes.get()}
+    _root{parser->implementation->structural_indexes.get()},
+    _streaming{false}
+
 {
   logger::log_headers();
 }
@@ -123,6 +127,10 @@ SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_really_inline bool json_iterator::at_root() const noexcept {
   return token.position() == root_checkpoint();
+}
+
+simdjson_really_inline bool json_iterator::streaming() const noexcept {
+  return _streaming;
 }
 
 simdjson_really_inline token_position json_iterator::root_checkpoint() const noexcept {
