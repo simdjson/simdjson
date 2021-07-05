@@ -128,23 +128,42 @@ namespace document_stream_tests {
 
   bool test_leading_spaces() {
     std::cout << "Running " << __func__ << std::endl;
-    const simdjson::padded_string input = R"(                                        [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+    const simdjson::padded_string input = R"(                               [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
     size_t count = 0;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
     count = 0;
     for(auto doc: stream) {
-          auto error = doc.error();
-          if(error) {
-            std::cout << "Expected no error but got " << error << std::endl;
-            return false;
-          }
-          count++;
+      auto error = doc.error();
+      if(error) {
+        std::cout << "Expected no error but got " << error << std::endl;
+        return false;
+      }
+      count++;
     }
     return count == 15;
   }
 
+
+  bool test_crazy_leading_spaces() {
+    std::cout << "Running " << __func__ << std::endl;
+    const simdjson::padded_string input = R"(                                                                                                                                                           [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+    size_t count = 0;
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
+    count = 0;
+    for(auto doc: stream) {
+      auto error = doc.error();
+      if(error) {
+        std::cout << "Expected no error but got " << error << std::endl;
+        return false;
+      }
+      count++;
+    }
+    return count == 15;
+  }
 
   bool issue1307() {
     std::cout << "Running " << __func__ << std::endl;
@@ -795,6 +814,7 @@ namespace document_stream_tests {
            stress_data_race() &&
            stress_data_race_with_error() &&
            test_leading_spaces() &&
+           test_crazy_leading_spaces() &&
            simple_example() &&
            truncated_window() &&
            truncated_window_unclosed_string_in_object() &&
