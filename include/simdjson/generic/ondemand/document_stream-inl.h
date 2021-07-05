@@ -35,6 +35,10 @@ inline size_t document_stream::size_in_bytes() const noexcept {
   return len;
 }
 
+inline size_t document_stream::truncated_bytes() const noexcept {
+  return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
+}
+
 simdjson_really_inline document_stream::iterator::iterator() noexcept
   : stream{nullptr}, finished{true} {
 }

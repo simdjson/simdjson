@@ -64,11 +64,25 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool truncated() {
+        TEST_START();
+        auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2  )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+        for (auto i = stream.begin(); i != stream.end(); ++i) {
+        }
+        size_t truncated = stream.truncated_bytes();
+        ASSERT_EQUAL(truncated, 6);
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return
             testing_document_iteration() &&
             doc_index() &&
             testing_source() &&
+            truncated() &&
             true;
     }
 } // document_stream_tests
