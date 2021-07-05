@@ -95,7 +95,7 @@ inline void document_stream::start() noexcept {
   // Always run the first stage 1 parse immediately
   batch_start = 0;
   error = run_stage1(*parser, batch_start);
-  if(error == EMPTY) {
+  while(error == EMPTY) {
     // In exceptional cases, we may start with an empty block
     batch_start = next_batch_start();
     if (batch_start >= len) { return; }
