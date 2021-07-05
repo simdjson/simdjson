@@ -11,50 +11,49 @@ namespace document_stream_tests {
         return ss.str();
     }
 
-    bool testing() {
+    bool testing_document_iteration() {
         TEST_START();
         auto json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3])"_padded;
         ondemand::parser parser;
         ondemand::document_stream stream;
-        ondemand::document_stream::iterator i;
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
-        i = stream.begin();
-        //ASSERT_EQUAL(my_string(*i), "[1,[1,2]]");
-        ++i;
-        //ASSERT_EQUAL(my_string(*i), "{\"a\":1,\"b\":2}");
-        ++i;
-        //ASSERT_EQUAL(my_string(*i), "{\"o\":{\"1\":1,\"2\":2}}");
-        ++i;
-        //ASSERT_EQUAL(my_string(*i), "[1,2,3]");
+        std::string_view expected[4] = {"[1,[1,2]]", "{\"a\":1,\"b\":2}", "{\"o\":{\"1\":1,\"2\":2}}", "[1,2,3]"};
+        size_t counter{0};
+        for(auto & doc : stream) {
+            ASSERT_TRUE(counter < 4);
+            ASSERT_EQUAL(my_string(doc), expected[counter++]);
+        }
+        ASSERT_EQUAL(counter, 4);
         TEST_SUCCEED();
     }
 
     bool doc_index() {
         TEST_START();
         // TODO: Check if works when multiple batches are loaded
-        auto json = R"([1,2,3]  {"1":1,"2":2,"4":4} [1,2,3]  )"_padded;
+        auto json = R"({"z":5}  {"1":1,"2":2,"4":4} [7,  10,   9]  [15,  11,   12, 13]  [154,  110,   112, 1311])"_padded;
+        std::string_view expected[5] = {"{\"z\":5}", "{\"1\":1,\"2\":2,\"4\":4}", "[7,10,9]", "[15,11,12,13]", "[154,110,112,1311]"};
+        size_t expected_indexes[5] = {0, 9, 29, 44, 65};
+
         ondemand::parser parser;
         ondemand::document_stream stream;
-        ondemand::document_stream::iterator i;
-        size_t index;
+        size_t counter{0};
         ASSERT_SUCCESS(parser.iterate_many(json,25).get(stream));
-        i = stream.begin();
-        index = i.current_index();
-        ASSERT_EQUAL(index,0);
-        ++i;
-        index = i.current_index();
-        ASSERT_EQUAL(index,9);
-        ++i;
-        index = i.current_index();
-        ASSERT_EQUAL(index,29);
+        for(auto i = stream.begin(); i != stream.end(); ++i) {
+            ASSERT_TRUE(counter < 5);
+            ASSERT_EQUAL(i.current_index(), expected_indexes[counter]);
+            ASSERT_EQUAL(my_string(*i), expected[counter]);
+            counter++;
+        }
+        ASSERT_EQUAL(counter, 5);
+        TEST_SUCCEED();
         TEST_SUCCEED();
     }
 
     bool run() {
         return
-                testing() &&
-                doc_index() &&
-                true;
+            testing_document_iteration() &&
+            doc_index() &&
+            true;
     }
 } // document_stream_tests
 

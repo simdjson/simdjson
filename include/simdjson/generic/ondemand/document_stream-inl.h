@@ -14,7 +14,7 @@ simdjson_really_inline document_stream::document_stream(
   : parser{&_parser},
     buf{_buf},
     len{_len},
-    batch_size{_batch_size <= simdjson::MINIMAL_BATCH_SIZE ? simdjson::MINIMAL_BATCH_SIZE : _batch_size},
+    batch_size{_batch_size <= MINIMAL_BATCH_SIZE ? MINIMAL_BATCH_SIZE : _batch_size},
     error{SUCCESS}
 {}
 
@@ -115,15 +115,49 @@ inline void document_stream::next() noexcept {
   // Check if at end of structural indexes (i.e. at end of batch)
   if(doc.iter._root - parser->implementation->structural_indexes.get() >= parser->implementation->n_structural_indexes) {
     error = EMPTY;
-    //std::cout << "LOADING NEW BATCH" << std::endl;
     // Load another batch (if available)
     while (error == EMPTY) {
       batch_start = next_batch_start();
       if (batch_start >= len) { break; }
-
-      std::cout << "FINE: " << doc.iter.peek() <<std::endl;
       error = run_stage1(*parser, batch_start);
-      std::cout << "BROKEN: " << doc.iter.peek() <<std::endl;
+      /**
+       * Whenever we move to another window, we need to update all pointers to make
+       * it appear as if the input buffer started at the beginning of the window.
+       *
+       * Take this input:
+       *
+       * {"z":5}  {"1":1,"2":2,"4":4} [7,  10,   9]  [15,  11,   12, 13]  [154,  110,   112, 1311]
+       *
+       * Say you process the following window...
+       *
+       * '{"z":5}  {"1":1,"2":2,"4":4} [7,  10,   9]'
+       *
+       * When you do so, the json_iterator has a pointer at the beginning of the memory region
+       * (pointing at the beginning of '{"z"...'.
+       *
+       * When you move to the window that starts at...
+       *
+       * '[7,  10,   9]  [15,  11,   12, 13] ...
+       *
+       * then it is not sufficient to just run stage 1. You also need to re-anchor the
+       * json_iterator so that it believes we are starting at '[7,  10,   9]...'.
+       *
+       * Under the DOM front-end, this gets done automatically because the parser owns
+       * the pointer the data, and when you call stage1 and then stage2 on the same
+       * parser, then stage2 will run on the pointer acquired by stage1.
+       *
+       * That is, stage1 calls "this->buf = _buf" so the parser remembers the buffer that
+       * we used. But json_iterator has no callback when stage1 is called on the parser.
+       * In fact, I think that the parser is unaware of json_iterator.
+       *
+       *
+       * So we need to re-anchor the json_iterator after each call to stage 1 so that
+       * all of the pointers are in sync.
+       */
+      doc.iter = json_iterator(&buf[batch_start], parser);
+      /**
+       * End of resync.
+       */
 
       if (error) { continue; } // If the error was EMPTY, we may want to load another batch.
       doc_index = batch_start;
@@ -147,6 +181,8 @@ inline size_t document_stream::next_batch_start() const noexcept {
 }
 
 inline error_code document_stream::run_stage1(ondemand::parser &p, size_t _batch_start) noexcept {
+  // This code only updates the structural index in the parser, it does not update any json_iterator
+  // instance.
   size_t remaining = len - _batch_start;
   if (remaining <= batch_size) {
     return p.implementation->stage1(&buf[_batch_start], remaining, stage1_mode::streaming_final);
