@@ -429,28 +429,26 @@ steps:
     - cmake $CMAKE_FLAGS ..
     - cmake --build . $BUILD_FLAGS
     - ctest $CTEST_FLAGS
-##############################
-# With bintray gone, it is clear how we should fuzz.
-#---
-#kind: pipeline
-#name: arm64-fuzz
-#platform: { os: linux, arch: arm64 }
-#steps:
-#- name: Build and run fuzzers shortly
-#  image: ubuntu:20.04
-#  environment:
-#    CC: clang
-#    CXX: clang++
-#    DEBIAN_FRONTEND: noninteractive
-#    ASAN_OPTIONS: detect_leaks=0
-#  commands:
-#    - apt-get -qq update
-#    - apt-get install -q -y clang cmake git wget zip ninja-build
-#    - wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
-#    - tar xf corpus.tar && rm corpus.tar
-#    - fuzz/build_like_ossfuzz.sh
-#    - mkdir -p common_out
-#    - for fuzzer in build/fuzz/fuzz_* ; do echo $fuzzer;$fuzzer common_out out/* -max_total_time=40; done
+---
+kind: pipeline
+name: arm64-fuzz
+platform: { os: linux, arch: arm64 }
+steps:
+- name: Build and run fuzzers shortly
+  image: ubuntu:20.04
+  environment:
+    CC: clang
+    CXX: clang++
+    DEBIAN_FRONTEND: noninteractive
+    ASAN_OPTIONS: detect_leaks=0
+  commands:
+    - apt-get -qq update
+    - apt-get install -q -y clang cmake git wget zip ninja-build
+    - wget -O corpus.tar.gz https://readonly:readonly@www.pauldreik.se/fuzzdata/index.php?project=simdjson
+    - tar xf corpus.tar.gz && rm corpus.tar.gz
+    - fuzz/build_like_ossfuzz.sh
+    - mkdir -p common_out
+    - for fuzzer in build/fuzz/fuzz_* ; do echo $fuzzer;$fuzzer common_out out/* -max_total_time=40; done
 ---
 kind: pipeline
 name: stylecheck

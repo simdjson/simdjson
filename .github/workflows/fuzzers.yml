@@ -129,6 +129,11 @@ jobs:
         name: corpus
         path: corpus.tar
 
+    - name: Store the corpus externally
+      run: |
+        gzip --keep corpus.tar
+        curl -F"filedata=@corpus.tar.gz" https://simdjson:${{ secrets.fuzzdatapassword }}@www.pauldreik.se/fuzzdata/index.php
+
     # This takes a subset of the minimized corpus and run it through valgrind. It is slow,
     # therefore take a "random" subset. The random selection is accomplished by sorting on filenames,
     # which are hashes of the content.
