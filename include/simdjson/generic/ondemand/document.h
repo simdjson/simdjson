@@ -375,7 +375,7 @@ protected:
   friend class field;
   friend class token;
   friend class document_stream;
-  friend class document_stream::iterator;
+  friend class ondemand::document_stream::iterator;
 };
 
 } // namespace ondemand

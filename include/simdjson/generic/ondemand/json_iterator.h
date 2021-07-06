@@ -228,7 +228,7 @@ protected:
 
   friend class document;
   friend class document_stream;
-  friend class document_stream::iterator;
+  friend class ondemand::document_stream::iterator;
   friend class object;
   friend class array;
   friend class value;

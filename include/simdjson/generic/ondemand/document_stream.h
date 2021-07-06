@@ -137,12 +137,16 @@ public:
      */
      simdjson_really_inline std::string_view source() const noexcept;
 
-  //private:
+  private:
     simdjson_really_inline iterator(document_stream *s, bool finished) noexcept;
     /** The document_stream we're iterating through. */
     document_stream* stream;
     /** Whether we're finished or not. */
     bool finished;
+
+    friend class document;
+    friend class document_stream;
+    friend class json_iterator;
   };
 
   /**
@@ -233,6 +237,8 @@ private:
   size_t doc_index{};
 
   friend class parser;
+  friend class document;
+  friend class json_iterator;
   friend struct simdjson_result<ondemand::document_stream>;
   friend struct internal::simdjson_result_base<ondemand::document_stream>;
 };  // document_stream
