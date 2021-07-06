@@ -204,9 +204,24 @@ simdjson_really_inline size_t document_stream::iterator::current_index() const n
 simdjson_really_inline std::string_view document_stream::iterator::source() const noexcept {
   auto depth = stream->doc.iter.depth();
   auto cur_struct_index = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
-  // If at root, depth = 1 even though not yet in the document
-  if (stream->doc.iter.at_root()) { depth--; }
-  do {
+
+  // If at root, process the first token to determine if scalar value
+  if (stream->doc.iter.at_root()) {
+    switch (stream->buf[stream->parser->implementation->structural_indexes[cur_struct_index]]) {
+      case '{': case '[':   // Depth=1 already at start of document
+        break;
+      case '}': case ']':
+        depth--;
+        break;
+      default:    // Scalar value document
+        // TODO: Remove any trailing whitespaces
+        // This returns a string spanning from start of value to the beginning of the next document (excluded)
+        return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->parser->implementation->structural_indexes[++cur_struct_index] - current_index() - 1);
+    }
+    cur_struct_index++;
+  }
+
+  while (cur_struct_index <= static_cast<int64_t>(stream->parser->implementation->n_structural_indexes)) {
     switch (stream->buf[stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':
         depth++;
@@ -215,9 +230,10 @@ simdjson_really_inline std::string_view document_stream::iterator::source() cons
         depth--;
         break;
     }
+    if (depth == 0) { break; }
     cur_struct_index++;
-  } while (depth != 0 || cur_struct_index > static_cast<int64_t>(stream->parser->implementation->n_structural_indexes));
-  return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->parser->implementation->structural_indexes[cur_struct_index] - current_index() - 1);
+  }
+  return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->parser->implementation->structural_indexes[cur_struct_index] - current_index() + 1);
 }
 
 inline error_code document_stream::iterator::error() const noexcept {

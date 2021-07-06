@@ -86,7 +86,7 @@ namespace document_stream_tests {
     bool testing_source() {
         TEST_START();
         // TODO: Add test where source is called after document is parsed
-        auto json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3] )"_padded;
+        auto json = R"([1,[1,2]]     {"a":1,"b":2}      {"o":{"1":1,"2":2}}   [1,2,3] )"_padded;
         ondemand::parser parser;
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
