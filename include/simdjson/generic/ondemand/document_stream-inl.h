@@ -220,6 +220,10 @@ simdjson_really_inline std::string_view document_stream::iterator::source() cons
   return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->parser->implementation->structural_indexes[cur_struct_index] - current_index() - 1);
 }
 
+inline error_code document_stream::iterator::error() const noexcept {
+  return stream->error;
+}
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

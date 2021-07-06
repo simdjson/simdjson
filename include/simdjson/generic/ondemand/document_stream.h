@@ -137,6 +137,11 @@ public:
      */
      simdjson_really_inline std::string_view source() const noexcept;
 
+    /**
+     * Returns error of the stream (if any).
+     */
+     inline error_code error() const noexcept;
+
   private:
     simdjson_really_inline iterator(document_stream *s, bool finished) noexcept;
     /** The document_stream we're iterating through. */
