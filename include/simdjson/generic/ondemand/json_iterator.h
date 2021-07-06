@@ -3,6 +3,7 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
 class document;
+class document_stream;
 class object;
 class array;
 class value;
@@ -228,7 +229,6 @@ protected:
 
   friend class document;
   friend class document_stream;
-  friend class ondemand::document_stream::iterator;
   friend class object;
   friend class array;
   friend class value;

@@ -10,6 +10,7 @@ class object;
 class value;
 class raw_json_string;
 class array_iterator;
+class document_stream;
 
 /**
  * A JSON document iteration.
@@ -375,7 +376,6 @@ protected:
   friend class field;
   friend class token;
   friend class document_stream;
-  friend class ondemand::document_stream::iterator;
 };
 
 } // namespace ondemand
