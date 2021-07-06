@@ -188,8 +188,15 @@ simdjson_really_inline size_t trim_partial_utf8(const uint8_t *buf, size_t len) 
 template<size_t STEP_SIZE>
 error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, stage1_mode partial) noexcept {
   if (simdjson_unlikely(len > parser.capacity())) { return CAPACITY; }
-  if (is_streaming(partial)) { len = trim_partial_utf8(buf, len); }
-
+  // We guard the rest of the code so that we can assume that len > 0 throughout.
+  if (len == 0) { return EMPTY; }
+  if (is_streaming(partial)) {
+    len = trim_partial_utf8(buf, len);
+    // If you end up with an empty window after trimming
+    // the partial UTF-8 bytes, then chances are good that you
+    // have an UTF-8 formatting error.
+    if(len == 0) { return UTF8_ERROR; }
+  }
   buf_block_reader<STEP_SIZE> reader(buf, len);
   json_structural_indexer indexer(parser.structural_indexes.get());
 
@@ -197,12 +204,11 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   while (reader.has_full_block()) {
     indexer.step<STEP_SIZE>(reader.full_block(), reader);
   }
-
-  // Take care of the last block (will always be there unless file is empty)
+  // Take care of the last block (will always be there unless file is empty which is
+  // not supposed to happen.)
   uint8_t block[STEP_SIZE];
-  if (simdjson_unlikely(reader.get_remainder(block) == 0)) { return EMPTY; }
+  if (simdjson_unlikely(reader.get_remainder(block) == 0)) { return UNEXPECTED_ERROR; }
   indexer.step<STEP_SIZE>(block, reader);
-
   return indexer.finish(parser, reader.block_index(), len, partial);
 }
 
@@ -236,7 +242,6 @@ simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<u
 simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial) {
   // Write out the final iteration's structurals
   indexer.write(uint32_t(idx-64), prev_structurals);
-
   error_code error = scanner.finish();
   // We deliberately break down the next expression so that it is
   // human readable.
