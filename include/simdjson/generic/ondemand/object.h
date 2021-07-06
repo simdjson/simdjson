@@ -119,6 +119,10 @@ public:
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
 
 protected:
+  /**
+   * Go to the end of the object, no matter where you are right now.
+   */
+  simdjson_really_inline error_code consume() noexcept;
   static simdjson_really_inline simdjson_result<object> start(value_iterator &iter) noexcept;
   static simdjson_really_inline simdjson_result<object> start_root(value_iterator &iter) noexcept;
   static simdjson_really_inline object started(value_iterator &iter) noexcept;

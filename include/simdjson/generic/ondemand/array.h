@@ -83,6 +83,11 @@ public:
 
 protected:
   /**
+   * Go to the end of the array, no matter where you are right now.
+   */
+  simdjson_really_inline error_code consume() noexcept;
+
+  /**
    * Begin array iteration.
    *
    * @param iter The iterator. Must be where the initial [ is expected. Will be *moved* into the

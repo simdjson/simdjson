@@ -73,7 +73,9 @@ bool load_to_string(const char *filename) {
   }
   std::cout << "file loaded: " << docdata.size() << " bytes." << std::endl;
   simdjson::ondemand::document doc;
-  error = parser.iterate(docdata).get(doc);
+    auto cars_json = R"( { "test": "result"  }  )"_padded;
+
+  error = parser.iterate(cars_json).get(doc);
   if (error) {
     std::cerr << error << std::endl;
     return false;
@@ -90,7 +92,7 @@ bool load_to_string(const char *filename) {
   bool match = (serial1 == serial2);
   if (match) {
     std::cout << "Parsing to_string and calling to_string again results in the "
-                 "same content."
+                 "same content. "
               << "Got " << serial1.size() << " bytes." << std::endl;
   }
   return match;
@@ -147,7 +149,7 @@ bool load_to_string_exceptionless(const char *filename) {
   bool match = (serial1 == serial2);
   if (match) {
     std::cout << "Parsing to_string and calling to_string again results in the "
-                 "same content."
+                 "same content. "
               << "Got " << serial1.size() << " bytes." << std::endl;
   }
   return match;
@@ -164,8 +166,183 @@ bool minify_exceptionless_test() {
   return true;
 }
 
+bool at_start_array() {
+  TEST_START();
+  ondemand::parser parser;
+  auto arr_json = R"( [111,2,3,5] )"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
+  ondemand::array array;
+  ASSERT_SUCCESS( doc.get_array().get(array) );
+  std::string_view serial;
+  ASSERT_SUCCESS( simdjson::to_json_string(array).get(serial));
+  ASSERT_EQUAL(serial, "[111,2,3,5]");
+  TEST_SUCCEED();
+}
+
+
+bool at_start_object() {
+  TEST_START();
+  ondemand::parser parser;
+  auto arr_json = R"( {"a":1, "b":2, "c": 3 } )"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
+  ondemand::object object;
+  ASSERT_SUCCESS( doc.get_object().get(object) );
+  std::string_view serial;
+  ASSERT_SUCCESS( simdjson::to_json_string(object).get(serial));
+  ASSERT_EQUAL(serial, R"({"a":1, "b":2, "c": 3 })");
+  ASSERT_SUCCESS( simdjson::to_json_string(object).get(serial));
+  ASSERT_EQUAL(serial, R"({"a":1, "b":2, "c": 3 })");
+  TEST_SUCCEED();
+}
+
+bool in_middle_array() {
+  TEST_START();
+  ondemand::parser parser;
+  auto arr_json = R"( [111,{"a":1},3,5] )"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
+  ondemand::array array;
+  ASSERT_SUCCESS( doc.get_array().get(array) );
+  auto i = array.begin();
+  int64_t x;
+  ASSERT_SUCCESS( (*i).get_int64().get(x) );
+  ASSERT_EQUAL(x, 111);
+  std::string_view serial;
+  ASSERT_SUCCESS( simdjson::to_json_string(array).get(serial));
+  ASSERT_EQUAL(serial, "[111,{\"a\":1},3,5]");
+  ASSERT_SUCCESS( simdjson::to_json_string(doc).get(serial));
+  ASSERT_EQUAL(serial, "[111,{\"a\":1},3,5]");
+  TEST_SUCCEED();
+}
+
+bool at_middle_object() {
+  TEST_START();
+  ondemand::parser parser;
+  auto arr_json = R"( {"a":1, "b":2, "c": 3 } )"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
+  ondemand::object object;
+  ASSERT_SUCCESS( doc.get_object().get(object) );
+  int64_t x;
+  ASSERT_SUCCESS(object["b"].get_int64().get(x));
+  ASSERT_EQUAL(x,2);
+  std::string_view serial;
+  ASSERT_SUCCESS( simdjson::to_json_string(object).get(serial));
+  ASSERT_EQUAL(serial, R"({"a":1, "b":2, "c": 3 })");
+  ASSERT_SUCCESS( simdjson::to_json_string(doc).get(serial));
+  ASSERT_EQUAL(serial, R"({"a":1, "b":2, "c": 3 })");
+  TEST_SUCCEED();
+}
+
+bool at_middle_object_just_key() {
+  TEST_START();
+  ondemand::parser parser;
+  auto arr_json = R"( {"a":1, "b":2, "c": 3 } )"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
+  ondemand::object object;
+  ASSERT_SUCCESS( doc.get_object().get(object) );
+  ondemand::value x;
+  ASSERT_SUCCESS(object["b"].get(x));
+  std::string_view serial;
+  ASSERT_SUCCESS( simdjson::to_json_string(object).get(serial));
+  ASSERT_EQUAL(serial, R"({"a":1, "b":2, "c": 3 })");
+  ASSERT_SUCCESS( simdjson::to_json_string(doc).get(serial));
+  ASSERT_EQUAL(serial, R"({"a":1, "b":2, "c": 3 })");
+  TEST_SUCCEED();
+}
+
+
+bool at_end_object() {
+  TEST_START();
+  ondemand::parser parser;
+  auto arr_json = R"( {"a":1, "b":2, "c": 3 } )"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
+  ondemand::object object;
+  ASSERT_SUCCESS( doc.get_object().get(object) );
+  int64_t x;
+  ASSERT_ERROR(object["bcc"].get_int64().get(x), NO_SUCH_FIELD);
+  std::string_view serial;
+  ASSERT_SUCCESS( simdjson::to_json_string(object).get(serial));
+  ASSERT_EQUAL(serial, R"({"a":1, "b":2, "c": 3 })");
+  ASSERT_SUCCESS( simdjson::to_json_string(doc).get(serial));
+  ASSERT_EQUAL(serial, R"({"a":1, "b":2, "c": 3 })");
+  TEST_SUCCEED();
+}
+
+bool at_array_end() {
+  TEST_START();
+  ondemand::parser parser;
+  std::string_view serial;
+
+  auto arr_json = R"( [111,2,3,5] )"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
+  ondemand::array array;
+  ASSERT_SUCCESS( doc.get_array().get(array) );
+  auto i = array.begin();
+  int64_t x;
+  ASSERT_SUCCESS( (*i).get_int64().get(x) );
+  ASSERT_EQUAL(x, 111);
+  ++i;
+  ASSERT_SUCCESS( (*i).get_int64().get(x) );
+  ASSERT_EQUAL(x, 2);
+  ++i;
+  ASSERT_SUCCESS( (*i).get_int64().get(x) );
+  ASSERT_EQUAL(x, 3);
+  ++i;
+  ASSERT_SUCCESS( (*i).get_int64().get(x) );
+  ASSERT_EQUAL(x, 5);
+  ASSERT_SUCCESS( simdjson::to_json_string(array).get(serial));
+  ASSERT_EQUAL(serial, "[111,2,3,5]");
+  ASSERT_SUCCESS( simdjson::to_json_string(doc).get(serial));
+  ASSERT_EQUAL(serial, "[111,2,3,5]");
+  TEST_SUCCEED();
+}
+
+bool complex_case() {
+  TEST_START();
+  ondemand::parser parser;
+  auto arr_json = R"( {"array":[1,2,3], "objects":[{"id":1}, {"id":2}, {"id":3}]} )"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
+  ondemand::object obj;
+  ASSERT_SUCCESS( doc.get_object().get(obj) );
+  ondemand::array array;
+  ASSERT_SUCCESS( obj["objects"].get_array().get(array) );
+  std::string_view serial;
+  for(auto v : array) {
+    ondemand::object object;
+    ASSERT_SUCCESS( v.get_object().get(object) );
+    int64_t x;
+    ASSERT_SUCCESS(object["id"].get_int64().get(x));
+    if(x / 2 * 2 != x) {
+      ASSERT_SUCCESS( simdjson::to_json_string(object).get(serial));
+      ASSERT_EQUAL(serial, "{\"id\":"+std::to_string(x)+"}");
+    }
+  }
+  ASSERT_SUCCESS( simdjson::to_json_string(array).get(serial));
+  ASSERT_EQUAL(serial, R"([{"id":1}, {"id":2}, {"id":3}])");
+  ASSERT_SUCCESS( simdjson::to_json_string(obj).get(serial));
+  ASSERT_EQUAL(serial, R"({"array":[1,2,3], "objects":[{"id":1}, {"id":2}, {"id":3}]})");
+  ASSERT_SUCCESS( simdjson::to_json_string(doc).get(serial));
+  ASSERT_EQUAL(serial, R"({"array":[1,2,3], "objects":[{"id":1}, {"id":2}, {"id":3}]})");
+  TEST_SUCCEED();
+}
+
 bool run() {
   return
+      complex_case() &&
+      at_start_object() &&
+      at_middle_object() &&
+      at_middle_object_just_key() &&
+      at_end_object() &&
+      at_start_array() &&
+      in_middle_array() &&
+      at_array_end() &&
 #if SIMDJSON_EXCEPTIONS
       issue1607() &&
       minify_demo() &&
