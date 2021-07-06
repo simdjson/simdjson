@@ -76,6 +76,10 @@
         "unordered_map": "cpp",
         "utility": "cpp",
         "vector": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "deque": "cpp",
+        "fstream": "cpp",
+        "map": "cpp",
+        "stack": "cpp"
     }
 }

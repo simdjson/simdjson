@@ -71,11 +71,14 @@ simdjson_really_inline simdjson_result<array_iterator> array::begin() noexcept {
 simdjson_really_inline simdjson_result<array_iterator> array::end() noexcept {
   return array_iterator(iter);
 }
+simdjson_really_inline error_code array::consume() noexcept {
+  return iter.json_iter().skip_child(iter.depth()-1);
+}
 
 simdjson_really_inline simdjson_result<std::string_view> array::raw_json_token() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
-  for(simdjson_unused auto v : *this) {}
-  if(iter.error()) { return iter.error(); }
+  auto error = consume();
+  if(error) { return error; }
   const uint8_t * final_point{iter._json_iter->peek(0)};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }

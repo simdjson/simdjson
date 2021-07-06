@@ -45,10 +45,35 @@ simdjson_really_inline simdjson_result<object> object::start_root(value_iterator
   SIMDJSON_TRY( iter.start_root_object().get(has_value) );
   return object(iter);
 }
+simdjson_really_inline error_code object::consume() noexcept {
+  // You might hope that
+  // return iter.json_iter().skip_child(iter.depth()-1);
+  // would work, but no such luck.
+  if(iter.error()) { return iter.error(); }
+  if(!iter.is_open()) { return SUCCESS; }
+  if(!iter.at_first_field()) {
+    auto error = iter.skip_child();
+    if(error) { iter.abandon(); return error; }
+    simdjson_unused bool has_value;
+    error = iter.has_next_field().get(has_value);
+    if(error) { iter.abandon(); return error; }
+  }
+  while (iter.is_open()) {
+    simdjson_unused raw_json_string actual_key;
+    auto error = iter.field_key().get(actual_key);
+    if (error) { iter.abandon(); return error; };
+    if ((error = iter.field_value())) { iter.abandon(); return error; }
+    if ((error = iter.skip_child())) { iter.abandon(); return error; }
+    simdjson_unused bool has_value;
+    if ((error = iter.has_next_field().get(has_value) )) { iter.abandon(); return error; }
+  }
+  return SUCCESS;
+}
+
 simdjson_really_inline simdjson_result<std::string_view> object::raw_json_token() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
-  for (simdjson_unused auto field : *this) {}
-  if(iter.error()) { return iter.error(); }
+  auto error = consume();
+  if(error) { return error; }
   const uint8_t * final_point{iter._json_iter->peek(0)};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
