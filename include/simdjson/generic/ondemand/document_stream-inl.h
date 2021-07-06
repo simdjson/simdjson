@@ -115,10 +115,11 @@ inline void document_stream::next() noexcept {
   if (error) { return; }
   next_document();
   if (error) { return; }
-  doc_index = batch_start + parser->implementation->structural_indexes[doc.iter._root - parser->implementation->structural_indexes.get()];
+  auto cur_struct_index = doc.iter._root - parser->implementation->structural_indexes.get();
+  doc_index = batch_start + parser->implementation->structural_indexes[cur_struct_index];
 
   // Check if at end of structural indexes (i.e. at end of batch)
-  if(doc.iter._root - parser->implementation->structural_indexes.get() >= parser->implementation->n_structural_indexes) {
+  if(cur_struct_index >= (int64_t) parser->implementation->n_structural_indexes) {
     error = EMPTY;
     // Load another batch (if available)
     while (error == EMPTY) {
@@ -202,11 +203,11 @@ simdjson_really_inline size_t document_stream::iterator::current_index() const n
 
 simdjson_really_inline std::string_view document_stream::iterator::source() const noexcept {
   auto depth = stream->doc.iter.depth();
-  auto i = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
+  auto cur_struct_index = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
   // If at root, depth = 1 even though not yet in the document
   if (stream->doc.iter.at_root()) { depth--; }
   do {
-    switch (stream->buf[stream->parser->implementation->structural_indexes[i]]) {
+    switch (stream->buf[stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':
         depth++;
         break;
@@ -214,9 +215,9 @@ simdjson_really_inline std::string_view document_stream::iterator::source() cons
         depth--;
         break;
     }
-    i++;
-  } while (depth != 0 || i > stream->parser->implementation->n_structural_indexes);
-  return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->parser->implementation->structural_indexes[i] - current_index() - 1);
+    cur_struct_index++;
+  } while (depth != 0 || cur_struct_index > (int64_t) stream->parser->implementation->n_structural_indexes);
+  return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->parser->implementation->structural_indexes[cur_struct_index] - current_index() - 1);
 }
 
 } // namespace ondemand
