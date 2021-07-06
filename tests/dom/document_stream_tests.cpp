@@ -808,23 +808,24 @@ namespace document_stream_tests {
   }
 
   bool issue1649() {
-      std::size_t batch_size=637;
-      const auto json=simdjson::padded_string(std::string("\xd7"));
-      simdjson::dom::parser parser;
-      simdjson::dom::document_stream docs;
-      if(parser.parse_many(json,batch_size).get(docs)) {
-          return true;
-      }
-
-      size_t bool_count=0;
-      for (auto doc : docs) {
-          bool_count+=doc.is_bool();
-      }
-      return true;
+    std::cout << "Running " << __func__ << std::endl;
+    std::size_t batch_size = 637;
+    const auto json=simdjson::padded_string(std::string("\xd7"));
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream docs;
+    if(parser.parse_many(json,batch_size).get(docs)) {
+          return false;
+    }
+    size_t bool_count=0;
+    for (auto doc : docs) {
+      bool_count += doc.is_bool();
+    }
+    return true;
   }
 
   bool run() {
-    return adversarial_single_document_array() &&
+    return issue1649() &&
+           adversarial_single_document_array() &&
            adversarial_single_document() &&
            unquoted_key() &&
            stress_data_race() &&
@@ -852,8 +853,7 @@ namespace document_stream_tests {
            large_window() &&
            json_issue467() &&
            document_stream_test() &&
-           document_stream_utf8_test() &&
-           issue1649();
+           document_stream_utf8_test();
   }
 }
 
