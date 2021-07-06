@@ -379,9 +379,9 @@ bool run() {
       minify_demo() &&
       minify_demo2() &&
       minify_test() &&
+      car_example() &&
 #endif // SIMDJSON_EXCEPTIONS
       minify_exceptionless_test() &&
-      car_example() &&
       true;
 }
 
