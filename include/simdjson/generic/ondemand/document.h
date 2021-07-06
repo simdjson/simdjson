@@ -375,6 +375,7 @@ protected:
   friend class field;
   friend class token;
   friend class document_stream;
+  friend class json_iterator;
 };
 
 } // namespace ondemand
