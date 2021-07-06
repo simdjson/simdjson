@@ -119,7 +119,7 @@ inline void document_stream::next() noexcept {
   doc_index = batch_start + parser->implementation->structural_indexes[cur_struct_index];
 
   // Check if at end of structural indexes (i.e. at end of batch)
-  if(cur_struct_index >= (int64_t) parser->implementation->n_structural_indexes) {
+  if(cur_struct_index >= static_cast<int64_t>(parser->implementation->n_structural_indexes)) {
     error = EMPTY;
     // Load another batch (if available)
     while (error == EMPTY) {
@@ -216,7 +216,7 @@ simdjson_really_inline std::string_view document_stream::iterator::source() cons
         break;
     }
     cur_struct_index++;
-  } while (depth != 0 || cur_struct_index > (int64_t) stream->parser->implementation->n_structural_indexes);
+  } while (depth != 0 || cur_struct_index > static_cast<int64_t>(stream->parser->implementation->n_structural_indexes));
   return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->parser->implementation->structural_indexes[cur_struct_index] - current_index() - 1);
 }
 
