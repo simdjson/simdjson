@@ -46,9 +46,11 @@ simdjson_really_inline simdjson_result<object> object::start_root(value_iterator
   return object(iter);
 }
 simdjson_really_inline error_code object::consume() noexcept {
+  /////////////////
   // You might hope that
   // return iter.json_iter().skip_child(iter.depth()-1);
   // would work, but no such luck.
+  /////////////////
   if(iter.error()) { return iter.error(); }
   if(!iter.is_open()) { return SUCCESS; }
   if(!iter.at_first_field()) {
@@ -70,7 +72,7 @@ simdjson_really_inline error_code object::consume() noexcept {
   return SUCCESS;
 }
 
-simdjson_really_inline simdjson_result<std::string_view> object::raw_json_token() noexcept {
+simdjson_really_inline simdjson_result<std::string_view> object::raw_json() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
   if(error) { return error; }

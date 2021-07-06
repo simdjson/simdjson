@@ -75,7 +75,7 @@ simdjson_really_inline error_code array::consume() noexcept {
   return iter.json_iter().skip_child(iter.depth()-1);
 }
 
-simdjson_really_inline simdjson_result<std::string_view> array::raw_json_token() noexcept {
+simdjson_really_inline simdjson_result<std::string_view> array::raw_json() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
   if(error) { return error; }

@@ -111,12 +111,11 @@ public:
   inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
 
   /**
-   * Consumes the object and return a string_view instance corresponding to the
-   * object as represented in JSON. It points inside the original document. The
-   * object must not have been previously accessed: we must still point at the
-   * beginning.
+   * Consumes the object and returns a string_view instance corresponding to the
+   * object as represented in JSON. It points inside the original byte array containg
+   * the JSON document.
    */
-  simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+  simdjson_really_inline simdjson_result<std::string_view> raw_json() noexcept;
 
 protected:
   /**
