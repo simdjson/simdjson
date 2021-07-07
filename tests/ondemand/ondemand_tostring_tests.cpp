@@ -197,6 +197,54 @@ bool minify_exceptionless_test() {
   return true;
 }
 
+bool empty_object() {
+  TEST_START();
+  ondemand::parser parser;
+  auto arr_json = R"({})"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS( parser.iterate(arr_json).get(doc));
+  std::string_view serial;
+  ASSERT_SUCCESS( simdjson::to_json_string(doc).get(serial));
+  ASSERT_EQUAL(serial, R"({})");
+  TEST_SUCCEED();
+}
+
+bool empty_array() {
+  TEST_START();
+  ondemand::parser parser;
+  auto arr_json = R"([])"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS( parser.iterate(arr_json).get(doc));
+  std::string_view serial;
+  ASSERT_SUCCESS( simdjson::to_json_string(doc).get(serial));
+  ASSERT_EQUAL(serial, R"([])");
+  TEST_SUCCEED();
+}
+
+bool single_digit_document() {
+  TEST_START();
+  ondemand::parser parser;
+  auto arr_json = R"(9)"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
+  std::string_view serial;
+  ASSERT_SUCCESS( simdjson::to_json_string(doc).get(serial));
+  ASSERT_EQUAL(serial, R"(9)");
+  TEST_SUCCEED();
+}
+
+bool single_string_document() {
+  TEST_START();
+  ondemand::parser parser;
+  auto arr_json = R"("")"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
+  std::string_view serial;
+  ASSERT_SUCCESS( simdjson::to_json_string(doc).get(serial));
+  ASSERT_EQUAL(serial, R"("")");
+  TEST_SUCCEED();
+}
+
 bool at_start_array() {
   TEST_START();
   ondemand::parser parser;
@@ -308,7 +356,6 @@ bool at_array_end() {
   TEST_START();
   ondemand::parser parser;
   std::string_view serial;
-
   auto arr_json = R"( [111,2,3,5] )"_padded;
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
@@ -366,6 +413,10 @@ bool complex_case() {
 
 bool run() {
   return
+      empty_object() &&
+      empty_array() &&
+      single_digit_document() &&
+      single_string_document() &&
       complex_case() &&
       at_start_object() &&
       at_middle_object() &&
