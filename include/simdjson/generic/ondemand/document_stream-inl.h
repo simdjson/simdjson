@@ -106,7 +106,8 @@ inline void document_stream::start() noexcept {
     error = run_stage1(*parser, batch_start);
   }
   if (error) { return; }
-  doc = document(json_iterator(buf, parser));
+  doc_index = batch_start;
+  doc = document(json_iterator(&buf[batch_start], parser));
   doc.iter._streaming = true;
 }
 
@@ -161,6 +162,7 @@ inline void document_stream::next() noexcept {
        * all of the pointers are in sync.
        */
       doc.iter = json_iterator(&buf[batch_start], parser);
+      doc.iter._streaming = true;
       /**
        * End of resync.
        */

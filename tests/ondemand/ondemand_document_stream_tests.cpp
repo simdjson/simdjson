@@ -237,6 +237,37 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool test_leading_spaces() {
+        TEST_START();
+        auto input = R"(                               [1,1] [1,2] [1,3]  [1,4] [1,5] [1,6] [1,7] [1,8] [1,9] [1,10] [1,11] [1,12] [1,13] [1,14] [1,15] )"_padded;;
+        size_t count{0};
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
+        for(auto i = stream.begin(); i != stream.end(); ++i) {
+            ASSERT_SUCCESS(i.error());
+            count++;
+        }
+        ASSERT_EQUAL(count,15);
+        TEST_SUCCEED();
+  }
+
+
+  bool test_crazy_leading_spaces() {
+    TEST_START();
+    auto input = R"(                                                                                                                                                           [1,1] [1,2] [1,3]  [1,4] [1,5] [1,6] [1,7] [1,8] [1,9] [1,10] [1,11] [1,12] [1,13] [1,14] [1,15] )"_padded;;
+    size_t count{0};
+    ondemand::parser parser;
+    ondemand::document_stream stream;
+    ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
+    for(auto i = stream.begin(); i != stream.end(); ++i) {
+        ASSERT_SUCCESS(i.error());
+        count++;
+    }
+    ASSERT_EQUAL(count,15);
+    TEST_SUCCEED();
+  }
+
     bool run() {
         return
             simple_document_iteration() &&
@@ -250,6 +281,8 @@ namespace document_stream_tests {
             truncated_complete_docs() &&
             truncated_unclosed_string() &&
             small_window() &&
+            test_leading_spaces() &&
+            test_crazy_leading_spaces() &&
             true;
     }
 } // document_stream_tests
