@@ -126,7 +126,9 @@ simdjson_really_inline simdjson_result<value> document::operator[](const char *k
 }
 
 simdjson_really_inline error_code document::consume() noexcept {
-  return iter.skip_child(0);
+  auto error = iter.skip_child(0);
+  if(error) { iter.abandon(); }
+  return error;
 }
 
 simdjson_really_inline simdjson_result<std::string_view> document::raw_json() noexcept {
