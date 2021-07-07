@@ -128,23 +128,42 @@ namespace document_stream_tests {
 
   bool test_leading_spaces() {
     std::cout << "Running " << __func__ << std::endl;
-    const simdjson::padded_string input = R"(                                        [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+    const simdjson::padded_string input = R"(                               [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
     size_t count = 0;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
     count = 0;
     for(auto doc: stream) {
-          auto error = doc.error();
-          if(error) {
-            std::cout << "Expected no error but got " << error << std::endl;
-            return false;
-          }
-          count++;
+      auto error = doc.error();
+      if(error) {
+        std::cout << "Expected no error but got " << error << std::endl;
+        return false;
+      }
+      count++;
     }
     return count == 15;
   }
 
+
+  bool test_crazy_leading_spaces() {
+    std::cout << "Running " << __func__ << std::endl;
+    const simdjson::padded_string input = R"(                                                                                                                                                           [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+    size_t count = 0;
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
+    count = 0;
+    for(auto doc: stream) {
+      auto error = doc.error();
+      if(error) {
+        std::cout << "Expected no error but got " << error << std::endl;
+        return false;
+      }
+      count++;
+    }
+    return count == 15;
+  }
 
   bool issue1307() {
     std::cout << "Running " << __func__ << std::endl;
@@ -788,13 +807,31 @@ namespace document_stream_tests {
     return true;
   }
 
+  bool issue1649() {
+    std::cout << "Running " << __func__ << std::endl;
+    std::size_t batch_size = 637;
+    const auto json=simdjson::padded_string(std::string("\xd7"));
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream docs;
+    if(parser.parse_many(json,batch_size).get(docs)) {
+          return false;
+    }
+    size_t bool_count=0;
+    for (auto doc : docs) {
+      bool_count += doc.is_bool();
+    }
+    return true;
+  }
+
   bool run() {
-    return adversarial_single_document_array() &&
+    return issue1649() &&
+           adversarial_single_document_array() &&
            adversarial_single_document() &&
            unquoted_key() &&
            stress_data_race() &&
            stress_data_race_with_error() &&
            test_leading_spaces() &&
+           test_crazy_leading_spaces() &&
            simple_example() &&
            truncated_window() &&
            truncated_window_unclosed_string_in_object() &&
