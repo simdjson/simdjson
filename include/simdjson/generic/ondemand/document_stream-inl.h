@@ -207,7 +207,7 @@ simdjson_really_inline std::string_view document_stream::iterator::source() cons
 
   // If at root, process the first token to determine if scalar value
   if (stream->doc.iter.at_root()) {
-    switch (stream->buf[stream->parser->implementation->structural_indexes[cur_struct_index]]) {
+    switch (stream->buf[stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':   // Depth=1 already at start of document
         break;
       case '}': case ']':
@@ -222,7 +222,7 @@ simdjson_really_inline std::string_view document_stream::iterator::source() cons
   }
 
   while (cur_struct_index <= static_cast<int64_t>(stream->parser->implementation->n_structural_indexes)) {
-    switch (stream->buf[stream->parser->implementation->structural_indexes[cur_struct_index]]) {
+    switch (stream->buf[stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':
         depth++;
         break;
@@ -233,7 +233,8 @@ simdjson_really_inline std::string_view document_stream::iterator::source() cons
     if (depth == 0) { break; }
     cur_struct_index++;
   }
-  return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->parser->implementation->structural_indexes[cur_struct_index] - current_index() + 1);
+
+  return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->parser->implementation->structural_indexes[cur_struct_index] - current_index() + stream->batch_start + 1);;
 }
 
 inline error_code document_stream::iterator::error() const noexcept {

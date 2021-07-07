@@ -27,6 +27,58 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool simple_document_iteration_multiple_batches() {
+        TEST_START();
+        auto json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3])"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json,32).get(stream));
+        std::string_view expected[4] = {"[1,[1,2]]", "{\"a\":1,\"b\":2}", "{\"o\":{\"1\":1,\"2\":2}}", "[1,2,3]"};
+        size_t counter{0};
+        for(auto i = stream.begin(); i != stream.end(); ++i) {
+            ASSERT_TRUE(counter < 4);
+            ASSERT_EQUAL(i.source(), expected[counter++]);
+        }
+        ASSERT_EQUAL(counter, 4);
+        TEST_SUCCEED();
+    }
+
+    bool simple_document_iteration_with_parsing() {
+        TEST_START();
+        auto json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3])"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+        std::string_view expected[4] = {"[1,[1,2]]", "{\"a\":1,\"b\":2}", "{\"o\":{\"1\":1,\"2\":2}}", "[1,2,3]"};
+        size_t counter{0};
+        auto i = stream.begin();
+        int64_t x;
+
+        ASSERT_EQUAL(i.source(),expected[counter++]);
+        ASSERT_SUCCESS( (*i).at_pointer("/1/1").get(x) );
+        ASSERT_EQUAL(x,2);
+        ++i;
+
+        ASSERT_EQUAL(i.source(),expected[counter++]);
+        ASSERT_SUCCESS( (*i).find_field("a").get(x) );
+        ASSERT_EQUAL(x,1);
+        ++i;
+
+        ASSERT_EQUAL(i.source(),expected[counter++]);
+        ASSERT_SUCCESS( (*i).at_pointer("/o/2").get(x) );
+        ASSERT_EQUAL(x,2);
+        ++i;
+
+        ASSERT_EQUAL(i.source(),expected[counter++]);
+        ASSERT_SUCCESS( (*i).at_pointer("/2").get(x) );
+        ASSERT_EQUAL(x,3);
+        ++i;
+
+        if (i != stream.end()) { return false; }
+
+        TEST_SUCCEED();
+    }
+
     bool atoms_json() {
         TEST_START();
         auto json = R"(5 true 20.3 "string" )"_padded;
@@ -46,7 +98,7 @@ namespace document_stream_tests {
     bool doc_index() {
         TEST_START();
         auto json = R"({"z":5}  {"1":1,"2":2,"4":4} [7,  10,   9]  [15,  11,   12, 13]  [154,  110,   112, 1311])"_padded;
-        std::string_view expected[5] = {"{\"z\":5}", "{\"1\":1,\"2\":2,\"4\":4}", "[7,10,9]", "[15,11,12,13]", "[154,110,112,1311]"};
+        std::string_view expected[5] = {R"({"z":5})",R"({"1":1,"2":2,"4":4})","[7,  10,   9]","[15,  11,   12, 13]","[154,  110,   112, 1311]"};
         size_t expected_indexes[5] = {0, 9, 29, 44, 65};
 
         ondemand::parser parser;
@@ -56,7 +108,7 @@ namespace document_stream_tests {
         for(auto i = stream.begin(); i != stream.end(); ++i) {
             ASSERT_TRUE(counter < 5);
             ASSERT_EQUAL(i.current_index(), expected_indexes[counter]);
-            ASSERT_EQUAL(my_string(*i), expected[counter]);
+            ASSERT_EQUAL(i.source(), expected[counter]);
             counter++;
         }
         ASSERT_EQUAL(counter, 5);
@@ -66,7 +118,7 @@ namespace document_stream_tests {
     bool doc_index_multiple_batches() {
         TEST_START();
         auto json = R"({"z":5}  {"1":1,"2":2,"4":4} [7,  10,   9]  [15,  11,   12, 13]  [154,  110,   112, 1311])"_padded;
-        std::string_view expected[5] = {"{\"z\":5}", "{\"1\":1,\"2\":2,\"4\":4}", "[7,10,9]", "[15,11,12,13]", "[154,110,112,1311]"};
+        std::string_view expected[5] = {R"({"z":5})",R"({"1":1,"2":2,"4":4})","[7,  10,   9]","[15,  11,   12, 13]","[154,  110,   112, 1311]"};
         size_t expected_indexes[5] = {0, 9, 29, 44, 65};
 
         ondemand::parser parser;
@@ -76,16 +128,15 @@ namespace document_stream_tests {
         for(auto i = stream.begin(); i != stream.end(); ++i) {
             ASSERT_TRUE(counter < 5);
             ASSERT_EQUAL(i.current_index(), expected_indexes[counter]);
-            ASSERT_EQUAL(my_string(*i), expected[counter]);
+            ASSERT_EQUAL(i.source(), expected[counter]);
             counter++;
         }
         ASSERT_EQUAL(counter, 5);
         TEST_SUCCEED();
     }
 
-    bool testing_source() {
+    bool source_test() {
         TEST_START();
-        // TODO: Add test where source is called after document is parsed
         auto json = R"([1,[1,2]]     {"a":1,"b":2}      {"o":{"1":1,"2":2}}   [1,2,3] )"_padded;
         ondemand::parser parser;
         ondemand::document_stream stream;
@@ -153,19 +204,19 @@ namespace document_stream_tests {
     }
 
     bool truncated_unclosed_string_in_object() {
-    // The last JSON document is intentionally truncated.
-    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
-    ondemand::parser parser;
-    ondemand::document_stream stream;
-    ASSERT_SUCCESS( parser.iterate_many(json).get(stream) );
-    size_t counter{0};
-    for(auto i = stream.begin(); i != stream.end(); ++i) {
-        counter++;
-    }
-    size_t truncated = stream.truncated_bytes();
-    ASSERT_EQUAL(counter,2);
-    ASSERT_EQUAL(truncated,39);
-    TEST_SUCCEED();
+        // The last JSON document is intentionally truncated.
+        auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS( parser.iterate_many(json).get(stream) );
+        size_t counter{0};
+        for(auto i = stream.begin(); i != stream.end(); ++i) {
+            counter++;
+        }
+        size_t truncated = stream.truncated_bytes();
+        ASSERT_EQUAL(counter,2);
+        ASSERT_EQUAL(truncated,39);
+        TEST_SUCCEED();
     }
 
     bool small_window() {
@@ -189,10 +240,12 @@ namespace document_stream_tests {
     bool run() {
         return
             simple_document_iteration() &&
+            simple_document_iteration_multiple_batches() &&
+            simple_document_iteration_with_parsing() &&
             atoms_json() &&
             doc_index() &&
             doc_index_multiple_batches() &&
-            testing_source() &&
+            source_test() &&
             truncated() &&
             truncated_complete_docs() &&
             truncated_unclosed_string() &&
