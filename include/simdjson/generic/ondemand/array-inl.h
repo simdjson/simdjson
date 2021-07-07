@@ -72,7 +72,9 @@ simdjson_really_inline simdjson_result<array_iterator> array::end() noexcept {
   return array_iterator(iter);
 }
 simdjson_really_inline error_code array::consume() noexcept {
-  return iter.json_iter().skip_child(iter.depth()-1);
+  auto error = iter.json_iter().skip_child(iter.depth()-1);
+  if(error) { iter.abandon(); }
+  return error;
 }
 
 simdjson_really_inline simdjson_result<std::string_view> array::raw_json() noexcept {
