@@ -89,7 +89,7 @@ public:
   /**
    * Advance the current token.
    */
-  simdjson_really_inline const uint8_t *advance() noexcept;
+  simdjson_really_inline const uint8_t *return_current_and_advance() noexcept;
 
   /**
    * Get the JSON text for a given token (relative).

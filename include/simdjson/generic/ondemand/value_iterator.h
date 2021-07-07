@@ -330,6 +330,16 @@ protected:
    * Usage: used by array::begin() in debug mode (SIMDJSON_DEVELOPMENT_CHECKS)
    */
   simdjson_really_inline bool is_at_iterator_start() const noexcept;
+
+  /**
+   * Assuming that we are within an object, this returns true if we
+   * are pointing at a key.
+   *
+   * Usage: the skip_child() method should never be used while we are pointing
+   * at a key inside an object.
+   */
+  simdjson_really_inline bool is_at_key() const noexcept;
+
   inline void assert_at_start() const noexcept;
   inline void assert_at_container_start() const noexcept;
   inline void assert_at_root() const noexcept;
