@@ -46,30 +46,14 @@ simdjson_really_inline simdjson_result<object> object::start_root(value_iterator
   return object(iter);
 }
 simdjson_really_inline error_code object::consume() noexcept {
-  /////////////////
-  // You might hope that
-  // return iter.json_iter().skip_child(iter.depth()-1);
-  // would work, but no such luck.
-  /////////////////
-  if(iter.error()) { return iter.error(); }
-  if(!iter.is_open()) { return SUCCESS; }
-  if(!iter.at_first_field()) {
-    auto error = iter.skip_child();
-    if(error) { iter.abandon(); return error; }
-    simdjson_unused bool has_value;
-    error = iter.has_next_field().get(has_value);
-    if(error) { iter.abandon(); return error; }
-  }
-  while (iter.is_open()) {
+  if(iter.is_at_key()) {
     simdjson_unused raw_json_string actual_key;
     auto error = iter.field_key().get(actual_key);
     if (error) { iter.abandon(); return error; };
     if ((error = iter.field_value())) { iter.abandon(); return error; }
-    if ((error = iter.skip_child())) { iter.abandon(); return error; }
-    simdjson_unused bool has_value;
-    if ((error = iter.has_next_field().get(has_value) )) { iter.abandon(); return error; }
   }
-  return SUCCESS;
+  auto error  = iter.json_iter().skip_child(iter.depth()-1);
+  return error;
 }
 
 simdjson_really_inline simdjson_result<std::string_view> object::raw_json() noexcept {
