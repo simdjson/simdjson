@@ -237,6 +237,20 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool large_window() {
+        TEST_START();
+    #if SIZE_MAX > 17179869184
+        auto json = R"({"error":[],"result":{"token":"xxx"}}{"error":[],"result":{"token":"xxx"}})"_padded;
+        ondemand::parser parser;
+        uint64_t window_size{17179869184}; // deliberately too big
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS( parser.iterate_many(json, size_t(window_size)).get(stream) );
+        auto i = stream.begin();
+        ASSERT_ERROR(i.error(),CAPACITY);
+    #endif
+        TEST_SUCCEED();
+    }
+
     bool test_leading_spaces() {
         TEST_START();
         auto input = R"(                               [1,1] [1,2] [1,3]  [1,4] [1,5] [1,6] [1,7] [1,8] [1,9] [1,10] [1,11] [1,12] [1,13] [1,14] [1,15] )"_padded;;
@@ -250,21 +264,158 @@ namespace document_stream_tests {
         }
         ASSERT_EQUAL(count,15);
         TEST_SUCCEED();
-  }
+    }
 
 
-  bool test_crazy_leading_spaces() {
+    bool test_crazy_leading_spaces() {
+        TEST_START();
+        auto input = R"(                                                                                                                                                           [1,1] [1,2] [1,3]  [1,4] [1,5] [1,6] [1,7] [1,8] [1,9] [1,10] [1,11] [1,12] [1,13] [1,14] [1,15] )"_padded;;
+        size_t count{0};
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
+        for(auto i = stream.begin(); i != stream.end(); ++i) {
+            ASSERT_SUCCESS(i.error());
+            count++;
+        }
+        ASSERT_EQUAL(count,15);
+        TEST_SUCCEED();
+    }
+
+    bool adversarial_single_document() {
+        TEST_START();
+        auto json = R"({"f[)"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+        size_t count{0};
+        for (auto & doc : stream) {
+            (void)doc;
+            count++;
+        }
+        ASSERT_EQUAL(count,0);
+        TEST_SUCCEED();
+    }
+
+    bool adversarial_single_document_array() {
+        TEST_START();
+        auto json = R"(["this is an unclosed string ])"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+        size_t count{0};
+        for (auto & doc : stream) {
+            (void)doc;
+            count++;
+        }
+        ASSERT_EQUAL(count,0);
+        TEST_SUCCEED();
+    }
+
+    bool document_stream_test() {
+        TEST_START();
+        fflush(NULL);
+        const size_t n_records = 10000;
+        std::string data;
+        std::vector<char> buf(1024);
+        // Generating data
+        for (size_t i = 0; i < n_records; ++i) {
+            size_t n = snprintf(buf.data(),
+                                buf.size(),
+                            "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
+                            "\"ete\": {\"id\": %zu, \"name\": \"eventail%zu\"}}",
+                            i, i, (i % 2) ? "homme" : "femme", i % 10, i % 10);
+            if (n >= buf.size()) { abort(); }
+            data += std::string(buf.data(), n);
+        }
+
+        for(size_t batch_size = 1000; batch_size < 2000; batch_size += (batch_size>1050?10:1)) {
+            fflush(NULL);
+            simdjson::padded_string str(data);
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            size_t count{0};
+            ASSERT_SUCCESS( parser.iterate_many(str, batch_size).get(stream) );
+            for (auto & doc : stream) {
+                int64_t keyid;
+                ASSERT_SUCCESS( doc["id"].get(keyid) );
+                ASSERT_EQUAL( keyid, int64_t(count) );
+
+                count++;
+            }
+            ASSERT_EQUAL(count,n_records);
+        }
+        TEST_SUCCEED();
+    }
+
+
+    bool document_stream_utf8_test() {
+        TEST_START();
+        fflush(NULL);
+        const size_t n_records = 10000;
+        std::string data;
+        std::vector<char> buf(1024);
+        // Generating data
+        for (size_t i = 0; i < n_records; ++i) {
+        size_t n = snprintf(buf.data(),
+                            buf.size(),
+                        "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
+                        "\"\xC3\xA9t\xC3\xA9\": {\"id\": %zu, \"name\": \"\xC3\xA9ventail%zu\"}}",
+                        i, i, (i % 2) ? "\xE2\xBA\x83" : "\xE2\xBA\x95", i % 10, i % 10);
+        if (n >= buf.size()) { abort(); }
+        data += std::string(buf.data(), n);
+        }
+
+        for(size_t batch_size = 1000; batch_size < 2000; batch_size += (batch_size>1050?10:1)) {
+            fflush(NULL);
+            simdjson::padded_string str(data);
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            size_t count{0};
+            ASSERT_SUCCESS( parser.iterate_many(str, batch_size).get(stream) );
+            for (auto & doc : stream) {
+                int64_t keyid;
+                ASSERT_SUCCESS( doc["id"].get(keyid) );
+                ASSERT_EQUAL( keyid, int64_t(count) );
+
+                count++;
+            }
+            ASSERT_EQUAL( count, n_records )
+        }
+        TEST_SUCCEED();
+    }
+
+    bool stress_data_race() {
     TEST_START();
-    auto input = R"(                                                                                                                                                           [1,1] [1,2] [1,3]  [1,4] [1,5] [1,6] [1,7] [1,8] [1,9] [1,10] [1,11] [1,12] [1,13] [1,14] [1,15] )"_padded;;
-    size_t count{0};
+    // Correct JSON.
+    auto input = R"([1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
     ondemand::parser parser;
     ondemand::document_stream stream;
     ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
     for(auto i = stream.begin(); i != stream.end(); ++i) {
-        ASSERT_SUCCESS(i.error());
+      ASSERT_SUCCESS(i.error());
+    }
+    TEST_SUCCEED();
+  }
+
+  bool stress_data_race_with_error() {
+    TEST_START();
+    // Intentionally broken
+    auto input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+    ondemand::parser parser;
+    ondemand::document_stream stream;
+    ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
+    size_t count{0};
+    for(auto i = stream.begin(); i != stream.end(); ++i) {
+        auto error = i.error();
+        if(count <= 3) {
+            ASSERT_SUCCESS(error);
+        } else {
+            ASSERT_ERROR(error,TAPE_ERROR);
+            break;
+        }
         count++;
     }
-    ASSERT_EQUAL(count,15);
     TEST_SUCCEED();
   }
 
@@ -281,8 +432,15 @@ namespace document_stream_tests {
             truncated_complete_docs() &&
             truncated_unclosed_string() &&
             small_window() &&
+            large_window() &&
             test_leading_spaces() &&
             test_crazy_leading_spaces() &&
+            adversarial_single_document() &&
+            adversarial_single_document_array() &&
+            document_stream_test() &&
+            document_stream_utf8_test() &&
+            stress_data_race() &&
+            stress_data_race_with_error() &&
             true;
     }
 } // document_stream_tests
