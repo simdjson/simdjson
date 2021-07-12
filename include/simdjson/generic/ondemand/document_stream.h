@@ -1,5 +1,4 @@
 #include "simdjson/error.h"
-#include "parser.h"
 #ifdef SIMDJSON_THREADS_ENABLED
 #include <thread>
 #include <mutex>
