@@ -33,6 +33,8 @@ namespace document_stream_tests {
         ondemand::parser parser;
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(json,32).get(stream));
+        ondemand::parser parser2;
+        stream.stage1_thread_parser = &parser2;
         std::string_view expected[4] = {"[1,[1,2]]", "{\"a\":1,\"b\":2}", "{\"o\":{\"1\":1,\"2\":2}}", "[1,2,3]"};
         size_t counter{0};
         for(auto i = stream.begin(); i != stream.end(); ++i) {
@@ -125,6 +127,8 @@ namespace document_stream_tests {
         ondemand::document_stream stream;
         size_t counter{0};
         ASSERT_SUCCESS(parser.iterate_many(json,32).get(stream));
+        ondemand::parser parser2;
+        stream.stage1_thread_parser = &parser2;
         for(auto i = stream.begin(); i != stream.end(); ++i) {
             ASSERT_TRUE(counter < 5);
             ASSERT_EQUAL(i.current_index(), expected_indexes[counter]);
@@ -258,6 +262,8 @@ namespace document_stream_tests {
         ondemand::parser parser;
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
+        ondemand::parser parser2;
+        stream.stage1_thread_parser = &parser2;
         for(auto i = stream.begin(); i != stream.end(); ++i) {
             ASSERT_SUCCESS(i.error());
             count++;
@@ -274,6 +280,8 @@ namespace document_stream_tests {
         ondemand::parser parser;
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
+        ondemand::parser parser2;
+        stream.stage1_thread_parser = &parser2;
         for(auto i = stream.begin(); i != stream.end(); ++i) {
             ASSERT_SUCCESS(i.error());
             count++;
@@ -336,6 +344,8 @@ namespace document_stream_tests {
             ondemand::document_stream stream;
             size_t count{0};
             ASSERT_SUCCESS( parser.iterate_many(str, batch_size).get(stream) );
+            ondemand::parser parser2;
+            stream.stage1_thread_parser = &parser2;
             for (auto & doc : stream) {
                 int64_t keyid;
                 ASSERT_SUCCESS( doc["id"].get(keyid) );
@@ -373,6 +383,8 @@ namespace document_stream_tests {
             ondemand::document_stream stream;
             size_t count{0};
             ASSERT_SUCCESS( parser.iterate_many(str, batch_size).get(stream) );
+            ondemand::parser parser2;
+            stream.stage1_thread_parser = &parser2;
             for (auto & doc : stream) {
                 int64_t keyid;
                 ASSERT_SUCCESS( doc["id"].get(keyid) );
@@ -392,6 +404,8 @@ namespace document_stream_tests {
     ondemand::parser parser;
     ondemand::document_stream stream;
     ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
+    ondemand::parser parser2;
+    stream.stage1_thread_parser = &parser2;
     for(auto i = stream.begin(); i != stream.end(); ++i) {
       ASSERT_SUCCESS(i.error());
     }
@@ -408,6 +422,8 @@ namespace document_stream_tests {
     ondemand::parser parser;
     ondemand::document_stream stream;
     ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
+    ondemand::parser parser2;
+    stream.stage1_thread_parser = &parser2;
     size_t count{0};
     for(auto i = stream.begin(); i != stream.end(); ++i) {
         auto error = i.error();

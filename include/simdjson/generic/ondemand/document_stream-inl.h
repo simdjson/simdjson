@@ -39,11 +39,9 @@ inline void stage1_worker::start_thread() {
         if(!can_work) {
           break;
         }
-        std::cout << "IN THREAD" << std::endl;
         this->owner->stage1_thread_error = this->owner->run_stage1(*this->stage1_thread_parser,
               this->_next_batch_start);
         this->has_work = false;
-        std::cout << "STAGE1 IN THREAD" << std::endl;
         // The condition variable call should be moved after thread_lock.unlock() for performance
         // reasons but thread sanitizers may report it as a data race if we do.
         // See https://stackoverflow.com/questions/35775501/c-should-condition-variable-be-notified-under-lock
@@ -204,15 +202,12 @@ inline void document_stream::start() noexcept {
 
   #ifdef SIMDJSON_THREADS_ENABLED
   if (use_thread && next_batch_start() < len) {
-    std::cout << "START" << std::endl;
     // Kick off the first thread on next batch if needed
-    error = stage1_thread_parser.allocate(batch_size);
-    std::cout << "ALLOCATED" << std::endl;
+    error = stage1_thread_parser->allocate(batch_size);
     if (error) { return; }
     worker->start_thread();
     start_stage1_thread();
     if (error) { return; }
-    std::cout << "FINISH" << std::endl;
   }
   #endif // SIMDJSON_THREADS_ENABLED
 }
@@ -363,7 +358,7 @@ inline void document_stream::load_from_stage1_thread() noexcept {
   worker->finish();
   // Swap to the parser that was loaded up in the thread. Make sure the parser has
   // enough memory to swap to, as well.
-  std::swap(*parser, stage1_thread_parser);
+  std::swap(stage1_thread_parser,parser);
   error = stage1_thread_error;
   if (error) { return; }
 
@@ -381,7 +376,7 @@ inline void document_stream::start_stage1_thread() noexcept {
   this->stage1_thread_error = UNINITIALIZED; // In case something goes wrong, make sure it's an error
   size_t _next_batch_start = this->next_batch_start();
 
-  worker->run(this, & this->stage1_thread_parser, _next_batch_start);
+  worker->run(this, this->stage1_thread_parser, _next_batch_start);
 }
 
 #endif // SIMDJSON_THREADS_ENABLED

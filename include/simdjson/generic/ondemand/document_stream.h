@@ -1,4 +1,5 @@
 #include "simdjson/error.h"
+#include "parser.h"
 #ifdef SIMDJSON_THREADS_ENABLED
 #include <thread>
 #include <mutex>
@@ -76,6 +77,8 @@ private:
    */
   std::mutex locking_mutex{};
   std::condition_variable cond_var{};
+
+  friend class document_stream;
 };
 #endif  // SIMDJSON_THREADS_ENABLED
 
@@ -218,7 +221,7 @@ public:
    */
   simdjson_really_inline iterator end() noexcept;
 
-private:
+//private:
 
   document_stream &operator=(const document_stream &) = delete; // Disallow copying
   document_stream(const document_stream &other) = delete; // Disallow copying
@@ -316,7 +319,7 @@ private:
    * The parser used to run stage 1 in the background. Will be swapped
    * with the regular parser when finished.
    */
-  //ondemand::parser stage1_thread_parser{};
+  ondemand::parser * stage1_thread_parser{};
 
   friend struct stage1_worker;
   #endif // SIMDJSON_THREADS_ENABLED
