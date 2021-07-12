@@ -1,4 +1,9 @@
 #include "simdjson/error.h"
+#ifdef SIMDJSON_THREADS_ENABLED
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#endif
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -23,6 +28,56 @@ static constexpr size_t MINIMAL_BATCH_SIZE = 32;
 class parser;
 class json_iterator;
 class document;
+
+#ifdef SIMDJSON_THREADS_ENABLED
+/** @private Custom worker class **/
+struct stage1_worker {
+  stage1_worker() noexcept = default;
+  stage1_worker(const stage1_worker&) = delete;
+  stage1_worker(stage1_worker&&) = delete;
+  stage1_worker operator=(const stage1_worker&) = delete;
+  ~stage1_worker();
+  /**
+   * We only start the thread when it is needed, not at object construction, this may throw.
+   * You should only call this once.
+   **/
+  void start_thread();
+  /**
+   * Start a stage 1 job. You should first call 'run', then 'finish'.
+   * You must call start_thread once before.
+   */
+  void run(document_stream * ds, parser * stage1, size_t next_batch_start);
+  /** Wait for the run to finish (blocking). You should first call 'run', then 'finish'. **/
+  void finish();
+
+private:
+
+  /**
+   * Normally, we would never stop the thread. But we do in the destructor.
+   * This function is only safe assuming that you are not waiting for results. You
+   * should have called run, then finish, and be done.
+   **/
+  void stop_thread();
+
+  std::thread thread{};
+  /** These three variables define the work done by the thread. **/
+  ondemand::parser * stage1_thread_parser{};
+  size_t _next_batch_start{};
+  document_stream * owner{};
+  /**
+   * We have two state variables. This could be streamlined to one variable in the future but
+   * we use two for clarity.
+   */
+  bool has_work{false};
+  bool can_work{true};
+
+  /**
+   * We lock using a mutex.
+   */
+  std::mutex locking_mutex{};
+  std::condition_variable cond_var{};
+};
+#endif  // SIMDJSON_THREADS_ENABLED
 
 /**
  * A forward-only stream of documents.
@@ -240,6 +295,31 @@ private:
   error_code error;
   size_t batch_start{0};
   size_t doc_index{};
+
+  #ifdef SIMDJSON_THREADS_ENABLED
+  /** Indicates whether we use threads. Note that this needs to be a constant during the execution of the parsing. */
+  bool use_thread;
+
+  inline void load_from_stage1_thread() noexcept;
+
+  /** Start a thread to run stage 1 on the next batch. */
+  inline void start_stage1_thread() noexcept;
+
+  /** Wait for the stage 1 thread to finish and capture the results. */
+  inline void finish_stage1_thread() noexcept;
+
+  /** The error returned from the stage 1 thread. */
+  error_code stage1_thread_error{UNINITIALIZED};
+  /** The thread used to run stage 1 against the next batch in the background. */
+  std::unique_ptr<stage1_worker> worker{new(std::nothrow) stage1_worker()};
+  /**
+   * The parser used to run stage 1 in the background. Will be swapped
+   * with the regular parser when finished.
+   */
+  //ondemand::parser stage1_thread_parser{};
+
+  friend struct stage1_worker;
+  #endif // SIMDJSON_THREADS_ENABLED
 
   friend class parser;
   friend class document;

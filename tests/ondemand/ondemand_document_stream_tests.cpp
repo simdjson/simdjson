@@ -400,6 +400,9 @@ namespace document_stream_tests {
 
   bool stress_data_race_with_error() {
     TEST_START();
+    #if SIMDJSON_THREAD_ENABLED
+    std::cout << "ENABLED" << std::endl;
+    #endif
     // Intentionally broken
     auto input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
     ondemand::parser parser;
