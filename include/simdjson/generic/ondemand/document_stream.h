@@ -318,7 +318,7 @@ public:
    * The parser used to run stage 1 in the background. Will be swapped
    * with the regular parser when finished.
    */
-  ondemand::parser * stage1_thread_parser{};
+  ondemand::parser stage1_thread_parser{};
 
   friend struct stage1_worker;
   #endif // SIMDJSON_THREADS_ENABLED

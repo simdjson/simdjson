@@ -203,7 +203,7 @@ inline void document_stream::start() noexcept {
   #ifdef SIMDJSON_THREADS_ENABLED
   if (use_thread && next_batch_start() < len) {
     // Kick off the first thread on next batch if needed
-    error = stage1_thread_parser->allocate(batch_size);
+    error = stage1_thread_parser.allocate(batch_size);
     if (error) { return; }
     worker->start_thread();
     start_stage1_thread();
@@ -358,7 +358,8 @@ inline void document_stream::load_from_stage1_thread() noexcept {
   worker->finish();
   // Swap to the parser that was loaded up in the thread. Make sure the parser has
   // enough memory to swap to, as well.
-  std::swap(stage1_thread_parser,parser);
+  this->worker->stage1_thread_parser = & this->stage1_thread_parser;
+  std::swap(this->worker->stage1_thread_parser,parser);
   error = stage1_thread_error;
   if (error) { return; }
 
@@ -376,7 +377,7 @@ inline void document_stream::start_stage1_thread() noexcept {
   this->stage1_thread_error = UNINITIALIZED; // In case something goes wrong, make sure it's an error
   size_t _next_batch_start = this->next_batch_start();
 
-  worker->run(this, this->stage1_thread_parser, _next_batch_start);
+  worker->run(this, & this->stage1_thread_parser, _next_batch_start);
 }
 
 #endif // SIMDJSON_THREADS_ENABLED
