@@ -29,7 +29,7 @@ template <int TYPE = PERF_TYPE_HARDWARE> class LinuxEvents {
   size_t num_events{};
   std::vector<uint64_t> temp_result_vec{};
   std::vector<uint64_t> result{};
-  std::vector<int> fdææs{};
+  std::vector<int> fds{};
   bool quiet;
 
 public:
