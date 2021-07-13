@@ -358,8 +358,7 @@ inline void document_stream::load_from_stage1_thread() noexcept {
   worker->finish();
   // Swap to the parser that was loaded up in the thread. Make sure the parser has
   // enough memory to swap to, as well.
-  this->worker->stage1_thread_parser = & this->stage1_thread_parser;
-  std::swap(this->worker->stage1_thread_parser,parser);
+  std::swap(stage1_thread_parser,*parser);
   error = stage1_thread_error;
   if (error) { return; }
 
