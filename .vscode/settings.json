@@ -4,6 +4,7 @@
         {"column": 120 }
     ],
     "files.trimTrailingWhitespace": true,
+    "C_Cpp.autoAddFileAssociations": false,
     "files.associations": {
         "array": "cpp",
         "iterator": "cpp",
