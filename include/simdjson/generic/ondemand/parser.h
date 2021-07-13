@@ -10,6 +10,21 @@ class value;
 class raw_json_string;
 class document_stream;
 
+/**
+ * The default batch size for document_stream instances for this On Demand kernel.
+ * Note that different On Demand kernel may use a different DEFAULT_BATCH_SIZE value
+ * in the future.
+ */
+static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
+/**
+ * Some adversary might try to set the batch size to 0 or 1, which might cause problems.
+ * We set a minimum of 32B since anything else is highly likely to be an error. In practice,
+ * most users will want a much larger batch size.
+ *
+ * All non-negative MINIMAL_BATCH_SIZE values should be 'safe' except that, obviously, no JSON
+ * document can ever span 0 or 1 byte and that very large values would create memory allocation issues.
+ */
+static constexpr size_t MINIMAL_BATCH_SIZE = 32;
 
 /**
  * A JSON fragment iterator.
