@@ -829,16 +829,17 @@ namespace document_stream_tests {
     std::mt19937 gen(637);
     std::uniform_int_distribution<size_t> bs(0,1000);
     std::uniform_int_distribution<size_t> len(0,10);
-    std::uniform_int_distribution<char> ascii(0,char(255));
-    for(size_t i = 0; i < 10000; i++) {
+    std::uniform_int_distribution<char> ascii;
+    for(size_t i = 0; i < 100000; i++) {
       if((i%1000) == 0) { std::cout << "."; std::cout.flush(); }
       size_t batch_size = bs(gen);
-      size_t l = len(gen);
-      std::unique_ptr<char[]> buffer(new char[l]);
+      const size_t l = len(gen);
+      char * buffer = new char[l];
       for(size_t z = 0; z < l; z++) {
-        buffer.get()[z] = ascii(gen);
+        buffer[z] = ascii(gen);
       }
-      const auto json = simdjson::padded_string(buffer.get(), l);
+      const auto json = simdjson::padded_string(buffer, l);
+      delete[] buffer;
       simdjson::dom::parser parser;
       simdjson::dom::document_stream docs;
       if(parser.parse_many(json,batch_size).get(docs)) {
