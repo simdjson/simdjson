@@ -29,6 +29,7 @@ template <int TYPE = PERF_TYPE_HARDWARE> class LinuxEvents {
   size_t num_events{};
   std::vector<uint64_t> temp_result_vec{};
   std::vector<uint64_t> result{};
+  std::vector<int> fds{};
   bool quiet;
 
 public:
@@ -52,10 +53,12 @@ public:
     uint32_t i = 0;
     for (auto config : config_vec) {
       attribs.config = config;
-      fd = static_cast<int>(syscall(__NR_perf_event_open, &attribs, pid, cpu, group, flags));
-      if (fd == -1) {
+      int _fd = static_cast<int>(syscall(__NR_perf_event_open, &attribs, pid, cpu, group, flags));
+      if (_fd == -1) {
         report_error("perf_event_open");
       }
+      fd = _fd; // fd tracks the last _fd value.
+      fds.push_back(fd);
       ioctl(fd, PERF_EVENT_IOC_ID, &result[i++]);
       if (group == -1) {
         group = fd;
@@ -65,7 +68,11 @@ public:
     temp_result_vec.resize(num_events * 2 + 1);
   }
 
-  ~LinuxEvents() { if (fd != -1) { close(fd); } }
+  ~LinuxEvents() {
+   for (auto tfd : fds) {
+      if (tfd != -1) { close(tfd); }
+    }
+  }
 
   inline void start() {
     if (fd != -1) {
