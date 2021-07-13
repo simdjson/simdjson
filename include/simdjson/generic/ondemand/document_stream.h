@@ -204,7 +204,7 @@ public:
    */
   simdjson_really_inline iterator end() noexcept;
 
-//private:
+private:
 
   document_stream &operator=(const document_stream &) = delete; // Disallow copying
   document_stream(const document_stream &other) = delete; // Disallow copying
