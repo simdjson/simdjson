@@ -34,6 +34,8 @@ fi
 builddir=build-sanitizers-O0
 #...but feel free to use this one instead, if you want to build coverage fast.
 #builddir=build-fast
+#...or this one, to find data races
+#builddir=build-threadsanitizer-O1
 
 if [ ! -d $builddir ] ; then
   fuzz/build_fuzzer_variants.sh

@@ -95,7 +95,23 @@ variant=sanitizers-O3
 	ninja all_fuzzers
 	cd ..
     fi
+variant=threadsanitizer-O1
 
+    if [ ! -d build-$variant ] ; then
+
+	mkdir build-$variant
+	cd build-$variant
+	cmake .. \
+	      $COMMON \
+	      -DCMAKE_CXX_FLAGS="-O1 -fsanitize=fuzzer-no-link,thread -fno-sanitize-recover=undefined $CXX_CLAGS_COMMON" \
+	      -DCMAKE_C_FLAGS="-O1 -fsanitize=fuzzer-no-link,thread -fno-sanitize-recover=undefined" \
+	      -DCMAKE_BUILD_TYPE=Debug \
+	      -DSIMDJSON_FUZZ_LINKMAIN=Off \
+	      -DSIMDJSON_FUZZ_LDFLAGS="-fsanitize=fuzzer"
+
+	ninja all_fuzzers
+	cd ..
+    fi
 variant=sanitizers-O0
 
     if [ ! -d build-$variant ] ; then
