@@ -2,6 +2,7 @@
 #include <vector>
 #include <cctype>
 #include <unistd.h>
+#include <random>
 
 #include "simdjson.h"
 #include "test_macros.h"
@@ -823,8 +824,39 @@ namespace document_stream_tests {
     return true;
   }
 
+  bool baby_fuzzer() {
+    std::cout << "Running " << __func__ << std::endl;
+    std::mt19937 gen(637);
+    std::uniform_int_distribution<size_t> bs(0,1000);
+    std::uniform_int_distribution<size_t> len(0,10);
+    std::uniform_int_distribution<int> ascii;
+    for(size_t i = 0; i < 100000; i++) {
+      if((i%1000) == 0) { std::cout << "."; std::cout.flush(); }
+      size_t batch_size = bs(gen);
+      const size_t l = len(gen);
+      char * buffer = new char[l];
+      for(size_t z = 0; z < l; z++) {
+        buffer[z] = char(ascii(gen));
+      }
+      const auto json = simdjson::padded_string(buffer, l);
+      delete[] buffer;
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream docs;
+      if(parser.parse_many(json,batch_size).get(docs)) {
+        return false;
+      }
+      simdjson_unused size_t bool_count = 0;
+      for (auto doc : docs) {
+        bool_count += doc.is_bool();
+      }
+    }
+    std::cout << std::endl;
+    return true;
+  }
+
   bool run() {
-    return issue1649() &&
+    return baby_fuzzer() &&
+           issue1649() &&
            adversarial_single_document_array() &&
            adversarial_single_document() &&
            unquoted_key() &&
