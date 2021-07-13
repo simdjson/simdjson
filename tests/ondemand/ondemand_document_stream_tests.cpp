@@ -404,7 +404,7 @@ namespace document_stream_tests {
     std::cout << "ENABLED" << std::endl;
     #endif
     // Intentionally broken
-    auto input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+    auto input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;
     ondemand::parser parser;
     ondemand::document_stream stream;
     ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
