@@ -28,6 +28,7 @@ public:
   inline parser(parser &&other) noexcept = default;
   simdjson_really_inline parser(const parser &other) = delete;
   simdjson_really_inline parser &operator=(const parser &other) = delete;
+  simdjson_really_inline parser &operator=(parser &&other) noexcept = default;
 
   /** Deallocate the JSON parser. */
   inline ~parser() noexcept = default;
