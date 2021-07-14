@@ -392,6 +392,21 @@ bool iterate_many_truncated_example() {
   TEST_SUCCEED();
 }
 
+bool ndjson_basics_example() {
+  TEST_START();
+  auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
+  ondemand::parser parser;
+  ondemand::document_stream docs = parser.iterate_many(json);
+  size_t count{0};
+  int64_t expected[3] = {1,2,3};
+  for (auto & doc : docs) {
+    int64_t actual;
+    ASSERT_SUCCESS( doc["foo"].get(actual) );
+    ASSERT_EQUAL( actual,expected[count++] );
+  }
+  TEST_SUCCEED();
+}
+
 int main() {
   if (
     true
@@ -417,6 +432,7 @@ int main() {
     && json_pointer_rewind()
     && iterate_many_example()
     && iterate_many_truncated_example()
+    && ndjson_basics_example()
   ) {
     return 0;
   } else {
