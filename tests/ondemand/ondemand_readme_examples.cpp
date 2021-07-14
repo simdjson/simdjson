@@ -396,7 +396,8 @@ bool ndjson_basics_example() {
   TEST_START();
   auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
   ondemand::parser parser;
-  ondemand::document_stream docs = parser.iterate_many(json);
+  ondemand::document_stream docs;
+  ASSERT_SUCCESS( parser.iterate_many(json).get(docs) );
   size_t count{0};
   int64_t expected[3] = {1,2,3};
   for (auto & doc : docs) {
