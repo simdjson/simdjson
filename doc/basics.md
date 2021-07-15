@@ -996,6 +996,7 @@ The parsed results (`dom::document`, `dom::element`, `array`, `object`) depend o
 The CPU detection, which runs the first time parsing is attempted and switches to the fastest
 parser for your CPU, is transparent and thread-safe.
 
+In a threaded environment, stack space is often limited. Running code like simdjson in debug mode may require hundreds of kilobytes of stack memory. Thus stack overflows are a possibility. We recommend you turn on optimization when working in an environment where stack space is limited. If you must run your code in debug mode, we recommend you configure your system to have more stack space. We discourage you from running production code based on a debug build.
 
 Standard Compliance
 --------------------
