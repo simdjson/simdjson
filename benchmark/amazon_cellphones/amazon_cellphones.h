@@ -6,9 +6,30 @@ namespace amazon_cellphones {
 
 using namespace json_benchmark;
 
+template<typename StringType>
+struct brand {
+    StringType brand_name;
+    double total_rating;
+    size_t count{1};
+    template<typename OtherStringType>
+    simdjson_really_inline bool operator==(const brand<OtherStringType> &other) const {
+        return brand_name == other.brand_name;
+    }
+    template<typename OtherStringType>
+    simdjson_really_inline bool operator!=(const brand<OtherStringType> &other) const { return !(*this == other); }
+};
+
+template<typename StringType>
+simdjson_unused static std::ostream &operator<<(std::ostream &o, const brand<StringType> &b) {
+  o << "brand_name: " << b.brand_name << std::endl;
+  o << "total_rating: " << b.total_rating << std::endl;
+  o << "count: " << b.count << std::endl;
+  return o;
+}
+
 template<typename I>
 struct runner : public file_runner<I> {
-    std::vector<uint64_t> result{};
+    std::vector<brand<typename I::StringType>> result{};
 
     bool setup(benchmark::State &state) {
         return this->load_json(state, AMAZON_CELLPHONES_NDJSON);
@@ -24,14 +45,6 @@ struct runner : public file_runner<I> {
         return this->implementation.run(this->json, result);
     }
 
-    bool after_run(benchmark::State &state) {
-        if (!file_runner<I>::after_run(state)) { return false; }
-        std::sort(result.begin(), result.end());
-        auto last = std::unique(result.begin(), result.end());
-        result.erase(last, result.end());
-        return true;
-    }
-
     template<typename R>
     bool diff(benchmark::State &state, runner<R> &reference) {
         return diff_results(state, result, reference.result, diff_flags::NONE);
@@ -44,7 +57,7 @@ struct runner : public file_runner<I> {
 
 struct simdjson_dom;
 
-template<typename I> simdjson_really_inline static void distinct_user_id(benchmark::State &state) {
+template<typename I> simdjson_really_inline static void amazon_cellphones(benchmark::State &state) {
   run_json_benchmark<runner<I>, runner<simdjson_dom>>(state);
 }
 
