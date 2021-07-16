@@ -120,9 +120,9 @@ namespace {
 namespace stage1 {
 
 simdjson_really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
-  // On ARM, we don't short-circuit this if there are no backslashes, because the branch gives us no
-  // benefit and therefore makes things worse.
-  // if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
+  // On Apple M1 this branch can improve performance by 7-14%, although some other
+  // processors see no benefit.
+  if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
   return find_escaped_branchless(backslash);
 }
 
