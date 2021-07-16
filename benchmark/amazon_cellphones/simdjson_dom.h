@@ -8,7 +8,7 @@ namespace amazon_cellphones {
 
 using namespace simdjson;
 
-struct simdjson_ondemand {
+struct simdjson_dom {
   using StringType = std::string;
 
   dom::parser parser{};
@@ -19,16 +19,16 @@ struct simdjson_ondemand {
     ++i;  // Skip first line
     for (;i != stream.end(); ++i) {
       auto doc = *i;
-      StringType copy(std::string_view(doc.at(1).get_string()));
+      StringType copy(std::string_view(doc.at(1)));
       auto x = result.find(copy);
       if (x == result.end()) {  // If key not found, add new key
         result.emplace(copy, amazon_cellphones::brand{
-          doc.at(5).get_double() * doc.at(7).get_uint64(),
-          doc.at(7).get_uint64()
+          double(doc.at(5)) * uint64_t(doc.at(7)),
+          uint64_t(doc.at(7))
         });
       } else {  // Otherwise, update key data
-        x->second.cumulative_rating += doc.at(5).get_double() * doc.at(7).get_uint64();
-        x->second.count += doc.at(7).get_uint64();
+        x->second.cumulative_rating += double(doc.at(5)) * uint64_t(doc.at(7));
+        x->second.reviews_count += uint64_t(doc.at(7));
       }
     }
 

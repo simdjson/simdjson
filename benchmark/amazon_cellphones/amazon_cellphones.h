@@ -10,17 +10,17 @@ using namespace json_benchmark;
 
 struct brand {
     double cumulative_rating;
-    size_t count;
+    uint64_t reviews_count;
     simdjson_really_inline bool operator==(const brand &other) const {
         return cumulative_rating == other.cumulative_rating &&
-            count == other.count;
+            reviews_count == other.reviews_count;
     }
     simdjson_really_inline bool operator!=(const brand &other) const { return !(*this == other); }
 };
 
 simdjson_unused static std::ostream &operator<<(std::ostream &o, const brand &b) {
   o << "cumulative_rating: " << b.cumulative_rating << std::endl;
-  o << "count: " << b.count << std::endl;
+  o << "reviews_count: " << b.reviews_count << std::endl;
   return o;
 }
 
