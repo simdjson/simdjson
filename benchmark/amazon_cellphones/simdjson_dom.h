@@ -8,38 +8,33 @@ namespace amazon_cellphones {
 
 using namespace simdjson;
 
-struct simdjson_dom {
-  using StringType = std::string_view;
+struct simdjson_ondemand {
+  using StringType = std::string;
 
   dom::parser parser{};
 
-  bool run(simdjson::padded_string &json, std::vector<brand<StringType>> &result) {
+  bool run(simdjson::padded_string &json, std::map<StringType, brand> &result) {
     auto stream = parser.parse_many(json);
     auto i = stream.begin();
     ++i;  // Skip first line
     for (;i != stream.end(); ++i) {
       auto doc = *i;
-      auto x = result.begin();
-      while(true) {
-        if (x == result.end()) {
-          result.emplace_back(amazon_cellphones::brand<StringType>{
-            doc.at(1),
-            doc.at(5).get_double() * doc.at(7).get_uint64(),
-            doc.at(7),
-          });
-          break;
-        }
-        else if ((*x).brand_name == doc.at(1)) {
-          (*x).cumulative_rating += doc.at(5).get_double() * doc.at(7).get_uint64();
-          (*x).count += doc.at(7).get_uint64();
-          break;
-        }
-        ++x;
+      StringType copy(std::string_view(doc.at(1).get_string()));
+      auto x = result.find(copy);
+      if (x == result.end()) {  // If key not found, add new key
+        result.emplace(copy, amazon_cellphones::brand{
+          doc.at(5).get_double() * doc.at(7).get_uint64(),
+          doc.at(7).get_uint64()
+        });
+      } else {  // Otherwise, update key data
+        x->second.cumulative_rating += doc.at(5).get_double() * doc.at(7).get_uint64();
+        x->second.count += doc.at(7).get_uint64();
       }
     }
-    std::cout << result << std::endl;
+
     return true;
   }
+
 };
 
 BENCHMARK_TEMPLATE(amazon_cellphones, simdjson_dom)->UseManualTime();

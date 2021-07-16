@@ -1,46 +1,39 @@
 #pragma once
 
 #include "json_benchmark/file_runner.h"
-#include <vector>
+#include <map>
+#include <string>
 
 namespace amazon_cellphones {
 
 using namespace json_benchmark;
 
-template<typename StringType>
 struct brand {
-    const StringType brand_name;
     double cumulative_rating;
     size_t count;
-    template<typename OtherStringType>
-    simdjson_really_inline bool operator==(const brand<OtherStringType> &other) const {
-        return brand_name == other.brand_name &&
-            cumulative_rating == other.cumulative_rating &&
+    simdjson_really_inline bool operator==(const brand &other) const {
+        return cumulative_rating == other.cumulative_rating &&
             count == other.count;
     }
-    template<typename OtherStringType>
-    simdjson_really_inline bool operator!=(const brand<OtherStringType> &other) const { return !(*this == other); }
+    simdjson_really_inline bool operator!=(const brand &other) const { return !(*this == other); }
 };
 
-template<typename StringType>
-simdjson_unused static std::ostream &operator<<(std::ostream &o, const brand<StringType> &b) {
-  o << "brand_name: " << b.brand_name << std::endl;
+simdjson_unused static std::ostream &operator<<(std::ostream &o, const brand &b) {
   o << "cumulative_rating: " << b.cumulative_rating << std::endl;
   o << "count: " << b.count << std::endl;
   return o;
 }
 
 template<typename StringType>
-simdjson_unused static std::ostream &operator<<(std::ostream &o, const std::vector<brand<StringType>> &result) {
-  for (auto b : result) {
-      o << b << std::endl;
-  }
+simdjson_unused static std::ostream &operator<<(std::ostream &o, const std::pair<const StringType, brand> &p) {
+  o << "brand: " << p.first << std::endl;
+	o << p.second;
   return o;
 }
 
 template<typename I>
 struct runner : public file_runner<I> {
-    std::vector<brand<typename I::StringType>> result{};
+    std::map<typename I::StringType, brand> result{};
 
     bool setup(benchmark::State &state) {
         return this->load_json(state, AMAZON_CELLPHONES_NDJSON);
