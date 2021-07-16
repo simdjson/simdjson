@@ -3,7 +3,6 @@
 #if SIMDJSON_EXCEPTIONS
 
 #include "amazon_cellphones.h"
-#include <algorithm>
 
 namespace amazon_cellphones {
 
@@ -14,26 +13,28 @@ struct simdjson_dom {
 
   dom::parser parser{};
 
-  bool run(simdjson::padded_string &json, std::vector<brand<StringType>> &result) {
+  bool run(simdjson::padded_string &json, std::map<StringType, brand<StringType>> &result) {
+    std::cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" << std::endl;
     auto stream = parser.parse_many(json);
     auto i = stream.begin();
     ++i;  // Skip first line
     for (;i != stream.end(); ++i) {
       auto doc = *i;
-      amazon_cellphones::brand<StringType> b { doc.at(1), doc.at(5) };
-      auto is_in = std::find(result.begin(),result.end(),b);
+      std::cout << "CURRENT: " << doc.at(1) << '\t' << doc.at(5) << std::endl;
+      std::cout << "BEFORE: " << result << std::endl;
+      auto is_in = result.find(doc.at(1));
       if (is_in != result.end()) {
-        std::cout << (*is_in).brand_name << '\t' << b.brand_name << std::endl;
-        (*is_in).total_rating = (*is_in).total_rating + b.total_rating;
-        (*is_in).count++;
+        is_in->second.count++;
+        is_in->second.total_rating = is_in->second.total_rating + doc.at(5).get_double();
       }
       else {
-        std::cout << "NEW: " << b.brand_name << std::endl;
-        result.push_back(b);
+        result.emplace(doc.at(1), amazon_cellphones::brand<StringType>{
+          doc.at(1).get_string(),
+          doc.at(5).get_double()
+        });
+        std::cout << "NEW: "<< doc.at(1) << '\t' << doc.at(5) << std::endl;
       }
-    }
-    for (auto b : result) {
-      std::cout << b.brand_name << '\t' << b.total_rating << '\t' << b.count << std::endl;
+      std::cout << "AFTER: " << result << std::endl;
     }
     return true;
   }

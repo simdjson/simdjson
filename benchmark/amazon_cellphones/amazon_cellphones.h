@@ -13,7 +13,9 @@ struct brand {
     size_t count{1};
     template<typename OtherStringType>
     simdjson_really_inline bool operator==(const brand<OtherStringType> &other) const {
-        return brand_name == other.brand_name;
+        return brand_name == other.brand_name &&
+            total_rating == other.total_rating &&
+            count == other.count;
     }
     template<typename OtherStringType>
     simdjson_really_inline bool operator!=(const brand<OtherStringType> &other) const { return !(*this == other); }
@@ -27,9 +29,18 @@ simdjson_unused static std::ostream &operator<<(std::ostream &o, const brand<Str
   return o;
 }
 
+template<typename StringType>
+simdjson_unused static std::ostream &operator<<(std::ostream &o, const std::map<std::string_view, brand<StringType>> &result) {
+	for (auto p : result) {
+		o << "Brand: "<< p.first << std::endl;
+		o << p.second;
+	}
+  return o;
+}
+
 template<typename I>
 struct runner : public file_runner<I> {
-    std::vector<brand<typename I::StringType>> result{};
+    std::map<typename I::StringType ,brand<typename I::StringType>> result{};
 
     bool setup(benchmark::State &state) {
         return this->load_json(state, AMAZON_CELLPHONES_NDJSON);
