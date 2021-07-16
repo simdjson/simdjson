@@ -254,8 +254,10 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     // Design consideration: it seems like a function with the
     // signature simd8<L> compress(uint16_t mask) would be
     // sensible, but the AVX ISA makes this kind of approach difficult.
+    // The ARM version returns count_ones(mask) * 2, part of which is calculated as a byproduct,
+    // as count_ones is much more expensive than on x64.
     template<typename L>
-    simdjson_really_inline void compress(uint16_t mask, L * output) const {
+    simdjson_really_inline int compress(uint16_t mask, L * output) const {
       using internal::thintable_epi8;
       using internal::BitsSetTable256mul2;
       using internal::pshufb_combine_table;
@@ -287,6 +289,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
       uint8x16_t compactmask = vld1q_u8(reinterpret_cast<const uint8_t *>(pshufb_combine_table + pop1 * 8));
       uint8x16_t answer = vqtbl1q_u8(pruned, compactmask);
       vst1q_u8(reinterpret_cast<uint8_t*>(output), answer);
+      return pop1 + BitsSetTable256mul2[mask2];
     }
 
     template<typename L>
@@ -440,10 +443,10 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
 
 
     simdjson_really_inline void compress(uint64_t mask, T * output) const {
-      this->chunks[0].compress(uint16_t(mask), output);
-      this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - count_ones(mask & 0xFFFF));
-      this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - count_ones(mask & 0xFFFFFFFF));
-      this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
+      int ones_count_mul2 = this->chunks[0].compress(uint16_t(mask), output);
+      ones_count_mul2 += this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - (ones_count_mul2 >> 1));
+      ones_count_mul2 += this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - (ones_count_mul2 >> 1));
+      this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - (ones_count_mul2 >> 1));
     }
 
     simdjson_really_inline uint64_t to_bitmask() const {
