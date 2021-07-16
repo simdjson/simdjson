@@ -1,6 +1,7 @@
 #pragma once
 
 #include "json_benchmark/file_runner.h"
+#include <vector>
 
 namespace amazon_cellphones {
 
@@ -8,7 +9,7 @@ using namespace json_benchmark;
 
 template<typename StringType>
 struct brand {
-    StringType brand_name;
+    const StringType brand_name;
     double total_rating;
     size_t count{1};
     template<typename OtherStringType>
@@ -30,17 +31,16 @@ simdjson_unused static std::ostream &operator<<(std::ostream &o, const brand<Str
 }
 
 template<typename StringType>
-simdjson_unused static std::ostream &operator<<(std::ostream &o, const std::map<std::string_view, brand<StringType>> &result) {
-	for (auto p : result) {
-		o << "Brand: "<< p.first << std::endl;
-		o << p.second;
-	}
+simdjson_unused static std::ostream &operator<<(std::ostream &o, const std::vector<brand<StringType>> &result) {
+  for (auto b : result) {
+      o << b << std::endl;
+  }
   return o;
 }
 
 template<typename I>
 struct runner : public file_runner<I> {
-    std::map<typename I::StringType ,brand<typename I::StringType>> result{};
+    std::vector<brand<typename I::StringType>> result{};
 
     bool setup(benchmark::State &state) {
         return this->load_json(state, AMAZON_CELLPHONES_NDJSON);

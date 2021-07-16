@@ -13,29 +13,30 @@ struct simdjson_dom {
 
   dom::parser parser{};
 
-  bool run(simdjson::padded_string &json, std::map<StringType, brand<StringType>> &result) {
-    std::cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" << std::endl;
+  bool run(simdjson::padded_string &json, std::vector<brand<StringType>> &result) {
     auto stream = parser.parse_many(json);
     auto i = stream.begin();
     ++i;  // Skip first line
     for (;i != stream.end(); ++i) {
       auto doc = *i;
-      std::cout << "CURRENT: " << doc.at(1) << '\t' << doc.at(5) << std::endl;
-      std::cout << "BEFORE: " << result << std::endl;
-      auto is_in = result.find(doc.at(1));
-      if (is_in != result.end()) {
-        is_in->second.count++;
-        is_in->second.total_rating = is_in->second.total_rating + doc.at(5).get_double();
+      auto x = result.begin();
+      while(true) {
+        if (x == result.end()) {
+          result.emplace_back(amazon_cellphones::brand<StringType>{
+            doc.at(1),
+            doc.at(5)
+          });
+          break;
+        }
+        else if ((*x).brand_name == doc.at(1)) {
+          (*x).total_rating += doc.at(5).get_double();
+          (*x).count++;
+          break;
+        }
+        ++x;
       }
-      else {
-        result.emplace(doc.at(1), amazon_cellphones::brand<StringType>{
-          doc.at(1).get_string(),
-          doc.at(5).get_double()
-        });
-        std::cout << "NEW: "<< doc.at(1) << '\t' << doc.at(5) << std::endl;
-      }
-      std::cout << "AFTER: " << result << std::endl;
     }
+    std::cout << result << std::endl;
     return true;
   }
 };
