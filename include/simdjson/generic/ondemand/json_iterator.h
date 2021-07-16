@@ -3,6 +3,7 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
 class document;
+class document_stream;
 class object;
 class array;
 class value;
@@ -44,6 +45,20 @@ protected:
    * - 3 = key or value inside root array/object.
    */
   depth_t _depth{};
+  /**
+   * Beginning of the document indexes.
+   * Normally we have root == parser->implementation->structural_indexes.get()
+   * but this may differ, especially in streaming mode (where we have several
+   * documents);
+   */
+  token_position _root{};
+  /**
+   * Normally, a json_iterator operates over a single document, but in
+   * some cases, we may have a stream of documents. This attribute is meant
+   * as meta-data: the json_iterator works the same irrespective of the
+   * value of this attribute.
+   */
+  bool _streaming{false};
 
 public:
   simdjson_really_inline json_iterator() noexcept = default;
@@ -60,6 +75,14 @@ public:
    * Tell whether the iterator is still at the start
    */
   simdjson_really_inline bool at_root() const noexcept;
+
+  /**
+   * Tell whether we should be expected to run in streaming
+   * mode (iterating over many documents). It is pure metadata
+   * that does not affect how the iterator works. It is used by
+   * start_root_array() and start_root_object().
+   */
+  simdjson_really_inline bool streaming() const noexcept;
 
   /**
    * Get the root value iterator
@@ -155,8 +178,8 @@ public:
    *
    * @param child_depth the expected child depth.
    */
-  simdjson_really_inline void descend_to(depth_t parent_depth) noexcept;
-  simdjson_really_inline void descend_to(depth_t parent_depth, int32_t delta) noexcept;
+  simdjson_really_inline void descend_to(depth_t child_depth) noexcept;
+  simdjson_really_inline void descend_to(depth_t child_depth, int32_t delta) noexcept;
 
   /**
    * Get current depth.
@@ -205,6 +228,7 @@ protected:
   simdjson_really_inline token_position last_document_position() const noexcept;
 
   friend class document;
+  friend class document_stream;
   friend class object;
   friend class array;
   friend class value;

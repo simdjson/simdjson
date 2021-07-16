@@ -12,4 +12,5 @@
 #include "simdjson/generic/ondemand/field-inl.h"
 #include "simdjson/generic/ondemand/object-inl.h"
 #include "simdjson/generic/ondemand/parser-inl.h"
+#include "simdjson/generic/ondemand/document_stream-inl.h"
 #include "simdjson/generic/ondemand/serialization-inl.h"

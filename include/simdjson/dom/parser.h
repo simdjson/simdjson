@@ -335,7 +335,7 @@ public:
    *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
-  inline simdjson_result<document_stream> load_many(const std::string &path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> load_many(const std::string &path, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
 
   /**
    * Parse a buffer containing many JSON documents.
@@ -429,18 +429,18 @@ public:
    *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
-  inline simdjson_result<document_stream> parse_many(const uint8_t *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> parse_many(const uint8_t *buf, size_t len, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
-  inline simdjson_result<document_stream> parse_many(const char *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> parse_many(const char *buf, size_t len, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
-  inline simdjson_result<document_stream> parse_many(const std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> parse_many(const std::string &s, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
   inline simdjson_result<document_stream> parse_many(const std::string &&s, size_t batch_size) = delete;// unsafe
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
-  inline simdjson_result<document_stream> parse_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> parse_many(const padded_string &s, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
   inline simdjson_result<document_stream> parse_many(const padded_string &&s, size_t batch_size) = delete;// unsafe
 
   /** @private We do not want to allow implicit conversion from C string to std::string. */
-  simdjson_result<document_stream> parse_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
+  simdjson_result<document_stream> parse_many(const char *buf, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept = delete;
 
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
