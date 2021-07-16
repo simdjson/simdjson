@@ -10,12 +10,12 @@ using namespace json_benchmark;
 template<typename StringType>
 struct brand {
     const StringType brand_name;
-    double total_rating;
-    size_t count{1};
+    double cumulative_rating;
+    size_t count;
     template<typename OtherStringType>
     simdjson_really_inline bool operator==(const brand<OtherStringType> &other) const {
         return brand_name == other.brand_name &&
-            total_rating == other.total_rating &&
+            cumulative_rating == other.cumulative_rating &&
             count == other.count;
     }
     template<typename OtherStringType>
@@ -25,7 +25,7 @@ struct brand {
 template<typename StringType>
 simdjson_unused static std::ostream &operator<<(std::ostream &o, const brand<StringType> &b) {
   o << "brand_name: " << b.brand_name << std::endl;
-  o << "total_rating: " << b.total_rating << std::endl;
+  o << "cumulative_rating: " << b.cumulative_rating << std::endl;
   o << "count: " << b.count << std::endl;
   return o;
 }

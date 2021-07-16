@@ -24,13 +24,14 @@ struct simdjson_dom {
         if (x == result.end()) {
           result.emplace_back(amazon_cellphones::brand<StringType>{
             doc.at(1),
-            doc.at(5)
+            doc.at(5).get_double() * doc.at(7).get_uint64(),
+            doc.at(7),
           });
           break;
         }
         else if ((*x).brand_name == doc.at(1)) {
-          (*x).total_rating += doc.at(5).get_double();
-          (*x).count++;
+          (*x).cumulative_rating += doc.at(5).get_double() * doc.at(7).get_uint64();
+          (*x).count += doc.at(7).get_uint64();
           break;
         }
         ++x;
