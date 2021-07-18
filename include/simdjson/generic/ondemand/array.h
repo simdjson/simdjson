@@ -74,14 +74,17 @@ public:
    */
   inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
   /**
-   * Consumes the array and return a string_view instance corresponding to the
-   * array as represented in JSON. It points inside the original document. The
-   * array must not have been previously accessed: we must still point at the
-   * beginning.
+   * Consumes the array and returns a string_view instance corresponding to the
+   * array as represented in JSON. It points inside the original document.
    */
-  simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+  simdjson_really_inline simdjson_result<std::string_view> raw_json() noexcept;
 
 protected:
+  /**
+   * Go to the end of the array, no matter where you are right now.
+   */
+  simdjson_really_inline error_code consume() noexcept;
+
   /**
    * Begin array iteration.
    *

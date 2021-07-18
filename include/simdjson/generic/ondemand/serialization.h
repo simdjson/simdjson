@@ -2,9 +2,26 @@
 #include "simdjson/error.h"
 
 namespace simdjson {
+/**
+ * Create a string-view instance out of a document instance. The string-view instance
+ * contains JSON text that is suitable to be parsed as JSON again.
+ */
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::document& x) noexcept;
+/**
+ * Create a string-view instance out of a value instance. The string-view instance
+ * contains JSON text that is suitable to be parsed as JSON again. The value must
+ * not have been accessed previously.
+ */
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::value& x) noexcept;
+/**
+ * Create a string-view instance out of an object instance. The string-view instance
+ * contains JSON text that is suitable to be parsed as JSON again.
+ */
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::object& x) noexcept;
+/**
+ * Create a string-view instance out of an array instance. The string-view instance
+ * contains JSON text that is suitable to be parsed as JSON again.
+ */
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::array& x) noexcept;
 #if SIMDJSON_EXCEPTIONS
 inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> x);

@@ -14,37 +14,19 @@ inline std::string_view trim(const std::string_view str) noexcept {
 
 
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::document& x) noexcept {
-  using namespace SIMDJSON_IMPLEMENTATION::ondemand;
-  json_type t;
-  auto error = x.type().get(t);
-  if(error != SUCCESS) { return error; }
-  switch (t)
-  {
-    case json_type::array:
-    {
-      SIMDJSON_IMPLEMENTATION::ondemand::array array;
-      error = x.get_array().get(array);
-      if(error) { return error; }
-      return to_json_string(array);
-    }
-    case json_type::object:
-    {
-      SIMDJSON_IMPLEMENTATION::ondemand::object object;
-      error = x.get_object().get(object);
-      if(error) { return error; }
-      return to_json_string(object);
-    }
-    default:
-    {
-      std::string_view v;
-      error = x.raw_json_token().get(v);
-      if(error) { return error; }
-      return trim(v);
-    }
-  }
+  std::string_view v;
+  auto error = x.raw_json().get(v);
+  if(error) {return error; }
+  return trim(v);
 }
 
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::value& x) noexcept {
+  /**
+   * If we somehow receive a value that has already been consumed,
+   * then the following code could be in trouble. E.g., we create
+   * an array as needed, but if an array was already created, then
+   * it could be bad.
+   */
   using namespace SIMDJSON_IMPLEMENTATION::ondemand;
   SIMDJSON_IMPLEMENTATION::ondemand::json_type t;
   auto error = x.type().get(t);
@@ -72,14 +54,14 @@ inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION:
 
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::object& x) noexcept {
   std::string_view v;
-  auto error = x.raw_json_token().get(v);
+  auto error = x.raw_json().get(v);
   if(error) {return error; }
   return trim(v);
 }
 
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::array& x) noexcept {
   std::string_view v;
-  auto error = x.raw_json_token().get(v);
+  auto error = x.raw_json().get(v);
   if(error) {return error; }
   return trim(v);
 }
