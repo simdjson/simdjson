@@ -68,13 +68,13 @@ include(FetchContent)
 FetchContent_Declare(
   simdjson
   GIT_REPOSITORY https://github.com/simdjson/simdjson.git
-  GIT_TAG  v0.9.3
+  GIT_TAG  tags/v0.9.6
   GIT_SHALLOW TRUE)
 
 FetchContent_MakeAvailable(simdjson)
 ```
 
-You should replace `GIT_TAG  v0.9.3` by the version you need. If you omit `GIT_TAG  v0.9.3`, you will work from the main branch of simdjson: we recommend that if you are working on production code, you always work from a release.
+You should provide `GIT_TAG` with the release you need. If you omit `GIT_TAG  ...`, you will work from the main branch of simdjson: we recommend that if you are working on production code, you always work from a release.
 
 Elsewhere in your project, you can declare dependencies on simdjson with lines such as these:
 
@@ -1026,6 +1026,7 @@ The parsed results (`dom::document`, `dom::element`, `array`, `object`) depend o
 The CPU detection, which runs the first time parsing is attempted and switches to the fastest
 parser for your CPU, is transparent and thread-safe.
 
+In a threaded environment, stack space is often limited. Running code like simdjson in debug mode may require hundreds of kilobytes of stack memory. Thus stack overflows are a possibility. We recommend you turn on optimization when working in an environment where stack space is limited. If you must run your code in debug mode, we recommend you configure your system to have more stack space. We discourage you from running production code based on a debug build.
 
 Standard Compliance
 --------------------

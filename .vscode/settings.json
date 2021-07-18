@@ -4,6 +4,7 @@
         {"column": 120 }
     ],
     "files.trimTrailingWhitespace": true,
+    "C_Cpp.autoAddFileAssociations": false,
     "files.associations": {
         "array": "cpp",
         "iterator": "cpp",
@@ -77,9 +78,6 @@
         "utility": "cpp",
         "vector": "cpp",
         "*.ipp": "cpp",
-        "deque": "cpp",
-        "fstream": "cpp",
-        "map": "cpp",
-        "stack": "cpp"
+        "*.tcc": "cpp"
     }
 }
