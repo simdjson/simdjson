@@ -35,6 +35,20 @@ namespace misc_tests {
     TEST_SUCCEED();
   }
 
+  bool issue1661() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata = R"({"":],"global-groups":[[]}})"_padded;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    simdjson::ondemand::object global_groups;
+    ASSERT_ERROR(doc["global-groups"].get(global_groups), INCORRECT_TYPE);
+    simdjson::ondemand::object globals;
+    auto error = doc["globals"].get(globals);
+    if(error == SUCCESS) { return false; }
+    TEST_SUCCEED();
+  }
+
   simdjson_warn_unused bool big_integer() {
     TEST_START();
     simdjson::ondemand::parser parser;
@@ -120,6 +134,7 @@ namespace misc_tests {
   bool run() {
     return
            issue1660() &&
+           issue1661() &&
            big_integer_in_string() &&
            big_integer() &&
            raw_json_token() &&
