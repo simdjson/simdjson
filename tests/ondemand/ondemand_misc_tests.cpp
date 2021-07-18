@@ -5,6 +5,36 @@ using namespace simdjson;
 
 namespace misc_tests {
   using namespace std;
+  bool issue1660() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata =  R"({"globals":{"a":{"shadowable":[}}}})"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ondemand::object globals;
+    ASSERT_SUCCESS(doc["globals"].get(globals));
+    for (auto global_field : globals) {
+      ondemand::value global;
+      ASSERT_SUCCESS(global_field.value().get(global));
+      ondemand::json_type global_type;
+      ASSERT_SUCCESS(global.type().get(global_type));
+      ASSERT_EQUAL(global_type, ondemand::json_type::object);
+      ondemand::object global_object;
+      ASSERT_SUCCESS(global.get(global_object));
+      ondemand::value shadowable;
+      ASSERT_SUCCESS(global_object["shadowable"].get(shadowable));
+      ASSERT_ERROR(shadowable.get_bool(), INCORRECT_TYPE);
+      ondemand::value badvalue;
+      auto error = global_object["writable"].get(badvalue);
+      if(error == SUCCESS) {
+        return false;
+      } else {
+        break;
+      }
+    }
+    TEST_SUCCEED();
+  }
+
   simdjson_warn_unused bool big_integer() {
     TEST_START();
     simdjson::ondemand::parser parser;
@@ -89,6 +119,7 @@ namespace misc_tests {
 
   bool run() {
     return
+           issue1660() &&
            big_integer_in_string() &&
            big_integer() &&
            raw_json_token() &&
