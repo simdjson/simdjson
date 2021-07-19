@@ -117,7 +117,7 @@ bool json_array_count_complex() {
   std::cout << "Number of elements: " <<  count << std::endl;
   size_t c = 0;
   for(ondemand::object elem : test_array) {
-    std::cout << simdjson::to_string(elem);
+    std::cout << simdjson::to_json_string(elem);
     c++;
   }
   std::cout << std::endl;

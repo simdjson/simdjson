@@ -56,7 +56,7 @@ simdjson_really_inline bool assert_success(const T &actual, const char *operatio
 template<typename A, typename E=A>
 simdjson_really_inline bool assert_equal(const A &actual, const E &expected, const char *operation = "result") {
   if (!equals_expected(actual, expected)) {
-    std::cerr << "FAIL: " << operation << " returned " << actual << " (expected " << expected << ")" << std::flush;
+    std::cerr << "FAIL: " << operation << " returned '" << actual << "' (expected '" << expected << "')" << std::flush;
     std::cerr << std::endl;
     return false;
   }

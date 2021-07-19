@@ -68,13 +68,13 @@ include(FetchContent)
 FetchContent_Declare(
   simdjson
   GIT_REPOSITORY https://github.com/simdjson/simdjson.git
-  GIT_TAG  v0.9.3
+  GIT_TAG  tags/v0.9.6
   GIT_SHALLOW TRUE)
 
 FetchContent_MakeAvailable(simdjson)
 ```
 
-You should replace `GIT_TAG  v0.9.3` by the version you need. If you omit `GIT_TAG  v0.9.3`, you will work from the main branch of simdjson: we recommend that if you are working on production code, you always work from a release.
+You should provide `GIT_TAG` with the release you need. If you omit `GIT_TAG  ...`, you will work from the main branch of simdjson: we recommend that if you are working on production code, you always work from a release.
 
 Elsewhere in your project, you can declare dependencies on simdjson with lines such as these:
 
@@ -253,19 +253,49 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   - `field.value()` will get you the value, which you can then use all these other methods on.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index. Instead,
   you will need to iterate through the array and keep an index yourself.
-* **Output to strings (simdjson 1.0 or better):** Given a document or an element (or node) out of a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_string(element)` returns a `simdjson::simdjson_result<std::string>` instance. You can cast it to `std::string` and it will throw when an error was encountered (`std::string(simdjson::to_string(element))`). Or else you can do `std::string s; if(simdjson::to_string(element).get(s) == simdjson::SUCCESS) { ... }`. This consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document. The returned string contains a serialized version of the element or document that is suitable to be parsed again. It is also a newly allocated `std::string` that is independent from the simdjson parser. The `to_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes). Th
+* **Output to strings (simdjson 1.0 or better):** Given a document, a value, an array or an object in a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_json_string(element)`. A call to `to_json_string` consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document. The `simdjson::to_json_string` does not allocate memory. The `to_json_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes).
   > ```C++
   > // serialize a JSON to an escaped std::string instance so that it can be parsed again as JSON
-  > auto cars_json = R"( { "test": "result"  }  )"_padded;
-  > ondemand::document doc = parser.iterate(cars_json);
-  > std::cout << simdjson::to_string(doc["test"]) << std::endl; // Requires simdjson 1.0 or better
+  > auto silly_json = R"( { "test": "result"  }  )"_padded;
+  > ondemand::document doc = parser.iterate(silly_json);
+  > std::cout << simdjson::to_json_string(doc["test"]) << std::endl; // Requires simdjson 1.0 or better
   >````
   > ```C++
   > // retrieves an unescaped string value as a string_view instance
-  > auto cars_json = R"( { "test": "result"  }  )"_padded;
-  > ondemand::document doc = parser.iterate(cars_json);
+  > auto silly_json = R"( { "test": "result"  }  )"_padded;
+  > ondemand::document doc = parser.iterate(silly_json);
   > std::cout << std::string_view(doc["test"]) << std::endl;
   >````
+You can use `to_json_string` to efficiently extract components of a JSON document to reconstruct a new JSON document, as in the following example:
+  > ```C++
+  > auto cars_json = R"( [
+  >   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  >   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  >   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  > ] )"_padded;
+  > std::vector<std::string_view> arrays;
+  > // We are going to collect string_view instances which point inside the `cars_json` string
+  > // and are therefore valid as long as `cars_json` remains in scope.
+  > {
+  >   ondemand::parser parser;
+  >   for (ondemand::object car : parser.iterate(cars_json)) {
+  >     if(uint64_t(car["year"]) > 2000) {
+  >       arrays.push_back(simdjson::to_json_string(car["tire_pressure"]));
+  >     }
+  >   }
+  > }
+  > // We can now convert to a JSON string:
+  > std::ostringstream oss;
+  > oss << "[";
+  > for(size_t i = 0; i < arrays.size(); i++) {
+  >   if(i>0) { oss << ","; }
+  >   oss << arrays[i];
+  > }
+  > oss << "]";
+  > auto json_string = oss.str();
+  > // json_string == "[[ 40.1, 39.9, 37.7, 40.4 ],[ 30.1, 31.0, 28.6, 28.7 ]]"
+  >````
+
 
 ### Examples
 
@@ -974,6 +1004,7 @@ The parsed results (`dom::document`, `dom::element`, `array`, `object`) depend o
 The CPU detection, which runs the first time parsing is attempted and switches to the fastest
 parser for your CPU, is transparent and thread-safe.
 
+In a threaded environment, stack space is often limited. Running code like simdjson in debug mode may require hundreds of kilobytes of stack memory. Thus stack overflows are a possibility. We recommend you turn on optimization when working in an environment where stack space is limited. If you must run your code in debug mode, we recommend you configure your system to have more stack space. We discourage you from running production code based on a debug build.
 
 Standard Compliance
 --------------------

@@ -352,8 +352,18 @@ public:
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
   simdjson_really_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
-
+  /**
+   * Consumes the document and returns a string_view instance corresponding to the
+   * document as represented in JSON. It points inside the original byte array containg
+   * the JSON document.
+   */
+  simdjson_really_inline simdjson_result<std::string_view> raw_json() noexcept;
 protected:
+  /**
+   * Consumes the document.
+   */
+  simdjson_really_inline error_code consume() noexcept;
+
   simdjson_really_inline document(ondemand::json_iterator &&iter) noexcept;
   simdjson_really_inline const uint8_t *text(uint32_t idx) const noexcept;
 
