@@ -187,12 +187,14 @@ simdjson_really_inline void json_iterator::abandon() noexcept {
 }
 
 simdjson_really_inline const uint8_t *json_iterator::return_current_and_advance() noexcept {
-  assert_more_tokens();
+  // The following assert_more_tokens is currently disabled because rely on end-of-file buffering.
+  // assert_more_tokens();
   return token.return_current_and_advance();
 }
 
 simdjson_really_inline const uint8_t *json_iterator::peek(int32_t delta) const noexcept {
-  assert_more_tokens(delta+1);
+  // The following assert_more_tokens is currently disabled because rely on end-of-file buffering.
+  // assert_more_tokens(delta+1);
   return token.peek(delta);
 }
 
