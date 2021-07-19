@@ -341,6 +341,35 @@ protected:
   simdjson_really_inline const uint8_t *peek_start() const noexcept;
   simdjson_really_inline uint32_t peek_start_length() const noexcept;
 
+  /**
+   * The general idea of the advance_... methods and the peek_* methods
+   * is that you first peek and check that you have desired type. If you do,
+   * and only if you do, then you advance.
+   *
+   * We used to unconditionally advance. But this made reasoning about our
+   * current state difficult.
+   * Suppose you always advance. Look at the 'value' matching the key
+   * "shadowable" in the following example...
+   *
+   * ({"globals":{"a":{"shadowable":[}}}})
+   *
+   * If the user thinks it is a Boolean and asks for it, then we check the '[',
+   * decide it is not a Boolean, but still move into the next character ('}'). Now
+   * we are left pointing at '}' right after a '['. And we have not yet reported
+   * an error, only that we do not have a Boolean.
+   *
+   * If, instead, you just stand your ground until it is content that you know, then
+   * you will only even move beyond the '[' if the user tells you that you have an
+   * array. So you will be at the '}' character inside the array and, hopefully, you
+   * will then catch the error because an array cannot start with '}', but the code
+   * processing Boolean values does not know this.
+   *
+   * So the contract is: first call 'peek_...' and then call 'advance_...' only
+   * if you have determined that it is a type you can handle.
+   *
+   * Unfortunately, it makes the code more verbose, longer and maybe more error prone.
+   */
+
   simdjson_really_inline void advance_scalar(const char *type) noexcept;
   simdjson_really_inline void advance_root_scalar(const char *type) noexcept;
   simdjson_really_inline void advance_non_root_scalar(const char *type) noexcept;
