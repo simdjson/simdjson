@@ -162,6 +162,10 @@ simdjson_really_inline  simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEME
   if (error()) { return error(); }
   return first.count_elements();
 }
+simdjson_really_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at(size_t index) noexcept {
+  if (error()) { return error(); }
+  return first.at(index);
+}
 simdjson_really_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at_pointer(std::string_view json_pointer) noexcept {
   if (error()) { return error(); }
   return first.at_pointer(json_pointer);
