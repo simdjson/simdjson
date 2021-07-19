@@ -162,7 +162,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_field_unordered_raw(const std::string_view key) noexcept {
-  std::cout <<"======find_field_unordered_raw " << to_string() << std::endl;
   /**
    * When find_field_unordered_raw is called, we can either be pointing at the
    * first key, pointing outside (at the closing brace) or if a key was matched
@@ -229,12 +228,8 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // If someone queried a key but they not did access the value, then we are left pointing
     // at the ':' and we need to move forward through the value... If the value was
     // processed then skip_child() does not move the iterator (but may adjust the depth).
-        std::cout <<"+++++++++calling skip_child from " << to_string() << std::endl;
-
     if ((error = skip_child() )) { abandon(); return error; }
     search_start = _json_iter->position();
-        std::cout <<"+++++++++find_field_unordered_raw setting search start... " << to_string() << std::endl;
-
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
     if (_json_iter->start_position(_depth) != start_position()) { return OUT_OF_ORDER_ITERATION; }
@@ -254,8 +249,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //                                  ^ (depth 0)
   // ```
   //
-  std::cout <<"find_field_unordered_raw categoies " << to_string() << std::endl;
-std::cout << "has_value = " << has_value << std::endl;
   // Next, we find a match starting from the current position.
   while (has_value) {
     SIMDJSON_ASSUME( _json_iter->_depth == _depth ); // We must be at the start of a field
@@ -304,14 +297,8 @@ std::cout << "has_value = " << has_value << std::endl;
   // beginning of the object.
   // (We have already run through the object before, so we've already validated its structure. We
   // don't check errors in this bit.)
-    std::cout <<"find_field_unordered_raw resetting... " << to_string() << std::endl;
-
   SIMDJSON_TRY(reset_object().get(has_value));
-      std::cout <<"find_field_unordered_raw resetted... " << to_string() << std::endl;
-
   while (true) {
-          std::cout <<"PING" << to_string() << std::endl;
-
     SIMDJSON_ASSUME(has_value); // we should reach search_start before ever reaching the end of the object
     SIMDJSON_ASSUME( _json_iter->_depth == _depth ); // We must be at the start of a field
 
@@ -477,7 +464,6 @@ simdjson_really_inline bool value_iterator::is_null() noexcept {
   if(result) { advance_non_root_scalar("null"); }
   return result;
 }
-}
 
 constexpr const uint32_t MAX_INT_LENGTH = 1024;
 
@@ -538,9 +524,10 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 simdjson_really_inline bool value_iterator::is_root_null() noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("null");
-  if (max_len >= 4 && !atomparsing::str4ncmp(json, "null") &&
-         (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[5]))) {}
-  advance_root_scalar("null");
+  auto result = (max_len >= 4 && !atomparsing::str4ncmp(json, "null") &&
+         (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[5])));
+  if(result) { advance_root_scalar("null"); }
+  return result;
 }
 
 simdjson_warn_unused simdjson_really_inline error_code value_iterator::skip_child() noexcept {
@@ -658,18 +645,14 @@ simdjson_really_inline const uint8_t *value_iterator::peek_root_scalar(const cha
   if (!is_at_start()) { return peek_start(); }
 
   assert_at_root();
-  auto result = _json_iter->return_current_and_advance();
-  _json_iter->ascend_to(depth()-1);
-  return result;
+  return _json_iter->peek();
 }
 simdjson_really_inline const uint8_t *value_iterator::peek_non_root_scalar(const char *type) noexcept {
   logger::log_value(*_json_iter, start_position(), depth(), type);
   if (!is_at_start()) { return peek_start(); }
 
   assert_at_non_root_start();
-  auto result = _json_iter->return_current_and_advance();
-  _json_iter->ascend_to(depth()-1);
-  return result;
+  return _json_iter->peek();
 }
 
 simdjson_really_inline void value_iterator::advance_root_scalar(const char *type) noexcept {

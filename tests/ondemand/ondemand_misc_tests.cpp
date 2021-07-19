@@ -70,9 +70,6 @@ namespace misc_tests {
       ondemand::value shadowable;
       ASSERT_SUCCESS(global_object["shadowable"].get(shadowable));
       ASSERT_ERROR(shadowable.get_bool(), INCORRECT_TYPE);
-      std::cout<<std::endl;
-      std::cout<<"GOT BOOL"<<std::endl;
-
       ondemand::value badvalue;
       auto error = global_object["writable"].get(badvalue);
       if(error == SUCCESS) {
