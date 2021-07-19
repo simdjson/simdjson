@@ -81,6 +81,160 @@ namespace misc_tests {
     TEST_SUCCEED();
   }
 
+
+  bool issue1660_with_uint64() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata =  R"({"globals":{"a":{"shadowable":[}}}})"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ondemand::object globals;
+    ASSERT_SUCCESS(doc["globals"].get(globals));
+    for (auto global_field : globals) {
+      ondemand::value global;
+      ASSERT_SUCCESS(global_field.value().get(global));
+      ondemand::json_type global_type;
+      ASSERT_SUCCESS(global.type().get(global_type));
+      ASSERT_EQUAL(global_type, ondemand::json_type::object);
+      ondemand::object global_object;
+      ASSERT_SUCCESS(global.get(global_object));
+      ondemand::value shadowable;
+      ASSERT_SUCCESS(global_object["shadowable"].get(shadowable));
+      ASSERT_ERROR(shadowable.get_uint64(), INCORRECT_TYPE);
+      ondemand::value badvalue;
+      auto error = global_object["writable"].get(badvalue);
+      if(error == SUCCESS) {
+        return false;
+      } else {
+        break;
+      }
+    }
+    TEST_SUCCEED();
+  }
+
+
+  bool issue1660_with_int64() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata =  R"({"globals":{"a":{"shadowable":[}}}})"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ondemand::object globals;
+    ASSERT_SUCCESS(doc["globals"].get(globals));
+    for (auto global_field : globals) {
+      ondemand::value global;
+      ASSERT_SUCCESS(global_field.value().get(global));
+      ondemand::json_type global_type;
+      ASSERT_SUCCESS(global.type().get(global_type));
+      ASSERT_EQUAL(global_type, ondemand::json_type::object);
+      ondemand::object global_object;
+      ASSERT_SUCCESS(global.get(global_object));
+      ondemand::value shadowable;
+      ASSERT_SUCCESS(global_object["shadowable"].get(shadowable));
+      ASSERT_ERROR(shadowable.get_int64(), INCORRECT_TYPE);
+      ondemand::value badvalue;
+      auto error = global_object["writable"].get(badvalue);
+      if(error == SUCCESS) {
+        return false;
+      } else {
+        break;
+      }
+    }
+    TEST_SUCCEED();
+  }
+
+  bool issue1660_with_double() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata =  R"({"globals":{"a":{"shadowable":[}}}})"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ondemand::object globals;
+    ASSERT_SUCCESS(doc["globals"].get(globals));
+    for (auto global_field : globals) {
+      ondemand::value global;
+      ASSERT_SUCCESS(global_field.value().get(global));
+      ondemand::json_type global_type;
+      ASSERT_SUCCESS(global.type().get(global_type));
+      ASSERT_EQUAL(global_type, ondemand::json_type::object);
+      ondemand::object global_object;
+      ASSERT_SUCCESS(global.get(global_object));
+      ondemand::value shadowable;
+      ASSERT_SUCCESS(global_object["shadowable"].get(shadowable));
+      ASSERT_ERROR(shadowable.get_double(), INCORRECT_TYPE);
+      ondemand::value badvalue;
+      auto error = global_object["writable"].get(badvalue);
+      if(error == SUCCESS) {
+        return false;
+      } else {
+        break;
+      }
+    }
+    TEST_SUCCEED();
+  }
+
+
+  bool issue1660_with_null() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata =  R"({"globals":{"a":{"shadowable":[}}}})"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ondemand::object globals;
+    ASSERT_SUCCESS(doc["globals"].get(globals));
+    for (auto global_field : globals) {
+      ondemand::value global;
+      ASSERT_SUCCESS(global_field.value().get(global));
+      ondemand::json_type global_type;
+      ASSERT_SUCCESS(global.type().get(global_type));
+      ASSERT_EQUAL(global_type, ondemand::json_type::object);
+      ondemand::object global_object;
+      ASSERT_SUCCESS(global.get(global_object));
+      ondemand::value shadowable;
+      ASSERT_SUCCESS(global_object["shadowable"].get(shadowable));
+      ASSERT_TRUE(!shadowable.is_null());
+      ondemand::value badvalue;
+      auto error = global_object["writable"].get(badvalue);
+      if(error == SUCCESS) {
+        return false;
+      } else {
+        break;
+      }
+    }
+    TEST_SUCCEED();
+  }
+
+
+  bool issue1660_with_string() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata =  R"({"globals":{"a":{"shadowable":[}}}})"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ondemand::object globals;
+    ASSERT_SUCCESS(doc["globals"].get(globals));
+    for (auto global_field : globals) {
+      ondemand::value global;
+      ASSERT_SUCCESS(global_field.value().get(global));
+      ondemand::json_type global_type;
+      ASSERT_SUCCESS(global.type().get(global_type));
+      ASSERT_EQUAL(global_type, ondemand::json_type::object);
+      ondemand::object global_object;
+      ASSERT_SUCCESS(global.get(global_object));
+      ondemand::value shadowable;
+      ASSERT_SUCCESS(global_object["shadowable"].get(shadowable));
+      ASSERT_ERROR(shadowable.get_string(), INCORRECT_TYPE);
+      ondemand::value badvalue;
+      auto error = global_object["writable"].get(badvalue);
+      if(error == SUCCESS) {
+        return false;
+      } else {
+        break;
+      }
+    }
+    TEST_SUCCEED();
+  }
+
   bool issue1661() {
     TEST_START();
     ondemand::parser parser;
@@ -179,6 +333,11 @@ namespace misc_tests {
 
   bool run() {
     return
+           issue1660_with_uint64() &&
+           issue1660_with_int64() &&
+           issue1660_with_double() &&
+           issue1660_with_null() &&
+           issue1660_with_string() &&
            issue1660_with_bool() &&
            issue1661a() &&
            issue1660() &&
