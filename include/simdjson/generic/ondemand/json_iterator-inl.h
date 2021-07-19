@@ -202,12 +202,16 @@ simdjson_really_inline uint32_t json_iterator::peek_length(int32_t delta) const 
 }
 
 simdjson_really_inline const uint8_t *json_iterator::peek(token_position position) const noexcept {
-  assert_valid_position(position);
+  // todo: currently we require end-of-string buffering, but the following
+  // assert_valid_position should be turned on if/when we lift that condition.
+  // assert_valid_position(position);
   return token.peek(position);
 }
 
 simdjson_really_inline uint32_t json_iterator::peek_length(token_position position) const noexcept {
-  assert_valid_position(position);
+  // todo: currently we require end-of-string buffering, but the following
+  // assert_valid_position should be turned on if/when we lift that condition.
+  // assert_valid_position(position);
   return token.peek_length(position);
 }
 
