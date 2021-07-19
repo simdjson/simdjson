@@ -254,7 +254,7 @@ namespace std {
 #endif
 
 // Feature flag for partially-implemented "don't require padding" feature
-// TODO remove before 1.0
+// TODO remove once feature complete.
 #ifndef __SIMDJSON_CHECK_EOF
 # define __SIMDJSON_CHECK_EOF 1
 #endif
