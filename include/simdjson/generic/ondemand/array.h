@@ -100,7 +100,7 @@ protected:
    *
    * @param iter The iterator. Must be after the initial [. Will be *moved* into the resulting array.
    */
-  static simdjson_really_inline array started(value_iterator &iter) noexcept;
+  static simdjson_really_inline simdjson_result<array> started(value_iterator &iter) noexcept;
 
   /**
    * Create an array at the given Internal array creation. Call array::start() or array::started() instead of this.

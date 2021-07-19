@@ -208,7 +208,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // this object iterator will blithely scan that object for fields.
     if (_json_iter->depth() < depth() - 1) { return OUT_OF_ORDER_ITERATION; }
 #endif
-    has_value = reset_object();
+    SIMDJSON_TRY(reset_object().get(has_value));
     at_first = true;
   // 3. When a previous search found a field or an iterator yielded a value:
   //
@@ -298,7 +298,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   // beginning of the object.
   // (We have already run through the object before, so we've already validated its structure. We
   // don't check errors in this bit.)
-  has_value = reset_object();
+  SIMDJSON_TRY(reset_object().get(has_value));
   while (true) {
     SIMDJSON_ASSUME(has_value); // we should reach search_start before ever reaching the end of the object
     SIMDJSON_ASSUME( _json_iter->_depth == _depth ); // We must be at the start of a field
@@ -664,12 +664,12 @@ simdjson_really_inline void value_iterator::move_at_container_start() noexcept {
   _json_iter->token.set_position(_start_position + 1);
 }
 
-simdjson_really_inline bool value_iterator::reset_array() noexcept {
+simdjson_really_inline simdjson_result<bool> value_iterator::reset_array() noexcept {
   move_at_container_start();
   return started_array();
 }
 
-simdjson_really_inline bool value_iterator::reset_object() noexcept {
+simdjson_really_inline simdjson_result<bool> value_iterator::reset_object() noexcept {
   move_at_container_start();
   return started_object();
 }

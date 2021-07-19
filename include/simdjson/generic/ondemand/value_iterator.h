@@ -310,12 +310,12 @@ protected:
    * Restarts an array iteration.
    * @returns Whether the array has any elements (returns false for empty).
    */
-  simdjson_really_inline bool reset_array() noexcept;
+  simdjson_really_inline simdjson_result<bool> reset_array() noexcept;
   /**
    * Restarts an object iteration.
    * @returns Whether the object has any fields (returns false for empty).
    */
-  simdjson_really_inline bool reset_object() noexcept;
+  simdjson_really_inline simdjson_result<bool> reset_object() noexcept;
   /**
    * move_at_start(): moves us so that we are pointing at the beginning of
    * the container. It updates the index so that at_start() is true and it
