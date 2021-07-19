@@ -27,7 +27,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 #endif
   if (*_json_iter->peek() == '}') {
     logger::log_value(*_json_iter, "empty object");
-    _json_iter->advance();
+    _json_iter->return_current_and_advance();
     end_container();
     return false;
   }
@@ -55,7 +55,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
   // It's illegal to call this unless there are more tokens: anything that ends in } or ] is
   // obligated to verify there are more tokens if they are not the top level.
-  switch (*_json_iter->advance()) {
+  switch (*_json_iter->return_current_and_advance()) {
     case '}':
       logger::log_end_value(*_json_iter, "object");
       SIMDJSON_TRY( end_container() );
@@ -351,7 +351,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::field_key() noexcept {
   assert_at_next();
 
-  const uint8_t *key = _json_iter->advance();
+  const uint8_t *key = _json_iter->return_current_and_advance();
   if (*(key++) != '"') { return report_error(TAPE_ERROR, "Object key is not a string"); }
   return raw_json_string(key);
 }
@@ -359,7 +359,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> val
 simdjson_warn_unused simdjson_really_inline error_code value_iterator::field_value() noexcept {
   assert_at_next();
 
-  if (*_json_iter->advance() != ':') { return report_error(TAPE_ERROR, "Missing colon in object field"); }
+  if (*_json_iter->return_current_and_advance() != ':') { return report_error(TAPE_ERROR, "Missing colon in object field"); }
   _json_iter->descend_to(depth()+1);
   return SUCCESS;
 }
@@ -385,7 +385,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   assert_at_container_start();
   if (*_json_iter->peek() == ']') {
     logger::log_value(*_json_iter, "empty array");
-    _json_iter->advance();
+    _json_iter->return_current_and_advance();
     SIMDJSON_TRY( end_container() );
     return false;
   }
@@ -407,7 +407,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   assert_at_next();
 
   logger::log_event(*this, "has_next_element");
-  switch (*_json_iter->advance()) {
+  switch (*_json_iter->return_current_and_advance()) {
     case ']':
       logger::log_end_value(*_json_iter, "array");
       SIMDJSON_TRY( end_container() );
@@ -579,7 +579,7 @@ simdjson_really_inline const uint8_t *value_iterator::advance_scalar(const char 
 
   // Get the JSON and advance the cursor, decreasing depth to signify that we have retrieved the value.
   assert_at_start();
-  auto result = _json_iter->advance();
+  auto result = _json_iter->return_current_and_advance();
   _json_iter->ascend_to(depth()-1);
   return result;
 }
@@ -595,10 +595,9 @@ simdjson_really_inline error_code value_iterator::start_container(uint8_t start_
     json = peek_start();
   } else {
     assert_at_start();
-    json = _json_iter->advance();
+    json = _json_iter->return_current_and_advance();
   }
 
-  // Get the JSON and advance the cursor
   if (*json != start_char) { return incorrect_type_error(incorrect_type_message); }
   return SUCCESS;
 }
@@ -608,7 +607,7 @@ simdjson_really_inline const uint8_t *value_iterator::advance_root_scalar(const 
   if (!is_at_start()) { return peek_start(); }
 
   assert_at_root();
-  auto result = _json_iter->advance();
+  auto result = _json_iter->return_current_and_advance();
   _json_iter->ascend_to(depth()-1);
   return result;
 }
@@ -617,7 +616,7 @@ simdjson_really_inline const uint8_t *value_iterator::advance_non_root_scalar(co
   if (!is_at_start()) { return peek_start(); }
 
   assert_at_non_root_start();
-  auto result = _json_iter->advance();
+  auto result = _json_iter->return_current_and_advance();
   _json_iter->ascend_to(depth()-1);
   return result;
 }
@@ -630,6 +629,14 @@ simdjson_really_inline error_code value_iterator::incorrect_type_error(const cha
 simdjson_really_inline bool value_iterator::is_at_start() const noexcept {
   return position() == start_position();
 }
+
+simdjson_really_inline bool value_iterator::is_at_key() const noexcept {
+  // Keys are at the same depth as the object.
+  // Note here that we could be safer and check that we are within an object,
+  // but we do not.
+  return _depth == _json_iter->_depth && *_json_iter->peek() == '"';
+}
+
 simdjson_really_inline bool value_iterator::is_at_iterator_start() const noexcept {
   // We can legitimately be either at the first value ([1]), or after the array if it's empty ([]).
   auto delta = position() - start_position();

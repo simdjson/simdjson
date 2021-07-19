@@ -149,6 +149,22 @@ simdjson_really_inline simdjson_result<value> document::operator[](const char *k
   return start_or_resume_object()[key];
 }
 
+simdjson_really_inline error_code document::consume() noexcept {
+  auto error = iter.skip_child(0);
+  if(error) { iter.abandon(); }
+  return error;
+}
+
+simdjson_really_inline simdjson_result<std::string_view> document::raw_json() noexcept {
+  printf("document::raw_json()\n");
+  auto _iter = get_root_value_iterator();
+  const uint8_t * starting_point{_iter.peek_start()};
+  auto error = consume();
+  if(error) { return error; }
+  const uint8_t * final_point{iter.peek(0)};
+  return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
+}
+
 simdjson_really_inline simdjson_result<json_type> document::type() noexcept {
   return get_root_value_iterator().type();
 }

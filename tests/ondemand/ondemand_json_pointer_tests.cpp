@@ -43,10 +43,10 @@ namespace json_pointer_tests {
         ondemand::parser parser;
         ondemand::document doc;
         ondemand::value val;
-        std::string actual;
+        std::string_view actual;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
         ASSERT_SUCCESS(doc.at_pointer(json_pointer).get(val));
-        ASSERT_SUCCESS(simdjson::to_string(val).get(actual));
+        ASSERT_SUCCESS(simdjson::to_json_string(val).get(actual));
         ASSERT_EQUAL(actual,expected);
         TEST_SUCCEED();
     }
@@ -275,8 +275,19 @@ namespace json_pointer_tests {
                 json_pointer_invalidation() &&
                 demo_test() &&
                 demo_relative_path() &&
-                run_success_test(TEST_RFC_JSON,"",R"({"foo":["bar","baz"],"":0,"a/b":1,"c%d":2,"e^f":3,"g|h":4,"i\\j":5,"k\"l":6," ":7,"m~n":8})") &&
-                run_success_test(TEST_RFC_JSON,"/foo",R"(["bar","baz"])") &&
+                run_success_test(TEST_RFC_JSON,"",R"({
+        "foo": ["bar", "baz"],
+        "": 0,
+        "a/b": 1,
+        "c%d": 2,
+        "e^f": 3,
+        "g|h": 4,
+        "i\\j": 5,
+        "k\"l": 6,
+        " ": 7,
+        "m~n": 8
+    })") &&
+                run_success_test(TEST_RFC_JSON,"/foo",R"(["bar", "baz"])") &&
                 run_success_test(TEST_RFC_JSON,"/foo/0",R"("bar")") &&
                 run_success_test(TEST_RFC_JSON,"/",R"(0)") &&
                 run_success_test(TEST_RFC_JSON,"/a~1b",R"(1)") &&
@@ -287,16 +298,60 @@ namespace json_pointer_tests {
                 run_success_test(TEST_RFC_JSON,R"(/k\"l)",R"(6)") &&
                 run_success_test(TEST_RFC_JSON,"/ ",R"(7)") &&
                 run_success_test(TEST_RFC_JSON,"/m~0n",R"(8)") &&
-                run_success_test(TEST_JSON, "", R"({"/~01abc":[0,{"\\\" 0":["value0","value1"]}],"0":"0 ok","01":"01 ok","":"empty ok","arr":[]})") &&
-                run_success_test(TEST_JSON, R"(/~1~001abc)", R"([0,{"\\\" 0":["value0","value1"]}])") &&
-                run_success_test(TEST_JSON, R"(/~1~001abc/1)", R"({"\\\" 0":["value0","value1"]})") &&
-                run_success_test(TEST_JSON, R"(/~1~001abc/1/\\\" 0)", R"(["value0","value1"])") &&
+                run_success_test(TEST_JSON, "", R"({
+        "/~01abc": [
+        0,
+        {
+            "\\\" 0": [
+            "value0",
+            "value1"
+            ]
+        }
+        ],
+        "0": "0 ok",
+        "01": "01 ok",
+        "": "empty ok",
+        "arr": []
+    })") &&
+                run_success_test(TEST_JSON, R"(/~1~001abc)", R"([
+        0,
+        {
+            "\\\" 0": [
+            "value0",
+            "value1"
+            ]
+        }
+        ])") &&
+                run_success_test(TEST_JSON, R"(/~1~001abc/1)", R"({
+            "\\\" 0": [
+            "value0",
+            "value1"
+            ]
+        })") &&
+                run_success_test(TEST_JSON, R"(/~1~001abc/1/\\\" 0)", R"([
+            "value0",
+            "value1"
+            ])") &&
                 run_success_test(TEST_JSON, R"(/~1~001abc/1/\\\" 0/0)", "\"value0\"") &&
                 run_success_test(TEST_JSON, R"(/~1~001abc/1/\\\" 0/1)", "\"value1\"") &&
                 run_success_test(TEST_JSON, "/arr", R"([])") &&
                 run_success_test(TEST_JSON, "/0", "\"0 ok\"") &&
                 run_success_test(TEST_JSON, "/01", "\"01 ok\"") &&
-                run_success_test(TEST_JSON, "", R"({"/~01abc":[0,{"\\\" 0":["value0","value1"]}],"0":"0 ok","01":"01 ok","":"empty ok","arr":[]})") &&
+                run_success_test(TEST_JSON, "", R"({
+        "/~01abc": [
+        0,
+        {
+            "\\\" 0": [
+            "value0",
+            "value1"
+            ]
+        }
+        ],
+        "0": "0 ok",
+        "01": "01 ok",
+        "": "empty ok",
+        "arr": []
+    })") &&
                 run_failure_test(TEST_JSON, R"(/~1~001abc/1/\\\" 0/2)", INDEX_OUT_OF_BOUNDS) &&
                 run_failure_test(TEST_JSON, "/arr/0", INDEX_OUT_OF_BOUNDS) &&
                 run_failure_test(TEST_JSON, "~1~001abc", INVALID_JSON_POINTER) &&

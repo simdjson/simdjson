@@ -41,10 +41,45 @@ simdjson_really_inline simdjson_result<object> object::start_root(value_iterator
   SIMDJSON_TRY( iter.start_root_object().error() );
   return object(iter);
 }
+simdjson_really_inline error_code object::consume() noexcept {
+  if(iter.is_at_key()) {
+    /**
+     * whenever you are pointing at a key, calling skip_child() is
+     * unsafe because you will hit a string and you will assume that
+     * it is string value, and this mistake will lead you to make bad
+     * depth computation.
+     */
+    /**
+     * We want to 'consume' the key. We could really
+     * just do _json_iter->return_current_and_advance(); at this
+     * point, but, for clarity, we will use the high-level API to
+     * eat the key. We assume that the compiler optimizes away
+     * most of the work.
+     */
+    simdjson_unused raw_json_string actual_key;
+    auto error = iter.field_key().get(actual_key);
+    if (error) { iter.abandon(); return error; };
+    // Let us move to the value while we are at it.
+    if ((error = iter.field_value())) { iter.abandon(); return error; }
+  }
+  auto error_skip = iter.json_iter().skip_child(iter.depth()-1);
+  if(error_skip) { iter.abandon(); }
+  return error_skip;
+}
+
+simdjson_really_inline simdjson_result<std::string_view> object::raw_json() noexcept {
+  const uint8_t * starting_point{iter.peek_start()};
+  auto error = consume();
+  if(error) { return error; }
+  const uint8_t * final_point{iter._json_iter->peek(0)};
+  return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
+}
+
 simdjson_really_inline simdjson_result<object> object::started(value_iterator &iter) noexcept {
   SIMDJSON_TRY( iter.started_object().error() );
   return object(iter);
 }
+
 simdjson_really_inline object object::resume(const value_iterator &iter) noexcept {
   return iter;
 }

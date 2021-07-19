@@ -24,7 +24,7 @@ public:
   /**
    * Advance to the next token (returning the current one).
    */
-  simdjson_really_inline const uint8_t *advance() noexcept;
+  simdjson_really_inline const uint8_t *return_current_and_advance() noexcept;
   /**
    * Reports the current offset in bytes from the start of the underlying buffer.
    */

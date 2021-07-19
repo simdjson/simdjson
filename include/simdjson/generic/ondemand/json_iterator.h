@@ -89,7 +89,7 @@ public:
   /**
    * Advance the current token without modifying depth.
    */
-  simdjson_really_inline const uint8_t *advance() noexcept;
+  simdjson_really_inline const uint8_t *return_current_and_advance() noexcept;
 
   /**
    * Assert that there are at least the given number of tokens left.
