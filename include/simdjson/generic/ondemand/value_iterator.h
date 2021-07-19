@@ -340,9 +340,15 @@ protected:
   simdjson_really_inline simdjson_result<bool> parse_bool(const uint8_t *json) const noexcept;
   simdjson_really_inline const uint8_t *peek_start() const noexcept;
   simdjson_really_inline uint32_t peek_start_length() const noexcept;
-  simdjson_really_inline const uint8_t *advance_scalar(const char *type) noexcept;
-  simdjson_really_inline const uint8_t *advance_root_scalar(const char *type) noexcept;
-  simdjson_really_inline const uint8_t *advance_non_root_scalar(const char *type) noexcept;
+
+  simdjson_really_inline void advance_scalar(const char *type) noexcept;
+  simdjson_really_inline void advance_root_scalar(const char *type) noexcept;
+  simdjson_really_inline void advance_non_root_scalar(const char *type) noexcept;
+
+  simdjson_really_inline const uint8_t *peek_scalar(const char *type) noexcept;
+  simdjson_really_inline const uint8_t *peek_root_scalar(const char *type) noexcept;
+  simdjson_really_inline const uint8_t *peek_non_root_scalar(const char *type) noexcept;
+
 
   simdjson_really_inline error_code start_container(uint8_t start_char, const char *incorrect_type_message, const char *type) noexcept;
   simdjson_really_inline error_code end_container() noexcept;
