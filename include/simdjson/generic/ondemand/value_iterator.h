@@ -313,7 +313,6 @@ protected:
 
   simdjson_really_inline bool parse_null(const uint8_t *json) const noexcept;
   simdjson_really_inline simdjson_result<bool> parse_bool(const uint8_t *json) const noexcept;
-
   simdjson_really_inline const uint8_t *peek_start() const noexcept;
   simdjson_really_inline uint32_t peek_start_length() const noexcept;
   simdjson_really_inline const uint8_t *advance_start(const char *type) const noexcept;
@@ -331,6 +330,16 @@ protected:
    * Usage: used by array::begin() in debug mode (SIMDJSON_DEVELOPMENT_CHECKS)
    */
   simdjson_really_inline bool is_at_iterator_start() const noexcept;
+
+  /**
+   * Assuming that we are within an object, this returns true if we
+   * are pointing at a key.
+   *
+   * Usage: the skip_child() method should never be used while we are pointing
+   * at a key inside an object.
+   */
+  simdjson_really_inline bool is_at_key() const noexcept;
+
   inline void assert_at_start() const noexcept;
   inline void assert_at_container_start() const noexcept;
   inline void assert_at_root() const noexcept;
