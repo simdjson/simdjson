@@ -5,6 +5,21 @@ using namespace simdjson;
 
 namespace misc_tests {
   using namespace std;
+
+  bool issue1661a() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata = R"({"":],"global-groups":[[]}})"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ondemand::value global_groups;
+    ASSERT_SUCCESS(doc["global-groups"].get(global_groups));
+    ondemand::json_type global_type;
+    ASSERT_SUCCESS(global_groups.type().get(global_type));
+    ASSERT_EQUAL(global_type, ondemand::json_type::array);
+    TEST_SUCCEED();
+  }
+
   bool issue1660() {
     TEST_START();
     ondemand::parser parser;
@@ -37,13 +52,13 @@ namespace misc_tests {
 
   bool issue1661() {
     TEST_START();
-    simdjson::ondemand::parser parser;
-    simdjson::padded_string docdata = R"({"":],"global-groups":[[]}})"_padded;
-    simdjson::ondemand::document doc;
+    ondemand::parser parser;
+    padded_string docdata = R"({"":],"global-groups":[[]}})"_padded;
+    ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
-    simdjson::ondemand::object global_groups;
+    ondemand::object global_groups;
     ASSERT_ERROR(doc["global-groups"].get(global_groups), INCORRECT_TYPE);
-    simdjson::ondemand::object globals;
+    ondemand::object globals;
     auto error = doc["globals"].get(globals);
     if(error == SUCCESS) { return false; }
     TEST_SUCCEED();
@@ -133,6 +148,7 @@ namespace misc_tests {
 
   bool run() {
     return
+           issue1661a() &&
            issue1660() &&
            issue1661() &&
            big_integer_in_string() &&
