@@ -174,6 +174,15 @@ public:
    */
   simdjson_warn_unused error_code allocate(size_t capacity, size_t max_depth=DEFAULT_MAX_DEPTH) noexcept;
 
+  #ifdef SIMDJSON_THREADS_ENABLED
+  /**
+   * The parser instance can use threads when they are available to speed up some
+   * operations. It is enabled by default. Changing this attribute will change the
+   * behavior of the parser for future operations.
+   */
+  bool threaded{true};
+  #endif
+
 private:
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<internal::dom_parser_implementation> implementation{};
