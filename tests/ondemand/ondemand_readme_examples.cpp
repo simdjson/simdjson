@@ -384,8 +384,8 @@ bool iterate_many_truncated_example() {
   ASSERT_SUCCESS( parser.iterate_many(json,json.size()).get(stream) );
   std::string_view expected[2] = {"[1,2,3]", R"({"1":1,"2":3,"4":4})"};
   size_t count{0};
-  for(auto & doc : stream) {
-      ASSERT_EQUAL(my_string(doc),expected[count++]);
+  for(auto i = stream.begin(); i != stream.end(); ++i) {
+      ASSERT_EQUAL(i.source(),expected[count++]);
   }
   size_t truncated = stream.truncated_bytes();
   ASSERT_EQUAL(truncated,39);

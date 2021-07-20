@@ -213,8 +213,8 @@ Consider the following example where a truncated document (`{"key":"intentionall
     simdjson::ondemand::document_stream stream;
     auto error = parser.iterate_many(json,json.size()).get(stream);
     if(error) { std::cerr << error << std::endl; return; }
-    for(auto & doc : stream) {
-       std::cout << doc << std::endl;
+    for(auto i = stream.begin(); i != stream.end(); ++i) {
+       std::cout << i.source() << std::endl;
     }
     std::cout << stream.truncated_bytes() << " bytes "<< std::endl; // returns 39 bytes
 ```
