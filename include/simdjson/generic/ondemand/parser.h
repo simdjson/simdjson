@@ -8,6 +8,23 @@ class array;
 class object;
 class value;
 class raw_json_string;
+class document_stream;
+
+/**
+ * The default batch size for document_stream instances for this On Demand kernel.
+ * Note that different On Demand kernel may use a different DEFAULT_BATCH_SIZE value
+ * in the future.
+ */
+static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
+/**
+ * Some adversary might try to set the batch size to 0 or 1, which might cause problems.
+ * We set a minimum of 32B since anything else is highly likely to be an error. In practice,
+ * most users will want a much larger batch size.
+ *
+ * All non-negative MINIMAL_BATCH_SIZE values should be 'safe' except that, obviously, no JSON
+ * document can ever span 0 or 1 byte and that very large values would create memory allocation issues.
+ */
+static constexpr size_t MINIMAL_BATCH_SIZE = 32;
 
 /**
  * A JSON fragment iterator.
@@ -26,6 +43,7 @@ public:
   inline parser(parser &&other) noexcept = default;
   simdjson_really_inline parser(const parser &other) = delete;
   simdjson_really_inline parser &operator=(const parser &other) = delete;
+  simdjson_really_inline parser &operator=(parser &&other) noexcept = default;
 
   /** Deallocate the JSON parser. */
   inline ~parser() noexcept = default;
@@ -125,6 +143,19 @@ public:
    */
   simdjson_warn_unused simdjson_result<json_iterator> iterate_raw(padded_string_view json) & noexcept;
 
+  inline simdjson_result<document_stream> iterate_many(const uint8_t *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
+  inline simdjson_result<document_stream> iterate_many(const char *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
+  inline simdjson_result<document_stream> iterate_many(const std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> iterate_many(const std::string &&s, size_t batch_size) = delete;// unsafe
+  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
+  inline simdjson_result<document_stream> iterate_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> iterate_many(const padded_string &&s, size_t batch_size) = delete;// unsafe
+
+  /** @private We do not want to allow implicit conversion from C string to std::string. */
+  simdjson_result<document_stream> iterate_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
+
   /** The capacity of this parser (the largest document it can process). */
   simdjson_really_inline size_t capacity() const noexcept;
   /** The maximum capacity of this parser (the largest document it is allowed to process). */
@@ -143,6 +174,15 @@ public:
    */
   simdjson_warn_unused error_code allocate(size_t capacity, size_t max_depth=DEFAULT_MAX_DEPTH) noexcept;
 
+  #ifdef SIMDJSON_THREADS_ENABLED
+  /**
+   * The parser instance can use threads when they are available to speed up some
+   * operations. It is enabled by default. Changing this attribute will change the
+   * behavior of the parser for future operations.
+   */
+  bool threaded{true};
+  #endif
+
 private:
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<internal::dom_parser_implementation> implementation{};
@@ -155,6 +195,7 @@ private:
 #endif
 
   friend class json_iterator;
+  friend class document_stream;
 };
 
 } // namespace ondemand

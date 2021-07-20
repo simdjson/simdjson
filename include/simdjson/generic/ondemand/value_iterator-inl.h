@@ -19,7 +19,10 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::start_root_object() noexcept {
   bool result;
   SIMDJSON_TRY( start_object().get(result) );
-  if (*_json_iter->peek_last() != '}') { return _json_iter->report_error(TAPE_ERROR, "object invalid: { at beginning of document unmatched by } at end of document"); }
+  if( ! _json_iter->streaming() ) {
+    // For document streams, we do not know the "last" structural of the current document, so peek_last() is nonesense.
+    if (*_json_iter->peek_last() != '}') { return _json_iter->report_error(TAPE_ERROR, "object invalid: { at beginning of document unmatched by } at end of document"); }
+  }
   return result;
 }
 
@@ -363,7 +366,10 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::start_root_array() noexcept {
   bool result;
   SIMDJSON_TRY( start_array().get(result) );
-  if (*_json_iter->peek_last() != ']') { return _json_iter->report_error(TAPE_ERROR, "array invalid: [ at beginning of document unmatched by ] at end of document"); }
+  if( ! _json_iter->streaming() ) {
+    // For document streams, we do not know the "last" structural of the current document, so peek_last() is nonesense.
+    if (*_json_iter->peek_last() != ']') { return _json_iter->report_error(TAPE_ERROR, "array invalid: [ at beginning of document unmatched by ] at end of document"); }
+  }
   return result;
 }
 
