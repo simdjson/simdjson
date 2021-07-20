@@ -1,4 +1,4 @@
-parse_many
+iterate_many
 ==========
 
 An interface providing features to work with files or streams containing multiple small JSON documents.
@@ -8,7 +8,6 @@ Contents
 --------
 
 - [Motivations](#motivations)
-- [Performance](#performance)
 - [How it works](#how-it-works)
 - [Support](#support)
 - [API](#api)
@@ -31,27 +30,21 @@ Consider a sequence of one million values, each possibly one kilobyte
 when encoded -- roughly one gigabyte.  It is often desirable to process such a dataset incrementally
 without having to first read all of it before beginning to produce results.
 
-Performance
------------
-
-The following is a chart comparing the speed of the different alternatives to parse a multiline JSON.
-The simdjson library provides a threaded and non-threaded `parse_many()` implementation.  As the
-figure below shows, if you can, use threads, but if you cannot, the unthreaded mode is still fast!
-[![Chart.png](/doc/Multiline_JSON_Parse_Competition.png)](/doc/Multiline_JSON_Parse_Competition.png)
 
 How it works
 ------------
 
 ### Context
 
-The parsing in simdjson is divided into 2 stages.  First, in stage 1, we parse the document and find
-all the structural indexes (`{`, `}`, `]`, `[`, `,`, `"`, ...) and validate UTF8.  Then, in stage 2,
-we go through the document again and build the tape using structural indexes found during stage 1.
-Although stage 1 finds the structural indexes, it has no knowledge of the structure of the document
-nor does it know whether it parsed a valid document, multiple documents, or even if the document is
-complete.
+Before parsing anything, simdjson first preprocesses the JSON text by identifying all structural indexes
+(i.e. the starting position of any JSON value, as well as any important operators like `,`, `:`, `]` or
+`}`) and validating UTF8. This stage is referred to stage 1. However, during this process, simdjson has
+no knowledge of whether parsed a valid document, multiple documents, or even if the document is complete.
+Then, to iterate through the JSON text during parsing, we use what we call a JSON iterator that will navigate
+through the text using these structural indexes. This JSON iterator is not visible though, but it is the
+key component to make parsing work.
 
-Prior to parse_many, most people who had to parse a multiline JSON file would proceed by reading the
+Prior to iterate_many, most people who had to parse a multiline JSON file would proceed by reading the
 file line by line, using a utility function like `std::getline` or equivalent, and would then use
 the `parse` on each of those lines.  From a performance point of view, this process is highly
 inefficient,  in that it requires a lot of unnecessary memory allocation and makes use of the
@@ -75,33 +68,32 @@ big as the biggest document in your file, but not too big so that it submerges t
 The bigger the batch size, the fewer we need to make allocations. We found that 1MB is somewhat a
 sweet spot.
 
-1. When the user calls `parse_many`, we return a `document_stream` which the user can iterate over
+1. When the user calls `iterate_many`, we return a `document_stream` which the user can iterate over
    to receive parsed documents.
 2. We call stage 1 on the first batch_size bytes of JSON in the buffer, detecting structural
-   indexes for all documents in that batch.
-3. We call stage 2 on the indexes, reading tokens until we reach the end of a valid document (i.e.
-   a single array, object, string, boolean, number or null).
-4. Each time the user calls `++` to read the next document, we call stage 2 to parse the next
-   document where we left off.
+	indexes for all documents in that batch.
+3. The `document_stream` owns a `document` instance that keeps track of the current document position
+	in the stream using a JSON iterator. To obtain a valid document, the `document_stream` returns a
+	**reference** to its document instance.
+4. Each time the user calls `++` to read the next document, the JSON iterator moves to the start the
+	next document.
 5. When we reach the end of the batch, we call stage 1 on the next batch, starting from the end of
    the last document, and go to step 3.
 
 ### Threads
 
-But how can we make use of threads if they are available?  We found a pretty cool algorithm that allows us to quickly
-identify the  position of the last JSON document in a given batch. Knowing exactly where the end of
-the batch is, we no longer need for stage 2 to finish in order to load a new batch. We already know
-where to start the next batch. Therefore, we can run stage 1 on the next batch concurrently while
-the main thread is going through stage 2. Running stage 1 in a different thread can, in best
-cases, remove almost entirely its cost and replaces it by the overhead of a thread, which is orders
-of magnitude cheaper. Ain't that awesome!
+But how can we make use of threads if they are available?  We found a pretty cool algorithm that allows
+us to quickly identify the  position of the last JSON document in a given batch. Knowing exactly where
+the end of the last document in the batch is, we can safely parse through the last document without any
+worries that it might be incomplete. Therefore, we can run stage 1 on the next batch concurrently while
+parsing the documents in the current batch. Running stage 1 in a different thread can, in best cases,
+remove almost entirely its cost and replaces it by the overhead of a thread, which is orders of magnitude
+cheaper. Ain't that awesome!
 
 Thread support is only active if thread supported is detected in which case the macro
 SIMDJSON_THREADS_ENABLED is set. Otherwise the library runs in  single-thread mode.
 
 A `document_stream` instance uses at most two threads: there is a main thread and a worker thread.
-You should expect the main thread to be fully occupied while the worker thread is partially busy
-(e.g., 80% of the time).
 
 Support
 -------
@@ -168,22 +160,23 @@ Tracking your position
 Some users would like to know where the document they parsed is in the input array of bytes.
 It is possible to do so by accessing directly the iterator and calling its `current_index()`
 method which reports the location (in bytes) of the current document in the input stream.
-You may also call the `source()` method to get a `std::string_view` instance on the document.
+You may also call the `source()` method to get a `std::string_view` instance on the document
+and `error()` to check if there were any error.
 
 Let us illustrate the idea with code:
 
 
 ```C++
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
-    simdjson::dom::parser parser;
-    simdjson::dom::document_stream stream;
-    auto error = parser.parse_many(json).get(stream);
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document_stream stream;
+    auto error = parser.iterate_many(json).get(stream);
     if( error ) { /* do something */ }
     auto i = stream.begin();
-    size_t count{0};
+	 size_t count{0};
     for(; i != stream.end(); ++i) {
-        auto doc = *i;
-        if(!doc.error()) {
+        auto & doc = *i;
+        if(!i.error()) {
           std::cout << "got full document at " << i.current_index() << std::endl;
           std::cout << i.source() << std::endl;
           count++;
@@ -216,15 +209,21 @@ Consider the following example where a truncated document (`{"key":"intentionall
 
 ```C++
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
-    simdjson::dom::parser parser;
-    simdjson::dom::document_stream stream;
-    auto error = parser.parse_many(json,json.size()).get(stream);
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document_stream stream;
+    auto error = parser.iterate_many(json,json.size()).get(stream);
     if(error) { std::cerr << error << std::endl; return; }
-    for(auto doc : stream) {
-       std::cout << doc << std::endl;
+    for(auto i = stream.begin(); i != stream.end(); ++i) {
+       std::cout << i.source() << std::endl;
     }
     std::cout << stream.truncated_bytes() << " bytes "<< std::endl; // returns 39 bytes
 ```
 
+This will print:
+```
+[1,2,3]
+{"1":1,"2":3,"4":4}
+39 bytes
+```
 
 Importantly, you should only call `truncated_bytes()` after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet.

@@ -68,13 +68,13 @@ include(FetchContent)
 FetchContent_Declare(
   simdjson
   GIT_REPOSITORY https://github.com/simdjson/simdjson.git
-  GIT_TAG  v0.9.3
+  GIT_TAG  tags/v0.9.6
   GIT_SHALLOW TRUE)
 
 FetchContent_MakeAvailable(simdjson)
 ```
 
-You should replace `GIT_TAG  v0.9.3` by the version you need. If you omit `GIT_TAG  v0.9.3`, you will work from the main branch of simdjson: we recommend that if you are working on production code, you always work from a release.
+You should provide `GIT_TAG` with the release you need. If you omit `GIT_TAG  ...`, you will work from the main branch of simdjson: we recommend that if you are working on production code, you always work from a release.
 
 Elsewhere in your project, you can declare dependencies on simdjson with lines such as these:
 
@@ -253,19 +253,49 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   - `field.value()` will get you the value, which you can then use all these other methods on.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index. Instead,
   you will need to iterate through the array and keep an index yourself.
-* **Output to strings (simdjson 1.0 or better):** Given a document or an element (or node) out of a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_string(element)` returns a `simdjson::simdjson_result<std::string>` instance. You can cast it to `std::string` and it will throw when an error was encountered (`std::string(simdjson::to_string(element))`). Or else you can do `std::string s; if(simdjson::to_string(element).get(s) == simdjson::SUCCESS) { ... }`. This consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document. The returned string contains a serialized version of the element or document that is suitable to be parsed again. It is also a newly allocated `std::string` that is independent from the simdjson parser. The `to_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes). Th
+* **Output to strings (simdjson 1.0 or better):** Given a document, a value, an array or an object in a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_json_string(element)`. A call to `to_json_string` consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document. The `simdjson::to_json_string` does not allocate memory. The `to_json_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes).
   > ```C++
   > // serialize a JSON to an escaped std::string instance so that it can be parsed again as JSON
-  > auto cars_json = R"( { "test": "result"  }  )"_padded;
-  > ondemand::document doc = parser.iterate(cars_json);
-  > std::cout << simdjson::to_string(doc["test"]) << std::endl; // Requires simdjson 1.0 or better
+  > auto silly_json = R"( { "test": "result"  }  )"_padded;
+  > ondemand::document doc = parser.iterate(silly_json);
+  > std::cout << simdjson::to_json_string(doc["test"]) << std::endl; // Requires simdjson 1.0 or better
   >````
   > ```C++
   > // retrieves an unescaped string value as a string_view instance
-  > auto cars_json = R"( { "test": "result"  }  )"_padded;
-  > ondemand::document doc = parser.iterate(cars_json);
+  > auto silly_json = R"( { "test": "result"  }  )"_padded;
+  > ondemand::document doc = parser.iterate(silly_json);
   > std::cout << std::string_view(doc["test"]) << std::endl;
   >````
+You can use `to_json_string` to efficiently extract components of a JSON document to reconstruct a new JSON document, as in the following example:
+  > ```C++
+  > auto cars_json = R"( [
+  >   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  >   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  >   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  > ] )"_padded;
+  > std::vector<std::string_view> arrays;
+  > // We are going to collect string_view instances which point inside the `cars_json` string
+  > // and are therefore valid as long as `cars_json` remains in scope.
+  > {
+  >   ondemand::parser parser;
+  >   for (ondemand::object car : parser.iterate(cars_json)) {
+  >     if(uint64_t(car["year"]) > 2000) {
+  >       arrays.push_back(simdjson::to_json_string(car["tire_pressure"]));
+  >     }
+  >   }
+  > }
+  > // We can now convert to a JSON string:
+  > std::ostringstream oss;
+  > oss << "[";
+  > for(size_t i = 0; i < arrays.size(); i++) {
+  >   if(i>0) { oss << ","; }
+  >   oss << arrays[i];
+  > }
+  > oss << "]";
+  > auto json_string = oss.str();
+  > // json_string == "[[ 40.1, 39.9, 37.7, 40.4 ],[ 30.1, 31.0, 28.6, 28.7 ]]"
+  >````
+
 
 ### Examples
 
@@ -933,60 +963,38 @@ format. If your JSON documents all contain arrays or objects, we even support di
 concatenation without whitespace. The concatenated file has no size restrictions (including larger
 than 4GB), though each individual document must be no larger than 4 GB.
 
-Here is a simple example, given `x.json` with this content:
-
-```json
-{ "foo": 1 }
-{ "foo": 2 }
-{ "foo": 3 }
-```
+Here is a simple example:
 
 ```c++
-dom::parser parser;
-dom::document_stream docs = parser.load_many("x.json");
-for (dom::element doc : docs) {
-  cout << doc["foo"] << endl;
+auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
+ondemand::parser parser;
+ondemand::document_stream docs = parser.iterate_many(json);
+for (auto & doc : docs) {
+  std::cout << doc["foo"] << std::endl;
 }
 // Prints 1 2 3
 ```
 
-In-memory ndjson strings can be parsed as well, with `parser.parse_many(string)`:
+It is important to note that the iteration returns a `document` reference, and hence why the `&` is needed.
+
+Unlike `parser.iterate`, `parser.iterate_many` may parse "on demand" (lazily). That is, no parsing may have been done before you enter the loop
+`for (auto & doc : docs) {` and you should expect the parser to only ever fully parse one JSON document at a time.
+
+As with `parser.iterate`, when calling  `parser.iterate_many(string)`, no copy is made of the provided string input. The provided memory buffer may be accessed each time a JSON document is parsed.  Calling `parser.iterate_many(string)` on a  temporary string buffer (e.g., `docs = parser.parse_many("[1,2,3]"_padded)`) is unsafe (and will not compile) because the  `document_stream` instance needs access to the buffer to return the JSON documents.
 
 
-```c++
-dom::parser parser;
-  auto json = R"({ "foo": 1 }
-{ "foo": 2 }
-{ "foo": 3 })"_padded;
-dom::document_stream docs = parser.parse_many(json);
-for (dom::element doc : docs) {
-  cout << doc["foo"] << endl;
-}
-// Prints 1 2 3
-```
+`iterate_many` can also take an optional parameter `size_t batch_size` which defines the window processing size. It is set by default to a large value (`1000000` corresponding to 1 MB). None of your JSON documents should exceed this window size, or else you will get  the error `simdjson::CAPACITY`. You cannot set this window size larger than 4 GB: you will get  the error `simdjson::CAPACITY`. The smaller the window size is, the less memory the function will use. Setting the window size too small (e.g., less than 100 kB) may also impact performance negatively. Leaving it to 1 MB is expected to be a good choice, unless you have some larger documents.
 
+If your documents are large (e.g., larger than a megabyte), then the `iterate_many` function is maybe ill-suited. It is really meant to support reading efficiently streams of relatively small documents (e.g., a few kilobytes each). If you have larger documents, you should use other functions like `iterate`.
 
-Unlike `parser.parse`, both `parser.load_many(filename)` and `parser.parse_many(string)` may parse
-"on demand" (lazily). That is, no parsing may have been done before you enter the loop
-`for (dom::element doc : docs) {` and you should expect the parser to only ever fully parse one JSON
-document at a time.
-
-1. When calling `parser.load_many(filename)`, the file's content is loaded up in a memory buffer owned by the `parser`'s instance. Thus the file can be safely deleted after calling `parser.load_many(filename)` as the parser instance owns all of the data.
-2. When calling  `parser.parse_many(string)`, no copy is made of the provided string input. The provided memory buffer may be accessed each time a JSON document is parsed.  Calling `parser.parse_many(string)` on a  temporary string buffer (e.g., `docs = parser.parse_many("[1,2,3]"_padded)`) is unsafe (and will not compile) because the  `document_stream` instance needs access to the buffer to return the JSON documents. In contrast, calling `doc = parser.parse("[1,2,3]"_padded)` is safe because `parser.parse` eagerly parses the input.
-
-
-Both `load_many` and `parse_many` take an optional parameter `size_t batch_size` which defines the window processing size. It is set by default to a large value (`1000000` corresponding to 1 MB). None of your JSON documents should exceed this window size, or else you will get  the error `simdjson::CAPACITY`. You cannot set this window size larger than 4 GB: you will get  the error `simdjson::CAPACITY`. The smaller the window size is, the less memory the function will use. Setting the window size too small (e.g., less than 100 kB) may also impact performance negatively. Leaving it to 1 MB is expected to be a good choice, unless you have some larger documents.
-
-If your documents are large (e.g., larger than a megabyte), then the `load_many` and `parse_many` functions are maybe ill-suited. They are really meant to support reading efficiently streams of relatively small documents (e.g., a few kilobytes each). If you have larger documents, you should use other functions like `parse`.
-
-See [parse_many.md](parse_many.md) for detailed information and design.
+See [iterate_many.md](iterate_many.md) for detailed information and design.
 
 Thread Safety
 -------------
 
 We built simdjson with thread safety in mind.
 
-The simdjson library is single-threaded except for  [`parse_many`](parse_many.md) which may use secondary threads under its control when the library is compiled with thread support.
+The simdjson library is single-threaded except for [`iterate_many`](iterate_many.md) and [`parse_many`](parse_many.md) which may use secondary threads under their control when the library is compiled with thread support.
 
 
 We recommend using one `dom::parser` object per thread in which case the library is thread-safe.
@@ -996,6 +1004,7 @@ The parsed results (`dom::document`, `dom::element`, `array`, `object`) depend o
 The CPU detection, which runs the first time parsing is attempted and switches to the fastest
 parser for your CPU, is transparent and thread-safe.
 
+In a threaded environment, stack space is often limited. Running code like simdjson in debug mode may require hundreds of kilobytes of stack memory. Thus stack overflows are a possibility. We recommend you turn on optimization when working in an environment where stack space is limited. If you must run your code in debug mode, we recommend you configure your system to have more stack space. We discourage you from running production code based on a debug build.
 
 Standard Compliance
 --------------------

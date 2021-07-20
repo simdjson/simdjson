@@ -10,6 +10,64 @@ const char *GSOC_JSON = SIMDJSON_BENCHMARK_DATA_DIR "gsoc-2018.json";
 
 
 
+
+static void fast_minify_twitter(State& state) {
+  dom::parser parser;
+  padded_string docdata;
+  auto error = padded_string::load(TWITTER_JSON).get(docdata);
+  if(error) {
+      cerr << "could not parse twitter.json" << error << endl;
+      return;
+  }
+  std::unique_ptr<char[]> buffer{new char[docdata.size()]};
+
+  size_t bytes = 0;
+  for (simdjson_unused auto _ : state) {
+    size_t new_length{}; // It will receive the minified length.
+    auto error = simdjson::minify(docdata.data(), docdata.size(), buffer.get(), new_length);
+    bytes += docdata.size();
+    benchmark::DoNotOptimize(error);
+  }
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
+  state.counters["Gigabytes"] = benchmark::Counter(
+	        double(bytes), benchmark::Counter::kIsRate,
+	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
+  state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+}
+BENCHMARK(fast_minify_twitter)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+
+
+
+static void fast_minify_gsoc(State& state) {
+  dom::parser parser;
+  padded_string docdata;
+  auto error = padded_string::load(GSOC_JSON).get(docdata);
+  if(error) {
+      cerr << "could not parse gsoc-2018.json" << error << endl;
+      return;
+  }
+  std::unique_ptr<char[]> buffer{new char[docdata.size()]};
+
+  size_t bytes = 0;
+  for (simdjson_unused auto _ : state) {
+    size_t new_length{}; // It will receive the minified length.
+    auto error = simdjson::minify(docdata.data(), docdata.size(), buffer.get(), new_length);
+    bytes += docdata.size();
+    benchmark::DoNotOptimize(error);
+  }
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
+  state.counters["Gigabytes"] = benchmark::Counter(
+	        double(bytes), benchmark::Counter::kIsRate,
+	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
+  state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+}
+BENCHMARK(fast_minify_gsoc)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
 static void unicode_validate_twitter(State& state) {
   dom::parser parser;
   padded_string docdata;

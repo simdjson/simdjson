@@ -84,6 +84,20 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<json_iterator> parse
   return json_iterator(reinterpret_cast<const uint8_t *>(json.data()), this);
 }
 
+inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+  if(batch_size < MINIMAL_BATCH_SIZE) { batch_size = MINIMAL_BATCH_SIZE; }
+  return document_stream(*this, buf, len, batch_size);
+}
+inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size) noexcept {
+  return iterate_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size);
+}
+inline simdjson_result<document_stream> parser::iterate_many(const std::string &s, size_t batch_size) noexcept {
+  return iterate_many(s.data(), s.length(), batch_size);
+}
+inline simdjson_result<document_stream> parser::iterate_many(const padded_string &s, size_t batch_size) noexcept {
+  return iterate_many(s.data(), s.length(), batch_size);
+}
+
 simdjson_really_inline size_t parser::capacity() const noexcept {
   return _capacity;
 }
