@@ -156,7 +156,6 @@ simdjson_really_inline error_code document::consume() noexcept {
 }
 
 simdjson_really_inline simdjson_result<std::string_view> document::raw_json() noexcept {
-  printf("document::raw_json()\n");
   auto _iter = get_root_value_iterator();
   const uint8_t * starting_point{_iter.peek_start()};
   auto error = consume();

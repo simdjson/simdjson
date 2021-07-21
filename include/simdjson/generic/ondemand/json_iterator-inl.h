@@ -33,6 +33,7 @@ simdjson_really_inline json_iterator::json_iterator(const uint8_t *buf, ondemand
 
 inline void json_iterator::rewind() noexcept {
   token.set_position( root_position() );
+  assert_more_tokens(1);
   logger::log_headers(); // We start again
   _string_buf_loc = parser->string_buf.get();
   _depth = 1;
@@ -150,7 +151,7 @@ simdjson_really_inline void json_iterator::assert_at_root() const noexcept {
 }
 
 simdjson_really_inline void json_iterator::assert_more_tokens(uint32_t required_tokens) const noexcept {
-  assert_valid_position(token._position + required_tokens - 1);
+  assert_valid_position(token.position() + required_tokens - 1);
 }
 
 simdjson_really_inline void json_iterator::assert_valid_position(token_position position) const noexcept {
@@ -166,6 +167,9 @@ simdjson_really_inline bool json_iterator::at_end() const noexcept {
 simdjson_really_inline token_position json_iterator::end_position() const noexcept {
   uint32_t n_structural_indexes{parser->implementation->n_structural_indexes};
   return &parser->implementation->structural_indexes[n_structural_indexes];
+}
+simdjson_really_inline const uint8_t *json_iterator::end() const noexcept {
+  return token.buf + parser->implementation->len;
 }
 
 inline std::string json_iterator::to_string() const noexcept {
@@ -192,7 +196,7 @@ simdjson_really_inline const uint8_t *json_iterator::return_current_and_advance(
   return token.return_current_and_advance();
 }
 
-simdjson_really_inline simdjson_result<const uint8_t *> json_iterator::try_advance(uint32_t required_tokens) noexcept {
+simdjson_really_inline simdjson_result<const uint8_t *> json_iterator::try_return_current_and_advance(uint32_t required_tokens) noexcept {
   const uint8_t *json = token.return_current_and_advance();
   // Check this *after* we get the pointer, since getting the pointer is more time-sensitive than the branch.
   // Also resolves nicely to 0 in the common case of required_tokens == 1.
@@ -301,34 +305,6 @@ simdjson_really_inline error_code json_iterator::optional_error(error_code _erro
   SIMDJSON_ASSUME(_error == INCORRECT_TYPE || _error == NO_SUCH_FIELD);
   logger::log_error(*this, message);
   return _error;
-}
-
-template<int N>
-simdjson_warn_unused simdjson_really_inline bool json_iterator::copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t (&tmpbuf)[N]) noexcept {
-  // Truncate whitespace to fit the buffer.
-  if (max_len > N-1) {
-    if (jsoncharutils::is_not_structural_or_whitespace(json[N-1])) { return false; }
-    max_len = N-1;
-  }
-
-  // Copy to the buffer.
-  std::memcpy(tmpbuf, json, max_len);
-  tmpbuf[max_len] = ' ';
-  return true;
-}
-
-template<int N>
-simdjson_warn_unused simdjson_really_inline bool json_iterator::peek_to_buffer(uint8_t (&tmpbuf)[N]) noexcept {
-  auto max_len = token.peek_length();
-  auto json = token.peek();
-  return copy_to_buffer(json, max_len, tmpbuf);
-}
-
-template<int N>
-simdjson_warn_unused simdjson_really_inline bool json_iterator::advance_to_buffer(uint8_t (&tmpbuf)[N]) noexcept {
-  auto max_len = peek_length();
-  auto json = return_current_and_advance();
-  return copy_to_buffer(json, max_len, tmpbuf);
 }
 
 } // namespace ondemand

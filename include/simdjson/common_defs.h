@@ -71,8 +71,12 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 #define SIMDJSON_ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
 #if defined(SIMDJSON_REGULAR_VISUAL_STUDIO)
-
+  #if SIMDJSON_NO_FORCE_INLINING
+  // forcing inlining can increase stack usage.
+  #define simdjson_really_inline inline
+  #else
   #define simdjson_really_inline __forceinline
+  #endif
   #define simdjson_never_inline __declspec(noinline)
 
   #define simdjson_unused
@@ -106,8 +110,12 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define SIMDJSON_POP_DISABLE_WARNINGS __pragma(warning( pop ))
 
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO
-
+  #if SIMDJSON_NO_FORCE_INLINING
+  // forcing inlining can increase stack usage.
+  #define simdjson_really_inline inline
+  #else
   #define simdjson_really_inline inline __attribute__((always_inline))
+  #endif
   #define simdjson_never_inline inline __attribute__((noinline))
 
   #define simdjson_unused __attribute__((unused))
@@ -268,11 +276,12 @@ namespace std {
 #if __has_attribute(__fallthrough__)
 // we are good to go:
 # define simdjson_fallthrough                    __attribute__((__fallthrough__))
-#endif
-#endif
+#endif // __has_attribute(__fallthrough__)
+#endif // SIMDJSON_CPLUSPLUS17
+
 // on some systems, we simply do not have support for fallthrough, so use a default:
 #ifndef simdjson_fallthrough
 # define simdjson_fallthrough do {} while (0)  /* fallthrough */
-#endif
+#endif // simdjson_fallthrough
 
 #endif // SIMDJSON_COMMON_DEFS_H

@@ -98,7 +98,7 @@ public:
    *
    * @error TAPE_ERROR If there are not at least required_tokens tokens remaining.
    */
-  simdjson_really_inline simdjson_result<const uint8_t *> try_advance(uint32_t required_tokens=1) noexcept;
+  simdjson_really_inline simdjson_result<const uint8_t *> try_return_current_and_advance(uint32_t required_tokens=1) noexcept;
 
   /**
    * Return an error unless there are enough tokens left.
@@ -211,10 +211,6 @@ public:
    */
   simdjson_really_inline error_code optional_error(error_code error, const char *message) noexcept;
 
-  template<int N> simdjson_warn_unused simdjson_really_inline bool copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t (&tmpbuf)[N]) noexcept;
-  template<int N> simdjson_warn_unused simdjson_really_inline bool peek_to_buffer(uint8_t (&tmpbuf)[N]) noexcept;
-  template<int N> simdjson_warn_unused simdjson_really_inline bool advance_to_buffer(uint8_t (&tmpbuf)[N]) noexcept;
-
   simdjson_really_inline token_position position() const noexcept;
   simdjson_really_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
@@ -235,7 +231,7 @@ protected:
   /// The token *at* the end. This points at gibberish and should only be used for comparison.
   simdjson_really_inline token_position end_position() const noexcept;
   /// The end of the buffer.
-  simdjson_really_inline token_position end() const noexcept;
+  simdjson_really_inline const uint8_t *end() const noexcept;
 
   friend class document;
   friend class object;
