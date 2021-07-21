@@ -56,6 +56,7 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child
    * check.
    */
   if (depth() <= parent_depth) { return SUCCESS; }
+  SIMDJSON_TRY( require_tokens(1) );
   switch (*return_current_and_advance()) {
     // TODO consider whether matching braces is a requirement: if non-matching braces indicates
     // *missing* braces, then future lookups are not in the object/arrays they think they are,
@@ -187,18 +188,29 @@ simdjson_really_inline void json_iterator::abandon() noexcept {
 }
 
 simdjson_really_inline const uint8_t *json_iterator::return_current_and_advance() noexcept {
-  // The following assert_more_tokens is currently disabled because rely on end-of-file buffering.
-  // assert_more_tokens();
-  // This is almost surely related to __SIMDJSON_CHECK_EOF but given that __SIMDJSON_CHECK_EOF
-  // is ON by default, we have no choice but to disable it for real with a comment.
+  assert_more_tokens();
   return token.return_current_and_advance();
 }
 
+simdjson_really_inline simdjson_result<const uint8_t *> json_iterator::try_advance(uint32_t required_tokens) noexcept {
+  const uint8_t *json = token.return_current_and_advance();
+  // Check this *after* we get the pointer, since getting the pointer is more time-sensitive than the branch.
+  // Also resolves nicely to 0 in the common case of required_tokens == 1.
+  SIMDJSON_TRY( require_tokens(required_tokens - 1) );
+  return json;
+}
+
+simdjson_really_inline error_code json_iterator::require_tokens(simdjson_unused uint32_t required_tokens) noexcept {
+#if __SIMDJSON_CHECK_EOF
+  if (position() + required_tokens > end_position()) {
+    return report_error(TAPE_ERROR, "Document ended early");
+  }
+#endif
+  return SUCCESS;
+}
+
 simdjson_really_inline const uint8_t *json_iterator::peek(int32_t delta) const noexcept {
-  // The following assert_more_tokens is currently disabled because rely on end-of-file buffering.
-  // assert_more_tokens(delta+1);
-  // This is almost surely related to __SIMDJSON_CHECK_EOF but given that __SIMDJSON_CHECK_EOF
-  // is ON by default, we have no choice but to disable it for real with a comment.
+  assert_more_tokens(delta+1);
   return token.peek(delta);
 }
 
@@ -208,20 +220,12 @@ simdjson_really_inline uint32_t json_iterator::peek_length(int32_t delta) const 
 }
 
 simdjson_really_inline const uint8_t *json_iterator::peek(token_position position) const noexcept {
-  // todo: currently we require end-of-string buffering, but the following
-  // assert_valid_position should be turned on if/when we lift that condition.
-  // assert_valid_position(position);
-  // This is almost surely related to __SIMDJSON_CHECK_EOF but given that __SIMDJSON_CHECK_EOF
-  // is ON by default, we have no choice but to disable it for real with a comment.
+  assert_valid_position(position);
   return token.peek(position);
 }
 
 simdjson_really_inline uint32_t json_iterator::peek_length(token_position position) const noexcept {
-  // todo: currently we require end-of-string buffering, but the following
-  // assert_valid_position should be turned on if/when we lift that condition.
-  // assert_valid_position(position);
-  // This is almost surely related to __SIMDJSON_CHECK_EOF but given that __SIMDJSON_CHECK_EOF
-  // is ON by default, we have no choice but to disable it for real with a comment.
+  assert_valid_position(position);
   return token.peek_length(position);
 }
 

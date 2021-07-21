@@ -74,7 +74,6 @@ simdjson_really_inline simdjson_result<std::string_view> object::raw_json() noex
   const uint8_t * final_point{iter._json_iter->peek(0)};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
-
 simdjson_really_inline simdjson_result<object> object::started(value_iterator &iter) noexcept {
   SIMDJSON_TRY( iter.started_object().error() );
   return object(iter);
