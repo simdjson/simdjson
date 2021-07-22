@@ -10,7 +10,7 @@ namespace object_tests {
   bool no_missing_keys() {
     TEST_START();
     simdjson::ondemand::parser parser;
-    simdjson::padded_string docdata =  R"([{"a":"a"},{}])"_padded;
+    std::string docdata =  R"([{"a":"a"},{}])";
     simdjson::ondemand::document doc;
     auto error = parser.iterate(docdata).get(doc);
     if(error != simdjson::SUCCESS) { return false; }
@@ -33,7 +33,7 @@ namespace object_tests {
   bool missing_key_continue() {
     TEST_START();
     simdjson::ondemand::parser parser;
-    simdjson::padded_string docdata =  R"({"a":0, "b":1, "c":2})"_padded;
+    std::string docdata =  R"({"a":0, "b":1, "c":2})";
     simdjson::ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     int64_t num;
@@ -90,7 +90,7 @@ namespace object_tests {
   bool missing_keys() {
     TEST_START();
     simdjson::ondemand::parser parser;
-    simdjson::padded_string docdata =  R"([{"a":"a"},{}])"_padded;
+    std::string docdata =  R"([{"a":"a"},{}])";
     simdjson::ondemand::document doc;
     auto error = parser.iterate(docdata).get(doc);
     if(error != simdjson::SUCCESS) { return false; }
@@ -110,7 +110,7 @@ namespace object_tests {
   bool missing_keys_for_empty_top_level_object() {
     TEST_START();
     simdjson::ondemand::parser parser;
-    simdjson::padded_string docdata = "{}"_padded;
+    std::string docdata = "{}";
     simdjson::ondemand::document doc;
     auto error = parser.iterate(docdata).get(doc);
     if(error != simdjson::SUCCESS) { return false; }
@@ -139,7 +139,7 @@ namespace object_tests {
   bool broken_issue_1521() {
     TEST_START();
     ondemand::parser parser;
-    padded_string json = R"({"type":"root","nodes":[{"type":"child","nodes":[]},{"type":"child","name":"child-name","nodes":[]}]})"_padded;
+    std::string json = R"({"type":"root","nodes":[{"type":"child","nodes":[]},{"type":"child","name":"child-name","nodes":[]}]})";
     ondemand::document file_tree = parser.iterate(json);
     try {
       broken_descend(file_tree);
@@ -154,7 +154,7 @@ namespace object_tests {
     TEST_START();
     ondemand::parser parser;
     // We omit the ',"nodes":[]'
-    padded_string json = R"({"type":"root","nodes":[{"type":"child"},{"type":"child","name":"child-name","nodes":[]}]})"_padded;
+    std::string json = R"({"type":"root","nodes":[{"type":"child"},{"type":"child","name":"child-name","nodes":[]}]})";
     ondemand::document file_tree = parser.iterate(json);
     try {
       broken_descend(file_tree);
@@ -181,7 +181,7 @@ namespace object_tests {
   bool issue_1521() {
     TEST_START();
     ondemand::parser parser;
-    padded_string json = R"({"type":"root","nodes":[{"type":"child","nodes":[]},{"type":"child","name":"child-name","nodes":[]}]})"_padded;
+    std::string json = R"({"type":"root","nodes":[{"type":"child","nodes":[]},{"type":"child","name":"child-name","nodes":[]}]})";
     ondemand::document file_tree = parser.iterate(json);
     try {
       descend(file_tree);
@@ -195,7 +195,7 @@ namespace object_tests {
 
   bool iterate_object() {
     TEST_START();
-    auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
+    std::string json = R"({ "a": 1, "b": 2, "c": 3 })";
     const char* expected_key[] = { "a", "b", "c" };
     const uint64_t expected_value[] = { 1, 2, 3 };
     SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
@@ -254,7 +254,7 @@ namespace object_tests {
 
   bool iterate_object_partial_children() {
     TEST_START();
-    auto json = R"(
+    std::string json = R"(
       {
         "scalar_ignore":       0,
         "empty_array_ignore":  [],
@@ -268,7 +268,7 @@ namespace object_tests {
         "quadruple_nested_break": { "a": [ { "b": [ 9, 99 ], "c": 999 }, 9999 ], "d": 99999 },
         "actual_value": 10
       }
-    )"_padded;
+    )";
     SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::object object;
       ASSERT_SUCCESS( doc_result.get(object) );
@@ -408,7 +408,7 @@ namespace object_tests {
 
   bool iterate_empty_object() {
     TEST_START();
-    auto json = R"({})"_padded;
+    std::string json = R"({})";
 
     SUBTEST("ondemand::object", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::object object;
@@ -430,7 +430,7 @@ namespace object_tests {
 
   bool value_search_unescaped_key() {
     TEST_START();
-    auto json = R"({"k\u0065y": 1})"_padded;
+    std::string json = R"({"k\u0065y": 1})";
     SUBTEST("ondemand::unescapedkey", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::object object;
       bool got_key = false;
@@ -468,7 +468,7 @@ namespace object_tests {
 
   bool issue_1480() {
     TEST_START();
-    auto json = R"({ "name"  : "something", "version": "0.13.2", "version_major": 0})"_padded;
+    std::string json = R"({ "name"  : "something", "version": "0.13.2", "version_major": 0})";
 
     SUBTEST("ondemand::issue_1480::object", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::object object;
@@ -545,7 +545,7 @@ namespace object_tests {
 
   bool iterate_object_exception() {
     TEST_START();
-    auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
+    std::string json = R"({ "a": 1, "b": 2, "c": 3 })";
     const char* expected_key[] = { "a", "b", "c" };
     const uint64_t expected_value[] = { 1, 2, 3 };
     ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
@@ -563,7 +563,7 @@ namespace object_tests {
 
   bool iterate_empty_object_exception() {
     TEST_START();
-    auto json = R"({})"_padded;
+    std::string json = R"({})";
 
     ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
       for (simdjson_unused ondemand::field field : doc_result.get_object()) {

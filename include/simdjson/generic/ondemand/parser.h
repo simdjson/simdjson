@@ -90,6 +90,12 @@ public:
    */
   simdjson_warn_unused simdjson_result<document> iterate(padded_string_view json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate(const padded_string & json) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate(std::string_view view) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate(const char *json, size_t len) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const char *json, size_t len, size_t capacity) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const uint8_t *json, size_t len, size_t capacity) & noexcept;

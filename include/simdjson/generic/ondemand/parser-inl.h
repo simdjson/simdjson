@@ -28,6 +28,22 @@ simdjson_warn_unused simdjson_really_inline error_code parser::allocate(size_t n
   return SUCCESS;
 }
 
+
+simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const char *json, size_t len) & noexcept {
+  // Allocate if needed
+  if (capacity() < len || !string_buf) {
+    SIMDJSON_TRY( allocate(len, max_depth()) );
+  }
+
+  // Run stage 1.
+  SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json), len, stage1_mode::regular) );
+  return document::start({ reinterpret_cast<const uint8_t *>(json), this });
+}
+
+simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(std::string_view view) & noexcept {
+  return iterate(view.data(), view.size());
+}
+
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(padded_string_view json) & noexcept {
   if (json.padding() < SIMDJSON_PADDING) { return INSUFFICIENT_PADDING; }
 
@@ -54,7 +70,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const std::string &json) & noexcept {
-  return iterate(padded_string_view(json));
+  return iterate(json.data(), json.size());
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string_view> &result) & noexcept {
@@ -64,11 +80,15 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
   return iterate(json);
 }
 
+simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const padded_string & json) & noexcept {
+  return iterate(padded_string_view{json});
+}
+
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string> &result) & noexcept {
   // We don't presently have a way to temporarily get a const T& from a simdjson_result<T> without throwing an exception
   SIMDJSON_TRY( result.error() );
   const padded_string &json = result.value_unsafe();
-  return iterate(json);
+  return iterate(padded_string_view{json});
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<json_iterator> parser::iterate_raw(padded_string_view json) & noexcept {
