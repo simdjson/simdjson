@@ -317,7 +317,7 @@ simdjson_warn_unused simdjson_really_inline bool json_iterator::copy_to_buffer(c
   if((N < max_len) || (N == 0)) { return false; }
   // Truncate whitespace to fit the buffer.
   if (max_len > N-1) {
-    if (jsoncharutils::is_not_structural_or_whitespace(json[N-1])) { return false; }
+    // if (jsoncharutils::is_not_structural_or_whitespace(json[N-1])) { return false; }
     max_len = N-1;
   }
 
