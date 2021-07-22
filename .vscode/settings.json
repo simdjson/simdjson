@@ -4,7 +4,6 @@
         {"column": 120 }
     ],
     "files.trimTrailingWhitespace": true,
-    "C_Cpp.autoAddFileAssociations": false,
     "files.associations": {
         "array": "cpp",
         "iterator": "cpp",
@@ -18,6 +17,7 @@
         "__errc": "cpp",
         "__functional_base": "cpp",
         "__hash_table": "cpp",
+        "__locale": "cpp",
         "__mutex_base": "cpp",
         "__node_handle": "cpp",
         "__nullptr": "cpp",
@@ -33,6 +33,7 @@
         "cinttypes": "cpp",
         "clocale": "cpp",
         "cmath": "cpp",
+        "codecvt": "cpp",
         "complex": "cpp",
         "condition_variable": "cpp",
         "cstdarg": "cpp",
@@ -46,6 +47,7 @@
         "cwctype": "cpp",
         "deque": "cpp",
         "exception": "cpp",
+        "forward_list": "cpp",
         "fstream": "cpp",
         "functional": "cpp",
         "initializer_list": "cpp",
@@ -55,13 +57,17 @@
         "iostream": "cpp",
         "istream": "cpp",
         "limits": "cpp",
+        "list": "cpp",
         "locale": "cpp",
         "map": "cpp",
         "memory": "cpp",
         "mutex": "cpp",
         "new": "cpp",
+        "numeric": "cpp",
         "ostream": "cpp",
+        "random": "cpp",
         "ratio": "cpp",
+        "regex": "cpp",
         "set": "cpp",
         "sstream": "cpp",
         "stack": "cpp",
@@ -75,9 +81,10 @@
         "type_traits": "cpp",
         "typeinfo": "cpp",
         "unordered_map": "cpp",
+        "unordered_set": "cpp",
         "utility": "cpp",
+        "valarray": "cpp",
         "vector": "cpp",
-        "*.ipp": "cpp",
-        "*.tcc": "cpp"
+        "*.ipp": "cpp"
     }
 }

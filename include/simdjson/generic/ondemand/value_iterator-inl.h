@@ -38,7 +38,11 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::started_root_object() noexcept {
-  if (*_json_iter->peek_last() != '}') {
+  // When in streaming mode, we cannot expect peek_last() to be the last structural element of the
+  // current document. It only works in the normal mode where we have indexed a single document.
+  // Note that adding a check for 'streaming' is not expensive since we only have at most
+  // one root element.
+  if (! _json_iter->streaming() && (*_json_iter->peek_last() != '}')) {
     return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing } at end");
   }
   return started_object();
@@ -406,7 +410,11 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::started_root_array() noexcept {
-  if (*_json_iter->peek_last() != ']') {
+  // When in streaming mode, we cannot expect peek_last() to be the last structural element of the
+  // current document. It only works in the normal mode where we have indexed a single document.
+  // Note that adding a check for 'streaming' is not expensive since we only have at most
+  // one root element.
+  if ( ! _json_iter->streaming() && (*_json_iter->peek_last() != ']')) {
     return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing ] at end");
   }
   return started_array();

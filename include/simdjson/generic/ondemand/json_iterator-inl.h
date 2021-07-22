@@ -7,7 +7,9 @@ simdjson_really_inline json_iterator::json_iterator(json_iterator &&other) noexc
     parser{other.parser},
     _string_buf_loc{other._string_buf_loc},
     error{other.error},
-    _depth{other._depth}
+    _depth{other._depth},
+    _root{other._root},
+    _streaming{other._streaming}
 {
   other.parser = nullptr;
 }
@@ -17,6 +19,8 @@ simdjson_really_inline json_iterator &json_iterator::operator=(json_iterator &&o
   _string_buf_loc = other._string_buf_loc;
   error = other.error;
   _depth = other._depth;
+  _root = other._root;
+  _streaming = other._streaming;
   other.parser = nullptr;
   return *this;
 }
@@ -25,7 +29,10 @@ simdjson_really_inline json_iterator::json_iterator(const uint8_t *buf, ondemand
   : token(buf, &_parser->implementation->structural_indexes[0]),
     parser{_parser},
     _string_buf_loc{parser->string_buf.get()},
-    _depth{1}
+    _depth{1},
+    _root{parser->implementation->structural_indexes.get()},
+    _streaming{false}
+
 {
   logger::log_headers();
   assert_more_tokens();
@@ -138,16 +145,17 @@ simdjson_really_inline bool json_iterator::at_root() const noexcept {
   return position() == root_position();
 }
 
+simdjson_really_inline bool json_iterator::streaming() const noexcept {
+  return _streaming;
+}
+
 simdjson_really_inline token_position json_iterator::root_position() const noexcept {
-  return parser->implementation->structural_indexes.get();
+  return _root;
 }
 
 simdjson_really_inline void json_iterator::assert_at_root() const noexcept {
   SIMDJSON_ASSUME( _depth == 1 );
-  // Visual Studio Clang treats unique_ptr.get() as "side effecting."
-#ifndef SIMDJSON_CLANG_VISUAL_STUDIO
-  SIMDJSON_ASSUME( token._position == parser->implementation->structural_indexes.get() );
-#endif
+  SIMDJSON_ASSUME( token.position() == _root );
 }
 
 simdjson_really_inline void json_iterator::assert_more_tokens(uint32_t required_tokens) const noexcept {
