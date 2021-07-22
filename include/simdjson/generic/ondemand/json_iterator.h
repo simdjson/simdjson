@@ -72,9 +72,9 @@ public:
   simdjson_really_inline void assert_at_root() const noexcept;
 
   /**
-   * Tell whether the iterator is at the EOF mark
+   * Tell whether the iterator is at the EOF mark (end of the input buffer)
    */
-  simdjson_really_inline bool at_end() const noexcept;
+  simdjson_really_inline bool at_end_of_input_buffer() const noexcept;
 
   /**
    * Tell whether the iterator is live (has not been moved).
@@ -143,18 +143,24 @@ public:
    *
    * This is not null-terminated; it is a view into the JSON.
    *
-   * @param index The position of the token to retrieve.
-   *
-   * TODO consider a string_view, assuming the length will get stripped out by the optimizer when
-   * it isn't used ...
+   * @param position The position of the token to retrieve.
    */
   simdjson_really_inline const uint8_t *peek(token_position position) const noexcept;
+  /**
+   * Get a pointer to the current location in the input buffer.
+   *
+   * This is not null-terminated; it is a view into the JSON.
+   *
+   * You may be pointing outside of the input buffer: it is not generally
+   * safe to derefence this pointer.
+   */
+  simdjson_really_inline const uint8_t *unsafe_pointer() const noexcept;
   /**
    * Get the maximum length of the JSON text for the current token (or relative).
    *
    * The length will include any whitespace at the end of the token.
    *
-   * @param index The position of the token to retrieve.
+   * @param position The position of the token to retrieve.
    */
   simdjson_really_inline uint32_t peek_length(token_position position) const noexcept;
   /**
@@ -183,8 +189,8 @@ public:
    *
    * @param child_depth the expected child depth.
    */
-  simdjson_really_inline void descend_to(depth_t parent_depth) noexcept;
-  simdjson_really_inline void descend_to(depth_t parent_depth, int32_t delta) noexcept;
+  simdjson_really_inline void descend_to(depth_t child_depth) noexcept;
+  simdjson_really_inline void descend_to(depth_t child_depth, int32_t delta) noexcept;
 
   /**
    * Get current depth.
@@ -229,9 +235,9 @@ protected:
   /// The last token before the end
   simdjson_really_inline token_position last_position() const noexcept;
   /// The token *at* the end. This points at gibberish and should only be used for comparison.
-  simdjson_really_inline token_position end_position() const noexcept;
+  simdjson_really_inline token_position end_of_input_buffer_position() const noexcept;
   /// The end of the buffer.
-  simdjson_really_inline const uint8_t *end() const noexcept;
+  simdjson_really_inline const uint8_t *end_of_input_buffer() const noexcept;
 
   friend class document;
   friend class object;

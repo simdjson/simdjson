@@ -151,7 +151,7 @@ simdjson_unused simdjson_really_inline bool operator!=(std::string_view c, const
 
 
 simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(json_iterator &iter) const noexcept {
-  return unescape(iter.string_buf_loc(), iter.end());
+  return unescape(iter.string_buf_loc(), iter.end_of_input_buffer());
 }
 
 

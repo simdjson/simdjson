@@ -88,10 +88,10 @@ namespace object_error_tests {
   }
   bool object_lookup_unclosed_error() {
     TEST_START();
-  #if __SIMDJSON_CHECK_EOF
+  #if SIMDJSON_CHECK_EOF
     ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_error(doc["a"], INCOMPLETE_ARRAY_OR_OBJECT));
   #else
-    ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_success(doc["a"]));
+    ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_error(doc["a"], INCOMPLETE_ARRAY_OR_OBJECT));
   #endif
     ONDEMAND_SUBTEST("unclosed", R"({ "a"             )",    assert_error(doc["a"], INCOMPLETE_ARRAY_OR_OBJECT));
     ONDEMAND_SUBTEST("unclosed", R"({                 )",    assert_error(doc["a"], INCOMPLETE_ARRAY_OR_OBJECT));
@@ -119,13 +119,11 @@ namespace object_error_tests {
   bool object_lookup_miss_unclosed_error() {
     TEST_START();
     ONDEMAND_SUBTEST("unclosed", R"({ "a": 1,         )",    assert_error(doc["b"], INCOMPLETE_ARRAY_OR_OBJECT));
-    // TODO These next two pass the user a value that may run past the end of the buffer if they aren't careful.
-    // In particular, if the padding is decorated with the wrong values, we could cause overrun!
     ONDEMAND_SUBTEST("unclosed", R"({ "a": 1          )",    assert_error(doc["b"], INCOMPLETE_ARRAY_OR_OBJECT));
     ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_error(doc["b"], INCOMPLETE_ARRAY_OR_OBJECT));
     ONDEMAND_SUBTEST("unclosed", R"({ "a"             )",    assert_error(doc["b"], INCOMPLETE_ARRAY_OR_OBJECT));
     ONDEMAND_SUBTEST("unclosed", R"({                 )",    assert_error(doc["b"], INCOMPLETE_ARRAY_OR_OBJECT));
-    TEST_SUCCEED();
+TEST_SUCCEED();
   }
   bool object_lookup_miss_next_error() {
     TEST_START();

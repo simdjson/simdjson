@@ -40,7 +40,7 @@ public:
     return dom_parser.len - *(next_structural-1);
   }
 
-  simdjson_really_inline bool at_end() {
+  simdjson_really_inline bool at_end_of_input_buffer() {
     return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
   }
   simdjson_really_inline bool at_beginning() {

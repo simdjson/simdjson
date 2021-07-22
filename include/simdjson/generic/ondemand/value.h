@@ -295,9 +295,9 @@ public:
    * The string_view will always point into the input buffer.
    *
    * The string_view will start at the beginning of the token, and include the entire token
-   * *as well as all spaces until the next token (or EOF).* This means, for example, that a
-   * string token always begins with a " and is always terminated by the final ", possibly
-   * followed by a number of spaces.
+   * *as well as all spaces until the next token (or end of the buffer, or EOF).*
+   * This means, for example, that a string token always begins with a " and is always
+   * terminated by the final ", possibly followed by a number of spaces.
    *
    * The string_view is *not* null-terminated. However, if this is a scalar (string, number,
    * boolean, or null), the character after the end of the string_view is guaranteed to be
