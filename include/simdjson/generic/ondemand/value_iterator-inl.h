@@ -440,9 +440,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_itera
 simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_double() noexcept {
   return numberparsing::parse_double(advance_non_root_scalar("double"));
 }
-simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_double_from_string() noexcept {
-  return numberparsing::parse_double_from_string(advance_non_root_scalar("double"));
-}
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::get_bool() noexcept {
   return parse_bool(advance_non_root_scalar("bool"));
 }
@@ -479,14 +476,6 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterat
   uint8_t tmpbuf[1074+8+1];
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { logger::log_error(*_json_iter, _start_position, depth(), "Root number more than 1082 characters"); return NUMBER_ERROR; }
   return numberparsing::parse_double(tmpbuf);
-}
-simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_root_double_from_string() noexcept {
-  auto max_len = peek_start_length();
-  auto json = advance_root_scalar("double");
-  // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/, 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { logger::log_error(*_json_iter, _start_position, depth(), "Root number more than 1082 characters"); return NUMBER_ERROR; }
-  return numberparsing::parse_double_from_string(tmpbuf);
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::get_root_bool() noexcept {
   auto max_len = peek_start_length();

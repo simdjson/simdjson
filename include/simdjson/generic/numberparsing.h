@@ -753,6 +753,12 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer(co
 
 simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept {
   //
+  // Check if string
+  //
+  bool string = (*src == '"');
+  src += string;
+
+  //
   // Check for minus sign
   //
   bool negative = (*src == '-');
@@ -813,85 +819,6 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
   }
 
   if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
-
-  overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
-
-  //
-  // Assemble (or slow-parse) the float
-  //
-  double d;
-  if (simdjson_likely(!overflow)) {
-    if (compute_float_64(exponent, i, negative, d)) { return d; }
-  }
-  if (!parse_float_fallback(src-negative, &d)) {
-    return NUMBER_ERROR;
-  }
-  return d;
-}
-
-simdjson_unused simdjson_really_inline simdjson_result<double> parse_double_from_string(const uint8_t * src) noexcept {
-  //
-  // Check for minus sign
-  //
-  src++;
-  bool negative = (*src == '-');
-  src += negative;
-
-  //
-  // Parse the integer part.
-  //
-  uint64_t i = 0;
-  const uint8_t *p = src;
-  p += parse_digit(*p, i);
-  bool leading_zero = (i == 0);
-  while (parse_digit(*p, i)) { p++; }
-  // no integer digits, or 0123 (zero must be solo)
-  if ( p == src ) { return INCORRECT_TYPE; }
-  if ( (leading_zero && p != src+1)) { return NUMBER_ERROR; }
-
-  //
-  // Parse the decimal part.
-  //
-  int64_t exponent = 0;
-  bool overflow;
-  if (simdjson_likely(*p == '.')) {
-    p++;
-    const uint8_t *start_decimal_digits = p;
-    if (!parse_digit(*p, i)) { return NUMBER_ERROR; } // no decimal digits
-    p++;
-    while (parse_digit(*p, i)) { p++; }
-    exponent = -(p - start_decimal_digits);
-
-    // Overflow check. More than 19 digits (minus the decimal) may be overflow.
-    overflow = p-src-1 > 19;
-    if (simdjson_unlikely(overflow && leading_zero)) {
-      // Skip leading 0.00000 and see if it still overflows
-      const uint8_t *start_digits = src + 2;
-      while (*start_digits == '0') { start_digits++; }
-      overflow = start_digits-src > 19;
-    }
-  } else {
-    overflow = p-src > 19;
-  }
-
-  //
-  // Parse the exponent
-  //
-  if (*p == 'e' || *p == 'E') {
-    p++;
-    bool exp_neg = *p == '-';
-    p += exp_neg || *p == '+';
-
-    uint64_t exp = 0;
-    const uint8_t *start_exp_digits = p;
-    while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
-
-    exponent += exp_neg ? 0-exp : exp;
-  }
-
-  if (jsoncharutils::is_not_structural_or_whitespace_with_quotes(*p)) { return NUMBER_ERROR; }
 
   overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
 

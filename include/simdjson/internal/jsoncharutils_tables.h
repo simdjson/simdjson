@@ -18,8 +18,6 @@ namespace internal {
 
 extern SIMDJSON_DLLIMPORTEXPORT const bool structural_or_whitespace_negated[256];
 extern SIMDJSON_DLLIMPORTEXPORT const bool structural_or_whitespace[256];
-extern SIMDJSON_DLLIMPORTEXPORT const bool structural_or_whitespace_negated_with_quotes[256];
-extern SIMDJSON_DLLIMPORTEXPORT const bool structural_or_whitespace_with_quotes[256];
 extern SIMDJSON_DLLIMPORTEXPORT const uint32_t digit_to_val32[886];
 
 } // namespace internal

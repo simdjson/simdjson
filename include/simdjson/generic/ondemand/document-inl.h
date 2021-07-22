@@ -46,9 +46,6 @@ simdjson_really_inline simdjson_result<int64_t> document::get_int64() noexcept {
 simdjson_really_inline simdjson_result<double> document::get_double() noexcept {
   return get_root_value_iterator().get_root_double();
 }
-simdjson_really_inline simdjson_result<double> document::get_double_from_string() noexcept {
-  return get_root_value_iterator().get_root_double_from_string();
-}
 simdjson_really_inline simdjson_result<std::string_view> document::get_string() noexcept {
   return get_root_value_iterator().get_root_string();
 }
