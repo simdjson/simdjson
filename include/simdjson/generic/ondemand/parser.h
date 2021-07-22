@@ -109,6 +109,9 @@ public:
   simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string_view> &json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(padded_string &&json) & noexcept = delete;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate(std::string &&json) & noexcept = delete;
+
 
   /**
    * @private

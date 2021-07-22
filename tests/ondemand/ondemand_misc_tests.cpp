@@ -9,7 +9,7 @@ namespace misc_tests {
   bool issue1661a() {
     TEST_START();
     ondemand::parser parser;
-    padded_string docdata = R"({"":],"global-groups":[[]}})"_padded;
+    std::string docdata = R"({"":],"global-groups":[[]}})";
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ondemand::value global_groups;
@@ -23,7 +23,7 @@ namespace misc_tests {
   bool issue1660() {
     TEST_START();
     ondemand::parser parser;
-    padded_string docdata =  R"({"globals":{"a":{"shadowable":[}}}})"_padded;
+    std::string docdata =  R"({"globals":{"a":{"shadowable":[}}}})";
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ondemand::object globals;
@@ -54,7 +54,7 @@ namespace misc_tests {
   bool issue1660_with_bool() {
     TEST_START();
     ondemand::parser parser;
-    padded_string docdata =  R"({"globals":{"a":{"shadowable":[}}}})"_padded;
+    std::string docdata =  R"({"globals":{"a":{"shadowable":[}}}})";
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ondemand::object globals;
@@ -85,7 +85,7 @@ namespace misc_tests {
   bool issue1660_with_uint64() {
     TEST_START();
     ondemand::parser parser;
-    padded_string docdata =  R"({"globals":{"a":{"shadowable":[}}}})"_padded;
+    std::string docdata =  R"({"globals":{"a":{"shadowable":[}}}})";
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ondemand::object globals;
@@ -116,7 +116,7 @@ namespace misc_tests {
   bool issue1660_with_int64() {
     TEST_START();
     ondemand::parser parser;
-    padded_string docdata =  R"({"globals":{"a":{"shadowable":[}}}})"_padded;
+    std::string docdata =  R"({"globals":{"a":{"shadowable":[}}}})";
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ondemand::object globals;
@@ -146,7 +146,7 @@ namespace misc_tests {
   bool issue1660_with_double() {
     TEST_START();
     ondemand::parser parser;
-    padded_string docdata =  R"({"globals":{"a":{"shadowable":[}}}})"_padded;
+    std::string docdata =  R"({"globals":{"a":{"shadowable":[}}}})";
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ondemand::object globals;
@@ -177,7 +177,7 @@ namespace misc_tests {
   bool issue1660_with_null() {
     TEST_START();
     ondemand::parser parser;
-    padded_string docdata =  R"({"globals":{"a":{"shadowable":[}}}})"_padded;
+    std::string docdata =  R"({"globals":{"a":{"shadowable":[}}}})";
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ondemand::object globals;
@@ -208,7 +208,7 @@ namespace misc_tests {
   bool issue1660_with_string() {
     TEST_START();
     ondemand::parser parser;
-    padded_string docdata =  R"({"globals":{"a":{"shadowable":[}}}})"_padded;
+    std::string docdata =  R"({"globals":{"a":{"shadowable":[}}}})";
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ondemand::object globals;
@@ -238,7 +238,7 @@ namespace misc_tests {
   bool issue1661() {
     TEST_START();
     ondemand::parser parser;
-    padded_string docdata = R"({"":],"global-groups":[[]}})"_padded;
+    std::string docdata = R"({"":],"global-groups":[[]}})";
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ondemand::object global_groups;
@@ -252,7 +252,7 @@ namespace misc_tests {
   simdjson_warn_unused bool big_integer() {
     TEST_START();
     simdjson::ondemand::parser parser;
-    simdjson::padded_string docdata =  R"({"value":12321323213213213213213213213211223})"_padded;
+    std::string docdata =  R"({"value":12321323213213213213213213213211223})";
     simdjson::ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     simdjson::ondemand::object o;
@@ -265,7 +265,7 @@ namespace misc_tests {
   simdjson_warn_unused bool big_integer_in_string() {
     TEST_START();
     simdjson::ondemand::parser parser;
-    simdjson::padded_string docdata =  R"({"value":"12321323213213213213213213213211223"})"_padded;
+    std::string docdata =  R"({"value":"12321323213213213213213213213211223"})";
     simdjson::ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     simdjson::ondemand::object o;
@@ -275,17 +275,16 @@ namespace misc_tests {
     ASSERT_EQUAL(token, "\"12321323213213213213213213213211223\"");
     return true;
   }
-  simdjson_warn_unused bool test_raw_json_token(string_view json, string_view expected_token, int expected_start_index = 0) {
+  simdjson_warn_unused bool test_raw_json_token(string json, string_view expected_token, int expected_start_index = 0) {
     string title = "'";
     title.append(json.data(), json.length());
     title += "'";
-    padded_string json_padded = json;
-    SUBTEST(title, test_ondemand_doc(json_padded, [&](auto doc) {
+    SUBTEST(title, test_ondemand_doc(json, [&](auto doc) {
       string_view token;
       ASSERT_SUCCESS( doc.raw_json_token().get(token) );
       ASSERT_EQUAL( token, expected_token );
       // Validate the text is inside the original buffer
-      ASSERT_EQUAL( reinterpret_cast<const void*>(token.data()), reinterpret_cast<const void*>(&json_padded.data()[expected_start_index]));
+      ASSERT_EQUAL( reinterpret_cast<const void*>(token.data()), reinterpret_cast<const void*>(&json.data()[expected_start_index]));
       return true;
     }));
 
@@ -293,22 +292,22 @@ namespace misc_tests {
     auto json_in_hash = string(R"({"a":)");
     json_in_hash.append(json.data(), json.length());
     json_in_hash += "}";
-    json_padded = json_in_hash;
     title = "'";
     title.append(json_in_hash.data(), json_in_hash.length());
     title += "'";
-    SUBTEST(title, test_ondemand_doc(json_padded, [&](auto doc) {
+    SUBTEST(title, test_ondemand_doc(json_in_hash, [&](auto doc) {
       string_view token;
       ASSERT_SUCCESS( doc["a"].raw_json_token().get(token) );
       ASSERT_EQUAL( token, expected_token );
       // Validate the text is inside the original buffer
       // Adjust for the {"a":
-      ASSERT_EQUAL( reinterpret_cast<const void*>(token.data()), reinterpret_cast<const void*>(&json_padded.data()[5+expected_start_index]));
+      ASSERT_EQUAL( reinterpret_cast<const void*>(token.data()), reinterpret_cast<const void*>(&json_in_hash.data()[5+expected_start_index]));
       return true;
     }));
 
     return true;
   }
+  //bool raw_json_token() { return true; }
 
   bool raw_json_token() {
     TEST_START();

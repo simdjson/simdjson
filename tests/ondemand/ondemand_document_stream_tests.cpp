@@ -13,7 +13,7 @@ namespace document_stream_tests {
 
     bool simple_document_iteration() {
         TEST_START();
-        auto json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3])"_padded;
+        std::string json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3])";
         ondemand::parser parser;
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
@@ -29,7 +29,7 @@ namespace document_stream_tests {
 
     bool simple_document_iteration_multiple_batches() {
         TEST_START();
-        auto json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3])"_padded;
+        std::string json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3])";
         ondemand::parser parser;
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(json,32).get(stream));
@@ -45,7 +45,7 @@ namespace document_stream_tests {
 
     bool simple_document_iteration_with_parsing() {
         TEST_START();
-        auto json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3])"_padded;
+        std::string json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3])";
         ondemand::parser parser;
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
@@ -81,7 +81,7 @@ namespace document_stream_tests {
 
     bool atoms_json() {
         TEST_START();
-        auto json = R"(5 true 20.3 "string" )"_padded;
+        std::string json = R"(5 true 20.3 "string" )";
         ondemand::parser parser;
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
@@ -97,7 +97,7 @@ namespace document_stream_tests {
 
     bool doc_index() {
         TEST_START();
-        auto json = R"({"z":5}  {"1":1,"2":2,"4":4} [7,  10,   9]  [15,  11,   12, 13]  [154,  110,   112, 1311])"_padded;
+        std::string json = R"({"z":5}  {"1":1,"2":2,"4":4} [7,  10,   9]  [15,  11,   12, 13]  [154,  110,   112, 1311])";
         std::string_view expected[5] = {R"({"z":5})",R"({"1":1,"2":2,"4":4})","[7,  10,   9]","[15,  11,   12, 13]","[154,  110,   112, 1311]"};
         size_t expected_indexes[5] = {0, 9, 29, 44, 65};
 
@@ -117,7 +117,7 @@ namespace document_stream_tests {
 
     bool doc_index_multiple_batches() {
         TEST_START();
-        auto json = R"({"z":5}  {"1":1,"2":2,"4":4} [7,  10,   9]  [15,  11,   12, 13]  [154,  110,   112, 1311])"_padded;
+        std::string json = R"({"z":5}  {"1":1,"2":2,"4":4} [7,  10,   9]  [15,  11,   12, 13]  [154,  110,   112, 1311])";
         std::string_view expected[5] = {R"({"z":5})",R"({"1":1,"2":2,"4":4})","[7,  10,   9]","[15,  11,   12, 13]","[154,  110,   112, 1311]"};
         size_t expected_indexes[5] = {0, 9, 29, 44, 65};
 
@@ -137,7 +137,7 @@ namespace document_stream_tests {
 
     bool source_test() {
         TEST_START();
-        auto json = R"([1,[1,2]]     {"a":1,"b":2}      {"o":{"1":1,"2":2}}   [1,2,3] )"_padded;
+        std::string json = R"([1,[1,2]]     {"a":1,"b":2}      {"o":{"1":1,"2":2}}   [1,2,3] )";
         ondemand::parser parser;
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
@@ -153,7 +153,7 @@ namespace document_stream_tests {
     bool truncated() {
         TEST_START();
         // The last JSON document is intentionally truncated.
-        auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2  )"_padded;
+        std::string json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2  )";
         ondemand::parser parser;
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
@@ -170,7 +170,7 @@ namespace document_stream_tests {
 
     bool truncated_complete_docs() {
         TEST_START();
-        auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2]  )"_padded;
+        std::string json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2]  )";
         ondemand::parser parser;
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
@@ -188,7 +188,7 @@ namespace document_stream_tests {
     bool truncated_unclosed_string() {
         TEST_START();
         // The last JSON document is intentionally truncated.
-        auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} "intentionally unclosed string  )"_padded;
+        std::string json = R"([1,2,3]  {"1":1,"2":3,"4":4} "intentionally unclosed string  )";
         ondemand::parser parser;
         ondemand::document_stream stream;
         // We use a window of json.size() though any large value would do.
@@ -205,7 +205,7 @@ namespace document_stream_tests {
 
     bool truncated_unclosed_string_in_object() {
         // The last JSON document is intentionally truncated.
-        auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
+        std::string json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )";
         ondemand::parser parser;
         ondemand::document_stream stream;
         ASSERT_SUCCESS( parser.iterate_many(json).get(stream) );
@@ -240,7 +240,7 @@ namespace document_stream_tests {
     bool large_window() {
         TEST_START();
     #if SIZE_MAX > 17179869184
-        auto json = R"({"error":[],"result":{"token":"xxx"}}{"error":[],"result":{"token":"xxx"}})"_padded;
+        std::string json = R"({"error":[],"result":{"token":"xxx"}}{"error":[],"result":{"token":"xxx"}})";
         ondemand::parser parser;
         uint64_t window_size{17179869184}; // deliberately too big
         ondemand::document_stream stream;
@@ -253,7 +253,7 @@ namespace document_stream_tests {
 
     bool test_leading_spaces() {
         TEST_START();
-        auto input = R"(                               [1,1] [1,2] [1,3]  [1,4] [1,5] [1,6] [1,7] [1,8] [1,9] [1,10] [1,11] [1,12] [1,13] [1,14] [1,15] )"_padded;;
+        std::string input = R"(                               [1,1] [1,2] [1,3]  [1,4] [1,5] [1,6] [1,7] [1,8] [1,9] [1,10] [1,11] [1,12] [1,13] [1,14] [1,15] )";
         size_t count{0};
         ondemand::parser parser;
         ondemand::document_stream stream;
@@ -269,7 +269,7 @@ namespace document_stream_tests {
 
     bool test_crazy_leading_spaces() {
         TEST_START();
-        auto input = R"(                                                                                                                                                           [1,1] [1,2] [1,3]  [1,4] [1,5] [1,6] [1,7] [1,8] [1,9] [1,10] [1,11] [1,12] [1,13] [1,14] [1,15] )"_padded;;
+        std::string input = R"(                                                                                                                                                           [1,1] [1,2] [1,3]  [1,4] [1,5] [1,6] [1,7] [1,8] [1,9] [1,10] [1,11] [1,12] [1,13] [1,14] [1,15] )";
         size_t count{0};
         ondemand::parser parser;
         ondemand::document_stream stream;
@@ -284,7 +284,7 @@ namespace document_stream_tests {
 
     bool adversarial_single_document() {
         TEST_START();
-        auto json = R"({"f[)"_padded;
+        std::string json = R"({"f[)";
         ondemand::parser parser;
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
@@ -299,7 +299,7 @@ namespace document_stream_tests {
 
     bool adversarial_single_document_array() {
         TEST_START();
-        auto json = R"(["this is an unclosed string ])"_padded;
+        std::string json = R"(["this is an unclosed string ])";
         ondemand::parser parser;
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
@@ -388,7 +388,7 @@ namespace document_stream_tests {
     bool stress_data_race() {
     TEST_START();
     // Correct JSON.
-    auto input = R"([1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+    std::string input = R"([1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )";
     ondemand::parser parser;
     ondemand::document_stream stream;
     ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
@@ -404,7 +404,7 @@ namespace document_stream_tests {
     std::cout << "ENABLED" << std::endl;
     #endif
     // Intentionally broken
-    auto input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;
+    std::string input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )";
     ondemand::parser parser;
     ondemand::document_stream stream;
     ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));

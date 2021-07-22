@@ -86,7 +86,7 @@ namespace document_stream_tests {
   bool stress_data_race() {
     std::cout << "Running " << __func__ << std::endl;
     // Correct JSON.
-    const simdjson::padded_string input = R"([1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+    const simdjson::padded_string input = R"([1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
@@ -103,7 +103,7 @@ namespace document_stream_tests {
   bool stress_data_race_with_error() {
     std::cout << "Running " << __func__ << std::endl;
     // Intentionally broken
-    const simdjson::padded_string input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+    const simdjson::padded_string input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
@@ -129,7 +129,7 @@ namespace document_stream_tests {
 
   bool test_leading_spaces() {
     std::cout << "Running " << __func__ << std::endl;
-    const simdjson::padded_string input = R"(                               [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+    const simdjson::padded_string input = R"(                               [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;
     size_t count = 0;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
@@ -149,7 +149,7 @@ namespace document_stream_tests {
 
   bool test_crazy_leading_spaces() {
     std::cout << "Running " << __func__ << std::endl;
-    const simdjson::padded_string input = R"(                                                                                                                                                           [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+    const simdjson::padded_string input = R"(                                                                                                                                                           [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;
     size_t count = 0;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;

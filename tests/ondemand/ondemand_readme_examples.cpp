@@ -36,8 +36,8 @@ bool basics_3() {
 
   ondemand::parser parser;
   char json[3];
-  strcpy(json, "[1]");
-  ondemand::document doc = parser.iterate(json, strlen(json));
+  memcpy(json, "[1]", 3);
+  ondemand::document doc = parser.iterate(json, 3);
 
   simdjson_unused auto unused_doc = doc.get_array();
 

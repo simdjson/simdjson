@@ -5,7 +5,7 @@
 using namespace simdjson;
 
 namespace json_pointer_tests {
-    const padded_string TEST_JSON = R"(
+    const std::string TEST_JSON = R"(
     {
         "/~01abc": [
         0,
@@ -21,9 +21,9 @@ namespace json_pointer_tests {
         "": "empty ok",
         "arr": []
     }
-    )"_padded;
+    )";
 
-    const padded_string TEST_RFC_JSON = R"(
+    const std::string TEST_RFC_JSON = R"(
     {
         "foo": ["bar", "baz"],
         "": 0,
@@ -36,7 +36,7 @@ namespace json_pointer_tests {
         " ": 7,
         "m~n": 8
     }
-    )"_padded;
+    )";
 
     bool run_success_test(const padded_string & json,std::string_view json_pointer,std::string expected) {
         TEST_START();
@@ -63,11 +63,11 @@ namespace json_pointer_tests {
 
     bool demo_test() {
         TEST_START();
-        auto cars_json = R"( [
+        std::string cars_json = R"( [
         { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
         { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
         { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-        ] )"_padded;
+        ] )";
 
         ondemand::parser parser;
         ondemand::document cars;
@@ -80,11 +80,11 @@ namespace json_pointer_tests {
 
     bool demo_relative_path() {
         TEST_START();
-        auto cars_json = R"( [
+        std::string cars_json = R"( [
         { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
         { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
         { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-        ] )"_padded;
+        ] )";
 
         ondemand::parser parser;
         ondemand::document cars;
@@ -103,11 +103,11 @@ namespace json_pointer_tests {
 
     bool many_json_pointers() {
         TEST_START();
-        auto cars_json = R"( [
+        std::string cars_json = R"( [
         { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
         { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
         { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-        ] )"_padded;
+        ] )";
 
         ondemand::parser parser;
         ondemand::document cars;
@@ -131,12 +131,12 @@ namespace json_pointer_tests {
         ondemand::value v;
         std::string_view val;
 
-        auto invalid_escape_key = R"( {"hello": [0,1,2,3], "te\est": "foo", "bool": true, "num":1234, "success":"yes"} )"_padded;
-        auto invalid_escape_value = R"( {"hello": [0,1,2,3], "test": "fo\eo", "bool": true, "num":1234, "success":"yes"} )"_padded;
-        auto invalid_escape_value_at_jp = R"( {"hello": [0,1,2,3], "test": "foo", "bool": true, "num":1234, "success":"y\es"} )"_padded;
-        auto unclosed_object = R"( {"test": "foo", "bool": true, "num":1234, "success":"yes" )"_padded;
-        auto missing_bracket_before = R"( {"hello": [0,1,2,3, "test": "foo", "bool": true, "num":1234, "success":"yes"} )"_padded;
-        auto missing_bracket_after = R"( {"test": "foo", "bool": true, "num":1234, "success":"yes", "hello":[0,1,2,3} )"_padded;
+        std::string invalid_escape_key = R"( {"hello": [0,1,2,3], "te\est": "foo", "bool": true, "num":1234, "success":"yes"} )";
+        std::string invalid_escape_value = R"( {"hello": [0,1,2,3], "test": "fo\eo", "bool": true, "num":1234, "success":"yes"} )";
+        std::string invalid_escape_value_at_jp = R"( {"hello": [0,1,2,3], "test": "foo", "bool": true, "num":1234, "success":"y\es"} )";
+        std::string unclosed_object = R"( {"test": "foo", "bool": true, "num":1234, "success":"yes" )";
+        std::string missing_bracket_before = R"( {"hello": [0,1,2,3, "test": "foo", "bool": true, "num":1234, "success":"yes"} )";
+        std::string missing_bracket_after = R"( {"test": "foo", "bool": true, "num":1234, "success":"yes", "hello":[0,1,2,3} )";
 
         std::string json_pointer = "/success";
         std::cout << "\t- invalid_escape_key" << std::endl;
@@ -166,7 +166,7 @@ namespace json_pointer_tests {
 
     bool many_json_pointers_object_array() {
         TEST_START();
-        auto dogcatpotato = R"( { "dog" : [1,2,3], "cat" : [5, 6, 7], "potato" : [1234]})"_padded;
+        std::string dogcatpotato = R"( { "dog" : [1,2,3], "cat" : [5, 6, 7], "potato" : [1234]})";
 
         ondemand::parser parser;
         ondemand::document doc;
@@ -182,7 +182,7 @@ namespace json_pointer_tests {
     }
     bool many_json_pointers_object() {
         TEST_START();
-        auto cfoofoo2 = R"( { "c" :{ "foo": { "a": [ 10, 20, 30 ] }}, "d": { "foo2": { "a": [ 10, 20, 30 ] }} , "e": 120 })"_padded;
+        std::string cfoofoo2 = R"( { "c" :{ "foo": { "a": [ 10, 20, 30 ] }}, "d": { "foo2": { "a": [ 10, 20, 30 ] }} , "e": 120 })";
         ondemand::parser parser;
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate(cfoofoo2).get(doc));
@@ -199,7 +199,7 @@ namespace json_pointer_tests {
     }
     bool many_json_pointers_array() {
         TEST_START();
-        auto cfoofoo2 = R"( [ 111, 2, 3, { "foo": { "a": [ 10, 20, 33 ] }}, { "foo2": { "a": [ 10, 20, 30 ] }}, 1001 ])"_padded;
+        std::string cfoofoo2 = R"( [ 111, 2, 3, { "foo": { "a": [ 10, 20, 33 ] }}, { "foo2": { "a": [ 10, 20, 30 ] }}, 1001 ])";
         ondemand::parser parser;
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate(cfoofoo2).get(doc));
@@ -222,11 +222,11 @@ namespace json_pointer_tests {
 
     bool json_pointer_invalidation() {
         TEST_START();
-        auto cars_json = R"( [
+        std::string cars_json = R"( [
         { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
         { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
         { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-        ] )"_padded;
+        ] )";
 
         ondemand::parser parser;
         ondemand::document cars;

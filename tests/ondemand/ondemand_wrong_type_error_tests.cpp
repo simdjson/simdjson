@@ -9,9 +9,8 @@ namespace wrong_type_error_tests {
 #define TEST_CAST_ERROR(JSON, TYPE, ERROR) \
   std::cout << "- Subtest: get_" << (#TYPE) << "() - JSON: " << (JSON) << std::endl; \
   { \
-    /* Put padding into the string to check the buffer overrun code as well */ \
-    auto doc_json = std::string(JSON) + "1111111111111111111111111111111111111111111111111111111111111111"; \
-    if (!test_ondemand_doc(padded_string_view(doc_json.data(), strlen(JSON), doc_json.length()), [&](auto doc_result) { \
+    std::string doc_json = std::string(JSON); \
+    if (!test_ondemand_doc(doc_json, [&](auto doc_result) { \
       ASSERT_ERROR( doc_result.get_##TYPE(), (ERROR) ); \
       return true; \
     })) { \
@@ -19,7 +18,7 @@ namespace wrong_type_error_tests {
     } \
   } \
   { \
-    padded_string a_json(std::string(R"({ "a": )") + JSON + " }"); \
+    std::string a_json(std::string(R"({ "a": )") + JSON + " }"); \
     std::cout << R"(- Subtest: get_)" << (#TYPE) << "() - JSON: " << a_json << std::endl; \
     if (!test_ondemand_doc(a_json, [&](auto doc_result) { \
       ASSERT_ERROR( doc_result["a"].get_##TYPE(), (ERROR) ); \

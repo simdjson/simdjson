@@ -116,7 +116,7 @@ namespace array_error_tests {
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
   bool out_of_order_array_iteration_error() {
     TEST_START();
-    auto json = R"([ [ 1, 2 ] ])"_padded;
+    std::string json = R"([ [ 1, 2 ] ])";
     SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc) {
       for (auto arr : doc) {
         for (auto subelement : arr) { ASSERT_SUCCESS(subelement); }
@@ -155,7 +155,7 @@ namespace array_error_tests {
 
   bool out_of_order_top_level_array_iteration_error() {
     TEST_START();
-    auto json = R"([ 1, 2 ])"_padded;
+    std::string json = R"([ 1, 2 ])";
     SUBTEST("simdjson_result<document>", test_ondemand_doc(json, [&](auto arr) {
       for (auto element : arr) { ASSERT_SUCCESS(element); }
       ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );

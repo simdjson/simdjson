@@ -99,6 +99,11 @@ struct padded_string final {
   operator std::string_view() const;
 
   /**
+   * Create a std::string with the same content (and no padding).
+   */
+  std::string to_string() const;
+
+  /**
    * Create a padded_string_view with the same content.
    */
   operator padded_string_view() const noexcept;
