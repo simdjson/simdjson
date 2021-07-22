@@ -269,6 +269,7 @@ public:
   simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> get_root_uint64() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> get_root_int64() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<double> get_root_double() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<double> get_root_double_from_string() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<bool> get_root_bool() noexcept;
   simdjson_really_inline bool is_root_null() noexcept;
 

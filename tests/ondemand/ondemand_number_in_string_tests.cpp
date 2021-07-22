@@ -11,8 +11,12 @@ namespace number_in_string_tests {
         ondemand::parser parser;
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        size_t counter{0};
+        std::vector<double> expected = {1.2, 2.3};
+        double d;
         for (auto value : doc) {
-            std::cout << value.get_double_from_string() << std::endl;
+            d = value.get_double_from_string();
+            ASSERT_EQUAL(d,expected[counter++]);
         }
         TEST_SUCCEED();
     }
@@ -23,13 +27,31 @@ namespace number_in_string_tests {
         ondemand::parser parser;
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
-        std::cout << doc.find_field("a").get_double_from_string() << std::endl;
+        size_t counter{0};
+        std::vector<double> expected = {1.2, 2.3};
+        double d;
+        d = doc.find_field("a").get_double_from_string();
+        ASSERT_EQUAL(d,expected[counter++]);
+        d = doc.find_field("b").get_double_from_string();
+        ASSERT_EQUAL(d,expected[counter++]);
+        TEST_SUCCEED();
+    }
+
+    bool doc() {
+        TEST_START();
+         auto json = R"( "1.2" )"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        double d = doc.get_double_from_string();
+        ASSERT_EQUAL(d,1.2);
         TEST_SUCCEED();
     }
 
     bool run() {
         return  array() &&
                 object() &&
+                doc() &&
                 true;
     }
 }   // number_in_string_tests
