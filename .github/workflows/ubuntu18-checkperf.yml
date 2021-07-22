@@ -1,6 +1,12 @@
 name: Performance check on Ubuntu 18.04 CI (GCC 7)
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
   ubuntu-build:
