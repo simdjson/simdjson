@@ -155,7 +155,11 @@ simdjson_really_inline token_position json_iterator::root_position() const noexc
 
 simdjson_really_inline void json_iterator::assert_at_root() const noexcept {
   SIMDJSON_ASSUME( _depth == 1 );
+#ifndef SIMDJSON_CLANG_VISUAL_STUDIO
+  // Under Visual Studio, the next SIMDJSON_ASSUME fails with: the argument
+  // has side effects that will be discarded.
   SIMDJSON_ASSUME( token.position() == _root );
+#endif
 }
 
 simdjson_really_inline void json_iterator::assert_more_tokens(uint32_t required_tokens) const noexcept {
