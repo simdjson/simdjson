@@ -614,7 +614,7 @@ const uint8_t integer_string_finisher[256] = {
     NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
     NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
     NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
-    NUMBER_ERROR, NUMBER_ERROR,   SUCCESS,      NUMBER_ERROR, NUMBER_ERROR,
+    NUMBER_ERROR, NUMBER_ERROR,   SUCCESS,      NUMBER_ERROR, SUCCESS,
     NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
     NUMBER_ERROR, NUMBER_ERROR,   NUMBER_ERROR, NUMBER_ERROR, SUCCESS,
     NUMBER_ERROR, INCORRECT_TYPE, NUMBER_ERROR, NUMBER_ERROR, NUMBER_ERROR,
@@ -663,7 +663,12 @@ const uint8_t integer_string_finisher[256] = {
 
 // Parse any number from 0 to 18,446,744,073,709,551,615
 simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
-  const uint8_t *p = src;
+  //
+  // Check if string
+  //
+  bool string = (*src == '"');
+
+  const uint8_t *p = src + string;
   //
   // Parse the integer part.
   //
@@ -711,6 +716,12 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(
 
 // Parse any number from  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
 simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) noexcept {
+  //
+  // Check if string
+  //
+  bool string = (*src == '"');
+  src += string;
+
   //
   // Check for minus sign
   //

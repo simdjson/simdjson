@@ -5,57 +5,114 @@
 using namespace simdjson;
 
 namespace number_in_string_tests {
-    bool array() {
+    bool array_double() {
         TEST_START();
-        auto json = R"(["1.2","2.3","-42.3","2.43442e3", 5.432, -23.2])"_padded;
+        auto json = R"(["1.2","2.3","-42.3","2.43442e3", "-1.234e3"])"_padded;
         ondemand::parser parser;
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
         size_t counter{0};
-        std::vector<double> expected = {1.2, 2.3,-42.3,2434.42, 5.432, -23.2};
+        std::vector<double> expected = {1.2, 2.3, -42.3, 2434.42, -1234};
         double d;
         for (auto value : doc) {
-            d = value.get_double();
+            ASSERT_SUCCESS(value.get_double().get(d));
             ASSERT_EQUAL(d,expected[counter++]);
+        }
+        TEST_SUCCEED();
+    }
+
+    bool array_int() {
+        TEST_START();
+        auto json = R"(["1", "2", "-3", "1000", "-7844"])"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        size_t counter{0};
+        std::vector<int> expected = {1, 2, -3, 1000, -7844};
+        int64_t i;
+        for (auto value : doc) {
+            ASSERT_SUCCESS(value.get_int64().get(i));
+            ASSERT_EQUAL(i,expected[counter++]);
+        }
+        TEST_SUCCEED();
+    }
+
+    bool array_unsigned() {
+        TEST_START();
+        auto json = R"(["1", "2", "24", "9000", "156934"])"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        size_t counter{0};
+        std::vector<int> expected = {1, 2, 24, 9000, 156934};
+        uint64_t u;
+        for (auto value : doc) {
+            ASSERT_SUCCESS(value.get_uint64().get(u));
+            ASSERT_EQUAL(u,expected[counter++]);
         }
         TEST_SUCCEED();
     }
 
     bool object() {
         TEST_START();
-        auto json = R"({"a":"1.2", "b":"2.3", "c":"2.342e2", "d":"-2.25e1"})"_padded;
+        auto json = R"({"a":"1.2", "b":"-2.342e2", "c":"22", "d":"-112358", "e":"1080", "f":"123456789"})"_padded;
         ondemand::parser parser;
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
         size_t counter{0};
-        std::vector<double> expected = {1.2, 2.3, 234.2, -22.5};
+        std::vector<double> expected = {1.2, -234.2, 22, -112358, 1080, 123456789};
         double d;
+        int64_t i;
+        uint64_t u;
+        // Doubles
         ASSERT_SUCCESS(doc.find_field("a").get_double().get(d));
         ASSERT_EQUAL(d,expected[counter++]);
         ASSERT_SUCCESS(doc.find_field("b").get_double().get(d));
         ASSERT_EQUAL(d,expected[counter++]);
-        ASSERT_SUCCESS(doc.find_field("c").get_double().get(d));
-        ASSERT_EQUAL(d,expected[counter++]);
-        ASSERT_SUCCESS(doc.find_field("d").get_double().get(d));
-        ASSERT_EQUAL(d,expected[counter++]);
+        // Integers
+        ASSERT_SUCCESS(doc.find_field("c").get_int64().get(i));
+        ASSERT_EQUAL(i,expected[counter++]);
+        ASSERT_SUCCESS(doc.find_field("d").get_int64().get(i));
+        ASSERT_EQUAL(i,expected[counter++]);
+        // Unsigned integers
+        ASSERT_SUCCESS(doc.find_field("e").get_uint64().get(u));
+        ASSERT_EQUAL(u,expected[counter++]);
+        ASSERT_SUCCESS(doc.find_field("f").get_uint64().get(u));
+        ASSERT_EQUAL(u,expected[counter++]);
         TEST_SUCCEED();
     }
 
-    bool doc() {
+    bool docs() {
         TEST_START();
-        auto json = R"( "-1.23e1" )"_padded;
+        auto double_doc = R"( "-1.23e1" )"_padded;
+        auto int_doc = R"( "-243" )"_padded;
+        auto uint_doc = R"( "212213" )"_padded;
         ondemand::parser parser;
         ondemand::document doc;
-        ASSERT_SUCCESS(parser.iterate(json).get(doc));
-        double d = doc.get_double();
+        double d;
+        int64_t i;
+        uint64_t u;
+        // Double
+        ASSERT_SUCCESS(parser.iterate(double_doc).get(doc));
+        ASSERT_SUCCESS(doc.get_double().get(d));
         ASSERT_EQUAL(d,-12.3);
+        // Integer
+        ASSERT_SUCCESS(parser.iterate(int_doc).get(doc));
+        ASSERT_SUCCESS(doc.get_int64().get(i));
+        ASSERT_EQUAL(i,-243);
+        // Unsinged integer
+        ASSERT_SUCCESS(parser.iterate(uint_doc).get(doc));
+        ASSERT_SUCCESS(doc.get_uint64().get(u));
+        ASSERT_EQUAL(u,212213);
         TEST_SUCCEED();
     }
 
     bool run() {
-        return  array() &&
+        return  array_double() &&
+                array_int() &&
+                array_unsigned() &&
                 object() &&
-                doc() &&
+                docs() &&
                 true;
     }
 }   // number_in_string_tests
