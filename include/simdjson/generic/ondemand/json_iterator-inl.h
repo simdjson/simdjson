@@ -153,7 +153,11 @@ simdjson_really_inline token_position json_iterator::root_position() const noexc
 
 simdjson_really_inline void json_iterator::assert_at_root() const noexcept {
   SIMDJSON_ASSUME( _depth == 1 );
+#ifndef SIMDJSON_CLANG_VISUAL_STUDIO
+  // Under Visual Studio, the next SIMDJSON_ASSUME fails with: the argument
+  // has side effects that will be discarded.
   SIMDJSON_ASSUME( token.position() == _root );
+#endif
 }
 
 simdjson_really_inline void json_iterator::assert_more_tokens(uint32_t required_tokens) const noexcept {
@@ -309,6 +313,8 @@ simdjson_really_inline error_code json_iterator::optional_error(error_code _erro
 
 template<int N>
 simdjson_warn_unused simdjson_really_inline bool json_iterator::copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t (&tmpbuf)[N]) noexcept {
+  // Let us guard against silly cases:
+  if((N < max_len) || (N == 0)) { return false; }
   // Truncate whitespace to fit the buffer.
   if (max_len > N-1) {
     if (jsoncharutils::is_not_structural_or_whitespace(json[N-1])) { return false; }
