@@ -69,10 +69,18 @@ public:
   /**
    * Cast this JSON value to an unsigned integer.
    *
-   * @returns A signed 64-bit integer.
+   * @returns A unsigned 64-bit integer.
    * @returns INCORRECT_TYPE If the JSON value is not a 64-bit unsigned integer.
    */
   simdjson_really_inline simdjson_result<uint64_t> get_uint64() noexcept;
+
+  /**
+   * Cast this JSON value (inside string) to a unsigned integer.
+   *
+   * @returns A unsigned 64-bit integer.
+   * @returns INCORRECT_TYPE If the JSON value is not a 64-bit unsigned integer.
+   */
+  simdjson_really_inline simdjson_result<uint64_t> get_uint64_in_string() noexcept;
 
   /**
    * Cast this JSON value to a signed integer.
@@ -83,12 +91,28 @@ public:
   simdjson_really_inline simdjson_result<int64_t> get_int64() noexcept;
 
   /**
+   * Cast this JSON value (inside string) to a signed integer.
+   *
+   * @returns A signed 64-bit integer.
+   * @returns INCORRECT_TYPE If the JSON value is not a 64-bit integer.
+   */
+  simdjson_really_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
+
+  /**
    * Cast this JSON value to a double.
    *
    * @returns A double.
    * @returns INCORRECT_TYPE If the JSON value is not a valid floating-point number.
    */
   simdjson_really_inline simdjson_result<double> get_double() noexcept;
+
+  /**
+   * Cast this JSON value (inside string) to a double
+   *
+   * @returns A double.
+   * @returns INCORRECT_TYPE If the JSON value is not a valid floating-point number.
+   */
+  simdjson_really_inline simdjson_result<double> get_double_in_string() noexcept;
 
   /**
    * Cast this JSON value to a string.
@@ -416,8 +440,11 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> get_object() noexcept;
 
   simdjson_really_inline simdjson_result<uint64_t> get_uint64() noexcept;
+  simdjson_really_inline simdjson_result<uint64_t> get_uint64_in_string() noexcept;
   simdjson_really_inline simdjson_result<int64_t> get_int64() noexcept;
+  simdjson_really_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_really_inline simdjson_result<double> get_double() noexcept;
+  simdjson_really_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_really_inline simdjson_result<std::string_view> get_string() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_really_inline simdjson_result<bool> get_bool() noexcept;

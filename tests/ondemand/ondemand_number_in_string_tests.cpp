@@ -15,7 +15,7 @@ namespace number_in_string_tests {
         std::vector<double> expected = {1.2, 2.3, -42.3, 2434.42, -1234};
         double d;
         for (auto value : doc) {
-            ASSERT_SUCCESS(value.get_double().get(d));
+            d = value.get_double_in_string();
             ASSERT_EQUAL(d,expected[counter++]);
         }
         TEST_SUCCEED();
@@ -31,7 +31,7 @@ namespace number_in_string_tests {
         std::vector<int> expected = {1, 2, -3, 1000, -7844};
         int64_t i;
         for (auto value : doc) {
-            ASSERT_SUCCESS(value.get_int64().get(i));
+            i = value.get_int64_in_string();
             ASSERT_EQUAL(i,expected[counter++]);
         }
         TEST_SUCCEED();
@@ -47,7 +47,7 @@ namespace number_in_string_tests {
         std::vector<int> expected = {1, 2, 24, 9000, 156934};
         uint64_t u;
         for (auto value : doc) {
-            ASSERT_SUCCESS(value.get_uint64().get(u));
+            u = value.get_uint64_in_string();
             ASSERT_EQUAL(u,expected[counter++]);
         }
         TEST_SUCCEED();
@@ -65,19 +65,19 @@ namespace number_in_string_tests {
         int64_t i;
         uint64_t u;
         // Doubles
-        ASSERT_SUCCESS(doc.find_field("a").get_double().get(d));
+        d = doc.find_field("a").get_double_in_string();
         ASSERT_EQUAL(d,expected[counter++]);
-        ASSERT_SUCCESS(doc.find_field("b").get_double().get(d));
+        d = doc.find_field("b").get_double_in_string();
         ASSERT_EQUAL(d,expected[counter++]);
         // Integers
-        ASSERT_SUCCESS(doc.find_field("c").get_int64().get(i));
+        i = doc.find_field("c").get_int64_in_string();
         ASSERT_EQUAL(i,expected[counter++]);
-        ASSERT_SUCCESS(doc.find_field("d").get_int64().get(i));
+        i = doc.find_field("d").get_int64_in_string();
         ASSERT_EQUAL(i,expected[counter++]);
         // Unsigned integers
-        ASSERT_SUCCESS(doc.find_field("e").get_uint64().get(u));
+        u = doc.find_field("e").get_uint64_in_string();
         ASSERT_EQUAL(u,expected[counter++]);
-        ASSERT_SUCCESS(doc.find_field("f").get_uint64().get(u));
+        u = doc.find_field("f").get_uint64_in_string();
         ASSERT_EQUAL(u,expected[counter++]);
         TEST_SUCCEED();
     }
@@ -94,15 +94,15 @@ namespace number_in_string_tests {
         uint64_t u;
         // Double
         ASSERT_SUCCESS(parser.iterate(double_doc).get(doc));
-        ASSERT_SUCCESS(doc.get_double().get(d));
+        d = doc.get_double_in_string();
         ASSERT_EQUAL(d,-12.3);
         // Integer
         ASSERT_SUCCESS(parser.iterate(int_doc).get(doc));
-        ASSERT_SUCCESS(doc.get_int64().get(i));
+        i = doc.get_int64_in_string();
         ASSERT_EQUAL(i,-243);
         // Unsinged integer
         ASSERT_SUCCESS(parser.iterate(uint_doc).get(doc));
-        ASSERT_SUCCESS(doc.get_uint64().get(u));
+        u = doc.get_uint64_in_string();
         ASSERT_EQUAL(u,212213);
         TEST_SUCCEED();
     }

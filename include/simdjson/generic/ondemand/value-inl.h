@@ -36,11 +36,20 @@ simdjson_really_inline simdjson_result<std::string_view> value::get_string() noe
 simdjson_really_inline simdjson_result<double> value::get_double() noexcept {
   return iter.get_double();
 }
+simdjson_really_inline simdjson_result<double> value::get_double_in_string() noexcept {
+  return iter.get_double_in_string();
+}
 simdjson_really_inline simdjson_result<uint64_t> value::get_uint64() noexcept {
   return iter.get_uint64();
 }
+simdjson_really_inline simdjson_result<uint64_t> value::get_uint64_in_string() noexcept {
+  return iter.get_uint64_in_string();
+}
 simdjson_really_inline simdjson_result<int64_t> value::get_int64() noexcept {
   return iter.get_int64();
+}
+simdjson_really_inline simdjson_result<int64_t> value::get_int64_in_string() noexcept {
+  return iter.get_int64_in_string();
 }
 simdjson_really_inline simdjson_result<bool> value::get_bool() noexcept {
   return iter.get_bool();
@@ -221,13 +230,25 @@ simdjson_really_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_IMPLEM
   if (error()) { return error(); }
   return first.get_uint64();
 }
+simdjson_really_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_uint64_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_uint64_in_string();
+}
 simdjson_really_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_int64() noexcept {
   if (error()) { return error(); }
   return first.get_int64();
 }
+simdjson_really_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_int64_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_int64_in_string();
+}
 simdjson_really_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_double() noexcept {
   if (error()) { return error(); }
   return first.get_double();
+}
+simdjson_really_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_double_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_double_in_string();
 }
 simdjson_really_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_string() noexcept {
   if (error()) { return error(); }
