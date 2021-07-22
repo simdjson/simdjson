@@ -349,6 +349,65 @@ bool json_pointer_rewind() {
   TEST_SUCCEED();
 }
 
+bool iterate_many_example() {
+  TEST_START();
+  auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document_stream stream;
+  ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+  auto i = stream.begin();
+  size_t count{0};
+  size_t expected_indexes[3] = {0,9,29};
+  std::string_view expected_doc[3] = {"[1,2,3]", R"({"1":1,"2":3,"4":4})", "[1,2,3]"};
+  for(; i != stream.end(); ++i) {
+      auto & doc = *i;
+      ASSERT_SUCCESS(doc.type());
+      ASSERT_SUCCESS(i.error());
+      ASSERT_EQUAL(i.current_index(),expected_indexes[count]);
+      ASSERT_EQUAL(i.source(),expected_doc[count]);
+      count++;
+  }
+  TEST_SUCCEED();
+}
+
+std::string my_string(ondemand::document& doc) {
+  std::stringstream ss;
+  ss << doc;
+  return ss.str();
+}
+
+bool iterate_many_truncated_example() {
+  TEST_START();
+  auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document_stream stream;
+  ASSERT_SUCCESS( parser.iterate_many(json,json.size()).get(stream) );
+  std::string_view expected[2] = {"[1,2,3]", R"({"1":1,"2":3,"4":4})"};
+  size_t count{0};
+  for(auto i = stream.begin(); i != stream.end(); ++i) {
+      ASSERT_EQUAL(i.source(),expected[count++]);
+  }
+  size_t truncated = stream.truncated_bytes();
+  ASSERT_EQUAL(truncated,39);
+  TEST_SUCCEED();
+}
+
+bool ndjson_basics_example() {
+  TEST_START();
+  auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
+  ondemand::parser parser;
+  ondemand::document_stream docs;
+  ASSERT_SUCCESS( parser.iterate_many(json).get(docs) );
+  size_t count{0};
+  int64_t expected[3] = {1,2,3};
+  for (auto & doc : docs) {
+    int64_t actual;
+    ASSERT_SUCCESS( doc["foo"].get(actual) );
+    ASSERT_EQUAL( actual,expected[count++] );
+  }
+  TEST_SUCCEED();
+}
+
 int main() {
   if (
     true
@@ -372,6 +431,9 @@ int main() {
     && json_pointer_simple()
     && json_pointer_multiple()
     && json_pointer_rewind()
+    && iterate_many_example()
+    && iterate_many_truncated_example()
+    && ndjson_basics_example()
   ) {
     return 0;
   } else {

@@ -10,8 +10,8 @@ An overview of what you need to know to use simdjson, with examples.
 * [Versions](#versions)
 * [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents)
 * [Documents Are Iterators](#documents-are-iterators)
-* [Using the Parsed JSON](#using-the-parsed-json)
 * [C++11 Support and string_view](#c11-support-and-string_view)
+* [Using the Parsed JSON](#using-the-parsed-json)
 * [C++17 Support](#c17-support)
 * [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
 * [UTF-8 validation (alone)](#utf-8-validation-alone)
@@ -176,6 +176,41 @@ with the document, the source (whether file or string) can be safely discarded.
 For best performance, a `parser` instance should be reused over several files: otherwise you will
 needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory
 allocations during parsing when using simdjson. [See our performance notes for details](performance.md).
+
+
+
+C++11 Support and string_view
+-------------
+
+The simdjson library builds on compilers supporting the [C++11 standard](https://en.wikipedia.org/wiki/C%2B%2B11). It is also a strict requirement: we have no plan to support older C++ compilers.
+
+We represent parsed strings in simdjson using the `std::string_view` class. It avoids
+the need to copy the data, as would be necessary with the `std::string` class. It also
+avoids the pitfalls of null-terminated C strings. It makes it easier for our users to
+copy the data into their own favorite class instances (e.g., alternatives to `std::string`).
+
+A `std::string_view` instance is effectively just a pointer to a region in memory representing
+a string. In simdjson, we return `std::string_view` instances that either point within the
+input string you parsed, or to a temporary string buffer inside our parser class instances.
+When using `std::string_view` instances, it is your responsibility to ensure that
+`std::string_view` instance does not outlive the pointed-to memory (e.g., either the input
+buffer or the parser instance). Furthermore, some operations reset the string buffer
+inside our parser instances: e.g., when we parse a new document. Thus a `std::string_view` instance
+is often best viewed as a temporary string value that is tied to the document you are parsing.
+At the cost of some memory allocation, you may convert your `std::string_view` instances for long-term storage into `std::string` instances:
+`std::string mycopy(view)` (C++17) or  `std::string mycopy(view.begin(), view.end())` (prior to C++17).
+
+
+The `std::string_view` class has become standard as part of C++17 but it is not always available
+on compilers which only supports C++11. When we detect that `string_view` is natively
+available, we define the macro `SIMDJSON_HAS_STRING_VIEW`.
+
+When we detect that it is unavailable,
+we use [string-view-lite](https://github.com/martinmoene/string-view-lite) as a
+substitute. In such cases, we use the type alias `using string_view = nonstd::string_view;` to
+offer the same API, irrespective of the compiler and standard library. The macro
+`SIMDJSON_HAS_STRING_VIEW` will be *undefined* to indicate that we emulate `string_view`.
+
 
 Using the Parsed JSON
 ---------------------
@@ -468,26 +503,6 @@ void basics_treewalk() {
   recursive_print_json(parser.iterate(json));
 }
 ```
-
-
-C++11 Support and string_view
--------------
-
-The simdjson library builds on compilers supporting the [C++11 standard](https://en.wikipedia.org/wiki/C%2B%2B11). It is also a strict requirement: we have no plan to support older C++ compilers.
-
-We represent parsed strings in simdjson using the `std::string_view` class. It avoids
-the need to copy the data, as would be necessary with the `std::string` class. It also
-avoids the pitfalls of null-terminated C strings.
-
-The `std::string_view` class has become standard as part of C++17 but it is not always available
-on compilers which only supports C++11. When we detect that `string_view` is natively
-available, we define the macro `SIMDJSON_HAS_STRING_VIEW`.
-
-When we detect that it is unavailable,
-we use [string-view-lite](https://github.com/martinmoene/string-view-lite) as a
-substitute. In such cases, we use the type alias `using string_view = nonstd::string_view;` to
-offer the same API, irrespective of the compiler and standard library. The macro
-`SIMDJSON_HAS_STRING_VIEW` will be *undefined* to indicate that we emulate `string_view`.
 
 
 C++17 Support
@@ -928,6 +943,7 @@ before printout the data.
   }
 ```
 
+Performance note: the On Demand front-end does not materialize the parsed numbers and other values. If you are accessing everything twice, you may need to parse them twice. Thus the rewind functionality is best suited for cases where the first pass only scans the structure of the document.
 
 Direct Access to the Raw String
 --------------------------------
@@ -945,14 +961,25 @@ simdjson::padded_string docdata =  R"({"value":123213232132132132132132132132112
 simdjson::ondemand::document doc = parser.iterate(docdata);
 simdjson::ondemand::object obj = doc.get_object();
 std::string_view token = obj["value"].raw_json_token();
-// token has value "12321323213213213213213213213211223"
+// token has value 12321323213213213213213213213211223, it points inside the input string
 ```
 
-Performance note: the On Demand front-end does not materialize the parsed numbers and other values. If you are accessing everything twice, you may need to parse them twice. Thus the rewind functionality is
-best suited for cases where the first pass only scans the structure of the document.
 The `raw_json_token` method even works when the JSON value is a string. In such cases, it
 will return the complete string with the quotes and with eventual escaped sequences as in the
 source document.
+
+```C++
+simdjson::ondemand::parser parser;
+simdjson::padded_string docdata =  R"({"value":"12321323213213213213213213213211223"})"_padded;
+simdjson::ondemand::document doc = parser.iterate(docdata);
+simdjson::ondemand::object obj = doc.get_object();
+string_view token = obj["value"].raw_json_token();
+// token has value "12321323213213213213213213213211223", it points inside the input string
+```
+
+The `raw_json_token()` should be fast and free of allocation.
+
+
 
 Newline-Delimited JSON (ndjson) and JSON lines
 ----------------------------------------------
@@ -963,60 +990,38 @@ format. If your JSON documents all contain arrays or objects, we even support di
 concatenation without whitespace. The concatenated file has no size restrictions (including larger
 than 4GB), though each individual document must be no larger than 4 GB.
 
-Here is a simple example, given `x.json` with this content:
-
-```json
-{ "foo": 1 }
-{ "foo": 2 }
-{ "foo": 3 }
-```
+Here is a simple example:
 
 ```c++
-dom::parser parser;
-dom::document_stream docs = parser.load_many("x.json");
-for (dom::element doc : docs) {
-  cout << doc["foo"] << endl;
+auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
+ondemand::parser parser;
+ondemand::document_stream docs = parser.iterate_many(json);
+for (auto & doc : docs) {
+  std::cout << doc["foo"] << std::endl;
 }
 // Prints 1 2 3
 ```
 
-In-memory ndjson strings can be parsed as well, with `parser.parse_many(string)`:
+It is important to note that the iteration returns a `document` reference, and hence why the `&` is needed.
+
+Unlike `parser.iterate`, `parser.iterate_many` may parse "on demand" (lazily). That is, no parsing may have been done before you enter the loop
+`for (auto & doc : docs) {` and you should expect the parser to only ever fully parse one JSON document at a time.
+
+As with `parser.iterate`, when calling  `parser.iterate_many(string)`, no copy is made of the provided string input. The provided memory buffer may be accessed each time a JSON document is parsed.  Calling `parser.iterate_many(string)` on a  temporary string buffer (e.g., `docs = parser.parse_many("[1,2,3]"_padded)`) is unsafe (and will not compile) because the  `document_stream` instance needs access to the buffer to return the JSON documents.
 
 
-```c++
-dom::parser parser;
-  auto json = R"({ "foo": 1 }
-{ "foo": 2 }
-{ "foo": 3 })"_padded;
-dom::document_stream docs = parser.parse_many(json);
-for (dom::element doc : docs) {
-  cout << doc["foo"] << endl;
-}
-// Prints 1 2 3
-```
+`iterate_many` can also take an optional parameter `size_t batch_size` which defines the window processing size. It is set by default to a large value (`1000000` corresponding to 1 MB). None of your JSON documents should exceed this window size, or else you will get  the error `simdjson::CAPACITY`. You cannot set this window size larger than 4 GB: you will get  the error `simdjson::CAPACITY`. The smaller the window size is, the less memory the function will use. Setting the window size too small (e.g., less than 100 kB) may also impact performance negatively. Leaving it to 1 MB is expected to be a good choice, unless you have some larger documents.
 
+If your documents are large (e.g., larger than a megabyte), then the `iterate_many` function is maybe ill-suited. It is really meant to support reading efficiently streams of relatively small documents (e.g., a few kilobytes each). If you have larger documents, you should use other functions like `iterate`.
 
-Unlike `parser.parse`, both `parser.load_many(filename)` and `parser.parse_many(string)` may parse
-"on demand" (lazily). That is, no parsing may have been done before you enter the loop
-`for (dom::element doc : docs) {` and you should expect the parser to only ever fully parse one JSON
-document at a time.
-
-1. When calling `parser.load_many(filename)`, the file's content is loaded up in a memory buffer owned by the `parser`'s instance. Thus the file can be safely deleted after calling `parser.load_many(filename)` as the parser instance owns all of the data.
-2. When calling  `parser.parse_many(string)`, no copy is made of the provided string input. The provided memory buffer may be accessed each time a JSON document is parsed.  Calling `parser.parse_many(string)` on a  temporary string buffer (e.g., `docs = parser.parse_many("[1,2,3]"_padded)`) is unsafe (and will not compile) because the  `document_stream` instance needs access to the buffer to return the JSON documents. In contrast, calling `doc = parser.parse("[1,2,3]"_padded)` is safe because `parser.parse` eagerly parses the input.
-
-
-Both `load_many` and `parse_many` take an optional parameter `size_t batch_size` which defines the window processing size. It is set by default to a large value (`1000000` corresponding to 1 MB). None of your JSON documents should exceed this window size, or else you will get  the error `simdjson::CAPACITY`. You cannot set this window size larger than 4 GB: you will get  the error `simdjson::CAPACITY`. The smaller the window size is, the less memory the function will use. Setting the window size too small (e.g., less than 100 kB) may also impact performance negatively. Leaving it to 1 MB is expected to be a good choice, unless you have some larger documents.
-
-If your documents are large (e.g., larger than a megabyte), then the `load_many` and `parse_many` functions are maybe ill-suited. They are really meant to support reading efficiently streams of relatively small documents (e.g., a few kilobytes each). If you have larger documents, you should use other functions like `parse`.
-
-See [parse_many.md](parse_many.md) for detailed information and design.
+See [iterate_many.md](iterate_many.md) for detailed information and design.
 
 Thread Safety
 -------------
 
 We built simdjson with thread safety in mind.
 
-The simdjson library is single-threaded except for  [`parse_many`](parse_many.md) which may use secondary threads under its control when the library is compiled with thread support.
+The simdjson library is single-threaded except for [`iterate_many`](iterate_many.md) and [`parse_many`](parse_many.md) which may use secondary threads under their control when the library is compiled with thread support.
 
 
 We recommend using one `dom::parser` object per thread in which case the library is thread-safe.

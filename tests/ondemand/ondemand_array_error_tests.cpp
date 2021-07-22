@@ -101,7 +101,7 @@ namespace array_error_tests {
   bool array_iterate_incomplete_error() {
     TEST_START();
     ONDEMAND_SUBTEST("unclosed after array", R"([ [1] )", assert_iterate(doc.get_array().at(0), { int64_t(1) }, { INCOMPLETE_ARRAY_OR_OBJECT }));
-    ONDEMAND_SUBTEST("unclosed after array", R"([ [1,])", assert_iterate(doc.get_array().at(0), { int64_t(1) }, { INCORRECT_TYPE, INCOMPLETE_ARRAY_OR_OBJECT }));
+    ONDEMAND_SUBTEST("unclosed after array", R"([ [1,])", assert_iterate(doc.get_array().at(0), { int64_t(1) }, { INCORRECT_TYPE, TAPE_ERROR }));
     ONDEMAND_SUBTEST("unclosed after array", R"([ [1])",  assert_iterate(doc.get_array().at(0), { int64_t(1) }, { INCOMPLETE_ARRAY_OR_OBJECT }));
     ONDEMAND_SUBTEST("unclosed after array", R"([ [])",   assert_iterate(doc.get_array().at(0),                 { INCOMPLETE_ARRAY_OR_OBJECT }));
     TEST_SUCCEED();

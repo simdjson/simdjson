@@ -26,6 +26,12 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 
 SIMDJSON_POP_DISABLE_WARNINGS
 
+#include "amazon_cellphones/simdjson_dom.h"
+#include "amazon_cellphones/simdjson_ondemand.h"
+
+#include "large_amazon_cellphones/simdjson_dom.h"
+#include "large_amazon_cellphones/simdjson_ondemand.h"
+
 #include "partial_tweets/simdjson_dom.h"
 #include "partial_tweets/simdjson_ondemand.h"
 #include "partial_tweets/yyjson.h"
