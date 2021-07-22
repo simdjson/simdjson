@@ -91,6 +91,14 @@ public:
   simdjson_really_inline simdjson_result<double> get_double() noexcept;
 
   /**
+   * Cast this JSON value to a double.
+   *
+   * @returns A double.
+   * @returns INCORRECT_TYPE If the JSON value is not a valid floating-point number.
+   */
+  simdjson_really_inline simdjson_result<double> get_double_from_string() noexcept;
+
+  /**
    * Cast this JSON value to a string.
    *
    * The string is guaranteed to be valid UTF-8.
@@ -418,6 +426,7 @@ public:
   simdjson_really_inline simdjson_result<uint64_t> get_uint64() noexcept;
   simdjson_really_inline simdjson_result<int64_t> get_int64() noexcept;
   simdjson_really_inline simdjson_result<double> get_double() noexcept;
+  simdjson_really_inline simdjson_result<double> get_double_from_string() noexcept;
   simdjson_really_inline simdjson_result<std::string_view> get_string() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_really_inline simdjson_result<bool> get_bool() noexcept;

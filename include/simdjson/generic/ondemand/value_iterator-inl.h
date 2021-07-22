@@ -440,6 +440,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_itera
 simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_double() noexcept {
   return numberparsing::parse_double(advance_non_root_scalar("double"));
 }
+simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_double_from_string() noexcept {
+  return numberparsing::parse_double_from_string(advance_non_root_scalar("double"));
+}
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::get_bool() noexcept {
   return parse_bool(advance_non_root_scalar("bool"));
 }

@@ -16,6 +16,14 @@ simdjson_really_inline uint32_t is_structural_or_whitespace(uint8_t c) {
   return internal::structural_or_whitespace[c];
 }
 
+simdjson_really_inline uint32_t is_not_structural_or_whitespace_with_quotes(uint8_t c) {
+  return internal::structural_or_whitespace_negated_with_quotes[c];
+}
+
+simdjson_really_inline uint32_t is_structural_or_whitespace_with_quotes(uint8_t c) {
+  return internal::structural_or_whitespace_with_quotes[c];
+}
+
 // returns a value with the high 16 bits set if not valid
 // otherwise returns the conversion of the 4 hex digits at src into the bottom
 // 16 bits of the 32-bit return register
