@@ -327,20 +327,6 @@ simdjson_warn_unused simdjson_really_inline bool json_iterator::copy_to_buffer(c
   return true;
 }
 
-template<int N>
-simdjson_warn_unused simdjson_really_inline bool json_iterator::peek_to_buffer(uint8_t (&tmpbuf)[N]) noexcept {
-  auto max_len = token.peek_length();
-  auto json = token.peek();
-  return copy_to_buffer(json, max_len, tmpbuf);
-}
-
-template<int N>
-simdjson_warn_unused simdjson_really_inline bool json_iterator::advance_to_buffer(uint8_t (&tmpbuf)[N]) noexcept {
-  auto max_len = peek_length();
-  auto json = return_current_and_advance();
-  return copy_to_buffer(json, max_len, tmpbuf);
-}
-
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

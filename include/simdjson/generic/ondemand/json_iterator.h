@@ -219,8 +219,6 @@ public:
   simdjson_really_inline error_code optional_error(error_code error, const char *message) noexcept;
 
   template<int N> simdjson_warn_unused simdjson_really_inline bool copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t (&tmpbuf)[N]) noexcept;
-  template<int N> simdjson_warn_unused simdjson_really_inline bool peek_to_buffer(uint8_t (&tmpbuf)[N]) noexcept;
-  template<int N> simdjson_warn_unused simdjson_really_inline bool advance_to_buffer(uint8_t (&tmpbuf)[N]) noexcept;
 
   simdjson_really_inline token_position position() const noexcept;
   simdjson_really_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
