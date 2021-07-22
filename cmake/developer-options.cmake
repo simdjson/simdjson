@@ -8,6 +8,14 @@ if(SIMDJSON_NO_FORCE_INLINING)
   add_compile_definitions(SIMDJSON_NO_FORCE_INLINING=1)
 endif()
 
+option(SIMDJSON_CHECK_EOF "Check for the end of the input buffer (to avoid buffer overflows). We expect this setting to be ON except for performance testing." ON)
+if(SIMDJSON_CHECK_EOF)
+  add_compile_definitions(SIMDJSON_CHECK_EOF=1)
+else()
+  add_compile_definitions(SIMDJSON_CHECK_EOF=0)
+endif()
+
+
 option(SIMDJSON_SANITIZE_UNDEFINED "Sanitize undefined behavior" OFF)
 if(SIMDJSON_SANITIZE_UNDEFINED)
   add_compile_options(-fsanitize=undefined -fno-sanitize-recover=all)

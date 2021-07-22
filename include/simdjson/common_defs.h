@@ -261,7 +261,13 @@ namespace std {
 #endif
 #endif
 
-// Feature flag for "don't require padding" feature
+// The SIMDJSON_CHECK_EOF macro is a feature flag for the "don't require padding"
+// feature in the On Demand API.
+// When we have padding, we do not need to check for the end of the input buffer.
+// However, without padding, it is unsafe not to have end-of-buffer checks.
+// Thus this SIMDJSON_CHECK_EOF should be set to true (1) for safety as it activates
+// several safety checks. We still allow expert users to disable it.
+// Note that this only affects the On Demand API.
 #ifndef SIMDJSON_CHECK_EOF
 # define SIMDJSON_CHECK_EOF 1
 #endif

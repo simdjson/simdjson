@@ -211,15 +211,7 @@ jobs:
   nocheckeof-clang10:
     description: Validate that when SIMDJSON_CHECK_EOF=0, everything still succeeds
     environment:
-      CXXFLAGS: -DSIMDJSON_CHECK_EOF=0
-      CMAKE_BUILD_FLAGS: --target ondemand_tests
-      CTEST_FLAGS: --output-on-failure -R ondemand_
-    executor: clang10
-    steps: [ cmake_test ]
-  nocheckeof-clang10:
-    description: Validate that when SIMDJSON_CHECK_EOF=0, everything still succeeds
-    environment:
-      CXXFLAGS: -DSIMDJSON_CHECK_EOF=0
+      CXXFLAGS: -DSIMDJSON_CHECK_EOF=OFF
       CMAKE_BUILD_FLAGS: --target ondemand_tests
       CTEST_FLAGS: --output-on-failure -R ondemand_
     executor: clang10
