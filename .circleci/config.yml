@@ -216,6 +216,14 @@ jobs:
       CTEST_FLAGS: --output-on-failure -R ondemand_
     executor: clang10
     steps: [ cmake_test ]
+  nocheckeof-clang10:
+    description: Validate that when __SIMDJSON_CHECK_EOF=0, everything still succeeds
+    environment:
+      CXXFLAGS: -D__SIMDJSON_CHECK_EOF=0
+      CMAKE_BUILD_FLAGS: --target ondemand_tests
+      CTEST_FLAGS: --output-on-failure -R ondemand_
+    executor: clang10
+    steps: [ cmake_test ]
   # dynamic
   dynamic-gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake dynamic build

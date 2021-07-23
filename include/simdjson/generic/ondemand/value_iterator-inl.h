@@ -640,7 +640,6 @@ simdjson_really_inline const uint8_t *value_iterator::peek_root_scalar(const cha
   return _json_iter->peek();
 }
 simdjson_really_inline const uint8_t *value_iterator::peek_non_root_scalar(const char *type) noexcept {
-
   logger::log_value(*_json_iter, start_position(), depth(), type);
   if (!is_at_start()) { return peek_start(); }
 

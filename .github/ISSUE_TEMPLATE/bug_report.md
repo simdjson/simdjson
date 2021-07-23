@@ -18,25 +18,34 @@ Before submitting an issue, please ensure that you have read the documentation:
 **Describe the bug**
 A clear and concise description of what the bug is.
 
-Note that a compiler warning is not a bug.
+A compiler or static-analyzer warning is not a bug.
+
+We are committed to providing good documentation. We accept the lack of documentation or a misleading documentation as a bug (a 'documentation bug').
+
+We accept the identification of an issue by a sanitizer or some checker tool (e.g., valgrind) as a bug, but you must first ensure that it is not a false positive.
+
+We recommend that you run your tests using different optimization levels.
+
+Before reporting a bug, please ensure that you have read our documentation.
 
 **To Reproduce**
 Steps to reproduce the behaviour: provide a code sample if possible.
 
-If we cannot reproduce the issue, then we cannot address it.
+If we cannot reproduce the issue, then we cannot address it. Note that a stack trace from your own program is not enough. A sample of your source code is insufficient: please provide a complete test for us to reproduce the issue. Please reduce the issue: use as small and as simple an example of the bug as possible.
 
-Note that a stack trace from your own program is not enough.
+It should be possible to trigger the bug by using solely simdjson with our default build setup. If you can only observe the bug within some specific context, with some other software, please reduce the issue first.
 
-**simjson release:**
+**simjson release**
 
 Unless you plan to contribute to simdjson, you should only work from releases. Please be mindful that our main branch may have additional features, bugs and documentation items.
 
 It is fine to report bugs against our main branch, but if that is what you are doing, please be explicit.
 
-**Configuration (please complete the following information if relevant):**
+**Configuration (please complete the following information if relevant)**
  - OS: [e.g. Ubuntu 16.04.6 LTS]
  - Compiler [e.g. Apple clang version 11.0.3 (clang-1103.0.32.59) x86_64-apple-darwin19.4.0]
  - Version [e.g. 22]
+ - Optimization setting (e.g., -O3)
 
 We support up-to-date 64-bit ARM and x64 FreeBSD, macOS, Windows and Linux systems. Please ensure that your configuration is supported before labelling the issue as a bug. In particular, we do not support legacy 32-bit systems.
 
