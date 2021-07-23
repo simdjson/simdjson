@@ -41,7 +41,7 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
   const __m128i mul_1_10000 =
       _mm_setr_epi16(10000, 1, 10000, 1, 10000, 1, 10000, 1);
   // _mm_loadu_si128(reinterpret_cast<const __m128i *>(chars)) is faster
-  // but _mm_loadu_si64(chars) avoids buffer overflows.
+  // but _mm_loadl_epi64(chars) avoids buffer overflows.
   const __m128i input = _mm_sub_epi8(
       _mm_loadl_epi64(reinterpret_cast<const __m128i *>(chars)), ascii0);
   const __m128i t1 = _mm_maddubs_epi16(input, mul_1_10);
