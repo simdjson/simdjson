@@ -292,7 +292,7 @@ workflows:
       - libcpp-clang10
 
       # full single-implementation tests
-      - sanitize-gcc10
+      # - sanitize-gcc10 # gcc10 + sanitize uses a lot of memory?
       - sanitize-clang10
       - threadsanitize-gcc10
       - threadsanitize-clang10
@@ -311,7 +311,7 @@ workflows:
 
 
       # sanitized single-implementation tests
-      - sanitize-haswell-gcc10
+      # - sanitize-haswell-gcc10 # gcc10 + sanitize uses a lot of memory?
       - sanitize-haswell-clang10
 
       # testing "just the library"
