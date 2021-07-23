@@ -16,17 +16,17 @@ void basics_1() {
 
 void basics_2() {
   dom::parser parser;
-  dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string
+  dom::element doc = parser.parse(std::string("[1,2,3]")); // parse a string
 
   cout << doc;
 }
 
 void basics_dom_1() {
-  auto cars_json = R"( [
+  std::string cars_json = R"( [
     { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
     { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
     { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-  ] )"_padded;
+  ] )";
   dom::parser parser;
 
   // Parse and iterate through each car
@@ -53,7 +53,7 @@ void basics_dom_1() {
 }
 
 void parse_many_truncated() {
-    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
+    std::string json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )";
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     auto error = parser.parse_many(json,json.size()).get(stream);
@@ -65,11 +65,11 @@ void parse_many_truncated() {
 }
 
 void basics_dom_2() {
-  auto cars_json = R"( [
+  std::string cars_json = R"( [
     { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
     { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
     { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-  ] )"_padded;
+  ] )";
   dom::parser parser;
   dom::element cars = parser.parse(cars_json);
   cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
@@ -83,10 +83,10 @@ void basics_dom_2() {
 }
 
 void basics_dom_3() {
-  auto abstract_json = R"( [
+  std::string abstract_json = R"( [
     {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
     {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
-  ] )"_padded;
+  ] )";
   dom::parser parser;
 
   // Parse and iterate through an array of objects
@@ -102,8 +102,8 @@ void basics_dom_3() {
 }
 
 void basics_dom_4() {
-  auto abstract_json = R"(
-    {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
+  std::string abstract_json = R"(
+    {  "str" : { "123" : {"abc" : 3.14 } } } )";
   dom::parser parser;
   double v = parser.parse(abstract_json)["str"]["123"]["abc"];
   cout << "number: " << v << endl;
@@ -221,7 +221,7 @@ namespace treewalk_1 {
 
 #ifdef SIMDJSON_CPLUSPLUS17
 void basics_cpp17_1() {
-  padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
+  std::string json = R"(  { "foo": 1, "bar": 2 }  )";
   dom::parser parser;
   dom::object object;
   auto error = parser.parse(json).get(object);
@@ -234,7 +234,7 @@ void basics_cpp17_1() {
 
 void basics_cpp17_2() {
   // C++ 11 version for comparison
-  padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
+  std::string json = R"(  { "foo": 1, "bar": 2 }  )";
   dom::parser parser;
   dom::object object;
   auto error = parser.parse(json).get(object);
@@ -254,9 +254,9 @@ void basics_ndjson() {
 
 void basics_ndjson_parse_many() {
   dom::parser parser;
-  auto json = R"({ "foo": 1 }
+  std::string json = R"({ "foo": 1 }
 { "foo": 2 }
-{ "foo": 3 })"_padded;
+{ "foo": 3 })";
   dom::document_stream docs = parser.parse_many(json);
   for (dom::element doc : docs) {
     cout << doc["foo"] << endl;
@@ -269,7 +269,7 @@ void implementation_selection_1() {
 }
 
 void unescaped_key() {
-    auto json = R"({"k\u0065y": 1})"_padded;
+    std::string json = R"({"k\u0065y": 1})";
     ondemand::parser parser;
     auto doc = parser.iterate(json);
     ondemand::object object = doc.get_object();
@@ -320,7 +320,7 @@ void ondemand_performance_1() {
   ondemand::parser parser;
 
   // This initializes buffers  big enough to handle this JSON.
-  auto json = "[ true, false ]"_padded;
+  std::string json = "[ true, false ]";
   auto doc = parser.iterate(json);
   for(bool i : doc.get_array()) {
     cout << i << endl;
@@ -328,7 +328,7 @@ void ondemand_performance_1() {
 
 
   // This reuses the existing buffers
-  auto number_json = "[1, 2, 3]"_padded;
+  std::string number_json = "[1, 2, 3]";
   doc = parser.iterate(number_json);
   for(int64_t i : doc.get_array()) {
     cout << i << endl;
@@ -339,15 +339,15 @@ void performance_1() {
   dom::parser parser;
 
   // This initializes buffers and a document big enough to handle this JSON.
-  dom::element doc = parser.parse("[ true, false ]"_padded);
+  dom::element doc = parser.parse(std::string("[ true, false ]"));
   cout << doc << endl;
 
   // This reuses the existing buffers, and reuses and *overwrites* the old document
-  doc = parser.parse("[1, 2, 3]"_padded);
+  doc = parser.parse(std::string("[1, 2, 3]"));
   cout << doc << endl;
 
   // This also reuses the existing buffers, and reuses and *overwrites* the old document
-  dom::element doc2 = parser.parse("true"_padded);
+  dom::element doc2 = parser.parse(std::string("true"));
   // Even if you keep the old reference around, doc and doc2 refer to the same document.
   cout << doc << endl;
   cout << doc2 << endl;
@@ -360,7 +360,7 @@ void performance_2() {
   dom::parser parser(1000*1000); // Never grow past documents > 1MB
   /* for (web_request request : listen()) */ {
     dom::element doc;
-    auto body = "1"_padded; /*request.body*/
+    std::string body = "1"; /*request.body*/
     auto error = parser.parse(body/*request.body*/).get(doc);
     // If the document was above our limit, emit 413 = payload too large
     if (error == CAPACITY) { /* request.respond(413); continue; */ }
@@ -376,7 +376,7 @@ void performance_3() {
 
   /* for (web_request request : listen()) */ {
     dom::element doc;
-    auto body = "1"_padded;/*request.body*/
+    std::string body = "1";/*request.body*/
     auto error = parser.parse(body).get(doc);
     // If the document was above our limit, emit 413 = payload too large
     if (error == CAPACITY) { /* request.respond(413); continue; */ }
@@ -463,5 +463,6 @@ int main() {
   basics_dom_3();
   basics_dom_4();
   minify();
-  return 0;
+  printf("Tests ok.\n");
+  return EXIT_SUCCESS;
 }

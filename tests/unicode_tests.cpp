@@ -158,7 +158,7 @@ void brute_force_tests() {
   fflush(NULL);
   std::random_device rd{};
   RandomUTF8 gen_1_2_3_4(rd, 1, 1, 1, 1);
-  size_t total = 1000;
+  size_t total = 100;
   for (size_t i = 0; i < total; i++) {
 
     auto UTF8 = gen_1_2_3_4.generate(rand() % 256);

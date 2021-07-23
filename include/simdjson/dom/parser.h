@@ -142,57 +142,31 @@ public:
    * the parser instance without moving it by wrapping it inside an `unique_ptr` instance like
    * so: `std::unique_ptr<dom::parser> parser(new dom::parser{});`.
    *
-   * ### REQUIRED: Buffer Padding
+   * ### Buffer Padding
    *
-   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated.
-   *
-   * If realloc_if_needed is true (the default), it is assumed that the buffer does *not* have enough padding,
-   * and it is copied into an enlarged temporary buffer before parsing. Thus the following is safe:
-   *
-   *   const char *json      = R"({"key":"value"})";
-   *   const size_t json_len = std::strlen(json);
-   *   simdjson::dom::parser parser;
-   *   simdjson::dom::element element = parser.parse(json, json_len);
-   *
-   * If you set realloc_if_needed to false (e.g., parser.parse(json, json_len, false)),
-   * you must provide a buffer with at least SIMDJSON_PADDING extra bytes at the end.
-   * The benefit of setting realloc_if_needed to false is that you avoid a temporary
-   * memory allocation and a copy.
-   *
-   * The padded bytes may be read. It is not important how you initialize
-   * these bytes though we recommend a sensible default like null character values or spaces.
-   * For example, the following low-level code is safe:
-   *
-   *   const char *json      = R"({"key":"value"})";
-   *   const size_t json_len = std::strlen(json);
-   *   std::unique_ptr<char[]> padded_json_copy{new char[json_len + SIMDJSON_PADDING]};
-   *   std::memcpy(padded_json_copy.get(), json, json_len);
-   *   std::memset(padded_json_copy.get() + json_len, '\0', SIMDJSON_PADDING);
-   *   simdjson::dom::parser parser;
-   *   simdjson::dom::element element = parser.parse(padded_json_copy.get(), json_len, false);
+   * We do not require that the input buffer be padded, but for backward compatibility, we have
+   * a realloc_if_needed parameter with a default value. It can be ignored.
    *
    * ### Parser Capacity
    *
    * If the parser's current capacity is less than len, it will allocate enough capacity
    * to handle it (up to max_capacity).
    *
-   * @param buf The JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes, unless
-   *            realloc_if_needed is true.
+   * @param buf The JSON to parse.
    * @param len The length of the JSON.
-   * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
+   * @param realloc_if_needed this parameter is left in place for backward compatibility, it can be ignored (defaults to false)
    * @return An element pointing at the root of the document, or an error:
-   *         - MEMALLOC if realloc_if_needed is true or the parser does not have enough capacity,
+   *         - MEMALLOC if the parser does not have enough capacity,
    *           and memory allocation fails.
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
    *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
-  inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) & noexcept;
-  inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) && =delete;
+  inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = false) & noexcept;
+  inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = false) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  simdjson_really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) & noexcept;
-  simdjson_really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) && =delete;
+  simdjson_really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = false) & noexcept;
+  simdjson_really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = false) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
   simdjson_really_inline simdjson_result<element> parse(const std::string &s) & noexcept;
   simdjson_really_inline simdjson_result<element> parse(const std::string &s) && =delete;
@@ -236,22 +210,21 @@ public:
    * moving a document, you can recover safe access to the document root with its `root()` method.
    *
    * @param doc The document instance where the parsed data will be stored (on success).
-   * @param buf The JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes, unless
-   *            realloc_if_needed is true.
+   * @param buf The JSON to parse.
    * @param len The length of the JSON.
-   * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
+   * @param realloc_if_needed this parameter is left in place for backward compatibility, it can be ignored (defaults to false)
    * @return An element pointing at the root of document, or an error:
-   *         - MEMALLOC if realloc_if_needed is true or the parser does not have enough capacity,
+   *         - MEMALLOC if the parser does not have enough capacity,
    *           and memory allocation fails.
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
    *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
-  inline simdjson_result<element> parse_into_document(document& doc, const uint8_t *buf, size_t len, bool realloc_if_needed = true) & noexcept;
-  inline simdjson_result<element> parse_into_document(document& doc, const uint8_t *buf, size_t len, bool realloc_if_needed = true) && =delete;
+  inline simdjson_result<element> parse_into_document(document& doc, const uint8_t *buf, size_t len, bool realloc_if_needed = false) & noexcept;
+  inline simdjson_result<element> parse_into_document(document& doc, const uint8_t *buf, size_t len, bool realloc_if_needed = false) && =delete;
   /** @overload parse_into_document(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const char *buf, size_t len, bool realloc_if_needed = true) & noexcept;
-  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const char *buf, size_t len, bool realloc_if_needed = true) && =delete;
+  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const char *buf, size_t len, bool realloc_if_needed = false) & noexcept;
+  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const char *buf, size_t len, bool realloc_if_needed = false) && =delete;
   /** @overload parse_into_document(const uint8_t *buf, size_t len, bool realloc_if_needed) */
   simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const std::string &s) & noexcept;
   simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const std::string &s) && =delete;
@@ -402,10 +375,6 @@ public:
    *     cout << title << endl;
    *   }
    *
-   * ### REQUIRED: Buffer Padding
-   *
-   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated.
    *
    * ### Threads
    *
@@ -417,7 +386,7 @@ public:
    * If the parser's current capacity is less than batch_size, it will allocate enough capacity
    * to handle it (up to max_capacity).
    *
-   * @param buf The concatenated JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes.
+   * @param buf The concatenated JSON to parse.
    * @param len The length of the concatenated JSON.
    * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
    *                   spot is cache-related: small enough to fit in cache, yet big enough to

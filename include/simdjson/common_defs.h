@@ -35,12 +35,7 @@ double from_chars(const char *first, const char* end) noexcept;
 constexpr size_t SIMDJSON_MAXSIZE_BYTES = 0xFFFFFFFF;
 
 /**
- * The amount of padding needed in a buffer to parse JSON.
- *
- * the input buf should be readable up to buf + SIMDJSON_PADDING
- * this is a stopgap; there should be a better description of the
- * main loop and its behavior that abstracts over this
- * See https://github.com/simdjson/simdjson/issues/174
+ * Padding requirement.
  */
 constexpr size_t SIMDJSON_PADDING = 32;
 

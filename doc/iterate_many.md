@@ -167,7 +167,7 @@ Let us illustrate the idea with code:
 
 
 ```C++
-    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
+    std::string json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )";
     simdjson::ondemand::parser parser;
     simdjson::ondemand::document_stream stream;
     auto error = parser.iterate_many(json).get(stream);
@@ -208,7 +208,7 @@ Some users may need to work with truncated streams. The simdjson may truncate do
 Consider the following example where a truncated document (`{"key":"intentionally unclosed string  `) containing 39 bytes has been left within the stream. In such cases, the first two whole documents are parsed and returned, and the `truncated_bytes()` method returns 39.
 
 ```C++
-    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
+    std::string json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )";
     simdjson::ondemand::parser parser;
     simdjson::ondemand::document_stream stream;
     auto error = parser.iterate_many(json,json.size()).get(stream);

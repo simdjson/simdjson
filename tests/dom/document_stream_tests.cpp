@@ -7,7 +7,7 @@
 #include "simdjson.h"
 #include "test_macros.h"
 
-void print_hex(const simdjson::padded_string& s) {
+void print_hex(const std::string& s) {
   printf("hex  : ");
   for(size_t i = 0; i < s.size(); i++) { printf("%02X ", uint8_t(s.data()[i])); }
   printf("\n");
@@ -71,7 +71,7 @@ std::string trim(const std::string s) {
 }
 
 namespace document_stream_tests {
-  static simdjson::dom::document_stream parse_many_stream_return(simdjson::dom::parser &parser, simdjson::padded_string &str) {
+  static simdjson::dom::document_stream parse_many_stream_return(simdjson::dom::parser &parser, std::string &str) {
     simdjson::dom::document_stream stream;
     simdjson_unused auto error = parser.parse_many(str).get(stream);
     return stream;
@@ -79,14 +79,14 @@ namespace document_stream_tests {
   // this is a compilation test
   simdjson_unused static void parse_many_stream_assign() {
       simdjson::dom::parser parser;
-      simdjson::padded_string str("{}",2);
+      std::string str("{}",2);
       simdjson::dom::document_stream s1 = parse_many_stream_return(parser, str);
   }
 
   bool stress_data_race() {
     std::cout << "Running " << __func__ << std::endl;
     // Correct JSON.
-    const simdjson::padded_string input = R"([1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;
+    const std::string input = R"([1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )";
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
@@ -103,7 +103,7 @@ namespace document_stream_tests {
   bool stress_data_race_with_error() {
     std::cout << "Running " << __func__ << std::endl;
     // Intentionally broken
-    const simdjson::padded_string input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;
+    const std::string input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )";
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
@@ -129,7 +129,7 @@ namespace document_stream_tests {
 
   bool test_leading_spaces() {
     std::cout << "Running " << __func__ << std::endl;
-    const simdjson::padded_string input = R"(                               [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;
+    const std::string input = R"(                               [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )";
     size_t count = 0;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
@@ -149,7 +149,7 @@ namespace document_stream_tests {
 
   bool test_crazy_leading_spaces() {
     std::cout << "Running " << __func__ << std::endl;
-    const simdjson::padded_string input = R"(                                                                                                                                                           [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;
+    const std::string input = R"(                                                                                                                                                           [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )";
     size_t count = 0;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
@@ -168,7 +168,7 @@ namespace document_stream_tests {
 
   bool issue1307() {
     std::cout << "Running " << __func__ << std::endl;
-    const simdjson::padded_string input = decode_base64("AgAMACA=");
+    const std::string input = decode_base64("AgAMACA=");
     print_hex(input);
     for(size_t window = 0; window <= 100; window++) {
       simdjson::dom::parser parser;
@@ -188,7 +188,7 @@ namespace document_stream_tests {
 
   bool issue1308() {
     std::cout << "Running " << __func__ << std::endl;
-    const simdjson::padded_string input = decode_base64("bcdtW0E=");
+    const std::string input = decode_base64("bcdtW0E=");
     print_hex(input);
     for(size_t window = 0; window <= 100; window++) {
       simdjson::dom::parser parser;
@@ -208,7 +208,7 @@ namespace document_stream_tests {
 
   bool issue1309() {
     std::cout << "Running " << __func__ << std::endl;
-    const simdjson::padded_string input = decode_base64("CQA5OAo5CgoKCiIiXyIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiXyIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiLb29vb29vb29vb29vb29vz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz29vb29vb29vbIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiYiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiI=");
+    const std::string input = decode_base64("CQA5OAo5CgoKCiIiXyIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiXyIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiLb29vb29vb29vb29vb29vz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz29vb29vb29vbIiIiIiIiIiIiIiIiIiIiIiIiIiIiJiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiYiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiI=");
     print_hex(input);
     for(size_t window = 0; window <= 100; window++) {
       simdjson::dom::parser parser;
@@ -231,7 +231,7 @@ namespace document_stream_tests {
     // hex  : 20 20 5B 20 33 2C 31 5D 20 22 22 22 22 22 22 22 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20
     // ascii:  __ __[__ __3__,__1__]__ __"__"__"__"__"__"__"__ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __
     // We have four full documents followed by an unclosed string.
-    const simdjson::padded_string input = decode_base64("ICBbIDMsMV0gIiIiIiIiIiAgICAgICAgICAgICAgICAg");
+    const std::string input = decode_base64("ICBbIDMsMV0gIiIiIiIiIiAgICAgICAgICAgICAgICAg");
     print_hex(input);
     for(size_t window = 0; window <= 100; window++) {
       simdjson::dom::parser parser;
@@ -261,7 +261,7 @@ namespace document_stream_tests {
 
   bool issue1311() {
     std::cout << "Running " << __func__ << std::endl;
-    const simdjson::padded_string input = decode_base64("NSMwW1swDPw=");
+    const std::string input = decode_base64("NSMwW1swDPw=");
     print_hex(input);
     for(size_t window = 0; window <= 100; window++) {
       simdjson::dom::parser parser;
@@ -321,7 +321,7 @@ namespace document_stream_tests {
 
   bool test_naked_iterators() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([1,23] "lone string" {"key":"unfinished value}  )"_padded;
+    std::string json = R"([1,23] "lone string" {"key":"unfinished value}  )";
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS( parser.parse_many(json).get(stream) );
@@ -344,7 +344,7 @@ namespace document_stream_tests {
   bool adversarial_single_document() {
     std::cout << "Running " << __func__ << std::endl;
     simdjson::dom::parser parser;
-    auto json = R"({"f[)"_padded;
+    std::string json = R"({"f[)";
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS(parser.parse_many(json).get(stream));
     size_t count = 0;
@@ -359,7 +359,7 @@ namespace document_stream_tests {
   bool adversarial_single_document_array() {
     std::cout << "Running " << __func__ << std::endl;
     simdjson::dom::parser parser;
-    auto json = R"(["this is an unclosed string ])"_padded;
+    std::string json = R"(["this is an unclosed string ])";
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS(parser.parse_many(json).get(stream));
     size_t count = 0;
@@ -374,7 +374,7 @@ namespace document_stream_tests {
   bool single_document() {
     std::cout << "Running " << __func__ << std::endl;
     simdjson::dom::parser parser;
-    auto json = R"({"hello": "world"})"_padded;
+    std::string json = R"({"hello": "world"})";
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS(parser.parse_many(json).get(stream));
     size_t count = 0;
@@ -401,7 +401,7 @@ namespace document_stream_tests {
   bool single_document_exceptions() {
     std::cout << "Running " << __func__ << std::endl;
     simdjson::dom::parser parser;
-    auto json = R"({"hello": "world"})"_padded;
+    std::string json = R"({"hello": "world"})";
     size_t count = 0;
     for (simdjson::dom::element doc : parser.parse_many(json)) {
         std::string expected = R"({"hello":"world"})";
@@ -419,7 +419,7 @@ namespace document_stream_tests {
   bool issue1133() {
     std::cout << "Running " << __func__ << std::endl;
     simdjson::dom::parser parser;
-    auto json = "{\"hello\": \"world\"}"_padded;
+    std::string json = "{\"hello\": \"world\"}";
     simdjson::dom::document_stream docs = parser.parse_many(json);
     size_t count = 0;
     for (simdjson::dom::element doc : docs) {
@@ -441,12 +441,12 @@ namespace document_stream_tests {
 #endif
   bool simple_example() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
+    std::string json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )";
     simdjson::dom::parser parser;
     size_t count = 0;
     simdjson::dom::document_stream stream;
     // We use a window of json.size() though any large value would do.
-    ASSERT_SUCCESS( parser.parse_many(json, json.size()).get(stream) );
+    ASSERT_SUCCESS( parser.parse_many(json).get(stream) );
     auto i = stream.begin();
     for(; i != stream.end(); ++i) {
         auto doc = *i;
@@ -478,11 +478,11 @@ namespace document_stream_tests {
 
   bool unquoted_key() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"({unquoted_key: "keys must be quoted"})"_padded;
+    std::string json = R"({unquoted_key: "keys must be quoted"})";
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     // We use a window of json.size() though any large value would do.
-    ASSERT_SUCCESS( parser.parse_many(json, json.size()).get(stream) );
+    ASSERT_SUCCESS( parser.parse_many(json).get(stream) );
     auto i = stream.begin();
     for(; i != stream.end(); ++i) {
         auto doc = *i;
@@ -503,7 +503,7 @@ namespace document_stream_tests {
     std::cout << "Running " << __func__ << std::endl;
     // The last JSON document is
     // intentionally truncated.
-    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2  )"_padded;
+    std::string json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2  )";
     std::cout << "input size " << json.size() << std::endl;
     simdjson::dom::parser parser;
     size_t count = 0;
@@ -539,11 +539,11 @@ namespace document_stream_tests {
   bool truncated_window_unclosed_string() {
     std::cout << "Running " << __func__ << std::endl;
     // The last JSON document is intentionally truncated.
-    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} "intentionally unclosed string  )"_padded;
+    std::string json = R"([1,2,3]  {"1":1,"2":3,"4":4} "intentionally unclosed string  )";
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     // We use a window of json.size() though any large value would do.
-    ASSERT_SUCCESS( parser.parse_many(json,json.size()).get(stream) );
+    ASSERT_SUCCESS( parser.parse_many(json).get(stream) );
     auto i = stream.begin();
     size_t counter{0};
     for(; i != stream.end(); ++i) {
@@ -577,11 +577,11 @@ namespace document_stream_tests {
   bool truncated_window_unclosed_string_in_object() {
     std::cout << "Running " << __func__ << std::endl;
     // The last JSON document is intentionally truncated.
-    auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
+    std::string json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )";
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     // We use a window of json.size() though any large value would do.
-    ASSERT_SUCCESS( parser.parse_many(json,json.size()).get(stream) );
+    ASSERT_SUCCESS( parser.parse_many(json).get(stream) );
     auto i = stream.begin();
     size_t counter{0};
     for(; i != stream.end(); ++i) {
@@ -619,7 +619,7 @@ namespace document_stream_tests {
       input.push_back('1');
       input.push_back(i < 1023 ? ',' : ']');
     }
-    auto json = simdjson::padded_string(input.data(),input.size());
+    auto json = std::string(input.data(),input.size());
     simdjson::dom::parser parser;
     size_t count = 0;
     size_t window_size = 1024; // deliberately too small
@@ -647,7 +647,7 @@ namespace document_stream_tests {
       input.push_back('1');
       input.push_back(i < 1023 ? ',' : ']');
     }
-    auto json = simdjson::padded_string(input.data(), input.size());
+    auto json = std::string(input.data(), input.size());
     // We are going to repeat this test 1000 times so
     // that if there is an issue, we are more likely to
     // trigger it systematically.
@@ -682,7 +682,7 @@ namespace document_stream_tests {
   bool large_window() {
     std::cout << "Running " << __func__ << std::endl;
 #if SIZE_MAX > 17179869184
-    auto json = R"({"error":[],"result":{"token":"xxx"}}{"error":[],"result":{"token":"xxx"}})"_padded;
+    std::string json = R"({"error":[],"result":{"token":"xxx"}}{"error":[],"result":{"token":"xxx"}})";
     simdjson::dom::parser parser;
     size_t count = 0;
     uint64_t window_size{17179869184}; // deliberately too big
@@ -698,7 +698,7 @@ namespace document_stream_tests {
 #endif
     return true;
   }
-  static bool parse_json_message_issue467(simdjson::padded_string &json, size_t expectedcount) {
+  static bool parse_json_message_issue467(std::string &json, size_t expectedcount) {
     simdjson::dom::parser parser;
     size_t count = 0;
     simdjson::dom::document_stream stream;
@@ -719,8 +719,8 @@ namespace document_stream_tests {
 
   bool json_issue467() {
     std::cout << "Running " << __func__ << std::endl;
-    auto single_message = R"({"error":[],"result":{"token":"xxx"}})"_padded;
-    auto two_messages = R"({"error":[],"result":{"token":"xxx"}}{"error":[],"result":{"token":"xxx"}})"_padded;
+    std::string single_message = R"({"error":[],"result":{"token":"xxx"}})";
+    std::string two_messages = R"({"error":[],"result":{"token":"xxx"}}{"error":[],"result":{"token":"xxx"}})";
 
     if(!parse_json_message_issue467(single_message, 1)) {
       return false;
@@ -735,7 +735,7 @@ namespace document_stream_tests {
   bool document_stream_test() {
     std::cout << "Running " << __func__ << std::endl;
     fflush(NULL);
-    const size_t n_records = 10000;
+    const size_t n_records = 100;
     std::string data;
     std::vector<char> buf(1024);
     for (size_t i = 0; i < n_records; ++i) {
@@ -750,7 +750,7 @@ namespace document_stream_tests {
     for(size_t batch_size = 1000; batch_size < 2000; batch_size += (batch_size>1050?10:1)) {
       printf(".");
       fflush(NULL);
-      simdjson::padded_string str(data);
+      std::string str(data);
       simdjson::dom::parser parser;
       size_t count = 0;
       simdjson::dom::document_stream stream;
@@ -775,7 +775,7 @@ namespace document_stream_tests {
   bool document_stream_utf8_test() {
     std::cout << "Running " << __func__ << std::endl;
     fflush(NULL);
-    const size_t n_records = 10000;
+    const size_t n_records = 100;
     std::string data;
     std::vector<char> buf(1024);
     for (size_t i = 0; i < n_records; ++i) {
@@ -790,7 +790,7 @@ namespace document_stream_tests {
     for(size_t batch_size = 1000; batch_size < 2000; batch_size += (batch_size>1050?10:1)) {
       printf(".");
       fflush(NULL);
-      simdjson::padded_string str(data);
+      std::string str(data);
       simdjson::dom::parser parser;
       size_t count = 0;
       simdjson::dom::document_stream stream;
@@ -811,7 +811,7 @@ namespace document_stream_tests {
   bool issue1649() {
     std::cout << "Running " << __func__ << std::endl;
     std::size_t batch_size = 637;
-    const auto json=simdjson::padded_string(std::string("\xd7"));
+    const auto json=std::string("\xd7");
     simdjson::dom::parser parser;
     simdjson::dom::document_stream docs;
     if(parser.parse_many(json,batch_size).get(docs)) {
@@ -838,7 +838,7 @@ namespace document_stream_tests {
       for(size_t z = 0; z < l; z++) {
         buffer[z] = char(ascii(gen));
       }
-      const auto json = simdjson::padded_string(buffer, l);
+      const auto json = std::string(buffer, l);
       delete[] buffer;
       simdjson::dom::parser parser;
       simdjson::dom::document_stream docs;

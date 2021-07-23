@@ -10,7 +10,7 @@ namespace document_tests {
     std::vector<std::string> json_strings{"[true,false]", "[1,2,3,null]",
                                         R"({"yay":"json!"})"};
     simdjson::dom::parser parser1;
-    for (simdjson::padded_string str : json_strings) {
+    for (std::string str : json_strings) {
       simdjson::dom::element element;
       ASSERT_SUCCESS( parser1.parse(str).get(element) );
       std::cout << element << std::endl;
@@ -39,14 +39,14 @@ namespace document_tests {
   // adversarial example that once triggered overruns, see https://github.com/simdjson/simdjson/issues/345
   bool bad_example() {
     std::cout << __func__ << std::endl;
-    simdjson::padded_string badjson = "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"_padded;
+    std::string badjson = "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6";
     simdjson::dom::parser parser;
     ASSERT_ERROR( parser.parse(badjson), simdjson::TAPE_ERROR );
     return true;
   }
   bool count_array_example() {
     std::cout << __func__ << std::endl;
-    simdjson::padded_string smalljson = "[1,2,3]"_padded;
+    std::string smalljson = "[1,2,3]";
     simdjson::dom::parser parser;
     simdjson::dom::array array;
     ASSERT_SUCCESS( parser.parse(smalljson).get(array) );
@@ -55,7 +55,7 @@ namespace document_tests {
   }
   bool count_object_example() {
     std::cout << __func__ << std::endl;
-    simdjson::padded_string smalljson = "{\"1\":1,\"2\":1,\"3\":1}"_padded;
+    std::string smalljson = "{\"1\":1,\"2\":1,\"3\":1}";
     simdjson::dom::parser parser;
     simdjson::dom::object object;
     ASSERT_SUCCESS( parser.parse(smalljson).get(object) );
@@ -74,7 +74,7 @@ namespace document_tests {
   // returns true if successful
   bool stable_test() {
     std::cout << __func__ << std::endl;
-    simdjson::padded_string json = "{"
+    std::string json = "{"
           "\"Image\":{"
               "\"Width\":800,"
               "\"Height\":600,"
@@ -87,7 +87,7 @@ namespace document_tests {
               "\"Animated\":false,"
               "\"IDs\":[116,943.3,234,38793]"
             "}"
-        "}"_padded;
+        "}";
     simdjson::dom::parser parser;
     std::ostringstream myStream;
 #if SIMDJSON_EXCEPTIONS
