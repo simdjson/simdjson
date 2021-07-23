@@ -87,7 +87,7 @@ public:
   /**
    * Get the root value iterator
    */
-  simdjson_really_inline token_position root_checkpoint() const noexcept;
+  simdjson_really_inline token_position root_position() const noexcept;
 
   /**
    * Assert if the iterator is not at the start
@@ -97,7 +97,7 @@ public:
   /**
    * Tell whether the iterator is at the EOF mark
    */
-  simdjson_really_inline bool at_eof() const noexcept;
+  simdjson_really_inline bool at_end() const noexcept;
 
   /**
    * Tell whether the iterator is live (has not been moved).
@@ -110,10 +110,22 @@ public:
   simdjson_really_inline void abandon() noexcept;
 
   /**
-   * Advance the current token.
+   * Advance the current token without modifying depth.
    */
   simdjson_really_inline const uint8_t *return_current_and_advance() noexcept;
 
+  /**
+   * Assert that there are at least the given number of tokens left.
+   *
+   * Has no effect in release builds.
+   */
+  simdjson_really_inline void assert_more_tokens(uint32_t required_tokens=1) const noexcept;
+  /**
+   * Assert that the given position addresses an actual token (is within bounds).
+   *
+   * Has no effect in release builds.
+   */
+  simdjson_really_inline void assert_valid_position(token_position position) const noexcept;
   /**
    * Get the JSON text for a given token (relative).
    *
@@ -207,8 +219,6 @@ public:
   simdjson_really_inline error_code optional_error(error_code error, const char *message) noexcept;
 
   template<int N> simdjson_warn_unused simdjson_really_inline bool copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t (&tmpbuf)[N]) noexcept;
-  template<int N> simdjson_warn_unused simdjson_really_inline bool peek_to_buffer(uint8_t (&tmpbuf)[N]) noexcept;
-  template<int N> simdjson_warn_unused simdjson_really_inline bool advance_to_buffer(uint8_t (&tmpbuf)[N]) noexcept;
 
   simdjson_really_inline token_position position() const noexcept;
   simdjson_really_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
@@ -225,7 +235,12 @@ public:
   inline void rewind() noexcept;
 protected:
   simdjson_really_inline json_iterator(const uint8_t *buf, ondemand::parser *parser) noexcept;
-  simdjson_really_inline token_position last_document_position() const noexcept;
+  /// The last token before the end
+  simdjson_really_inline token_position last_position() const noexcept;
+  /// The token *at* the end. This points at gibberish and should only be used for comparison.
+  simdjson_really_inline token_position end_position() const noexcept;
+  /// The end of the buffer.
+  simdjson_really_inline token_position end() const noexcept;
 
   friend class document;
   friend class document_stream;
