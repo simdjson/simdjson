@@ -209,14 +209,6 @@ jobs:
     environment: { CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON  -DSIMDJSON_NO_FORCE_INLINING=ON -DSIMDJSON_SANITIZE_THREADS=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
     steps: [ cmake_test ]
   nocheckeof-clang10:
-    description: Validate that when SIMDJSON_CHECK_EOF=0, everything still succeeds
-    environment:
-      CXXFLAGS: -DSIMDJSON_CHECK_EOF=OFF
-      CMAKE_BUILD_FLAGS: --target ondemand_tests
-      CTEST_FLAGS: --output-on-failure -R ondemand_
-    executor: clang10
-    steps: [ cmake_test ]
-  nocheckeof-clang10:
     description: Validate that when __SIMDJSON_CHECK_EOF=0, everything still succeeds
     environment:
       CXXFLAGS: -D__SIMDJSON_CHECK_EOF=0
