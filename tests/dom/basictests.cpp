@@ -51,14 +51,14 @@ namespace number_tests {
     };
     simdjson::dom::parser parser;
     for(auto string_double : ground_truth) {
-        std::cout << "parsing the string '" << string_double.first << "'" << std::endl;
-        std::cout << "I am expecting the floating-point value '" << string_double.second << "'" << std::endl;
         double result;
-        ASSERT_SUCCESS(parser.parse(string_double.first).get(result));
-        std::cout << "Resulting float is '" << result << "'" << std::endl;
+        std::string input = string_double.first;
+        ASSERT_SUCCESS(parser.parse(input).get(result));
         if(result != string_double.second) {
+          std::cout << "parsing the string '" << input << "'" << std::endl;
+          std::cout << "I am expecting the floating-point value '" << string_double.second << "'" << std::endl;
+          std::cout << "Resulting float is '" << result << "'" << std::endl;
           std::cerr << std::hexfloat << result << " vs " << string_double.second << std::endl;
-          std::cerr << string_double.first << std::endl;
           return false;
         }
     }
@@ -113,9 +113,10 @@ namespace number_tests {
     };
     for (std::pair<std::string, double> p : testing) {
       double actual;
-      ASSERT_SUCCESS(parser.parse(p.first).get(actual));
+      std::string input = p.first;
+      ASSERT_SUCCESS(parser.parse(input).get(actual));
       if (actual != p.second) {
-          std::cerr << "JSON '" << p.first << "' parsed to " << actual << " instead of " << p.first << std::endl;
+          std::cerr << "JSON '" << input << "' parsed to " << actual << " instead of " << p.second << std::endl;
           return false;
       }
     }

@@ -168,11 +168,17 @@ public:
   simdjson_really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = false) & noexcept;
   simdjson_really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = false) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
+  simdjson_really_inline simdjson_result<element> parse(std::string_view s) & noexcept;
+  simdjson_really_inline simdjson_result<element> parse(std::string_view s) && = delete;
   simdjson_really_inline simdjson_result<element> parse(const std::string &s) & noexcept;
-  simdjson_really_inline simdjson_result<element> parse(const std::string &s) && =delete;
+  simdjson_really_inline simdjson_result<element> parse(const std::string &s) && = delete;
+  simdjson_really_inline simdjson_result<element> parse(std::string &&s) & noexcept;
+  simdjson_really_inline simdjson_result<element> parse(std::string &&s) && = delete;
+
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
   simdjson_really_inline simdjson_result<element> parse(const padded_string &s) & noexcept;
   simdjson_really_inline simdjson_result<element> parse(const padded_string &s) && =delete;
+  simdjson_really_inline simdjson_result<element> parse(const padded_string &&s) = delete;
 
   /** @private We do not want to allow implicit conversion from C string to std::string. */
   simdjson_really_inline simdjson_result<element> parse(const char *buf) noexcept = delete;
@@ -228,6 +234,10 @@ public:
   /** @overload parse_into_document(const uint8_t *buf, size_t len, bool realloc_if_needed) */
   simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const std::string &s) & noexcept;
   simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const std::string &s) && =delete;
+  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, std::string &&s) & noexcept;
+  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, std::string &&s) && =delete;
+  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, std::string_view s) & noexcept;
+  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, std::string_view s) && =delete;
   /** @overload parse_into_document(const uint8_t *buf, size_t len, bool realloc_if_needed) */
   simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const padded_string &s) & noexcept;
   simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const padded_string &s) && =delete;
@@ -403,10 +413,11 @@ public:
   inline simdjson_result<document_stream> parse_many(const char *buf, size_t len, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> parse_many(const std::string &s, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
-  inline simdjson_result<document_stream> parse_many(const std::string &&s, size_t batch_size) = delete;// unsafe
+  inline simdjson_result<document_stream> parse_many(const std::string_view s, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> parse_many(std::string &&s, size_t batch_size) = delete;// unsafe
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> parse_many(const padded_string &s, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
-  inline simdjson_result<document_stream> parse_many(const padded_string &&s, size_t batch_size) = delete;// unsafe
+  inline simdjson_result<document_stream> parse_many(padded_string &&s, size_t batch_size) = delete;// unsafe
 
   /** @private We do not want to allow implicit conversion from C string to std::string. */
   simdjson_result<document_stream> parse_many(const char *buf, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept = delete;

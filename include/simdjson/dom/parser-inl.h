@@ -127,6 +127,14 @@ simdjson_really_inline simdjson_result<element> parser::parse_into_document(docu
 simdjson_really_inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const std::string &s) & noexcept {
   return parse_into_document(provided_doc, s.data(), s.length());
 }
+simdjson_really_inline simdjson_result<element> parser::parse_into_document(document& provided_doc, std::string&& s) & noexcept {
+  std::string local_string(s);
+  return parse_into_document(provided_doc, local_string.data(), local_string.length());
+}
+simdjson_really_inline simdjson_result<element> parser::parse_into_document(document& provided_doc, std::string_view s) & noexcept {
+  return parse_into_document(provided_doc, s.data(), s.length());
+}
+
 simdjson_really_inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const padded_string &s) & noexcept {
   return parse_into_document(provided_doc, s.data(), s.length(), false);
 }
@@ -142,6 +150,13 @@ simdjson_really_inline simdjson_result<element> parser::parse(const char *buf, s
 simdjson_really_inline simdjson_result<element> parser::parse(const std::string &s) & noexcept {
   return parse(s.data(), s.length());
 }
+simdjson_really_inline simdjson_result<element> parser::parse(std::string &&s) & noexcept {
+  std::string local_string(s);
+  return parse(local_string.data(), local_string.length());
+}
+simdjson_really_inline simdjson_result<element> parser::parse(std::string_view s) & noexcept {
+  return parse(s.data(), s.length());
+}
 simdjson_really_inline simdjson_result<element> parser::parse(const padded_string &s) & noexcept {
   return parse(s.data(), s.length(), false);
 }
@@ -154,6 +169,9 @@ inline simdjson_result<document_stream> parser::parse_many(const char *buf, size
   return parse_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size);
 }
 inline simdjson_result<document_stream> parser::parse_many(const std::string &s, size_t batch_size) noexcept {
+  return parse_many(s.data(), s.length(), batch_size);
+}
+inline simdjson_result<document_stream> parser::parse_many(const std::string_view s, size_t batch_size) noexcept {
   return parse_many(s.data(), s.length(), batch_size);
 }
 inline simdjson_result<document_stream> parser::parse_many(const padded_string &s, size_t batch_size) noexcept {
