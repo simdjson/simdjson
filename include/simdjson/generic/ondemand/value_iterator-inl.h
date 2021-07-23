@@ -135,7 +135,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   while (has_value) {
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
@@ -143,14 +143,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // key and the value. It will also increment the depth by one.
     if ((error = field_value() )) { abandon(); return error; }
     // If it matches, stop and return
-    // We could do it this way if we wanted to allow arbitrary
-    // key content (including escaped quotes).
-    //if (actual_key.unsafe_is_equal(max_key_length, key)) {
-    // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key (containing a well placed unescaped quote
-    // character and being longer than the number of bytes remaining in the JSON
-    // input).
-    if (actual_key.unsafe_is_equal(key)) {
+    if (actual_key.unsafe_is_equal(max_key_length, key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
@@ -265,7 +258,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
@@ -274,14 +267,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     if ((error = field_value() )) { abandon(); return error; }
 
     // If it matches, stop and return
-    // We could do it this way if we wanted to allow arbitrary
-    // key content (including escaped quotes).
-    // if (actual_key.unsafe_is_equal(max_key_length, key)) {
-    // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key (containing a well placed unescaped quote
-    // character and being longer than the number of bytes remaining in the JSON
-    // input).
-    if (actual_key.unsafe_is_equal(key)) {
+    if (actual_key.unsafe_is_equal(max_key_length, key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
@@ -314,7 +300,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     error = field_key().get(actual_key); SIMDJSON_ASSUME(!error);
@@ -323,14 +309,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     error = field_value(); SIMDJSON_ASSUME(!error);
 
     // If it matches, stop and return
-    // We could do it this way if we wanted to allow arbitrary
-    // key content (including escaped quotes).
-    // if (actual_key.unsafe_is_equal(max_key_length, key)) {
-    // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key (containing a well placed unescaped quote
-    // character and being longer than the number of bytes remaining in the JSON
-    // input).
-    if (actual_key.unsafe_is_equal(key)) {
+    if (actual_key.unsafe_is_equal(max_key_length, key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;

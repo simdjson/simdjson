@@ -45,16 +45,8 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(padded_string_view json) & noexcept {
-  if (json.padding() < SIMDJSON_PADDING) { return INSUFFICIENT_PADDING; }
-
-  // Allocate if needed
-  if (capacity() < json.length() || !string_buf) {
-    SIMDJSON_TRY( allocate(json.length(), max_depth()) );
-  }
-
-  // Run stage 1.
-  SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), stage1_mode::regular) );
-  return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this });
+  // Iterate does not require any padding!!!
+  return iterate(json.data(), json.size());
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const char *json, size_t len, size_t allocated) & noexcept {
@@ -81,18 +73,20 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const padded_string & json) & noexcept {
-  return iterate(padded_string_view{json});
+  // We do not use the padding at all anymore.
+  return iterate(json.data(), json.size());
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string> &result) & noexcept {
   // We don't presently have a way to temporarily get a const T& from a simdjson_result<T> without throwing an exception
   SIMDJSON_TRY( result.error() );
   const padded_string &json = result.value_unsafe();
-  return iterate(padded_string_view{json});
+  return iterate(json);
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<json_iterator> parser::iterate_raw(padded_string_view json) & noexcept {
-  if (json.padding() < SIMDJSON_PADDING) { return INSUFFICIENT_PADDING; }
+  // Iterate does not require any padding!!!
+  // if (json.padding() < SIMDJSON_PADDING) { return INSUFFICIENT_PADDING; }
 
   // Allocate if needed
   if (capacity() < json.length()) {
@@ -116,6 +110,9 @@ inline simdjson_result<document_stream> parser::iterate_many(const std::string &
 }
 inline simdjson_result<document_stream> parser::iterate_many(const padded_string &s, size_t batch_size) noexcept {
   return iterate_many(s.data(), s.length(), batch_size);
+}
+inline simdjson_result<document_stream> parser::iterate_many(std::string_view view, size_t batch_size) noexcept {
+  return iterate_many(view.data(), view.length(), batch_size);
 }
 
 simdjson_really_inline size_t parser::capacity() const noexcept {
