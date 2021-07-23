@@ -191,7 +191,7 @@ jobs:
   sanitize-gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake sanitize build
     executor: gcc10
-    environment: { CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
+    environment: { CMAKE_FLAGS: -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
     steps: [ cmake_test ]
   sanitize-clang10:
     description: Build and run tests on clang 10 and AVX 2 with a cmake sanitize build
@@ -270,7 +270,7 @@ jobs:
   sanitize-haswell-gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake sanitize build
     executor: gcc10
-    environment: {  CXXFLAGS: -march=haswell, CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
+    environment: {  CXXFLAGS: -march=haswell, CMAKE_FLAGS: -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: --output-on-failure -LE explicitonly }
     steps: [ cmake_test ]
   sanitize-haswell-clang10:
     description: Build and run tests on clang 10 and AVX 2 with a cmake sanitize build
