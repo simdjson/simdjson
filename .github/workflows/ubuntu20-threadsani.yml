@@ -1,12 +1,6 @@
 name: Ubuntu 20.04 CI (GCC 9) with Thread Sanitizer
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+on: [push, pull_request]
 
 jobs:
   ubuntu-build:
