@@ -153,7 +153,7 @@ namespace json_pointer_tests {
         ASSERT_ERROR(doc.at_pointer(json_pointer).get(val), simdjson::STRING_ERROR);
         std::cout << "\t- unclosed_object" << std::endl;
         ASSERT_SUCCESS(parser.iterate(unclosed_object).get(doc));
-        ASSERT_ERROR(doc.at_pointer(json_pointer).get(val), simdjson::TAPE_ERROR);
+        ASSERT_ERROR(doc.at_pointer(json_pointer).get(val), simdjson::INCOMPLETE_ARRAY_OR_OBJECT);
         std::cout << "\t- missing_bracket_before" << std::endl;
         ASSERT_SUCCESS(parser.iterate(missing_bracket_before).get(doc));
         ASSERT_ERROR(doc.at_pointer(json_pointer).get(val), simdjson::TAPE_ERROR);
