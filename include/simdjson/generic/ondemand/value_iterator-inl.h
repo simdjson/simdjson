@@ -135,7 +135,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   while (has_value) {
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    // We know, for sure, that _json_iter->peek_length() is at least '1', but it could
+    // be just one, so subtracting by more than 1 is unsafe.
+    size_t max_key_length_including_final_quote = _json_iter->peek_length() - 1; // -1 for one quote
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
@@ -143,7 +145,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // key and the value. It will also increment the depth by one.
     if ((error = field_value() )) { abandon(); return error; }
     // If it matches, stop and return
-    if (actual_key.unsafe_is_equal(max_key_length, key)) {
+    if (actual_key.unsafe_is_equal(max_key_length_including_final_quote, key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
@@ -258,7 +260,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    // We know, for sure, that _json_iter->peek_length() is at least '1', but it could
+    // be just one, so subtracting by more than 1 is unsafe.
+    size_t max_key_length_including_final_quote = _json_iter->peek_length() - 1; // -1 for one quote
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
@@ -267,7 +271,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     if ((error = field_value() )) { abandon(); return error; }
 
     // If it matches, stop and return
-    if (actual_key.unsafe_is_equal(max_key_length, key)) {
+    if (actual_key.unsafe_is_equal(max_key_length_including_final_quote, key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
@@ -300,7 +304,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    // We know, for sure, that _json_iter->peek_length() is at least '1', but it could
+    // be just one, so subtracting by more than 1 is unsafe.
+    size_t max_key_length_including_final_quote = _json_iter->peek_length() - 1; // -1 for one quote
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     error = field_key().get(actual_key); SIMDJSON_ASSUME(!error);
@@ -309,7 +315,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     error = field_value(); SIMDJSON_ASSUME(!error);
 
     // If it matches, stop and return
-    if (actual_key.unsafe_is_equal(max_key_length, key)) {
+    if (actual_key.unsafe_is_equal(max_key_length_including_final_quote, key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
