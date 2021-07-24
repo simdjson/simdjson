@@ -35,12 +35,7 @@ double from_chars(const char *first, const char* end) noexcept;
 constexpr size_t SIMDJSON_MAXSIZE_BYTES = 0xFFFFFFFF;
 
 /**
- * The amount of padding needed in a buffer to parse JSON.
- *
- * the input buf should be readable up to buf + SIMDJSON_PADDING
- * this is a stopgap; there should be a better description of the
- * main loop and its behavior that abstracts over this
- * See https://github.com/simdjson/simdjson/issues/174
+ * Padding requirement.
  */
 constexpr size_t SIMDJSON_PADDING = 32;
 
@@ -71,8 +66,12 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 #define SIMDJSON_ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
 #if defined(SIMDJSON_REGULAR_VISUAL_STUDIO)
-
+  #if SIMDJSON_NO_FORCE_INLINING
+  // forcing inlining can increase stack usage.
+  #define simdjson_really_inline inline
+  #else
   #define simdjson_really_inline __forceinline
+  #endif
   #define simdjson_never_inline __declspec(noinline)
 
   #define simdjson_unused
@@ -106,8 +105,12 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define SIMDJSON_POP_DISABLE_WARNINGS __pragma(warning( pop ))
 
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO
-
+  #if SIMDJSON_NO_FORCE_INLINING
+  // forcing inlining can increase stack usage.
+  #define simdjson_really_inline inline
+  #else
   #define simdjson_really_inline inline __attribute__((always_inline))
+  #endif
   #define simdjson_never_inline inline __attribute__((noinline))
 
   #define simdjson_unused __attribute__((unused))
@@ -253,10 +256,15 @@ namespace std {
 #endif
 #endif
 
-// Feature flag for partially-implemented "don't require padding" feature
-// TODO remove once feature complete.
-#ifndef __SIMDJSON_CHECK_EOF
-# define __SIMDJSON_CHECK_EOF 1
+// The SIMDJSON_CHECK_EOF macro is a feature flag for the "don't require padding"
+// feature in the On Demand API.
+// When we have padding, we do not need to check for the end of the input buffer.
+// However, without padding, it is unsafe not to have end-of-buffer checks.
+// Thus this SIMDJSON_CHECK_EOF should be set to true (1) for safety as it activates
+// several safety checks. We still allow expert users to disable it.
+// Note that this only affects the On Demand API.
+#ifndef SIMDJSON_CHECK_EOF
+# define SIMDJSON_CHECK_EOF 1
 #endif
 
 #if SIMDJSON_CPLUSPLUS17
@@ -268,11 +276,12 @@ namespace std {
 #if __has_attribute(__fallthrough__)
 // we are good to go:
 # define simdjson_fallthrough                    __attribute__((__fallthrough__))
-#endif
-#endif
+#endif // __has_attribute(__fallthrough__)
+#endif // SIMDJSON_CPLUSPLUS17
+
 // on some systems, we simply do not have support for fallthrough, so use a default:
 #ifndef simdjson_fallthrough
 # define simdjson_fallthrough do {} while (0)  /* fallthrough */
-#endif
+#endif // simdjson_fallthrough
 
 #endif // SIMDJSON_COMMON_DEFS_H

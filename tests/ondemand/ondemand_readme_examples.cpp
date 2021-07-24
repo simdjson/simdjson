@@ -23,7 +23,7 @@ bool basics_2() {
   TEST_START();
 
   ondemand::parser parser;
-  auto json = "[1,2,3]"_padded; // The _padded suffix creates a simdjson::padded_string instance
+  std::string json = "[1,2,3]";
   ondemand::document doc = parser.iterate(json); // parse a string
 
   simdjson_unused auto unused_doc = doc.get_array();
@@ -35,9 +35,9 @@ bool basics_3() {
   TEST_START();
 
   ondemand::parser parser;
-  char json[3+SIMDJSON_PADDING];
-  strcpy(json, "[1]");
-  ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
+  char json[3];
+  memcpy(json, "[1]", 3);
+  ondemand::document doc = parser.iterate(json, 3);
 
   simdjson_unused auto unused_doc = doc.get_array();
 
@@ -48,7 +48,7 @@ bool basics_3() {
 bool json_array_with_array_count() {
   TEST_START();
   ondemand::parser parser;
-  auto cars_json = R"( [ 40.1, 39.9, 37.7, 40.4 ] )"_padded;
+  std::string cars_json = R"( [ 40.1, 39.9, 37.7, 40.4 ] )";
   auto doc = parser.iterate(cars_json);
   auto arr = doc.get_array();
   size_t count = arr.count_elements();
@@ -69,7 +69,7 @@ bool json_array_with_array_count() {
 bool json_value_with_array_count() {
   TEST_START();
   ondemand::parser parser;
-  auto cars_json = R"( {"array":[ 40.1, 39.9, 37.7, 40.4 ]} )"_padded;
+  std::string cars_json = R"( {"array":[ 40.1, 39.9, 37.7, 40.4 ]} )";
   auto doc = parser.iterate(cars_json);
   auto val = doc["array"];
   size_t count = val.count_elements();
@@ -91,7 +91,7 @@ bool json_value_with_array_count() {
 bool json_array_count() {
   TEST_START();
   ondemand::parser parser;
-  auto cars_json = R"( [ 40.1, 39.9, 37.7, 40.4 ] )"_padded;
+  std::string cars_json = R"( [ 40.1, 39.9, 37.7, 40.4 ] )";
   auto doc = parser.iterate(cars_json);
   size_t count = doc.count_elements();
   ASSERT_EQUAL(4, count);
@@ -110,7 +110,7 @@ bool json_array_count() {
 bool json_array_count_complex() {
   TEST_START();
   ondemand::parser parser;
-  auto cars_json = R"( { "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )"_padded;
+  std::string cars_json = R"( { "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )";
   auto doc = parser.iterate(cars_json);
   auto test_array = doc.find_field("test").get_array();
   size_t count = test_array.count_elements();
@@ -132,7 +132,7 @@ bool using_the_parsed_json_1() {
   try {
 
     ondemand::parser parser;
-    auto json = R"(  { "x": 1, "y": 2 }  )"_padded;
+    std::string json = R"(  { "x": 1, "y": 2 }  )";
     auto doc = parser.iterate(json);
     double y = doc.find_field("y"); // The cursor is now after the 2 (at })
     double x = doc.find_field("x"); // This fails, because there are no more fields after "y"
@@ -148,7 +148,7 @@ bool using_the_parsed_json_2() {
   TEST_START();
 
   ondemand::parser parser;
-  auto json = R"(  { "x": 1, "y": 2 }  )"_padded;
+  std::string json = R"(  { "x": 1, "y": 2 }  )";
   auto doc = parser.iterate(json);
   double y = doc["y"]; // The cursor is now after the 2 (at })
   double x = doc["x"]; // Success: [] loops back around to find "x"
@@ -161,7 +161,7 @@ bool using_the_parsed_json_2() {
   bool big_integer() {
     TEST_START();
     simdjson::ondemand::parser parser;
-    simdjson::padded_string docdata =  R"({"value":12321323213213213213213213213211223})"_padded;
+    std::string docdata =  R"({"value":12321323213213213213213213213211223})";
     simdjson::ondemand::document doc = parser.iterate(docdata);
     simdjson::ondemand::object obj = doc.get_object();
     string_view token = obj["value"].raw_json_token();
@@ -173,7 +173,7 @@ bool using_the_parsed_json_2() {
   bool big_integer_in_string() {
     TEST_START();
     simdjson::ondemand::parser parser;
-    simdjson::padded_string docdata =  R"({"value":"12321323213213213213213213213211223"})"_padded;
+    std::string docdata =  R"({"value":"12321323213213213213213213213211223"})";
     simdjson::ondemand::document doc = parser.iterate(docdata);
     simdjson::ondemand::object obj = doc.get_object();
     string_view token = obj["value"].raw_json_token();
@@ -185,11 +185,11 @@ bool using_the_parsed_json_3() {
   TEST_START();
 
   ondemand::parser parser;
-  auto cars_json = R"( [
+  std::string cars_json = R"( [
     { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
     { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
     { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-  ] )"_padded;
+  ] )";
 
   // Iterating through an array of objects
   for (ondemand::object car : parser.iterate(cars_json)) {
@@ -216,11 +216,11 @@ bool using_the_parsed_json_rewind() {
   TEST_START();
 
   ondemand::parser parser;
-  auto cars_json = R"( [
+  std::string cars_json = R"( [
     { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
     { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
     { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-  ] )"_padded;
+  ] )";
 
   auto doc = parser.iterate(cars_json);
   size_t count = 0;
@@ -239,10 +239,10 @@ bool using_the_parsed_json_4() {
   TEST_START();
 
   ondemand::parser parser;
-  auto points_json = R"( [
+  std::string points_json = R"( [
       {  "12345" : {"x":12.34, "y":56.78, "z": 9998877}   },
       {  "12545" : {"x":11.44, "y":12.78, "z": 11111111}  }
-    ] )"_padded;
+    ] )";
 
   // Parse and iterate through an array of objects
   for (ondemand::object points : parser.iterate(points_json)) {
@@ -260,9 +260,9 @@ bool using_the_parsed_json_4() {
 bool using_the_parsed_json_5() {
   TEST_START();
 
-  auto abstract_json = R"(
+  std::string abstract_json = R"(
     { "str" : { "123" : {"abc" : 3.14 } } }
-  )"_padded;
+  )";
   ondemand::parser parser;
   auto doc = parser.iterate(abstract_json);
   cout << doc["str"]["123"]["abc"].get_double() << endl; // Prints 3.14
@@ -273,9 +273,9 @@ bool using_the_parsed_json_5() {
 #endif // SIMDJSON_EXCEPTIONS
 
 int using_the_parsed_json_6_process() {
-  auto abstract_json = R"(
+  std::string abstract_json = R"(
     { "str" : { "123" : {"abc" : 3.14 } } }
-  )"_padded;
+  )";
   ondemand::parser parser;
 
   double value;
@@ -292,11 +292,11 @@ bool using_the_parsed_json_6() {
   TEST_SUCCEED();
 }
 
-const padded_string cars_json = R"( [
+const std::string cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-] )"_padded;
+] )";
 
 bool json_pointer_simple() {
     TEST_START();
@@ -328,11 +328,11 @@ bool json_pointer_multiple() {
 
 bool json_pointer_rewind() {
   TEST_START();
-  auto json = R"( {
+  std::string json = R"( {
   "k0": 27,
   "k1": [13,26],
   "k2": true
-  } )"_padded;
+  } )";
 
   ondemand::parser parser;
   ondemand::document doc;
@@ -351,7 +351,7 @@ bool json_pointer_rewind() {
 
 bool iterate_many_example() {
   TEST_START();
-  auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
+  std::string json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )";
   simdjson::ondemand::parser parser;
   simdjson::ondemand::document_stream stream;
   ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
@@ -378,7 +378,7 @@ std::string my_string(ondemand::document& doc) {
 
 bool iterate_many_truncated_example() {
   TEST_START();
-  auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
+  std::string json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )";
   simdjson::ondemand::parser parser;
   simdjson::ondemand::document_stream stream;
   ASSERT_SUCCESS( parser.iterate_many(json,json.size()).get(stream) );
@@ -394,7 +394,7 @@ bool iterate_many_truncated_example() {
 
 bool ndjson_basics_example() {
   TEST_START();
-  auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
+  std::string json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )";
   ondemand::parser parser;
   ondemand::document_stream docs;
   ASSERT_SUCCESS( parser.iterate_many(json).get(docs) );
@@ -435,8 +435,9 @@ int main() {
     && iterate_many_truncated_example()
     && ndjson_basics_example()
   ) {
-    return 0;
+    std::cout << "all good." << std::endl;
+    return EXIT_SUCCESS;
   } else {
-    return 1;
+    return EXIT_FAILURE;
   }
 }

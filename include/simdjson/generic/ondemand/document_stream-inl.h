@@ -345,7 +345,7 @@ simdjson_really_inline std::string_view document_stream::iterator::source() cons
     cur_struct_index++;
   }
 
-  return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->parser->implementation->structural_indexes[cur_struct_index] - current_index() + stream->batch_start + 1);;
+  return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->parser->implementation->structural_indexes[cur_struct_index] - current_index() + stream->batch_start + 1);
 }
 
 inline error_code document_stream::iterator::error() const noexcept {

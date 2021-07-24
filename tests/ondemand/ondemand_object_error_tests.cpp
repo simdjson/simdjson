@@ -88,10 +88,10 @@ namespace object_error_tests {
   }
   bool object_lookup_unclosed_error() {
     TEST_START();
-  #if __SIMDJSON_CHECK_EOF
+  #if SIMDJSON_CHECK_EOF
     ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_error(doc["a"], INCOMPLETE_ARRAY_OR_OBJECT));
   #else
-    ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_success(doc["a"]));
+    ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_error(doc["a"], INCOMPLETE_ARRAY_OR_OBJECT));
   #endif
     ONDEMAND_SUBTEST("unclosed", R"({ "a"             )",    assert_error(doc["a"], INCOMPLETE_ARRAY_OR_OBJECT));
     ONDEMAND_SUBTEST("unclosed", R"({                 )",    assert_error(doc["a"], INCOMPLETE_ARRAY_OR_OBJECT));
@@ -119,13 +119,11 @@ namespace object_error_tests {
   bool object_lookup_miss_unclosed_error() {
     TEST_START();
     ONDEMAND_SUBTEST("unclosed", R"({ "a": 1,         )",    assert_error(doc["b"], INCOMPLETE_ARRAY_OR_OBJECT));
-    // TODO These next two pass the user a value that may run past the end of the buffer if they aren't careful.
-    // In particular, if the padding is decorated with the wrong values, we could cause overrun!
     ONDEMAND_SUBTEST("unclosed", R"({ "a": 1          )",    assert_error(doc["b"], INCOMPLETE_ARRAY_OR_OBJECT));
     ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_error(doc["b"], INCOMPLETE_ARRAY_OR_OBJECT));
     ONDEMAND_SUBTEST("unclosed", R"({ "a"             )",    assert_error(doc["b"], INCOMPLETE_ARRAY_OR_OBJECT));
     ONDEMAND_SUBTEST("unclosed", R"({                 )",    assert_error(doc["b"], INCOMPLETE_ARRAY_OR_OBJECT));
-    TEST_SUCCEED();
+TEST_SUCCEED();
   }
   bool object_lookup_miss_next_error() {
     TEST_START();
@@ -139,7 +137,7 @@ namespace object_error_tests {
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
   bool out_of_order_object_iteration_error() {
     TEST_START();
-    auto json = R"([ { "x": 1, "y": 2 } ])"_padded;
+    std::string json = R"([ { "x": 1, "y": 2 } ])";
     SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
       for (auto element : doc) {
         auto obj = element.get_object();
@@ -162,7 +160,7 @@ namespace object_error_tests {
 
   bool out_of_order_top_level_object_iteration_error() {
     TEST_START();
-    auto json = R"({ "x": 1, "y": 2 })"_padded;
+    std::string json = R"({ "x": 1, "y": 2 })";
     SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
       auto obj = doc.get_object();
       for (auto field : obj) { ASSERT_SUCCESS(field); }
@@ -181,7 +179,7 @@ namespace object_error_tests {
 
   bool out_of_order_object_index_child_error() {
     TEST_START();
-    auto json = R"([ { "x": 1, "y": 2 } ])"_padded;
+    std::string json = R"([ { "x": 1, "y": 2 } ])";
     SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
       simdjson_result<ondemand::object> obj;
       for (auto element : doc) {
@@ -223,7 +221,7 @@ namespace object_error_tests {
 
   bool out_of_order_object_index_sibling_error() {
     TEST_START();
-    auto json = R"([ { "x": 0, "y": 2 }, { "x": 1, "y": 4 } ])"_padded;
+    std::string json = R"([ { "x": 0, "y": 2 }, { "x": 1, "y": 4 } ])";
     SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
       simdjson_result<ondemand::object> last_obj;
       uint64_t i = 0;
@@ -302,7 +300,7 @@ namespace object_error_tests {
 
   bool out_of_order_object_find_field_child_error() {
     TEST_START();
-    auto json = R"([ { "x": 1, "y": 2 } ])"_padded;
+    std::string json = R"([ { "x": 1, "y": 2 } ])";
     SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
       simdjson_result<ondemand::object> obj;
       for (auto element : doc) {
@@ -344,7 +342,7 @@ namespace object_error_tests {
 
   bool out_of_order_object_find_field_sibling_error() {
     TEST_START();
-    auto json = R"([ { "x": 0, "y": 2 }, { "x": 1, "y": 4 } ])"_padded;
+    std::string json = R"([ { "x": 0, "y": 2 }, { "x": 1, "y": 4 } ])";
     SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
       simdjson_result<ondemand::object> last_obj;
       uint64_t i = 0;
@@ -423,7 +421,7 @@ namespace object_error_tests {
 
   bool out_of_order_object_find_field_unordered_child_error() {
     TEST_START();
-    auto json = R"([ { "x": 1, "y": 2 } ])"_padded;
+    std::string json = R"([ { "x": 1, "y": 2 } ])";
     SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
       simdjson_result<ondemand::object> obj;
       for (auto element : doc) {
@@ -465,7 +463,7 @@ namespace object_error_tests {
 
   bool out_of_order_object_find_field_unordered_sibling_error() {
     TEST_START();
-    auto json = R"([ { "x": 0, "y": 2 }, { "x": 1, "y": 4 } ])"_padded;
+    std::string json = R"([ { "x": 0, "y": 2 }, { "x": 1, "y": 4 } ])";
     SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
       simdjson_result<ondemand::object> last_obj;
       uint64_t i = 0;

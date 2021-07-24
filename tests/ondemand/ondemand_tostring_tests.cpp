@@ -24,7 +24,7 @@ const char *test_files[] = {
 #if SIMDJSON_EXCEPTIONS
 bool issue1607() {
   TEST_START();
-  auto silly_json = R"( { "test": "result"  }  )"_padded;
+  std::string silly_json = R"( { "test": "result"  }  )";
   ondemand::parser parser;
   ondemand::document doc = parser.iterate(silly_json);
   std::string_view expected = R"("result")";
@@ -37,7 +37,7 @@ bool issue1607() {
 bool minify_demo() {
   TEST_START();
   ondemand::parser parser;
-  auto silly_json = R"( { "test": "result"  }  )"_padded;
+  std::string silly_json = R"( { "test": "result"  }  )";
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(silly_json).get(doc) );
   std::cout << simdjson::to_json_string(doc["test"]) << std::endl;
@@ -47,7 +47,7 @@ bool minify_demo() {
 bool minify_demo2() {
   TEST_START();
   ondemand::parser parser;
-  auto silly_json = R"( { "test": "result"  }  )"_padded;
+  std::string silly_json = R"( { "test": "result"  }  )";
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(silly_json).get(doc) );
   std::cout << std::string_view(doc["test"]) << std::endl;
@@ -55,11 +55,11 @@ bool minify_demo2() {
 }
 bool car_example() {
   TEST_START();
-  auto cars_json = R"( [
+  std::string cars_json = R"( [
     { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
     { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
     { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-  ] )"_padded;
+  ] )";
   std::vector<std::string_view> arrays;
   // We are going to collect string_view instances which point inside the `cars_json` string
   // and are therefore valid as long as `cars_json` remains in scope.
@@ -104,7 +104,7 @@ bool load_to_string(const char *filename) {
   }
   std::cout << "file loaded: " << docdata.size() << " bytes." << std::endl;
   simdjson::ondemand::document doc;
-    auto silly_json = R"( { "test": "result"  }  )"_padded;
+  std::string silly_json = R"( { "test": "result"  }  )";
 
   error = parser.iterate(silly_json).get(doc);
   if (error) {
@@ -200,7 +200,7 @@ bool minify_exceptionless_test() {
 bool empty_object() {
   TEST_START();
   ondemand::parser parser;
-  auto arr_json = R"({})"_padded;
+  std::string arr_json = R"({})";
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(arr_json).get(doc));
   std::string_view serial;
@@ -212,7 +212,7 @@ bool empty_object() {
 bool empty_array() {
   TEST_START();
   ondemand::parser parser;
-  auto arr_json = R"([])"_padded;
+  std::string arr_json = R"([])";
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(arr_json).get(doc));
   std::string_view serial;
@@ -224,7 +224,7 @@ bool empty_array() {
 bool single_digit_document() {
   TEST_START();
   ondemand::parser parser;
-  auto arr_json = R"(9)"_padded;
+  std::string arr_json = R"(9)";
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
   std::string_view serial;
@@ -236,7 +236,7 @@ bool single_digit_document() {
 bool single_string_document() {
   TEST_START();
   ondemand::parser parser;
-  auto arr_json = R"("")"_padded;
+  std::string arr_json = R"("")";
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
   std::string_view serial;
@@ -248,7 +248,7 @@ bool single_string_document() {
 bool at_start_array() {
   TEST_START();
   ondemand::parser parser;
-  auto arr_json = R"( [111,2,3,5] )"_padded;
+  std::string arr_json = R"( [111,2,3,5] )";
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
   ondemand::array array;
@@ -263,7 +263,7 @@ bool at_start_array() {
 bool at_start_object() {
   TEST_START();
   ondemand::parser parser;
-  auto arr_json = R"( {"a":1, "b":2, "c": 3 } )"_padded;
+  std::string arr_json = R"( {"a":1, "b":2, "c": 3 } )";
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
   ondemand::object object;
@@ -279,7 +279,7 @@ bool at_start_object() {
 bool in_middle_array() {
   TEST_START();
   ondemand::parser parser;
-  auto arr_json = R"( [111,{"a":1},3,5] )"_padded;
+  std::string arr_json = R"( [111,{"a":1},3,5] )";
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
   ondemand::array array;
@@ -299,7 +299,7 @@ bool in_middle_array() {
 bool at_middle_object() {
   TEST_START();
   ondemand::parser parser;
-  auto arr_json = R"( {"a":1, "b":2, "c": 3 } )"_padded;
+  std::string arr_json = R"( {"a":1, "b":2, "c": 3 } )";
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
   ondemand::object object;
@@ -318,7 +318,7 @@ bool at_middle_object() {
 bool at_middle_object_just_key() {
   TEST_START();
   ondemand::parser parser;
-  auto arr_json = R"( {"a":1, "b":2, "c": 3 } )"_padded;
+  std::string arr_json = R"( {"a":1, "b":2, "c": 3 } )";
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
   ondemand::object object;
@@ -337,7 +337,7 @@ bool at_middle_object_just_key() {
 bool at_end_object() {
   TEST_START();
   ondemand::parser parser;
-  auto arr_json = R"( {"a":1, "b":2, "c": 3 } )"_padded;
+  std::string arr_json = R"( {"a":1, "b":2, "c": 3 } )";
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
   ondemand::object object;
@@ -356,7 +356,7 @@ bool at_array_end() {
   TEST_START();
   ondemand::parser parser;
   std::string_view serial;
-  auto arr_json = R"( [111,2,3,5] )"_padded;
+  std::string arr_json = R"( [111,2,3,5] )";
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
   ondemand::array array;
@@ -384,7 +384,7 @@ bool at_array_end() {
 bool complex_case() {
   TEST_START();
   ondemand::parser parser;
-  auto arr_json = R"( {"array":[1,2,3], "objects":[{"id":1}, {"id":2}, {"id":3}]} )"_padded;
+  std::string arr_json = R"( {"array":[1,2,3], "objects":[{"id":1}, {"id":2}, {"id":3}]} )";
   ondemand::document doc;
   ASSERT_SUCCESS( parser.iterate(arr_json).get(doc) );
   ondemand::object obj;

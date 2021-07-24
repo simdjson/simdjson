@@ -95,9 +95,9 @@ public:
   simdjson_really_inline void assert_at_root() const noexcept;
 
   /**
-   * Tell whether the iterator is at the EOF mark
+   * Tell whether the iterator is at the EOF mark (end of the input buffer)
    */
-  simdjson_really_inline bool at_end() const noexcept;
+  simdjson_really_inline bool at_end_of_input_buffer() const noexcept;
 
   /**
    * Tell whether the iterator is live (has not been moved).
@@ -114,6 +114,22 @@ public:
    */
   simdjson_really_inline const uint8_t *return_current_and_advance() noexcept;
 
+  /**
+   * Advance the current token by one, without modifying depth.
+   *
+   * @param requiremed_tokens The number of tokens that must exist. Only advances one token.
+   *
+   * @error TAPE_ERROR If there are not at least required_tokens tokens remaining.
+   */
+  simdjson_really_inline simdjson_result<const uint8_t *> try_return_current_and_advance(uint32_t required_tokens=1) noexcept;
+
+  /**
+   * Return an error unless there are enough tokens left.
+   *
+   * @param required_tokens The number of tokens that must exist.
+   * @error TAPE_ERROR If there are not at least required_tokens tokens remaining.
+   */
+  simdjson_really_inline error_code require_tokens(uint32_t required_tokens=1) noexcept;
   /**
    * Assert that there are at least the given number of tokens left.
    *
@@ -150,18 +166,24 @@ public:
    *
    * This is not null-terminated; it is a view into the JSON.
    *
-   * @param index The position of the token to retrieve.
-   *
-   * TODO consider a string_view, assuming the length will get stripped out by the optimizer when
-   * it isn't used ...
+   * @param position The position of the token to retrieve.
    */
   simdjson_really_inline const uint8_t *peek(token_position position) const noexcept;
+  /**
+   * Get a pointer to the current location in the input buffer.
+   *
+   * This is not null-terminated; it is a view into the JSON.
+   *
+   * You may be pointing outside of the input buffer: it is not generally
+   * safe to derefence this pointer.
+   */
+  simdjson_really_inline const uint8_t *unsafe_pointer() const noexcept;
   /**
    * Get the maximum length of the JSON text for the current token (or relative).
    *
    * The length will include any whitespace at the end of the token.
    *
-   * @param index The position of the token to retrieve.
+   * @param position The position of the token to retrieve.
    */
   simdjson_really_inline uint32_t peek_length(token_position position) const noexcept;
   /**
@@ -218,8 +240,6 @@ public:
    */
   simdjson_really_inline error_code optional_error(error_code error, const char *message) noexcept;
 
-  template<int N> simdjson_warn_unused simdjson_really_inline bool copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t (&tmpbuf)[N]) noexcept;
-
   simdjson_really_inline token_position position() const noexcept;
   simdjson_really_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
@@ -238,9 +258,9 @@ protected:
   /// The last token before the end
   simdjson_really_inline token_position last_position() const noexcept;
   /// The token *at* the end. This points at gibberish and should only be used for comparison.
-  simdjson_really_inline token_position end_position() const noexcept;
+  simdjson_really_inline token_position end_of_input_buffer_position() const noexcept;
   /// The end of the buffer.
-  simdjson_really_inline token_position end() const noexcept;
+  simdjson_really_inline const uint8_t *end_of_input_buffer() const noexcept;
 
   friend class document;
   friend class document_stream;

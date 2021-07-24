@@ -151,7 +151,7 @@ bool tester(int seed, size_t volume) {
 int main(int argc, char *argv[]) {
   // We test 1,000,000 random strings by default.
   // You can specify more tests with the '-m' flag if you want.
-  size_t howmany = 1000000;
+  size_t howmany = 10000;
 
   int c;
   while ((c = getopt(argc, argv, "a:m:h")) != -1) {

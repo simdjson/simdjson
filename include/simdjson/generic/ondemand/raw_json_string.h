@@ -53,8 +53,11 @@ public:
    * This compares the current instance to the std::string_view target: returns true if
    * they are byte-by-byte equal (no escaping is done) on target.size() characters,
    * and if the raw_json_string instance has a quote character at byte index target.size().
-   * We never read more than length + 1 bytes in the raw_json_string instance.
-   * If length is smaller than target.size(), this will return false.
+   * We never read more than max_key_length_including_final_quote bytes in the raw_json_string instance.
+   * If max_key_length_including_final_quote is smaller than target.size() + 1, this will return false.
+   *
+   * max_key_length_including_final_quote is the maximal key length in bytes, not including
+   * the leading quote.
    *
    * The std::string_view instance may contain any characters. However, the caller
    * is responsible for setting length so that length bytes may be read in the
@@ -63,7 +66,7 @@ public:
    * Performance: the comparison may be done using memcmp which may be efficient
    * for long strings.
    */
-  simdjson_really_inline bool unsafe_is_equal(size_t length, std::string_view target) const noexcept;
+  simdjson_really_inline bool unsafe_is_equal(size_t max_key_length_including_final_quote, std::string_view target) const noexcept;
 
   /**
    * This compares the current instance to the std::string_view target: returns true if
@@ -140,10 +143,13 @@ private:
    * @param dst A pointer to a buffer at least large enough to write this string as well as a \0.
    *            dst will be updated to the next unused location (just after the \0 written out at
    *            the end of this string).
+   * @param buf_end A pointer to the end of the input JSON you passed to iterate(). This is
+   *            used to prevent overruns, since simdjson normally reads (but does not use) past
+   *            the end quote when parsing a string for performance reasons.
    * @return A string_view pointing at the unescaped string in dst
    * @error STRING_ERROR if escapes are incorrect.
    */
-  simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(uint8_t *&dst) const noexcept;
+  simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(uint8_t *&dst, const uint8_t *buf_end) const noexcept;
   /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
    *
@@ -188,7 +194,7 @@ public:
   simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 
   simdjson_really_inline simdjson_result<const char *> raw() const noexcept;
-  simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(uint8_t *&dst) const noexcept;
+  simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(uint8_t *&dst, const uint8_t *buf_end) const noexcept;
   simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept;
 };
 

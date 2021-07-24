@@ -15,7 +15,6 @@ An overview of what you need to know to use simdjson, with examples.
 * [Reusing the parser for maximum efficiency](#reusing-the-parser-for-maximum-efficiency)
 * [Server Loops: Long-Running Processes and Memory Capacity](#server-loops-long-running-processes-and-memory-capacity)
 * [Best Use of the DOM API](#best-use-of-the-dom-api)
-* [Padding and Temporary Copies](#padding-and-temporary-copies)
 
 DOM vs On Demand
 ----------------------------------------------
@@ -36,12 +35,11 @@ dom::parser parser;
 dom::element doc = parser.load(filename); // load and parse a file
 ```
 
-Or by creating a padded string (for efficiency reasons, simdjson requires a string with
-SIMDJSON_PADDING bytes at the end) and calling `parse()`:
+Or by creating a string and calling `parse()`:
 
 ```c++
 dom::parser parser;
-dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string, the _padded suffix creates a simdjson::padded_string instance
+dom::element doc = parser.parse(std::string("[1,2,3]")); // parse a string
 ```
 
 The parsed document resulting from the `parser.load` and `parser.parse` calls depends on the `parser` instance. Thus the `parser` instance must remain in scope. Furthermore, you must have at most one parsed document in play per `parser` instance.
@@ -54,8 +52,7 @@ During the`load` or `parse` calls, neither the input file nor the input string a
 For best performance, a `parser` instance should be reused over several files: otherwise you will needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory allocations during parsing when using simdjson. [See our performance notes for details](performance.md).
 
 If you need a lower-level interface, you may call the function `parser.parse(const char * p, size_t l)` on a pointer `p` while specifying the
-length of your input `l` in bytes. To see how to get the very best performance from a low-level approach, you way want to read our [performance notes](https://github.com/simdjson/simdjson/blob/master/doc/performance.md#padding-and-temporary-copies) on this topic (see the Padding and Temporary Copies section).
-
+length of your input `l` in bytes.
 
 Using the Parsed JSON
 ---------------------
@@ -69,7 +66,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   `dom::object` and `dom::array`) and pass it by reference to `get()` which gives you back an error code: e.g.,
   ```c++
   simdjson::error_code error;
-  simdjson::padded_string numberstring = "1.2"_padded; // our JSON input ("1.2")
+  std::string numberstring = "1.2"; // our JSON input ("1.2")
   simdjson::dom::parser parser;
   double value; // variable where we store the value to be parsed
   error = parser.parse(numberstring).get(value);
@@ -96,11 +93,11 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 The following code illustrates all of the above:
 
 ```c++
-auto cars_json = R"( [
+std::string cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-] )"_padded;
+] )";
 dom::parser parser;
 
 // Iterating through an array of objects
@@ -129,10 +126,10 @@ for (dom::object car : parser.parse(cars_json)) {
 Here is a different example illustrating the same ideas:
 
 ```C++
-auto abstract_json = R"( [
+std::string abstract_json = R"( [
     {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
     {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
-  ] )"_padded;
+  ] )";
 dom::parser parser;
 
 // Parse and iterate through an array of objects
@@ -151,8 +148,8 @@ And another one:
 
 
 ```C++
-  auto abstract_json = R"(
-    {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
+  std::string abstract_json = R"(
+    {  "str" : { "123" : {"abc" : 3.14 } } } )";
   dom::parser parser;
   double v = parser.parse(abstract_json)["str"]["123"]["abc"];
   cout << "number: " << v << endl;
@@ -165,7 +162,7 @@ C++17 Support
 While the simdjson library can be used in any project using C++ 11 and above, field iteration has special support C++ 17's destructuring syntax. For example:
 
 ```c++
-padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
+std::string json = R"(  { "foo": 1, "bar": 2 }  )";
 dom::parser parser;
 dom::object object;
 auto error = parser.parse(json).get(object);
@@ -179,7 +176,7 @@ For comparison, here is the C++ 11 version of the same code:
 
 ```c++
 // C++ 11 version for comparison
-padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
+std::string json = R"(  { "foo": 1, "bar": 2 }  )";
 dom::parser parser;
 dom::object object;
 auto error = parser.parse(json).get(object);
@@ -197,11 +194,11 @@ The simdjson library also supports [JSON pointer](https://tools.ietf.org/html/rf
 `at_pointer()` method, letting you reach further down into the document in a single call:
 
 ```c++
-auto cars_json = R"( [
+std::string cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-] )"_padded;
+] )";
 dom::parser parser;
 dom::element cars = parser.parse(cars_json);
 cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
@@ -218,11 +215,11 @@ You can apply a JSON path to any node and the path gets interpreted relatively, 
 Consider the following example:
 
 ```c++
-auto cars_json = R"( [
+std::string cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-] )"_padded;
+] )";
 dom::parser parser;
 dom::element cars = parser.parse(cars_json);
 cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
@@ -321,11 +318,11 @@ int main(void) {
 This is how the example in "Using the Parsed JSON" could be written using only error code checking:
 
 ```c++
-auto cars_json = R"( [
+std::string cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-] )"_padded;
+] )";
 dom::parser parser;
 dom::array cars;
 auto error = parser.parse(cars_json).get(cars);
@@ -368,10 +365,10 @@ for (dom::element car_element : cars) {
 Here is another example:
 
 ```C++
-auto abstract_json = R"( [
+std::string abstract_json = R"( [
     {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
     {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
-  ] )"_padded;
+  ] )";
 dom::parser parser;
 dom::array array;
 auto error = parser.parse(abstract_json).get(array);
@@ -401,8 +398,8 @@ for (dom::element elem : array) {
 And another one:
 
 ```C++
-  auto abstract_json = R"(
-    {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
+  std::string abstract_json = R"(
+    {  "str" : { "123" : {"abc" : 3.14 } } } )";
   dom::parser parser;
   double v;
   auto error = parser.parse(abstract_json)["str"]["123"]["abc"].get(v);
@@ -536,15 +533,16 @@ you can parse terabytes of JSON data without doing any new allocation.
 dom::parser parser;
 
 // This initializes buffers and a document big enough to handle this JSON.
-dom::element doc = parser.parse("[ true, false ]"_padded);
+dom::element doc = parser.parse(std::string("[ true, false ]"));
+// std::string("[ true, false ]") may be replaced by "[ true, false ]"s
 cout << doc << endl;
 
 // This reuses the existing buffers, and reuses and *overwrites* the old document
-doc = parser.parse("[1, 2, 3]"_padded);
+doc = parser.parse(std::string("[1, 2, 3]"));
 cout << doc << endl;
 
 // This also reuses the existing buffers, and reuses and *overwrites* the old document
-dom::element doc2 = parser.parse("true"_padded);
+dom::element doc2 = parser.parse(std::string("true"));
 // Even if you keep the old reference around, doc and doc2 refer to the same document.
 cout << doc << endl;
 cout << doc2 << endl;
@@ -610,26 +608,3 @@ Best Use of the DOM API
 -------------------------
 
 The simdjson API provides access to the JSON DOM (document-object-model) content as a tree of `dom::element` instances, each representing an object, an array or an atomic type (null, true, false, number). These `dom::element` instances are lightweight objects (e.g., spanning 16 bytes) and it might be advantageous to pass them by value, as opposed to passing them by reference or by pointer.
-
-Padding and Temporary Copies
---------------
-
-The simdjson function `parser.parse` reads data from a padded  buffer, containing SIMDJSON_PADDING extra bytes added at the end.
-If you are passing a `padded_string` to `parser.parse` or loading the JSON directly from
-disk (`parser.load`), padding is automatically  handled.
-When calling `parser.parse` on a pointer (e.g., `parser.parse(my_char_pointer, my_length_in_bytes)`) a temporary copy  is made by default with adequate padding and you, again, do not need to be concerned with padding.
-
-Some users may not be able use our `padded_string` class or to load the data directly from disk (`parser.load`). They may need to pass data pointers to the library.  If these users wish to avoid temporary copies and corresponding temporary memory allocations, they may want to call `parser.parse` with the `realloc_if_needed` parameter set to false (e.g., `parser.parse(my_char_pointer, my_length_in_bytes, false)`). In such cases, they need to ensure that there are at least SIMDJSON_PADDING extra bytes at the end that can be safely accessed and read. They do not need to initialize the padded bytes to any value in particular. The following example is safe:
-
-
-```C++
-const char *json      = R"({"key":"value"})";
-const size_t json_len = std::strlen(json);
-std::unique_ptr<char[]> padded_json_copy{new char[json_len + SIMDJSON_PADDING]};
-memcpy(padded_json_copy.get(), json, json_len);
-memset(padded_json_copy.get() + json_len, 0, SIMDJSON_PADDING);
-simdjson::dom::parser parser;
-simdjson::dom::element element = parser.parse(padded_json_copy.get(), json_len, false);
-````
-
-Setting the `realloc_if_needed` parameter `false` in this manner may lead to better performance since copies are avoided, but it requires that the user takes more responsibilities: the simdjson library cannot verify that the input buffer was padded with SIMDJSON_PADDING extra bytes.

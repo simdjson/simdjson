@@ -182,7 +182,7 @@ bool issue1142() {
 
   const char * input_array = "[]";
   size_t input_length = std::strlen(input_array);
-  auto element4 = parser.parse(input_array, input_length).at_pointer("");;
+  auto element4 = parser.parse(input_array, input_length).at_pointer("");
   ASSERT_EQUAL(std::string(R"([])"), simdjson::minify(element4));
 
 #endif

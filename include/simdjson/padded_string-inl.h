@@ -110,6 +110,7 @@ inline const char *padded_string::data() const noexcept { return data_ptr; }
 inline char *padded_string::data() noexcept { return data_ptr; }
 
 inline padded_string::operator std::string_view() const { return std::string_view(data(), length()); }
+inline std::string padded_string::to_string() const { return std::string(data(), length()); }
 
 inline padded_string::operator padded_string_view() const noexcept {
   return padded_string_view(data(), length(), length() + SIMDJSON_PADDING);

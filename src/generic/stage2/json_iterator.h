@@ -241,9 +241,11 @@ simdjson_really_inline json_iterator::json_iterator(dom_parser_implementation &_
 }
 
 simdjson_really_inline const uint8_t *json_iterator::peek() const noexcept {
+  if(at_eof()) { return reinterpret_cast<const uint8_t *>(" ");}
   return &buf[*(next_structural)];
 }
 simdjson_really_inline const uint8_t *json_iterator::advance() noexcept {
+  if(at_eof()) { return reinterpret_cast<const uint8_t *>(" ");}
   return &buf[*(next_structural++)];
 }
 simdjson_really_inline size_t json_iterator::remaining_len() const noexcept {

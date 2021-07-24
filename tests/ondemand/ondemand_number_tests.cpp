@@ -26,7 +26,7 @@ namespace number_tests {
     std::cout << __func__ << std::endl;
 
     // converts the double "expected" to a padded string
-    auto format_into_padded=[](const double expected) -> padded_string
+    auto format_into_padded=[](const double expected) -> std::string
     {
       std::vector<char> buf(1024);
       const auto n = std::snprintf(buf.data(),
@@ -36,7 +36,7 @@ namespace number_tests {
                                expected);
       const auto nz=static_cast<size_t>(n);
       if (n<0 || nz >= buf.size()) { std::abort(); }
-      return padded_string(buf.data(), nz);
+      return std::string(buf.data(), nz);
     };
 
     for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
@@ -146,8 +146,8 @@ namespace number_tests {
       if (n >= buf.size()) { std::abort(); }
       std::fflush(nullptr);
       const double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
-
-      if(!test_ondemand<double>(padded_string(buf.data(), n), [&](double actual) {
+      std::string str(buf.data(), n);
+      if(!test_ondemand<double>(str, [&](double actual) {
                                 if(actual!=expected) {
                                   std::cerr << "JSON '" << buf.data() << " parsed to ";
                                   std::fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf

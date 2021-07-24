@@ -2,7 +2,7 @@
 link_libraries(simdjson)
 include_directories(..)
 add_subdirectory(compilation_failure_tests)
-add_cpp_test(ondemand_tostring_tests         LABELS ondemand acceptance per_implementation)
+
 add_cpp_test(ondemand_active_tests           LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_array_tests            LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_array_error_tests      LABELS ondemand acceptance per_implementation)
@@ -15,10 +15,12 @@ add_cpp_test(ondemand_misc_tests             LABELS ondemand acceptance per_impl
 add_cpp_test(ondemand_number_tests           LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_object_tests           LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_object_error_tests     LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_object_find_field_tests LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_ordering_tests         LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_parse_api_tests        LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_readme_examples        LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_scalar_tests           LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_tostring_tests         LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_twitter_tests          LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_wrong_type_error_tests LABELS ondemand acceptance per_implementation)
 

@@ -100,17 +100,23 @@ namespace array_error_tests {
   }
   bool array_iterate_incomplete_error() {
     TEST_START();
+#if SIMDJSON_CHECK_EOF
     ONDEMAND_SUBTEST("unclosed after array", R"([ [1] )", assert_iterate(doc.get_array().at(0), { int64_t(1) }, { INCOMPLETE_ARRAY_OR_OBJECT }));
     ONDEMAND_SUBTEST("unclosed after array", R"([ [1,])", assert_iterate(doc.get_array().at(0), { int64_t(1) }, { INCORRECT_TYPE, TAPE_ERROR }));
     ONDEMAND_SUBTEST("unclosed after array", R"([ [1])",  assert_iterate(doc.get_array().at(0), { int64_t(1) }, { INCOMPLETE_ARRAY_OR_OBJECT }));
     ONDEMAND_SUBTEST("unclosed after array", R"([ [])",   assert_iterate(doc.get_array().at(0),                 { INCOMPLETE_ARRAY_OR_OBJECT }));
+#else
+    ONDEMAND_SUBTEST("unclosed after array", R"([ [1] )", assert_iterate(doc.get_array().at(0), { int64_t(1) }));
+    ONDEMAND_SUBTEST("unclosed after array", R"([ [1,])", assert_iterate(doc.get_array().at(0), { int64_t(1) }, { INCORRECT_TYPE, TAPE_ERROR }));
+    ONDEMAND_SUBTEST("unclosed after array", R"([ [1])",  assert_iterate(doc.get_array().at(0), { int64_t(1) }));
+#endif
     TEST_SUCCEED();
   }
 
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
   bool out_of_order_array_iteration_error() {
     TEST_START();
-    auto json = R"([ [ 1, 2 ] ])"_padded;
+    std::string json = R"([ [ 1, 2 ] ])";
     SUBTEST("simdjson_result<value>", test_ondemand_doc(json, [&](auto doc) {
       for (auto arr : doc) {
         for (auto subelement : arr) { ASSERT_SUCCESS(subelement); }
@@ -149,7 +155,7 @@ namespace array_error_tests {
 
   bool out_of_order_top_level_array_iteration_error() {
     TEST_START();
-    auto json = R"([ 1, 2 ])"_padded;
+    std::string json = R"([ 1, 2 ])";
     SUBTEST("simdjson_result<document>", test_ondemand_doc(json, [&](auto arr) {
       for (auto element : arr) { ASSERT_SUCCESS(element); }
       ASSERT_ITERATE_ERROR( arr, OUT_OF_ORDER_ITERATION );

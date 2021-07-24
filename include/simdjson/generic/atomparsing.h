@@ -15,47 +15,50 @@ simdjson_really_inline uint32_t string_to_uint32(const char* str) { uint32_t val
 
 // Again in str4ncmp we use a memcpy to avoid undefined behavior. The memcpy may appear expensive.
 // Yet all decent optimizing compilers will compile memcpy to a single instruction, just about.
+// It is unsafe because you must ensure that you have at least 4 characters before calling this function!
 simdjson_warn_unused
-simdjson_really_inline uint32_t str4ncmp(const uint8_t *src, const char* atom) {
+simdjson_really_inline uint32_t str4ncmp_unsafe(const uint8_t *src, const char* atom) {
   uint32_t srcval; // we want to avoid unaligned 32-bit loads (undefined in C/C++)
-  static_assert(sizeof(uint32_t) <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be larger than 4 bytes");
   std::memcpy(&srcval, src, sizeof(uint32_t));
   return srcval ^ string_to_uint32(atom);
 }
 
+// It is unsafe because you must ensure that you have at least 5 characters before calling this function!
 simdjson_warn_unused
-simdjson_really_inline bool is_valid_true_atom(const uint8_t *src) {
-  return (str4ncmp(src, "true") | jsoncharutils::is_not_structural_or_whitespace(src[4])) == 0;
+simdjson_really_inline bool is_valid_true_atom_unsafe(const uint8_t *src) {
+  return (str4ncmp_unsafe(src, "true") | jsoncharutils::is_not_structural_or_whitespace(src[4])) == 0;
 }
 
 simdjson_warn_unused
 simdjson_really_inline bool is_valid_true_atom(const uint8_t *src, size_t len) {
-  if (len > 4) { return is_valid_true_atom(src); }
-  else if (len == 4) { return !str4ncmp(src, "true"); }
+  if (len > 4) { return is_valid_true_atom_unsafe(src); }
+  else if (len == 4) { return !str4ncmp_unsafe(src, "true"); }
   else { return false; }
 }
 
+// It is unsafe because you must ensure that you have at least 5 characters before calling this function!
 simdjson_warn_unused
-simdjson_really_inline bool is_valid_false_atom(const uint8_t *src) {
-  return (str4ncmp(src+1, "alse") | jsoncharutils::is_not_structural_or_whitespace(src[5])) == 0;
+simdjson_really_inline bool is_valid_false_atom_unsafe(const uint8_t *src) {
+  return (str4ncmp_unsafe(src+1, "alse") | jsoncharutils::is_not_structural_or_whitespace(src[5])) == 0;
 }
 
 simdjson_warn_unused
 simdjson_really_inline bool is_valid_false_atom(const uint8_t *src, size_t len) {
-  if (len > 5) { return is_valid_false_atom(src); }
-  else if (len == 5) { return !str4ncmp(src+1, "alse"); }
+  if (len > 5) { return is_valid_false_atom_unsafe(src); }
+  else if (len == 5) { return !str4ncmp_unsafe(src+1, "alse"); }
   else { return false; }
 }
 
+// It is unsafe because you must ensure that you have at least 5 characters before calling this function!
 simdjson_warn_unused
-simdjson_really_inline bool is_valid_null_atom(const uint8_t *src) {
-  return (str4ncmp(src, "null") | jsoncharutils::is_not_structural_or_whitespace(src[4])) == 0;
+simdjson_really_inline bool is_valid_null_atom_unsafe(const uint8_t *src) {
+  return (str4ncmp_unsafe(src, "null") | jsoncharutils::is_not_structural_or_whitespace(src[4])) == 0;
 }
 
 simdjson_warn_unused
 simdjson_really_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
-  if (len > 4) { return is_valid_null_atom(src); }
-  else if (len == 4) { return !str4ncmp(src, "null"); }
+  if (len > 4) { return is_valid_null_atom_unsafe(src); }
+  else if (len == 4) { return !str4ncmp_unsafe(src, "null"); }
   else { return false; }
 }
 

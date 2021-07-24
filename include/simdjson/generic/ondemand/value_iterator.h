@@ -44,9 +44,9 @@ public:
   simdjson_warn_unused simdjson_really_inline error_code skip_child() noexcept;
 
   /**
-   * Tell whether the iterator is at the EOF mark
+   * Tell whether the iterator is at the EOF mark (end of input buffer)
    */
-  simdjson_really_inline bool at_end() const noexcept;
+  simdjson_really_inline bool at_end_of_input_buffer() const noexcept;
 
   /**
    * Tell whether the iterator is at the start of the value
@@ -336,8 +336,8 @@ protected:
   inline std::string to_string() const noexcept;
   simdjson_really_inline value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept;
 
-  simdjson_really_inline bool parse_null(const uint8_t *json) const noexcept;
-  simdjson_really_inline simdjson_result<bool> parse_bool(const uint8_t *json) const noexcept;
+  simdjson_really_inline bool parse_null(uint32_t max_len, const uint8_t *json) const noexcept;
+  simdjson_really_inline simdjson_result<bool> parse_bool(uint32_t max_len, const uint8_t *json) const noexcept;
   simdjson_really_inline const uint8_t *peek_start() const noexcept;
   simdjson_really_inline uint32_t peek_start_length() const noexcept;
 
@@ -409,7 +409,7 @@ protected:
    * Usage: the skip_child() method should never be used while we are pointing
    * at a key inside an object.
    */
-  simdjson_really_inline bool is_at_key() const noexcept;
+  simdjson_really_inline simdjson_result<bool> is_at_key() const noexcept;
 
   inline void assert_at_start() const noexcept;
   inline void assert_at_container_start() const noexcept;
@@ -423,10 +423,10 @@ protected:
 
   /** @copydoc error_code json_iterator::position() const noexcept; */
   simdjson_really_inline token_position position() const noexcept;
-  /** @copydoc error_code json_iterator::end_position() const noexcept; */
+  /** @copydoc error_code json_iterator::end_of_input_buffer_position() const noexcept; */
   simdjson_really_inline token_position last_position() const noexcept;
-  /** @copydoc error_code json_iterator::end_position() const noexcept; */
-  simdjson_really_inline token_position end_position() const noexcept;
+  /** @copydoc error_code json_iterator::end_of_input_buffer_position() const noexcept; */
+  simdjson_really_inline token_position end_of_input_buffer_position() const noexcept;
   /** @copydoc error_code json_iterator::report_error(error_code error, const char *message) noexcept; */
   simdjson_really_inline error_code report_error(error_code error, const char *message) noexcept;
 
@@ -434,6 +434,7 @@ protected:
   friend class object;
   friend class array;
   friend class value;
+  friend class field;
 }; // value_iterator
 
 } // namespace ondemand

@@ -51,14 +51,14 @@ namespace number_tests {
     };
     simdjson::dom::parser parser;
     for(auto string_double : ground_truth) {
-        std::cout << "parsing the string '" << string_double.first << "'" << std::endl;
-        std::cout << "I am expecting the floating-point value '" << string_double.second << "'" << std::endl;
         double result;
-        ASSERT_SUCCESS(parser.parse(string_double.first).get(result));
-        std::cout << "Resulting float is '" << result << "'" << std::endl;
+        std::string input = string_double.first;
+        ASSERT_SUCCESS(parser.parse(input).get(result));
         if(result != string_double.second) {
+          std::cout << "parsing the string '" << input << "'" << std::endl;
+          std::cout << "I am expecting the floating-point value '" << string_double.second << "'" << std::endl;
+          std::cout << "Resulting float is '" << result << "'" << std::endl;
           std::cerr << std::hexfloat << result << " vs " << string_double.second << std::endl;
-          std::cerr << string_double.first << std::endl;
           return false;
         }
     }
@@ -113,9 +113,10 @@ namespace number_tests {
     };
     for (std::pair<std::string, double> p : testing) {
       double actual;
-      ASSERT_SUCCESS(parser.parse(p.first).get(actual));
+      std::string input = p.first;
+      ASSERT_SUCCESS(parser.parse(input).get(actual));
       if (actual != p.second) {
-          std::cerr << "JSON '" << p.first << "' parsed to " << actual << " instead of " << p.first << std::endl;
+          std::cerr << "JSON '" << input << "' parsed to " << actual << " instead of " << p.second << std::endl;
           return false;
       }
     }
@@ -326,9 +327,9 @@ namespace parse_api_tests {
   using namespace simdjson;
   using namespace simdjson::dom;
 
-  const padded_string BASIC_JSON = "[1,2,3]"_padded;
-  const padded_string BASIC_NDJSON = "[1,2,3]\n[4,5,6]"_padded;
-  const padded_string EMPTY_NDJSON = ""_padded;
+  const std::string BASIC_JSON = "[1,2,3]";
+  const std::string BASIC_NDJSON = "[1,2,3]\n[4,5,6]";
+  const std::string EMPTY_NDJSON = "";
   bool parser_moving_parser() {
     std::cout << "Running " << __func__ << std::endl;
     typedef std::tuple<std::string, std::unique_ptr<parser>,element> simdjson_tuple;
@@ -349,7 +350,7 @@ namespace parse_api_tests {
 #if SIMDJSON_EXCEPTIONS
   bool issue679() {
     std::cout << "Running " << __func__ << std::endl;
-    auto input = "[1, 2, 3]"_padded;
+    std::string input = "[1, 2, 3]";
     dom::document doc;
     {
       dom::parser parser;
@@ -377,7 +378,7 @@ namespace parse_api_tests {
   //See https://github.com/simdjson/simdjson/issues/1332
   bool parser_moving_parser_and_recovering() {
     std::cout << "Running " << __func__ << std::endl;
-    auto input = "[1, 2, 3]"_padded;
+    std::string input = "[1, 2, 3]";
     auto parser = dom::parser{};
     dom::element root = parser.parse(input); // might throw
     auto parser2 = std::move(parser);
@@ -390,7 +391,7 @@ namespace parse_api_tests {
   struct moving_parser {
     dom::parser parser{};
     bool is_valid{false};
-    simdjson::error_code parse(const padded_string & input) {
+    simdjson::error_code parse(const std::string & input) {
       auto answer = parser.parse(input).error();
       is_valid = !answer;
       return answer;
@@ -404,7 +405,7 @@ namespace parse_api_tests {
   // Shows how to use moving_parser
   bool parser_moving_parser_and_recovering_struct() {
     std::cout << "Running " << __func__ << std::endl;
-    auto input = "[1, 2, 3]"_padded;
+    std::string input = "[1, 2, 3]";
     moving_parser mp{};
     mp.parse(input);// I could check the error here if I want
     auto mp2 = std::move(mp);
@@ -645,7 +646,7 @@ namespace dom_api_tests {
   // returns true if successful
   bool ParsedJson_Iterator_test() {
     std::cout << "Running " << __func__ << std::endl;
-    simdjson::padded_string json = R"({
+    std::string json = R"({
           "Image": {
               "Width":  800,
               "Height": 600,
@@ -658,7 +659,7 @@ namespace dom_api_tests {
               "Animated" : false,
               "IDs": [116, 943, 234, 38793]
             }
-        })"_padded;
+        })";
     simdjson::ParsedJson pj = build_parsed_json(json);
     if (pj.error) {
       printf("Could not parse '%s': %s\n", json.data(), simdjson::error_message(pj.error));
@@ -1045,10 +1046,10 @@ namespace dom_api_tests {
   bool string_value_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    ASSERT_EQUAL( (const char *)parser.parse(R"("hi")"_padded), "hi" );
-    ASSERT_EQUAL( string_view(parser.parse(R"("hi")"_padded)), "hi" );
-    ASSERT_EQUAL( (const char *)parser.parse(R"("has backslash\\")"_padded), "has backslash\\");
-    ASSERT_EQUAL( string_view(parser.parse(R"("has backslash\\")"_padded)), "has backslash\\" );
+    ASSERT_EQUAL( (const char *)parser.parse(std::string(R"("hi")")), "hi" );
+    ASSERT_EQUAL( string_view(parser.parse(std::string(R"("hi")"))), "hi" );
+    ASSERT_EQUAL( (const char *)parser.parse(std::string(R"("has backslash\\")")), "has backslash\\");
+    ASSERT_EQUAL( string_view(parser.parse(std::string(R"("has backslash\\")"))), "has backslash\\" );
     return true;
   }
 
@@ -1056,18 +1057,18 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
 
-    ASSERT_EQUAL( uint64_t(parser.parse("0"_padded)), 0);
-    ASSERT_EQUAL( int64_t(parser.parse("0"_padded)), 0);
-    ASSERT_EQUAL( double(parser.parse("0"_padded)), 0);
+    ASSERT_EQUAL( uint64_t(parser.parse(std::string("0"))), 0);
+    ASSERT_EQUAL( int64_t(parser.parse(std::string("0"))), 0);
+    ASSERT_EQUAL( double(parser.parse(std::string("0"))), 0);
 
-    ASSERT_EQUAL( uint64_t(parser.parse("1"_padded)), 1);
-    ASSERT_EQUAL( int64_t(parser.parse("1"_padded)), 1);
-    ASSERT_EQUAL( double(parser.parse("1"_padded)), 1);
+    ASSERT_EQUAL( uint64_t(parser.parse(std::string("1"))), 1);
+    ASSERT_EQUAL( int64_t(parser.parse(std::string("1"))), 1);
+    ASSERT_EQUAL( double(parser.parse(std::string("1"))), 1);
 
-    ASSERT_EQUAL( int64_t(parser.parse("-1"_padded)), -1);
-    ASSERT_EQUAL( double(parser.parse("-1"_padded)), -1);
+    ASSERT_EQUAL( int64_t(parser.parse(std::string("-1"))), -1);
+    ASSERT_EQUAL( double(parser.parse(std::string("-1"))), -1);
 
-    ASSERT_EQUAL( double(parser.parse("1.1"_padded)), 1.1);
+    ASSERT_EQUAL( double(parser.parse(std::string("1.1"))), 1.1);
 
     return true;
   }
@@ -1076,9 +1077,9 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
 
-    ASSERT_EQUAL( bool(parser.parse("true"_padded)), true);
+    ASSERT_EQUAL( bool(parser.parse(std::string("true"))), true);
 
-    ASSERT_EQUAL( bool(parser.parse("false"_padded)), false);
+    ASSERT_EQUAL( bool(parser.parse(std::string("false"))), false);
 
     return true;
   }
@@ -1087,7 +1088,7 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
 
-    ASSERT_EQUAL( bool(parser.parse("null"_padded).is_null()), true );
+    ASSERT_EQUAL( bool(parser.parse(std::string("null")).is_null()), true );
 
     return true;
   }
@@ -1218,7 +1219,7 @@ namespace type_tests {
   using namespace simdjson;
   using namespace std;
 
-  const padded_string ALL_TYPES_JSON = R"(
+  const std::string ALL_TYPES_JSON = R"(
     {
       "array": [],
 
@@ -1245,7 +1246,7 @@ namespace type_tests {
 
       "null": null
     }
-  )"_padded;
+  )";
 
   template<typename T>
   bool test_cast(simdjson_result<dom::element> result, T expected) {
@@ -1740,7 +1741,7 @@ namespace format_tests {
   using namespace simdjson;
   using namespace simdjson::dom;
   using namespace std;
-  const padded_string DOCUMENT = R"({ "foo" : 1, "bar" : [ 1, 2, 0.11111111111111113 ], "baz": { "a": 3.1415926535897936, "b": 2, "c": 3.141592653589794 } })"_padded;
+  const std::string DOCUMENT = R"({ "foo" : 1, "bar" : [ 1, 2, 0.11111111111111113 ], "baz": { "a": 3.1415926535897936, "b": 2, "c": 3.141592653589794 } })";
   const string MINIFIED(R"({"foo":1,"bar":[1,2,0.11111111111111113],"baz":{"a":3.1415926535897936,"b":2,"c":3.141592653589794}})");
   bool assert_minified(ostringstream &actual, const std::string &expected=MINIFIED) {
     if (actual.str() != expected) {
@@ -1965,7 +1966,7 @@ namespace to_string_tests {
   using namespace simdjson;
   using namespace simdjson::dom;
   using namespace std;
-  const padded_string DOCUMENT = R"({ "foo" : 1, "bar" : [ 1, 2, 0.11111111111111113 ], "baz": { "a": 3.1415926535897936, "b": 2, "c": 3.141592653589794 } })"_padded;
+  const std::string DOCUMENT = R"({ "foo" : 1, "bar" : [ 1, 2, 0.11111111111111113 ], "baz": { "a": 3.1415926535897936, "b": 2, "c": 3.141592653589794 } })";
   const string MINIFIED(R"({"foo":1,"bar":[1,2,0.11111111111111113],"baz":{"a":3.1415926535897936,"b":2,"c":3.141592653589794}})");
   bool assert_minified(ostringstream &actual, const std::string &expected=MINIFIED) {
     if (actual.str() != expected) {
@@ -1977,11 +1978,12 @@ namespace to_string_tests {
     return true;
   }
 
+
   bool print_to_string_large_int() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     dom::element doc;
-    ASSERT_SUCCESS( parser.parse("-922337203685477580"_padded).get(doc) );
+    ASSERT_SUCCESS( parser.parse(std::string("-922337203685477580")).get(doc) );
     ostringstream s;
     s << to_string(doc);
     if(s.str() != "-922337203685477580") {
@@ -2116,6 +2118,56 @@ namespace to_string_tests {
   }
 }
 
+bool simple_overflows() {
+  std::cout << "Running " << __func__ << std::endl;
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+
+  for (const char * val : {"[f]", "{\"a\":f}"}) {
+    char * tmp = new char[strlen(val)];
+    memcpy(tmp, val, strlen(val));
+    ASSERT_ERROR( parser.parse(tmp, strlen(val)).get(doc), simdjson::F_ATOM_ERROR);
+    delete[] tmp;
+  }
+
+  for (const char * val : {"[t]", "{\"a\":t}"}) {
+    char * tmp = new char[strlen(val)];
+    memcpy(tmp, val, strlen(val));
+    ASSERT_ERROR( parser.parse(tmp, strlen(val)).get(doc), simdjson::T_ATOM_ERROR);
+    delete[] tmp;
+  }
+
+  for (const char * val : {"[n]", "{\"a\":n}"}) {
+    char * tmp = new char[strlen(val)];
+    memcpy(tmp, val, strlen(val));
+    ASSERT_ERROR( parser.parse(tmp, strlen(val)).get(doc), simdjson::N_ATOM_ERROR);
+    delete[] tmp;
+  }
+
+  for (const char * val : {"[-]", "{\"a\":-}"}) {
+    char * tmp = new char[strlen(val)];
+    memcpy(tmp, val, strlen(val));
+    ASSERT_ERROR( parser.parse(tmp, strlen(val)).get(doc), simdjson::NUMBER_ERROR);
+    delete[] tmp;
+  }
+
+  for (const char * val : {"[[]", "{\"a\":[[]"}) {
+    char * tmp = new char[strlen(val)];
+    memcpy(tmp, val, strlen(val));
+    ASSERT_ERROR( parser.parse(tmp, strlen(val)).get(doc), simdjson::TAPE_ERROR);
+    delete[] tmp;
+  }
+
+  ASSERT_ERROR( parser.parse(std::string("[f]")).get(doc), simdjson::F_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("[t]")).get(doc), simdjson::T_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("[n]")).get(doc), simdjson::N_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("[-]")).get(doc), simdjson::NUMBER_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("{\"a\":f}")).get(doc), simdjson::F_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("{\"a\":t}")).get(doc), simdjson::T_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("{\"a\":n}")).get(doc), simdjson::N_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("{\"a\":-}")).get(doc), simdjson::NUMBER_ERROR);
+  return true;
+}
 
 
 int main(int argc, char *argv[]) {
@@ -2153,7 +2205,8 @@ int main(int argc, char *argv[]) {
   std::cout << "------------------------------------------------------------" << std::endl;
 
   std::cout << "Running basic tests." << std::endl;
-  if (to_string_tests::run() &&
+  if (simple_overflows() &&
+      to_string_tests::run() &&
       validate_tests::run() &&
       minify_tests::run() &&
       parse_api_tests::run() &&

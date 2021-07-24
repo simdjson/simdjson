@@ -25,12 +25,15 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
   _json_iter->set_start_position(_depth, start_position());
 #endif
+  SIMDJSON_TRY( _json_iter->require_tokens(1) );
   if (*_json_iter->peek() == '}') {
     logger::log_value(*_json_iter, "empty object");
     _json_iter->return_current_and_advance();
     end_container();
     return false;
   }
+  SIMDJSON_TRY( _json_iter->require_tokens(3) ); // Make sure we have three tokens: "x" : value
+  logger::log_start_value(*_json_iter, "object");
   return true;
 }
 
@@ -46,16 +49,18 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 }
 
 simdjson_warn_unused simdjson_really_inline error_code value_iterator::end_container() noexcept {
-#if __SIMDJSON_CHECK_EOF
-    if (depth() > 1 && at_end()) { return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing parent ] or }"); }
-    // if (depth() <= 1 && !at_end()) { return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing [ or { at start"); }
-#endif // __SIMDJSON_CHECK_EOF
+#if SIMDJSON_CHECK_EOF
+    if (depth() > 1 && at_end_of_input_buffer()) { return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing parent ] or }"); }
+    // if (depth() <= 1 && !at_end_of_input_buffer()) { return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing [ or { at start"); }
+#endif // SIMDJSON_CHECK_EOF
     _json_iter->ascend_to(depth()-1);
     return SUCCESS;
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::has_next_field() noexcept {
   assert_at_next();
+
+  SIMDJSON_TRY( error_unless_more_tokens() );
 
   // It's illegal to call this unless there are more tokens: anything that ends in } or ] is
   // obligated to verify there are more tokens if they are not the top level.
@@ -65,6 +70,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
       SIMDJSON_TRY( end_container() );
       return false;
     case ',':
+      SIMDJSON_TRY( error_unless_more_tokens(3) ); // Make sure we have three tokens: "x" : value
       return true;
     default:
       return report_error(TAPE_ERROR, "Missing comma between object fields");
@@ -129,7 +135,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   while (has_value) {
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    // We know, for sure, that _json_iter->peek_length() is at least '1', but it could
+    // be just one, so subtracting by more than 1 is unsafe.
+    size_t max_key_length_including_final_quote = _json_iter->peek_length() - 1; // -1 for one quote
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
@@ -137,14 +145,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // key and the value. It will also increment the depth by one.
     if ((error = field_value() )) { abandon(); return error; }
     // If it matches, stop and return
-    // We could do it this way if we wanted to allow arbitrary
-    // key content (including escaped quotes).
-    //if (actual_key.unsafe_is_equal(max_key_length, key)) {
-    // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key (containing a well placed unescaped quote
-    // character and being longer than the number of bytes remaining in the JSON
-    // input).
-    if (actual_key.unsafe_is_equal(key)) {
+    if (actual_key.unsafe_is_equal(max_key_length_including_final_quote, key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
@@ -259,7 +260,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    // We know, for sure, that _json_iter->peek_length() is at least '1', but it could
+    // be just one, so subtracting by more than 1 is unsafe.
+    size_t max_key_length_including_final_quote = _json_iter->peek_length() - 1; // -1 for one quote
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
@@ -268,14 +271,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     if ((error = field_value() )) { abandon(); return error; }
 
     // If it matches, stop and return
-    // We could do it this way if we wanted to allow arbitrary
-    // key content (including escaped quotes).
-    // if (actual_key.unsafe_is_equal(max_key_length, key)) {
-    // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key (containing a well placed unescaped quote
-    // character and being longer than the number of bytes remaining in the JSON
-    // input).
-    if (actual_key.unsafe_is_equal(key)) {
+    if (actual_key.unsafe_is_equal(max_key_length_including_final_quote, key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
@@ -308,7 +304,9 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    // We know, for sure, that _json_iter->peek_length() is at least '1', but it could
+    // be just one, so subtracting by more than 1 is unsafe.
+    size_t max_key_length_including_final_quote = _json_iter->peek_length() - 1; // -1 for one quote
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     error = field_key().get(actual_key); SIMDJSON_ASSUME(!error);
@@ -317,14 +315,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     error = field_value(); SIMDJSON_ASSUME(!error);
 
     // If it matches, stop and return
-    // We could do it this way if we wanted to allow arbitrary
-    // key content (including escaped quotes).
-    // if (actual_key.unsafe_is_equal(max_key_length, key)) {
-    // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key (containing a well placed unescaped quote
-    // character and being longer than the number of bytes remaining in the JSON
-    // input).
-    if (actual_key.unsafe_is_equal(key)) {
+    if (actual_key.unsafe_is_equal(max_key_length_including_final_quote, key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
@@ -354,6 +345,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::field_key() noexcept {
   assert_at_next();
 
+  // started_object() and has_next_field() already checked that we have a key
   const uint8_t *key = _json_iter->return_current_and_advance();
   if (*(key++) != '"') { return report_error(TAPE_ERROR, "Object key is not a string"); }
   return raw_json_string(key);
@@ -362,6 +354,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> val
 simdjson_warn_unused simdjson_really_inline error_code value_iterator::field_value() noexcept {
   assert_at_next();
 
+  // started_object() and has_next_field() already checked that we have a : and a value token
   if (*_json_iter->return_current_and_advance() != ':') { return report_error(TAPE_ERROR, "Missing colon in object field"); }
   _json_iter->descend_to(depth()+1);
   return SUCCESS;
@@ -386,6 +379,8 @@ inline std::string value_iterator::to_string() const noexcept {
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::started_array() noexcept {
   assert_at_container_start();
+  SIMDJSON_TRY( _json_iter->require_tokens(1) );
+
   if (*_json_iter->peek() == ']') {
     logger::log_value(*_json_iter, "empty array");
     _json_iter->return_current_and_advance();
@@ -413,13 +408,16 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::has_next_element() noexcept {
   assert_at_next();
 
+  const uint8_t *json;
   logger::log_event(*this, "has_next_element");
-  switch (*_json_iter->return_current_and_advance()) {
+  SIMDJSON_TRY( _json_iter->try_return_current_and_advance().get(json) )
+  switch (*json) {
     case ']':
       logger::log_end_value(*_json_iter, "array");
       SIMDJSON_TRY( end_container() );
       return false;
     case ',':
+      SIMDJSON_TRY( _json_iter->require_tokens(1) );
       _json_iter->descend_to(depth()+1);
       return true;
     default:
@@ -427,19 +425,8 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   }
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::parse_bool(const uint8_t *json) const noexcept {
-  auto not_true = atomparsing::str4ncmp(json, "true");
-  auto not_false = atomparsing::str4ncmp(json, "fals") | (json[4] ^ 'e');
-  bool error = (not_true && not_false) || jsoncharutils::is_not_structural_or_whitespace(json[not_true ? 5 : 4]);
-  if (error) { return incorrect_type_error("Not a boolean"); }
-  return simdjson_result<bool>(!not_true);
-}
-simdjson_really_inline bool value_iterator::parse_null(const uint8_t *json) const noexcept {
-  return !atomparsing::str4ncmp(json, "null") && jsoncharutils::is_structural_or_whitespace(json[4]);
-}
-
 simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> value_iterator::get_string() noexcept {
-  return get_raw_json_string().unescape(_json_iter->string_buf_loc());
+  return get_raw_json_string().unescape(*_json_iter);
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::get_raw_json_string() noexcept {
   auto json = peek_scalar("string");
@@ -463,14 +450,40 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterat
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::get_bool() noexcept {
-  auto result = parse_bool(peek_non_root_scalar("bool"));
+  auto result = parse_bool(peek_start_length(), peek_non_root_scalar("bool"));
   if(result.error() != INCORRECT_TYPE) { advance_non_root_scalar("bool"); }
   return result;
 }
+
+simdjson_really_inline simdjson_result<bool> value_iterator::parse_bool(uint32_t max_len, const uint8_t *json) const noexcept {
+  if (max_len >= 4) {
+    if (!atomparsing::str4ncmp_unsafe(json, "true")) {
+      if (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[4])) {
+        return simdjson_result<bool>(true);
+      }
+    } else if (!atomparsing::str4ncmp_unsafe(json, "fals") && max_len >= 5 && json[4] == 'e') {
+      if (max_len == 5 || jsoncharutils::is_structural_or_whitespace(json[5])) {
+        return simdjson_result<bool>(false);
+      }
+    }
+  }
+  return incorrect_type_error("Not a boolean");
+}
 simdjson_really_inline bool value_iterator::is_null() noexcept {
-  auto result = parse_null(peek_non_root_scalar("null"));
+  auto result = parse_null(peek_start_length(), peek_non_root_scalar("null"));
   if(result) { advance_non_root_scalar("null"); }
   return result;
+}
+
+simdjson_really_inline bool value_iterator::parse_null(uint32_t max_len, const uint8_t *json) const noexcept {
+  if (max_len >= 4) {
+    if (!atomparsing::str4ncmp_unsafe(json, "null")) {
+      if (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[4])) {
+        return true;
+      }
+    };
+  }
+  return false;
 }
 
 constexpr const uint32_t MAX_INT_LENGTH = 1024;
@@ -484,56 +497,31 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> val
 simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::get_root_uint64() noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
-    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
-    return NUMBER_ERROR;
-  }
-  auto result = numberparsing::parse_unsigned(tmpbuf);
+  auto result = numberparsing::parse_unsigned(json, json+max_len);
   if(result.error() != INCORRECT_TYPE) { advance_root_scalar("uint64"); }
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::get_root_int64() noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
-    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
-    return NUMBER_ERROR;
-  }
-
-  auto result = numberparsing::parse_integer(tmpbuf);
+  auto result = numberparsing::parse_integer(json, json+max_len);
   if(result.error() != INCORRECT_TYPE) { advance_root_scalar("int64"); }
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_root_double() noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("double");
-  // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
-  // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
-  // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
-    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
-    return NUMBER_ERROR;
-  }
-  auto result = numberparsing::parse_double(tmpbuf);
+  auto result = numberparsing::parse_double(json, json+max_len);
   if(result.error() != INCORRECT_TYPE) { advance_root_scalar("double"); }
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::get_root_bool() noexcept {
-  auto max_len = peek_start_length();
-  auto json = peek_root_scalar("bool");
-  uint8_t tmpbuf[5+1];
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { return incorrect_type_error("Not a boolean"); }
-  advance_root_scalar("bool");
-  return parse_bool(tmpbuf);
+  auto result = parse_bool(peek_start_length(), peek_root_scalar("bool"));
+  if(result.error() != INCORRECT_TYPE) { advance_root_scalar("bool"); }
+  return result;
 }
 simdjson_really_inline bool value_iterator::is_root_null() noexcept {
-  auto max_len = peek_start_length();
-  auto json = peek_root_scalar("null");
-  auto result = (max_len >= 4 && !atomparsing::str4ncmp(json, "null") &&
-         (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[5])));
+  auto result = parse_null(peek_start_length(), peek_root_scalar("null"));
   if(result) { advance_root_scalar("null"); }
   return result;
 }
@@ -560,8 +548,8 @@ simdjson_really_inline bool value_iterator::is_open() const noexcept {
 }
 SIMDJSON_POP_DISABLE_WARNINGS
 
-simdjson_really_inline bool value_iterator::at_end() const noexcept {
-  return _json_iter->at_end();
+simdjson_really_inline bool value_iterator::at_end_of_input_buffer() const noexcept {
+  return _json_iter->at_end_of_input_buffer();
 }
 
 simdjson_really_inline bool value_iterator::at_start() const noexcept {
@@ -594,10 +582,12 @@ simdjson_warn_unused simdjson_really_inline json_iterator &value_iterator::json_
 }
 
 simdjson_really_inline const uint8_t *value_iterator::peek_start() const noexcept {
-  return _json_iter->peek(start_position());
+  auto result = _json_iter->peek(start_position());
+  return result;
 }
 simdjson_really_inline uint32_t value_iterator::peek_start_length() const noexcept {
-  return _json_iter->peek_length(start_position());
+  auto result = _json_iter->peek_length(start_position());
+  return result;
 }
 
 simdjson_really_inline const uint8_t *value_iterator::peek_scalar(const char *type) noexcept {
@@ -685,15 +675,29 @@ simdjson_really_inline error_code value_iterator::incorrect_type_error(const cha
   return INCORRECT_TYPE;
 }
 
+simdjson_really_inline error_code value_iterator::error_unless_more_tokens(uint32_t tokens) const noexcept {
+  if ((position() + tokens) > end_of_input_buffer_position()) {
+    return _json_iter->report_error(TAPE_ERROR, "Document ended early");
+  }
+  return SUCCESS;
+}
+
 simdjson_really_inline bool value_iterator::is_at_start() const noexcept {
   return position() == start_position();
 }
 
-simdjson_really_inline bool value_iterator::is_at_key() const noexcept {
+simdjson_really_inline simdjson_result<bool> value_iterator::is_at_key() const noexcept {
   // Keys are at the same depth as the object.
   // Note here that we could be safer and check that we are within an object,
   // but we do not.
-  return _depth == _json_iter->_depth && *_json_iter->peek() == '"';
+  if(_depth == _json_iter->_depth) {
+    // If it is at a key, we need 3 more tokens, but if it is not at a key, then a single
+    // token would suffice (i.e., '}').
+    SIMDJSON_TRY( _json_iter->require_tokens(1) );
+
+    return *_json_iter->peek() == '"';
+  }
+  return false;
 }
 
 simdjson_really_inline bool value_iterator::is_at_iterator_start() const noexcept {
@@ -793,8 +797,8 @@ simdjson_really_inline token_position value_iterator::position() const noexcept 
   return _json_iter->position();
 }
 
-simdjson_really_inline token_position value_iterator::end_position() const noexcept {
-  return _json_iter->end_position();
+simdjson_really_inline token_position value_iterator::end_of_input_buffer_position() const noexcept {
+  return _json_iter->end_of_input_buffer_position();
 }
 
 simdjson_really_inline token_position value_iterator::last_position() const noexcept {

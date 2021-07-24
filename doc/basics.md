@@ -132,25 +132,22 @@ auto json = padded_string::load("twitter.json");
 ondemand::document doc = parser.iterate(json); // position a pointer at the beginning of the JSON data
 ```
 
-Or by creating a padded string (for efficiency reasons, simdjson requires a string with
-SIMDJSON_PADDING bytes at the end) and calling `iterate()`:
+Or by creating a string and calling `iterate()`:
 
 ```c++
 ondemand::parser parser;
-auto json = "[1,2,3]"_padded; // The _padded suffix creates a simdjson::padded_string instance
+std::string json = "[1,2,3]";
 ondemand::document doc = parser.iterate(json); // parse a string
 ```
 
-If you have a buffer of your own with enough padding already (SIMDJSON_PADDING extra bytes allocated), you can use `padded_string_view` to pass it in:
+If you have a buffer of your own pass it in:
 
 ```c++
 ondemand::parser parser;
-char json[3+SIMDJSON_PADDING];
-strcpy(json, "[1]");
-ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
+const char * json = "[1]";
+ondemand::document doc = parser.iterate(json, strlen(json));
 ```
 
-We recommend against creating many `std::string` or many `std::padding_string` instances in your application to store your JSON data.
 Consider reusing the same buffers and limiting memory allocations.
 
 Documents Are Iterators
@@ -242,7 +239,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > parsing and writing out the unescaped keys to a string buffer and returning a `std::string_view`
   > instance. You should expect a performance penalty when using `unescaped_key()`.
   > ```c++
-  > auto json = R"({"k\u0065y": 1})"_padded;
+  > std::string json = R"({"k\u0065y": 1})";
   > ondemand::parser parser;
   > auto doc = parser.iterate(json);
   > ondemand::object object = doc.get_object();
@@ -264,7 +261,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   >
   > ```c++
   > ondemand::parser parser;
-  > auto json = R"(  { "x": 1, "y": 2 }  )"_padded;
+  > std::string json = R"(  { "x": 1, "y": 2 }  )";
   > auto doc = parser.iterate(json);
   > double y = doc.find_field("y"); // The cursor is now after the 2 (at })
   > double x = doc.find_field("x"); // This fails, because there are no more fields after "y"
@@ -274,7 +271,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   >
   > ```c++
   > ondemand::parser parser;
-  > auto json = R"(  { "x": 1, "y": 2 }  )"_padded;
+  > std::string json = R"(  { "x": 1, "y": 2 }  )";
   > auto doc = parser.iterate(json);
   > double y = doc["y"]; // The cursor is now after the 2 (at })
   > double x = doc["x"]; // Success: [] loops back around to find "x"
@@ -291,23 +288,23 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 * **Output to strings (simdjson 1.0 or better):** Given a document, a value, an array or an object in a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_json_string(element)`. A call to `to_json_string` consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document. The `simdjson::to_json_string` does not allocate memory. The `to_json_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes).
   > ```C++
   > // serialize a JSON to an escaped std::string instance so that it can be parsed again as JSON
-  > auto silly_json = R"( { "test": "result"  }  )"_padded;
+  > std::string silly_json = R"( { "test": "result"  }  )";
   > ondemand::document doc = parser.iterate(silly_json);
   > std::cout << simdjson::to_json_string(doc["test"]) << std::endl; // Requires simdjson 1.0 or better
   >````
   > ```C++
   > // retrieves an unescaped string value as a string_view instance
-  > auto silly_json = R"( { "test": "result"  }  )"_padded;
+  > std::string silly_json = R"( { "test": "result"  }  )";
   > ondemand::document doc = parser.iterate(silly_json);
   > std::cout << std::string_view(doc["test"]) << std::endl;
   >````
 You can use `to_json_string` to efficiently extract components of a JSON document to reconstruct a new JSON document, as in the following example:
   > ```C++
-  > auto cars_json = R"( [
+  > std::string cars_json = R"( [
   >   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   >   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   >   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-  > ] )"_padded;
+  > ] )";
   > std::vector<std::string_view> arrays;
   > // We are going to collect string_view instances which point inside the `cars_json` string
   > // and are therefore valid as long as `cars_json` remains in scope.
@@ -338,11 +335,11 @@ The following code illustrates many of the above concepts:
 
 ```c++
 ondemand::parser parser;
-auto cars_json = R"( [
+std::string cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-] )"_padded;
+] )";
 
 // Iterating through an array of objects
 for (ondemand::object car : parser.iterate(cars_json)) {
@@ -366,10 +363,10 @@ Here is a different example illustrating the same ideas:
 
 ```C++
 ondemand::parser parser;
-auto points_json = R"( [
+std::string points_json = R"( [
     {  "12345" : {"x":12.34, "y":56.78, "z": 9998877}   },
     {  "12545" : {"x":11.44, "y":12.78, "z": 11111111}  }
-  ] )"_padded;
+  ] )";
 
 // Parse and iterate through an array of objects
 for (ondemand::object points : parser.iterate(points_json)) {
@@ -385,9 +382,9 @@ for (ondemand::object points : parser.iterate(points_json)) {
 And another one:
 
 ```C++
-auto abstract_json = R"(
+std::string abstract_json = R"(
   { "str" : { "123" : {"abc" : 3.14 } } }
-)"_padded;
+)";
 ondemand::parser parser;
 auto doc = parser.iterate(abstract_json);
 cout << doc["str"]["123"]["abc"].get_double() << endl; // Prints 3.14
@@ -399,9 +396,9 @@ cout << doc["str"]["123"]["abc"].get_double() << endl; // Prints 3.14
   to `get()` which gives you back an error code: e.g.,
 
   ```c++
-  auto abstract_json = R"(
+  std::string abstract_json = R"(
     { "str" : { "123" : {"abc" : 3.14 } } }
-  )"_padded;
+  )";
   ondemand::parser parser;
 
   double value;
@@ -417,7 +414,7 @@ aware that the `count_elements` method can be costly since it requires scanning 
 whole array. You may use it as follows if your document is itself an array:
 
 ```C++
-  auto cars_json = R"( [ 40.1, 39.9, 37.7, 40.4 ] )"_padded;
+  std::string cars_json = R"( [ 40.1, 39.9, 37.7, 40.4 ] )";
   auto doc = parser.iterate(cars_json);
   size_t count = doc.count_elements(); // requires simdjson 1.0 or better
   std::vector<double> values(count);
@@ -429,7 +426,7 @@ If you access an array inside a document, you can use the `count_elements` metho
 You should not let the array instance go out of scope before consuming it after calling the `count_elements` method:
 ``` C++
    ondemand::parser parser;
-   auto cars_json = R"( { "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )"_padded;
+   std::string cars_json = R"( { "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )";
    auto doc = parser.iterate(cars_json);
    auto test_array = doc.find_field("test").get_array();
    size_t count = test_array.count_elements(); // requires simdjson 1.0 or better
@@ -511,7 +508,7 @@ C++17 Support
 While the simdjson library can be used in any project using C++ 11 and above, field iteration has special support C++ 17's destructuring syntax. For example:
 
 ```c++
-padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
+std::string json = R"(  { "foo": 1, "bar": 2 }  )";
 dom::parser parser;
 dom::object object;
 auto error = parser.parse(json).get(object);
@@ -525,7 +522,7 @@ For comparison, here is the C++ 11 version of the same code:
 
 ```c++
 // C++ 11 version for comparison
-padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
+std::string json = R"(  { "foo": 1, "bar": 2 }  )";
 dom::parser parser;
 dom::object object;
 auto error = parser.parse(json).get(object);
@@ -580,11 +577,11 @@ The simdjson library also supports [JSON pointer](https://tools.ietf.org/html/rf
 Consider the following example:
 
 ```c++
-auto cars_json = R"( [
+std::string cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-] )"_padded;
+] )";
 ondemand::parser parser;
 auto cars = parser.iterate(cars_json);
 cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
@@ -598,11 +595,11 @@ select the value. If your keys contain the characters '/' or '~', they must be e
 For multiple JSON pointer queries on a document, one can call `at_pointer` multiple times.
 
 ```c++
-auto cars_json = R"( [
+std::string cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-] )"_padded;
+] )";
 ondemand::parser parser;
 auto cars = parser.iterate(cars_json);
 size_t size = cars.count_elements();
@@ -627,11 +624,11 @@ struct car_type {
       make{_make}, model{_model}, year(_year), tire_pressure(_tire_pressure) {}
 };
 
-auto cars_json = R"( [
+std::string cars_json = R"( [
 { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
 { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
 { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-] )"_padded;
+] )";
 
 ondemand::parser parser;
 ondemand::document cars;
@@ -667,11 +664,11 @@ for (int i = 0; i < 3; i++) {
 Furthermore, `at_pointer` calls `rewind` at the beginning of the call (i.e. the document is not reset after `at_pointer`). Consider the following example,
 
 ```c++
-auto json = R"( {
+std::string json = R"( {
   "k0": 27,
   "k1": [13,26],
   "k2": true
-} )"_padded;
+} )";
 ondemand::parser parser;
 auto doc = parser.iterate(json);
 std::cout << doc.at_pointer("/k1/1") << std::endl; // Prints 26
@@ -766,11 +763,11 @@ int main(void) {
 This is how the example in "Using the Parsed JSON" could be written using only error code checking:
 
 ```c++
-auto cars_json = R"( [
+std::string cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-] )"_padded;
+] )";
 dom::parser parser;
 dom::array cars;
 auto error = parser.parse(cars_json).get(cars);
@@ -813,10 +810,10 @@ for (dom::element car_element : cars) {
 Here is another example:
 
 ```C++
-auto abstract_json = R"( [
+std::string abstract_json = R"( [
     {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
     {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
-  ] )"_padded;
+  ] )";
 dom::parser parser;
 dom::array array;
 auto error = parser.parse(abstract_json).get(array);
@@ -846,8 +843,8 @@ for (dom::element elem : array) {
 And another one:
 
 ```C++
-  auto abstract_json = R"(
-    {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
+  std::string abstract_json = R"(
+    {  "str" : { "123" : {"abc" : 3.14 } } } )";
   dom::parser parser;
   double v;
   auto error = parser.parse(abstract_json)["str"]["123"]["abc"].get(v);
@@ -926,11 +923,11 @@ before printout the data.
 
 ```C++
   ondemand::parser parser;
-  auto cars_json = R"( [
+  std::string cars_json = R"( [
     { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
     { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
     { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-  ] )"_padded;
+  ] )";
 
   auto doc = parser.iterate(cars_json);
   for (simdjson_unused ondemand::object car : doc) {
@@ -957,7 +954,7 @@ parse as you see fit.
 
 ```C++
 simdjson::ondemand::parser parser;
-simdjson::padded_string docdata =  R"({"value":12321323213213213213213213213211223})"_padded;
+std::string docdata =  R"({"value":12321323213213213213213213213211223})";
 simdjson::ondemand::document doc = parser.iterate(docdata);
 simdjson::ondemand::object obj = doc.get_object();
 std::string_view token = obj["value"].raw_json_token();
@@ -970,7 +967,7 @@ source document.
 
 ```C++
 simdjson::ondemand::parser parser;
-simdjson::padded_string docdata =  R"({"value":"12321323213213213213213213213211223"})"_padded;
+std::string docdata =  R"({"value":"12321323213213213213213213213211223"})";
 simdjson::ondemand::document doc = parser.iterate(docdata);
 simdjson::ondemand::object obj = doc.get_object();
 string_view token = obj["value"].raw_json_token();
@@ -993,7 +990,7 @@ than 4GB), though each individual document must be no larger than 4 GB.
 Here is a simple example:
 
 ```c++
-auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
+std::string json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )";
 ondemand::parser parser;
 ondemand::document_stream docs = parser.iterate_many(json);
 for (auto & doc : docs) {
@@ -1007,12 +1004,12 @@ It is important to note that the iteration returns a `document` reference, and h
 Unlike `parser.iterate`, `parser.iterate_many` may parse "on demand" (lazily). That is, no parsing may have been done before you enter the loop
 `for (auto & doc : docs) {` and you should expect the parser to only ever fully parse one JSON document at a time.
 
-As with `parser.iterate`, when calling  `parser.iterate_many(string)`, no copy is made of the provided string input. The provided memory buffer may be accessed each time a JSON document is parsed.  Calling `parser.iterate_many(string)` on a  temporary string buffer (e.g., `docs = parser.parse_many("[1,2,3]"_padded)`) is unsafe (and will not compile) because the  `document_stream` instance needs access to the buffer to return the JSON documents.
+As with `parser.iterate`, when calling  `parser.iterate_many(string)`, no copy is made of the provided string input. The provided memory buffer may be accessed each time a JSON document is parsed.  Calling `parser.iterate_many(string)` on a  temporary string buffer (e.g., `docs = parser.parse_many("[1,2,3]")`) is unsafe (and will not compile) because the  `document_stream` instance needs access to the buffer to return the JSON documents.
 
 
-`iterate_many` can also take an optional parameter `size_t batch_size` which defines the window processing size. It is set by default to a large value (`1000000` corresponding to 1 MB). None of your JSON documents should exceed this window size, or else you will get  the error `simdjson::CAPACITY`. You cannot set this window size larger than 4 GB: you will get  the error `simdjson::CAPACITY`. The smaller the window size is, the less memory the function will use. Setting the window size too small (e.g., less than 100 kB) may also impact performance negatively. Leaving it to 1 MB is expected to be a good choice, unless you have some larger documents.
+The `iterate_many` function can also take an optional parameter `size_t batch_size` which defines the window processing size. It is set by default to a large value (`1000000` corresponding to 1 MB). None of your JSON documents should exceed this window size, or else you will get  the error `simdjson::CAPACITY`. You cannot set this window size larger than 4 GB: you will get  the error `simdjson::CAPACITY`. The smaller the window size is, the less memory the function will use. Setting the window size too small (e.g., less than 100 kB) may also impact performance negatively. Leaving it to 1 MB is expected to be a good choice, unless you have some larger documents.
 
-If your documents are large (e.g., larger than a megabyte), then the `iterate_many` function is maybe ill-suited. It is really meant to support reading efficiently streams of relatively small documents (e.g., a few kilobytes each). If you have larger documents, you should use other functions like `iterate`.
+If your individual documents within the stream of documents are large (e.g., larger than a megabyte per individual document), then the `iterate_many` function is maybe ill-suited. It is really meant to support reading efficiently streams of relatively small documents (e.g., a few kilobytes each). If you have larger documents, you should use other functions like `iterate`.
 
 See [iterate_many.md](iterate_many.md) for detailed information and design.
 

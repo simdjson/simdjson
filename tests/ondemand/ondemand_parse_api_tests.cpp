@@ -6,9 +6,9 @@ using namespace simdjson;
 namespace parse_api_tests {
   using namespace std;
 
-  const padded_string BASIC_JSON = "[1,2,3]"_padded;
-  const padded_string BASIC_NDJSON = "[1,2,3]\n[4,5,6]"_padded;
-  const padded_string EMPTY_NDJSON = ""_padded;
+  const std::string BASIC_JSON = "[1,2,3]";
+  const std::string BASIC_NDJSON = "[1,2,3]\n[4,5,6]";
+  const std::string EMPTY_NDJSON = "";
 
 
   bool parser_iterate_empty() {
@@ -109,13 +109,6 @@ namespace parse_api_tests {
       ASSERT_SUCCESS( doc.get_double() );
     }
 
-    {
-      cout << "- padded_string_view(string_view(char*))" << endl;
-      padded_string_view json(json_str, sizeof(json_str));
-      auto doc = parser.iterate(json);
-      ASSERT_SUCCESS( doc.get_double() );
-    }
-
     TEST_SUCCEED();
   }
 
@@ -127,30 +120,6 @@ namespace parse_api_tests {
     ASSERT_EQUAL(strlen(json_str), 2);
     ASSERT_EQUAL(padded_string_view(json_str, strlen(json_str), sizeof(json_str)).padding(), 31);
     ASSERT_EQUAL(SIMDJSON_PADDING, 32);
-
-    {
-      cout << "- char*, 31 padding" << endl;
-      ASSERT_ERROR( parser.iterate(json_str, strlen(json_str), sizeof(json_str)), INSUFFICIENT_PADDING );
-      cout << "- char*, 0 padding" << endl;
-      ASSERT_ERROR( parser.iterate(json_str, strlen(json_str), strlen(json_str)), INSUFFICIENT_PADDING );
-    }
-
-    {
-      std::string_view json(json_str);
-      cout << "- string_view, 31 padding" << endl;
-      ASSERT_ERROR( parser.iterate(json, sizeof(json_str)), INSUFFICIENT_PADDING );
-      cout << "- string_view, 0 padding" << endl;
-      ASSERT_ERROR( parser.iterate(json, strlen(json_str)), INSUFFICIENT_PADDING );
-    }
-
-    {
-      std::string json = "12";
-      json.shrink_to_fit();
-      cout << "- string, 0 padding" << endl;
-      ASSERT_ERROR( parser.iterate(json), INSUFFICIENT_PADDING );
-      // It's actually kind of hard to allocate "just enough" capacity, since the string tends
-      // to grow more than you tell it to.
-    }
 
     TEST_SUCCEED();
   }
@@ -170,9 +139,9 @@ namespace parse_api_tests {
     // A document spans about 40 bytes. Nevertheless, some users
     // would rather reuse them.
     std::cout << sizeof(doc) << std::endl;
-    auto json = R"({"key": "value"})"_padded;
-    auto jsonbad = R"({"key": "value")"_padded; // deliberaty broken
-    auto jsonunclosedstring = "{\"coordinates:[{\"x\":1.1,\"y\":2.2,\"z\":3.3}]}"_padded;
+    std::string json = R"({"key": "value"})";
+    std::string jsonbad = R"({"key": "value")"; // deliberaty broken
+    std::string jsonunclosedstring = "{\"coordinates:[{\"x\":1.1,\"y\":2.2,\"z\":3.3}]}";
     std::string_view output;
 
     ondemand::parser parser;

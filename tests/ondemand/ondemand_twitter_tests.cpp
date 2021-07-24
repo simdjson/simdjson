@@ -11,7 +11,8 @@ namespace twitter_tests {
     TEST_START();
     padded_string json;
     ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
-    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+    std::string json_str(json);
+    ASSERT_TRUE(test_ondemand_doc(json_str, [&](auto doc_result) {
       uint64_t count;
       ASSERT_SUCCESS( doc_result["search_metadata"]["count"].get(count) );
       ASSERT_EQUAL( count, 100 );
@@ -46,7 +47,8 @@ namespace twitter_tests {
     TEST_START();
     padded_string json;
     ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
-    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+    std::string json_str = json.to_string();
+    ASSERT_TRUE(test_ondemand_doc(json_str, [&](auto doc_result) {
       // Print users with a default profile.
       set<string_view> default_users;
       for (auto tweet : doc_result["statuses"]) {
@@ -72,7 +74,8 @@ namespace twitter_tests {
     TEST_START();
     padded_string json;
     ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
-    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+    std::string json_str = json.to_string();
+    ASSERT_TRUE(test_ondemand_doc(json_str, [&](auto doc_result) {
       // Print image names and sizes
       set<pair<uint64_t, uint64_t>> image_sizes;
       for (auto tweet : doc_result["statuses"]) {
@@ -111,7 +114,8 @@ namespace twitter_tests {
     TEST_START();
     padded_string json;
     ASSERT_SUCCESS( padded_string::load(TWITTER_JSON).get(json) );
-    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+    std::string json_str = json.to_string();
+    ASSERT_TRUE(test_ondemand_doc(json_str, [&](auto doc_result) {
       uint64_t count = doc_result["search_metadata"]["count"];
       ASSERT_EQUAL( count, 100 );
       return true;
@@ -122,7 +126,8 @@ namespace twitter_tests {
   bool twitter_default_profile_exception() {
     TEST_START();
     padded_string json = padded_string::load(TWITTER_JSON);
-    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+    std::string json_str = json.to_string();
+    ASSERT_TRUE(test_ondemand_doc(json_str, [&](auto doc_result) {
       // Print users with a default profile.
       set<string_view> default_users;
       for (auto tweet : doc_result["statuses"]) {
@@ -151,7 +156,8 @@ namespace twitter_tests {
   bool twitter_image_sizes_exception() {
     TEST_START();
     padded_string json = padded_string::load(TWITTER_JSON);
-    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+    std::string json_str = json.to_string();
+    ASSERT_TRUE(test_ondemand_doc(json_str, [&](auto doc_result) {
       // Print image names and sizes
       set<pair<uint64_t, uint64_t>> image_sizes;
       for (auto tweet : doc_result["statuses"]) {

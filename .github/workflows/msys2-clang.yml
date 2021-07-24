@@ -1,12 +1,7 @@
 name: MSYS2-CLANG-CI
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+on: [push, pull_request]
+
 
 jobs:
   windows-mingw:

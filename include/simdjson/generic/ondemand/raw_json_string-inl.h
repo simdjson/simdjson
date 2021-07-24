@@ -6,8 +6,9 @@ namespace ondemand {
 simdjson_really_inline raw_json_string::raw_json_string(const uint8_t * _buf) noexcept : buf{_buf} {}
 
 simdjson_really_inline const char * raw_json_string::raw() const noexcept { return reinterpret_cast<const char *>(buf); }
-simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(uint8_t *&dst) const noexcept {
-  uint8_t *end = stringparsing::parse_string(buf, dst);
+
+simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(uint8_t *&dst, const uint8_t *buf_end) const noexcept {
+  uint8_t *end = stringparsing::parse_string(buf, dst, buf_end);
   if (!end) { return STRING_ERROR; }
   std::string_view result(reinterpret_cast<const char *>(dst), end-dst);
   dst = end;
@@ -51,17 +52,19 @@ simdjson_really_inline bool raw_json_string::is_free_from_unescaped_quote(const 
 }
 
 
-simdjson_really_inline bool raw_json_string::unsafe_is_equal(size_t length, std::string_view target) const noexcept {
+simdjson_really_inline bool raw_json_string::unsafe_is_equal(size_t max_key_length_including_final_quote, std::string_view target) const noexcept {
   // If we are going to call memcmp, then we must know something about the length of the raw_json_string.
-  return (length >= target.size()) && (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
+  if(max_key_length_including_final_quote <= target.size()) { return false; }
+  // It is now safe to read in [0, target.size()].
+  return (raw()[target.size()] == '"') && (memcmp(raw(), target.data(), target.size()) == 0);
 }
 
 simdjson_really_inline bool raw_json_string::unsafe_is_equal(std::string_view target) const noexcept {
   // Assumptions: does not contain unescaped quote characters, and
   // the raw content is quote terminated within a valid JSON string.
-  if(target.size() <= SIMDJSON_PADDING) {
-    return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
-  }
+  // if(target.size() <= SIMDJSON_PADDING) {
+  //  return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
+  // }
   const char * r{raw()};
   size_t pos{0};
   for(;pos < target.size();pos++) {
@@ -150,7 +153,7 @@ simdjson_unused simdjson_really_inline bool operator!=(std::string_view c, const
 
 
 simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(json_iterator &iter) const noexcept {
-  return unescape(iter.string_buf_loc());
+  return unescape(iter.string_buf_loc(), iter.end_of_input_buffer());
 }
 
 
@@ -183,9 +186,9 @@ simdjson_really_inline simdjson_result<const char *> simdjson_result<SIMDJSON_IM
   if (error()) { return error(); }
   return first.raw();
 }
-simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::unescape(uint8_t *&dst) const noexcept {
+simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::unescape(uint8_t *&dst, const uint8_t *buf_end) const noexcept {
   if (error()) { return error(); }
-  return first.unescape(dst);
+  return first.unescape(dst, buf_end);
 }
 simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept {
   if (error()) { return error(); }
