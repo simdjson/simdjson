@@ -530,6 +530,7 @@ simdjson_really_inline simdjson_result<double> parse_double(const uint8_t * cons
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
 simdjson_really_inline error_code parse_number(const uint8_t * const src, W &writer, const uint8_t * const end) {
+  SIMDJSON_ASSUME(end != nullptr);
   //
   // Check for minus sign
   //

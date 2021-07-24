@@ -110,9 +110,9 @@ namespace object_tests {
   bool missing_keys_for_empty_top_level_object() {
     TEST_START();
     simdjson::ondemand::parser parser;
-    std::string docdata = "{}";
+    const char* docdata = "{}";
     simdjson::ondemand::document doc;
-    auto error = parser.iterate(docdata).get(doc);
+    auto error = parser.iterate(docdata, strlen(docdata)).get(doc);
     if(error != simdjson::SUCCESS) { return false; }
     error = doc.find_field_unordered("keynotfound").error();
     if(error != simdjson::NO_SUCH_FIELD) {

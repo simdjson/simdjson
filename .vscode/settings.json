@@ -17,7 +17,6 @@
         "__errc": "cpp",
         "__functional_base": "cpp",
         "__hash_table": "cpp",
-        "__locale": "cpp",
         "__mutex_base": "cpp",
         "__node_handle": "cpp",
         "__nullptr": "cpp",
@@ -85,6 +84,7 @@
         "utility": "cpp",
         "valarray": "cpp",
         "vector": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "filesystem": "cpp"
     }
 }

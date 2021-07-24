@@ -6,33 +6,49 @@
 #include "cast_tester.h"
 #include "test_macros.h"
 
+/**
+ * We use std::string_view throughout because it is easier to stress
+ * memory overflows with std::string_view instances than with
+ * std::string instances, given that the latter have their own
+ * memory allocators (e.g., with short string optimizations). E.g.,
+ * you might run the tests under valgrind or some sanitizer.
+ */
 template<typename T, typename F>
-bool test_ondemand(simdjson::ondemand::parser &parser, const std::string &json, const F& f) {
+bool test_ondemand(simdjson::ondemand::parser &parser, std::string_view json, const F& f) {
   auto doc = parser.iterate(json);
   T val;
   ASSERT_SUCCESS( doc.get(val) );
   return f(val);
 }
 template<typename T, typename F>
-bool test_ondemand(const std::string &json, const F& f) {
+bool test_ondemand(std::string_view json, const F& f) {
   simdjson::ondemand::parser parser;
   return test_ondemand<T, F>(parser, json, f);
 }
 
 template<typename F>
-bool test_ondemand_doc(simdjson::ondemand::parser &parser, const std::string &json, const F& f) {
+bool test_ondemand_doc(simdjson::ondemand::parser &parser, std::string_view json, const F& f) {
   return f(parser.iterate(json));
 }
 template<typename F>
-bool test_ondemand_doc(const std::string &json, const F& f) {
+bool test_ondemand_doc(std::string_view json, const F& f) {
   simdjson::ondemand::parser parser;
   return test_ondemand_doc(parser, json, f);
 }
 
+/**
+ * In the following macro, we allocate just what is needed.
+ * The goal is to make sure it allows us to detect memory
+ * overflows and similar problems (when running the tests
+ * under valgrind or under a sanitizer).
+ */
 #define ONDEMAND_SUBTEST(NAME, JSON, TEST) \
 { \
   std::cout << "- Subtest " << NAME << " - JSON: " << (JSON) << " ..." << std::endl; \
-  if (!test_ondemand_doc(JSON##s, [&](auto doc) { \
+  std::unique_ptr<char[]> p(new char[strlen(JSON)]); \
+  std::memcpy(p.get(), JSON, strlen(JSON)); \
+  std::string_view view(p.get(), strlen(JSON)); \
+  if (!test_ondemand_doc(view, [&](auto doc) { \
     return (TEST); \
   })) { \
     return false; \
