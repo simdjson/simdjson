@@ -90,9 +90,12 @@ namespace object_tests {
   bool missing_keys() {
     TEST_START();
     simdjson::ondemand::parser parser;
-    std::string docdata =  R"([{"a":"a"},{}])";
+    // We want to stress memory overflows.
+    const char* staticdoc = R"([{"a":"a"},{}])";
+    std::unique_ptr<char[]> docdata(new char[strlen(staticdoc)]);
+    std::memcpy(docdata.get(), staticdoc, strlen(staticdoc));
     simdjson::ondemand::document doc;
-    auto error = parser.iterate(docdata).get(doc);
+    auto error = parser.iterate(docdata.get(), strlen(staticdoc)).get(doc);
     if(error != simdjson::SUCCESS) { return false; }
     simdjson::ondemand::array a;
     error = doc.get_array().get(a);
@@ -110,9 +113,12 @@ namespace object_tests {
   bool missing_keys_for_empty_top_level_object() {
     TEST_START();
     simdjson::ondemand::parser parser;
-    const char* docdata = "{}";
+    std::unique_ptr<char[]> docdata(new char[2]);
+    // We want to stress memory overflows.
+    const char* staticdoc = "{}";
+    std::memcpy(docdata.get(), staticdoc, 2);
     simdjson::ondemand::document doc;
-    auto error = parser.iterate(docdata, strlen(docdata)).get(doc);
+    auto error = parser.iterate(docdata.get(), 2).get(doc);
     if(error != simdjson::SUCCESS) { return false; }
     error = doc.find_field_unordered("keynotfound").error();
     if(error != simdjson::NO_SUCH_FIELD) {
