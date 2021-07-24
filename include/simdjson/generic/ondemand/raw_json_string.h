@@ -53,8 +53,11 @@ public:
    * This compares the current instance to the std::string_view target: returns true if
    * they are byte-by-byte equal (no escaping is done) on target.size() characters,
    * and if the raw_json_string instance has a quote character at byte index target.size().
-   * We never read more than length + 1 bytes in the raw_json_string instance.
-   * If length is smaller than target.size(), this will return false.
+   * We never read more than max_key_length_including_final_quote bytes in the raw_json_string instance.
+   * If max_key_length_including_final_quote is smaller than target.size() + 1, this will return false.
+   *
+   * max_key_length_including_final_quote is the maximal key length in bytes, not including
+   * the leading quote.
    *
    * The std::string_view instance may contain any characters. However, the caller
    * is responsible for setting length so that length bytes may be read in the
@@ -63,7 +66,7 @@ public:
    * Performance: the comparison may be done using memcmp which may be efficient
    * for long strings.
    */
-  simdjson_really_inline bool unsafe_is_equal(size_t length, std::string_view target) const noexcept;
+  simdjson_really_inline bool unsafe_is_equal(size_t max_key_length_including_final_quote, std::string_view target) const noexcept;
 
   /**
    * This compares the current instance to the std::string_view target: returns true if

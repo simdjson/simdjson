@@ -52,9 +52,11 @@ simdjson_really_inline bool raw_json_string::is_free_from_unescaped_quote(const 
 }
 
 
-simdjson_really_inline bool raw_json_string::unsafe_is_equal(size_t length, std::string_view target) const noexcept {
+simdjson_really_inline bool raw_json_string::unsafe_is_equal(size_t max_key_length_including_final_quote, std::string_view target) const noexcept {
   // If we are going to call memcmp, then we must know something about the length of the raw_json_string.
-  return (length >= target.size()) && (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
+  if(max_key_length_including_final_quote <= target.size()) { return false; }
+  // It is now safe to read in [0, target.size()].
+  return (raw()[target.size()] == '"') && (memcmp(raw(), target.data(), target.size()) == 0);
 }
 
 simdjson_really_inline bool raw_json_string::unsafe_is_equal(std::string_view target) const noexcept {
