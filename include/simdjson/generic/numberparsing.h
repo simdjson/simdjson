@@ -310,7 +310,12 @@ bool parse_float_fallback(const uint8_t * const ptr, const uint8_t * const end, 
 // http://0x80.pl/articles/swar-digits-validate.html
 simdjson_really_inline bool is_made_of_eight_digits_fast(const uint8_t * const chars, const uint8_t * const end) {
   uint64_t val;
-  if (end != nullptr && (end-chars) < 8) { return false; }
+  // end == nullptr is forbidden here since we have SIMDJSON_SWAR_NUMBER_PARSING
+#ifndef SIMDJSON_SWAR_NUMBER_PARSING
+#warning "You should never call is_made_of_eight_digits_fast given that SIMDJSON_SWAR_NUMBER_PARSING is undefined."
+#endif
+  SIMDJSON_ASSUME(end != nullptr);
+  if ((end-chars) < 8) { return false; }
   std::memcpy(&val, chars, 8);
   // a branchy method might be faster:
   // return (( val & 0xF0F0F0F0F0F0F0F0 ) == 0x3030303030303030)
@@ -365,7 +370,7 @@ simdjson_really_inline error_code parse_decimal(simdjson_unused const uint8_t * 
   // the integer into a float in a lossless manner.
   const uint8_t * const first_after_period = p;
 
-#ifdef SWAR_NUMBER_PARSING
+#ifdef SIMDJSON_SWAR_NUMBER_PARSING
   // this helps if we have lots of decimals!
   // this turns out to be frequent enough.
   if (is_made_of_eight_digits_fast(p, end)) {
@@ -503,7 +508,7 @@ simdjson_really_inline error_code write_float(const uint8_t * const src, const u
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_really_inline error_code parse_number(const uint8_t * const, W &writer, const uint8_t * const = nullptr) {
+simdjson_really_inline error_code parse_number(const uint8_t * const, W &writer, const uint8_t * const) {
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -524,7 +529,7 @@ simdjson_really_inline simdjson_result<double> parse_double(const uint8_t * cons
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_really_inline error_code parse_number(const uint8_t * const src, W &writer, const uint8_t * const end = nullptr) {
+simdjson_really_inline error_code parse_number(const uint8_t * const src, W &writer, const uint8_t * const end) {
   //
   // Check for minus sign
   //
@@ -784,6 +789,12 @@ simdjson_really_inline simdjson_result<double> parse_double(const uint8_t * src,
 
   //
   // Parse the decimal part.
+  //
+  // performance todo: we could use SWAR here to quickly processing
+  // digits in blocs of, say, eight digits. Doing so requires that
+  // we always have access to some estimation of the end of the buffer.
+  // Currently, we only have that for root numbers in the On Demand API,
+  // so it is not terribly useful for performance purposes.
   //
   int64_t exponent = 0;
   bool overflow;
