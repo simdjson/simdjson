@@ -19,8 +19,8 @@ task:
   build_script:
     - mkdir build
     - cd build
-    - cmake -DSIMDJSON_BASH=OFF  -DSIMDJSON_GIT=OFF ..
-    - make
+    - cmake -DSIMDJSON_BASH=OFF   -DSIMDJSON_DEVELOPER_MODE=ON  -DSIMDJSON_GIT=OFF ..
+    - cmake --build .
   test_script:
     - cd build
     - ctest --output-on-failure -LE explicitonly

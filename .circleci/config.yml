@@ -88,13 +88,13 @@ commands:
     steps:
       - cmake_prep
       - dependency_restore
-      - run: cmake $CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination -B build .
+      - run: cmake  -DSIMDJSON_DEVELOPER_MODE=ON $CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination -B build .
       - dependency_cache # dependencies are produced in the configure step
 
   cmake_build:
     steps:
       - cmake_build_cache
-      - run: cmake --build build
+      - run: cmake  --build build
 
   cmake_test:
     steps:

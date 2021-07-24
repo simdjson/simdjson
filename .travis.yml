@@ -183,7 +183,7 @@ install:
 script:
   - mkdir build
   - cd build
-  - cmake $CMAKE_FLAGS ..
+  - cmake   -DSIMDJSON_DEVELOPER_MODE=ON $CMAKE_FLAGS ..
   - cmake --build . -- -j2
   - SIMDJSON_FORCE_IMPLEMENTATION=ppc64 ctest $CTEST_FLAGS -L per_implementation
   - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
