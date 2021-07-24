@@ -28,12 +28,15 @@ public:
     return buf[*next_structural];
   }
   simdjson_really_inline const uint8_t* peek() {
+    if(at_end_of_input_buffer()) { return " ";}
     return &buf[*next_structural];
   }
   simdjson_really_inline const uint8_t* advance() {
+    if(at_end_of_input_buffer()) { return " ";}
     return &buf[*(next_structural++)];
   }
   simdjson_really_inline char advance_char() {
+    if(at_end_of_input_buffer()) { return " ";}
     return buf[*(next_structural++)];
   }
   simdjson_really_inline size_t remaining_len() {

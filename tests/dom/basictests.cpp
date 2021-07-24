@@ -2151,6 +2151,13 @@ bool simple_overflows() {
     delete[] tmp;
   }
 
+  for (const char * val : {"[[]", "{\"a\":[[]"}) {
+    char * tmp = new char[strlen(val)];
+    memcpy(tmp, val, strlen(val));
+    ASSERT_ERROR( parser.parse(tmp, strlen(val)).get(doc), simdjson::TAPE_ERROR);
+    delete[] tmp;
+  }
+
   ASSERT_ERROR( parser.parse(std::string("[f]")).get(doc), simdjson::F_ATOM_ERROR);
   ASSERT_ERROR( parser.parse(std::string("[t]")).get(doc), simdjson::T_ATOM_ERROR);
   ASSERT_ERROR( parser.parse(std::string("[n]")).get(doc), simdjson::N_ATOM_ERROR);
