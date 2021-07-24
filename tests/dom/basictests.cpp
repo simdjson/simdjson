@@ -1978,6 +1978,7 @@ namespace to_string_tests {
     return true;
   }
 
+
   bool print_to_string_large_int() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
@@ -2117,6 +2118,49 @@ namespace to_string_tests {
   }
 }
 
+bool simple_overflows() {
+  std::cout << "Running " << __func__ << std::endl;
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+
+  for (const char * val : {"[f]", "{\"a\":f}"}) {
+    char * tmp = new char[strlen(val)];
+    memcpy(tmp, val, strlen(val));
+    ASSERT_ERROR( parser.parse(tmp, strlen(val)).get(doc), simdjson::F_ATOM_ERROR);
+    delete[] tmp;
+  }
+
+  for (const char * val : {"[t]", "{\"a\":t}"}) {
+    char * tmp = new char[strlen(val)];
+    memcpy(tmp, val, strlen(val));
+    ASSERT_ERROR( parser.parse(tmp, strlen(val)).get(doc), simdjson::T_ATOM_ERROR);
+    delete[] tmp;
+  }
+
+  for (const char * val : {"[n]", "{\"a\":n}"}) {
+    char * tmp = new char[strlen(val)];
+    memcpy(tmp, val, strlen(val));
+    ASSERT_ERROR( parser.parse(tmp, strlen(val)).get(doc), simdjson::N_ATOM_ERROR);
+    delete[] tmp;
+  }
+
+  for (const char * val : {"[-]", "{\"a\":-}"}) {
+    char * tmp = new char[strlen(val)];
+    memcpy(tmp, val, strlen(val));
+    ASSERT_ERROR( parser.parse(tmp, strlen(val)).get(doc), simdjson::NUMBER_ERROR);
+    delete[] tmp;
+  }
+
+  ASSERT_ERROR( parser.parse(std::string("[f]")).get(doc), simdjson::F_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("[t]")).get(doc), simdjson::T_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("[n]")).get(doc), simdjson::N_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("[-]")).get(doc), simdjson::NUMBER_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("{\"a\":f}")).get(doc), simdjson::F_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("{\"a\":t}")).get(doc), simdjson::T_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("{\"a\":n}")).get(doc), simdjson::N_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("{\"a\":-}")).get(doc), simdjson::NUMBER_ERROR);
+  return true;
+}
 
 
 int main(int argc, char *argv[]) {
@@ -2154,7 +2198,8 @@ int main(int argc, char *argv[]) {
   std::cout << "------------------------------------------------------------" << std::endl;
 
   std::cout << "Running basic tests." << std::endl;
-  if (to_string_tests::run() &&
+  if (simple_overflows() &&
+      to_string_tests::run() &&
       validate_tests::run() &&
       minify_tests::run() &&
       parse_api_tests::run() &&

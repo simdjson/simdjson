@@ -451,11 +451,11 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
 simdjson_really_inline simdjson_result<bool> value_iterator::parse_bool(uint32_t max_len, const uint8_t *json) const noexcept {
   if (max_len >= 4) {
-    if (!atomparsing::str4ncmp(json, "true")) {
+    if (!atomparsing::str4ncmp_unsafe(json, "true")) {
       if (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[4])) {
         return simdjson_result<bool>(true);
       }
-    } else if (!atomparsing::str4ncmp(json, "fals") && max_len >= 5 && json[4] == 'e') {
+    } else if (!atomparsing::str4ncmp_unsafe(json, "fals") && max_len >= 5 && json[4] == 'e') {
       if (max_len == 5 || jsoncharutils::is_structural_or_whitespace(json[5])) {
         return simdjson_result<bool>(false);
       }
@@ -471,7 +471,7 @@ simdjson_really_inline bool value_iterator::is_null() noexcept {
 
 simdjson_really_inline bool value_iterator::parse_null(uint32_t max_len, const uint8_t *json) const noexcept {
   if (max_len >= 4) {
-    if (!atomparsing::str4ncmp(json, "null")) {
+    if (!atomparsing::str4ncmp_unsafe(json, "null")) {
       if (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[4])) {
         return true;
       }
