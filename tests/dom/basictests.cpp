@@ -2116,7 +2116,20 @@ namespace to_string_tests {
   }
 }
 
-
+bool simple_overflows() {
+  std::cout << "Running " << __func__ << std::endl;
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  ASSERT_ERROR( parser.parse(std::string("[f]")).get(doc), simdjson::F_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("[t]")).get(doc), simdjson::T_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("[n]")).get(doc), simdjson::N_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("[-]")).get(doc), simdjson::NUMBER_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("{\"a\":f}")).get(doc), simdjson::F_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("{\"a\":t}")).get(doc), simdjson::T_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("{\"a\":n}")).get(doc), simdjson::N_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse(std::string("{\"a\":-}")).get(doc), simdjson::NUMBER_ERROR);
+  return true;
+}
 
 int main(int argc, char *argv[]) {
   std::cout << std::unitbuf;
@@ -2141,7 +2154,6 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
   }
-
   // this is put here deliberately to check that the documentation is correct (README),
   // should this fail to compile, you should update the documentation:
   if (simdjson::active_implementation->name() == "unsupported") {
@@ -2153,7 +2165,8 @@ int main(int argc, char *argv[]) {
   std::cout << "------------------------------------------------------------" << std::endl;
 
   std::cout << "Running basic tests." << std::endl;
-  if (to_string_tests::run() &&
+  if (simple_overflows() &&
+      to_string_tests::run() &&
       validate_tests::run() &&
       minify_tests::run() &&
       parse_api_tests::run() &&

@@ -146,11 +146,20 @@ public:
    */
   simdjson_really_inline uint32_t peek_length(int32_t delta=0) const noexcept;
   /**
+   * Get a pointer to the current location in the input buffer.
+   *
+   * This is not null-terminated; it is a view into the JSON.
+   *
+   * You may be pointing outside of the input buffer: it is not generally
+   * safe to derefence this pointer.
+   */
+  simdjson_really_inline const uint8_t *unsafe_pointer() const noexcept;
+  /**
    * Get the JSON text for a given token.
    *
    * This is not null-terminated; it is a view into the JSON.
    *
-   * @param index The position of the token to retrieve.
+   * @param position The position of the token to retrieve.
    *
    * TODO consider a string_view, assuming the length will get stripped out by the optimizer when
    * it isn't used ...
@@ -161,7 +170,7 @@ public:
    *
    * The length will include any whitespace at the end of the token.
    *
-   * @param index The position of the token to retrieve.
+   * @param position The position of the token to retrieve.
    */
   simdjson_really_inline uint32_t peek_length(token_position position) const noexcept;
   /**

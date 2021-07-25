@@ -3,6 +3,12 @@
 #
 add_library(simdjson-internal-flags INTERFACE)
 
+
+option(SIMDJSON_CHECK_EOF "Check for the end of the input buffer. The setting is unnecessary since we require padding of the inputs. You should expect tests to fail with this option turned on." OFF)
+if(SIMDJSON_CHECK_EOF)
+  add_compile_definitions(SIMDJSON_CHECK_EOF=1)
+endif()
+
 option(SIMDJSON_SANITIZE_UNDEFINED "Sanitize undefined behavior" OFF)
 if(SIMDJSON_SANITIZE_UNDEFINED)
   add_compile_options(-fsanitize=undefined -fno-sanitize-recover=all)

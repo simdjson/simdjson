@@ -735,7 +735,7 @@ namespace document_stream_tests {
   bool document_stream_test() {
     std::cout << "Running " << __func__ << std::endl;
     fflush(NULL);
-    const size_t n_records = 10000;
+    const size_t n_records = 100;
     std::string data;
     std::vector<char> buf(1024);
     for (size_t i = 0; i < n_records; ++i) {
@@ -775,7 +775,7 @@ namespace document_stream_tests {
   bool document_stream_utf8_test() {
     std::cout << "Running " << __func__ << std::endl;
     fflush(NULL);
-    const size_t n_records = 10000;
+    const size_t n_records = 100;
     std::string data;
     std::vector<char> buf(1024);
     for (size_t i = 0; i < n_records; ++i) {

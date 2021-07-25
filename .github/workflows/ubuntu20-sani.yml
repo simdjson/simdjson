@@ -1,4 +1,4 @@
-name: Ubuntu 20.04 CI (GCC 9) with Thread Sanitizer
+name: Ubuntu 20.04 CI (GCC 9) With Memory Sanitizer
 
 on: [push, pull_request]
 
@@ -16,9 +16,8 @@ jobs:
           key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
       - name: Use cmake
         run: |
-          mkdir build &&
-          cd build &&
-          cmake  -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_SANITIZE_THREADS=ON ..  &&
-          cmake --build . --target document_stream_tests  --target ondemand_document_stream_tests --target parse_many_test  &&
-          ctest --output-on-failure  -R parse_many_test  &&
-          ctest --output-on-failure  -R document_stream_tests
+          mkdir builddebug &&
+          cd builddebug &&
+          cmake -DSIMDJSON_SANITIZE=ON -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF ..  &&
+          cmake --build .   &&
+          ctest -j --output-on-failure -LE explicitonly

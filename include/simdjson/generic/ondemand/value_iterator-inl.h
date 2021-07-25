@@ -46,10 +46,10 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 }
 
 simdjson_warn_unused simdjson_really_inline error_code value_iterator::end_container() noexcept {
-#if __SIMDJSON_CHECK_EOF
+#if SIMDJSON_CHECK_EOF
     if (depth() > 1 && at_end()) { return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing parent ] or }"); }
     // if (depth() <= 1 && !at_end()) { return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing [ or { at start"); }
-#endif // __SIMDJSON_CHECK_EOF
+#endif // SIMDJSON_CHECK_EOF
     _json_iter->ascend_to(depth()-1);
     return SUCCESS;
 }
@@ -130,6 +130,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
     // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    // Note: _json_iter->peek_length() - 2 might overflow if _json_iter->peek_length() < 2.
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
@@ -260,6 +261,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
     // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    // Note: _json_iter->peek_length() - 2 might overflow if _json_iter->peek_length() < 2.
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
@@ -309,6 +311,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
     // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    // Note: _json_iter->peek_length() - 2 might overflow if _json_iter->peek_length() < 2.
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     error = field_key().get(actual_key); SIMDJSON_ASSUME(!error);

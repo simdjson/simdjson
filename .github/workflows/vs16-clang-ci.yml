@@ -1,12 +1,6 @@
 name: VS16-CLANG-CI
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+on: [push, pull_request]
 
 jobs:
   ci:
@@ -31,7 +25,7 @@ jobs:
         buildWithCMake: true
         cmakeAppendedArgs:  -T ClangCL -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF
         buildWithCMakeArgs: --config Release
-    
+
     - name: 'Run CTest'
       run: ctest -C Release -LE explicitonly  --output-on-failure
       working-directory: "${{ github.workspace }}/../../_temp/windows"

@@ -129,8 +129,6 @@ public:
    * those bytes are initialized to, as long as they are allocated.
    *
    * @param json The JSON to parse.
-   * @param len The length of the JSON.
-   * @param allocated The number of bytes allocated in the JSON (must be at least len+SIMDJSON_PADDING).
    *
    * @return The iterator, or an error:
    *         - INSUFFICIENT_PADDING if the input has less than SIMDJSON_PADDING extra bytes.
@@ -143,6 +141,67 @@ public:
    */
   simdjson_warn_unused simdjson_result<json_iterator> iterate_raw(padded_string_view json) & noexcept;
 
+
+  /**
+   * Parse a buffer containing many JSON documents.
+   *
+   *   auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
+   *   ondemand::parser parser;
+   *   ondemand::document_stream docs = parser.iterate_many(json);
+   *   for (auto & doc : docs) {
+   *     std::cout << doc["foo"] << std::endl;
+   *   }
+   *   // Prints 1 2 3
+   *
+   * No copy of the input buffer is made.
+   *
+   * The function is lazy: it may be that no more than one JSON document at a time is parsed.
+   *
+   * The caller is responsabile to ensure that the input string data remains unchanged and is
+   * not deleted during the loop.
+   *
+   * ### Format
+   *
+   * The buffer must contain a series of one or more JSON documents, concatenated into a single
+   * buffer, separated by whitespace. It effectively parses until it has a fully valid document,
+   * then starts parsing the next document at that point. (It does this with more parallelism and
+   * lookahead than you might think, though.)
+   *
+   * documents that consist of an object or array may omit the whitespace between them, concatenating
+   * with no separator. documents that consist of a single primitive (i.e. documents that are not
+   * arrays or objects) MUST be separated with whitespace.
+   *
+   * The documents must not exceed batch_size bytes (by default 1MB) or they will fail to parse.
+   * Setting batch_size to excessively large or excesively small values may impact negatively the
+   * performance.
+   *
+   * ### REQUIRED: Buffer Padding
+   *
+   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
+   * those bytes are initialized to, as long as they are allocated.
+   *
+   * ### Threads
+   *
+   * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
+   * hood to do some lookahead.
+   *
+   * ### Parser Capacity
+   *
+   * If the parser's current capacity is less than batch_size, it will allocate enough capacity
+   * to handle it (up to max_capacity).
+   *
+   * @param buf The concatenated JSON to parse.
+   * @param len The length of the concatenated JSON.
+   * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
+   *                   spot is cache-related: small enough to fit in cache, yet big enough to
+   *                   parse as many documents as possible in one tight loop.
+   *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   * @return The stream, or an error. An empty input will yield 0 documents rather than an EMPTY error. Errors:
+   *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails
+   *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
+   *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
+   *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
+   */
   inline simdjson_result<document_stream> iterate_many(const uint8_t *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> iterate_many(const char *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;

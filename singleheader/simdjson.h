@@ -10386,7 +10386,7 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
 } // namespace arm64
 } // namespace simdjson
 
-#define SWAR_NUMBER_PARSING
+#define SIMDJSON_SWAR_NUMBER_PARSING
 
 /* begin file include/simdjson/generic/numberparsing.h */
 #include <limits>
@@ -10743,7 +10743,7 @@ simdjson_really_inline error_code parse_decimal(simdjson_unused const uint8_t *c
   // the integer into a float in a lossless manner.
   const uint8_t *const first_after_period = p;
 
-#ifdef SWAR_NUMBER_PARSING
+#ifdef SIMDJSON_SWAR_NUMBER_PARSING
   // this helps if we have lots of decimals!
   // this turns out to be frequent enough.
   if (is_made_of_eight_digits_fast(p)) {
@@ -11826,7 +11826,7 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
 } // namespace fallback
 } // namespace simdjson
 
-#define SWAR_NUMBER_PARSING
+#define SIMDJSON_SWAR_NUMBER_PARSING
 /* begin file include/simdjson/generic/numberparsing.h */
 #include <limits>
 
@@ -12182,7 +12182,7 @@ simdjson_really_inline error_code parse_decimal(simdjson_unused const uint8_t *c
   // the integer into a float in a lossless manner.
   const uint8_t *const first_after_period = p;
 
-#ifdef SWAR_NUMBER_PARSING
+#ifdef SIMDJSON_SWAR_NUMBER_PARSING
   // this helps if we have lots of decimals!
   // this turns out to be frequent enough.
   if (is_made_of_eight_digits_fast(p)) {
@@ -13749,7 +13749,7 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
 } // namespace haswell
 } // namespace simdjson
 
-#define SWAR_NUMBER_PARSING
+#define SIMDJSON_SWAR_NUMBER_PARSING
 
 /* begin file include/simdjson/generic/numberparsing.h */
 #include <limits>
@@ -14106,7 +14106,7 @@ simdjson_really_inline error_code parse_decimal(simdjson_unused const uint8_t *c
   // the integer into a float in a lossless manner.
   const uint8_t *const first_after_period = p;
 
-#ifdef SWAR_NUMBER_PARSING
+#ifdef SIMDJSON_SWAR_NUMBER_PARSING
   // this helps if we have lots of decimals!
   // this turns out to be frequent enough.
   if (is_made_of_eight_digits_fast(p)) {
@@ -15772,7 +15772,7 @@ parse_eight_digits_unrolled(const uint8_t *chars) {
 } // namespace ppc64
 } // namespace simdjson
 
-#define SWAR_NUMBER_PARSING
+#define SIMDJSON_SWAR_NUMBER_PARSING
 
 /* begin file include/simdjson/generic/numberparsing.h */
 #include <limits>
@@ -16129,7 +16129,7 @@ simdjson_really_inline error_code parse_decimal(simdjson_unused const uint8_t *c
   // the integer into a float in a lossless manner.
   const uint8_t *const first_after_period = p;
 
-#ifdef SWAR_NUMBER_PARSING
+#ifdef SIMDJSON_SWAR_NUMBER_PARSING
   // this helps if we have lots of decimals!
   // this turns out to be frequent enough.
   if (is_made_of_eight_digits_fast(p)) {
@@ -17653,7 +17653,7 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
 } // namespace westmere
 } // namespace simdjson
 
-#define SWAR_NUMBER_PARSING
+#define SIMDJSON_SWAR_NUMBER_PARSING
 
 /* begin file include/simdjson/generic/numberparsing.h */
 #include <limits>
@@ -18010,7 +18010,7 @@ simdjson_really_inline error_code parse_decimal(simdjson_unused const uint8_t *c
   // the integer into a float in a lossless manner.
   const uint8_t *const first_after_period = p;
 
-#ifdef SWAR_NUMBER_PARSING
+#ifdef SIMDJSON_SWAR_NUMBER_PARSING
   // this helps if we have lots of decimals!
   // this turns out to be frequent enough.
   if (is_made_of_eight_digits_fast(p)) {

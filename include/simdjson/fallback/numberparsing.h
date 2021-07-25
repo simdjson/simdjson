@@ -27,7 +27,8 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#define SWAR_NUMBER_PARSING
+#define SIMDJSON_SWAR_NUMBER_PARSING 1
+
 #include "simdjson/generic/numberparsing.h"
 
 #endif // SIMDJSON_FALLBACK_NUMBERPARSING_H
