@@ -88,10 +88,10 @@ namespace object_error_tests {
   }
   bool object_lookup_unclosed_error() {
     TEST_START();
-  #if __SIMDJSON_CHECK_EOF
+  #if SIMDJSON_CHECK_EOF
     ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_error(doc["a"], INCOMPLETE_ARRAY_OR_OBJECT));
   #else
-    ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_success(doc["a"]));
+    ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_error(doc["a"], INCOMPLETE_ARRAY_OR_OBJECT));
   #endif
     ONDEMAND_SUBTEST("unclosed", R"({ "a"             )",    assert_error(doc["a"], INCOMPLETE_ARRAY_OR_OBJECT));
     ONDEMAND_SUBTEST("unclosed", R"({                 )",    assert_error(doc["a"], INCOMPLETE_ARRAY_OR_OBJECT));

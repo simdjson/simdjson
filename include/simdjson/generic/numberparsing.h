@@ -367,14 +367,16 @@ simdjson_really_inline error_code parse_decimal(simdjson_unused const uint8_t *c
   // the integer into a float in a lossless manner.
   const uint8_t *const first_after_period = p;
 
-#ifdef SWAR_NUMBER_PARSING
+#ifdef SIMDJSON_SWAR_NUMBER_PARSING
+#if SIMDJSON_SWAR_NUMBER_PARSING
   // this helps if we have lots of decimals!
   // this turns out to be frequent enough.
   if (is_made_of_eight_digits_fast(p)) {
     i = i * 100000000 + parse_eight_digits_unrolled(p);
     p += 8;
   }
-#endif
+#endif // SIMDJSON_SWAR_NUMBER_PARSING
+#endif // #ifdef SIMDJSON_SWAR_NUMBER_PARSING
   // Unrolling the first digit makes a small difference on some implementations (e.g. westmere)
   if (parse_digit(*p, i)) { ++p; }
   while (parse_digit(*p, i)) { p++; }
@@ -441,9 +443,7 @@ simdjson_really_inline size_t significant_digits(const uint8_t * start_digits, s
   // It is possible that the integer had an overflow.
   // We have to handle the case where we have 0.0000somenumber.
   const uint8_t *start = start_digits;
-  while ((*start == '0') || (*start == '.')) {
-    start++;
-  }
+  while ((*start == '0') || (*start == '.')) { ++start; }
   // we over-decrement by one when there is a '.'
   return digit_count - size_t(start - start_digits);
 }

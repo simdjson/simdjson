@@ -315,7 +315,7 @@ namespace document_stream_tests {
     bool document_stream_test() {
         TEST_START();
         fflush(NULL);
-        const size_t n_records = 10000;
+        const size_t n_records = 100;
         std::string data;
         std::vector<char> buf(1024);
         // Generating data
@@ -352,7 +352,7 @@ namespace document_stream_tests {
     bool document_stream_utf8_test() {
         TEST_START();
         fflush(NULL);
-        const size_t n_records = 10000;
+        const size_t n_records = 100;
         std::string data;
         std::vector<char> buf(1024);
         // Generating data

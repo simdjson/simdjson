@@ -82,7 +82,10 @@ simdjson_really_inline simdjson_result<std::string_view> array::raw_json() noexc
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
   if(error) { return error; }
-  const uint8_t * final_point{iter._json_iter->peek(0)};
+  // After 'consume()', we could be left pointing just beyond the document, but that
+  // is ok because we are not going to dereference the final pointer position, we just
+  // use it to compute the length in bytes.
+  const uint8_t * final_point{iter._json_iter->unsafe_pointer()};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 

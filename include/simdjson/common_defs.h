@@ -253,11 +253,8 @@ namespace std {
 #endif
 #endif
 
-// Feature flag for partially-implemented "don't require padding" feature
-// TODO remove once feature complete.
-#ifndef __SIMDJSON_CHECK_EOF
-# define __SIMDJSON_CHECK_EOF 1
-#endif
+// The SIMDJSON_CHECK_EOF macro is a feature flag for the "don't require padding"
+// feature.
 
 #if SIMDJSON_CPLUSPLUS17
 // if we have C++, then fallthrough is a default attribute
@@ -268,11 +265,11 @@ namespace std {
 #if __has_attribute(__fallthrough__)
 // we are good to go:
 # define simdjson_fallthrough                    __attribute__((__fallthrough__))
-#endif
-#endif
+#endif // __has_attribute(__fallthrough__)
+#endif // SIMDJSON_CPLUSPLUS17
 // on some systems, we simply do not have support for fallthrough, so use a default:
 #ifndef simdjson_fallthrough
 # define simdjson_fallthrough do {} while (0)  /* fallthrough */
-#endif
+#endif // simdjson_fallthrough
 
 #endif // SIMDJSON_COMMON_DEFS_H
