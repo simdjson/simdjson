@@ -107,12 +107,76 @@ namespace number_in_string_tests {
         TEST_SUCCEED();
     }
 
+    bool number_parsing_error() {
+        TEST_START();
+        auto json = R"( ["13.06.54", "1.0e", "2e3r4,,."])"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        size_t counter{0};
+        std::string expected[3] = {"13.06.54", "1.0e", "2e3r4,,."};
+        for (auto value : doc) {
+            double d;
+            std::string_view view;
+            ASSERT_ERROR(value.get_double_in_string().get(d),NUMBER_ERROR);
+            ASSERT_SUCCESS(value.get_string().get(view));
+            ASSERT_EQUAL(view,expected[counter++]);
+        }
+        ASSERT_EQUAL(counter,3);
+        TEST_SUCCEED();
+    }
+
+    bool incorrect_type_error() {
+        TEST_START();
+        auto json = R"( ["e", "i", "pi", "one", "zero"])"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        size_t counter{0};
+        std::string expected[5] = {"e", "i", "pi", "one", "zero"};
+        for (auto value : doc) {
+            double d;
+            std::string_view view;
+            ASSERT_ERROR(value.get_double_in_string().get(d),INCORRECT_TYPE);
+            ASSERT_SUCCESS(value.get_string().get(view));
+            ASSERT_EQUAL(view,expected[counter++]);
+        }
+        ASSERT_EQUAL(counter,5);
+        TEST_SUCCEED();
+    }
+
+    bool json_pointer_test() {
+        TEST_START();
+        auto json = R"( ["12.34", { "a":["3","5.6"], "b":{"c":"1.23e1"} }, ["1", "3.5"] ])"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        std::vector<double> expected = {12.34, 5.6, 12.3, 1, 3.5};
+        size_t counter{0};
+        double d;
+        ASSERT_SUCCESS(doc.at_pointer("/0").get_double_in_string().get(d));
+        ASSERT_EQUAL(d,expected[counter++]);
+        ASSERT_SUCCESS(doc.at_pointer("/1/a/1").get_double_in_string().get(d));
+        ASSERT_EQUAL(d,expected[counter++]);
+        ASSERT_SUCCESS(doc.at_pointer("/1/b/c").get_double_in_string().get(d));
+        ASSERT_EQUAL(d,expected[counter++]);
+        ASSERT_SUCCESS(doc.at_pointer("/2/0").get_double_in_string().get(d));
+        ASSERT_EQUAL(d,expected[counter++]);
+        ASSERT_SUCCESS(doc.at_pointer("/2/1").get_double_in_string().get(d));
+        ASSERT_EQUAL(d,expected[counter++]);
+        ASSERT_EQUAL(counter,5);
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return  array_double() &&
                 array_int() &&
                 array_unsigned() &&
                 object() &&
                 docs() &&
+                number_parsing_error() &&
+                incorrect_type_error() &&
+                json_pointer_test() &&
                 true;
     }
 }   // number_in_string_tests
