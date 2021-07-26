@@ -990,22 +990,21 @@ format. If your JSON documents all contain arrays or objects, we even support di
 concatenation without whitespace. The concatenated file has no size restrictions (including larger
 than 4GB), though each individual document must be no larger than 4 GB.
 
-Here is a simple example:
+Here is an example:
 
 ```c++
 auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
 ondemand::parser parser;
 ondemand::document_stream docs = parser.iterate_many(json);
-for (auto & doc : docs) {
+for (auto doc : docs) {
   std::cout << doc["foo"] << std::endl;
 }
 // Prints 1 2 3
 ```
 
-It is important to note that the iteration returns a `document` reference, and hence why the `&` is needed.
 
 Unlike `parser.iterate`, `parser.iterate_many` may parse "on demand" (lazily). That is, no parsing may have been done before you enter the loop
-`for (auto & doc : docs) {` and you should expect the parser to only ever fully parse one JSON document at a time.
+`for (auto doc : docs) {` and you should expect the parser to only ever fully parse one JSON document at a time.
 
 As with `parser.iterate`, when calling  `parser.iterate_many(string)`, no copy is made of the provided string input. The provided memory buffer may be accessed each time a JSON document is parsed.  Calling `parser.iterate_many(string)` on a  temporary string buffer (e.g., `docs = parser.parse_many("[1,2,3]"_padded)`) is unsafe (and will not compile) because the  `document_stream` instance needs access to the buffer to return the JSON documents.
 

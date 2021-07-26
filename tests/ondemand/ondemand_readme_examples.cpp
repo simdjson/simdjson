@@ -360,7 +360,7 @@ bool iterate_many_example() {
   size_t expected_indexes[3] = {0,9,29};
   std::string_view expected_doc[3] = {"[1,2,3]", R"({"1":1,"2":3,"4":4})", "[1,2,3]"};
   for(; i != stream.end(); ++i) {
-      auto & doc = *i;
+      auto doc = *i;
       ASSERT_SUCCESS(doc.type());
       ASSERT_SUCCESS(i.error());
       ASSERT_EQUAL(i.current_index(),expected_indexes[count]);
@@ -400,7 +400,7 @@ bool ndjson_basics_example() {
   ASSERT_SUCCESS( parser.iterate_many(json).get(docs) );
   size_t count{0};
   int64_t expected[3] = {1,2,3};
-  for (auto & doc : docs) {
+  for (auto doc : docs) {
     int64_t actual;
     ASSERT_SUCCESS( doc["foo"].get(actual) );
     ASSERT_EQUAL( actual,expected[count++] );

@@ -175,7 +175,7 @@ Let us illustrate the idea with code:
     auto i = stream.begin();
 	 size_t count{0};
     for(; i != stream.end(); ++i) {
-        auto & doc = *i;
+        auto doc = *i;
         if(!i.error()) {
           std::cout << "got full document at " << i.current_index() << std::endl;
           std::cout << i.source() << std::endl;
