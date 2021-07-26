@@ -397,41 +397,41 @@ namespace document_stream_tests {
     }
 
     bool stress_data_race() {
-    TEST_START();
-    // Correct JSON.
-    auto input = R"([1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
-    ondemand::parser parser;
-    ondemand::document_stream stream;
-    ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
-    for(auto i = stream.begin(); i != stream.end(); ++i) {
-      ASSERT_SUCCESS(i.error());
-    }
-    TEST_SUCCEED();
-  }
-
-  bool stress_data_race_with_error() {
-    TEST_START();
-    #if SIMDJSON_THREAD_ENABLED
-    std::cout << "ENABLED" << std::endl;
-    #endif
-    // Intentionally broken
-    auto input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;
-    ondemand::parser parser;
-    ondemand::document_stream stream;
-    ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
-    size_t count{0};
-    for(auto i = stream.begin(); i != stream.end(); ++i) {
-        auto error = i.error();
-        if(count <= 3) {
-            ASSERT_SUCCESS(error);
-        } else {
-            ASSERT_ERROR(error,TAPE_ERROR);
-            break;
+        TEST_START();
+        // Correct JSON.
+        auto input = R"([1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
+        for(auto i = stream.begin(); i != stream.end(); ++i) {
+            ASSERT_SUCCESS(i.error());
         }
-        count++;
+        TEST_SUCCEED();
     }
-    TEST_SUCCEED();
-  }
+
+    bool stress_data_race_with_error() {
+        TEST_START();
+        #if SIMDJSON_THREAD_ENABLED
+        std::cout << "ENABLED" << std::endl;
+        #endif
+        // Intentionally broken
+        auto input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
+        size_t count{0};
+        for(auto i = stream.begin(); i != stream.end(); ++i) {
+            auto error = i.error();
+            if(count <= 3) {
+                ASSERT_SUCCESS(error);
+            } else {
+                ASSERT_ERROR(error,TAPE_ERROR);
+                break;
+            }
+            count++;
+        }
+        TEST_SUCCEED();
+    }
 
     bool run() {
         return
