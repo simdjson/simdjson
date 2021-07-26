@@ -5,6 +5,37 @@
 using namespace simdjson;
 
 namespace number_in_string_tests {
+    const padded_string CRYPTO_JSON = R"(
+    {
+        "ticker":{
+            "base":"BTC",
+            "target":"USD",
+            "price":"443.7807865468",
+            "volume":"31720.1493969300",
+            "change":"Infinity",
+            "markets":[
+                {
+                    "market":"bitfinex",
+                    "price":"447.5000000000",
+                    "volume":"10559.5293639000"
+                },
+                {
+                    "market":"bitstamp",
+                    "price":"448.5400000000",
+                    "volume":"11628.2880079300"
+                },
+                {
+                    "market":"btce",
+                    "price":"432.8900000000",
+                    "volume":"8561.0563600000"
+                }
+            ]
+        },
+        "timestamp":1399490941,
+        "timestampstr":"1399490941"
+    }
+    )"_padded;
+
     bool array_double() {
         TEST_START();
         auto json = R"(["1.2","2.3","-42.3","2.43442e3", "-1.234e3"])"_padded;
@@ -168,6 +199,59 @@ namespace number_in_string_tests {
         TEST_SUCCEED();
     }
 
+    bool crypto_timestamp() {
+        TEST_START();
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(CRYPTO_JSON).get(doc));
+        uint64_t u;
+        ASSERT_SUCCESS(doc.at_pointer("/timestampstr").get_uint64_in_string().get(u));
+        ASSERT_EQUAL(u,1399490941);
+        TEST_SUCCEED();
+    }
+
+    bool crypto_market() {
+        TEST_START();
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(CRYPTO_JSON).get(doc));
+        ondemand::array markets;
+        ASSERT_SUCCESS(doc.find_field("ticker").find_field("markets").get_array().get(markets));
+        std::string_view expected_views[3] = {"bitfinex", "bitstamp", "btce"};
+        double expected_prices[3] = {447.5, 448.54, 432.89};
+        double expected_volumes[3] = {10559.5293639, 11628.28800793, 8561.05636};
+        size_t counter{0};
+        for (auto value : markets) {
+            std::string_view view;
+            double price;
+            double volume;
+            ASSERT_SUCCESS(value.find_field("market").get_string().get(view));
+            ASSERT_EQUAL(view,expected_views[counter]);
+            ASSERT_SUCCESS(value.find_field("price").get_double_in_string().get(price));
+            ASSERT_EQUAL(price,expected_prices[counter]);
+            ASSERT_SUCCESS(value.find_field("volume").get_double_in_string().get(volume));
+            ASSERT_EQUAL(volume,expected_volumes[counter]);
+            counter++;
+        }
+        ASSERT_EQUAL(counter,3);
+        TEST_SUCCEED();
+    }
+
+    bool crypto_infinity() {
+        TEST_START();
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(CRYPTO_JSON).get(doc));
+        ondemand::value value;
+        double d;
+        std::string_view view;
+        ASSERT_SUCCESS(doc.find_field("ticker").find_field("change").get(value));
+        ASSERT_ERROR(value.get_double_in_string().get(d), INCORRECT_TYPE);
+        ASSERT_SUCCESS(value.get_string().get(view));
+        ASSERT_EQUAL(view,"Infinity");
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return  array_double() &&
                 array_int() &&
@@ -177,6 +261,9 @@ namespace number_in_string_tests {
                 number_parsing_error() &&
                 incorrect_type_error() &&
                 json_pointer_test() &&
+                crypto_timestamp() &&
+                crypto_market() &&
+                crypto_infinity() &&
                 true;
     }
 }   // number_in_string_tests
