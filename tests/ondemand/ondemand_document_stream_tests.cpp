@@ -360,6 +360,28 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool issue1668_long() {
+        TEST_START();
+        auto json = R"([1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100])"_padded;
+
+        ondemand::parser odparser;
+        ondemand::document_stream odstream;
+        size_t counter{0};
+        ASSERT_SUCCESS( odparser.iterate_many(json.data(), json.length(), 50).get(odstream) );
+        for (auto doc: odstream) {
+            if(counter < 6) {
+                int64_t val;
+                ASSERT_SUCCESS(doc.at_pointer("/4").get(val));
+                ASSERT_EQUAL(val, 5);
+            } else {
+                ondemand::value val;
+                ASSERT_ERROR(doc.at_pointer("/4").get(val), CAPACITY);
+            }
+            counter++;
+        }
+        TEST_SUCCEED();
+    }
+
     bool document_stream_utf8_test() {
         TEST_START();
         fflush(NULL);
@@ -436,6 +458,7 @@ namespace document_stream_tests {
     bool run() {
         return
             issue1668() &&
+            issue1668_long() &&
             simple_document_iteration() &&
             simple_document_iteration_multiple_batches() &&
             simple_document_iteration_with_parsing() &&
