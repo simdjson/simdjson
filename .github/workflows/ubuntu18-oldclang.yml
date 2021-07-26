@@ -1,0 +1,31 @@
+name: Ubuntu 18.04 CI (LLVM 7)
+
+on: [push, pull_request]
+
+jobs:
+  ubuntu-build:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
+    runs-on: ubuntu-18.04
+
+    env:
+      CC: clang-7
+      CXX: clang++-7
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: dependencies/.cache
+          key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
+      - name: install clang 7
+        run: |
+          sudo apt update
+          sudo apt install clang-7
+      - name: Use cmake
+        run: |
+          mkdir build &&
+          cd build &&
+          cmake  -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
+          cmake --build .   &&
+          ctest -j --output-on-failure -LE explicitonly
