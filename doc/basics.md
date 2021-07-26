@@ -1011,6 +1011,47 @@ As with `parser.iterate`, when calling  `parser.iterate_many(string)`, no copy i
 
 The `iterate_many` function can also take an optional parameter `size_t batch_size` which defines the window processing size. It is set by default to a large value (`1000000` corresponding to 1 MB). None of your JSON documents should exceed this window size, or else you will get  the error `simdjson::CAPACITY`. You cannot set this window size larger than 4 GB: you will get  the error `simdjson::CAPACITY`. The smaller the window size is, the less memory the function will use. Setting the window size too small (e.g., less than 100 kB) may also impact performance negatively. Leaving it to 1 MB is expected to be a good choice, unless you have some larger documents.
 
+
+The following toy examples illustrates how to get capacity errors. It is an artificial example since you should never use a `batch_size` of 50 bytes (it is far too small).
+
+```c++
+// We are going to set the capacity to 50 bytes which means that we cannot
+// loading a document longer than 50 bytes. The first few documents are small,
+// but the last one is large. We will get an error at the last document.
+auto json = R"([1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100])"_padded;
+ondemand::parser parser;
+ondemand::document_stream stream;
+size_t counter{0};
+auto error = parser.iterate_many(json, 50).get(stream);
+if( error ) { /* handle the error */ }
+for (auto doc: stream) {
+  if(counter < 6) {
+    int64_t val;
+    error = doc.at_pointer("/4").get(val);
+    if( error ) { /* handle the error */ }
+    std::cout << "5 = " << val << std::endl;
+  } else {
+    ondemand::value val;
+    error = doc.at_pointer("/4").get(val);
+    // error == simdjson::CAPACITY
+    if(error) { std::cerr << error << std::endl;  break; }
+  }
+  counter++;
+}
+```
+
+This example should print out:
+
+```
+5 = 5
+5 = 5
+5 = 5
+5 = 5
+5 = 5
+5 = 5
+This parser can't support a document that big
+```
+
 If your documents are large (e.g., larger than a megabyte), then the `iterate_many` function is maybe ill-suited. It is really meant to support reading efficiently streams of relatively small documents (e.g., a few kilobytes each). If you have larger documents, you should use other functions like `iterate`.
 
 See [iterate_many.md](iterate_many.md) for detailed information and design.
