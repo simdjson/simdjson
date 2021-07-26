@@ -1022,9 +1022,12 @@ See [iterate_many.md](iterate_many.md) for detailed information and design.
 Parsing Numbers Inside Strings
 ------------------------------
 
-The simdjson library supports parsing valid numbers inside strings through three methods: `get_double_in_string`, `get_int64_in_string` and  `get_uint64_in_string`. However, it is important to
-note that these methods are not substitute to the regular `get_double`, `get_int64` and `get_uint64`. The usage of the `get_*_in_string` methods is solely to parse numbers inside strings, and so
-we expect users to call these methods appropriately. As an example, suppose we have the following JSON text:
+Though the JSON specification allows for numbers and string values, many engineers choose to integrate the numbers inside strings, e.g., they prefer `{"a":"1.9"}` to`{"a":1.9}`.
+The simdjson library supports parsing valid numbers inside strings which makes it more convenient for people working with those types of documents. This feature is supported through
+three methods: `get_double_in_string`, `get_int64_in_string` and  `get_uint64_in_string`. However, it is important to note that these methods are not substitute to the regular
+`get_double`, `get_int64` and `get_uint64`. The usage of the `get_*_in_string` methods is solely to parse valid JSON numbers inside strings, and so we expect users to call these
+methods appropriately. In particular, a valid JSON number has no leading and no trailing whitespaces, and the strings `"nan"`, `"1e"` and `"infinity"` will not be accepted as valid
+numbers. As an example, suppose we have the following JSON text:
 
 ```c++
 auto json =
