@@ -22,6 +22,7 @@ An overview of what you need to know to use simdjson, with examples.
 * [Rewinding](#rewinding)
 * [Direct Access to the Raw String](#direct-access-to-the-raw-string)
 * [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
+* [Parsing Numbers Inside Strings](#parsing-numbers-inside-strings)
 * [Thread Safety](#thread-safety)
 * [Standard Compliance](#standard-compliance)
 
@@ -984,7 +985,7 @@ The `raw_json_token()` should be fast and free of allocation.
 Newline-Delimited JSON (ndjson) and JSON lines
 ----------------------------------------------
 
-The simdjson library also support multithreaded JSON streaming through a large file containing many
+The simdjson library also supports multithreaded JSON streaming through a large file containing many
 smaller JSON documents in either [ndjson](http://ndjson.org) or [JSON lines](http://jsonlines.org)
 format. If your JSON documents all contain arrays or objects, we even support direct file
 concatenation without whitespace. The concatenated file has no size restrictions (including larger
@@ -1015,6 +1016,102 @@ As with `parser.iterate`, when calling  `parser.iterate_many(string)`, no copy i
 If your documents are large (e.g., larger than a megabyte), then the `iterate_many` function is maybe ill-suited. It is really meant to support reading efficiently streams of relatively small documents (e.g., a few kilobytes each). If you have larger documents, you should use other functions like `iterate`.
 
 See [iterate_many.md](iterate_many.md) for detailed information and design.
+
+
+
+Parsing Numbers Inside Strings
+------------------------------
+
+The simdjson library supports parsing valid numbers inside strings through three methods: `get_double_in_string`, `get_int64_in_string` and  `get_uint64_in_string`. However, it is important to
+note that these methods are not substitute to the regular `get_double`, `get_int64` and `get_uint64`. The usage of the `get_*_in_string` methods is solely to parse numbers inside strings, and so
+we expect users to call these methods appropriately. As an example, suppose we have the following JSON text:
+
+```c++
+auto json =
+{
+   "ticker":{
+      "base":"BTC",
+      "target":"USD",
+      "price":"443.7807865468",
+      "volume":"31720.1493969300",
+      "change":"Infinity",
+      "markets":[
+         {
+            "market":"bitfinex",
+            "price":"447.5000000000",
+            "volume":"10559.5293639000"
+         },
+         {
+            "market":"bitstamp",
+            "price":"448.5400000000",
+            "volume":"11628.2880079300"
+         },
+         {
+            "market":"btce",
+            "price":"432.8900000000",
+            "volume":"8561.0563600000"
+         }
+      ]
+   },
+   "timestamp":1399490941,
+   "timestampstr":"1399490941"
+}
+```
+
+Now, suppose that a user wants to get the time stamp from the `timestampstr` key. One could do the following:
+
+```c++
+ondemand::parser parser;
+auto doc = parser.iterate(json);
+uint64_t time = doc.at_pointer("/timestampstr").get_uint64_in_string();
+std::cout << time << std::endl;   // Prints 1399490941
+```
+
+Another thing a user might want to do is extract the `markets` array and get the market name, price and volume. Here is one way to do so:
+
+```c++
+ondemand::parser parser;
+auto doc = parser.iterate(json);
+
+// Getting markets array
+ondemand::array markets = doc.find_field("ticker").find_field("markets").get_array();
+// Iterating through markets array
+for (auto value : markets) {
+    std::cout << "Market: " << value.find_field("market").get_string();
+    std::cout << "\tPrice: " << value.find_field("price").get_double_in_string();
+    std::cout << "\tVolume: " << value.find_field("volume").get_double_in_string() << std::endl;
+}
+
+/* The above prints
+Market: bitfinex        Price: 447.5    Volume: 10559.5
+Market: bitstamp        Price: 448.54   Volume: 11628.3
+Market: btce    Price: 432.89   Volume: 8561.06
+*/
+```
+
+Finally, here is an example dealing with errors where the user wants to convert the string `"Infinity"`(`"change"` key) to a float with infinity value.
+
+```c++
+ondemand::parser parser;
+auto doc = parser.iterate(json);
+// Get "change"/"Infinity" key/value pair
+ondemand::value value = doc.find_field("ticker").find_field("change");
+double d;
+std::string_view view;
+auto error = value.get_double_in_string().get(d);
+// Check if parsed value into double successfully
+if (error) {
+  error = value.get_string().get(view);
+  if (error) { /* Handle error */ }
+  else if (view == "Infinity") {
+    d = std::numeric_limits::infinity();
+  }
+  else { /* Handle wrong value */ }
+}
+```
+It is also important to note that when dealing an invalid number inside a string, simdjson will report a `NUMBER_ERROR` error if the string begins with a number whereas simdjson
+will report a `INCORRECT_TYPE` error otherwise.
+
 
 Thread Safety
 -------------
