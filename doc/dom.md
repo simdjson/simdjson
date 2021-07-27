@@ -64,7 +64,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 
 * **Extracting Values (with exceptions):** You can cast a JSON element to a native type: `double(element)` or
   `double x = json_element`. This works for double, uint64_t, int64_t, bool,
-  dom::object and dom::array. An exception is thrown if the cast is not possible.
+  dom::object and dom::array. An exception (`simdjson::simdjson_error`) is thrown if the cast is not possible.
 * **Extracting Values (without exceptions):** You can use a variant usage of `get()` with error codes to avoid exceptions. You first declare the variable of the appropriate type (`double`, `uint64_t`, `int64_t`, `bool`,
   `dom::object` and `dom::array`) and pass it by reference to `get()` which gives you back an error code: e.g.,
   ```c++
