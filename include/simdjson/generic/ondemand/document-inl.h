@@ -64,11 +64,20 @@ simdjson_really_inline simdjson_result<object> document::get_object() & noexcept
 simdjson_really_inline simdjson_result<uint64_t> document::get_uint64() noexcept {
   return get_root_value_iterator().get_root_uint64();
 }
+simdjson_really_inline simdjson_result<uint64_t> document::get_uint64_in_string() noexcept {
+  return get_root_value_iterator().get_root_uint64_in_string();
+}
 simdjson_really_inline simdjson_result<int64_t> document::get_int64() noexcept {
   return get_root_value_iterator().get_root_int64();
 }
+simdjson_really_inline simdjson_result<int64_t> document::get_int64_in_string() noexcept {
+  return get_root_value_iterator().get_root_int64_in_string();
+}
 simdjson_really_inline simdjson_result<double> document::get_double() noexcept {
   return get_root_value_iterator().get_root_double();
+}
+simdjson_really_inline simdjson_result<double> document::get_double_in_string() noexcept {
+  return get_root_value_iterator().get_root_double_in_string();
 }
 simdjson_really_inline simdjson_result<std::string_view> document::get_string() noexcept {
   return get_root_value_iterator().get_root_string();
