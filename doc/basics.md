@@ -303,7 +303,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > ondemand::document doc = parser.iterate(silly_json);
   > std::cout << std::string_view(doc["test"]) << std::endl;
   >````
-You can use `to_json_string` to efficiently extract components of a JSON document to reconstruct a new JSON document, as in the following example:
+  You can use `to_json_string` to efficiently extract components of a JSON document to reconstruct a new JSON document, as in the following example:
   > ```C++
   > auto cars_json = R"( [
   >   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
