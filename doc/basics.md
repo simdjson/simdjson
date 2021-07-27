@@ -440,6 +440,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   }
   ```
 
+### Using the Parsed JSON: Additional examples
 
 
 Let us review these concepts with some additional examples. For simplicity, we omit the include clauses (`#include "simdjson.h"`) as well as namespace-using clauses (`using namespace simdjson;`).
