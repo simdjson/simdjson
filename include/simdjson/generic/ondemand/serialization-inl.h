@@ -20,6 +20,13 @@ inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION:
   return trim(v);
 }
 
+inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::document_reference& x) noexcept {
+  std::string_view v;
+  auto error = x.raw_json().get(v);
+  if(error) {return error; }
+  return trim(v);
+}
+
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::value& x) noexcept {
   /**
    * If we somehow receive a value that has already been consumed,
@@ -66,28 +73,30 @@ inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION:
   return trim(v);
 }
 
-#if SIMDJSON_EXCEPTIONS
-
 inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> x) {
   if (x.error()) { return x.error(); }
-  return to_json_string(x.value());
+  return to_json_string(x.value_unsafe());
+}
+
+inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference> x) {
+  if (x.error()) { return x.error(); }
+  return to_json_string(x.value_unsafe());
 }
 
 inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> x) {
   if (x.error()) { return x.error(); }
-  return to_json_string(x.value());
+  return to_json_string(x.value_unsafe());
 }
 
 inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> x) {
   if (x.error()) { return x.error(); }
-  return to_json_string(x.value());
+  return to_json_string(x.value_unsafe());
 }
 
 inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> x) {
   if (x.error()) { return x.error(); }
-  return to_json_string(x.value());
+  return to_json_string(x.value_unsafe());
 }
-#endif
 } // namespace simdjson
 
 
@@ -153,7 +162,20 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTA
     throw simdjson::simdjson_error(error);
   }
 }
-inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document> x) {
+inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_reference& value)  {
+  std::string_view v;
+  auto error = simdjson::to_json_string(value).get(v);
+  if(error == simdjson::SUCCESS) {
+    return (out << v);
+  } else {
+    throw simdjson::simdjson_error(error);
+  }
+}
+inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document>&& x) {
+  if (x.error()) { throw simdjson::simdjson_error(x.error()); }
+  return (out << x.value());
+}
+inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_reference>&& x) {
   if (x.error()) { throw simdjson::simdjson_error(x.error()); }
   return (out << x.value());
 }

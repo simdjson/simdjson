@@ -137,8 +137,9 @@ simdjson_really_inline document_stream::iterator::iterator(document_stream* _str
   : stream{_stream}, finished{is_end} {
 }
 
-simdjson_really_inline ondemand::document& document_stream::iterator::operator*() noexcept {
-  return stream->doc;
+simdjson_really_inline simdjson_result<ondemand::document_reference> document_stream::iterator::operator*() noexcept {
+  //if(stream->error) { return stream->error; }
+  return simdjson_result<ondemand::document_reference>(stream->doc, stream->error);
 }
 
 simdjson_really_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {

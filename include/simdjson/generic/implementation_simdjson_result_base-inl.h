@@ -49,8 +49,15 @@ simdjson_really_inline implementation_simdjson_result_base<T>::operator T&&() &&
   return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
 }
 
+#endif // SIMDJSON_EXCEPTIONS
+
 template<typename T>
 simdjson_really_inline const T& implementation_simdjson_result_base<T>::value_unsafe() const& noexcept {
+  return this->first;
+}
+
+template<typename T>
+simdjson_really_inline T& implementation_simdjson_result_base<T>::value_unsafe() & noexcept {
   return this->first;
 }
 
@@ -58,8 +65,6 @@ template<typename T>
 simdjson_really_inline T&& implementation_simdjson_result_base<T>::value_unsafe() && noexcept {
   return std::forward<T>(this->first);
 }
-
-#endif // SIMDJSON_EXCEPTIONS
 
 template<typename T>
 simdjson_really_inline implementation_simdjson_result_base<T>::implementation_simdjson_result_base(T &&value, error_code error) noexcept

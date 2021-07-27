@@ -97,19 +97,24 @@ struct implementation_simdjson_result_base {
    */
   simdjson_really_inline operator T&&() && noexcept(false);
 
+
+#endif // SIMDJSON_EXCEPTIONS
+
   /**
    * Get the result value. This function is safe if and only
    * the error() method returns a value that evaluates to false.
    */
   simdjson_really_inline const T& value_unsafe() const& noexcept;
-
+  /**
+   * Get the result value. This function is safe if and only
+   * the error() method returns a value that evaluates to false.
+   */
+  simdjson_really_inline T& value_unsafe() & noexcept;
   /**
    * Take the result value (move it). This function is safe if and only
    * the error() method returns a value that evaluates to false.
    */
   simdjson_really_inline T&& value_unsafe() && noexcept;
-
-#endif // SIMDJSON_EXCEPTIONS
 
   T first{};
   error_code second{UNINITIALIZED};

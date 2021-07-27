@@ -130,7 +130,7 @@ public:
     /**
      * Get the current document (or error).
      */
-    simdjson_really_inline ondemand::document& operator*() noexcept;
+    simdjson_really_inline simdjson_result<ondemand::document_reference> operator*() noexcept;
     /**
      * Advance to the next document (prefix).
      */

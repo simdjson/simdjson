@@ -5,12 +5,6 @@ using namespace simdjson;
 
 namespace document_stream_tests {
 
-    std::string my_string(ondemand::document& doc) {
-        std::stringstream ss;
-        ss << doc;
-        return ss.str();
-    }
-
     bool simple_document_iteration() {
         TEST_START();
         auto json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3])"_padded;
@@ -19,9 +13,11 @@ namespace document_stream_tests {
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
         std::string_view expected[4] = {"[1,[1,2]]", "{\"a\":1,\"b\":2}", "{\"o\":{\"1\":1,\"2\":2}}", "[1,2,3]"};
         size_t counter{0};
-        for(auto & doc : stream) {
+        for(auto doc : stream) {
             ASSERT_TRUE(counter < 4);
-            ASSERT_EQUAL(my_string(doc), expected[counter++]);
+            std::string_view view;
+            ASSERT_SUCCESS(to_json_string(doc).get(view));
+            ASSERT_EQUAL(view, expected[counter++]);
         }
         ASSERT_EQUAL(counter, 4);
         TEST_SUCCEED();
@@ -60,7 +56,8 @@ namespace document_stream_tests {
         ++i;
 
         ASSERT_EQUAL(i.source(),expected[counter++]);
-        ASSERT_SUCCESS( (*i).find_field("a").get(x) );
+        simdjson_result<ondemand::document_reference> xxx = *i;
+        ASSERT_SUCCESS( xxx.find_field("a").get(x) );
         ASSERT_EQUAL(x,1);
         ++i;
 
@@ -289,7 +286,7 @@ namespace document_stream_tests {
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
         size_t count{0};
-        for (auto & doc : stream) {
+        for (auto doc : stream) {
             (void)doc;
             count++;
         }
@@ -304,7 +301,7 @@ namespace document_stream_tests {
         ondemand::document_stream stream;
         ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
         size_t count{0};
-        for (auto & doc : stream) {
+        for (auto doc : stream) {
             (void)doc;
             count++;
         }
@@ -336,7 +333,7 @@ namespace document_stream_tests {
             ondemand::document_stream stream;
             size_t count{0};
             ASSERT_SUCCESS( parser.iterate_many(str, batch_size).get(stream) );
-            for (auto & doc : stream) {
+            for (auto doc : stream) {
                 int64_t keyid;
                 ASSERT_SUCCESS( doc["id"].get(keyid) );
                 ASSERT_EQUAL( keyid, int64_t(count) );
@@ -348,6 +345,42 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+
+    bool issue1668() {
+        TEST_START();
+        auto json = R"([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100])"_padded;
+
+        ondemand::parser odparser;
+        ondemand::document_stream odstream;
+        ASSERT_SUCCESS( odparser.iterate_many(json.data(), json.length(), 50).get(odstream) );
+        for (auto doc: odstream) {
+            ondemand::value val;
+            ASSERT_ERROR(doc.at_pointer("/40").get(val), CAPACITY);
+        }
+        TEST_SUCCEED();
+    }
+
+    bool issue1668_long() {
+        TEST_START();
+        auto json = R"([1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100])"_padded;
+
+        ondemand::parser odparser;
+        ondemand::document_stream odstream;
+        size_t counter{0};
+        ASSERT_SUCCESS( odparser.iterate_many(json.data(), json.length(), 50).get(odstream) );
+        for (auto doc: odstream) {
+            if(counter < 6) {
+                int64_t val;
+                ASSERT_SUCCESS(doc.at_pointer("/4").get(val));
+                ASSERT_EQUAL(val, 5);
+            } else {
+                ondemand::value val;
+                ASSERT_ERROR(doc.at_pointer("/4").get(val), CAPACITY);
+            }
+            counter++;
+        }
+        TEST_SUCCEED();
+    }
 
     bool document_stream_utf8_test() {
         TEST_START();
@@ -373,7 +406,7 @@ namespace document_stream_tests {
             ondemand::document_stream stream;
             size_t count{0};
             ASSERT_SUCCESS( parser.iterate_many(str, batch_size).get(stream) );
-            for (auto & doc : stream) {
+            for (auto doc : stream) {
                 int64_t keyid;
                 ASSERT_SUCCESS( doc["id"].get(keyid) );
                 ASSERT_EQUAL( keyid, int64_t(count) );
@@ -386,44 +419,46 @@ namespace document_stream_tests {
     }
 
     bool stress_data_race() {
-    TEST_START();
-    // Correct JSON.
-    auto input = R"([1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
-    ondemand::parser parser;
-    ondemand::document_stream stream;
-    ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
-    for(auto i = stream.begin(); i != stream.end(); ++i) {
-      ASSERT_SUCCESS(i.error());
-    }
-    TEST_SUCCEED();
-  }
-
-  bool stress_data_race_with_error() {
-    TEST_START();
-    #if SIMDJSON_THREAD_ENABLED
-    std::cout << "ENABLED" << std::endl;
-    #endif
-    // Intentionally broken
-    auto input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;
-    ondemand::parser parser;
-    ondemand::document_stream stream;
-    ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
-    size_t count{0};
-    for(auto i = stream.begin(); i != stream.end(); ++i) {
-        auto error = i.error();
-        if(count <= 3) {
-            ASSERT_SUCCESS(error);
-        } else {
-            ASSERT_ERROR(error,TAPE_ERROR);
-            break;
+        TEST_START();
+        // Correct JSON.
+        auto input = R"([1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
+        for(auto i = stream.begin(); i != stream.end(); ++i) {
+            ASSERT_SUCCESS(i.error());
         }
-        count++;
+        TEST_SUCCEED();
     }
-    TEST_SUCCEED();
-  }
+
+    bool stress_data_race_with_error() {
+        TEST_START();
+        #if SIMDJSON_THREAD_ENABLED
+        std::cout << "ENABLED" << std::endl;
+        #endif
+        // Intentionally broken
+        auto input = R"([1,23] [1,23] [1,23] [1,23 [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
+        size_t count{0};
+        for(auto i = stream.begin(); i != stream.end(); ++i) {
+            auto error = i.error();
+            if(count <= 3) {
+                ASSERT_SUCCESS(error);
+            } else {
+                ASSERT_ERROR(error,TAPE_ERROR);
+                break;
+            }
+            count++;
+        }
+        TEST_SUCCEED();
+    }
 
     bool run() {
         return
+            issue1668() &&
+            issue1668_long() &&
             simple_document_iteration() &&
             simple_document_iteration_multiple_batches() &&
             simple_document_iteration_with_parsing() &&

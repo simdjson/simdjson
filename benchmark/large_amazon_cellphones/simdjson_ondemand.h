@@ -18,7 +18,7 @@ struct simdjson_ondemand {
     ondemand::document_stream::iterator i = stream.begin();
     ++i;  // Skip first line
     for (;i != stream.end(); ++i) {
-      auto & doc = *i;
+      auto doc = *i;
       size_t index{0};
       StringType copy;
       double rating;
