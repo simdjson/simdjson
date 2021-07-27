@@ -158,7 +158,7 @@ We also have an informal [blog post providing some background and context](https
 
 For the video inclined, <br />
 [![simdjson at QCon San Francisco 2019](http://img.youtube.com/vi/wlvKAT7SZIQ/0.jpg)](http://www.youtube.com/watch?v=wlvKAT7SZIQ)<br />
-(it was the best voted talk, we're kinda proud of it).
+(It was the best voted talk, we're kinda proud of it.)
 
 Funding
 -------
