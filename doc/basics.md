@@ -375,8 +375,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
      std::cout << simdjson::to_string(elem);
   }
   ```
-* **Tree Walking and JSON Element Types:** Sometimes you don't necessarily have a document 
-  with a known type, and are trying to generically inspect or walk over JSON elements. To do that, you can use iterators and the type() method. 
+* **Tree Walking and JSON Element Types:** Sometimes you don't necessarily have a document
+  with a known type, and are trying to generically inspect or walk over JSON elements. To do that, you can use iterators and the type() method.
   For example,   here's a quick and dirty recursive function that verbosely prints the JSON document as JSON:
   ```c++
   // We use a template function because we need to
