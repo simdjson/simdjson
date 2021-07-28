@@ -428,7 +428,12 @@ bool stream_capacity_example() {
       ondemand::value val;
       error = doc.at_pointer("/4").get(val);
       // error == simdjson::CAPACITY
-      if(error) { std::cerr << error << std::endl;  break; }
+      if(error) {
+        std::cerr << error << std::endl;
+        // We left 293 bytes unprocessed at the tail end of the input.
+        std::cout << " unprocessed bytes at the end: " << stream.truncated_bytes() << std::endl;
+        break;
+      }
     }
     counter++;
   }
