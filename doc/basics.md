@@ -17,7 +17,8 @@ An overview of what you need to know to use simdjson, with examples.
 * [UTF-8 validation (alone)](#utf-8-validation-alone)
 * [JSON Pointer](#json-pointer)
 * [Error Handling](#error-handling)
-  * [Error Handling Example](#error-handling-example)
+  * [Error Handling Example without Exceptions](#error-handling-example-without-exceptions)
+  * [Disabling Exceptions](#disabling-exceptions)
   * [Exceptions](#exceptions)
 * [Rewinding](#rewinding)
 * [Direct Access to the Raw String](#direct-access-to-the-raw-string)
@@ -697,8 +698,8 @@ std::cout << doc.find_field("k0") << std::endl; // Prints 27
 Error Handling
 --------------
 
-All simdjson APIs that can fail return `simdjson_result<T>`, which is a &lt;value, error_code&gt;
-pair. You can retrieve the value with .get(), like so:
+The entire simdjson API is usable with and without exceptions. All simdjson APIs that can fail return `simdjson_result<T>`, which is a &lt;value, error_code&gt;
+pair. You can retrieve the value with .get() without generating an exception, like so:
 
 ```c++
 dom::element doc;
@@ -773,9 +774,9 @@ int main(void) {
 }
 ```
 
-### Error Handling Example
+### Error Handling Examples without Exceptions
 
-This is how the example in "Using the Parsed JSON" could be written using only error code checking:
+This is how the example in "Using the Parsed JSON" could be written using only error code checking (without exceptions):
 
 ```c++
 auto cars_json = R"( [
@@ -893,7 +894,9 @@ bool parse_string(const char *j, std::string &s) {
 }
 ```
 
-To ensure you don't write any code that uses exceptions, compile with `SIMDJSON_EXCEPTIONS=OFF`. For example, if including the project via cmake:
+### Disabling Exceptions
+
+The simdjson can be build with exceptions entirely disabled. It checks the `__cpp_exceptions` macro at compile time. Even if exceptions are enabled in your compiler, you may still disable exceptions specifically for simdjson, by setting `SIMDJSON_EXCEPTIONS` to `0` (false) at compile-time when building the simdjson library. If you are building with CMake,  to ensure you don't write any code that uses exceptions, you compile with `SIMDJSON_EXCEPTIONS=OFF`. For example, if including the project via cmake:
 
 ```cmake
 target_compile_definitions(simdjson PUBLIC SIMDJSON_EXCEPTIONS=OFF)
