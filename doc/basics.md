@@ -155,6 +155,8 @@ ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
 We recommend against creating many `std::string` or many `std::padding_string` instances in your application to store your JSON data.
 Consider reusing the same buffers and limiting memory allocations.
 
+By default, the simdjson library throws exceptions (`simdjson_error`) on errors. We omit `try`-`catch` clauses from our illustrating examples: if you omit `try`-`catch` in your code, an uncaught exception will halt your program. It is also possible to use simdjson without generating exceptions, and you may even build the library without exception support at all. See [Error Handling](#error-handling) for details.
+
 Documents Are Iterators
 -----------------------
 
