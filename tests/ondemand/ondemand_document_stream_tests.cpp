@@ -231,6 +231,7 @@ namespace document_stream_tests {
         ASSERT_SUCCESS( parser.iterate_many(json, window_size).get(stream) );
         auto i = stream.begin();
         ASSERT_ERROR(i.error(), CAPACITY);
+        ASSERT_EQUAL(stream.truncated_bytes(), json.length());
         TEST_SUCCEED();
     }
 
@@ -356,6 +357,7 @@ namespace document_stream_tests {
         for (auto doc: odstream) {
             ondemand::value val;
             ASSERT_ERROR(doc.at_pointer("/40").get(val), CAPACITY);
+            ASSERT_EQUAL(odstream.truncated_bytes(), json.length());
         }
         TEST_SUCCEED();
     }
@@ -376,6 +378,8 @@ namespace document_stream_tests {
             } else {
                 ondemand::value val;
                 ASSERT_ERROR(doc.at_pointer("/4").get(val), CAPACITY);
+                // We left 293 bytes unprocessed.
+                ASSERT_EQUAL(odstream.truncated_bytes(), 293);
             }
             counter++;
         }

@@ -1046,7 +1046,12 @@ for (auto doc: stream) {
     ondemand::value val;
     error = doc.at_pointer("/4").get(val);
     // error == simdjson::CAPACITY
-    if(error) { std::cerr << error << std::endl;  break; }
+    if(error) {
+      std::cerr << error << std::endl;
+      // We left 293 bytes unprocessed at the tail end of the input.
+      std::cout << " unprocessed bytes at the end: " << stream.truncated_bytes() << std::endl;
+      break;
+    }
   }
   counter++;
 }
@@ -1062,6 +1067,7 @@ This example should print out:
 5 = 5
 5 = 5
 This parser can't support a document that big
+ unprocessed bytes at the end: 293
 ```
 
 If your documents are large (e.g., larger than a megabyte), then the `iterate_many` function is maybe ill-suited. It is really meant to support reading efficiently streams of relatively small documents (e.g., a few kilobytes each). If you have larger documents, you should use other functions like `iterate`.
