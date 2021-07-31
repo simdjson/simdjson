@@ -30,13 +30,14 @@ namespace error_tests {
     auto json = "{\"haha\":{\"df2\":3.5, \"df3\": \"fd\"}}"_padded;
     ondemand::document doc;
     ASSERT_SUCCESS( parser.iterate(json).get(doc) );
-    ondemand::raw_json_string rawjson;
     try {
-      doc.get_raw_json_string().get(rawjson);
+      ondemand::raw_json_string rawjson = doc.get_raw_json_string();
+      (void)rawjson;
+      TEST_FAIL("Should have thrown an exception!")
     } catch(simdjson_error& e) {
       ASSERT_ERROR(e.error(), INCORRECT_TYPE);
+      TEST_SUCCEED();
     }
-    TEST_SUCCEED();
   }
 #endif
   bool parser_max_capacity() {
