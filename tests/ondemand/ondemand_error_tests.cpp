@@ -39,6 +39,22 @@ namespace error_tests {
       TEST_SUCCEED();
     }
   }
+  bool raw_json_string_except_with_io() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = "{\"haha\":{\"df2\":3.5, \"df3\": \"fd\"}}"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+    try {
+      auto rawjson = doc.get_raw_json_string();
+      std::cout << rawjson;
+      TEST_FAIL("Should have thrown an exception!")
+    } catch(simdjson_error& e) {
+      ASSERT_ERROR(e.error(), INCORRECT_TYPE);
+      TEST_SUCCEED();
+    }
+  }
+
 #endif
   bool parser_max_capacity() {
     TEST_START();
@@ -231,6 +247,7 @@ namespace error_tests {
     return
 #if SIMDJSON_EXCEPTIONS
            raw_json_string_except() &&
+           raw_json_string_except_with_io() &&
 #endif
            raw_json_string_error() &&
            empty_document_error() &&
