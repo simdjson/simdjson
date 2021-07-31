@@ -24,6 +24,33 @@ namespace error_tests {
     TEST_SUCCEED();
   }
 
+  bool simple_error_example() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = R"({"bad number":3.14.1 })"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+    double x;
+    ASSERT_ERROR( doc["bad number"].get_double().get(x), NUMBER_ERROR );
+    TEST_SUCCEED();
+  }
+
+#if SIMDJSON_EXCEPTIONS
+  bool simple_error_example_except() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = R"({"bad number":3.14.1 })"_padded;
+    try {
+      ondemand::document doc = parser.iterate(json);
+      double x = doc["bad number"].get_double();
+      TEST_FAIL("should throw got: "+std::to_string(x))
+    } catch(simdjson_error& e) {
+      ASSERT_ERROR(e.error(), NUMBER_ERROR);
+    }
+    TEST_SUCCEED();
+  }
+#endif
+
   bool get_fail_then_succeed_bool() {
     TEST_START();
     auto json = R"({ "val" : true })"_padded;
@@ -208,6 +235,8 @@ namespace error_tests {
            get_fail_then_succeed_bool() &&
            get_fail_then_succeed_null() &&
            invalid_type() &&
+           simple_error_example() &&
+           simple_error_example_except() &&
            true;
   }
 }

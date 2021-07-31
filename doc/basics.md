@@ -710,8 +710,53 @@ if (error) { cerr << error << endl; exit(1); }
 ```
 
 When you use the code this way, it is your responsibility to check for error before using the
-result: if there is an error, the result value will not be valid and using it will caused undefined
-behavior.
+result: if there is an error, the result value will not be valid and using it will caused undefined behavior.
+
+Let us illustrate with an example where we try to access a number that is not valid (`3.14.1`).
+If we want to proceed without throwing and catching exceptions, we can do so as follows:
+
+```C++
+bool simple_error_example() {
+    ondemand::parser parser;
+    auto json = R"({"bad number":3.14.1 })"_padded;
+    ondemand::document doc;
+    if( parser.iterate(json).get(doc) != SUCCESS ) { return false; }
+    double x;
+    auto error = doc["bad number"].get_double().get(x);
+    // returns "simdjson::NUMBER_ERROR"
+    if(error != SUCCESS) {
+      std::cout << error << std::endl;
+      return false;
+    }
+    std::cout << "Got " << x << std::endl;
+    return true;
+}
+```
+
+Observe how we verify the error variable before accessing the retrieved number (variable `x`).
+
+The equivalent with exception handling might look as follows.
+
+```C++
+  bool simple_error_example_except() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = R"({"bad number":3.14.1 })"_padded;
+    try {
+      ondemand::document doc = parser.iterate(json);
+      double x = doc["bad number"].get_double();
+      std::cout << "Got " << x << std::endl;
+      return true;
+    } catch(simdjson_error& e) {
+      // e.error() == NUMBER_ERROR
+      std::cout << e.error() << std::endl;
+      return false;
+    }
+  }
+```
+
+Notice how we can retrieve the exact error condition (in this instance `simdjson::NUMBER_ERROR`)
+from the exception.
 
 We can write a "quick start" example where we attempt to parse the following JSON file and access some data, without triggering exceptions:
 ```JavaScript
