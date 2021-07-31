@@ -236,7 +236,9 @@ namespace error_tests {
            get_fail_then_succeed_null() &&
            invalid_type() &&
            simple_error_example() &&
+#if SIMDJSON_EXCEPTIONS
            simple_error_example_except() &&
+#endif
            true;
   }
 }
