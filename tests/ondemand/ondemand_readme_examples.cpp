@@ -439,6 +439,43 @@ bool stream_capacity_example() {
   }
   return true;
 }
+
+
+
+bool simple_error_example() {
+    ondemand::parser parser;
+    auto json = R"({"bad number":3.14.1 })"_padded;
+    ondemand::document doc;
+    if( parser.iterate(json).get(doc) != SUCCESS ) { return false; }
+    double x;
+    auto error = doc["bad number"].get_double().get(x);
+    // returns "simdjson::NUMBER_ERROR"
+    if(error != SUCCESS) {
+      std::cout << error << std::endl;
+      return false;
+    }
+    std::cout << "Got " << x << std::endl;
+    return true;
+}
+
+#if SIMDJSON_EXCEPTIONS
+  bool simple_error_example_except() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = R"({"bad number":3.14.1 })"_padded;
+    try {
+      ondemand::document doc = parser.iterate(json);
+      double x = doc["bad number"].get_double();
+      std::cout << "Got " << x << std::endl;
+      return true;
+    } catch(simdjson_error& e) {
+      // e.error() == NUMBER_ERROR
+      std::cout << e.error() << std::endl;
+      return false;
+    }
+  }
+#endif
+
 int main() {
   if (
     true
