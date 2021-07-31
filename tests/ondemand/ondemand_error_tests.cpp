@@ -13,7 +13,32 @@ namespace error_tests {
     ASSERT_ERROR( parser.iterate(json), EMPTY );
     TEST_SUCCEED();
   }
-
+  bool raw_json_string_error() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = "{\"haha\":{\"df2\":3.5, \"df3\": \"fd\"}}"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+    ondemand::raw_json_string rawjson;
+    ASSERT_ERROR( doc.get_raw_json_string().get(rawjson), INCORRECT_TYPE );
+    TEST_SUCCEED();
+  }
+#if SIMDJSON_EXCEPTIONS
+  bool raw_json_string_except() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = "{\"haha\":{\"df2\":3.5, \"df3\": \"fd\"}}"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+    ondemand::raw_json_string rawjson;
+    try {
+      doc.get_raw_json_string().get(rawjson);
+    } catch(simdjson_error& e) {
+      ASSERT_ERROR(e.error(), INCORRECT_TYPE);
+    }
+    TEST_SUCCEED();
+  }
+#endif
   bool parser_max_capacity() {
     TEST_START();
     ondemand::parser parser(1); // max_capacity set to 1 byte
@@ -203,6 +228,10 @@ namespace error_tests {
 
   bool run() {
     return
+#if SIMDJSON_EXCEPTIONS
+           raw_json_string_except() &&
+#endif
+           raw_json_string_error() &&
            empty_document_error() &&
            parser_max_capacity() &&
            get_fail_then_succeed_bool() &&
