@@ -287,7 +287,7 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
 #if SIMDJSON_EXCEPTIONS
 
 template<typename T>
-inline std::ostream& operator<<(std::ostream& out, simdjson_result<T> value) noexcept { return out << value.value(); }
+inline std::ostream& operator<<(std::ostream& out, simdjson_result<T> value) { return out << value.value(); }
 #endif // SIMDJSON_EXCEPTIONS
 
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
