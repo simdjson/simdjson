@@ -1,4 +1,4 @@
-/* auto-generated on 2021-06-04 17:09:21 -0400. Do not edit! */
+/* auto-generated on 2021-06-05 11:33:32 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -2078,7 +2078,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 0.9.6
+#define SIMDJSON_VERSION 0.9.7
 
 namespace simdjson {
 enum {
@@ -2093,7 +2093,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 6
+  SIMDJSON_VERSION_REVISION = 7
 };
 } // namespace simdjson
 
@@ -2387,7 +2387,7 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
 #if SIMDJSON_EXCEPTIONS
 
 template<typename T>
-inline std::ostream& operator<<(std::ostream& out, simdjson_result<T> value) noexcept { return out << value.value(); }
+inline std::ostream& operator<<(std::ostream& out, simdjson_result<T> value) { return out << value.value(); }
 
 #endif // SIMDJSON_EXCEPTIONS
 
