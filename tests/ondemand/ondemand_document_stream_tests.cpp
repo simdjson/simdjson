@@ -5,6 +5,58 @@ using namespace simdjson;
 
 namespace document_stream_tests {
 
+    template <typename T>
+    bool process_doc(T &docref) {
+        int64_t val;
+        ASSERT_SUCCESS(docref.at_pointer("/4").get(val));
+        //ASSERT_SUCCESS(err);
+        ASSERT_EQUAL(val, 5);
+        return true;
+    }
+
+    bool issue1683() {
+        TEST_START();
+        std::string json = R"([1,2,3,4,5]
+[1,2,3,4,5]
+[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100]
+[1,2,3,4,5])";
+
+        ondemand::parser odparser;
+        ondemand::document_stream odstream;
+
+        // iterate_many all at once
+        auto oderror = odparser.iterate_many(json, 50).get(odstream);
+        if (oderror) { std::cerr << "ondemand iterate_many error: " << oderror << std::endl; return false; }
+
+        size_t currindex = 0;
+        auto i = odstream.begin();
+        for (; i != odstream.end(); ++i) {
+            ondemand::document_reference doc;
+            auto err = (*i).get(doc);
+            if(err == SUCCESS) { if(!process_doc(doc)) {return false; } }
+            currindex = i.current_index();
+            if (err == simdjson::CAPACITY) {
+                ASSERT_EQUAL(i.current_index(), 24);
+                ASSERT_EQUAL(odstream.truncated_bytes(), 305);
+                break;
+            } else if (err) {
+               TEST_FAIL(std::string("ondemand: error accessing jsonpointer: ") + simdjson::error_message(err));
+            }
+        }
+        ASSERT_EQUAL(odstream.truncated_bytes(), 305);
+
+        // iterate line-by-line
+        std::stringstream ss(json);
+        std::string oneline;
+        oneline.reserve(json.size() + SIMDJSON_PADDING);
+        while (getline(ss, oneline)) {
+            ondemand::document doc;
+            ASSERT_SUCCESS(odparser.iterate(oneline).get(doc));
+            if( ! process_doc(doc) ) { return false; }
+        }
+        TEST_SUCCEED();
+    }
+
     bool simple_document_iteration() {
         TEST_START();
         auto json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3])"_padded;
@@ -461,6 +513,7 @@ namespace document_stream_tests {
 
     bool run() {
         return
+            issue1683() &&
             issue1668() &&
             issue1668_long() &&
             simple_document_iteration() &&

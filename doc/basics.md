@@ -152,6 +152,9 @@ strcpy(json, "[1]");
 ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
 ```
 
+The simdjson library will also accept `std::string` instances, as long as the `capacity()` of
+the string exceeds the `size()` by at least `SIMDJSON_PADDING`. You can increase the `capacity()` with the `reserve()` function of your strings.
+
 We recommend against creating many `std::string` or many `std::padding_string` instances in your application to store your JSON data.
 Consider reusing the same buffers and limiting memory allocations.
 
@@ -173,6 +176,8 @@ to use.
 Because a document is an iterator over the JSON text, both the JSON text and the parser must
 remain alive (in scope) while you are using it. Further, a `parser` may have at most
 one document open at a time, since it holds allocated memory used for the parsing.
+In particular, if you must pass a document instance to a function, you should avoid
+passing it by value: choose to pass it by reference instance to avoid the copy.
 
 During the `iterate` call, the original JSON text is never modified--only read. After you are done
 with the document, the source (whether file or string) can be safely discarded.
