@@ -12,7 +12,6 @@ An overview of what you need to know to use simdjson, with examples.
 * [Documents Are Iterators](#documents-are-iterators)
 * [C++11 Support and string_view](#c11-support-and-string_view)
 * [Using the Parsed JSON](#using-the-parsed-json)
-* [C++17 Support](#c17-support)
 * [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
 * [UTF-8 validation (alone)](#utf-8-validation-alone)
 * [JSON Pointer](#json-pointer)
@@ -170,6 +169,10 @@ walking through the original JSON text, merrily reading commas and colons and br
 you get where you are going. This is the key to On Demand's performance: since it's just an iterator,
 it lets you parse values as you use them. And particularly, it lets you *skip* values you do not want
 to use.
+
+We refer to "On Demand" as a front-end component since it is an interface between the
+low-level parsing functions and the user. It hides much of the complexity of parsing JSON
+documents.
 
 ### Parser, Document and JSON Scope
 
@@ -357,6 +360,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   cout << value << endl; // Prints 3.14
   ```
+  This examples also show how we can string several operations and only check for the error once, a strategy we call  *error chaining*.
 * **Counting elements in arrays:** Sometimes it is useful to scan an array to determine its length prior to parsing it.
   For this purpose, `array` instances have a `count_elements` method. Users should be
   aware that the `count_elements` method can be costly since it requires scanning the
@@ -525,36 +529,6 @@ for (ondemand::object points : parser.iterate(points_json)) {
 }
 ```
 
-C++17 Support
--------------
-
-While the simdjson library can be used in any project using C++ 11 and above, field iteration has special support C++ 17's destructuring syntax. For example:
-
-```c++
-padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
-dom::parser parser;
-dom::object object;
-auto error = parser.parse(json).get(object);
-if (error) { cerr << error << endl; return; }
-for (auto [key, value] : object) {
-  cout << key << " = " << value << endl;
-}
-```
-
-For comparison, here is the C++ 11 version of the same code:
-
-```c++
-// C++ 11 version for comparison
-padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
-dom::parser parser;
-dom::object object;
-auto error = parser.parse(json).get(object);
-if (error) { cerr << error << endl; return; }
-for (dom::key_value_pair field : object) {
-  cout << field.key << " = " << field.value << endl;
-}
-```
-
 Minifying JSON strings without parsing
 ----------------------
 
@@ -589,6 +563,8 @@ The simdjson library has fast functions to validate UTF-8 strings. They are many
 The UTF-8 validation function merely checks that the input is valid UTF-8: it works with strings in general, not just JSON strings.
 
 Your input string does not need any padding. Any string will do. The `validate_utf8` function does not do any memory allocation on the heap, and it does not throw exceptions.
+
+If you find yourself needing only fast Unicode functions, consider using the simdutf library instead: https://github.com/simdutf/simdutf
 
 JSON Pointer
 ------------
@@ -709,13 +685,14 @@ The entire simdjson API is usable with and without exceptions. All simdjson APIs
 pair. You can retrieve the value with .get() without generating an exception, like so:
 
 ```c++
-dom::element doc;
-auto error = parser.parse(json).get(doc);
+ondemand::element doc;
+auto error = parser.iterate(json).get(doc);
 if (error) { cerr << error << endl; exit(1); }
 ```
 
 When you use the code this way, it is your responsibility to check for error before using the
-result: if there is an error, the result value will not be valid and using it will caused undefined behavior.
+result: if there is an error, the result value will not be valid and using it will caused undefined behavior. Most compilers should be able to help you if you activate the right
+set of warnings: they can identify variables that are written to but never otherwise accessed.
 
 Let us illustrate with an example where we try to access a number that is not valid (`3.14.1`).
 If we want to proceed without throwing and catching exceptions, we can do so as follows:
@@ -780,24 +757,29 @@ We can write a "quick start" example where we attempt to parse the following JSO
 }
 ```
 
-Our program loads the file, selects value corresponding to key "search_metadata" which expected to be an object, and then
-it selects the key "count" within that object.
+Our program loads the file, selects value corresponding to key `"search_metadata"` which expected to be an object, and then
+it selects the key `"count"` within that object.
+
 
 ```C++
 #include "simdjson.h"
+#include <iostream>
 
 int main(void) {
-  simdjson::dom::parser parser;
-  simdjson::dom::element tweets;
-  auto error = parser.load("twitter.json").get(tweets);
-  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
-
-  simdjson::dom::element res;
-  if ((error = tweets["search_metadata"]["count"].get(res))) {
-    std::cerr << "could not access keys" << std::endl;
+  simdjson::ondemand::parser parser;
+  auto error = padded_string::load("twitter.json").get(json);
+  if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  simdjson::ondemand::document tweets;
+  error = parser.iterate(json).get(tweets);
+  if( error ) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  simdjson::ondemand::value res;
+  error = tweets["search_metadata"]["count"].get(res);
+  if (error != SUCCESS) {
+    std::cerr << "could not access keys : " << error << std::endl;
     return EXIT_FAILURE;
   }
   std::cout << res << " results." << std::endl;
+  return EXIT_SUCCESS;
 }
 ```
 
@@ -810,19 +792,23 @@ triggering exceptions. To do this, we use `["statuses"].at(0)["id"]`. We break t
 
 Observe how we use the `at` method when querying an index into an array, and not the bracket operator.
 
+
 ```C++
 #include "simdjson.h"
+#include <iostream>
 
 int main(void) {
-  simdjson::dom::parser parser;
-  simdjson::dom::element tweets;
-  auto error = parser.load("twitter.json").get(tweets);
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document tweets;
+  padded_string json;
+  auto error = padded_string::load("twitter.json").get(json);
+  if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  error = parser.iterate(json).get(tweets);
   if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   uint64_t identifier;
   error = tweets["statuses"].at(0)["id"].get(identifier);
   if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   std::cout << identifier << std::endl;
-  return EXIT_SUCCESS;
 }
 ```
 
@@ -831,120 +817,59 @@ int main(void) {
 This is how the example in "Using the Parsed JSON" could be written using only error code checking (without exceptions):
 
 ```c++
-auto cars_json = R"( [
-  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
-  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
-  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-] )"_padded;
-dom::parser parser;
-dom::array cars;
-auto error = parser.parse(cars_json).get(cars);
-if (error) { cerr << error << endl; exit(1); }
+bool parse() {
+  ondemand::parser parser;
+  auto cars_json = R"( [
+    { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+    { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+    { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  ] )"_padded;
+  ondemand::document doc;
 
-// Iterating through an array of objects
-for (dom::element car_element : cars) {
-    dom::object car;
-    if ((error = car_element.get(car))) { cerr << error << endl; exit(1); }
+  // Iterating through an array of objects
+  auto error = parser.iterate(cars_json).get(doc);
+  if(error) { std::cerr << error << std::endl; return false; }
+  ondemand::array cars;
+  error = doc.get_array().get(cars);
+
+  for (auto car_value : cars) {
+    ondemand::object car;
+    error = car_value.get_object().get(car);
+    if(error) { std::cerr << error << std::endl; return false; }
 
     // Accessing a field by name
-    std::string_view make, model;
-    if ((error = car["make"].get(make))) { cerr << error << endl; exit(1); }
-    if ((error = car["model"].get(model))) { cerr << error << endl; exit(1); }
+    std::string_view make;
+    std::string_view model;
+    error = car["make"].get(make);
+    if(error) { std::cerr << error << std::endl; return false; }
+    error = car["model"].get(model);
+    if(error) { std::cerr << error << std::endl; return false; }
+
     cout << "Make/Model: " << make << "/" << model << endl;
 
     // Casting a JSON element to an integer
     uint64_t year;
-    if ((error = car["year"].get(year))) { cerr << error << endl; exit(1); }
-    cout << "- This car is " << 2020 - year << "years old." << endl;
+    error = car["year"].get(year);
+    if(error) { std::cerr << error << std::endl; return false; }
+    cout << "- This car is " << 2020 - year << " years old." << endl;
 
     // Iterating through an array of floats
     double total_tire_pressure = 0;
-    dom::array tire_pressure_array;
-    if ((error = car["tire_pressure"].get(tire_pressure_array))) { cerr << error << endl; exit(1); }
-    for (dom::element tire_pressure_element : tire_pressure_array) {
-        double tire_pressure;
-        if ((error = tire_pressure_element.get(tire_pressure))) { cerr << error << endl; exit(1); }
-        total_tire_pressure += tire_pressure;
+    ondemand::array pressures;
+    error = car["tire_pressure"].get_array().get(pressures);
+    if(error) { std::cerr << error << std::endl; return false; }
+    for (auto tire_pressure_value : pressures) {
+      double tire_pressure;
+      error = tire_pressure_value.get_double().get(tire_pressure);
+      if(error) { std::cerr << error << std::endl; return false; }
+      total_tire_pressure += tire_pressure;
     }
     cout << "- Average tire pressure: " << (total_tire_pressure / 4) << endl;
-
-    // Writing out all the information about the car
-    for (auto field : car) {
-        cout << "- " << field.key << ": " << field.value << endl;
-    }
-}
-```
-
-Here is another example:
-
-```C++
-auto abstract_json = R"( [
-    {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
-    {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
-  ] )"_padded;
-dom::parser parser;
-dom::array array;
-auto error = parser.parse(abstract_json).get(array);
-if (error) { cerr << error << endl; exit(1); }
-// Iterate through an array of objects
-for (dom::element elem : array) {
-    dom::object obj;
-    if ((error = elem.get(obj))) { cerr << error << endl; exit(1); }
-    for (auto & key_value : obj) {
-        cout << "key: " << key_value.key << " : ";
-        dom::object innerobj;
-        if ((error = key_value.value.get(innerobj))) { cerr << error << endl; exit(1); }
-
-        double va, vb;
-        if ((error = innerobj["a"].get(va))) { cerr << error << endl; exit(1); }
-        cout << "a: " << va << ", ";
-        if ((error = innerobj["b"].get(vc))) { cerr << error << endl; exit(1); }
-        cout << "b: " << vb << ", ";
-
-        int64_t vc;
-        if ((error = innerobj["c"].get(vc))) { cerr << error << endl; exit(1); }
-        cout << "c: " << vc << endl;
-    }
-}
-```
-
-And another one:
-
-```C++
-  auto abstract_json = R"(
-    {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
-  dom::parser parser;
-  double v;
-  auto error = parser.parse(abstract_json)["str"]["123"]["abc"].get(v);
-  if (error) { cerr << error << endl; exit(1); }
-  cout << "number: " << v << endl;
-```
-
-Notice how we can string several operations (`parser.parse(abstract_json)["str"]["123"]["abc"].get(v)`) and only check for the error once, a strategy we call  *error chaining*.
-
-The next two functions will take as input a JSON document containing an array with a single element, either a string or a number. They return true upon success.
-
-```C++
-simdjson::dom::parser parser{};
-
-bool parse_double(const char *j, double &d) {
-  auto error = parser.parse(j, std::strlen(j))
-        .at(0)
-        .get(d, error);
-  if (error) { return false; }
-  return true;
-}
-
-bool parse_string(const char *j, std::string &s) {
-  std::string_view answer;
-  auto error = parser.parse(j,strlen(j))
-        .at(0)
-        .get(answer, error);
-  if (error) { return false; }
-  s.assign(answer.data(), answer.size());
+  }
   return true;
 }
 ```
+
 
 ### Disabling Exceptions
 
@@ -959,7 +884,7 @@ target_compile_definitions(simdjson PUBLIC SIMDJSON_EXCEPTIONS=OFF)
 Users more comfortable with an exception flow may choose to directly cast the `simdjson_result<T>` to the desired type:
 
 ```c++
-dom::element doc = parser.parse(json); // Throws an exception if there was an error!
+simdjson::ondemande::document doc = parser.iterate(json); // Throws an exception if there was an error!
 ```
 
 When used this way, a `simdjson_error` exception will be thrown if an error occurs, preventing the
@@ -970,15 +895,17 @@ If one is willing to trigger exceptions, it is possible to write simpler code:
 
 ```C++
 #include "simdjson.h"
+#include <iostream>
 
 int main(void) {
-  simdjson::dom::parser parser;
-  simdjson::dom::element tweets = parser.load("twitter.json");
-  std::cout << "ID: " << tweets["statuses"].at(0)["id"] << std::endl;
+  simdjson::ondemand::parser parser;
+  padded_string json = padded_string::load("twitter.json");
+  simdjson::ondemand::document tweets = parser.iterate(json);
+  uint64_t identifier = tweets["statuses"].at(0)["id"];
+  std::cout << identifier << std::endl;
   return EXIT_SUCCESS;
 }
 ```
-
 
 Rewinding
 ----------
@@ -1236,9 +1163,8 @@ We built simdjson with thread safety in mind.
 The simdjson library is single-threaded except for [`iterate_many`](iterate_many.md) and [`parse_many`](parse_many.md) which may use secondary threads under their control when the library is compiled with thread support.
 
 
-We recommend using one `dom::parser` object per thread in which case the library is thread-safe.
-It is unsafe to reuse a `dom::parser` object between different threads.
-The parsed results (`dom::document`, `dom::element`, `array`, `object`) depend on the `dom::parser`, etc. therefore it is also potentially unsafe to use the result of the parsing between different threads.
+We recommend using one `parser` object per thread. When using the On Demand front-end (our default), you should access the `document` instances in a single-threaded manner since it
+acts as an iterator (and is therefore not thread safe).
 
 The CPU detection, which runs the first time parsing is attempted and switches to the fastest
 parser for your CPU, is transparent and thread-safe.

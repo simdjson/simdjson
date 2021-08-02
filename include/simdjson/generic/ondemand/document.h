@@ -234,6 +234,14 @@ public:
    */
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
   /**
+   * Get the value at the given index in the array. This function has linear-time complexity.
+   * This function should only be called once as the array iterator is not reset between each call.
+   *
+   * @return The value at the given index, or:
+   *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
+   */
+  simdjson_really_inline simdjson_result<value> at(size_t index) & noexcept;
+  /**
    * Begin array iteration.
    *
    * Part of the std::iterable interface.
@@ -444,6 +452,7 @@ public:
   simdjson_really_inline operator bool() noexcept(false);
 #endif
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+  simdjson_really_inline simdjson_result<value> at(size_t index) & noexcept;
   simdjson_really_inline simdjson_result<array_iterator> begin() & noexcept;
   simdjson_really_inline simdjson_result<array_iterator> end() & noexcept;
   simdjson_really_inline simdjson_result<value> find_field(std::string_view key) & noexcept;
@@ -501,6 +510,7 @@ public:
   simdjson_really_inline operator bool() noexcept(false);
 #endif
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at(size_t index) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field(std::string_view key) & noexcept;
@@ -553,6 +563,7 @@ public:
   simdjson_really_inline operator bool() noexcept(false);
 #endif
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at(size_t index) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field(std::string_view key) & noexcept;

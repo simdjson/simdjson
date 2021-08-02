@@ -198,7 +198,7 @@ bool using_the_parsed_json_3() {
 
     // Casting a JSON element to an integer
     uint64_t year = car["year"];
-    cout << "- This car is " << 2020 - year << "years old." << endl;
+    cout << "- This car is " << 2020 - year << " years old." << endl;
 
     // Iterating through an array of floats
     double total_tire_pressure = 0;
@@ -276,6 +276,61 @@ bool using_the_parsed_json_5() {
 
 #endif // SIMDJSON_EXCEPTIONS
 
+
+
+bool using_the_parsed_json_no_exceptions() {
+  TEST_START();
+
+  ondemand::parser parser;
+  auto cars_json = R"( [
+    { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+    { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+    { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  ] )"_padded;
+  ondemand::document doc;
+
+  // Iterating through an array of objects
+  auto error = parser.iterate(cars_json).get(doc);
+  if(error) { std::cerr << error << std::endl; return false; }
+  ondemand::array cars;
+  error = doc.get_array().get(cars);
+
+  for (auto car_value : cars) {
+    ondemand::object car;
+    error = car_value.get_object().get(car);
+    if(error) { std::cerr << error << std::endl; return false; }
+
+    // Accessing a field by name
+    std::string_view make;
+    std::string_view model;
+    error = car["make"].get(make);
+    if(error) { std::cerr << error << std::endl; return false; }
+    error = car["model"].get(model);
+    if(error) { std::cerr << error << std::endl; return false; }
+
+    cout << "Make/Model: " << make << "/" << model << endl;
+
+    // Casting a JSON element to an integer
+    uint64_t year;
+    error = car["year"].get(year);
+    if(error) { std::cerr << error << std::endl; return false; }
+    cout << "- This car is " << 2020 - year << " years old." << endl;
+
+    // Iterating through an array of floats
+    double total_tire_pressure = 0;
+    ondemand::array pressures;
+    error = car["tire_pressure"].get_array().get(pressures);
+    if(error) { std::cerr << error << std::endl; return false; }
+    for (auto tire_pressure_value : pressures) {
+      double tire_pressure;
+      error = tire_pressure_value.get_double().get(tire_pressure);
+      if(error) { std::cerr << error << std::endl; return false; }
+      total_tire_pressure += tire_pressure;
+    }
+    cout << "- Average tire pressure: " << (total_tire_pressure / 4) << endl;
+  }
+  TEST_SUCCEED();
+}
 int using_the_parsed_json_6_process() {
   auto abstract_json = R"(
     { "str" : { "123" : {"abc" : 3.14 } } }
@@ -458,6 +513,7 @@ bool simple_error_example() {
     return true;
 }
 
+
 #if SIMDJSON_EXCEPTIONS
   bool simple_error_example_except() {
     TEST_START();
@@ -476,6 +532,76 @@ bool simple_error_example() {
   }
 #endif
 
+int load_example() {
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document tweets;
+  padded_string json;
+  auto error = padded_string::load("twitter.json").get(json);
+  if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  error = parser.iterate(json).get(tweets);
+  if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  uint64_t identifier;
+  error = tweets["statuses"].at(0)["id"].get(identifier);
+  if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  std::cout << identifier << std::endl;
+  return EXIT_SUCCESS;
+}
+
+
+int example_1() {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  //auto error = padded_string::load("twitter.json").get(json);
+  // if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  padded_string json = R"( {
+  "statuses": [
+    {
+      "id": 505874924095815700
+    },
+    {
+      "id": 505874922023837700
+    }
+  ],
+  "search_metadata": {
+    "count": 100
+  }
+} )"_padded;
+
+  simdjson::ondemand::document tweets;
+  auto error = parser.iterate(json).get(tweets);
+  if( error ) { return EXIT_FAILURE; }
+  simdjson::ondemand::value res;
+  error = tweets["search_metadata"]["count"].get(res);
+  if (error != SUCCESS) {
+    std::cerr << "could not access keys" << std::endl;
+    return EXIT_FAILURE;
+  }
+  std::cout << res << " results." << std::endl;
+  return true;
+}
+#if SIMDJSON_EXCEPTIONS
+int load_example_except() {
+  simdjson::ondemand::parser parser;
+  padded_string json = padded_string::load("twitter.json");
+  simdjson::ondemand::document tweets = parser.iterate(json);
+  uint64_t identifier = tweets["statuses"].at(0)["id"];
+  std::cout << identifier << std::endl;
+  return EXIT_SUCCESS;
+}
+#endif
+bool test_load_example() {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document tweets;
+  padded_string json = R"( {"statuses":[{"id":1234}]} )"_padded;
+  auto error = parser.iterate(json).get(tweets);
+  if(error) { std::cerr << error << std::endl; return false; }
+  uint64_t identifier;
+  error = tweets["statuses"].at(0)["id"].get(identifier);
+  if(error) { std::cerr << error << std::endl; return false; }
+  std::cout << identifier << std::endl;
+  return identifier == 1234;
+}
 int main() {
   if (
     true
@@ -503,6 +629,9 @@ int main() {
     && iterate_many_truncated_example()
     && ndjson_basics_example()
     && stream_capacity_example()
+    && test_load_example()
+    && example_1()
+    && using_the_parsed_json_no_exceptions()
   ) {
     return 0;
   } else {
