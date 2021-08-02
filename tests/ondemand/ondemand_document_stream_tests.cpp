@@ -36,7 +36,7 @@ namespace document_stream_tests {
             if(err == SUCCESS) { if(!process_doc(doc)) {return false; } }
             currindex = i.current_index();
             if (err == simdjson::CAPACITY) {
-                ASSERT_EQUAL(i.current_index(), 24);
+                ASSERT_EQUAL(currindex, 24);
                 ASSERT_EQUAL(odstream.truncated_bytes(), 305);
                 break;
             } else if (err) {
