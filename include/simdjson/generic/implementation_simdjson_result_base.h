@@ -115,9 +115,10 @@ struct implementation_simdjson_result_base {
    * the error() method returns a value that evaluates to false.
    */
   simdjson_really_inline T&& value_unsafe() && noexcept;
-
-  T first{};
-  error_code second{UNINITIALIZED};
+protected:
+  /** users should never directly access first and second. **/
+  T first{}; /** Users should never directly access 'first'. **/
+  error_code second{UNINITIALIZED}; /** Users should never directly access 'second'. **/
 }; // struct implementation_simdjson_result_base
 
 } // namespace SIMDJSON_IMPLEMENTATION
