@@ -203,9 +203,9 @@ namespace object_tests {
       ASSERT_RESULT( doc_result.type(), json_type::object );
       ASSERT_SUCCESS( doc_result.get(object) );
       size_t i = 0;
-      for (auto [ field, error ] : object) {
-        ASSERT_SUCCESS(error);
-        ASSERT_EQUAL( field.key(), expected_key[i]);
+      for (auto field : object) {
+        ASSERT_SUCCESS( field.key().error() );
+        ASSERT_EQUAL( field.key().value_unsafe(), expected_key[i]);
         ASSERT_EQUAL( field.value().get_uint64().value_unsafe(), expected_value[i] );
         i++;
       }
@@ -217,9 +217,9 @@ namespace object_tests {
       ASSERT_RESULT( doc_result.type(), json_type::object );
       ASSERT_SUCCESS( doc_result.get(object) );
       size_t i = 0;
-      for (auto [ field, error ] : object) {
-        ASSERT_SUCCESS(error);
-        ASSERT_EQUAL( field.key(), expected_key[i]);
+      for (auto field : object) {
+        ASSERT_SUCCESS( field.error() );
+        ASSERT_EQUAL( field.key().value_unsafe(), expected_key[i]);
         ASSERT_EQUAL( field.value().get_uint64().value_unsafe(), expected_value[i] );
         i++;
       }
@@ -228,9 +228,9 @@ namespace object_tests {
       ASSERT_RESULT( doc_result.type(), json_type::object );
       ASSERT_SUCCESS( doc_result.get(object) );
       i = 0;
-      for (auto [ field, error ] : object) {
-        ASSERT_SUCCESS(error);
-        ASSERT_EQUAL( field.key(), expected_key[i]);
+      for (auto field : object) {
+        ASSERT_SUCCESS( field.error() );
+        ASSERT_EQUAL( field.key().value_unsafe(), expected_key[i]);
         ASSERT_EQUAL( field.value().get_uint64().value_unsafe(), expected_value[i] );
         i++;
       }
@@ -240,9 +240,9 @@ namespace object_tests {
     SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::object> object_result = doc_result.get_object();
       size_t i = 0;
-      for (auto [ field, error ] : object_result) {
-        ASSERT_SUCCESS(error);
-        ASSERT_EQUAL( field.key(), expected_key[i] );
+      for (auto field : object_result) {
+        ASSERT_SUCCESS( field.error() );
+        ASSERT_EQUAL( field.key().value_unsafe(), expected_key[i]);
         ASSERT_EQUAL( field.value().get_uint64().value_unsafe(), expected_value[i] );
         i++;
       }
@@ -297,9 +297,9 @@ namespace object_tests {
           case 3: {
             ASSERT_EQUAL(key, "object_break");
 
-            for (auto [ child_field, error ] : field.value().get_object()) {
-              ASSERT_SUCCESS(error);
-              ASSERT_EQUAL(child_field.key(), "x");
+            for (auto child_field : field.value().get_object()) {
+              ASSERT_SUCCESS( child_field.error() );
+              ASSERT_EQUAL(child_field.key().value_unsafe(), "x");
               uint64_t x;
               ASSERT_SUCCESS( child_field.value().get(x) );
               ASSERT_EQUAL(x, 3);
@@ -313,9 +313,9 @@ namespace object_tests {
           case 4: {
             ASSERT_EQUAL(key, "object_break_unused");
 
-            for (auto [ child_field, error ] : field.value().get_object()) {
-              ASSERT_SUCCESS(error);
-              ASSERT_EQUAL(child_field.key(), "x");
+            for (auto child_field : field.value().get_object()) {
+              ASSERT_SUCCESS(child_field.error());
+              ASSERT_EQUAL(child_field.key().value_unsafe(), "x");
               break;
             }
             std::cout << "  - After reaching (but not using) first value in child object ..." << std::endl;
@@ -576,17 +576,15 @@ namespace object_tests {
       ASSERT_RESULT( doc_result.type(), json_type::object );
       ASSERT_SUCCESS( doc_result.get(object) );
       size_t i = 0;
-      for (auto [ field, error ] : object) {
+      for (auto field : object) {
         (void)field;
-        (void)error;
         i++;
       }
       ASSERT_EQUAL( i, 0 );
       doc_result.rewind();
       i = 0;
-      for (auto [ field, error ] : object) {
+      for (auto field : object) {
         (void)field;
-        (void)error;
         i++;
       }
       ASSERT_EQUAL( i, 0 );
