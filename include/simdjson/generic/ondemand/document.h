@@ -116,6 +116,14 @@ public:
    */
   simdjson_really_inline simdjson_result<bool> get_bool() noexcept;
   /**
+   * Cast this JSON value to a value.
+   *
+   * @returns A value.
+   * @returns if a JSON value cannot be found.
+   */
+  simdjson_really_inline simdjson_result<value> get_value() noexcept;
+
+  /**
    * Checks if this JSON value is null.
    *
    * @returns Whether the value is null.
@@ -148,7 +156,9 @@ public:
   /**
    * Get this value as the given type.
    *
-   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool
+   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool, value
+   *
+   * Be mindful that the document instance must remain in scope while you are accessing object, array and value instances.
    *
    * @param out This is set to a value of the given type, parsed from the JSON. If there is an error, this may not be initialized.
    * @returns INCORRECT_TYPE If the JSON value is not an object.
@@ -220,6 +230,13 @@ public:
    * @exception simdjson_error(INCORRECT_TYPE) if the JSON value is not true or false.
    */
   simdjson_really_inline operator bool() noexcept(false);
+  /**
+   * Cast this JSON value to a value.
+   *
+   * @returns A value value.
+   * @exception if a JSON value cannot be found
+   */
+  simdjson_really_inline operator value() noexcept(false);
 #endif
   /**
    * This method scans the array and counts the number of elements.
@@ -399,7 +416,6 @@ protected:
 
   simdjson_really_inline value_iterator resume_value_iterator() noexcept;
   simdjson_really_inline value_iterator get_root_value_iterator() noexcept;
-  simdjson_really_inline simdjson_result<value> get_value_unsafe() noexcept;
   simdjson_really_inline simdjson_result<object> start_or_resume_object() noexcept;
   static simdjson_really_inline document start(ondemand::json_iterator &&iter) noexcept;
 
@@ -437,6 +453,8 @@ public:
   simdjson_really_inline simdjson_result<std::string_view> get_string() noexcept;
   simdjson_really_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_really_inline simdjson_result<bool> get_bool() noexcept;
+  simdjson_really_inline simdjson_result<value> get_value() noexcept;
+
   simdjson_really_inline bool is_null() noexcept;
   simdjson_really_inline simdjson_result<std::string_view> raw_json() noexcept;
   simdjson_really_inline operator document&() const noexcept;
@@ -450,6 +468,7 @@ public:
   simdjson_really_inline operator std::string_view() noexcept(false);
   simdjson_really_inline operator raw_json_string() noexcept(false);
   simdjson_really_inline operator bool() noexcept(false);
+  simdjson_really_inline operator value() noexcept(false);
 #endif
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
   simdjson_really_inline simdjson_result<value> at(size_t index) & noexcept;
@@ -491,6 +510,7 @@ public:
   simdjson_really_inline simdjson_result<std::string_view> get_string() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_really_inline simdjson_result<bool> get_bool() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> get_value() noexcept;
   simdjson_really_inline bool is_null() noexcept;
 
   template<typename T> simdjson_really_inline simdjson_result<T> get() & noexcept;
@@ -508,6 +528,7 @@ public:
   simdjson_really_inline operator std::string_view() noexcept(false);
   simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string() noexcept(false);
   simdjson_really_inline operator bool() noexcept(false);
+  simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::value() noexcept(false);
 #endif
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at(size_t index) & noexcept;
@@ -550,6 +571,7 @@ public:
   simdjson_really_inline simdjson_result<std::string_view> get_string() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_really_inline simdjson_result<bool> get_bool() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> get_value() noexcept;
   simdjson_really_inline bool is_null() noexcept;
 
 #if SIMDJSON_EXCEPTIONS
@@ -561,6 +583,7 @@ public:
   simdjson_really_inline operator std::string_view() noexcept(false);
   simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string() noexcept(false);
   simdjson_really_inline operator bool() noexcept(false);
+  simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::value() noexcept(false);
 #endif
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at(size_t index) & noexcept;

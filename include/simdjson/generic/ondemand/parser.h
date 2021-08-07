@@ -123,6 +123,9 @@ public:
    * iteration to ensure intermediate buffers can be accessed. Any document must be destroyed before
    * you call parse() again or destroy the parser.
    *
+   * The ondemand::document instance holds the iterator. The document must remain in scope
+   * while you are accessing instances of ondemand::value, ondemand::object, ondemand::array.
+   *
    * ### REQUIRED: Buffer Padding
    *
    * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what

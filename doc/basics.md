@@ -388,14 +388,10 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   }
   ```
 * **Tree Walking and JSON Element Types:** Sometimes you don't necessarily have a document
-  with a known type, and are trying to generically inspect or walk over JSON elements. To do that, you can use iterators and the type() method.
-  For example,   here's a quick and dirty recursive function that verbosely prints the JSON document as JSON:
+  with a known type, and are trying to generically inspect or walk over JSON elements. To do that, you can use iterators and the `type()` method.
+  For example, the following is a quick and dirty recursive function that verbosely prints the JSON document as JSON. This example also illustrates lifecycle requirements: the `document` instance holds the iterator. The document must remain in scope while you are accessing instances of `value`, `object` and `array`.
   ```c++
-  // We use a template function because we need to
-  // support both ondemand::value and ondemand::document
-  // as a parameter type. Note that we move the values.
-  template <class T>
-  void recursive_print_json(T&& element) {
+  void recursive_print_json(ondemand::value element) {
     bool add_comma;
     switch (element.type()) {
     case ondemand::json_type::array:
@@ -426,7 +422,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
         recursive_print_json(field.value());
         add_comma = true;
       }
-      cout << "}";
+      cout << "}\n";
       break;
     case ondemand::json_type::number:
       // assume it fits in a double
@@ -446,9 +442,16 @@ support for users who avoid exceptions. See [the simdjson error handling documen
     }
   }
   void basics_treewalk() {
+    padded_string json = R"( [
+    { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+    { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+    { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  ] )"_padded;
     ondemand::parser parser;
-    auto json = padded_string::load("twitter.json");
-    recursive_print_json(parser.iterate(json));
+    ondemand::document doc = parser.iterate(json);
+    ondemand::value val = doc;
+    recursive_print_json(val);
+    std::cout << std::endl;
   }
   ```
 
