@@ -17,7 +17,7 @@ namespace object_error_tests {
         ASSERT_ERROR(actual_error, expected_error[count - N]);
       } else {
         ASSERT_SUCCESS(actual_error);
-        ASSERT_EQUAL(field.key().first, expected_key[count]);
+        ASSERT_EQUAL(field.key().value_unsafe(), expected_key[count]);
         ASSERT_EQUAL(actual, expected[count]);
       }
       count++;

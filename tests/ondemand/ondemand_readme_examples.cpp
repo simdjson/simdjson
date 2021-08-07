@@ -345,6 +345,59 @@ int using_the_parsed_json_6_process() {
 
   return EXIT_SUCCESS;
 }
+
+bool exception_free_object_loop() {
+  auto json = R"({"k\u0065y": 1})"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  auto error = parser.iterate(json).get(doc);
+  if(error) { return false; }
+  ondemand::object object;
+  error = doc.get_object().get(object);
+  if(error) { return false; }
+  for(auto field : object) {
+    std::string_view keyv;
+    error = field.unescaped_key().get(keyv);
+    if(error) { return false; }
+    if(keyv == "key") {
+      uint64_t intvalue;
+      error = field.value().get(intvalue);
+      if(error) { return false; }
+      std::cout << intvalue;
+    }
+  }
+  return true;
+}
+
+
+bool exception_free_object_loop_no_escape() {
+  auto json = R"({"k\u0065y": 1})"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  auto error = parser.iterate(json).get(doc);
+  if(error) { return false; }
+  ondemand::object object;
+  error = doc.get_object().get(object);
+  if(error) { return false; }
+  for(auto field : object) {
+    ondemand::raw_json_string keyv;
+    error = field.key().get(keyv);
+    /**
+     * If you need to escape the keys, you can do
+     * std::string_view keyv;
+     * error = field.unescaped_key().get(keyv);
+     */
+    if(error) { return false; }
+    if(keyv == "key") {
+      uint64_t intvalue;
+      error = field.value().get(intvalue);
+      if(error) { return false; }
+      std::cout << intvalue;
+    }
+  }
+  return true;
+}
+
 bool using_the_parsed_json_6() {
   TEST_START();
   ASSERT_EQUAL(using_the_parsed_json_6_process(), EXIT_SUCCESS);

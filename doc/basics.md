@@ -871,6 +871,30 @@ bool parse() {
 ```
 
 
+The following examples illustrates how to iterate through the content of an object without
+having to handle exceptions.
+```c++
+  auto json = R"({"k\u0065y": 1})"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  auto error = parser.iterate(json).get(doc);
+  if(error) { return false; }
+  ondemand::object object;
+  error = doc.get_object().get(object);
+  if(error) { return false; }
+  for(auto field : object) {
+    ondemand::raw_json_string keyv;
+    error = field.key().get(keyv);
+    if(error) { return false; }
+    if(keyv == "key") {
+      uint64_t intvalue;
+      error = field.value().get(intvalue);
+      if(error) { return false; }
+      std::cout << intvalue;
+    }
+  }
+```
+
 ### Disabling Exceptions
 
 The simdjson can be build with exceptions entirely disabled. It checks the `__cpp_exceptions` macro at compile time. Even if exceptions are enabled in your compiler, you may still disable exceptions specifically for simdjson, by setting `SIMDJSON_EXCEPTIONS` to `0` (false) at compile-time when building the simdjson library. If you are building with CMake,  to ensure you don't write any code that uses exceptions, you compile with `SIMDJSON_EXCEPTIONS=OFF`. For example, if including the project via cmake:

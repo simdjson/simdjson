@@ -416,9 +416,10 @@ namespace array_tests {
           }
           // Break after using first value in child object
           case 3: {
-            for (auto [ child_field, error ] : value.get_object()) {
-              ASSERT_SUCCESS(error);
-              ASSERT_EQUAL(child_field.key(), "x");
+            for (auto child_field : value.get_object()) {
+              ondemand::raw_json_string k;
+              ASSERT_SUCCESS( child_field.key().get(k) );
+              ASSERT_EQUAL(k, "x");
               uint64_t x;
               ASSERT_SUCCESS( child_field.value().get(x) );
               ASSERT_EQUAL(x, 3);
@@ -430,9 +431,10 @@ namespace array_tests {
 
           // Break without using first value in child object
           case 4: {
-            for (auto [ child_field, error ] : value.get_object()) {
-              ASSERT_SUCCESS(error);
-              ASSERT_EQUAL(child_field.key(), "x");
+            for (auto child_field : value.get_object()) {
+              ondemand::raw_json_string k;
+              ASSERT_SUCCESS( child_field.key().get(k) );
+              ASSERT_EQUAL(k, "x");
               break;
             }
             std::cout << "  - After reaching (but not using) first value in child object ..." << std::endl;
@@ -457,8 +459,7 @@ namespace array_tests {
 
           // Break after first value in child array
           case 7: {
-            for (auto [ child_value, error ] : value) {
-              ASSERT_SUCCESS(error);
+            for (auto child_value : value) {
               uint64_t x;
               ASSERT_SUCCESS( child_value.get(x) );
               ASSERT_EQUAL( x, 7 );
