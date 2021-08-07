@@ -40,16 +40,16 @@ simdjson_really_inline simdjson_result<value> document::get_value() noexcept {
     case '[': {
       array result;
       SIMDJSON_TRY( get_array().get(result) );
+      iter._depth -= 1 ; /* undoing the increment so we go back at the doc depth.*/
       return value(result.iter);
     }
     case '{': {
       object result;
       SIMDJSON_TRY( get_object().get(result) );
+      iter._depth -= 1 ; /* undoing the increment so we go back at the doc depth.*/
       return value(result.iter);
     }
     default:
-      // TODO it is still wrong to convert this to a value! get_root_bool / etc. will not be
-      // called if you do this.
       return value(get_root_value_iterator());
   }
 }
