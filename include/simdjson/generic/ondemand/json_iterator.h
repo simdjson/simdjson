@@ -88,9 +88,12 @@ public:
    * Get the root value iterator
    */
   simdjson_really_inline token_position root_position() const noexcept;
-
   /**
-   * Assert if the iterator is not at the start
+   * Assert that we are at the document depth (== 1)
+   */
+  simdjson_really_inline void assert_at_document_depth() const noexcept;
+  /**
+   * Assert that we are at the root of the document
    */
   simdjson_really_inline void assert_at_root() const noexcept;
 

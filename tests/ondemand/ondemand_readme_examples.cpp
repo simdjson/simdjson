@@ -62,16 +62,18 @@ void recursive_print_json(ondemand::value element) {
 }
 
 bool basics_treewalk() {
-  padded_string json = R"( [
+  padded_string json[3] = {R"( [
     { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
     { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
     { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-  ] )"_padded;
+  ] )"_padded, R"( {"key":"value"} )"_padded, "[12,3]"_padded};
   ondemand::parser parser;
-  ondemand::document doc = parser.iterate(json);
-  ondemand::value val = doc;
-  recursive_print_json(val);
-  std::cout << std::endl;
+  for(size_t i = 0 ; i < 3; i++) {
+    ondemand::document doc = parser.iterate(json[i]);
+    ondemand::value val = doc;
+    recursive_print_json(val);
+    std::cout << std::endl;
+  }
   return true;
 }
 

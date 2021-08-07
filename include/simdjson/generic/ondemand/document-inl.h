@@ -36,21 +36,26 @@ simdjson_really_inline simdjson_result<object> document::start_or_resume_object(
 simdjson_really_inline simdjson_result<value> document::get_value() noexcept {
   // Make sure we start any arrays or objects before returning, so that start_root_<object/array>()
   // gets called.
+  iter.assert_at_document_depth();
   switch (*iter.peek()) {
-    case '[': {
+    case '[': {//shit
       array result;
       SIMDJSON_TRY( get_array().get(result) );
       iter._depth -= 1 ; /* undoing the increment so we go back at the doc depth.*/
+      iter.assert_at_document_depth();
       return value(result.iter);
     }
     case '{': {
       object result;
       SIMDJSON_TRY( get_object().get(result) );
-      iter._depth -= 1 ; /* undoing the increment so we go back at the doc depth.*/
+      iter.assert_at_document_depth();
       return value(result.iter);
     }
     default:
-      return value(get_root_value_iterator());
+      // Unfortunately, scalar documents are a special case in simdjson and they cannot
+      // be safely converted to value instances.
+      return SCALAR_DOCUMENT_AS_VALUE;
+      // return value(get_root_value_iterator());
   }
 }
 simdjson_really_inline simdjson_result<array> document::get_array() & noexcept {

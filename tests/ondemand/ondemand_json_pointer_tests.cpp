@@ -40,6 +40,7 @@ namespace json_pointer_tests {
 
     bool run_success_test(const padded_string & json,std::string_view json_pointer,std::string expected) {
         TEST_START();
+        std::cout <<":"<< json_pointer<<std::endl;
         ondemand::parser parser;
         ondemand::document doc;
         ondemand::value val;
@@ -48,6 +49,33 @@ namespace json_pointer_tests {
         ASSERT_SUCCESS(doc.at_pointer(json_pointer).get(val));
         ASSERT_SUCCESS(simdjson::to_json_string(val).get(actual));
         ASSERT_EQUAL(actual,expected);
+        // We want to see if the value is usable besides to_json_string.
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ASSERT_SUCCESS(doc.at_pointer(json_pointer).get(val));
+        ondemand::json_type type;
+        ASSERT_SUCCESS(val.type().get(type));
+        switch (type) {
+            case ondemand::json_type::array:
+               ASSERT_SUCCESS(val.get_array().error());
+               break;
+            case ondemand::json_type::object:
+               ASSERT_SUCCESS(val.get_object().error());
+               break;
+            case ondemand::json_type::number:
+               ASSERT_SUCCESS(val.get_double().error());
+               break;
+            case ondemand::json_type::string:
+               ASSERT_SUCCESS(val.get_string().error());
+               break;
+            case ondemand::json_type::boolean:
+               ASSERT_SUCCESS(val.get_bool().error());
+               break;
+            case ondemand::json_type::null:
+               ASSERT_TRUE(val.is_null());
+               break;
+            default:
+               TEST_FAIL("unexpected type");
+        }
         TEST_SUCCEED();
     }
 
@@ -275,6 +303,17 @@ namespace json_pointer_tests {
                 json_pointer_invalidation() &&
                 demo_test() &&
                 demo_relative_path() &&
+                run_success_test(TEST_RFC_JSON,"/foo",R"(["bar", "baz"])") &&
+                run_success_test(TEST_RFC_JSON,"/foo/0",R"("bar")") &&
+                run_success_test(TEST_RFC_JSON,"/",R"(0)") &&
+                run_success_test(TEST_RFC_JSON,"/a~1b",R"(1)") &&
+                run_success_test(TEST_RFC_JSON,"/c%d",R"(2)") &&
+                run_success_test(TEST_RFC_JSON,"/e^f",R"(3)") &&
+                run_success_test(TEST_RFC_JSON,"/g|h",R"(4)") &&
+                run_success_test(TEST_RFC_JSON,R"(/i\\j)",R"(5)") &&
+                run_success_test(TEST_RFC_JSON,R"(/k\"l)",R"(6)") &&
+                run_success_test(TEST_RFC_JSON,"/ ",R"(7)") &&
+                run_success_test(TEST_RFC_JSON,"/m~0n",R"(8)") &&
                 run_success_test(TEST_RFC_JSON,"",R"({
         "foo": ["bar", "baz"],
         "": 0,
@@ -287,17 +326,6 @@ namespace json_pointer_tests {
         " ": 7,
         "m~n": 8
     })") &&
-                run_success_test(TEST_RFC_JSON,"/foo",R"(["bar", "baz"])") &&
-                run_success_test(TEST_RFC_JSON,"/foo/0",R"("bar")") &&
-                run_success_test(TEST_RFC_JSON,"/",R"(0)") &&
-                run_success_test(TEST_RFC_JSON,"/a~1b",R"(1)") &&
-                run_success_test(TEST_RFC_JSON,"/c%d",R"(2)") &&
-                run_success_test(TEST_RFC_JSON,"/e^f",R"(3)") &&
-                run_success_test(TEST_RFC_JSON,"/g|h",R"(4)") &&
-                run_success_test(TEST_RFC_JSON,R"(/i\\j)",R"(5)") &&
-                run_success_test(TEST_RFC_JSON,R"(/k\"l)",R"(6)") &&
-                run_success_test(TEST_RFC_JSON,"/ ",R"(7)") &&
-                run_success_test(TEST_RFC_JSON,"/m~0n",R"(8)") &&
                 run_success_test(TEST_JSON, "", R"({
         "/~01abc": [
         0,
