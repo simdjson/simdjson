@@ -33,7 +33,13 @@ int main(int argc, char *argv[]) {
     std::cout << error << std::endl;
     return EXIT_FAILURE;
   }
-  std::cout << "document has the following type at the root: " << doc.type()
+  simdjson::ondemand::json_type type;
+  error = doc.type().get(type);
+  if (error) {
+    std::cout << error << std::endl;
+    return EXIT_FAILURE;
+  }
+  std::cout << "document has the following type at the root: " << type
             << std::endl;
 
   if (argc == 2) {
