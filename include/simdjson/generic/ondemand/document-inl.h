@@ -38,7 +38,7 @@ simdjson_really_inline simdjson_result<value> document::get_value() noexcept {
   // gets called.
   iter.assert_at_document_depth();
   switch (*iter.peek()) {
-    case '[': {//shit
+    case '[': {
       array result;
       SIMDJSON_TRY( get_array().get(result) );
       iter._depth -= 1 ; /* undoing the increment so we go back at the doc depth.*/
