@@ -129,6 +129,58 @@ namespace json_pointer_tests {
         TEST_SUCCEED();
     }
 
+    bool document_as_scalar() {
+        TEST_START();
+        auto number_json = R"( 1 )"_padded;
+        auto null_json = R"( null )"_padded;
+        auto string_json = R"( "a" )"_padded;
+        auto true_json = R"( true )"_padded;
+        auto false_json = R"( false )"_padded;
+        auto object_json = R"( {} )"_padded;
+        auto array_json = R"( {} )"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ondemand::value val;
+        bool is_scalar;
+        std::cout << "  checking number"<< std::endl;
+        ASSERT_SUCCESS(parser.iterate(number_json).get(doc));
+        ASSERT_SUCCESS(doc.scalar().get(is_scalar));
+        ASSERT_TRUE(is_scalar);
+        ASSERT_ERROR(doc.at_pointer("").get(val), simdjson::SCALAR_DOCUMENT_AS_VALUE);
+        std::cout << "  checking null"<< std::endl;
+        ASSERT_SUCCESS(parser.iterate(null_json).get(doc));
+        ASSERT_SUCCESS(doc.scalar().get(is_scalar));
+        ASSERT_TRUE(is_scalar);
+        ASSERT_ERROR(doc.at_pointer("").get(val), simdjson::SCALAR_DOCUMENT_AS_VALUE);
+        std::cout << "  checking string"<< std::endl;
+        ASSERT_SUCCESS(parser.iterate(string_json).get(doc));
+        ASSERT_SUCCESS(doc.scalar().get(is_scalar));
+        ASSERT_TRUE(is_scalar);
+        ASSERT_ERROR(doc.at_pointer("").get(val), simdjson::SCALAR_DOCUMENT_AS_VALUE);
+        std::cout << "  checking false"<< std::endl;
+        ASSERT_SUCCESS(parser.iterate(false_json).get(doc));
+        ASSERT_SUCCESS(doc.scalar().get(is_scalar));
+        ASSERT_TRUE(is_scalar);
+        ASSERT_ERROR(doc.at_pointer("").get(val), simdjson::SCALAR_DOCUMENT_AS_VALUE);
+        std::cout << "  checking true"<< std::endl;
+        ASSERT_SUCCESS(parser.iterate(true_json).get(doc));
+        ASSERT_SUCCESS(doc.scalar().get(is_scalar));
+        ASSERT_TRUE(is_scalar);
+        ASSERT_ERROR(doc.at_pointer("").get(val), simdjson::SCALAR_DOCUMENT_AS_VALUE);
+        std::cout << "  checking object"<< std::endl;
+        ASSERT_SUCCESS(parser.iterate(object_json).get(doc));
+        ASSERT_SUCCESS(doc.scalar().get(is_scalar));
+        ASSERT_FALSE(is_scalar);
+        ASSERT_SUCCESS(doc.at_pointer("").get(val));
+        std::cout << "  checking array"<< std::endl;
+        ASSERT_SUCCESS(parser.iterate(array_json).get(doc));
+        ASSERT_SUCCESS(doc.scalar().get(is_scalar));
+        ASSERT_FALSE(is_scalar);
+        ASSERT_SUCCESS(doc.at_pointer("").get(val));
+        TEST_SUCCEED();
+    }
+
+
     bool many_json_pointers() {
         TEST_START();
         auto cars_json = R"( [
@@ -388,6 +440,7 @@ namespace json_pointer_tests {
                 run_failure_test(TEST_JSON, "/~1~001abc/", INVALID_JSON_POINTER) &&
                 run_failure_test(TEST_JSON, "/~1~001abc/-", INDEX_OUT_OF_BOUNDS) &&
                 many_json_pointers() &&
+                document_as_scalar() &&
                 true;
     }
 }   // json_pointer_tests

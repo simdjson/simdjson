@@ -174,13 +174,12 @@ namespace array_tests {
   bool iterate_array_count() {
     TEST_START();
     const auto json = R"([ 1, 10, 100 ])"_padded;
-    const auto badjson = R"([ 1, 10 100 ])"_padded;
     const vector<uint64_t> expected_value = { 1, 10, 100 };
 
     SUBTEST("ondemand::count_elements", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::array array;
       ASSERT_RESULT( doc_result.type(), json_type::array );
-      ASSERT_SUCCESS( doc_result.get(array) );
+      ASSERT_SUCCESS( doc_result.get_array().get(array) );
       size_t count;
       ASSERT_SUCCESS( array.count_elements().get(count) );
       ASSERT_EQUAL(count, expected_value.size());
@@ -202,6 +201,40 @@ namespace array_tests {
         receiver[i] = actual;
         i++;
       }
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+
+  bool iterate_empty_array_count() {
+    TEST_START();
+    const auto json = R"([])"_padded;
+
+    SUBTEST("ondemand::count_elements", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get_array().get(array) );
+      size_t count;
+      ASSERT_SUCCESS( array.count_elements().get(count) );
+      ASSERT_EQUAL(count, 0);
+      return true;
+    }));
+    SUBTEST("ondemand::count_elements_and_decode", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
+      size_t count;
+      ASSERT_SUCCESS( array.count_elements().get(count) );
+      ASSERT_EQUAL(count, 0);
+      size_t i = 0;
+      std::vector<uint64_t> receiver(count);
+      for (auto value : array) {
+        uint64_t actual;
+        ASSERT_SUCCESS( value.get(actual) );
+        i++;
+      }
+      ASSERT_EQUAL(i, 0);
       return true;
     }));
     TEST_SUCCEED();
@@ -606,6 +639,7 @@ namespace array_tests {
 
   bool run() {
     return
+           iterate_empty_array_count() &&
            iterate_sub_array_count() &&
            iterate_complex_array_count() &&
            iterate_bad_array_count() &&

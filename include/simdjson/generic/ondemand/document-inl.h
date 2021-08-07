@@ -41,13 +41,14 @@ simdjson_really_inline simdjson_result<value> document::get_value() noexcept {
     case '[': {
       array result;
       SIMDJSON_TRY( get_array().get(result) );
-      iter._depth -= 1 ; /* undoing the increment so we go back at the doc depth.*/
+      iter._depth = 1 ; /* undoing the potential increment so we go back at the doc depth.*/
       iter.assert_at_document_depth();
       return value(result.iter);
     }
     case '{': {
       object result;
       SIMDJSON_TRY( get_object().get(result) );
+      iter._depth = 1 ; /* undoing the potential increment so we go back at the doc depth.*/
       iter.assert_at_document_depth();
       return value(result.iter);
     }
@@ -138,7 +139,10 @@ simdjson_really_inline simdjson_result<size_t> document::count_elements() & noex
   auto a = get_array();
   simdjson_result<size_t> answer = a.count_elements();
   /* If there was an array, we are now left pointing at its first element. */
-  if(answer.error() == SUCCESS) { iter._depth -= 1 ; /* undoing the increment so we go back at the doc depth.*/ }
+  if(answer.error() == SUCCESS) {
+    iter._depth = 1 ; /* undoing the increment so we go back at the doc depth.*/
+    iter.assert_at_document_depth();
+  }
   return answer;
 }
 simdjson_really_inline simdjson_result<value> document::at(size_t index) & noexcept {
@@ -191,6 +195,13 @@ simdjson_really_inline simdjson_result<std::string_view> document::raw_json() no
 
 simdjson_really_inline simdjson_result<json_type> document::type() noexcept {
   return get_root_value_iterator().type();
+}
+
+simdjson_really_inline simdjson_result<bool> document::scalar() noexcept {
+  json_type this_type;
+  auto error = type().get(this_type);
+  if(error) { return error; }
+  return ! ((this_type == json_type::array) || (this_type == json_type::object));
 }
 
 simdjson_really_inline simdjson_result<std::string_view> document::raw_json_token() noexcept {
@@ -361,6 +372,11 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_t
   return first.type();
 }
 
+simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::scalar() noexcept {
+  if (error()) { return error(); }
+  return first.scalar();
+}
+
 #if SIMDJSON_EXCEPTIONS
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
@@ -453,8 +469,8 @@ simdjson_really_inline simdjson_result<value> document_reference::operator[](std
 simdjson_really_inline simdjson_result<value> document_reference::operator[](const char *key) & noexcept { return (*doc)[key]; }
 simdjson_really_inline simdjson_result<value> document_reference::find_field_unordered(std::string_view key) & noexcept { return doc->find_field_unordered(key); }
 simdjson_really_inline simdjson_result<value> document_reference::find_field_unordered(const char *key) & noexcept { return doc->find_field_unordered(key); }
-
 simdjson_really_inline simdjson_result<json_type> document_reference::type() noexcept { return doc->type(); }
+simdjson_really_inline simdjson_result<bool> document_reference::scalar() noexcept { return doc->scalar(); }
 simdjson_really_inline simdjson_result<std::string_view> document_reference::raw_json_token() noexcept { return doc->raw_json_token(); }
 simdjson_really_inline simdjson_result<value> document_reference::at_pointer(std::string_view json_pointer) noexcept { return doc->at_pointer(json_pointer); }
 simdjson_really_inline simdjson_result<std::string_view> document_reference::raw_json() noexcept { return doc->raw_json();}
@@ -559,7 +575,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_t
   if (error()) { return error(); }
   return first.type();
 }
-
+simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::scalar() noexcept {
+  if (error()) { return error(); }
+  return first.scalar();
+}
 #if SIMDJSON_EXCEPTIONS
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
