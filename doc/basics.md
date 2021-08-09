@@ -236,11 +236,11 @@ Using the Parsed JSON
 Once you have a document (`simdjson::ondemand::document`), you can navigate it with idiomatic C++ iterators, operators and casts.
 Besides the documents instances and native types (`double`, `uint64_t`, `int64_t`, `bool`), we also have access Unicode (UTF-8) strings (`std::string_view`), 
 objects (`simdjson::ondemand::object`) and arrays (`simdjson::ondemand::array`). We also have a generic type (`simdjson::ondemand::value`)
-which represent a potential array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`, string) inside an array 
+which represent a potential array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`, string) inside an array
 or an object. Both generic types (`simdjson::ondemand::document` and `simdjson::ondemand::value`) have a `type()` method returning
 a `json_type` value describing the value (`json_type::array`, `json_type::object`, `json_type::number`, j`son_type::string`, `json_type::boolean`, `json_type::null`).
 While you are accessing the document, the `document` instance should remain in scope: it is your "iterator" which keeps track
-of where you are in the document.
+of where you are in the JSON document. By design, there is one and only one `document` instance per JSON document.
 
 
 The following specific instructions indicate how to use the JSON when exceptions are enabled, but simdjson has full, idiomatic
