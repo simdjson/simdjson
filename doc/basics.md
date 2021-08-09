@@ -192,8 +192,6 @@ For best performance, a `parser` instance should be reused over several files: o
 needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory
 allocations during parsing when using simdjson. [See our performance notes for details](performance.md).
 
-
-
 C++11 Support and string_view
 -------------
 
@@ -227,7 +225,7 @@ offer the same API, irrespective of the compiler and standard library. The macro
 `SIMDJSON_HAS_STRING_VIEW` will be *undefined* to indicate that we emulate `string_view`.
 
 Some users prefer to use non-JSON native encoding formats such as UTF-16 or UTF-32. Users may
-transcode the UTF-8 strings produced by the simdjson library to other formats. See the 
+transcode the UTF-8 strings produced by the simdjson library to other formats. See the
 [simdutf library](https://github.com/simdutf/simdutf), for example.
 
 Using the Parsed JSON
