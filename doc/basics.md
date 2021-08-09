@@ -234,7 +234,7 @@ Using the Parsed JSON
 ---------------------
 
 Once you have a document (`simdjson::ondemand::document`), you can navigate it with idiomatic C++ iterators, operators and casts.
-Besides the documents instances and native types (`double`, `uint64_t`, `int64_t`, `bool`), we also have access Unicode (UTF-8) strings (`std::string_view`), 
+Besides the documents instances and native types (`double`, `uint64_t`, `int64_t`, `bool`), we also have access Unicode (UTF-8) strings (`std::string_view`),
 objects (`simdjson::ondemand::object`) and arrays (`simdjson::ondemand::array`). We also have a generic type (`simdjson::ondemand::value`)
 which represent a potential array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`, string) inside an array
 or an object. Both generic types (`simdjson::ondemand::document` and `simdjson::ondemand::value`) have a `type()` method returning
