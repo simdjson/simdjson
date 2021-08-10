@@ -352,6 +352,11 @@ public:
   inline std::string to_debug_string() noexcept;
 
   /**
+   * Returns the location in the document if in bounds.
+   */
+  inline const char * current_location() noexcept;
+
+  /**
    * Get the value associated with the given JSON pointer.  We use the RFC 6901
    * https://tools.ietf.org/html/rfc6901 standard.
    *
