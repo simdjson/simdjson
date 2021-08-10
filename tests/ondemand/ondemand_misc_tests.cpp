@@ -20,6 +20,21 @@ namespace misc_tests {
     TEST_SUCCEED();
   }
 
+  bool doc_ref() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata = R"({"":2,"v":[]})"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ondemand::document_reference ref(doc);
+    ondemand::value arr;
+    ASSERT_SUCCESS(ref["v"].get(arr));
+    ondemand::json_type global_type;
+    ASSERT_SUCCESS(arr.type().get(global_type));
+    ASSERT_EQUAL(global_type, ondemand::json_type::array);
+    TEST_SUCCEED();
+  }
+
   bool issue1660() {
     TEST_START();
     ondemand::parser parser;
@@ -345,6 +360,7 @@ namespace misc_tests {
            big_integer_in_string() &&
            big_integer() &&
            raw_json_token() &&
+           doc_ref() &&
            true;
   }
 
