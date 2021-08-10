@@ -226,16 +226,16 @@ offer the same API, irrespective of the compiler and standard library. The macro
 `SIMDJSON_HAS_STRING_VIEW` will be *undefined* to indicate that we emulate `string_view`.
 
 Some users prefer to use non-JSON native encoding formats such as UTF-16 or UTF-32. Users may
-transcode the UTF-8 strings produced by the simdjson library to other formats. See the 
+transcode the UTF-8 strings produced by the simdjson library to other formats. See the
 [simdutf library](https://github.com/simdutf/simdutf), for example.
 
 Using the Parsed JSON
 ---------------------
 
 Once you have a document (`simdjson::ondemand::document`), you can navigate it with idiomatic C++ iterators, operators and casts.
-Besides native types (`double`, `uint64_t`, `int64_t`, `bool`), we also have access Unicode (UTF-8) strings (`std::string_view`), 
+Besides native types (`double`, `uint64_t`, `int64_t`, `bool`), we also have access Unicode (UTF-8) strings (`std::string_view`),
 objects (`simdjson::ondemand::object`) and arrays (`simdjson::ondemand::array`). We also have a generic type (`simdjson::ondemand::value`)
-which represent a potential array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`, string) inside an array 
+which represent a potential array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`, string) inside an array
 or an object. Both generic types (`simdjson::ondemand::document` and `simdjson::ondemand::value`) have a `type()` method returning
 a `json_type` value describing the value (`json_type::array`, `json_type::object`, `json_type::number`, j`son_type::string`, `json_type::boolean`, `json_type::null`).
 
