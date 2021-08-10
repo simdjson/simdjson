@@ -5,6 +5,23 @@ using namespace simdjson;
 
 namespace misc_tests {
   using namespace std;
+  bool test_get_value() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string json = R"({"a":[[1,null,3.0],["a","b",true],[10000000000,2,3]]})"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::value val;
+    ASSERT_SUCCESS(doc.get_value().get(val));
+    ondemand::object obj;
+    ASSERT_SUCCESS(val.get_object().get(obj));
+    ondemand::array arr;
+    ASSERT_SUCCESS(obj["a"].get_array().get(arr));
+    size_t count;
+    ASSERT_SUCCESS(arr.count_elements().get(count));
+    ASSERT_EQUAL(3,count);
+    TEST_SUCCEED();
+  }
 
   bool issue1661a() {
     TEST_START();
@@ -333,6 +350,7 @@ namespace misc_tests {
 
   bool run() {
     return
+           test_get_value() &&
            issue1660_with_uint64() &&
            issue1660_with_int64() &&
            issue1660_with_double() &&
