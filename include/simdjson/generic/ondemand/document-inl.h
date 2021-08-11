@@ -20,8 +20,8 @@ inline std::string document::to_debug_string() noexcept {
   return iter.to_string();
 }
 
-inline const char * current_location() noexcept {
-  
+inline const char * document::current_location() noexcept {
+  return iter.current_location();
 }
 
 simdjson_really_inline value_iterator document::resume_value_iterator() noexcept {

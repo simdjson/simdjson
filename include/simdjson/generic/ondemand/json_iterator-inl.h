@@ -191,6 +191,14 @@ inline std::string json_iterator::to_string() const noexcept {
           + std::string(" ]");
 }
 
+inline const char * json_iterator::current_location() noexcept {
+  auto cur_struct_index = token.position() - parser->implementation->structural_indexes.get();
+  if (cur_struct_index > parser->implementation->n_structural_indexes) {
+    return nullptr;
+  }
+  return reinterpret_cast<const char *>(token.peek());
+}
+
 simdjson_really_inline bool json_iterator::is_alive() const noexcept {
   return parser;
 }

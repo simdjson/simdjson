@@ -352,7 +352,7 @@ public:
   inline std::string to_debug_string() noexcept;
 
   /**
-   * Returns the location in the document if in bounds.
+   * Returns the current location in the document if in bounds.
    */
   inline const char * current_location() noexcept;
 
