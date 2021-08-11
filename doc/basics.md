@@ -179,11 +179,10 @@ documents.
 
 ### Parser, Document and JSON Scope
 
-Because a document is an iterator over the JSON text, both the JSON text and the parser must
-remain alive (in scope) while you are using it. Further, a `parser` may have at most
-one document open at a time, since it holds allocated memory used for the parsing.
-In particular, if you must pass a document instance to a function, you should avoid
-passing it by value: choose to pass it by reference instance to avoid the copy.
+For code safety, you should keep (1) the `parser` instance, (2) the input string and (3) the document instance alive throughout your parsing. Additionally, you should follow the following rules:
+
+- A `parser` may have at most one document open at a time, since it holds allocated memory used for the parsing.
+- By design, you should only have one `document` instance per JSON document. Thus, if you must pass a document instance to a function, you should avoid passing it by value: choose to pass it by reference instance to avoid the copy. (We also provide a `document_reference` class if you need to pass by value.)
 
 During the `iterate` call, the original JSON text is never modified--only read. After you are done
 with the document, the source (whether file or string) can be safely discarded.
@@ -232,7 +231,7 @@ Using the Parsed JSON
 ---------------------
 
 Once you have a document (`simdjson::ondemand::document`), you can navigate it with idiomatic C++ iterators, operators and casts.
-Besides the documents instances and native types (`double`, `uint64_t`, `int64_t`, `bool`), we also have access Unicode (UTF-8) strings (`std::string_view`),
+Besides the documents instances and native types (`double`, `uint64_t`, `int64_t`, `bool`), we also access Unicode (UTF-8) strings (`std::string_view`),
 objects (`simdjson::ondemand::object`) and arrays (`simdjson::ondemand::array`). We also have a generic type (`simdjson::ondemand::value`)
 which represent a potential array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`, string) inside an array
 or an object. Both generic types (`simdjson::ondemand::document` and `simdjson::ondemand::value`) have a `type()` method returning
