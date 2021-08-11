@@ -20,7 +20,7 @@ inline std::string document::to_debug_string() noexcept {
   return iter.to_string();
 }
 
-inline const char * document::current_location() noexcept {
+inline simdjson_result<const char *> document::current_location() noexcept {
   return iter.current_location();
 }
 

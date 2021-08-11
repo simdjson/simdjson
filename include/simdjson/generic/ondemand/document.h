@@ -354,7 +354,7 @@ public:
   /**
    * Returns the current location in the document if in bounds.
    */
-  inline const char * current_location() noexcept;
+  inline simdjson_result<const char *> current_location() noexcept;
 
   /**
    * Get the value associated with the given JSON pointer.  We use the RFC 6901

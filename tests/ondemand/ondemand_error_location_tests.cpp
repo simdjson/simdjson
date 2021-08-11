@@ -16,8 +16,10 @@ namespace error_location_tests {
         size_t count{0};
         for (auto value : doc) {
             int64_t i;
+            const char* c;
             // Must call current_location first because get_int64() will consume values
-            ASSERT_EQUAL(*doc.current_location(),expected[count]);
+            ASSERT_SUCCESS(doc.current_location().get(c));
+            ASSERT_EQUAL(*c,expected[count]);
             ASSERT_SUCCESS(value.get_int64().get(i));
             ASSERT_EQUAL(i,expected_values[count]);
             count++;

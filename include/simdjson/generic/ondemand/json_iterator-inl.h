@@ -191,10 +191,10 @@ inline std::string json_iterator::to_string() const noexcept {
           + std::string(" ]");
 }
 
-inline const char * json_iterator::current_location() noexcept {
+inline simdjson_result<const char *> json_iterator::current_location() noexcept {
   auto cur_struct_index = token.position() - parser->implementation->structural_indexes.get();
-  if (cur_struct_index > parser->implementation->n_structural_indexes) {
-    return nullptr;
+  if (cur_struct_index > static_cast<int>(parser->implementation->n_structural_indexes)) {
+    return INDEX_OUT_OF_BOUNDS;
   }
   return reinterpret_cast<const char *>(token.peek());
 }
