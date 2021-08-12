@@ -47,9 +47,10 @@ public:
   /**
    * Reset the iterator so that we are pointing back at the
    * beginning of the array. You should still consume values only once even if you
-   * can iterate through the array more than once. If you unescape a string within
-   * the array more than once, you have unsafe code. Note that rewinding an array
-   * means that you may need to reparse it anew: it is not a free operation.
+   * can iterate through the array more than once. If you unescape a string
+   * within the array more than once, you have unsafe code. Note that rewinding
+   * an array means that you may need to reparse it anew: it is not a free
+   * operation.
    *
    * @returns true if the array contains some elements (not empty)
    */
