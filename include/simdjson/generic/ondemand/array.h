@@ -42,7 +42,7 @@ public:
    * there is a missing comma), then an error is returned and it is no longer
    * safe to continue.
    */
-  inline simdjson_result<size_t> count_elements() & noexcept;
+  simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
 
   /**
    * Reset the iterator so that we are pointing back at the
