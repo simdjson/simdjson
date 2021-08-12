@@ -322,6 +322,14 @@ public:
   simdjson_really_inline simdjson_result<json_type> type() noexcept;
 
   /**
+   * Checks whether the value is a scalar (string, number, null, Boolean).
+   * Returns false when there it is an array or object.
+   *
+   * @returns true if the type is string, number, null, Boolean
+   * @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse".
+   */
+  simdjson_really_inline simdjson_result<bool> scalar() noexcept;
+  /**
    * Get the raw JSON for this token.
    *
    * The string_view will always point into the input buffer.
@@ -536,6 +544,7 @@ public:
    * let it throw an exception).
    */
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
+  simdjson_really_inline simdjson_result<bool> scalar() noexcept;
 
   /** @copydoc simdjson_really_inline std::string_view value::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;

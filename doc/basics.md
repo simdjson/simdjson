@@ -191,8 +191,6 @@ For best performance, a `parser` instance should be reused over several files: o
 needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory
 allocations during parsing when using simdjson. [See our performance notes for details](performance.md).
 
-
-
 C++11 Support and string_view
 -------------
 
@@ -233,11 +231,14 @@ Using the Parsed JSON
 ---------------------
 
 Once you have a document (`simdjson::ondemand::document`), you can navigate it with idiomatic C++ iterators, operators and casts.
-Besides native types (`double`, `uint64_t`, `int64_t`, `bool`), we also have access Unicode (UTF-8) strings (`std::string_view`),
+Besides the documents instances and native types (`double`, `uint64_t`, `int64_t`, `bool`), we also access Unicode (UTF-8) strings (`std::string_view`),
 objects (`simdjson::ondemand::object`) and arrays (`simdjson::ondemand::array`). We also have a generic type (`simdjson::ondemand::value`)
 which represent a potential array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`, string) inside an array
 or an object. Both generic types (`simdjson::ondemand::document` and `simdjson::ondemand::value`) have a `type()` method returning
 a `json_type` value describing the value (`json_type::array`, `json_type::object`, `json_type::number`, j`son_type::string`, `json_type::boolean`, `json_type::null`).
+While you are accessing the document, the `document` instance should remain in scope: it is your "iterator" which keeps track
+of where you are in the JSON document. By design, there is one and only one `document` instance per JSON document.
+
 
 The following specific instructions indicate how to use the JSON when exceptions are enabled, but simdjson has full, idiomatic
 support for users who avoid exceptions. See [the simdjson error handling documentation](basics.md#error-handling) for more.
@@ -310,8 +311,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   - `field.unescaped_key()` will get you the unescaped key string.
   - `field.value()` will get you the value, which you can then use all these other methods on.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index by index. Instead,
-  you should to iterate through the array and keep an index yourself.
-* **Output to strings (simdjson 1.0 or better):** Given a document, a value, an array or an object in a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_json_string(element)`. A call to `to_json_string` consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document. The `simdjson::to_json_string` does not allocate memory. The `to_json_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes).
+  you should iterate through the array and keep an index yourself.
+* **Output to strings:** Given a document, a value, an array or an object in a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_json_string(element)`. A call to `to_json_string` consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document. The `simdjson::to_json_string` does not allocate memory. The `to_json_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes).
   > ```C++
   > // serialize a JSON to an escaped std::string instance so that it can be parsed again as JSON
   > auto silly_json = R"( { "test": "result"  }  )"_padded;
@@ -398,14 +399,11 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   }
   ```
 * **Tree Walking and JSON Element Types:** Sometimes you don't necessarily have a document
-  with a known type, and are trying to generically inspect or walk over JSON elements. To do that, you can use iterators and the type() method.
-  For example,   here's a quick and dirty recursive function that verbosely prints the JSON document as JSON:
+  with a known type, and are trying to generically inspect or walk over JSON elements. To do that, you can use iterators and the `type()` method. You can also represent arbitrary JSON values with
+  `ondemand::value` instances: it can represent anything except a scalar document (lone number, string, null or Boolean). You can check for scalar documents with the method `scalar()`.
+  For example, the following is a quick and dirty recursive function that verbosely prints the JSON document as JSON. This example also illustrates lifecycle requirements: the `document` instance holds the iterator. The document must remain in scope while you are accessing instances of `value`, `object` and `array`.
   ```c++
-  // We use a template function because we need to
-  // support both ondemand::value and ondemand::document
-  // as a parameter type. Note that we move the values.
-  template <class T>
-  void recursive_print_json(T&& element) {
+  void recursive_print_json(ondemand::value element) {
     bool add_comma;
     switch (element.type()) {
     case ondemand::json_type::array:
@@ -436,7 +434,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
         recursive_print_json(field.value());
         add_comma = true;
       }
-      cout << "}";
+      cout << "}\n";
       break;
     case ondemand::json_type::number:
       // assume it fits in a double
@@ -456,9 +454,16 @@ support for users who avoid exceptions. See [the simdjson error handling documen
     }
   }
   void basics_treewalk() {
+    padded_string json = R"( [
+    { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+    { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+    { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  ] )"_padded;
     ondemand::parser parser;
-    auto json = padded_string::load("twitter.json");
-    recursive_print_json(parser.iterate(json));
+    ondemand::document doc = parser.iterate(json);
+    ondemand::value val = doc;
+    recursive_print_json(val);
+    std::cout << std::endl;
   }
   ```
 
@@ -686,7 +691,8 @@ doc.rewind();	// Need to manually rewind to be able to use find_field properly f
 std::cout << doc.find_field("k0") << std::endl; // Prints 27
 ```
 
-
+When the JSON path is the empty string (`""`) applied to a scalar document (lone string, number, Boolean or null), a SCALAR_DOCUMENT_AS_VALUE error is returned because scalar document cannot
+be represented as `value` instances. You can check that a document is a scalar with the method `scalar()`.
 
 Error Handling
 --------------
