@@ -305,6 +305,30 @@ bool using_the_parsed_json_rewind() {
   TEST_SUCCEED();
 }
 
+
+bool using_the_parsed_json_rewind_array() {
+  TEST_START();
+
+  ondemand::parser parser;
+  auto cars_json = R"( [
+    { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+    { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+    { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  ] )"_padded;
+
+  auto doc = parser.iterate(cars_json);
+  ondemand::array arr = doc.get_array();
+  size_t count = 0;
+  for (simdjson_unused ondemand::object car : arr) {
+    if(car["make"] == "Toyota") { count++; }
+  }
+  std::cout << "We have " << count << " Toyota cars.\n";
+  arr.rewind();
+  for (ondemand::object car : arr) {
+    cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
+  }
+  TEST_SUCCEED();
+}
 bool using_the_parsed_json_4() {
   TEST_START();
 
@@ -738,6 +762,7 @@ int main() {
     && json_array_count_complex()
     && json_array_count()
     && using_the_parsed_json_rewind()
+    && using_the_parsed_json_rewind_array()
     && basics_2()
     && using_the_parsed_json_1()
     && using_the_parsed_json_2()

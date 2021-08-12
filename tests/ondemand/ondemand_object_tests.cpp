@@ -237,6 +237,29 @@ namespace object_tests {
       ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
       return true;
     }));
+    SUBTEST("ondemand::object-rewind", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_RESULT( doc_result.type(), json_type::object );
+      ASSERT_SUCCESS( doc_result.get(object) );
+      size_t i = 0;
+      for (auto field : object) {
+        ASSERT_SUCCESS( field.error() );
+        ASSERT_EQUAL( field.key().value_unsafe(), expected_key[i]);
+        ASSERT_EQUAL( field.value().get_uint64().value_unsafe(), expected_value[i] );
+        i++;
+      }
+      ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
+      object.rewind();
+      i = 0;
+      for (auto field : object) {
+        ASSERT_SUCCESS( field.error() );
+        ASSERT_EQUAL( field.key().value_unsafe(), expected_key[i]);
+        ASSERT_EQUAL( field.value().get_uint64().value_unsafe(), expected_value[i] );
+        i++;
+      }
+      ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
+      return true;
+    }));
     SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::object> object_result = doc_result.get_object();
       size_t i = 0;
@@ -582,6 +605,44 @@ namespace object_tests {
       }
       ASSERT_EQUAL( i, 0 );
       doc_result.rewind();
+      i = 0;
+      for (auto field : object) {
+        (void)field;
+        i++;
+      }
+      ASSERT_EQUAL( i, 0 );
+      return true;
+    }));
+    SUBTEST("ondemand::object-rewind", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_RESULT( doc_result.type(), json_type::object );
+      ASSERT_SUCCESS( doc_result.get(object) );
+      size_t i = 0;
+      for (auto field : object) {
+        (void)field;
+        i++;
+      }
+      ASSERT_EQUAL( i, 0 );
+      object.rewind();
+      i = 0;
+      for (auto field : object) {
+        (void)field;
+        i++;
+      }
+      ASSERT_EQUAL( i, 0 );
+      return true;
+    }));
+    SUBTEST("ondemand::object-rewind", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_RESULT( doc_result.type(), json_type::object );
+      ASSERT_SUCCESS( doc_result.get(object) );
+      size_t i = 0;
+      for (auto field : object) {
+        (void)field;
+        i++;
+      }
+      ASSERT_EQUAL( i, 0 );
+      object.rewind();
       i = 0;
       for (auto field : object) {
         (void)field;
