@@ -5,7 +5,7 @@
 
 #include <cstring>
 #include <string>
-#include <iostream>
+#include <ostream>
 #include <iterator>
 #include <limits>
 #include <stdexcept>

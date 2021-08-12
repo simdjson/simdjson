@@ -1,6 +1,8 @@
 #ifndef TEST_MACROS_H
 #define TEST_MACROS_H
 
+#include <iostream>
+
 #ifndef SIMDJSON_BENCHMARK_DATA_DIR
 #define SIMDJSON_BENCHMARK_DATA_DIR "jsonexamples/"
 #endif

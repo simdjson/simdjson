@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
+#include <iostream>
 #include <random>
 #include <climits>
 #include <unistd.h>
