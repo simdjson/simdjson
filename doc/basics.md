@@ -517,6 +517,7 @@ for (ondemand::object car : parser.iterate(cars_json)) {
 The following example illustrates how you may also iterate through object values, effectively visiting all key-value pairs in the object.
 
 ```C++
+#include <iostream>
 #include "simdjson.h"
 using namespace std;
 using namespace simdjson;
@@ -778,8 +779,8 @@ it selects the key `"count"` within that object.
 
 
 ```C++
-#include "simdjson.h"
 #include <iostream>
+#include "simdjson.h"
 
 int main(void) {
   simdjson::ondemand::parser parser;
@@ -810,8 +811,8 @@ Observe how we use the `at` method when querying an index into an array, and not
 
 
 ```C++
-#include "simdjson.h"
 #include <iostream>
+#include "simdjson.h"
 
 int main(void) {
   simdjson::ondemand::parser parser;
@@ -934,8 +935,8 @@ program from continuing if there was an error.
 If one is willing to trigger exceptions, it is possible to write simpler code:
 
 ```C++
-#include "simdjson.h"
 #include <iostream>
+#include "simdjson.h"
 
 int main(void) {
   simdjson::ondemand::parser parser;

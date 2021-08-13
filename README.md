@@ -53,6 +53,7 @@ The simdjson library is easily consumable with a single .h and .cpp file.
 2. Create `quickstart.cpp`:
 
 ```c++
+#include <iostream>
 #include "simdjson.h"
 using namespace simdjson;
 int main(void) {
