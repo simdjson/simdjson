@@ -1,6 +1,7 @@
 #include "simdjson.h"
 #include <cstddef>
 #include <cstdint>
+#include <iostream>
 #include <random>
 
 class RandomUTF8 final {

@@ -2,7 +2,7 @@
 #define SIMDJSON_INTERNAL_JSONFORMATUTILS_H
 
 #include <iomanip>
-#include <iostream>
+#include <ostream>
 #include <sstream>
 
 namespace simdjson {

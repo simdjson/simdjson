@@ -1,6 +1,7 @@
 #ifndef ONDEMAND_TEST_ONDEMAND_H
 #define ONDEMAND_TEST_ONDEMAND_H
 
+#include <iostream>
 #include <unistd.h>
 #include "simdjson.h"
 #include "cast_tester.h"
