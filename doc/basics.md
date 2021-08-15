@@ -256,7 +256,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > parsed a value (such as by casting to double), you cannot get at it again.
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
   scan through the object looking for the field with the matching string, doing a character-by-character
-  comparison.
+  comparison. For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do
+  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. 
 
   > NOTE: JSON allows you to escape characters in keys. E.g., the key `"date"` may be written as
   > `"\u0064\u0061\u0074\u0065"`. By default, simdjson does *not* unescape keys when matching by default.
@@ -372,6 +373,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   cout << value << endl; // Prints 3.14
   ```
   This examples also show how we can string several operations and only check for the error once, a strategy we call  *error chaining*.
+  Though error chaining makes the code very compact, it also makes error reporting less precise: in this instance, you may get the
+  same error whether the field "str", "123" or "abc" is missing. If you need to break down error handling per operation, avoid error chaining.
 * **Counting elements in arrays:** Sometimes it is useful to scan an array to determine its length prior to parsing it.
   For this purpose, `array` instances have a `count_elements` method. Users should be
   aware that the `count_elements` method can be costly since it requires scanning the
@@ -697,6 +700,8 @@ be represented as `value` instances. You can check that a document is a scalar w
 
 Error Handling
 --------------
+
+Error handing with exception and a single try/catch clause makes the code simple, but it gives you little control over errors. For easier debugging or more robust error handling, you may want to consider our exception-free approach.
 
 The entire simdjson API is usable with and without exceptions. All simdjson APIs that can fail return `simdjson_result<T>`, which is a &lt;value, error_code&gt;
 pair. You can retrieve the value with .get() without generating an exception, like so:
