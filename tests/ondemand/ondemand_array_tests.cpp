@@ -359,6 +359,23 @@ namespace array_tests {
     }));
     TEST_SUCCEED();
   }
+  bool empty_rewind() {
+    TEST_START();
+    const auto json = R"( [] )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::array arr;
+    ASSERT_SUCCESS(doc.get_array().get(arr));
+    for(simdjson_unused auto i : arr) {
+      TEST_FAIL("should be empty?");
+    }
+    arr.rewind();
+    for(simdjson_unused auto i : arr) {
+      TEST_FAIL("should be empty?");
+    }
+    TEST_SUCCEED();
+  }
 
   bool iterate_array() {
     TEST_START();
@@ -678,6 +695,7 @@ namespace array_tests {
 
   bool run() {
     return
+           empty_rewind() &&
            iterate_empty_array_count() &&
            iterate_sub_array_count() &&
            iterate_complex_array_count() &&
