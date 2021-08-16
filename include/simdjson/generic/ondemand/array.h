@@ -43,7 +43,19 @@ public:
    * safe to continue.
    */
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
-
+  /**
+   * This method scans the beginning of the array and checks whether the
+   * array is empty.
+   * The is_empty method should always be called before you have begun
+   * iterating through the array: it is expected that you are pointing at
+   * the beginning of the array.
+   * The runtime complexity is constant. After
+   * calling this function, if successful, the array is 'rewinded' at its
+   * beginning as if it had never been accessed. If the JSON is malformed (e.g.,
+   * there is a missing comma), then an error is returned and it is no longer
+   * safe to continue.
+   */
+  simdjson_really_inline simdjson_result<bool> is_empty() & noexcept;
   /**
    * Reset the iterator so that we are pointing back at the
    * beginning of the array. You should still consume values only once even if you
@@ -171,6 +183,7 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() noexcept;
   inline simdjson_result<size_t> count_elements() & noexcept;
+  inline simdjson_result<bool> is_empty() & noexcept;
   inline simdjson_result<bool> rewind() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at(size_t index) noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;

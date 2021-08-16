@@ -101,6 +101,20 @@ simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcep
   return count;
 }
 
+simdjson_really_inline simdjson_result<bool> array::is_empty() & noexcept {
+  // If we enter this loop, then we are not empty.
+  for(simdjson_unused auto v : *this) {
+    iter.reset_array();
+    return false;
+  }
+  // We want to report errors.
+  if(iter.error()) { return iter.error(); }
+  // We need to move back at the start because we expect users to iterate through
+  // the array after counting the number of elements.
+  iter.reset_array();
+  return true;
+}
+
 inline simdjson_result<bool> array::rewind() & noexcept {
   return iter.reset_array();
 }
@@ -182,6 +196,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_
 simdjson_really_inline  simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::count_elements() & noexcept {
   if (error()) { return error(); }
   return first.count_elements();
+}
+simdjson_really_inline  simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::is_empty() & noexcept {
+  if (error()) { return error(); }
+  return first.is_empty();
 }
 simdjson_really_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at(size_t index) noexcept {
   if (error()) { return error(); }

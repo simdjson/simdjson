@@ -376,7 +376,47 @@ namespace array_tests {
     }
     TEST_SUCCEED();
   }
-
+  bool count_empty(simdjson::ondemand::array arr) {
+    size_t count;
+    ASSERT_SUCCESS(arr.count_elements().get(count));
+    ASSERT_EQUAL(count, 0);
+    bool is_empty;
+    ASSERT_SUCCESS(arr.is_empty().get(is_empty));
+    ASSERT_TRUE(is_empty);
+    return true;
+  }
+  bool empty_rewind_convoluted() {
+    TEST_START();
+    const auto json = R"( [] )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::value val;
+    ASSERT_SUCCESS(doc.get_value().get(val));
+    ondemand::json_type t;
+    ASSERT_SUCCESS(val.type().get(t));
+    ASSERT_EQUAL(t, ondemand::json_type::array);
+    simdjson::ondemand::array arr;
+    ASSERT_SUCCESS(val.get_array().get(arr));
+    if(count_empty(arr) != true) { return false; }
+    TEST_SUCCEED();
+  }
+#if SIMDJSON_EXCEPTIONS
+  bool empty_rewind_convoluted_with_exceptions() {
+    TEST_START();
+    const auto json = R"( [] )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::value val;
+    ASSERT_SUCCESS(doc.get_value().get(val));
+    ondemand::json_type t;
+    ASSERT_SUCCESS(val.type().get(t));
+    ASSERT_EQUAL(t, ondemand::json_type::array);
+    if(count_empty(simdjson::ondemand::array(val)) != true) { return false; }
+    TEST_SUCCEED();
+  }
+#endif
   bool iterate_array() {
     TEST_START();
     const auto json = R"( [ [ 1, 10, 100 ] ] )"_padded;
@@ -695,6 +735,7 @@ namespace array_tests {
 
   bool run() {
     return
+           empty_rewind_convoluted() &&
            empty_rewind() &&
            iterate_empty_array_count() &&
            iterate_sub_array_count() &&
@@ -707,6 +748,7 @@ namespace array_tests {
            iterate_empty_array() &&
            iterate_array_partial_children() &&
 #if SIMDJSON_EXCEPTIONS
+           empty_rewind_convoluted_with_exceptions() &&
            iterate_array_exception() &&
 #endif // SIMDJSON_EXCEPTIONS
            true;
