@@ -102,17 +102,10 @@ simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcep
 }
 
 simdjson_really_inline simdjson_result<bool> array::is_empty() & noexcept {
-  // If we enter this loop, then we are not empty.
-  for(simdjson_unused auto v : *this) {
-    iter.reset_array();
-    return false;
-  }
-  // We want to report errors.
-  if(iter.error()) { return iter.error(); }
-  // We need to move back at the start because we expect users to iterate through
-  // the array after counting the number of elements.
-  iter.reset_array();
-  return true;
+  bool is_not_empty;
+  auto error = iter.reset_array().get(is_not_empty);
+  if(error) { return error; }
+  return !is_not_empty;
 }
 
 inline simdjson_result<bool> array::rewind() & noexcept {
