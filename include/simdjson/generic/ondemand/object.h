@@ -121,6 +121,16 @@ public:
    */
   inline simdjson_result<bool> rewind() & noexcept;
   /**
+   * This method scans the beginning of the object and checks whether the
+   * object is empty.
+   * The runtime complexity is constant time. After
+   * calling this function, if successful, the object is 'rewinded' at its
+   * beginning as if it had never been accessed. If the JSON is malformed (e.g.,
+   * there is a missing comma), then an error is returned and it is no longer
+   * safe to continue.
+   */
+  inline simdjson_result<bool> is_empty() & noexcept;
+  /**
    * Consumes the object and returns a string_view instance corresponding to the
    * object as represented in JSON. It points inside the original byte array containg
    * the JSON document.
@@ -170,6 +180,8 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) && noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   inline simdjson_result<bool> rewind() noexcept;
+  inline simdjson_result<bool> is_empty() noexcept;
+
 };
 
 } // namespace simdjson

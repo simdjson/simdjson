@@ -41,15 +41,15 @@ public:
    * beginning as if it had never been accessed. If the JSON is malformed (e.g.,
    * there is a missing comma), then an error is returned and it is no longer
    * safe to continue.
+   *
+   * To check that an array is empty, it is more performant to use
+   * the is_empty() method.
    */
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
   /**
    * This method scans the beginning of the array and checks whether the
    * array is empty.
-   * The is_empty method should always be called before you have begun
-   * iterating through the array: it is expected that you are pointing at
-   * the beginning of the array.
-   * The runtime complexity is constant. After
+   * The runtime complexity is constant time. After
    * calling this function, if successful, the array is 'rewinded' at its
    * beginning as if it had never been accessed. If the JSON is malformed (e.g.,
    * there is a missing comma), then an error is returned and it is no longer

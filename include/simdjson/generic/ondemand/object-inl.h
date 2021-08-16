@@ -140,6 +140,13 @@ inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) 
 }
 
 
+simdjson_really_inline simdjson_result<bool> object::is_empty() & noexcept {
+  bool is_not_empty;
+  auto error = iter.reset_object().get(is_not_empty);
+  if(error) { return error; }
+  return !is_not_empty;
+}
+
 simdjson_really_inline simdjson_result<bool> object::rewind() & noexcept {
   return iter.reset_object();
 }
@@ -196,6 +203,11 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
 inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::rewind() noexcept {
   if (error()) { return error(); }
   return first.rewind();
+}
+
+inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::is_empty() noexcept {
+  if (error()) { return error(); }
+  return first.is_empty();
 }
 
 } // namespace simdjson
