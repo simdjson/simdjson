@@ -10,6 +10,7 @@
 #include "simdjson.h"
 #include <cstddef>
 #include <cstdlib>
+#include <iostream>
 #include "supported_implementations.h"
 
 extern "C" int VerboseTestOneInput(const uint8_t *Data, size_t Size) {

@@ -274,6 +274,7 @@ Our program loads the file, selects value corresponding to key "search_metadata"
 it selects the key "count" within that object.
 
 ```C++
+#include <iostream>
 #include "simdjson.h"
 
 int main(void) {
@@ -301,6 +302,7 @@ triggering exceptions. To do this, we use `["statuses"].at(0)["id"]`. We break t
 Observe how we use the `at` method when querying an index into an array, and not the bracket operator.
 
 ```C++
+#include <iostream>
 #include "simdjson.h"
 
 int main(void) {
@@ -457,6 +459,7 @@ program from continuing if there was an error.
 If one is willing to trigger exceptions, it is possible to write simpler code:
 
 ```C++
+#include <iostream>
 #include "simdjson.h"
 
 int main(void) {
