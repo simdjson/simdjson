@@ -32,7 +32,6 @@ namespace error_location_tests {
         auto json = R"( �{"a":1, 3} )"_padded;
         ondemand::parser parser;
         ondemand::document doc;
-        ondemand::object obj;
         const char * ptr;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
         ASSERT_ERROR(doc["a"], INCORRECT_TYPE);
@@ -82,7 +81,6 @@ namespace error_location_tests {
         auto json = R"( {"a":1, 3, "b":5} )"_padded;
         ondemand::parser parser;
         ondemand::document doc;
-        ondemand::object obj;
         const char * ptr;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
         ASSERT_ERROR(doc["b"], TAPE_ERROR);
