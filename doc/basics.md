@@ -257,7 +257,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
   scan through the object looking for the field with the matching string, doing a character-by-character
   comparison. For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do
-  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. 
+  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance.
 
   > NOTE: JSON allows you to escape characters in keys. E.g., the key `"date"` may be written as
   > `"\u0064\u0061\u0074\u0065"`. By default, simdjson does *not* unescape keys when matching by default.
