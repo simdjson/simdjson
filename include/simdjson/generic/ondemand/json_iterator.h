@@ -216,7 +216,7 @@ public:
   simdjson_really_inline uint8_t *&string_buf_loc() noexcept;
 
   /**
-   * Report an error, preventing further iteration.
+   * Report an unrecoverable error, preventing further iteration.
    *
    * @param error The error to report. Must not be SUCCESS, UNINITIALIZED, INCORRECT_TYPE, or NO_SUCH_FIELD.
    * @param message An error message to report with the error.

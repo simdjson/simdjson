@@ -8,8 +8,14 @@ namespace array_error_tests {
 
   template<typename V, typename T>
   bool assert_iterate(T array, V *expected, size_t N, simdjson::error_code *expected_error, size_t N2) {
+    /**
+     * We use printouts because the assert_iterate is abstract and hard to
+     * understand intuitively.
+     */
+    std::cout << "     --- assert_iterate ";
     size_t count = 0;
     for (auto elem : std::forward<T>(array)) {
+      std::cout << "-"; std::cout.flush();
       V actual;
       auto actual_error = elem.get(actual);
       if (count >= N) {
@@ -17,14 +23,19 @@ namespace array_error_tests {
           std::cerr << "FAIL: Extra error reported: " << actual_error << std::endl;
           return false;
         }
+        std::cout << "[ expect: " << expected_error[count - N] << " ]"; std::cout.flush();
         ASSERT_ERROR(actual_error, expected_error[count - N]);
       } else {
+        std::cout << "[ expect: SUCCESS ]"; std::cout.flush();
         ASSERT_SUCCESS(actual_error);
+        std::cout << "{ expect value : "<< expected[count] << " }"; std::cout.flush();
+
         ASSERT_EQUAL(actual, expected[count]);
       }
       count++;
     }
     ASSERT_EQUAL(count, N+N2);
+    std::cout << std::endl;
     return true;
   }
 
