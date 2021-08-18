@@ -323,7 +323,7 @@ bool using_the_parsed_json_rewind_array() {
     if(car["make"] == "Toyota") { count++; }
   }
   std::cout << "We have " << count << " Toyota cars.\n";
-  arr.rewind();
+  arr.reset();
   for (ondemand::object car : arr) {
     cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
   }

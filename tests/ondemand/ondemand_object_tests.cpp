@@ -249,7 +249,7 @@ namespace object_tests {
         i++;
       }
       ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
-      object.rewind();
+      object.reset();
       i = 0;
       for (auto field : object) {
         ASSERT_SUCCESS( field.error() );
@@ -623,7 +623,7 @@ namespace object_tests {
         i++;
       }
       ASSERT_EQUAL( i, 0 );
-      object.rewind();
+      object.reset();
       i = 0;
       for (auto field : object) {
         (void)field;
@@ -642,7 +642,7 @@ namespace object_tests {
         i++;
       }
       ASSERT_EQUAL( i, 0 );
-      object.rewind();
+      object.reset();
       i = 0;
       for (auto field : object) {
         (void)field;

@@ -66,7 +66,7 @@ public:
    *
    * @returns true if the array contains some elements (not empty)
    */
-  inline simdjson_result<bool> rewind() & noexcept;
+  inline simdjson_result<bool> reset() & noexcept;
   /**
    * Get the value associated with the given JSON pointer.  We use the RFC 6901
    * https://tools.ietf.org/html/rfc6901 standard, interpreting the current node
@@ -184,7 +184,7 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() noexcept;
   inline simdjson_result<size_t> count_elements() & noexcept;
   inline simdjson_result<bool> is_empty() & noexcept;
-  inline simdjson_result<bool> rewind() & noexcept;
+  inline simdjson_result<bool> reset() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at(size_t index) noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
 };

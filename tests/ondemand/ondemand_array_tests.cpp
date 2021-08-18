@@ -318,7 +318,7 @@ namespace array_tests {
       ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
       std::vector<int64_t> container(i); // container of size 'i'.
 
-      array.rewind();
+      array.reset();
       i = 0;
       for (auto value : array) {
         int64_t actual;
@@ -370,7 +370,7 @@ namespace array_tests {
     for(simdjson_unused auto i : arr) {
       TEST_FAIL("should be empty?");
     }
-    arr.rewind();
+    arr.reset();
     for(simdjson_unused auto i : arr) {
       TEST_FAIL("should be empty?");
     }
@@ -687,7 +687,7 @@ namespace array_tests {
       for (auto value : array) { (void) value; i++; }
       ASSERT_EQUAL(i, 0);
 
-      array.rewind();
+      array.reset();
       i = 0;
       for (auto value : array) { (void) value; i++; }
       ASSERT_EQUAL(i, 0);

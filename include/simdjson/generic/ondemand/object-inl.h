@@ -147,7 +147,7 @@ simdjson_really_inline simdjson_result<bool> object::is_empty() & noexcept {
   return !is_not_empty;
 }
 
-simdjson_really_inline simdjson_result<bool> object::rewind() & noexcept {
+simdjson_really_inline simdjson_result<bool> object::reset() & noexcept {
   return iter.reset_object();
 }
 
@@ -200,9 +200,9 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
   return first.at_pointer(json_pointer);
 }
 
-inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::rewind() noexcept {
+inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::reset() noexcept {
   if (error()) { return error(); }
-  return first.rewind();
+  return first.reset();
 }
 
 inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::is_empty() noexcept {

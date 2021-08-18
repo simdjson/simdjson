@@ -108,7 +108,7 @@ simdjson_really_inline simdjson_result<bool> array::is_empty() & noexcept {
   return !is_not_empty;
 }
 
-inline simdjson_result<bool> array::rewind() & noexcept {
+inline simdjson_result<bool> array::reset() & noexcept {
   return iter.reset_array();
 }
 

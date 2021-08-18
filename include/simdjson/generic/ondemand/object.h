@@ -119,7 +119,7 @@ public:
    *
    * @returns true if the object contains some elements (not empty)
    */
-  inline simdjson_result<bool> rewind() & noexcept;
+  inline simdjson_result<bool> reset() & noexcept;
   /**
    * This method scans the beginning of the object and checks whether the
    * object is empty.
@@ -179,7 +179,7 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) && noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
-  inline simdjson_result<bool> rewind() noexcept;
+  inline simdjson_result<bool> reset() noexcept;
   inline simdjson_result<bool> is_empty() noexcept;
 
 };
