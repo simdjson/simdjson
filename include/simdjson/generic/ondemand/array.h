@@ -79,6 +79,14 @@ public:
    */
   simdjson_really_inline simdjson_result<std::string_view> raw_json() noexcept;
 
+  /**
+   * Get the value at the given index. This function has linear-time complexity.
+   * This function should only be called once as the array iterator is not reset between each call.
+   *
+   * @return The value at the given index, or:
+   *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
+   */
+  simdjson_really_inline simdjson_result<value> at(size_t index) noexcept;
 protected:
   /**
    * Go to the end of the array, no matter where you are right now.
@@ -120,15 +128,6 @@ protected:
    *        into the resulting array.
    */
   simdjson_really_inline array(const value_iterator &iter) noexcept;
-
-  /**
-   * Get the value at the given index. This function has linear-time complexity.
-   * This function should only be called once as the array iterator is not reset between each call.
-   *
-   * @return The value at the given index, or:
-   *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
-   */
-  simdjson_really_inline simdjson_result<value> at(size_t index) noexcept;
 
   /**
    * Iterator marking current position.

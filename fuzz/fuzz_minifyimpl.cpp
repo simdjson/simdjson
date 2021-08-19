@@ -12,6 +12,7 @@
 #include "simdjson.h"
 #include <cstddef>
 #include <cstdlib>
+#include <iostream>
 #include <vector>
 #include "supported_implementations.h"
 

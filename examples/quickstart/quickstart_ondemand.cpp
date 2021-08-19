@@ -1,3 +1,4 @@
+#include <iostream>
 #include "simdjson.h"
 using namespace simdjson;
 int main(void) {

@@ -5,6 +5,23 @@ using namespace simdjson;
 
 namespace misc_tests {
   using namespace std;
+  bool test_get_value() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string json = R"({"a":[[1,null,3.0],["a","b",true],[10000000000,2,3]]})"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::value val;
+    ASSERT_SUCCESS(doc.get_value().get(val));
+    ondemand::object obj;
+    ASSERT_SUCCESS(val.get_object().get(obj));
+    ondemand::array arr;
+    ASSERT_SUCCESS(obj["a"].get_array().get(arr));
+    size_t count;
+    ASSERT_SUCCESS(arr.count_elements().get(count));
+    ASSERT_EQUAL(3,count);
+    TEST_SUCCEED();
+  }
 
   bool issue1661a() {
     TEST_START();
@@ -16,6 +33,21 @@ namespace misc_tests {
     ASSERT_SUCCESS(doc["global-groups"].get(global_groups));
     ondemand::json_type global_type;
     ASSERT_SUCCESS(global_groups.type().get(global_type));
+    ASSERT_EQUAL(global_type, ondemand::json_type::array);
+    TEST_SUCCEED();
+  }
+
+  bool doc_ref() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata = R"({"":2,"v":[]})"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ondemand::document_reference ref(doc);
+    ondemand::value arr;
+    ASSERT_SUCCESS(ref["v"].get(arr));
+    ondemand::json_type global_type;
+    ASSERT_SUCCESS(arr.type().get(global_type));
     ASSERT_EQUAL(global_type, ondemand::json_type::array);
     TEST_SUCCEED();
   }
@@ -234,7 +266,89 @@ namespace misc_tests {
     }
     TEST_SUCCEED();
   }
+  bool is_alive_root_array() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata = R"([1,2,3)"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_TRUE(doc.is_alive());
+    size_t count{0};
+    for(simdjson_unused simdjson_result<ondemand::value> val : doc) {
+      ASSERT_ERROR(val.error(), INCOMPLETE_ARRAY_OR_OBJECT);
+      count++;
+    }
+    ASSERT_EQUAL(count, 1);
+    ASSERT_FALSE(doc.is_alive());
+    TEST_SUCCEED();
+  }
 
+  bool is_alive_array() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata = R"({"a":[1,2,3})"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_TRUE(doc.is_alive());
+    ondemand::object obj;
+    ASSERT_SUCCESS(doc.get_object().get(obj));
+    ondemand::array internal_arr;
+    ASSERT_SUCCESS(obj["a"].get_array().get(internal_arr));
+    size_t count{0};
+    for(simdjson_unused simdjson_result<ondemand::value> val : internal_arr) {
+      if(count < 3) {
+        ASSERT_SUCCESS(val.error());
+        ASSERT_TRUE(doc.is_alive());
+      } else {
+        ASSERT_ERROR(val.error(), TAPE_ERROR);
+        ASSERT_FALSE(doc.is_alive());
+      }
+      count++;
+    }
+    ASSERT_EQUAL(count, 4);
+    ASSERT_FALSE(doc.is_alive());
+    TEST_SUCCEED();
+  }
+
+  bool is_alive_root_object() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata = R"({"a":1)"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_TRUE(doc.is_alive());
+    ondemand::object obj;
+    ASSERT_ERROR(doc.get_object().get(obj), INCOMPLETE_ARRAY_OR_OBJECT);
+    ASSERT_FALSE(doc.is_alive());
+    TEST_SUCCEED();
+  }
+
+  bool is_alive_object() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata = R"([{"a":1])"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_TRUE(doc.is_alive());
+    ondemand::object obj;
+    ASSERT_SUCCESS(doc.at(0).get_object().get(obj));
+    ASSERT_TRUE(doc.is_alive());
+    size_t count{0};
+    for(simdjson_unused simdjson_result<ondemand::field> val : obj) {
+      if(count == 0) {
+        ASSERT_SUCCESS(val.error());
+        ASSERT_TRUE(doc.is_alive());
+      }
+      if(count == 1) {
+        ASSERT_ERROR(val.error(), TAPE_ERROR);
+        ASSERT_FALSE(doc.is_alive());
+      }
+      count++;
+    }
+    ASSERT_EQUAL(count, 2);
+    ASSERT_FALSE(doc.is_alive());
+    TEST_SUCCEED();
+  }
   bool issue1661() {
     TEST_START();
     ondemand::parser parser;
@@ -333,6 +447,11 @@ namespace misc_tests {
 
   bool run() {
     return
+           is_alive_root_array() &&
+           is_alive_root_object() &&
+           is_alive_array() &&
+           is_alive_object() &&
+           test_get_value() &&
            issue1660_with_uint64() &&
            issue1660_with_int64() &&
            issue1660_with_double() &&
@@ -345,6 +464,7 @@ namespace misc_tests {
            big_integer_in_string() &&
            big_integer() &&
            raw_json_token() &&
+           doc_ref() &&
            true;
   }
 

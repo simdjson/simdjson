@@ -1,4 +1,5 @@
 #include <benchmark/benchmark.h>
+#include <iostream>
 #include "simdjson.h"
 using namespace simdjson;
 using namespace benchmark;

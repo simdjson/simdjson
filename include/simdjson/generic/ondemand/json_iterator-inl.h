@@ -153,6 +153,10 @@ simdjson_really_inline token_position json_iterator::root_position() const noexc
   return _root;
 }
 
+simdjson_really_inline void json_iterator::assert_at_document_depth() const noexcept {
+  SIMDJSON_ASSUME( _depth == 1 );
+}
+
 simdjson_really_inline void json_iterator::assert_at_root() const noexcept {
   SIMDJSON_ASSUME( _depth == 1 );
 #ifndef SIMDJSON_CLANG_VISUAL_STUDIO

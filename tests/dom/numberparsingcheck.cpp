@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 
 #ifndef JSON_TEST_NUMBERS
 #define JSON_TEST_NUMBERS

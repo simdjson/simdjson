@@ -5,7 +5,77 @@ using namespace std;
 using namespace simdjson;
 using error_code=simdjson::error_code;
 
+
+
 #if SIMDJSON_EXCEPTIONS
+
+
+void recursive_print_json(ondemand::value element) {
+    bool add_comma;
+    switch (element.type()) {
+    case ondemand::json_type::array:
+      cout << "[";
+      add_comma = false;
+      for (auto child : element.get_array()) {
+        if (add_comma) {
+          cout << ",";
+        }
+        // We need the call to value() to get
+        // an ondemand::value type.
+        recursive_print_json(child.value());
+        add_comma = true;
+      }
+      cout << "]";
+      break;
+    case ondemand::json_type::object:
+      cout << "{";
+      add_comma = false;
+      for (auto field : element.get_object()) {
+        if (add_comma) {
+          cout << ",";
+        }
+        // key() returns the key as it appears in the raw
+        // JSON document, if we want the unescaped key,
+        // we should do field.unescaped_key().
+        cout << "\"" << field.key() << "\": ";
+        recursive_print_json(field.value());
+        add_comma = true;
+      }
+      cout << "}\n";
+      break;
+    case ondemand::json_type::number:
+      // assume it fits in a double
+      cout << element.get_double();
+      break;
+    case ondemand::json_type::string:
+      // get_string() would return escaped string, but
+      // we are happy with unescaped string.
+      cout << "\"" << element.get_raw_json_string() << "\"";
+      break;
+    case ondemand::json_type::boolean:
+      cout << element.get_bool();
+      break;
+    case ondemand::json_type::null:
+      cout << "null";
+      break;
+    }
+}
+
+bool basics_treewalk() {
+  padded_string json[3] = {R"( [
+    { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+    { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+    { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  ] )"_padded, R"( {"key":"value"} )"_padded, "[12,3]"_padded};
+  ondemand::parser parser;
+  for(size_t i = 0 ; i < 3; i++) {
+    ondemand::document doc = parser.iterate(json[i]);
+    ondemand::value val = doc;
+    recursive_print_json(val);
+    std::cout << std::endl;
+  }
+  return true;
+}
 
 bool basics_1() {
   TEST_START();
@@ -345,6 +415,59 @@ int using_the_parsed_json_6_process() {
 
   return EXIT_SUCCESS;
 }
+
+bool exception_free_object_loop() {
+  auto json = R"({"k\u0065y": 1})"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  auto error = parser.iterate(json).get(doc);
+  if(error) { return false; }
+  ondemand::object object;
+  error = doc.get_object().get(object);
+  if(error) { return false; }
+  for(auto field : object) {
+    std::string_view keyv;
+    error = field.unescaped_key().get(keyv);
+    if(error) { return false; }
+    if(keyv == "key") {
+      uint64_t intvalue;
+      error = field.value().get(intvalue);
+      if(error) { return false; }
+      std::cout << intvalue;
+    }
+  }
+  return true;
+}
+
+
+bool exception_free_object_loop_no_escape() {
+  auto json = R"({"k\u0065y": 1})"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  auto error = parser.iterate(json).get(doc);
+  if(error) { return false; }
+  ondemand::object object;
+  error = doc.get_object().get(object);
+  if(error) { return false; }
+  for(auto field : object) {
+    ondemand::raw_json_string keyv;
+    error = field.key().get(keyv);
+    /**
+     * If you need to escape the keys, you can do
+     * std::string_view keyv;
+     * error = field.unescaped_key().get(keyv);
+     */
+    if(error) { return false; }
+    if(keyv == "key") {
+      uint64_t intvalue;
+      error = field.value().get(intvalue);
+      if(error) { return false; }
+      std::cout << intvalue;
+    }
+  }
+  return true;
+}
+
 bool using_the_parsed_json_6() {
   TEST_START();
   ASSERT_EQUAL(using_the_parsed_json_6_process(), EXIT_SUCCESS);
@@ -603,6 +726,9 @@ bool test_load_example() {
   return identifier == 1234;
 }
 int main() {
+#if SIMDJSON_EXCEPTIONS
+  basics_treewalk();
+#endif
   if (
     true
 #if SIMDJSON_EXCEPTIONS

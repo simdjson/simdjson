@@ -88,9 +88,12 @@ public:
    * Get the root value iterator
    */
   simdjson_really_inline token_position root_position() const noexcept;
-
   /**
-   * Assert if the iterator is not at the start
+   * Assert that we are at the document depth (== 1)
+   */
+  simdjson_really_inline void assert_at_document_depth() const noexcept;
+  /**
+   * Assert that we are at the root of the document
    */
   simdjson_really_inline void assert_at_root() const noexcept;
 
@@ -213,7 +216,7 @@ public:
   simdjson_really_inline uint8_t *&string_buf_loc() noexcept;
 
   /**
-   * Report an error, preventing further iteration.
+   * Report an unrecoverable error, preventing further iteration.
    *
    * @param error The error to report. Must not be SUCCESS, UNINITIALIZED, INCORRECT_TYPE, or NO_SUCH_FIELD.
    * @param message An error message to report with the error.

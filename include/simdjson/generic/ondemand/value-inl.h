@@ -144,6 +144,13 @@ simdjson_really_inline simdjson_result<json_type> value::type() noexcept {
   return iter.type();
 }
 
+simdjson_really_inline simdjson_result<bool> value::scalar() noexcept {
+  json_type this_type;
+  auto error = type().get(this_type);
+  if(error) { return error; }
+  return ! ((this_type == json_type::array) || (this_type == json_type::object));
+}
+
 simdjson_really_inline std::string_view value::raw_json_token() noexcept {
   return std::string_view(reinterpret_cast<const char*>(iter.peek_start()), iter.peek_start_length());
 }
@@ -298,7 +305,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_t
   if (error()) { return error(); }
   return first.type();
 }
-
+simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::scalar() noexcept {
+  if (error()) { return error(); }
+  return first.scalar();
+}
 #if SIMDJSON_EXCEPTIONS
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }

@@ -19,11 +19,17 @@ inline void document::rewind() noexcept {
 inline std::string document::to_debug_string() noexcept {
   return iter.to_string();
 }
+<<<<<<< HEAD
 
 inline simdjson_result<const char *> document::current_location() noexcept {
   return iter.current_location();
 }
 
+=======
+inline bool document::is_alive() noexcept {
+  return iter.is_alive();
+}
+>>>>>>> alive_fix
 simdjson_really_inline value_iterator document::resume_value_iterator() noexcept {
   return value_iterator(&iter, 1, iter.root_position());
 }
@@ -37,24 +43,30 @@ simdjson_really_inline simdjson_result<object> document::start_or_resume_object(
     return object::resume(resume_value_iterator());
   }
 }
-simdjson_really_inline simdjson_result<value> document::get_value_unsafe() noexcept {
+simdjson_really_inline simdjson_result<value> document::get_value() noexcept {
   // Make sure we start any arrays or objects before returning, so that start_root_<object/array>()
   // gets called.
+  iter.assert_at_document_depth();
   switch (*iter.peek()) {
     case '[': {
       array result;
       SIMDJSON_TRY( get_array().get(result) );
+      iter._depth = 1 ; /* undoing the potential increment so we go back at the doc depth.*/
+      iter.assert_at_document_depth();
       return value(result.iter);
     }
     case '{': {
       object result;
       SIMDJSON_TRY( get_object().get(result) );
+      iter._depth = 1 ; /* undoing the potential increment so we go back at the doc depth.*/
+      iter.assert_at_document_depth();
       return value(result.iter);
     }
     default:
-      // TODO it is still wrong to convert this to a value! get_root_bool / etc. will not be
-      // called if you do this.
-      return value(get_root_value_iterator());
+      // Unfortunately, scalar documents are a special case in simdjson and they cannot
+      // be safely converted to value instances.
+      return SCALAR_DOCUMENT_AS_VALUE;
+      // return value(get_root_value_iterator());
   }
 }
 simdjson_really_inline simdjson_result<array> document::get_array() & noexcept {
@@ -104,6 +116,7 @@ template<> simdjson_really_inline simdjson_result<double> document::get() & noex
 template<> simdjson_really_inline simdjson_result<uint64_t> document::get() & noexcept { return get_uint64(); }
 template<> simdjson_really_inline simdjson_result<int64_t> document::get() & noexcept { return get_int64(); }
 template<> simdjson_really_inline simdjson_result<bool> document::get() & noexcept { return get_bool(); }
+template<> simdjson_really_inline simdjson_result<value> document::get() & noexcept { return get_value(); }
 
 template<> simdjson_really_inline simdjson_result<raw_json_string> document::get() && noexcept { return get_raw_json_string(); }
 template<> simdjson_really_inline simdjson_result<std::string_view> document::get() && noexcept { return get_string(); }
@@ -111,6 +124,7 @@ template<> simdjson_really_inline simdjson_result<double> document::get() && noe
 template<> simdjson_really_inline simdjson_result<uint64_t> document::get() && noexcept { return std::forward<document>(*this).get_uint64(); }
 template<> simdjson_really_inline simdjson_result<int64_t> document::get() && noexcept { return std::forward<document>(*this).get_int64(); }
 template<> simdjson_really_inline simdjson_result<bool> document::get() && noexcept { return std::forward<document>(*this).get_bool(); }
+template<> simdjson_really_inline simdjson_result<value> document::get() && noexcept { return get_value(); }
 
 template<typename T> simdjson_really_inline error_code document::get(T &out) & noexcept {
   return get<T>().get(out);
@@ -128,12 +142,17 @@ simdjson_really_inline document::operator double() noexcept(false) { return get_
 simdjson_really_inline document::operator std::string_view() noexcept(false) { return get_string(); }
 simdjson_really_inline document::operator raw_json_string() noexcept(false) { return get_raw_json_string(); }
 simdjson_really_inline document::operator bool() noexcept(false) { return get_bool(); }
+simdjson_really_inline document::operator value() noexcept(false) { return get_value(); }
+
 #endif
 simdjson_really_inline simdjson_result<size_t> document::count_elements() & noexcept {
   auto a = get_array();
   simdjson_result<size_t> answer = a.count_elements();
   /* If there was an array, we are now left pointing at its first element. */
-  if(answer.error() == SUCCESS) { iter._depth -= 1 ; /* undoing the increment so we go back at the doc depth.*/ }
+  if(answer.error() == SUCCESS) {
+    iter._depth = 1 ; /* undoing the increment so we go back at the doc depth.*/
+    iter.assert_at_document_depth();
+  }
   return answer;
 }
 simdjson_really_inline simdjson_result<value> document::at(size_t index) & noexcept {
@@ -188,6 +207,13 @@ simdjson_really_inline simdjson_result<json_type> document::type() noexcept {
   return get_root_value_iterator().type();
 }
 
+simdjson_really_inline simdjson_result<bool> document::scalar() noexcept {
+  json_type this_type;
+  auto error = type().get(this_type);
+  if(error) { return error; }
+  return ! ((this_type == json_type::array) || (this_type == json_type::object));
+}
+
 simdjson_really_inline simdjson_result<std::string_view> document::raw_json_token() noexcept {
   auto _iter = get_root_value_iterator();
   return std::string_view(reinterpret_cast<const char*>(_iter.peek_start()), _iter.peek_start_length());
@@ -196,7 +222,7 @@ simdjson_really_inline simdjson_result<std::string_view> document::raw_json_toke
 simdjson_really_inline simdjson_result<value> document::at_pointer(std::string_view json_pointer) noexcept {
   rewind(); // Rewind the document each time at_pointer is called
   if (json_pointer.empty()) {
-    return this->get_value_unsafe();
+    return this->get_value();
   }
   json_type t;
   SIMDJSON_TRY(type().get(t));
@@ -309,6 +335,10 @@ simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTA
   if (error()) { return error(); }
   return first.get_bool();
 }
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_value() noexcept {
+  if (error()) { return error(); }
+  return first.get_value();
+}
 simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::is_null() noexcept {
   if (error()) { return error(); }
   return first.is_null();
@@ -352,6 +382,11 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_t
   return first.type();
 }
 
+simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::scalar() noexcept {
+  if (error()) { return error(); }
+  return first.scalar();
+}
+
 #if SIMDJSON_EXCEPTIONS
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
@@ -382,6 +417,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::docume
   return first;
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator bool() noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first;
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator SIMDJSON_IMPLEMENTATION::ondemand::value() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
 }
@@ -416,6 +455,7 @@ simdjson_really_inline simdjson_result<double> document_reference::get_double() 
 simdjson_really_inline simdjson_result<std::string_view> document_reference::get_string() noexcept { return doc->get_string(); }
 simdjson_really_inline simdjson_result<raw_json_string> document_reference::get_raw_json_string() noexcept { return doc->get_raw_json_string(); }
 simdjson_really_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_bool(); }
+simdjson_really_inline simdjson_result<value> document_reference::get_value() noexcept { return doc->get_value(); }
 simdjson_really_inline bool document_reference::is_null() noexcept { return doc->is_null(); }
 
 #if SIMDJSON_EXCEPTIONS
@@ -427,6 +467,7 @@ simdjson_really_inline document_reference::operator double() noexcept(false) { r
 simdjson_really_inline document_reference::operator std::string_view() noexcept(false) { return std::string_view(*doc); }
 simdjson_really_inline document_reference::operator raw_json_string() noexcept(false) { return raw_json_string(*doc); }
 simdjson_really_inline document_reference::operator bool() noexcept(false) { return bool(*doc); }
+simdjson_really_inline document_reference::operator value() noexcept(false) { return value(*doc); }
 #endif
 simdjson_really_inline simdjson_result<size_t> document_reference::count_elements() & noexcept { return doc->count_elements(); }
 simdjson_really_inline simdjson_result<value> document_reference::at(size_t index) & noexcept { return doc->at(index); }
@@ -438,8 +479,8 @@ simdjson_really_inline simdjson_result<value> document_reference::operator[](std
 simdjson_really_inline simdjson_result<value> document_reference::operator[](const char *key) & noexcept { return (*doc)[key]; }
 simdjson_really_inline simdjson_result<value> document_reference::find_field_unordered(std::string_view key) & noexcept { return doc->find_field_unordered(key); }
 simdjson_really_inline simdjson_result<value> document_reference::find_field_unordered(const char *key) & noexcept { return doc->find_field_unordered(key); }
-
 simdjson_really_inline simdjson_result<json_type> document_reference::type() noexcept { return doc->type(); }
+simdjson_really_inline simdjson_result<bool> document_reference::scalar() noexcept { return doc->scalar(); }
 simdjson_really_inline simdjson_result<std::string_view> document_reference::raw_json_token() noexcept { return doc->raw_json_token(); }
 simdjson_really_inline simdjson_result<value> document_reference::at_pointer(std::string_view json_pointer) noexcept { return doc->at_pointer(json_pointer); }
 simdjson_really_inline simdjson_result<std::string_view> document_reference::raw_json() noexcept { return doc->raw_json();}
@@ -532,6 +573,10 @@ simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTA
   if (error()) { return error(); }
   return first.get_bool();
 }
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_value() noexcept {
+  if (error()) { return error(); }
+  return first.get_value();
+}
 simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::is_null() noexcept {
   if (error()) { return error(); }
   return first.is_null();
@@ -540,7 +585,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_t
   if (error()) { return error(); }
   return first.type();
 }
-
+simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::scalar() noexcept {
+  if (error()) { return error(); }
+  return first.scalar();
+}
 #if SIMDJSON_EXCEPTIONS
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
@@ -571,6 +619,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::docume
   return first;
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::operator bool() noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first;
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::operator SIMDJSON_IMPLEMENTATION::ondemand::value() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
 }
