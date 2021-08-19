@@ -18,7 +18,7 @@ The fuzzers are used in several ways.
 * oss-fuzz - heavy duty 24/7 fuzzing provided by the google driven oss-fuzz project
 
 ## Local fuzzing
-Just invoke fuzz/quick_check.sh, it will download the latest corpus from bintray (kept up to date by the CI fuzzers) and run the fuzzers for a short time. In case you want to run the fuzzers for longer, modify the timeout value in the script or invoke the fuzzer directly.
+Just invoke fuzz/quick_check.sh, it will download the latest corpus (kept up to date by the CI fuzzers) and run the fuzzers for a short time. In case you want to run the fuzzers for longer, modify the timeout value in the script or invoke the fuzzer directly.
 
 This requires linux with clang and cmake installed (recent Debian and Ubuntu are known to work fine).
 
@@ -69,7 +69,7 @@ As little code as possible is kept at oss-fuzz since it is inconvenient to chang
 
 The simdjson library does not benefit from a corpus as much as other projects, because the library is very fast and explores the input space very well. With that said, it is still beneficial to have one. The CI job stores the corpus on a remote server between runs, and is available at [www.pauldreik.se](https://readonly:readonly@www.pauldreik.se/fuzzdata/index.php?project=simdjson).
 
-One can also grab the corpus as an artifact from the github actions job. Pick a run, then go to artifacts and download.
+One can also grab the corpus as an artifact from the github actions job if you are logged in at github. Pick a run, then go to artifacts and download.
 
 ## Fuzzing coverage
 
