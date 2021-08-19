@@ -19,17 +19,14 @@ inline void document::rewind() noexcept {
 inline std::string document::to_debug_string() noexcept {
   return iter.to_string();
 }
-<<<<<<< HEAD
 
 inline simdjson_result<const char *> document::current_location() noexcept {
   return iter.current_location();
 }
 
-=======
 inline bool document::is_alive() noexcept {
   return iter.is_alive();
 }
->>>>>>> alive_fix
 simdjson_really_inline value_iterator document::resume_value_iterator() noexcept {
   return value_iterator(&iter, 1, iter.root_position());
 }
