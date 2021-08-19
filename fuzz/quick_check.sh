@@ -4,7 +4,7 @@
 # good when working locally developing the fuzzers or making
 # sure code changes still pass the fuzzers.
 #
-# It will download the corpus from bintray (kept up to date
+# It will download the corpus from external store (kept up to date
 # by the crontab github actions) unless a local out/ directory
 # already exists.
 #
@@ -23,10 +23,9 @@ done
 
 #download the corpus if it does not already exist
 if [ ! -d out ] ; then
-  # ideally, we would download the github artifact but that requires being logged in which can not
-  # easily be fixed from this shell script.
-  echo "NOTE! please go to the artifacts page on https://github.com/simdjson/simdjson/actions/workflows/fuzzers.yml and download the latest corpus.tar.zip artifact manually to speed up fuzzing"
-  sleep 5s
+  # the corpus is also available for download from the artifacts page on https://github.com/simdjson/simdjson/actions/workflows/fuzzers.yml
+  # but that requires being logged in so can not be easily done from this script.
+  wget -O - https://readonly:readonly@www.pauldreik.se/fuzzdata/index.php?project=simdjson |tar xzf -
 fi
 
 # By default, use the debug friendly variant since this script is intended
