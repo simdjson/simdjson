@@ -1,7 +1,7 @@
 iterate_many
 ==========
 
-An interface providing features to work with files or streams containing multiple small JSON documents. Given an input such as 
+An interface providing features to work with files or streams containing multiple small JSON documents. Given an input such as
 ```JSON
 {"text":"a"}
 {"text":"b"}
