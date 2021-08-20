@@ -199,8 +199,7 @@ inline simdjson_result<const char *> json_iterator::current_location() noexcept 
   if (!is_alive()) {
     return reinterpret_cast<const char *>(token.peek());
   }
-  auto cur_struct_index = token.position() - parser->implementation->structural_indexes.get();
-  if (cur_struct_index >= static_cast<int>(parser->implementation->n_structural_indexes)) {
+  if (at_end()) {
     return INDEX_OUT_OF_BOUNDS;
   }
   return reinterpret_cast<const char *>(token.peek());
