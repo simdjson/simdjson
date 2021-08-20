@@ -5,7 +5,7 @@ using namespace simdjson;
 
 namespace error_location_tests {
 
-    bool simple_example() {
+    bool array() {
         TEST_START();
         auto json = R"( [1,2,3] )"_padded;
         ondemand::parser parser;
@@ -24,6 +24,32 @@ namespace error_location_tests {
             ASSERT_EQUAL(i,expected_values[count]);
             count++;
         }
+        ASSERT_EQUAL(count,3);
+        ASSERT_ERROR(doc.current_location(), INDEX_OUT_OF_BOUNDS);
+        TEST_SUCCEED();
+    }
+
+    bool object() {
+        TEST_START();
+        auto json = R"( {"a":1, "b":2, "c":3} )"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        std::vector<char> expected = {'1','2','3'};
+        std::vector<int64_t> expected_values = {1,2,3};
+        size_t count{0};
+        for (auto field : doc.get_object()) {
+            int64_t i;
+            const char* c;
+            // Must call current_location first because get_int64() will consume values
+            ASSERT_SUCCESS(doc.current_location().get(c));
+            ASSERT_EQUAL(*c,expected[count]);
+            ASSERT_SUCCESS(field.value().get(i));
+            ASSERT_EQUAL(i,expected_values[count]);
+            count++;
+        }
+        ASSERT_EQUAL(count,3);
+        ASSERT_ERROR(doc.current_location(), INDEX_OUT_OF_BOUNDS);
         TEST_SUCCEED();
     }
 
@@ -105,7 +131,8 @@ namespace error_location_tests {
     }
 
     bool run() {
-        return  simple_example() &&
+        return  array() &&
+                object() &&
                 broken_json1() &&
                 broken_json2() &&
                 broken_json3() &&
