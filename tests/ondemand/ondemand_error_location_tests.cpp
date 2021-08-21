@@ -77,7 +77,7 @@ namespace error_location_tests {
         ASSERT_SUCCESS(doc.get_array().get(arr));
         ASSERT_ERROR(arr.count_elements(), TAPE_ERROR);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr - 2, "] ");
+        ASSERT_EQUAL(ptr - 1, "] ");
         TEST_SUCCEED();
     }
 
@@ -98,7 +98,7 @@ namespace error_location_tests {
         }
         ASSERT_EQUAL(count, 1);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, ", 2] ");
+        ASSERT_EQUAL(ptr, "1, 2] ");
         TEST_SUCCEED();
     }
 
@@ -111,7 +111,7 @@ namespace error_location_tests {
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
         ASSERT_ERROR(doc["b"], TAPE_ERROR);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, ", \"b\":5} ");
+        ASSERT_EQUAL(ptr, "3, \"b\":5} ");
         TEST_SUCCEED();
     }
 
@@ -126,7 +126,21 @@ namespace error_location_tests {
             ASSERT_ERROR(val, INCOMPLETE_ARRAY_OR_OBJECT);
         }
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, "1,2,3 ");
+        ASSERT_EQUAL(ptr, "[1,2,3 ");
+        TEST_SUCCEED();
+    }
+
+    bool boolean_error() {
+        TEST_START();
+        auto json = R"( [tru, fals] )"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        for (auto val : doc) {
+            bool b;
+            ASSERT_ERROR(val.get(b), INCORRECT_TYPE);
+        }
+        ASSERT_ERROR(doc.current_location(), INDEX_OUT_OF_BOUNDS);
         TEST_SUCCEED();
     }
 
@@ -138,6 +152,7 @@ namespace error_location_tests {
                 broken_json3() &&
                 broken_json4() &&
                 incomplete_json() &&
+                boolean_error() &&
                 true;
     }
 
