@@ -205,7 +205,7 @@ inline simdjson_result<const char *> json_iterator::current_location() noexcept 
     }
   }
   if (at_end()) {
-    return INDEX_OUT_OF_BOUNDS;
+    return OUT_OF_BOUNDS;
   }
   return reinterpret_cast<const char *>(token.peek());
 }

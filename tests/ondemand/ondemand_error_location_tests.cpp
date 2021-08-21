@@ -25,7 +25,7 @@ namespace error_location_tests {
             count++;
         }
         ASSERT_EQUAL(count,3);
-        ASSERT_ERROR(doc.current_location(), INDEX_OUT_OF_BOUNDS);
+        ASSERT_ERROR(doc.current_location(), OUT_OF_BOUNDS);
         TEST_SUCCEED();
     }
 
@@ -49,7 +49,7 @@ namespace error_location_tests {
             count++;
         }
         ASSERT_EQUAL(count,3);
-        ASSERT_ERROR(doc.current_location(), INDEX_OUT_OF_BOUNDS);
+        ASSERT_ERROR(doc.current_location(), OUT_OF_BOUNDS);
         TEST_SUCCEED();
     }
 
@@ -140,7 +140,7 @@ namespace error_location_tests {
             bool b;
             ASSERT_ERROR(val.get(b), INCORRECT_TYPE);
         }
-        ASSERT_ERROR(doc.current_location(), INDEX_OUT_OF_BOUNDS);
+        ASSERT_ERROR(doc.current_location(), OUT_OF_BOUNDS);
         TEST_SUCCEED();
     }
 
