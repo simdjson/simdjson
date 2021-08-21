@@ -308,7 +308,30 @@ namespace array_tests {
       }
       return true;
     }));
+    SUBTEST("ondemand::array-rewind", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
 
+      size_t i = 0;
+      for (auto value : array) { (void)value; i++; }
+      ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
+      std::vector<int64_t> container(i); // container of size 'i'.
+
+      array.reset();
+      i = 0;
+      for (auto value : array) {
+        int64_t actual;
+        ASSERT_SUCCESS( value.get(actual) );
+        container[i] = actual;
+        i++;
+      }
+      ASSERT_EQUAL(i * sizeof(int64_t), sizeof(expected_value));
+      for(size_t j = 0; j < sizeof(expected_value)/sizeof(int64_t); j++) {
+        ASSERT_EQUAL(container[j], expected_value[j]);
+      }
+      return true;
+    }));
     SUBTEST("simdjson_result<ondemand::array>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::array> array = doc_result.get_array();
       ASSERT_RESULT( doc_result.type(), json_type::array );
@@ -336,7 +359,71 @@ namespace array_tests {
     }));
     TEST_SUCCEED();
   }
-
+  bool empty_rewind() {
+    TEST_START();
+    const auto json = R"( [] )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::array arr;
+    ASSERT_SUCCESS(doc.get_array().get(arr));
+    for(simdjson_unused auto i : arr) {
+      TEST_FAIL("should be empty?");
+    }
+    arr.reset();
+    for(simdjson_unused auto i : arr) {
+      TEST_FAIL("should be empty?");
+    }
+    TEST_SUCCEED();
+  }
+  bool count_empty(simdjson::ondemand::array arr) {
+    size_t count;
+    ASSERT_SUCCESS(arr.count_elements().get(count));
+    ASSERT_EQUAL(count, 0);
+    bool is_empty;
+    ASSERT_SUCCESS(arr.is_empty().get(is_empty));
+    ASSERT_TRUE(is_empty);
+    return true;
+  }
+  bool value_to_array(simdjson::ondemand::value val) {
+    ondemand::json_type t;
+    ASSERT_SUCCESS(val.type().get(t));
+    ASSERT_EQUAL(t, ondemand::json_type::array);
+    simdjson::ondemand::array arr;
+    ASSERT_SUCCESS(val.get_array().get(arr));
+    if(count_empty(arr) != true) { return false; }
+    return true;
+  }
+  bool empty_rewind_convoluted() {
+    TEST_START();
+    const auto json = R"( [] )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::value val;
+    ASSERT_SUCCESS(doc.get_value().get(val));
+    if(!value_to_array(val)) { return false; }
+    TEST_SUCCEED();
+  }
+#if SIMDJSON_EXCEPTIONS
+  bool value_to_array_except(simdjson::ondemand::value val) {
+    ondemand::json_type t = val.type();
+    ASSERT_EQUAL(t, ondemand::json_type::array);
+    if(count_empty(simdjson::ondemand::array(val)) != true) { return false; }
+    return true;
+  }
+  bool empty_rewind_convoluted_with_exceptions() {
+    TEST_START();
+    const auto json = R"( [] )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::value val;
+    ASSERT_SUCCESS(doc.get_value().get(val));
+    if(value_to_array_except(val) != true) { return false; }
+    TEST_SUCCEED();
+  }
+#endif
   bool iterate_array() {
     TEST_START();
     const auto json = R"( [ [ 1, 10, 100 ] ] )"_padded;
@@ -591,8 +678,24 @@ namespace array_tests {
       ASSERT_EQUAL(i, 0);
       return true;
     }));
+    SUBTEST("ondemand::array-rewind", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::array array;
+      ASSERT_RESULT( doc_result.type(), json_type::array );
+      ASSERT_SUCCESS( doc_result.get(array) );
+
+      size_t i = 0;
+      for (auto value : array) { (void) value; i++; }
+      ASSERT_EQUAL(i, 0);
+
+      array.reset();
+      i = 0;
+      for (auto value : array) { (void) value; i++; }
+      ASSERT_EQUAL(i, 0);
+      return true;
+    }));
     TEST_SUCCEED();
   }
+
 #if SIMDJSON_EXCEPTIONS
 
   bool iterate_array_exception() {
@@ -639,6 +742,8 @@ namespace array_tests {
 
   bool run() {
     return
+           empty_rewind_convoluted() &&
+           empty_rewind() &&
            iterate_empty_array_count() &&
            iterate_sub_array_count() &&
            iterate_complex_array_count() &&
@@ -650,6 +755,7 @@ namespace array_tests {
            iterate_empty_array() &&
            iterate_array_partial_children() &&
 #if SIMDJSON_EXCEPTIONS
+           empty_rewind_convoluted_with_exceptions() &&
            iterate_array_exception() &&
 #endif // SIMDJSON_EXCEPTIONS
            true;

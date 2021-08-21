@@ -237,6 +237,29 @@ namespace object_tests {
       ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
       return true;
     }));
+    SUBTEST("ondemand::object-rewind", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_RESULT( doc_result.type(), json_type::object );
+      ASSERT_SUCCESS( doc_result.get(object) );
+      size_t i = 0;
+      for (auto field : object) {
+        ASSERT_SUCCESS( field.error() );
+        ASSERT_EQUAL( field.key().value_unsafe(), expected_key[i]);
+        ASSERT_EQUAL( field.value().get_uint64().value_unsafe(), expected_value[i] );
+        i++;
+      }
+      ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
+      object.reset();
+      i = 0;
+      for (auto field : object) {
+        ASSERT_SUCCESS( field.error() );
+        ASSERT_EQUAL( field.key().value_unsafe(), expected_key[i]);
+        ASSERT_EQUAL( field.value().get_uint64().value_unsafe(), expected_value[i] );
+        i++;
+      }
+      ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
+      return true;
+    }));
     SUBTEST("simdjson_result<ondemand::object>", test_ondemand_doc(json, [&](auto doc_result) {
       simdjson_result<ondemand::object> object_result = doc_result.get_object();
       size_t i = 0;
@@ -590,11 +613,95 @@ namespace object_tests {
       ASSERT_EQUAL( i, 0 );
       return true;
     }));
+    SUBTEST("ondemand::object-rewind", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_RESULT( doc_result.type(), json_type::object );
+      ASSERT_SUCCESS( doc_result.get(object) );
+      size_t i = 0;
+      for (auto field : object) {
+        (void)field;
+        i++;
+      }
+      ASSERT_EQUAL( i, 0 );
+      object.reset();
+      i = 0;
+      for (auto field : object) {
+        (void)field;
+        i++;
+      }
+      ASSERT_EQUAL( i, 0 );
+      return true;
+    }));
+    SUBTEST("ondemand::object-rewind", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_RESULT( doc_result.type(), json_type::object );
+      ASSERT_SUCCESS( doc_result.get(object) );
+      size_t i = 0;
+      for (auto field : object) {
+        (void)field;
+        i++;
+      }
+      ASSERT_EQUAL( i, 0 );
+      object.reset();
+      i = 0;
+      for (auto field : object) {
+        (void)field;
+        i++;
+      }
+      ASSERT_EQUAL( i, 0 );
+      return true;
+    }));
 
     TEST_SUCCEED();
   }
 
 #endif // SIMDJSON_EXCEPTIONS
+
+  bool empty(simdjson::ondemand::object obj) {
+    bool is_empty;
+    ASSERT_SUCCESS(obj.is_empty().get(is_empty));
+    ASSERT_TRUE(is_empty);
+    return true;
+  }
+  bool value_to_object(simdjson::ondemand::value val) {
+    ondemand::json_type t;
+    ASSERT_SUCCESS(val.type().get(t));
+    ASSERT_EQUAL(t, ondemand::json_type::object);
+    simdjson::ondemand::object obj;
+    ASSERT_SUCCESS(val.get_object().get(obj));
+    if(empty(obj) != true) { return false; }
+    return true;
+  }
+  bool empty_rewind_convoluted() {
+    TEST_START();
+    const auto json = R"( {} )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::value val;
+    ASSERT_SUCCESS(doc.get_value().get(val));
+    if(!value_to_object(val)) { return false; }
+    TEST_SUCCEED();
+  }
+#if SIMDJSON_EXCEPTIONS
+  bool value_to_object_except(simdjson::ondemand::value val) {
+    ondemand::json_type t = val.type();
+    ASSERT_EQUAL(t, ondemand::json_type::object);
+    if(empty(simdjson::ondemand::object(val)) != true) { return false; }
+    return true;
+  }
+  bool empty_rewind_convoluted_with_exceptions() {
+    TEST_START();
+    const auto json = R"( {} )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::value val;
+    ASSERT_SUCCESS(doc.get_value().get(val));
+    if(value_to_object_except(val) != true) { return false; }
+    TEST_SUCCEED();
+  }
+#endif
 
   bool run() {
     return
@@ -612,8 +719,10 @@ namespace object_tests {
            iterate_empty_object() &&
            iterate_object_partial_children() &&
            issue_1480() &&
+           empty_rewind_convoluted() &&
 #if SIMDJSON_EXCEPTIONS
            iterate_object_exception() &&
+           empty_rewind_convoluted_with_exceptions() &&
 #endif // SIMDJSON_EXCEPTIONS
            true;
   }
