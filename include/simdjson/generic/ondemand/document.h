@@ -376,6 +376,11 @@ public:
    * Returns debugging information.
    */
   inline std::string to_debug_string() noexcept;
+  /**
+   * Some unrecoverable error conditions may render the document instance unusable.
+   * The is_alive() method returns true when the document is still suitable.
+   */
+  inline bool is_alive() noexcept;
 
   /**
    * Get the value associated with the given JSON pointer.  We use the RFC 6901
