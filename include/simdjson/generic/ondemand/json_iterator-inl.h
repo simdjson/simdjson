@@ -1,4 +1,3 @@
-#include <iostream>
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
