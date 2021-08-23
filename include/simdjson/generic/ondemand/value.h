@@ -329,6 +329,28 @@ public:
    * @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse".
    */
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
+
+  /**
+   * Checks whether the value is a negative number.
+   *
+   * @returns true if the number if negative.
+   */
+  simdjson_really_inline bool is_negative() noexcept;
+  /**
+   * Checks whether the value is an integer number. Note that
+   * this requires to partially parse the number string. If
+   * the value is determined to be an integer, it may still
+   * not parse properly as an integer in subsequent steps
+   * (e.g., it might overflow).
+   *
+   * Performance note: if you call this function systematically
+   * before parsing a number, you may have fallen for a performance
+   * anti-pattern.
+   *
+   * @returns true if the number if negative.
+   */
+  simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+
   /**
    * Get the raw JSON for this token.
    *
@@ -545,6 +567,8 @@ public:
    */
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
+  simdjson_really_inline simdjson_result<bool> is_negative() noexcept;
+  simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
 
   /** @copydoc simdjson_really_inline std::string_view value::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;

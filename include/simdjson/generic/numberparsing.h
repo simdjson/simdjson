@@ -1034,7 +1034,7 @@ simdjson_unused simdjson_really_inline bool is_negative(const uint8_t * src) noe
   return (*src == '-');
 }
 
-simdjson_unused simdjson_really_inline simdjson_result<double> is_integer(const uint8_t * src) noexcept {
+simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
   bool negative = (*src == '-');
   src += negative;
   const uint8_t *p = src;

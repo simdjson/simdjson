@@ -492,6 +492,12 @@ simdjson_really_inline bool value_iterator::is_null() noexcept {
   if(result) { advance_non_root_scalar("null"); }
   return result;
 }
+simdjson_really_inline bool value_iterator::is_negative() noexcept {
+  return numberparsing::is_negative(peek_non_root_scalar("numbersign"));
+}
+simdjson_really_inline simdjson_result<bool> value_iterator::is_integer() noexcept {
+  return numberparsing::is_integer(peek_non_root_scalar("integer"));
+}
 
 constexpr const uint32_t MAX_INT_LENGTH = 1024;
 
