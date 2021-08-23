@@ -1030,6 +1030,19 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
   return d;
 }
 
+simdjson_unused simdjson_really_inline bool is_negative(const uint8_t * src) noexcept {
+  return (*src == '-');
+}
+
+simdjson_unused simdjson_really_inline simdjson_result<double> is_integer(const uint8_t * src) noexcept {
+  bool negative = (*src == '-');
+  src += negative;
+  const uint8_t *p = src;
+  while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  if ( p == src ) { return NUMBER_ERROR; }
+  if (jsoncharutils::is_structural_or_whitespace(*p)) { return true; }
+  return false;
+}
 
 // Never read at src_end or beyond
 simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(const uint8_t * src, const uint8_t * const src_end) noexcept {

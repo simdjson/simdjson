@@ -21,6 +21,48 @@ inline std::ostream& operator<<(std::ostream& out, simdjson_result<json_type> &t
 }
 #endif
 
+
+
+simdjson_really_inline number_type number::get_number_type() const noexcept {
+  return type;
+}
+
+simdjson_really_inline bool number::is_uint64() const noexcept {
+  return get_number_type() == number_type::unsigned_integer;
+}
+
+simdjson_really_inline uint64_t number::get_uint64() const noexcept {
+  return payload.unsigned_integer;
+}
+
+
+simdjson_really_inline bool number::is_int64() const noexcept {
+  return get_number_type() == number_type::signed_integer;
+}
+
+simdjson_really_inline int64_t number::get_int64() const noexcept {
+  return payload.signed_integer;
+}
+
+simdjson_really_inline bool number::is_double() const noexcept {
+    return get_number_type() == number_type::floating_point_number;
+}
+
+simdjson_really_inline double number::get_double() const noexcept {
+  return payload.floating_point_number;
+}
+
+simdjson_really_inline double number::as_double() const noexcept {
+  if(is_double()) {
+    return payload.floating_point_number;
+  }
+  if(is_int64()) {
+    return double(payload.signed_integer);
+  }
+  return double(payload.unsigned_integer);
+}
+
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

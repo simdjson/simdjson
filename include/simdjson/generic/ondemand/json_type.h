@@ -16,6 +16,75 @@ enum class json_type {
 };
 
 /**
+ * The type of a JSON number
+ */
+enum class number_type {
+    floating_point_number=1, /// a binary64 number
+    signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
+    unsigned_integer         /// a positive integer larger or equal to 1<<63
+};
+
+/**
+ * A type representing a JSON number.
+ * The design of the struct is deliberately straight-forward. All
+ * functions return standard values with no error check.
+ */
+struct number {
+
+  /**
+   * return the automatically determined type of
+   * the number: number_type::floating_point_number,
+   * number_type::signed_integer or number_type::unsigned_integer.
+   */
+  simdjson_really_inline number_type get_number_type() const noexcept;
+  /**
+   * return true if the automatically determined type of
+   * the number is number_type::unsigned_integer.
+   */
+  simdjson_really_inline bool is_uint64() const noexcept;
+  /**
+   * return the value as a uint64_t, only valid if is_uint64() is true.
+   */
+  simdjson_really_inline uint64_t get_uint64() const noexcept;
+
+  /**
+   * return true if the automatically determined type of
+   * the number is number_type::signed_integer.
+   */
+  simdjson_really_inline bool is_int64() const noexcept;
+  /**
+   * return the value as a int64_t, only valid if is_int64() is true.
+   */
+  simdjson_really_inline int64_t get_int64() const noexcept;
+
+
+  /**
+   * return true if the automatically determined type of
+   * the number is number_type::floating_point_number.
+   */
+  simdjson_really_inline bool is_double() const noexcept;
+  /**
+   * return the value as a double, only valid if is_double() is true.
+   */
+  simdjson_really_inline double get_double() const noexcept;
+  /**
+   * Convert the number to a double. Though it always succeed, the conversion
+   * may be lossy if the number cannot be represented exactly.
+   */
+  simdjson_really_inline double as_double() const noexcept;
+
+protected:
+
+  union {
+    double floating_point_number;
+    int64_t signed_integer;
+    uint64_t unsigned_integer;
+  } payload{0};
+  number_type type{number_type::signed_integer};
+
+};
+
+/**
  * Write the JSON type to the output stream
  *
  * @param out The output stream.
