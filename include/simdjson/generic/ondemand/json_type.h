@@ -1,7 +1,6 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
-
 /**
  * The type of a JSON value.
  */
@@ -73,6 +72,17 @@ struct number {
    */
   simdjson_really_inline double as_double() const noexcept;
 
+
+  /** Store a signed 64-bit value to the number. */
+  simdjson_really_inline void append_s64(int64_t value) noexcept;
+
+  /** Store an unsigned 64-bit value to the number. */
+  simdjson_really_inline void append_u64(uint64_t value) noexcept;
+  /** Store a double value to the number. */
+  simdjson_really_inline void append_double(double value) noexcept;
+  /** Specifies that the value is a double, but leave it undefined. */
+  simdjson_really_inline void skip_double() noexcept;
+
 protected:
 
   union {
@@ -81,7 +91,7 @@ protected:
     uint64_t unsigned_integer;
   } payload{0};
   number_type type{number_type::signed_integer};
-
+  friend class value_iterator;
 };
 
 /**

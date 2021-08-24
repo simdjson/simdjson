@@ -499,7 +499,12 @@ simdjson_really_inline simdjson_result<bool> value_iterator::is_integer() noexce
   return numberparsing::is_integer(peek_non_root_scalar("integer"));
 }
 
-constexpr const uint32_t MAX_INT_LENGTH = 1024;
+simdjson_really_inline simdjson_result<number> value_iterator::get_number() noexcept {
+  number num;
+  error_code error =  numberparsing::parse_number(peek_non_root_scalar("number"), num);
+  if(error) { return error; }
+  return num;
+}
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> value_iterator::get_root_string() noexcept {
   return get_string();

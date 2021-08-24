@@ -62,6 +62,24 @@ simdjson_really_inline double number::as_double() const noexcept {
   return double(payload.unsigned_integer);
 }
 
+simdjson_really_inline void number::append_s64(int64_t value) noexcept {
+  payload.signed_integer = value;
+  type = number_type::signed_integer;
+}
+
+simdjson_really_inline void number::append_u64(uint64_t value) noexcept {
+  payload.unsigned_integer = value;
+  type = number_type::unsigned_integer;
+}
+
+simdjson_really_inline void number::append_double(double value) noexcept {
+  payload.floating_point_number = value;
+  type = number_type::floating_point_number;
+}
+
+simdjson_really_inline void number::skip_double() noexcept {
+  type = number_type::floating_point_number;
+}
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
