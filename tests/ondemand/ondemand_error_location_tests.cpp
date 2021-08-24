@@ -199,12 +199,15 @@ namespace error_location_tests {
         ondemand::parser parser;
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        const char * ptr;
         uint64_t i;
         ASSERT_SUCCESS(doc["a"].get(i));
         ASSERT_EQUAL(i, 5);
-        ASSERT_EQUAL(*doc.current_location(), ',');
+        ASSERT_SUCCESS(doc.current_location().get(ptr));
+        ASSERT_EQUAL(ptr, ", \"b\":4} ");
         ASSERT_ERROR(doc["c"], NO_SUCH_FIELD);
-        ASSERT_EQUAL(*doc.current_location(), ',');
+        ASSERT_SUCCESS(doc.current_location().get(ptr));
+        ASSERT_EQUAL(ptr, ", \"b\":4} ");
         TEST_SUCCEED();
     }
 
@@ -214,9 +217,11 @@ namespace error_location_tests {
         ondemand::parser parser;
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        const char * ptr;
         double d;
         ASSERT_ERROR(doc.at_pointer("/0").get(d), NUMBER_ERROR);
-        ASSERT_EQUAL(*doc.current_location(), ']');
+        ASSERT_SUCCESS(doc.current_location().get(ptr));
+        ASSERT_EQUAL(ptr, "] ");
         TEST_SUCCEED();
     }
 
