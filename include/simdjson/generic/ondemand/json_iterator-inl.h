@@ -198,7 +198,7 @@ inline std::string json_iterator::to_string() const noexcept {
 inline simdjson_result<const char *> json_iterator::current_location() noexcept {
   if (!is_alive()) {    // Unrecoverable error
     if (!at_root()) {
-      return reinterpret_cast<const char *>(token.peek() - 1);
+      return reinterpret_cast<const char *>(token.peek(-1));
     } else {
       return reinterpret_cast<const char *>(token.peek());
     }

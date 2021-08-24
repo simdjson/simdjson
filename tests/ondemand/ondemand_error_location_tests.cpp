@@ -53,6 +53,44 @@ namespace error_location_tests {
         TEST_SUCCEED();
     }
 
+    bool json_pointer() {
+        TEST_START();
+        auto json = R"( {"a": [1,2,[3,4,5]], "b": {"c": [1.2, 2.3]}} )"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        const char * ptr;
+        uint64_t i;
+        ASSERT_SUCCESS(doc.at_pointer("/a/2/1").get(i));
+        ASSERT_EQUAL(i, 4);
+        ASSERT_SUCCESS(doc.current_location().get(ptr));
+        ASSERT_EQUAL(ptr, ",5]], \"b\": {\"c\": [1.2, 2.3]}} ");
+        double d;
+        ASSERT_SUCCESS(doc.at_pointer("/b/c/1").get(d));
+        ASSERT_EQUAL(d, 2.3);
+        ASSERT_SUCCESS(doc.current_location().get(ptr));
+        ASSERT_EQUAL(ptr, "]}} ");
+        TEST_SUCCEED();
+    }
+
+    bool json_pointer_with_errors() {
+        TEST_START();
+        auto json = R"( {"a": [1,2,[3 4,5]], "b": {"c": [1.2., 2.3]}} )"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        const char * ptr;
+        double d;
+        ASSERT_ERROR(doc.at_pointer("/b/c/0").get(d), NUMBER_ERROR);
+        ASSERT_SUCCESS(doc.current_location().get(ptr));
+        ASSERT_EQUAL(ptr, ", 2.3]}} ");
+        uint64_t i;
+        ASSERT_ERROR(doc.at_pointer("/a/2/1").get(i), TAPE_ERROR);
+        ASSERT_SUCCESS(doc.current_location().get(ptr));
+        ASSERT_EQUAL(ptr, "4,5]], \"b\": {\"c\": [1.2., 2.3]}} ");
+        TEST_SUCCEED();
+    }
+
     bool broken_json1() {
         TEST_START();
         auto json = R"( �{"a":1, 3} )"_padded;
@@ -77,13 +115,13 @@ namespace error_location_tests {
         ASSERT_SUCCESS(doc.get_array().get(arr));
         ASSERT_ERROR(arr.count_elements(), TAPE_ERROR);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr - 1, "] ");
+        ASSERT_EQUAL(ptr - 2, "] ");
         TEST_SUCCEED();
     }
 
     bool broken_json3() {
         TEST_START();
-        auto json = R"( [1 1, 2] )"_padded;
+        auto json = R"( [1 1.23, 2] )"_padded;
         ondemand::parser parser;
         ondemand::document doc;
         size_t count{0};
@@ -98,20 +136,20 @@ namespace error_location_tests {
         }
         ASSERT_EQUAL(count, 1);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, "1, 2] ");
+        ASSERT_EQUAL(ptr, "1.23, 2] ");
         TEST_SUCCEED();
     }
 
     bool broken_json4() {
         TEST_START();
-        auto json = R"( {"a":1, 3, "b":5} )"_padded;
+        auto json = R"( {"a":1, 3.5, "b":5} )"_padded;
         ondemand::parser parser;
         ondemand::document doc;
         const char * ptr;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
         ASSERT_ERROR(doc["b"], TAPE_ERROR);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, "3, \"b\":5} ");
+        ASSERT_EQUAL(ptr, "3.5, \"b\":5} ");
         TEST_SUCCEED();
     }
 
@@ -144,15 +182,58 @@ namespace error_location_tests {
         TEST_SUCCEED();
     }
 
+    bool no_such_field() {
+        TEST_START();
+        auto json = R"( {"a":5, "b":4} )"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ASSERT_ERROR(doc["c"], NO_SUCH_FIELD);
+        ASSERT_ERROR(doc.current_location(), OUT_OF_BOUNDS);
+        TEST_SUCCEED();
+    }
+
+    bool object_with_no_such_field() {
+        TEST_START();
+        auto json = R"( {"a":5, "b":4} )"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        uint64_t i;
+        ASSERT_SUCCESS(doc["a"].get(i));
+        ASSERT_EQUAL(i, 5);
+        ASSERT_EQUAL(*doc.current_location(), ',');
+        ASSERT_ERROR(doc["c"], NO_SUCH_FIELD);
+        ASSERT_EQUAL(*doc.current_location(), ',');
+        TEST_SUCCEED();
+    }
+
+    bool number_parsing_error() {
+        TEST_START();
+        auto json = R"( [1.334.] )"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        double d;
+        ASSERT_ERROR(doc.at_pointer("/0").get(d), NUMBER_ERROR);
+        ASSERT_EQUAL(*doc.current_location(), ']');
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return  array() &&
                 object() &&
+                json_pointer() &&
+                json_pointer_with_errors() &&
                 broken_json1() &&
                 broken_json2() &&
                 broken_json3() &&
                 broken_json4() &&
                 incomplete_json() &&
                 boolean_error() &&
+                no_such_field() &&
+                object_with_no_such_field() &&
+                number_parsing_error() &&
                 true;
     }
 
