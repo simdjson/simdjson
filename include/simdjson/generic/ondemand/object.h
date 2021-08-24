@@ -111,6 +111,26 @@ public:
   inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
 
   /**
+   * Reset the iterator so that we are pointing back at the
+   * beginning of the object. You should still consume values only once even if you
+   * can iterate through the object more than once. If you unescape a string within
+   * the object more than once, you have unsafe code. Note that rewinding an object
+   * means that you may need to reparse it anew: it is not a free operation.
+   *
+   * @returns true if the object contains some elements (not empty)
+   */
+  inline simdjson_result<bool> reset() & noexcept;
+  /**
+   * This method scans the beginning of the object and checks whether the
+   * object is empty.
+   * The runtime complexity is constant time. After
+   * calling this function, if successful, the object is 'rewinded' at its
+   * beginning as if it had never been accessed. If the JSON is malformed (e.g.,
+   * there is a missing comma), then an error is returned and it is no longer
+   * safe to continue.
+   */
+  inline simdjson_result<bool> is_empty() & noexcept;
+  /**
    * Consumes the object and returns a string_view instance corresponding to the
    * object as represented in JSON. It points inside the original byte array containg
    * the JSON document.
@@ -159,6 +179,9 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) && noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
+  inline simdjson_result<bool> reset() noexcept;
+  inline simdjson_result<bool> is_empty() noexcept;
+
 };
 
 } // namespace simdjson

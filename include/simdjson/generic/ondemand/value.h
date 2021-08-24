@@ -328,7 +328,7 @@ public:
    * @returns true if the type is string, number, null, Boolean
    * @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse".
    */
-  simdjson_really_inline simdjson_result<bool> scalar() noexcept;
+  simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
   /**
    * Get the raw JSON for this token.
    *
@@ -544,7 +544,7 @@ public:
    * let it throw an exception).
    */
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
-  simdjson_really_inline simdjson_result<bool> scalar() noexcept;
+  simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
 
   /** @copydoc simdjson_really_inline std::string_view value::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
