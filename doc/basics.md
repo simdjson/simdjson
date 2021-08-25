@@ -957,8 +957,10 @@ int main(void) {
 ### Current location in document
 
 Sometimes, it might be helpful to know the current location in the document during iteration. This is especially useful when
-encountering errors or trying to identify JSON problems. Users can call the `current_location()` method on a document instances
-to retrieve a `const char *` pointer to the current location in the document. This method also works even after an error has invalidated the document and the parser (e.g. `TAPE_ERROR`, `INCOMPLETE_ARRAY_OR_OBJECT`). As an example, consider the following,
+encountering errors. Using `current_location()` in combination of exception-free error handling makes it easy to identify broken JSON
+and errors. Users can call the `current_location()` method on a document instance to retrieve a `const char *` pointer to the current
+location in the document. This method also works even after an error has invalidated the document and the parser (e.g. `TAPE_ERROR`,
+`INCOMPLETE_ARRAY_OR_OBJECT`). As an example, consider the following,
 
 ```c++
 auto broken_json = R"( {"double": 13.06, false, "integer": -343} )"_padded;    // Missing key
@@ -967,7 +969,8 @@ auto doc = parser.iterate(broken_json);
 int64_t i;
 auto error = doc["integer"].get_int64().get(i);    // Expect to get integer from "integer" key, but get TAPE_ERROR
 if (error) {
-  std::cout<< doc.current_location() << std::endl;  // Prints "false, "integer": -343} "
+  std::cout << error << std::endl;    // Prints TAPE_ERROR error message
+  std::cout<< doc.current_location() << std::endl;  // Prints "false, "integer": -343} " (location of TAPE_ERROR)
 }
 ```
 
@@ -982,7 +985,8 @@ auto doc = parser.iterate(json);
 int64_t i;
 auto error = doc["integer"].get_int64().get(i);    // Incorrect call on array, INCORRECT_TYPE error
 if (error) {
-  std::cout<< doc.current_location() << std::endl;  // Prints "[1,2,3] "
+  std::cout << error << std::endl;     // Prints INCORRECT_TYPE error message
+  std::cout<< doc.current_location() << std::endl;  // Prints "[1,2,3] " (location of INCORRECT_TYPE error)
 }
 ```
 
