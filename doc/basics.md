@@ -989,7 +989,7 @@ if (error) {
 If the location is invalid (i.e. at the end of a document), `current_location()` will return an `OUT_OF_BOUNDS` error. Example:
 
 ```c++
-auto json = R"( [1,2,3] )"_padded;    // Missing key
+auto json = R"( [1,2,3] )"_padded;
 ondemand::parser parser;
 auto doc = parser.iterate(json);
 for (auto val : doc) {
@@ -1002,14 +1002,14 @@ Finally, note that `current_location()` can also be used even when no exceptions
 that want to know the current state of iteration during parsing. For example,
 
 ```c++
-auto json = R"( [[1,2,3], -23.4, {"key": "value"}, true] )"
+auto json = R"( [[1,2,3], -23.4, {"key": "value"}, true] )"_padded;
 ondemand::parser parser;
 auto doc = parser.iterate(json);
 for (auto val : doc) {
-  ondemand::object;
+  ondemand::object obj;
   auto error = val.get_object().get(obj);     // Only get objects
   if (!error) {
-    std::cout << doc.current_location() << std::endl;   // Prints "{"key": "value"}, true] "
+    std::cout << doc.current_location() << std::endl;   // Prints ""key": "value"}, true] "
   }
 }
 ```
