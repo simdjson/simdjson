@@ -213,13 +213,13 @@ namespace error_location_tests {
 
     bool number_parsing_error() {
         TEST_START();
-        auto json = R"( [1.334.] )"_padded;
+        auto json = R"( [13.34.514] )"_padded;
         ondemand::parser parser;
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
         const char * ptr;
         double d;
-        ASSERT_ERROR(doc.at_pointer("/0").get(d), NUMBER_ERROR);
+        ASSERT_ERROR(doc.at_pointer("/0").get_double().get(d), NUMBER_ERROR);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
         ASSERT_EQUAL(ptr, "] ");
         TEST_SUCCEED();
