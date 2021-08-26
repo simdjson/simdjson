@@ -1246,7 +1246,7 @@ Thus it is a dynamically typed number. Before accessing the value, you must dete
 
 You must check the type before accessing the value: it is an error to call `get_int64()` when `number.get_number_type()` is not `number_type::signed_integer` and when `number.is_int64()` is false. You are responsible for this check as the user of the library.
 
-The `get_number()` functionis designed with performance in mind. When calling `get_number()`, you scan the number string only once, determining efficiently the type and storing it in an efficient manner.
+The `get_number()` function is designed with performance in mind. When calling `get_number()`, you scan the number string only once, determining efficiently the type and storing it in an efficient manner.
 
 Consider the following example:
 ```C++
