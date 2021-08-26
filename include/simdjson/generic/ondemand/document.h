@@ -504,6 +504,7 @@ public:
   simdjson_really_inline simdjson_result<json_type> type() noexcept;
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
 
+  simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
   simdjson_really_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
 private:
@@ -564,6 +565,7 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(const char *key) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
+  simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
   /** @copydoc simdjson_really_inline std::string_view document::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
 
@@ -618,6 +620,7 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(const char *key) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
+  simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
 
   /** @copydoc simdjson_really_inline std::string_view document_reference::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
