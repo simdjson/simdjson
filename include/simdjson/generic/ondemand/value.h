@@ -329,6 +329,60 @@ public:
    * @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse".
    */
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
+
+  /**
+   * Checks whether the value is a negative number.
+   *
+   * @returns true if the number if negative.
+   */
+  simdjson_really_inline bool is_negative() noexcept;
+  /**
+   * Checks whether the value is an integer number. Note that
+   * this requires to partially parse the number string. If
+   * the value is determined to be an integer, it may still
+   * not parse properly as an integer in subsequent steps
+   * (e.g., it might overflow).
+   *
+   * Performance note: if you call this function systematically
+   * before parsing a number, you may have fallen for a performance
+   * anti-pattern.
+   *
+   * @returns true if the number if negative.
+   */
+  simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  /**
+   * Attempt to parse an ondemand::number. An ondemand::number may
+   * contain an integer value or a floating-point value, the simdjson
+   * library will autodetect the type. Thus it is a dynamically typed
+   * number. Before accessing the value, you must determine the detected
+   * type.
+   *
+   * number.get_number_type() is number_type::signed_integer if we have
+   * a integer in [-9223372036854775808,9223372036854775808)
+   * You can recover the value by calling number.get_int64() and you
+   * have that number.is_int64() is true.
+   *
+   * number.get_number_type() is number_type::unsigned_integer if we have
+   * an integer in [9223372036854775808,18446744073709551616)
+   * You can recover the value by calling number.get_uint64() and you
+   * have that number.is_uint64() is true.
+   *
+   * Otherwise, number.get_number_type() has value number_type::floating_point_number
+   * and we have a binary64 number.
+   * You can recover the value by calling number.get_double() and you
+   * have that number.is_double() is true.
+   *
+   * You must check the type before accessing the value: it is an error
+   * to call "get_int64()" when number.get_number_type() is not
+   * number_type::signed_integer and when number.is_int64() is false.
+   *
+   * Performance note: this is designed with performance in mind. When
+   * calling 'get_number()', you scan the number string only once, determining
+   * efficiently the type and storing it in an efficient manner.
+   */
+  simdjson_warn_unused simdjson_really_inline simdjson_result<number> get_number() noexcept;
+
+
   /**
    * Get the raw JSON for this token.
    *
@@ -545,6 +599,9 @@ public:
    */
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
+  simdjson_really_inline simdjson_result<bool> is_negative() noexcept;
+  simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
 
   /** @copydoc simdjson_really_inline std::string_view value::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;

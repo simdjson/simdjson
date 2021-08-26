@@ -290,6 +290,9 @@ public:
   simdjson_warn_unused simdjson_really_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_really_inline bool is_null() noexcept;
+  simdjson_warn_unused simdjson_really_inline bool is_negative() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<number> get_number() noexcept;
 
   simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> get_root_string() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> get_root_raw_json_string() noexcept;

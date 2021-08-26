@@ -492,8 +492,19 @@ simdjson_really_inline bool value_iterator::is_null() noexcept {
   if(result) { advance_non_root_scalar("null"); }
   return result;
 }
+simdjson_really_inline bool value_iterator::is_negative() noexcept {
+  return numberparsing::is_negative(peek_non_root_scalar("numbersign"));
+}
+simdjson_really_inline simdjson_result<bool> value_iterator::is_integer() noexcept {
+  return numberparsing::is_integer(peek_non_root_scalar("integer"));
+}
 
-constexpr const uint32_t MAX_INT_LENGTH = 1024;
+simdjson_really_inline simdjson_result<number> value_iterator::get_number() noexcept {
+  number num;
+  error_code error =  numberparsing::parse_number(peek_non_root_scalar("number"), num);
+  if(error) { return error; }
+  return num;
+}
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> value_iterator::get_root_string() noexcept {
   return get_string();
@@ -566,6 +577,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterat
   if(result.error() != INCORRECT_TYPE) { advance_root_scalar("double"); }
   return result;
 }
+
 simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_root_double_in_string() noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("double");
