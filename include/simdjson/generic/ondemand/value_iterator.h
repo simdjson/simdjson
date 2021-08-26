@@ -303,6 +303,9 @@ public:
   simdjson_warn_unused simdjson_really_inline simdjson_result<double> get_root_double() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<double> get_root_double_in_string() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<bool> get_root_bool() noexcept;
+  simdjson_warn_unused simdjson_really_inline bool is_root_negative() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<bool> is_root_integer() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<number> get_root_number() noexcept;
   simdjson_really_inline bool is_root_null() noexcept;
 
   simdjson_really_inline error_code error() const noexcept;
