@@ -15,6 +15,15 @@ inline std::ostream& operator<<(std::ostream& out, json_type type) noexcept {
     return out;
 }
 
+inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
+    switch (type) {
+        case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
+        case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
+        case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        default: SIMDJSON_UNREACHABLE();
+    }
+    return out;
+}
 #if SIMDJSON_EXCEPTIONS
 inline std::ostream& operator<<(std::ostream& out, simdjson_result<json_type> &type) noexcept(false) {
     return out << type.value();

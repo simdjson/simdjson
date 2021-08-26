@@ -23,6 +23,7 @@ An overview of what you need to know to use simdjson, with examples.
 * [Direct Access to the Raw String](#direct-access-to-the-raw-string)
 * [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
 * [Parsing Numbers Inside Strings](#parsing-numbers-inside-strings)
+* [Dynamic Number Types](#dynamic-number-types)
 * [Thread Safety](#thread-safety)
 * [Standard Compliance](#standard-compliance)
 
@@ -230,14 +231,23 @@ transcode the UTF-8 strings produced by the simdjson library to other formats. S
 Using the Parsed JSON
 ---------------------
 
-Once you have a document (`simdjson::ondemand::document`), you can navigate it with idiomatic C++ iterators, operators and casts.
-Besides the documents instances and native types (`double`, `uint64_t`, `int64_t`, `bool`), we also access Unicode (UTF-8) strings (`std::string_view`),
-objects (`simdjson::ondemand::object`) and arrays (`simdjson::ondemand::array`). We also have a generic type (`simdjson::ondemand::value`)
-which represent a potential array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`, string) inside an array
-or an object. Both generic types (`simdjson::ondemand::document` and `simdjson::ondemand::value`) have a `type()` method returning
-a `json_type` value describing the value (`json_type::array`, `json_type::object`, `json_type::number`, j`son_type::string`, `json_type::boolean`, `json_type::null`).
-While you are accessing the document, the `document` instance should remain in scope: it is your "iterator" which keeps track
-of where you are in the JSON document. By design, there is one and only one `document` instance per JSON document.
+Once you have a document (`simdjson::ondemand::document`), you can navigate it with
+idiomatic C++ iterators, operators and casts. Besides the documents instances and
+native types (`double`, `uint64_t`, `int64_t`, `bool`), we also access
+Unicode (UTF-8) strings (`std::string_view`), objects (`simdjson::ondemand::object`)
+and arrays (`simdjson::ondemand::array`).
+We also have a generic type (`simdjson::ondemand::value`) which represent a potential
+array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`, string) inside an array or an object. Both generic types (`simdjson::ondemand::document` and `simdjson::ondemand::value`) have a `type()` method returning
+a `json_type` value describing the value (`json_type::array`, `json_type::object`, `json_type::number`, `json_type::string`, `json_type::boolean`, `json_type::null`).
+
+Advanced users who need to determine the number types (integer or float) dynamically,
+should review our section [dynamic number types](#dynamic-number-types). Indeed,
+we have an additional `ondemand::number` type which may represent either integers
+or floating-point values, depending on how the numbers are formatted.
+floating-point values followed by an integer.
+While you are accessing the document, the `document` instance should remain in scope:
+it is your "iterator" which keeps track of where you are in the JSON document.
+By design, there is one and only one `document` instance per JSON document.
 
 
 The following specific instructions indicate how to use the JSON when exceptions are enabled, but simdjson has full, idiomatic
@@ -990,7 +1000,7 @@ Direct Access to the Raw String
 
 The simdjson library makes explicit assumptions about types. For examples, numbers
 must be integers (up to 64-bit integers) or binary64 floating-point numbers. Some users
-have different needs. For example, some users might want to support big integers.
+have different needs. For example, some users might want to support big infloating-point number followed by an integer.tegers.
 The library makes this possible by providing a `raw_json_token` method which returns
 a `std::string_view` instance containing the value as a string which you may then
 parse as you see fit.
@@ -1201,6 +1211,80 @@ It is also important to note that when dealing an invalid number inside a string
 will report a `INCORRECT_TYPE` error otherwise.
 
 
+Dynamic Number Types
+------------------------------
+
+The JSON standard does not offer strongly typed numbers. It suggests that using
+the binary64 type (`double` in C++) is a safe choice, but little else.
+Given the JSON array `[1.0,1]`,  it is not specified whether it is an array
+of two floating-point numbers, two integers, or one floating-point number
+followed by an integer.
+
+Given an `ondemand::value` instance, you may ask whether it is a negative value
+with the `is_negative()` method. The function is inexpensive.
+
+To occasionally distinguish between floating-point values and integers given
+an `ondemand::value` instance, you may call the `is_integer()` method. We recognize
+an integer number by the lack decimal point and the lack of exponential suffix. E.g.,
+`1e1` is always considered to be a floating-point number. The `is_integer()` method
+does not consume the value, but it scans the number string. You should avoid calling
+it repeatedly.
+
+If you need to determine both the type of the number (integer or floating-point) and
+its value efficiently, you may call the `get_number()` method on the `ondemand::value`
+instance. Upon success, it returns an `ondemand::number` instance.
+
+
+An `ondemand::number` instance may contain an integer value or a floating-point value.
+Thus it is a dynamically typed number. Before accessing the value, you must determine the detected type:
+
+* `number.get_number_type()` has value `number_type::signed_integer` if we have a integer in [-9223372036854775808,9223372036854775808). You can recover the value by the `get_int64()` method applied on the `ondemand::number` instance. When `number.get_number_type()` has value `number_type::signed_integer`, you also have that `number.is_int64()` is true. Calling `get_int64()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::signed_integer` is unsafe.
+* `number.get_number_type()` has value `number_type::unsigned_integer` if we have a integer in [9223372036854775808,18446744073709551616). You can recover the value by the `get_uint64()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::unsigned_integer`, you also have that `number.is_uint64()` is true.  Calling `get_uint64()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::unsigned_integer` is unsafe.
+* `number.get_number_type()` has value `number_type::unsigned_integer` if we have a integer in [9223372036854775808,18446744073709551616). You can recover the value by the `get_uint64()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::unsigned_integer`, you also have that `number.is_uint64()` is true.  Calling `get_uint64()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::unsigned_integer` is unsafe.
+* `number.get_number_type()` has value `number_type::floating_point_number` if we have and we have a floating-point (binary64) number. You can recover the value by the `get_double()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::floating_point_number`, you also have that `number.is_double()` is true.  Calling `get_double()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::floating_point_number` is unsafe.
+
+
+You must check the type before accessing the value: it is an error to call `get_int64()` when `number.get_number_type()` is not `number_type::signed_integer` and when `number.is_int64()` is false. You are responsible for this check as the user of the library.
+
+The `get_number()` functionis designed with performance in mind. When calling `get_number()`, you scan the number string only once, determining efficiently the type and storing it in an efficient manner.
+
+Consider the following example:
+```C++
+    ondemand::parser parser;
+    padded_string docdata = R"([1.0, 3, 1, 3.1415,-13231232,9999999999999999999])"_padded;
+    ondemand::document doc = parser.iterate(docdata);
+    ondemand::array arr = doc.get_array();
+    for(ondemand::value val : arr) {
+      std::cout << val << " ";
+      std::cout << "negative: " << val.is_negative() << " ";
+      std::cout << "is_integer: " << val.is_integer() << " ";
+      ondemand::number num = val.get_number();
+      ondemand::number_type t = num.get_number_type();
+      switch(t) {
+        case ondemand::number_type::signed_integer:
+          std::cout  << "integer: " << num.get_int64() << std::endl;
+          break;
+        case ondemand::number_type::unsigned_integer:
+          std::cout << "large 64-bit integer: " << num.get_uint64() << std::endl;
+          break;
+        case ondemand::number_type::floating_point_number:
+          std::cout << "float: " << num.get_double() << std::endl;
+          break;
+      }
+    }
+```
+
+It will output:
+
+```
+1.0 negative: 0 is_integer: 0 float: 1
+3 negative: 0 is_integer: 1 integer: 3
+1 negative: 0 is_integer: 1 integer: 1
+3.1415 negative: 0 is_integer: 0 float: 3.1415
+-13231232 negative: 1 is_integer: 1 integer: -13231232
+9999999999999999999 negative: 0 is_integer: 1 large 64-bit integer: 9999999999999999999
+```
+
 Thread Safety
 -------------
 
@@ -1226,8 +1310,8 @@ The simdjson library is fully compliant with  the [RFC 8259](https://www.tbray.o
 - A single string or a single number is considered to be a valid JSON document.
 - We fully validate the numbers according to the JSON specification. For example,  the string `01` is not valid JSON document since the specification states that *leading zeros are not allowed*.
 - The specification allows implementations to set limits on the range and precision of numbers accepted.  We support 64-bit floating-point numbers as well as integer values.
-  - We parse integers and floating-point numbers as separate types which allows us to support all signed (two's complement) 64-bit integers, like a Java `long` or a C/C++ `long long` and all 64-bit unsigned integers. When we cannot represent exactly an integer as a signed or unsigned 64-bit value, we reject the JSON document.
-  - We support the full range of 64-bit floating-point numbers (binary64). The values range from `std::numeric_limits<double>::lowest()`  to `std::numeric_limits<double>::max()`, so from -1.7976e308 all the way to 1.7975e308. Extreme values (less or equal to -1e308, greater or equal to 1e308) are rejected: we refuse to parse the input document. Numbers are parsed with a perfect accuracy (ULP 0): the nearest floating-point value is chosen, rounding to even when needed. If you serialized your floating-point numbers with 17 significant digits in a standard compliant manner, the simdjson library is guaranteed to recover the same numbers, exactly.
+  - We parse integers and floating-point numbers afloating-point number followed by an integer.s separate types which allows us to support all signed (two's complement) 64-bit integersfloating-point number followed by an integer., like a Java `long` or a C/C++ `long long` and all 64-bit unsigned integers. When we cannot represent exactly an integer as a signed or unsigned 64-bit value, we reject the JSON document.
+  - We support the full range of 64-bit floating-point numbers (binary64). The values range from `std::numeric_limits<double>::lowest()`  to `std::numefloating-point number followed by an integer.ric_limits<double>::max()`, so from -1.7976e308 all the way to 1.7975e308. Extreme values (less or equal to -1e308, greater or equal to 1e308) are rejected: we refuse to parse the input document. Numbers are parsed with a perfect accuracy (ULP 0): the nearest floating-point value is chosen, rounding to even when needed. If you serialized your floating-point numbers with 17floating-point value  followed by an integer. significant digits in a standard compliant manner, the simdjson library is guaranfloating-point number followed by an integer.teed to recover the same numbers, exactly.
 - The specification states that JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8. The simdjson library does full UTF-8 validation as part of the parsing. The specification states that implementations MUST NOT add a byte order mark: the simdjson library rejects documents starting with a  byte order mark.
 - The simdjson library validates string content for unescaped characters. Unescaped line breaks and tabs in strings are not allowed.
 - The simdjson library accepts objects with repeated keys: all of the name/value pairs, including duplicates, are reported. We do not enforce key uniqueness.

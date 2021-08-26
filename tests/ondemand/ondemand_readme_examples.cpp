@@ -9,6 +9,32 @@ using error_code=simdjson::error_code;
 
 #if SIMDJSON_EXCEPTIONS
 
+  bool number_tests() {
+    ondemand::parser parser;
+    padded_string docdata = R"([1.0, 3, 1, 3.1415,-13231232,9999999999999999999])"_padded;
+    ondemand::document doc = parser.iterate(docdata);
+    ondemand::array arr = doc.get_array();
+    for(ondemand::value val : arr) {
+      std::cout << val << " ";
+      std::cout << "negative: " << val.is_negative() << " ";
+      std::cout << "is_integer: " << val.is_integer() << " ";
+      ondemand::number num = val.get_number();
+      ondemand::number_type t = num.get_number_type();
+      switch(t) {
+        case ondemand::number_type::signed_integer:
+          std::cout  << "integer: " << num.get_int64() << std::endl;
+          break;
+        case ondemand::number_type::unsigned_integer:
+          std::cout << "large 64-bit integer: " << num.get_uint64() << std::endl;
+          break;
+        case ondemand::number_type::floating_point_number:
+          std::cout << "float: " << num.get_double() << std::endl;
+          break;
+      }
+    }
+    return true;
+
+  }
 
 void recursive_print_json(ondemand::value element) {
     bool add_comma;
@@ -329,6 +355,8 @@ bool using_the_parsed_json_rewind_array() {
   }
   TEST_SUCCEED();
 }
+
+
 bool using_the_parsed_json_4() {
   TEST_START();
 
@@ -783,6 +811,9 @@ int main() {
     && test_load_example()
     && example_1()
     && using_the_parsed_json_no_exceptions()
+  #if SIMDJSON_EXCEPTIONS
+    && number_tests()
+  #endif
   ) {
     return 0;
   } else {

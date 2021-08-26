@@ -516,7 +516,8 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
 simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_really_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
-
+simdjson_unused simdjson_really_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
 #else
 
 // parse the number at src

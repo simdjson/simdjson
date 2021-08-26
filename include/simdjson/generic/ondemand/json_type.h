@@ -23,6 +23,8 @@ enum class number_type {
     unsigned_integer         /// a positive integer larger or equal to 1<<63
 };
 
+class value_iterator;
+
 /**
  * A type representing a JSON number.
  * The design of the struct is deliberately straight-forward. All
@@ -73,18 +75,37 @@ struct number {
   simdjson_really_inline double as_double() const noexcept;
 
 
+
+
+protected:
+  /**
+   * The next block of declaration is designed so that we can call the number parsing
+   * functions on a number type. They are protected and should never be used outside
+   * of the core simdjson library.
+   */
+  friend class value_iterator;
+  template<typename W>
+  friend error_code numberparsing::write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer);
+  template<typename W>
+  friend error_code numberparsing::parse_number(const uint8_t *const src, W &writer);
+  template<typename W>
+  friend error_code numberparsing::slow_float_parsing(simdjson_unused const uint8_t * src, W writer);
   /** Store a signed 64-bit value to the number. */
   simdjson_really_inline void append_s64(int64_t value) noexcept;
-
   /** Store an unsigned 64-bit value to the number. */
   simdjson_really_inline void append_u64(uint64_t value) noexcept;
   /** Store a double value to the number. */
   simdjson_really_inline void append_double(double value) noexcept;
   /** Specifies that the value is a double, but leave it undefined. */
   simdjson_really_inline void skip_double() noexcept;
+  /**
+   * End of friend declarations.
+   */
 
-protected:
-
+  /**
+   * Our attributes are a union type (size = 64 bits)
+   * followed by a type indicator.
+   */
   union {
     double floating_point_number;
     int64_t signed_integer;
@@ -101,6 +122,7 @@ protected:
  * @param type The json_type.
  */
 inline std::ostream& operator<<(std::ostream& out, json_type type) noexcept;
+inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 /**

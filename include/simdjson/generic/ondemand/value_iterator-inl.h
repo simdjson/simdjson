@@ -577,6 +577,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterat
   if(result.error() != INCORRECT_TYPE) { advance_root_scalar("double"); }
   return result;
 }
+
 simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_root_double_in_string() noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("double");
