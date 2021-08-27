@@ -454,37 +454,37 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> val
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::get_uint64() noexcept {
   auto result = numberparsing::parse_unsigned(peek_non_root_scalar("uint64"));
-  if(result.error() != INCORRECT_TYPE) { advance_non_root_scalar("uint64"); }
+  if(result.error() == SUCCESS) { advance_non_root_scalar("uint64"); }
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::get_uint64_in_string() noexcept {
   auto result = numberparsing::parse_unsigned_in_string(peek_non_root_scalar("uint64"));
-  if(result.error() != INCORRECT_TYPE) { advance_non_root_scalar("uint64"); }
+  if(result.error() == SUCCESS) { advance_non_root_scalar("uint64"); }
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::get_int64() noexcept {
   auto result = numberparsing::parse_integer(peek_non_root_scalar("int64"));
-  if(result.error() != INCORRECT_TYPE) { advance_non_root_scalar("int64"); }
+  if(result.error() == SUCCESS) { advance_non_root_scalar("int64"); }
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::get_int64_in_string() noexcept {
   auto result = numberparsing::parse_integer_in_string(peek_non_root_scalar("int64"));
-  if(result.error() != INCORRECT_TYPE) { advance_non_root_scalar("int64"); }
+  if(result.error() == SUCCESS) { advance_non_root_scalar("int64"); }
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_double() noexcept {
   auto result = numberparsing::parse_double(peek_non_root_scalar("double"));
-  if(result.error() != INCORRECT_TYPE) { advance_non_root_scalar("double"); }
+  if(result.error() == SUCCESS) { advance_non_root_scalar("double"); }
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_double_in_string() noexcept {
   auto result = numberparsing::parse_double_in_string(peek_non_root_scalar("double"));
-  if(result.error() != INCORRECT_TYPE) { advance_non_root_scalar("double"); }
+  if(result.error() == SUCCESS) { advance_non_root_scalar("double"); }
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::get_bool() noexcept {
   auto result = parse_bool(peek_non_root_scalar("bool"));
-  if(result.error() != INCORRECT_TYPE) { advance_non_root_scalar("bool"); }
+  if(result.error() == SUCCESS) { advance_non_root_scalar("bool"); }
   return result;
 }
 simdjson_really_inline bool value_iterator::is_null() noexcept {
@@ -533,9 +533,8 @@ simdjson_really_inline simdjson_result<number> value_iterator::get_root_number()
   }
   number num;
   error_code error =  numberparsing::parse_number(tmpbuf, num);
-  if(error == INCORRECT_TYPE) { return error; }
-  advance_root_scalar("number"); // we consume!
   if(error) { return error; }
+  advance_root_scalar("number");
   return num;
 }
 
@@ -554,7 +553,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iter
     return NUMBER_ERROR;
   }
   auto result = numberparsing::parse_unsigned(tmpbuf);
-  if(result.error() != INCORRECT_TYPE) { advance_root_scalar("uint64"); }
+  if(result.error() == SUCCESS) { advance_root_scalar("uint64"); }
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iterator::get_root_uint64_in_string() noexcept {
@@ -566,7 +565,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<uint64_t> value_iter
     return NUMBER_ERROR;
   }
   auto result = numberparsing::parse_unsigned_in_string(tmpbuf);
-  if(result.error() != INCORRECT_TYPE) { advance_root_scalar("uint64"); }
+  if(result.error() == SUCCESS) { advance_root_scalar("uint64"); }
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::get_root_int64() noexcept {
@@ -579,7 +578,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_itera
   }
 
   auto result = numberparsing::parse_integer(tmpbuf);
-  if(result.error() != INCORRECT_TYPE) { advance_root_scalar("int64"); }
+  if(result.error() == SUCCESS) { advance_root_scalar("int64"); }
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_iterator::get_root_int64_in_string() noexcept {
@@ -592,7 +591,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<int64_t> value_itera
   }
 
   auto result = numberparsing::parse_integer_in_string(tmpbuf);
-  if(result.error() != INCORRECT_TYPE) { advance_root_scalar("int64"); }
+  if(result.error() == SUCCESS) { advance_root_scalar("int64"); }
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterator::get_root_double() noexcept {
@@ -607,7 +606,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterat
     return NUMBER_ERROR;
   }
   auto result = numberparsing::parse_double(tmpbuf);
-  if(result.error() != INCORRECT_TYPE) { advance_root_scalar("double"); }
+  if(result.error() == SUCCESS) { advance_root_scalar("double"); }
   return result;
 }
 
@@ -623,7 +622,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<double> value_iterat
     return NUMBER_ERROR;
   }
   auto result = numberparsing::parse_double_in_string(tmpbuf);
-  if(result.error() != INCORRECT_TYPE) { advance_root_scalar("double"); }
+  if(result.error() == SUCCESS) { advance_root_scalar("double"); }
   return result;
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::get_root_bool() noexcept {
@@ -631,13 +630,14 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   auto json = peek_root_scalar("bool");
   uint8_t tmpbuf[5+1];
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { return incorrect_type_error("Not a boolean"); }
-  advance_root_scalar("bool");
-  return parse_bool(tmpbuf);
+  auto result = parse_bool(tmpbuf);
+  if(result.error() == SUCCESS) { advance_root_scalar("bool"); }
+  return result;
 }
 simdjson_really_inline bool value_iterator::is_root_null() noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("null");
-  auto result = (max_len >= 4 && !atomparsing::str4ncmp(json, "null") &&
+  bool result = (max_len >= 4 && !atomparsing::str4ncmp(json, "null") &&
          (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[5])));
   if(result) { advance_root_scalar("null"); }
   return result;

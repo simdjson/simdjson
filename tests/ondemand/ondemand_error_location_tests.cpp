@@ -83,7 +83,7 @@ namespace error_location_tests {
         double d;
         ASSERT_ERROR(doc.at_pointer("/b/c/0").get(d), NUMBER_ERROR);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, ", 2.3]}} ");
+        ASSERT_EQUAL(ptr, "1.2., 2.3]}} ");
         uint64_t i;
         ASSERT_ERROR(doc.at_pointer("/a/2/1").get(i), TAPE_ERROR);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
@@ -93,14 +93,14 @@ namespace error_location_tests {
 
     bool broken_json1() {
         TEST_START();
-        auto json = R"( �{"a":1, 3} )"_padded;
+        auto json = " \xc3\x94\xc3\xb8\xe2\x84\xa6{\"a\":1, 3} "_padded;
         ondemand::parser parser;
         ondemand::document doc;
         const char * ptr;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
         ASSERT_ERROR(doc["a"], INCORRECT_TYPE);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, "�{\"a\":1, 3} ");
+        ASSERT_EQUAL(ptr, "\xc3\x94\xc3\xb8\xe2\x84\xa6{\"a\":1, 3} ");
         TEST_SUCCEED();
     }
 
@@ -221,7 +221,20 @@ namespace error_location_tests {
         double d;
         ASSERT_ERROR(doc.at_pointer("/0").get_double().get(d), NUMBER_ERROR);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, "] ");
+        ASSERT_EQUAL(ptr, "13.34.514] ");
+        TEST_SUCCEED();
+    }
+    bool number_parsing_root_error() {
+        TEST_START();
+        auto json = R"( 13.34.514 )"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        const char * ptr;
+        double d;
+        ASSERT_ERROR(doc.get_double().get(d), NUMBER_ERROR);
+        ASSERT_SUCCESS(doc.current_location().get(ptr));
+        ASSERT_EQUAL(ptr, "13.34.514 ");
         TEST_SUCCEED();
     }
 
@@ -239,6 +252,7 @@ namespace error_location_tests {
                 no_such_field() &&
                 object_with_no_such_field() &&
                 number_parsing_error() &&
+                number_parsing_root_error() &&
                 true;
     }
 
