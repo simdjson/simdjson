@@ -495,6 +495,9 @@ simdjson_really_inline bool value_iterator::is_null() noexcept {
 simdjson_really_inline bool value_iterator::is_negative() noexcept {
   return numberparsing::is_negative(peek_non_root_scalar("numbersign"));
 }
+simdjson_really_inline bool value_iterator::is_root_negative() noexcept {
+  return numberparsing::is_negative(peek_root_scalar("numbersign"));
+}
 simdjson_really_inline simdjson_result<bool> value_iterator::is_integer() noexcept {
   return numberparsing::is_integer(peek_non_root_scalar("integer"));
 }
@@ -502,6 +505,36 @@ simdjson_really_inline simdjson_result<bool> value_iterator::is_integer() noexce
 simdjson_really_inline simdjson_result<number> value_iterator::get_number() noexcept {
   number num;
   error_code error =  numberparsing::parse_number(peek_non_root_scalar("number"), num);
+  if(error) { return error; }
+  return num;
+}
+
+
+simdjson_really_inline simdjson_result<bool> value_iterator::is_root_integer() noexcept {
+  auto max_len = peek_start_length();
+  auto json = peek_root_scalar("is_root_integer");
+  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
+    return false; // if there are more than 20 characters, it cannot be represented as an integer.
+  }
+  return numberparsing::is_integer(tmpbuf);
+}
+
+simdjson_really_inline simdjson_result<number> value_iterator::get_root_number() noexcept {
+  auto max_len = peek_start_length();
+  auto json = peek_root_scalar("number");
+  // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
+  // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
+  // number: -0.<fraction>e-308.
+  uint8_t tmpbuf[1074+8+1];
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
+    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
+    return NUMBER_ERROR;
+  }
+  number num;
+  error_code error =  numberparsing::parse_number(tmpbuf, num);
+  if(error == INCORRECT_TYPE) { return error; }
+  advance_root_scalar("number"); // we consume!
   if(error) { return error; }
   return num;
 }
