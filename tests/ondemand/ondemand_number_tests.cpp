@@ -7,7 +7,7 @@ using namespace simdjson;
 namespace number_tests {
 
   bool small_integers() {
-    std::cout << __func__ << std::endl;
+    TEST_START();
     for (int64_t m = 10; m < 20; m++) {
       for (int64_t i = -1024; i < 1024; i++) {
         if(!test_ondemand<int64_t>(std::to_string(i),
@@ -23,7 +23,7 @@ namespace number_tests {
   }
 
   bool powers_of_two() {
-    std::cout << __func__ << std::endl;
+    TEST_START();
 
     // converts the double "expected" to a padded string
     auto format_into_padded=[](const double expected) -> padded_string
@@ -133,7 +133,7 @@ namespace number_tests {
 
 
   bool powers_of_ten() {
-    std::cout << __func__ << std::endl;
+    TEST_START();
     std::vector<char> buf(1024);
 
     const bool is_pow_correct{1e-308 == std::pow(10,-308)};
@@ -159,7 +159,6 @@ namespace number_tests {
         return false;
       } // if
     } // for i
-    std::printf("Powers of 10 can be parsed.\n");
     return true;
   }
 
@@ -172,12 +171,144 @@ namespace number_tests {
   }
 
   bool old_crashes() {
+    TEST_START();
     github_issue_1273();
-    return true;
+    TEST_SUCCEED();
   }
 
+
+  bool is_alive_root_array() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata = R"([1,2,3)"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_TRUE(doc.is_alive());
+    size_t count{0};
+    for(simdjson_unused simdjson_result<ondemand::value> val : doc) {
+      ASSERT_ERROR(val.error(), INCOMPLETE_ARRAY_OR_OBJECT);
+      count++;
+    }
+    ASSERT_EQUAL(count, 1);
+    ASSERT_FALSE(doc.is_alive());
+    TEST_SUCCEED();
+  }
+
+  bool get_number_tests() {
+    TEST_START();
+    ondemand::parser parser;
+    padded_string docdata = R"([1.0, 3, 1, 3.1415,-13231232,9999999999999999999])"_padded;
+    ondemand::number_type expectedtypes[] = {ondemand::number_type::floating_point_number,
+                                 ondemand::number_type::signed_integer,
+                                 ondemand::number_type::signed_integer,
+                                 ondemand::number_type::floating_point_number,
+                                 ondemand::number_type::signed_integer,
+                                 ondemand::number_type::unsigned_integer
+                                 };
+    bool is_negative[] = {false, false, false, false, true, false};
+    bool is_integer[] = {false, true, true, false, true, true};
+
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ondemand::array arr;
+    ASSERT_SUCCESS(doc.get_array().get(arr));
+    size_t counter{0};
+    for(simdjson_result<ondemand::value> valr : arr) {
+      ondemand::value val;
+      ASSERT_SUCCESS(valr.get(val));
+      ondemand::number num;
+      ASSERT_SUCCESS(val.get_number().get(num));
+      ASSERT_EQUAL(is_negative[counter], val.is_negative());
+      bool intvalue;
+      ASSERT_SUCCESS(val.is_integer().get(intvalue));
+      ASSERT_EQUAL(is_integer[counter], intvalue);
+      ondemand::number_type t = num.get_number_type();
+      ASSERT_EQUAL(expectedtypes[counter], t);
+      switch(t) {
+        case ondemand::number_type::signed_integer:
+          ASSERT_TRUE(num.is_int64());
+          break;
+        case ondemand::number_type::unsigned_integer:
+          ASSERT_TRUE(num.is_uint64());
+          break;
+        case ondemand::number_type::floating_point_number:
+          ASSERT_TRUE(num.is_double());
+          break;
+      }
+      if(counter == 0) {
+        ASSERT_EQUAL(num.get_double(), 1.0);
+        ASSERT_EQUAL((double)num, 1.0);
+      } else if(counter == 1) {
+        ASSERT_EQUAL(num.get_int64(), 3);
+        ASSERT_EQUAL((int64_t)num, 3);
+      } else if(counter == 2) {
+        ASSERT_EQUAL(num.get_int64(), 1);
+        ASSERT_EQUAL((int64_t)num, 1);
+      } else if(counter == 3) {
+        ASSERT_EQUAL(num.get_double(), 3.1415);
+        ASSERT_EQUAL((double)num, 3.1415);
+      } else if(counter == 4) {
+        ASSERT_EQUAL(num.get_int64(), -13231232);
+        ASSERT_EQUAL((int64_t)num, -13231232);
+      } else if(counter == 5) {
+        ASSERT_EQUAL(num.get_uint64(), UINT64_C(9999999999999999999));
+        ASSERT_EQUAL((uint64_t)num, UINT64_C(9999999999999999999));
+      }
+      counter++;
+    }
+    TEST_SUCCEED();
+  }
+
+  bool get_root_number_tests() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    padded_string docdata;
+    ondemand::number number;
+    bool intvalue;
+
+    docdata = R"(1.0)"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_FALSE(doc.is_negative());
+    ASSERT_SUCCESS(doc.is_integer().get(intvalue));
+    ASSERT_SUCCESS(doc.get_number().get(number));
+    ASSERT_FALSE(intvalue);
+    ASSERT_EQUAL(number.get_number_type(), ondemand::number_type::floating_point_number);
+    ASSERT_EQUAL(number.get_double(), 1.0);
+
+    docdata = R"(-3.132321)"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_TRUE(doc.is_negative());
+    ASSERT_SUCCESS(doc.is_integer().get(intvalue));
+    ASSERT_SUCCESS(doc.get_number().get(number));
+    ASSERT_FALSE(intvalue);
+    ASSERT_EQUAL(number.get_number_type(), ondemand::number_type::floating_point_number);
+    ASSERT_EQUAL(number.get_double(), -3.132321);
+
+    docdata = R"(1233)"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_FALSE(doc.is_negative());
+    ASSERT_SUCCESS(doc.is_integer().get(intvalue));
+    ASSERT_SUCCESS(doc.get_number().get(number));
+    ASSERT_TRUE(intvalue);
+    ASSERT_EQUAL(number.get_number_type(), ondemand::number_type::signed_integer);
+    ASSERT_EQUAL(number.get_int64(), 1233);
+
+    docdata = R"(9999999999999999999)"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_FALSE(doc.is_negative());
+    ASSERT_SUCCESS(doc.is_integer().get(intvalue));
+    ASSERT_SUCCESS(doc.get_number().get(number));
+    ASSERT_TRUE(intvalue);
+    ASSERT_EQUAL(number.get_number_type(), ondemand::number_type::unsigned_integer);
+    ASSERT_EQUAL(number.get_uint64(), UINT64_C(9999999999999999999));
+
+    TEST_SUCCEED();
+  }
   bool run() {
-    return small_integers() &&
+    return get_root_number_tests() &&
+           get_number_tests()&&
+           small_integers() &&
            powers_of_two() &&
            powers_of_ten() &&
            old_crashes();

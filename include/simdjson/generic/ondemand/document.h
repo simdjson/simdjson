@@ -343,6 +343,50 @@ public:
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
 
   /**
+   * Checks whether the document is a negative number.
+   *
+   * @returns true if the number if negative.
+   */
+  simdjson_really_inline bool is_negative() noexcept;
+  /**
+   * Checks whether the document is an integer number. Note that
+   * this requires to partially parse the number string. If
+   * the value is determined to be an integer, it may still
+   * not parse properly as an integer in subsequent steps
+   * (e.g., it might overflow).
+   *
+   * @returns true if the number if negative.
+   */
+  simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  /**
+   * Attempt to parse an ondemand::number. An ondemand::number may
+   * contain an integer value or a floating-point value, the simdjson
+   * library will autodetect the type. Thus it is a dynamically typed
+   * number. Before accessing the value, you must determine the detected
+   * type.
+   *
+   * number.get_number_type() is number_type::signed_integer if we have
+   * a integer in [-9223372036854775808,9223372036854775808)
+   * You can recover the value by calling number.get_int64() and you
+   * have that number.is_int64() is true.
+   *
+   * number.get_number_type() is number_type::unsigned_integer if we have
+   * an integer in [9223372036854775808,18446744073709551616)
+   * You can recover the value by calling number.get_uint64() and you
+   * have that number.is_uint64() is true.
+   *
+   * Otherwise, number.get_number_type() has value number_type::floating_point_number
+   * and we have a binary64 number.
+   * You can recover the value by calling number.get_double() and you
+   * have that number.is_double() is true.
+   *
+   * You must check the type before accessing the value: it is an error
+   * to call "get_int64()" when number.get_number_type() is not
+   * number_type::signed_integer and when number.is_int64() is false.
+   */
+  simdjson_warn_unused simdjson_really_inline simdjson_result<number> get_number() noexcept;
+
+  /**
    * Get the raw JSON for this token.
    *
    * The string_view will always point into the input buffer.
@@ -505,6 +549,9 @@ public:
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
 
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
+  simdjson_really_inline bool is_negative() noexcept;
+  simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  simdjson_really_inline simdjson_result<number> get_number() noexcept;
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
   simdjson_really_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
 private:
@@ -566,6 +613,9 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
+  simdjson_really_inline bool is_negative() noexcept;
+  simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
   /** @copydoc simdjson_really_inline std::string_view document::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
 
@@ -621,7 +671,9 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
-
+  simdjson_really_inline bool is_negative() noexcept;
+  simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
   /** @copydoc simdjson_really_inline std::string_view document_reference::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
 
