@@ -716,6 +716,7 @@ bool simple_error_example() {
     try {
       return int64_t(doc["integer"]);
     } catch(simdjson_error& err) {
+      std::cerr << err.error() << std::endl;
       std::cerr << doc.current_location() << std::endl;
       return -1;
     }
