@@ -237,16 +237,22 @@ namespace number_tests {
       }
       if(counter == 0) {
         ASSERT_EQUAL(num.get_double(), 1.0);
+        ASSERT_EQUAL((double)num, 1.0);
       } else if(counter == 1) {
         ASSERT_EQUAL(num.get_int64(), 3);
+        ASSERT_EQUAL((int64_t)num, 3);
       } else if(counter == 2) {
         ASSERT_EQUAL(num.get_int64(), 1);
+        ASSERT_EQUAL((int64_t)num, 1);
       } else if(counter == 3) {
         ASSERT_EQUAL(num.get_double(), 3.1415);
+        ASSERT_EQUAL((double)num, 3.1415);
       } else if(counter == 4) {
         ASSERT_EQUAL(num.get_int64(), -13231232);
+        ASSERT_EQUAL((int64_t)num, -13231232);
       } else if(counter == 5) {
         ASSERT_EQUAL(num.get_uint64(), UINT64_C(9999999999999999999));
+        ASSERT_EQUAL((uint64_t)num, UINT64_C(9999999999999999999));
       }
       counter++;
     }

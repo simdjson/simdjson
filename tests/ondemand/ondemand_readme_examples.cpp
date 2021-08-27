@@ -22,12 +22,15 @@ using error_code=simdjson::error_code;
       ondemand::number_type t = num.get_number_type();
       switch(t) {
         case ondemand::number_type::signed_integer:
+          std::cout  << "integer: " << int64_t(num) << " ";
           std::cout  << "integer: " << num.get_int64() << std::endl;
           break;
         case ondemand::number_type::unsigned_integer:
+          std::cout  << "large 64-bit integer: " << uint64_t(num) << " ";
           std::cout << "large 64-bit integer: " << num.get_uint64() << std::endl;
           break;
         case ondemand::number_type::floating_point_number:
+          std::cout  << "float: " << double(num) << " ";
           std::cout << "float: " << num.get_double() << std::endl;
           break;
       }

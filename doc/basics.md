@@ -1238,10 +1238,9 @@ instance. Upon success, it returns an `ondemand::number` instance.
 An `ondemand::number` instance may contain an integer value or a floating-point value.
 Thus it is a dynamically typed number. Before accessing the value, you must determine the detected type:
 
-* `number.get_number_type()` has value `number_type::signed_integer` if we have a integer in [-9223372036854775808,9223372036854775808). You can recover the value by the `get_int64()` method applied on the `ondemand::number` instance. When `number.get_number_type()` has value `number_type::signed_integer`, you also have that `number.is_int64()` is true. Calling `get_int64()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::signed_integer` is unsafe.
-* `number.get_number_type()` has value `number_type::unsigned_integer` if we have a integer in [9223372036854775808,18446744073709551616). You can recover the value by the `get_uint64()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::unsigned_integer`, you also have that `number.is_uint64()` is true.  Calling `get_uint64()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::unsigned_integer` is unsafe.
-* `number.get_number_type()` has value `number_type::unsigned_integer` if we have a integer in [9223372036854775808,18446744073709551616). You can recover the value by the `get_uint64()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::unsigned_integer`, you also have that `number.is_uint64()` is true.  Calling `get_uint64()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::unsigned_integer` is unsafe.
-* `number.get_number_type()` has value `number_type::floating_point_number` if we have and we have a floating-point (binary64) number. You can recover the value by the `get_double()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::floating_point_number`, you also have that `number.is_double()` is true.  Calling `get_double()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::floating_point_number` is unsafe.
+* `number.get_number_type()` has value `number_type::signed_integer` if we have a integer in [-9223372036854775808,9223372036854775808). You can recover the value by the `get_int64()` method applied on the `ondemand::number` instance. When `number.get_number_type()` has value `number_type::signed_integer`, you also have that `number.is_int64()` is true. Calling `get_int64()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::signed_integer` is unsafe. You may replace `get_int64()` by a cast to a `int64_t` value.
+* `number.get_number_type()` has value `number_type::unsigned_integer` if we have a integer in [9223372036854775808,18446744073709551616). You can recover the value by the `get_uint64()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::unsigned_integer`, you also have that `number.is_uint64()` is true.  Calling `get_uint64()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::unsigned_integer` is unsafe. You may replace `get_uint64()` by a cast to a `uint64_t` value.
+* `number.get_number_type()` has value `number_type::floating_point_number` if we have and we have a floating-point (binary64) number. You can recover the value by the `get_double()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::floating_point_number`, you also have that `number.is_double()` is true.  Calling `get_double()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::floating_point_number` is unsafe. You may replace `get_double()` by a cast to a `double` value.
 
 
 You must check the type before accessing the value: it is an error to call `get_int64()` when `number.get_number_type()` is not `number_type::signed_integer` and when `number.is_int64()` is false. You are responsible for this check as the user of the library.
@@ -1262,12 +1261,15 @@ Consider the following example:
       ondemand::number_type t = num.get_number_type();
       switch(t) {
         case ondemand::number_type::signed_integer:
+          std::cout  << "integer: " << int64_t(num) << " ";
           std::cout  << "integer: " << num.get_int64() << std::endl;
           break;
         case ondemand::number_type::unsigned_integer:
+          std::cout  << "large 64-bit integer: " << uint64_t(num) << " ";
           std::cout << "large 64-bit integer: " << num.get_uint64() << std::endl;
           break;
         case ondemand::number_type::floating_point_number:
+          std::cout  << "float: " << double(num) << " ";
           std::cout << "float: " << num.get_double() << std::endl;
           break;
       }
@@ -1277,12 +1279,12 @@ Consider the following example:
 It will output:
 
 ```
-1.0 negative: 0 is_integer: 0 float: 1
-3 negative: 0 is_integer: 1 integer: 3
-1 negative: 0 is_integer: 1 integer: 1
-3.1415 negative: 0 is_integer: 0 float: 3.1415
--13231232 negative: 1 is_integer: 1 integer: -13231232
-9999999999999999999 negative: 0 is_integer: 1 large 64-bit integer: 9999999999999999999
+1.0 negative: 0 is_integer: 0 float: 1 float: 1
+3 negative: 0 is_integer: 1 integer: 3 integer: 3
+1 negative: 0 is_integer: 1 integer: 1 integer: 1
+3.1415 negative: 0 is_integer: 0 float: 3.1415 float: 3.1415
+-13231232 negative: 1 is_integer: 1 integer: -13231232 integer: -13231232
+9999999999999999999 negative: 0 is_integer: 1 large 64-bit integer: 9999999999999999999 large 64-bit integer: 9999999999999999999
 ```
 
 Thread Safety
