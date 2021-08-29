@@ -708,6 +708,20 @@ bool simple_error_example() {
       return false;
     }
   }
+
+  int64_t current_location_tape_error_with_except() {
+    auto broken_json = R"( {"double": 13.06, false, "integer": -343} )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc = parser.iterate(broken_json);
+    try {
+      return int64_t(doc["integer"]);
+    } catch(simdjson_error& err) {
+      std::cerr << err.error() << std::endl;
+      std::cerr << doc.current_location() << std::endl;
+      return -1;
+    }
+  }
+
 #endif
 
 int load_example() {
@@ -885,6 +899,7 @@ int main() {
     && current_location_no_error()
   #if SIMDJSON_EXCEPTIONS
     && number_tests()
+    && current_location_tape_error_with_except()
   #endif
   ) {
     return 0;
