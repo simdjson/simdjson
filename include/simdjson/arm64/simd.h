@@ -473,7 +473,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     }
 
 
-    simdjson_really_inline void compress(uint64_t mask, T * output) const {
+    simdjson_really_inline uint64_t compress(uint64_t mask, T * output) const {
       uint64_t popcounts = vget_lane_u64(vreinterpret_u64_u8(vcnt_u8(vcreate_u8(~mask))), 0);
       // compute the prefix sum of the popcounts of each byte
       uint64_t offsets = popcounts * 0x0101010101010101;
@@ -481,6 +481,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
       this->chunks[1].compress_halves(uint16_t(mask >> 16), &output[(offsets >> 8) & 0xFF], &output[(offsets >> 16) & 0xFF]);
       this->chunks[2].compress_halves(uint16_t(mask >> 32), &output[(offsets >> 24) & 0xFF], &output[(offsets >> 32) & 0xFF]);
       this->chunks[3].compress_halves(uint16_t(mask >> 48), &output[(offsets >> 40) & 0xFF], &output[(offsets >> 48) & 0xFF]);
+      return offsets >> 56;
     }
 
     simdjson_really_inline uint64_t to_bitmask() const {
