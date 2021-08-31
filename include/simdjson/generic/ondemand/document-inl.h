@@ -127,9 +127,25 @@ simdjson_really_inline document::operator value() noexcept(false) { return get_v
 
 #endif
 simdjson_really_inline simdjson_result<size_t> document::count_elements() & noexcept {
-  auto a = get_array();
-  simdjson_result<size_t> answer = a.count_elements();
-  /* If there was an array, we are now left pointing at its first element. */
+  json_type t;
+  simdjson_result<size_t> answer;
+  SIMDJSON_TRY(type().get(t));
+  switch (t) {
+    case ondemand::json_type::array: {
+      auto a = get_array();
+      answer = a.count_elements();
+      break;
+    }
+    case ondemand::json_type::object: {
+      auto a = get_object();
+      answer = a.count_elements();
+      break;
+    }
+    default:
+      return INCORRECT_TYPE;
+  }
+
+  /* If there was an array/object, we are now left pointing at its first element. */
   if(answer.error() == SUCCESS) {
     iter._depth = 1 ; /* undoing the increment so we go back at the doc depth.*/
     iter.assert_at_document_depth();
