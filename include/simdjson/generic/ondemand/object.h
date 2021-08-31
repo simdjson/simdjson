@@ -131,8 +131,8 @@ public:
    */
   inline simdjson_result<bool> is_empty() & noexcept;
   /**
-   * This method scans the object and counts the number of elements (key-value pairs).
-   * The count_elements method should always be called before you have begun
+   * This method scans the object and counts the number of key-value pairs.
+   * The count_fields method should always be called before you have begun
    * iterating through the object: it is expected that you are pointing at
    * the beginning of the object.
    * The runtime complexity is linear in the size of the object. After
@@ -144,7 +144,7 @@ public:
    * To check that an object is empty, it is more performant to use
    * the is_empty() method.
    */
-  simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+  simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
   /**
    * Consumes the object and returns a string_view instance corresponding to the
    * object as represented in JSON. It points inside the original byte array containg
@@ -196,7 +196,7 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   inline simdjson_result<bool> reset() noexcept;
   inline simdjson_result<bool> is_empty() noexcept;
-  inline simdjson_result<size_t> count_elements() & noexcept;
+  inline simdjson_result<size_t> count_fields() & noexcept;
 
 };
 
