@@ -703,6 +703,126 @@ namespace object_tests {
   }
 #endif
 
+  bool iterate_empty_object_count() {
+    TEST_START();
+    auto json = R"( {} )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::object obj;
+    size_t count;
+    ASSERT_SUCCESS(doc.get_object().get(obj));
+    ASSERT_SUCCESS(obj.count_elements().get(count));
+    ASSERT_EQUAL(count, 0);
+    TEST_SUCCEED();
+  }
+
+  bool iterate_basic_object_count() {
+    TEST_START();
+    auto json = R"( {"a":-55, "b":3.23, "c":100000000000000000000, "d":true, "e":null} )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::object obj;
+    size_t count;
+    ASSERT_SUCCESS(doc.get_object().get(obj));
+    ASSERT_SUCCESS(obj.count_elements().get(count));
+    ASSERT_EQUAL(count, 5);
+    TEST_SUCCEED();
+  }
+
+  bool iterate_complex_object_count() {
+    TEST_START();
+    auto json = R"( {
+                      "first": {"a":1, "b":[1,2,3], "c":{}},
+                      "second":[true, false, null, {"1":[4,5,6], "2":3.14}]
+                    } )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::object obj1;
+    size_t count{0};
+    ASSERT_SUCCESS(doc.get_object().get(obj1));
+    ASSERT_SUCCESS(obj1.count_elements().get(count));
+    ASSERT_EQUAL(count, 2);
+    count = 0;
+    ondemand::object obj2;
+    ASSERT_SUCCESS(doc.find_field("first").get_object().get(obj2));
+    ASSERT_SUCCESS(obj2.count_elements().get(count));
+    ASSERT_EQUAL(count, 3);
+    count = 0;
+    ondemand::object obj3;
+    ASSERT_SUCCESS(obj2.find_field("c").get_object().get(obj3));
+    ASSERT_SUCCESS(obj3.count_elements().get(count));
+    ASSERT_EQUAL(count, 0);
+    count = 0;
+    ondemand::object obj4;
+    ASSERT_SUCCESS(doc.at_pointer("/second/3").get_object().get(obj4));
+    ASSERT_SUCCESS(obj4.count_elements().get(count));
+    ASSERT_EQUAL(count, 2);
+    TEST_SUCCEED();
+  }
+
+  bool iterate_bad_object_count() {
+    TEST_START();
+    padded_string bad_jsons[3] = {R"( {"a":5 "b":3} )"_padded, R"( {"a":5, 3} )"_padded, R"( {"a":5, "b": } )"_padded};
+    std::string names[3] = {"missing_comma", "missing_key", "missing_value"};
+    size_t count{0};
+
+    for (auto name : names) {
+      SUBTEST("ondemand::" + name, test_ondemand_doc(bad_jsons[count++], [&](auto doc_result) {
+        ondemand::object object;
+        ASSERT_RESULT( doc_result.type(), json_type::object );
+        ASSERT_SUCCESS( doc_result.get(object) );
+        ASSERT_ERROR(object.count_elements(), TAPE_ERROR);
+        return true;
+      }));
+    }
+    ASSERT_EQUAL(count, 3);
+    TEST_SUCCEED();
+  }
+
+  bool iterate_doc_object_count() {
+    TEST_START();
+    auto empty = R"( {} )"_padded;
+    SUBTEST("ondemand::empty_doc_object", test_ondemand_doc(empty, [&](auto doc_result) {
+        size_t count;
+        ASSERT_RESULT( doc_result.type(), json_type::object );
+        ASSERT_SUCCESS( doc_result.count_elements().get(count) );
+        ASSERT_EQUAL( count, 0 );
+        return true;
+    }));
+    auto basic = R"( {"a":-1.234, "b":false, "c":null, "d":[1000.1,-2000.2,3000.3], "e":{"a":true, "b":false}})"_padded;
+    SUBTEST("ondemand::basic_doc_object", test_ondemand_doc(basic, [&](auto doc_result) {
+        size_t count;
+        ASSERT_RESULT( doc_result.type(), json_type::object );
+        ASSERT_SUCCESS( doc_result.count_elements().get(count) );
+        ASSERT_EQUAL( count, 5 );
+        return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+  bool iterate_bad_doc_object_count() {
+    TEST_START();
+    TEST_START();
+    padded_string bad_jsons[4] = {R"( {"a":5 "b":3} )"_padded, R"( {"a":5, 3} )"_padded, R"( {"a":5, "b": } )"_padded, R"( {"a":5, "b":3 )"_padded};
+    std::string names[4] = {"missing_comma", "missing_key", "missing_value", "missing_bracket"};
+    simdjson::error_code errors[4] = {TAPE_ERROR, TAPE_ERROR, TAPE_ERROR, INCOMPLETE_ARRAY_OR_OBJECT};
+    size_t count{0};
+
+    for (auto name : names) {
+      SUBTEST("ondemand::" + name, test_ondemand_doc(bad_jsons[count], [&](auto doc_result) {
+        ASSERT_RESULT( doc_result.type(), json_type::object );
+        ASSERT_ERROR(doc_result.count_elements(), errors[count]);
+        return true;
+      }));
+      count++;
+    }
+    ASSERT_EQUAL(count, 4);
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return
            value_search_unescaped_key() &&
@@ -724,6 +844,11 @@ namespace object_tests {
            iterate_object_exception() &&
            empty_rewind_convoluted_with_exceptions() &&
 #endif // SIMDJSON_EXCEPTIONS
+           iterate_empty_object_count() &&
+           iterate_basic_object_count() &&
+           iterate_complex_object_count() &&
+           iterate_bad_object_count() &&
+           iterate_bad_doc_object_count() &&
            true;
   }
 
