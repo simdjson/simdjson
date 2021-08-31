@@ -792,7 +792,7 @@ namespace object_tests {
         ASSERT_EQUAL( count, 0 );
         return true;
     }));
-    auto basic = R"( {"a":-1.234, "b":false, "c":null, "d":[1000.1,-2000.2,3000.3], "e":{"a":true, "b":false}})"_padded;
+    auto basic = R"( {"a":-1.234, "b":false, "c":null, "d":[1000.1,-2000.2,3000.3], "e":{"a":true, "b":false}} )"_padded;
     SUBTEST("ondemand::basic_doc_object", test_ondemand_doc(basic, [&](auto doc_result) {
         size_t count;
         ASSERT_RESULT( doc_result.type(), json_type::object );
@@ -804,7 +804,6 @@ namespace object_tests {
   }
 
   bool iterate_bad_doc_object_count() {
-    TEST_START();
     TEST_START();
     padded_string bad_jsons[4] = {R"( {"a":5 "b":3} )"_padded, R"( {"a":5, 3} )"_padded, R"( {"a":5, "b": } )"_padded, R"( {"a":5, "b":3 )"_padded};
     std::string names[4] = {"missing_comma", "missing_key", "missing_value", "missing_bracket"};

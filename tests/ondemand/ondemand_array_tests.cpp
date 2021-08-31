@@ -261,6 +261,44 @@ namespace array_tests {
     }));
     TEST_SUCCEED();
   }
+  bool iterate_document_array_count() {
+    TEST_START();
+    auto empty = R"( [] )"_padded;
+    SUBTEST("ondemand::empty_doc_array", test_ondemand_doc(empty, [&](auto doc_result) {
+        size_t count;
+        ASSERT_RESULT( doc_result.type(), json_type::array );
+        ASSERT_SUCCESS( doc_result.count_elements().get(count) );
+        ASSERT_EQUAL( count, 0 );
+        return true;
+    }));
+    auto basic = R"( [-1.234, 100000000000000, null, [1,2,3], {"t":true, "f":false}] )"_padded;
+    SUBTEST("ondemand::basic_doc_array", test_ondemand_doc(basic, [&](auto doc_result) {
+        size_t count;
+        ASSERT_RESULT( doc_result.type(), json_type::array );
+        ASSERT_SUCCESS( doc_result.count_elements().get(count) );
+        ASSERT_EQUAL( count, 5 );
+        return true;
+    }));
+    TEST_SUCCEED();
+  }
+  bool iterate_bad_document_array_count() {
+    TEST_START();
+    padded_string bad_jsons[2] = {R"( [1, 10 1000] )"_padded, R"( [1.23, 2.34 )"_padded};
+    std::string names[2] = {"missing_comma", "missing_bracket"};
+    simdjson::error_code errors[2] = {TAPE_ERROR, INCOMPLETE_ARRAY_OR_OBJECT};
+    size_t count{0};
+
+    for (auto name : names) {
+      SUBTEST("ondemand::" + name, test_ondemand_doc(bad_jsons[count], [&](auto doc_result) {
+        ASSERT_RESULT( doc_result.type(), json_type::array );
+        ASSERT_ERROR(doc_result.count_elements(), errors[count]);
+        return true;
+      }));
+      count++;
+    }
+    ASSERT_EQUAL(count, 2);
+    TEST_SUCCEED();
+  }
   bool iterate_document_array() {
     TEST_START();
     const auto json = R"([ 1, 10, 100 ])"_padded;
@@ -751,6 +789,8 @@ namespace array_tests {
            iterate_array_count() &&
            issue1588() &&
            iterate_array() &&
+           iterate_document_array_count() &&
+           iterate_bad_document_array_count() &&
            iterate_document_array() &&
            iterate_empty_array() &&
            iterate_array_partial_children() &&
