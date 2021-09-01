@@ -284,11 +284,12 @@ namespace simd {
       return (this->chunks[0] | this->chunks[1]) | (this->chunks[2] | this->chunks[3]);
     }
 
-    simdjson_really_inline void compress(uint64_t mask, T * output) const {
+    simdjson_really_inline uint64_t compress(uint64_t mask, T * output) const {
       this->chunks[0].compress(uint16_t(mask), output);
       this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - count_ones(mask & 0xFFFF));
       this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - count_ones(mask & 0xFFFFFFFF));
       this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
+      return 64 - count_ones(mask);
     }
 
     simdjson_really_inline uint64_t to_bitmask() const {

@@ -57,6 +57,19 @@ simdjson_really_inline uint8x16_t make_uint8x16_t(uint8_t x1,  uint8_t x2,  uint
   return x;
 }
 
+simdjson_really_inline uint8x8_t make_uint8x8_t(uint8_t x1,  uint8_t x2,  uint8_t x3,  uint8_t x4,
+                                         uint8_t x5,  uint8_t x6,  uint8_t x7,  uint8_t x8) {
+  uint8x8_t x{};
+  x = vset_lane_u8(x1, x, 0);
+  x = vset_lane_u8(x2, x, 1);
+  x = vset_lane_u8(x3, x, 2);
+  x = vset_lane_u8(x4, x, 3);
+  x = vset_lane_u8(x5, x, 4);
+  x = vset_lane_u8(x6, x, 5);
+  x = vset_lane_u8(x7, x, 6);
+  x = vset_lane_u8(x8, x, 7);
+  return x;
+}
 
 // We have to do the same work for make_int8x16_t
 simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_t x4,
@@ -289,6 +302,27 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
       vst1q_u8(reinterpret_cast<uint8_t*>(output), answer);
     }
 
+    // Copies all bytes corresponding to a 0 in the low half of the mask (interpreted as a
+    // bitset) to output1, then those corresponding to a 0 in the high half to output2.
+    template<typename L>
+    simdjson_really_inline void compress_halves(uint16_t mask, L *output1, L *output2) const {
+      using internal::thintable_epi8;
+      uint8_t mask1 = uint8_t(mask); // least significant 8 bits
+      uint8_t mask2 = uint8_t(mask >> 8); // most significant 8 bits
+      uint8x8_t compactmask1 = vcreate_u8(thintable_epi8[mask1]);
+      uint8x8_t compactmask2 = vcreate_u8(thintable_epi8[mask2]);
+      // we increment by 0x08 the second half of the mask
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+      uint8x8_t inc = make_uint8x8_t(0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08);
+#else
+      uint8x8_t inc = {0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08};
+#endif
+      compactmask2 = vadd_u8(compactmask2, inc);
+      // store each result (with the second store possibly overlapping the first)
+      vst1_u8((uint8_t*)output1, vqtbl1_u8(*this, compactmask1));
+      vst1_u8((uint8_t*)output2, vqtbl1_u8(*this, compactmask2));
+    }
+
     template<typename L>
     simdjson_really_inline simd8<L> lookup_16(
         L replace0,  L replace1,  L replace2,  L replace3,
@@ -439,11 +473,15 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     }
 
 
-    simdjson_really_inline void compress(uint64_t mask, T * output) const {
-      this->chunks[0].compress(uint16_t(mask), output);
-      this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - count_ones(mask & 0xFFFF));
-      this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - count_ones(mask & 0xFFFFFFFF));
-      this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
+    simdjson_really_inline uint64_t compress(uint64_t mask, T * output) const {
+      uint64_t popcounts = vget_lane_u64(vreinterpret_u64_u8(vcnt_u8(vcreate_u8(~mask))), 0);
+      // compute the prefix sum of the popcounts of each byte
+      uint64_t offsets = popcounts * 0x0101010101010101;
+      this->chunks[0].compress_halves(uint16_t(mask), output, &output[popcounts & 0xFF]);
+      this->chunks[1].compress_halves(uint16_t(mask >> 16), &output[(offsets >> 8) & 0xFF], &output[(offsets >> 16) & 0xFF]);
+      this->chunks[2].compress_halves(uint16_t(mask >> 32), &output[(offsets >> 24) & 0xFF], &output[(offsets >> 32) & 0xFF]);
+      this->chunks[3].compress_halves(uint16_t(mask >> 48), &output[(offsets >> 40) & 0xFF], &output[(offsets >> 48) & 0xFF]);
+      return offsets >> 56;
     }
 
     simdjson_really_inline uint64_t to_bitmask() const {

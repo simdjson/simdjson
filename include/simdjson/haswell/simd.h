@@ -303,11 +303,12 @@ namespace simd {
     simdjson_really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1) : chunks{chunk0, chunk1} {}
     simdjson_really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+32)} {}
 
-    simdjson_really_inline void compress(uint64_t mask, T * output) const {
+    simdjson_really_inline uint64_t compress(uint64_t mask, T * output) const {
       uint32_t mask1 = uint32_t(mask);
       uint32_t mask2 = uint32_t(mask >> 32);
       this->chunks[0].compress(mask1, output);
       this->chunks[1].compress(mask2, output + 32 - count_ones(mask1));
+      return 64 - count_ones(mask);
     }
 
     simdjson_really_inline void store(T ptr[64]) const {

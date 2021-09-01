@@ -27,8 +27,7 @@ private:
 
 simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
-  in.compress(mask, dst);
-  dst += 64 - count_ones(mask);
+  dst += in.compress(mask, dst);
 }
 
 simdjson_really_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
