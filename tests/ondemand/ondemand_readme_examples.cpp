@@ -225,6 +225,23 @@ bool json_array_count_complex() {
 
 }
 
+bool json_object_count() {
+  TEST_START();
+  auto json = R"( { "test":{ "val1":1, "val2":2 } }   )"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
+  size_t count;
+  ASSERT_SUCCESS(doc.count_fields().get(count));
+  ASSERT_EQUAL(count,1);
+  ondemand::object object;
+  size_t new_count;
+  ASSERT_SUCCESS(doc.find_field("test").get_object().get(object));
+  ASSERT_SUCCESS(object.count_fields().get(new_count));
+  ASSERT_EQUAL(new_count, 2);
+  TEST_SUCCEED();
+}
+
 bool using_the_parsed_json_1() {
   TEST_START();
 
@@ -871,6 +888,7 @@ int main() {
     && json_array_with_array_count()
     && json_array_count_complex()
     && json_array_count()
+    && json_object_count()
     && using_the_parsed_json_rewind()
     && using_the_parsed_json_rewind_array()
     && basics_2()

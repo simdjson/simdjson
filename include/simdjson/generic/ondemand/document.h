@@ -250,6 +250,21 @@ public:
    * safe to continue.
    */
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+   /**
+   * This method scans the object and counts the number of key-value pairs.
+   * The count_fields method should always be called before you have begun
+   * iterating through the object: it is expected that you are pointing at
+   * the beginning of the object.
+   * The runtime complexity is linear in the size of the object. After
+   * calling this function, if successful, the object is 'rewinded' at its
+   * beginning as if it had never been accessed. If the JSON is malformed (e.g.,
+   * there is a missing comma), then an error is returned and it is no longer
+   * safe to continue.
+   *
+   * To check that an object is empty, it is more performant to use
+   * the is_empty() method.
+   */
+  simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
   /**
    * Get the value at the given index in the array. This function has linear-time complexity.
    * This function should only be called once as the array iterator is not reset between each call.
@@ -535,6 +550,7 @@ public:
   simdjson_really_inline operator value() noexcept(false);
 #endif
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+  simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
   simdjson_really_inline simdjson_result<value> at(size_t index) & noexcept;
   simdjson_really_inline simdjson_result<array_iterator> begin() & noexcept;
   simdjson_really_inline simdjson_result<array_iterator> end() & noexcept;
@@ -601,6 +617,7 @@ public:
   simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::value() noexcept(false);
 #endif
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+  simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at(size_t index) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() & noexcept;
@@ -659,6 +676,7 @@ public:
   simdjson_really_inline operator SIMDJSON_IMPLEMENTATION::ondemand::value() noexcept(false);
 #endif
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+  simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at(size_t index) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() & noexcept;

@@ -141,6 +141,16 @@ simdjson_really_inline simdjson_result<size_t> document::count_elements() & noex
   }
   return answer;
 }
+simdjson_really_inline simdjson_result<size_t> document::count_fields() & noexcept {
+  auto a = get_object();
+  simdjson_result<size_t> answer = a.count_fields();
+  /* If there was an array, we are now left pointing at its first element. */
+  if(answer.error() == SUCCESS) {
+    iter._depth = 1 ; /* undoing the increment so we go back at the doc depth.*/
+    iter.assert_at_document_depth();
+  }
+  return answer;
+}
 simdjson_really_inline simdjson_result<value> document::at(size_t index) & noexcept {
   auto a = get_array();
   return a.at(index);
@@ -261,6 +271,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::docume
 simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::count_elements() & noexcept {
   if (error()) { return error(); }
   return first.count_elements();
+}
+simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::count_fields() & noexcept {
+  if (error()) { return error(); }
+  return first.count_fields();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::at(size_t index) & noexcept {
   if (error()) { return error(); }
@@ -492,6 +506,7 @@ simdjson_really_inline document_reference::operator bool() noexcept(false) { ret
 simdjson_really_inline document_reference::operator value() noexcept(false) { return value(*doc); }
 #endif
 simdjson_really_inline simdjson_result<size_t> document_reference::count_elements() & noexcept { return doc->count_elements(); }
+simdjson_really_inline simdjson_result<size_t> document_reference::count_fields() & noexcept { return doc->count_fields(); }
 simdjson_really_inline simdjson_result<value> document_reference::at(size_t index) & noexcept { return doc->at(index); }
 simdjson_really_inline simdjson_result<array_iterator> document_reference::begin() & noexcept { return doc->begin(); }
 simdjson_really_inline simdjson_result<array_iterator> document_reference::end() & noexcept { return doc->end(); }
@@ -526,6 +541,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::docume
 simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::count_elements() & noexcept {
   if (error()) { return error(); }
   return first.count_elements();
+}
+simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::count_fields() & noexcept {
+  if (error()) { return error(); }
+  return first.count_fields();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::at(size_t index) & noexcept {
   if (error()) { return error(); }

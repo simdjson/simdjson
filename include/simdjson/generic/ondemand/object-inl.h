@@ -139,6 +139,17 @@ inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) 
   return child;
 }
 
+simdjson_really_inline simdjson_result<size_t> object::count_fields() & noexcept {
+  size_t count{0};
+  // Important: we do not consume any of the values.
+  for(simdjson_unused auto v : *this) { count++; }
+  // The above loop will always succeed, but we want to report errors.
+  if(iter.error()) { return iter.error(); }
+  // We need to move back at the start because we expect users to iterate through
+  // the object after counting the number of elements.
+  iter.reset_object();
+  return count;
+}
 
 simdjson_really_inline simdjson_result<bool> object::is_empty() & noexcept {
   bool is_not_empty;
@@ -208,6 +219,11 @@ inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::
 inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::is_empty() noexcept {
   if (error()) { return error(); }
   return first.is_empty();
+}
+
+simdjson_really_inline  simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::count_fields() & noexcept {
+  if (error()) { return error(); }
+  return first.count_fields();
 }
 
 } // namespace simdjson
