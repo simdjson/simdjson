@@ -1,4 +1,4 @@
-/* auto-generated on 2021-08-28 20:19:30 -0400. Do not edit! */
+/* auto-generated on 2021-09-01 15:25:45 -0400. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -3535,8 +3535,7 @@ private:
 
 simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
-  in.compress(mask, dst);
-  dst += 64 - count_ones(mask);
+  dst += in.compress(mask, dst);
 }
 
 simdjson_really_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
@@ -7000,8 +6999,7 @@ private:
 
 simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
-  in.compress(mask, dst);
-  dst += 64 - count_ones(mask);
+  dst += in.compress(mask, dst);
 }
 
 simdjson_really_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
@@ -9127,8 +9125,7 @@ private:
 
 simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
-  in.compress(mask, dst);
-  dst += 64 - count_ones(mask);
+  dst += in.compress(mask, dst);
 }
 
 simdjson_really_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
@@ -11290,8 +11287,7 @@ private:
 
 simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
-  in.compress(mask, dst);
-  dst += 64 - count_ones(mask);
+  dst += in.compress(mask, dst);
 }
 
 simdjson_really_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {

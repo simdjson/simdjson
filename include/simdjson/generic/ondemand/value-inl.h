@@ -158,6 +158,9 @@ simdjson_really_inline bool value::is_negative() noexcept {
 simdjson_really_inline simdjson_result<bool> value::is_integer() noexcept {
   return iter.is_integer();
 }
+simdjson_warn_unused simdjson_really_inline simdjson_result<number_type> value::get_number_type() noexcept {
+  return iter.get_number_type();
+}
 simdjson_warn_unused simdjson_really_inline simdjson_result<number> value::get_number() noexcept {
   return iter.get_number();
 }
@@ -327,6 +330,10 @@ simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTA
 simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::is_integer() noexcept {
   if (error()) { return error(); }
   return first.is_integer();
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_number_type() noexcept {
+  if (error()) { return error(); }
+  return first.get_number_type();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_number() noexcept {
   if (error()) { return error(); }

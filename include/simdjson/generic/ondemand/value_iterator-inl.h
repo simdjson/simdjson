@@ -501,14 +501,15 @@ simdjson_really_inline bool value_iterator::is_root_negative() noexcept {
 simdjson_really_inline simdjson_result<bool> value_iterator::is_integer() noexcept {
   return numberparsing::is_integer(peek_non_root_scalar("integer"));
 }
-
+simdjson_really_inline simdjson_result<number_type> value_iterator::get_number_type() noexcept {
+  return numberparsing::get_number_type(peek_non_root_scalar("integer"));
+}
 simdjson_really_inline simdjson_result<number> value_iterator::get_number() noexcept {
   number num;
   error_code error =  numberparsing::parse_number(peek_non_root_scalar("number"), num);
   if(error) { return error; }
   return num;
 }
-
 
 simdjson_really_inline simdjson_result<bool> value_iterator::is_root_integer() noexcept {
   auto max_len = peek_start_length();
@@ -520,6 +521,19 @@ simdjson_really_inline simdjson_result<bool> value_iterator::is_root_integer() n
   return numberparsing::is_integer(tmpbuf);
 }
 
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> value_iterator::get_root_number_type() noexcept {
+  auto max_len = peek_start_length();
+  auto json = peek_root_scalar("number");
+  // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
+  // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
+  // number: -0.<fraction>e-308.
+  uint8_t tmpbuf[1074+8+1];
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
+    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
+    return NUMBER_ERROR;
+  }
+  return numberparsing::get_number_type(tmpbuf);
+}
 simdjson_really_inline simdjson_result<number> value_iterator::get_root_number() noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("number");

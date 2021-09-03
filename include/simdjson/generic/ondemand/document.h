@@ -359,6 +359,24 @@ public:
    */
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
   /**
+   * Determine the number type (integer or floating-point number).
+   *
+   * get_number_type() is number_type::unsigned_integer if we have
+   * an integer greater or equal to 9223372036854775808
+   * get_number_type() is number_type::signed_integer if we have an
+   * integer that is less than 9223372036854775808
+   * Otherwise, get_number_type() has value number_type::floating_point_number
+   *
+   * This function req
+   * uires processing the number string, but it is expected
+   * to be faster than get_number().get_number_type() because it is does not
+   * parse the number value.
+   *
+   * @returns the type of the number
+   */
+  simdjson_really_inline simdjson_result<number_type> get_number_type() noexcept;
+
+  /**
    * Attempt to parse an ondemand::number. An ondemand::number may
    * contain an integer value or a floating-point value, the simdjson
    * library will autodetect the type. Thus it is a dynamically typed
@@ -551,6 +569,7 @@ public:
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
   simdjson_really_inline bool is_negative() noexcept;
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  simdjson_really_inline simdjson_result<number_type> get_number_type() noexcept;
   simdjson_really_inline simdjson_result<number> get_number() noexcept;
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
   simdjson_really_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
@@ -615,6 +634,7 @@ public:
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
   simdjson_really_inline bool is_negative() noexcept;
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
   /** @copydoc simdjson_really_inline std::string_view document::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
@@ -673,6 +693,7 @@ public:
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
   simdjson_really_inline bool is_negative() noexcept;
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
   /** @copydoc simdjson_really_inline std::string_view document_reference::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;

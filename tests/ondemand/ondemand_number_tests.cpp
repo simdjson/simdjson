@@ -216,6 +216,9 @@ namespace number_tests {
     for(simdjson_result<ondemand::value> valr : arr) {
       ondemand::value val;
       ASSERT_SUCCESS(valr.get(val));
+      ondemand::number_type nt;
+      ASSERT_SUCCESS(val.get_number_type().get(nt));
+      ASSERT_EQUAL(expectedtypes[counter], nt);
       ondemand::number num;
       ASSERT_SUCCESS(val.get_number().get(num));
       ASSERT_EQUAL(is_negative[counter], val.is_negative());
@@ -265,11 +268,15 @@ namespace number_tests {
     ondemand::document doc;
     padded_string docdata;
     ondemand::number number;
+    ondemand::number_type nt;
+
     bool intvalue;
 
     docdata = R"(1.0)"_padded;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ASSERT_FALSE(doc.is_negative());
+    ASSERT_SUCCESS(doc.get_number_type().get(nt));
+    ASSERT_EQUAL(nt, ondemand::number_type::floating_point_number);
     ASSERT_SUCCESS(doc.is_integer().get(intvalue));
     ASSERT_SUCCESS(doc.get_number().get(number));
     ASSERT_FALSE(intvalue);
@@ -279,6 +286,8 @@ namespace number_tests {
     docdata = R"(-3.132321)"_padded;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ASSERT_TRUE(doc.is_negative());
+    ASSERT_SUCCESS(doc.get_number_type().get(nt));
+    ASSERT_EQUAL(nt, ondemand::number_type::floating_point_number);
     ASSERT_SUCCESS(doc.is_integer().get(intvalue));
     ASSERT_SUCCESS(doc.get_number().get(number));
     ASSERT_FALSE(intvalue);
@@ -288,6 +297,8 @@ namespace number_tests {
     docdata = R"(1233)"_padded;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ASSERT_FALSE(doc.is_negative());
+    ASSERT_SUCCESS(doc.get_number_type().get(nt));
+    ASSERT_EQUAL(nt, ondemand::number_type::signed_integer);
     ASSERT_SUCCESS(doc.is_integer().get(intvalue));
     ASSERT_SUCCESS(doc.get_number().get(number));
     ASSERT_TRUE(intvalue);
@@ -297,6 +308,8 @@ namespace number_tests {
     docdata = R"(9999999999999999999)"_padded;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ASSERT_FALSE(doc.is_negative());
+    ASSERT_SUCCESS(doc.get_number_type().get(nt));
+    ASSERT_EQUAL(nt, ondemand::number_type::unsigned_integer);
     ASSERT_SUCCESS(doc.is_integer().get(intvalue));
     ASSERT_SUCCESS(doc.get_number().get(number));
     ASSERT_TRUE(intvalue);

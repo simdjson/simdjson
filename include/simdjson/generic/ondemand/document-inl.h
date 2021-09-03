@@ -208,6 +208,10 @@ simdjson_really_inline simdjson_result<bool> document::is_integer() noexcept {
   return get_root_value_iterator().is_root_integer();
 }
 
+simdjson_really_inline simdjson_result<number_type> document::get_number_type() noexcept {
+  return get_root_value_iterator().get_root_number_type();
+}
+
 simdjson_really_inline simdjson_result<number> document::get_number() noexcept {
   return get_root_value_iterator().get_root_number();
 }
@@ -395,6 +399,11 @@ simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::d
 simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::is_integer() noexcept {
   if (error()) { return error(); }
   return first.is_integer();
+}
+
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_number_type() noexcept {
+  if (error()) { return error(); }
+  return first.get_number_type();
 }
 
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_number() noexcept {
