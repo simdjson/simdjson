@@ -515,6 +515,7 @@ simdjson_really_inline simdjson_result<bool> document_reference::is_scalar() noe
 simdjson_really_inline simdjson_result<const char *> document_reference::current_location() noexcept { return doc->current_location(); };
 simdjson_really_inline bool document_reference::is_negative() noexcept { return doc->is_negative(); }
 simdjson_really_inline simdjson_result<bool> document_reference::is_integer() noexcept { return doc->is_integer(); }
+simdjson_really_inline simdjson_result<number_type> document_reference::get_number_type() noexcept { return doc->get_number_type(); }
 simdjson_really_inline simdjson_result<number> document_reference::get_number() noexcept { return doc->get_number(); }
 simdjson_really_inline simdjson_result<std::string_view> document_reference::raw_json_token() noexcept { return doc->raw_json_token(); }
 simdjson_really_inline simdjson_result<value> document_reference::at_pointer(std::string_view json_pointer) noexcept { return doc->at_pointer(json_pointer); }
@@ -631,6 +632,10 @@ simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::d
 simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::is_integer() noexcept {
   if (error()) { return error(); }
   return first.is_integer();
+}
+simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_number_type() noexcept {
+  if (error()) { return error(); }
+  return first.get_number_type();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_number() noexcept {
   if (error()) { return error(); }
