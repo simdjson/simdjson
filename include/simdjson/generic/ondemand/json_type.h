@@ -14,15 +14,6 @@ enum class json_type {
     null     ///< A JSON null    (null)
 };
 
-/**
- * The type of a JSON number
- */
-enum class number_type {
-    floating_point_number=1, /// a binary64 number
-    signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
-};
-
 class value_iterator;
 
 /**
@@ -36,6 +27,12 @@ struct number {
    * return the automatically determined type of
    * the number: number_type::floating_point_number,
    * number_type::signed_integer or number_type::unsigned_integer.
+   *
+   *    enum class number_type {
+   *        floating_point_number=1, /// a binary64 number
+   *        signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
+   *        unsigned_integer         /// a positive integer larger or equal to 1<<63
+   *    };
    */
   simdjson_really_inline number_type get_number_type() const noexcept;
   /**

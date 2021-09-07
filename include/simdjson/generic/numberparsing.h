@@ -3,6 +3,18 @@
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+
+namespace ondemand {
+/**
+ * The type of a JSON number
+ */
+enum class number_type {
+    floating_point_number=1, /// a binary64 number
+    signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
+    unsigned_integer         /// a positive integer larger or equal to 1<<63
+};
+}
+
 namespace {
 /// @private
 namespace numberparsing {
@@ -518,6 +530,7 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer_in
 simdjson_unused simdjson_really_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_really_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
 simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept { return ondemand::number_type::signed_integer; }
 #else
 
 // parse the number at src
@@ -1043,6 +1056,25 @@ simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const ui
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) { return true; }
   return false;
+}
+
+simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept {
+  bool negative = (*src == '-');
+  src += negative;
+  const uint8_t *p = src;
+  while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  if ( p == src ) { return NUMBER_ERROR; }
+  if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    int digit_count = int(p - src);
+    if(digit_count >= 19) {
+      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
+      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
+        return ondemand::number_type::unsigned_integer;
+      }
+    }
+    return ondemand::number_type::signed_integer;
+  }
+  return ondemand::number_type::floating_point_number;
 }
 
 // Never read at src_end or beyond

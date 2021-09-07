@@ -292,6 +292,7 @@ public:
   simdjson_really_inline bool is_null() noexcept;
   simdjson_warn_unused simdjson_really_inline bool is_negative() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<number_type> get_number_type() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<number> get_number() noexcept;
 
   simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> get_root_string() noexcept;
@@ -305,6 +306,7 @@ public:
   simdjson_warn_unused simdjson_really_inline simdjson_result<bool> get_root_bool() noexcept;
   simdjson_warn_unused simdjson_really_inline bool is_root_negative() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<bool> is_root_integer() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<number_type> get_root_number_type() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<number> get_root_number() noexcept;
   simdjson_really_inline bool is_root_null() noexcept;
 

@@ -1,4 +1,4 @@
-/* auto-generated on 2021-08-28 20:19:30 -0400. Do not edit! */
+/* auto-generated on 2021-09-02 22:45:49 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -9780,6 +9780,19 @@ simdjson_really_inline uint8x16_t make_uint8x16_t(uint8_t x1,  uint8_t x2,  uint
   return x;
 }
 
+simdjson_really_inline uint8x8_t make_uint8x8_t(uint8_t x1,  uint8_t x2,  uint8_t x3,  uint8_t x4,
+                                         uint8_t x5,  uint8_t x6,  uint8_t x7,  uint8_t x8) {
+  uint8x8_t x{};
+  x = vset_lane_u8(x1, x, 0);
+  x = vset_lane_u8(x2, x, 1);
+  x = vset_lane_u8(x3, x, 2);
+  x = vset_lane_u8(x4, x, 3);
+  x = vset_lane_u8(x5, x, 4);
+  x = vset_lane_u8(x6, x, 5);
+  x = vset_lane_u8(x7, x, 6);
+  x = vset_lane_u8(x8, x, 7);
+  return x;
+}
 
 // We have to do the same work for make_int8x16_t
 simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_t x4,
@@ -10012,6 +10025,27 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
       vst1q_u8(reinterpret_cast<uint8_t*>(output), answer);
     }
 
+    // Copies all bytes corresponding to a 0 in the low half of the mask (interpreted as a
+    // bitset) to output1, then those corresponding to a 0 in the high half to output2.
+    template<typename L>
+    simdjson_really_inline void compress_halves(uint16_t mask, L *output1, L *output2) const {
+      using internal::thintable_epi8;
+      uint8_t mask1 = uint8_t(mask); // least significant 8 bits
+      uint8_t mask2 = uint8_t(mask >> 8); // most significant 8 bits
+      uint8x8_t compactmask1 = vcreate_u8(thintable_epi8[mask1]);
+      uint8x8_t compactmask2 = vcreate_u8(thintable_epi8[mask2]);
+      // we increment by 0x08 the second half of the mask
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+      uint8x8_t inc = make_uint8x8_t(0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08);
+#else
+      uint8x8_t inc = {0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08};
+#endif
+      compactmask2 = vadd_u8(compactmask2, inc);
+      // store each result (with the second store possibly overlapping the first)
+      vst1_u8((uint8_t*)output1, vqtbl1_u8(*this, compactmask1));
+      vst1_u8((uint8_t*)output2, vqtbl1_u8(*this, compactmask2));
+    }
+
     template<typename L>
     simdjson_really_inline simd8<L> lookup_16(
         L replace0,  L replace1,  L replace2,  L replace3,
@@ -10162,11 +10196,15 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     }
 
 
-    simdjson_really_inline void compress(uint64_t mask, T * output) const {
-      this->chunks[0].compress(uint16_t(mask), output);
-      this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - count_ones(mask & 0xFFFF));
-      this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - count_ones(mask & 0xFFFFFFFF));
-      this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
+    simdjson_really_inline uint64_t compress(uint64_t mask, T * output) const {
+      uint64_t popcounts = vget_lane_u64(vreinterpret_u64_u8(vcnt_u8(vcreate_u8(~mask))), 0);
+      // compute the prefix sum of the popcounts of each byte
+      uint64_t offsets = popcounts * 0x0101010101010101;
+      this->chunks[0].compress_halves(uint16_t(mask), output, &output[popcounts & 0xFF]);
+      this->chunks[1].compress_halves(uint16_t(mask >> 16), &output[(offsets >> 8) & 0xFF], &output[(offsets >> 16) & 0xFF]);
+      this->chunks[2].compress_halves(uint16_t(mask >> 32), &output[(offsets >> 24) & 0xFF], &output[(offsets >> 32) & 0xFF]);
+      this->chunks[3].compress_halves(uint16_t(mask >> 48), &output[(offsets >> 40) & 0xFF], &output[(offsets >> 48) & 0xFF]);
+      return offsets >> 56;
     }
 
     simdjson_really_inline uint64_t to_bitmask() const {
@@ -10620,6 +10658,18 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
 
 namespace simdjson {
 namespace arm64 {
+
+namespace ondemand {
+/**
+ * The type of a JSON number
+ */
+enum class number_type {
+    floating_point_number=1, /// a binary64 number
+    signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
+    unsigned_integer         /// a positive integer larger or equal to 1<<63
+};
+}
+
 namespace {
 /// @private
 namespace numberparsing {
@@ -11135,6 +11185,7 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer_in
 simdjson_unused simdjson_really_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_really_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
 simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept { return ondemand::number_type::signed_integer; }
 #else
 
 // parse the number at src
@@ -11660,6 +11711,25 @@ simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const ui
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) { return true; }
   return false;
+}
+
+simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept {
+  bool negative = (*src == '-');
+  src += negative;
+  const uint8_t *p = src;
+  while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  if ( p == src ) { return NUMBER_ERROR; }
+  if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    int digit_count = int(p - src);
+    if(digit_count >= 19) {
+      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
+      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
+        return ondemand::number_type::unsigned_integer;
+      }
+    }
+    return ondemand::number_type::signed_integer;
+  }
+  return ondemand::number_type::floating_point_number;
 }
 
 // Never read at src_end or beyond
@@ -12419,6 +12489,18 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
 
 namespace simdjson {
 namespace fallback {
+
+namespace ondemand {
+/**
+ * The type of a JSON number
+ */
+enum class number_type {
+    floating_point_number=1, /// a binary64 number
+    signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
+    unsigned_integer         /// a positive integer larger or equal to 1<<63
+};
+}
+
 namespace {
 /// @private
 namespace numberparsing {
@@ -12934,6 +13016,7 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer_in
 simdjson_unused simdjson_really_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_really_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
 simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept { return ondemand::number_type::signed_integer; }
 #else
 
 // parse the number at src
@@ -13459,6 +13542,25 @@ simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const ui
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) { return true; }
   return false;
+}
+
+simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept {
+  bool negative = (*src == '-');
+  src += negative;
+  const uint8_t *p = src;
+  while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  if ( p == src ) { return NUMBER_ERROR; }
+  if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    int digit_count = int(p - src);
+    if(digit_count >= 19) {
+      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
+      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
+        return ondemand::number_type::unsigned_integer;
+      }
+    }
+    return ondemand::number_type::signed_integer;
+  }
+  return ondemand::number_type::floating_point_number;
 }
 
 // Never read at src_end or beyond
@@ -14234,11 +14336,12 @@ namespace simd {
     simdjson_really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1) : chunks{chunk0, chunk1} {}
     simdjson_really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+32)} {}
 
-    simdjson_really_inline void compress(uint64_t mask, T * output) const {
+    simdjson_really_inline uint64_t compress(uint64_t mask, T * output) const {
       uint32_t mask1 = uint32_t(mask);
       uint32_t mask2 = uint32_t(mask >> 32);
       this->chunks[0].compress(mask1, output);
       this->chunks[1].compress(mask2, output + 32 - count_ones(mask1));
+      return 64 - count_ones(mask);
     }
 
     simdjson_really_inline void store(T ptr[64]) const {
@@ -14702,6 +14805,18 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
 
 namespace simdjson {
 namespace haswell {
+
+namespace ondemand {
+/**
+ * The type of a JSON number
+ */
+enum class number_type {
+    floating_point_number=1, /// a binary64 number
+    signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
+    unsigned_integer         /// a positive integer larger or equal to 1<<63
+};
+}
+
 namespace {
 /// @private
 namespace numberparsing {
@@ -15217,6 +15332,7 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer_in
 simdjson_unused simdjson_really_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_really_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
 simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept { return ondemand::number_type::signed_integer; }
 #else
 
 // parse the number at src
@@ -15742,6 +15858,25 @@ simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const ui
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) { return true; }
   return false;
+}
+
+simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept {
+  bool negative = (*src == '-');
+  src += negative;
+  const uint8_t *p = src;
+  while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  if ( p == src ) { return NUMBER_ERROR; }
+  if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    int digit_count = int(p - src);
+    if(digit_count >= 19) {
+      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
+      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
+        return ondemand::number_type::unsigned_integer;
+      }
+    }
+    return ondemand::number_type::signed_integer;
+  }
+  return ondemand::number_type::floating_point_number;
 }
 
 // Never read at src_end or beyond
@@ -16615,7 +16750,7 @@ template <typename T> struct simd8x64 {
            (this->chunks[2] | this->chunks[3]);
   }
 
-  simdjson_really_inline void compress(uint64_t mask, T *output) const {
+  simdjson_really_inline uint64_t compress(uint64_t mask, T *output) const {
     this->chunks[0].compress(uint16_t(mask), output);
     this->chunks[1].compress(uint16_t(mask >> 16),
                              output + 16 - count_ones(mask & 0xFFFF));
@@ -16623,6 +16758,7 @@ template <typename T> struct simd8x64 {
                              output + 32 - count_ones(mask & 0xFFFFFFFF));
     this->chunks[3].compress(uint16_t(mask >> 48),
                              output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
+    return 64 - count_ones(mask);
   }
 
   simdjson_really_inline uint64_t to_bitmask() const {
@@ -17084,6 +17220,18 @@ parse_eight_digits_unrolled(const uint8_t *chars) {
 
 namespace simdjson {
 namespace ppc64 {
+
+namespace ondemand {
+/**
+ * The type of a JSON number
+ */
+enum class number_type {
+    floating_point_number=1, /// a binary64 number
+    signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
+    unsigned_integer         /// a positive integer larger or equal to 1<<63
+};
+}
+
 namespace {
 /// @private
 namespace numberparsing {
@@ -17599,6 +17747,7 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer_in
 simdjson_unused simdjson_really_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_really_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
 simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept { return ondemand::number_type::signed_integer; }
 #else
 
 // parse the number at src
@@ -18124,6 +18273,25 @@ simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const ui
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) { return true; }
   return false;
+}
+
+simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept {
+  bool negative = (*src == '-');
+  src += negative;
+  const uint8_t *p = src;
+  while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  if ( p == src ) { return NUMBER_ERROR; }
+  if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    int digit_count = int(p - src);
+    if(digit_count >= 19) {
+      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
+      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
+        return ondemand::number_type::unsigned_integer;
+      }
+    }
+    return ondemand::number_type::signed_integer;
+  }
+  return ondemand::number_type::floating_point_number;
 }
 
 // Never read at src_end or beyond
@@ -18865,11 +19033,12 @@ namespace simd {
       return (this->chunks[0] | this->chunks[1]) | (this->chunks[2] | this->chunks[3]);
     }
 
-    simdjson_really_inline void compress(uint64_t mask, T * output) const {
+    simdjson_really_inline uint64_t compress(uint64_t mask, T * output) const {
       this->chunks[0].compress(uint16_t(mask), output);
       this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - count_ones(mask & 0xFFFF));
       this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - count_ones(mask & 0xFFFFFFFF));
       this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
+      return 64 - count_ones(mask);
     }
 
     simdjson_really_inline uint64_t to_bitmask() const {
@@ -19324,6 +19493,18 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
 
 namespace simdjson {
 namespace westmere {
+
+namespace ondemand {
+/**
+ * The type of a JSON number
+ */
+enum class number_type {
+    floating_point_number=1, /// a binary64 number
+    signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
+    unsigned_integer         /// a positive integer larger or equal to 1<<63
+};
+}
+
 namespace {
 /// @private
 namespace numberparsing {
@@ -19839,6 +20020,7 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer_in
 simdjson_unused simdjson_really_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_really_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
 simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept { return ondemand::number_type::signed_integer; }
 #else
 
 // parse the number at src
@@ -20366,6 +20548,25 @@ simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const ui
   return false;
 }
 
+simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept {
+  bool negative = (*src == '-');
+  src += negative;
+  const uint8_t *p = src;
+  while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  if ( p == src ) { return NUMBER_ERROR; }
+  if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    int digit_count = int(p - src);
+    if(digit_count >= 19) {
+      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
+      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
+        return ondemand::number_type::unsigned_integer;
+      }
+    }
+    return ondemand::number_type::signed_integer;
+  }
+  return ondemand::number_type::floating_point_number;
+}
+
 // Never read at src_end or beyond
 simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(const uint8_t * src, const uint8_t * const src_end) noexcept {
   if(src == src_end) { return NUMBER_ERROR; }
@@ -20735,15 +20936,6 @@ enum class json_type {
     null     ///< A JSON null    (null)
 };
 
-/**
- * The type of a JSON number
- */
-enum class number_type {
-    floating_point_number=1, /// a binary64 number
-    signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
-};
-
 class value_iterator;
 
 /**
@@ -20757,6 +20949,12 @@ struct number {
    * return the automatically determined type of
    * the number: number_type::floating_point_number,
    * number_type::signed_integer or number_type::unsigned_integer.
+   *
+   *    enum class number_type {
+   *        floating_point_number=1, /// a binary64 number
+   *        signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
+   *        unsigned_integer         /// a positive integer larger or equal to 1<<63
+   *    };
    */
   simdjson_really_inline number_type get_number_type() const noexcept;
   /**
@@ -21854,6 +22052,7 @@ public:
   simdjson_really_inline bool is_null() noexcept;
   simdjson_warn_unused simdjson_really_inline bool is_negative() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<number_type> get_number_type() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<number> get_number() noexcept;
 
   simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> get_root_string() noexcept;
@@ -21867,6 +22066,7 @@ public:
   simdjson_warn_unused simdjson_really_inline simdjson_result<bool> get_root_bool() noexcept;
   simdjson_warn_unused simdjson_really_inline bool is_root_negative() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<bool> is_root_integer() noexcept;
+  simdjson_warn_unused simdjson_really_inline simdjson_result<number_type> get_root_number_type() noexcept;
   simdjson_warn_unused simdjson_really_inline simdjson_result<number> get_root_number() noexcept;
   simdjson_really_inline bool is_root_null() noexcept;
 
@@ -22744,6 +22944,24 @@ public:
    */
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
   /**
+   * Determine the number type (integer or floating-point number).
+   *
+   * get_number_type() is number_type::unsigned_integer if we have
+   * an integer greater or equal to 9223372036854775808
+   * get_number_type() is number_type::signed_integer if we have an
+   * integer that is less than 9223372036854775808
+   * Otherwise, get_number_type() has value number_type::floating_point_number
+   *
+   * This function req
+   * uires processing the number string, but it is expected
+   * to be faster than get_number().get_number_type() because it is does not
+   * parse the number value.
+   *
+   * @returns the type of the number
+   */
+  simdjson_really_inline simdjson_result<number_type> get_number_type() noexcept;
+
+  /**
    * Attempt to parse an ondemand::number. An ondemand::number may
    * contain an integer value or a floating-point value, the simdjson
    * library will autodetect the type. Thus it is a dynamically typed
@@ -22936,6 +23154,7 @@ public:
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
   simdjson_really_inline bool is_negative() noexcept;
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  simdjson_really_inline simdjson_result<number_type> get_number_type() noexcept;
   simdjson_really_inline simdjson_result<number> get_number() noexcept;
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
   simdjson_really_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
@@ -23000,6 +23219,7 @@ public:
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
   simdjson_really_inline bool is_negative() noexcept;
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number> get_number() noexcept;
   /** @copydoc simdjson_really_inline std::string_view document::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
@@ -23058,6 +23278,7 @@ public:
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
   simdjson_really_inline bool is_negative() noexcept;
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number> get_number() noexcept;
   /** @copydoc simdjson_really_inline std::string_view document_reference::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
@@ -23421,6 +23642,23 @@ public:
    */
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
   /**
+   * Determine the number type (integer or floating-point number).
+   *
+   * get_number_type() is number_type::unsigned_integer if we have
+   * an integer greater or equal to 9223372036854775808
+   * get_number_type() is number_type::signed_integer if we have an
+   * integer that is less than 9223372036854775808
+   * Otherwise, get_number_type() has value number_type::floating_point_number
+   *
+   * This function requires processing the number string, but it is expected
+   * to be faster than get_number().get_number_type() because it is does not
+   * parse the number value.
+   *
+   * @returns the type of the number
+   */
+  simdjson_really_inline simdjson_result<number_type> get_number_type() noexcept;
+
+  /**
    * Attempt to parse an ondemand::number. An ondemand::number may
    * contain an integer value or a floating-point value, the simdjson
    * library will autodetect the type. Thus it is a dynamically typed
@@ -23671,6 +23909,7 @@ public:
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
   simdjson_really_inline simdjson_result<bool> is_negative() noexcept;
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
+  simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number> get_number() noexcept;
 
   /** @copydoc simdjson_really_inline std::string_view value::raw_json_token() const noexcept */
@@ -26149,14 +26388,15 @@ simdjson_really_inline bool value_iterator::is_root_negative() noexcept {
 simdjson_really_inline simdjson_result<bool> value_iterator::is_integer() noexcept {
   return numberparsing::is_integer(peek_non_root_scalar("integer"));
 }
-
+simdjson_really_inline simdjson_result<number_type> value_iterator::get_number_type() noexcept {
+  return numberparsing::get_number_type(peek_non_root_scalar("integer"));
+}
 simdjson_really_inline simdjson_result<number> value_iterator::get_number() noexcept {
   number num;
   error_code error =  numberparsing::parse_number(peek_non_root_scalar("number"), num);
   if(error) { return error; }
   return num;
 }
-
 
 simdjson_really_inline simdjson_result<bool> value_iterator::is_root_integer() noexcept {
   auto max_len = peek_start_length();
@@ -26168,6 +26408,19 @@ simdjson_really_inline simdjson_result<bool> value_iterator::is_root_integer() n
   return numberparsing::is_integer(tmpbuf);
 }
 
+simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number_type> value_iterator::get_root_number_type() noexcept {
+  auto max_len = peek_start_length();
+  auto json = peek_root_scalar("number");
+  // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
+  // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
+  // number: -0.<fraction>e-308.
+  uint8_t tmpbuf[1074+8+1];
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
+    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
+    return NUMBER_ERROR;
+  }
+  return numberparsing::get_number_type(tmpbuf);
+}
 simdjson_really_inline simdjson_result<number> value_iterator::get_root_number() noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("number");
@@ -27182,6 +27435,10 @@ simdjson_really_inline simdjson_result<bool> document::is_integer() noexcept {
   return get_root_value_iterator().is_root_integer();
 }
 
+simdjson_really_inline simdjson_result<number_type> document::get_number_type() noexcept {
+  return get_root_value_iterator().get_root_number_type();
+}
+
 simdjson_really_inline simdjson_result<number> document::get_number() noexcept {
   return get_root_value_iterator().get_root_number();
 }
@@ -27371,6 +27628,11 @@ simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_BUILTIN_IM
   return first.is_integer();
 }
 
+simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number_type> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::get_number_type() noexcept {
+  if (error()) { return error(); }
+  return first.get_number_type();
+}
+
 simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::get_number() noexcept {
   if (error()) { return error(); }
   return first.get_number();
@@ -27480,6 +27742,7 @@ simdjson_really_inline simdjson_result<bool> document_reference::is_scalar() noe
 simdjson_really_inline simdjson_result<const char *> document_reference::current_location() noexcept { return doc->current_location(); };
 simdjson_really_inline bool document_reference::is_negative() noexcept { return doc->is_negative(); }
 simdjson_really_inline simdjson_result<bool> document_reference::is_integer() noexcept { return doc->is_integer(); }
+simdjson_really_inline simdjson_result<number_type> document_reference::get_number_type() noexcept { return doc->get_number_type(); }
 simdjson_really_inline simdjson_result<number> document_reference::get_number() noexcept { return doc->get_number(); }
 simdjson_really_inline simdjson_result<std::string_view> document_reference::raw_json_token() noexcept { return doc->raw_json_token(); }
 simdjson_really_inline simdjson_result<value> document_reference::at_pointer(std::string_view json_pointer) noexcept { return doc->at_pointer(json_pointer); }
@@ -27596,6 +27859,10 @@ simdjson_really_inline bool simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ond
 simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::is_integer() noexcept {
   if (error()) { return error(); }
   return first.is_integer();
+}
+simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number_type> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::get_number_type() noexcept {
+  if (error()) { return error(); }
+  return first.get_number_type();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::get_number() noexcept {
   if (error()) { return error(); }
@@ -27819,6 +28086,9 @@ simdjson_really_inline bool value::is_negative() noexcept {
 simdjson_really_inline simdjson_result<bool> value::is_integer() noexcept {
   return iter.is_integer();
 }
+simdjson_warn_unused simdjson_really_inline simdjson_result<number_type> value::get_number_type() noexcept {
+  return iter.get_number_type();
+}
 simdjson_warn_unused simdjson_really_inline simdjson_result<number> value::get_number() noexcept {
   return iter.get_number();
 }
@@ -27988,6 +28258,10 @@ simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_BUILTIN_IM
 simdjson_really_inline simdjson_result<bool> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::is_integer() noexcept {
   if (error()) { return error(); }
   return first.is_integer();
+}
+simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number_type> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::get_number_type() noexcept {
+  if (error()) { return error(); }
+  return first.get_number_type();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::get_number() noexcept {
   if (error()) { return error(); }

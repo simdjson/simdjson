@@ -20,6 +20,9 @@ using error_code=simdjson::error_code;
       std::cout << "is_integer: " << val.is_integer() << " ";
       ondemand::number num = val.get_number();
       ondemand::number_type t = num.get_number_type();
+      // direct computation without materializing the number:
+      ondemand::number_type dt = val.get_number_type();
+      if(t != dt) { throw std::runtime_error("bug"); }
       switch(t) {
         case ondemand::number_type::signed_integer:
           std::cout  << "integer: " << int64_t(num) << " ";

@@ -1108,6 +1108,12 @@ before printout the data.
 
 Performance note: the On Demand front-end does not materialize the parsed numbers and other values. If you are accessing everything twice, you may need to parse them twice. Thus the rewind functionality is best suited for cases where the first pass only scans the structure of the document.
 
+Both arrays and objects have a similar method `reset()`. It is similar
+to the document `rewind()` method, except that it does not rewind the
+internal string buffer. Thus you should consume values only once
+even if you can iterate through the array or object more than once.
+If you unescape a string within an array more than once, you have unsafe code.
+
 Direct Access to the Raw String
 --------------------------------
 
@@ -1360,6 +1366,11 @@ You must check the type before accessing the value: it is an error to call `get_
 
 The `get_number()` function is designed with performance in mind. When calling `get_number()`, you scan the number string only once, determining efficiently the type and storing it in an efficient manner.
 
+If you only need to compute `v.get_number().get_number_type()` on
+a `document` or `value` instance, you should call directly the faster method
+`v.get_number_type()` which does not generate an
+intermediate `number` instance.
+
 Consider the following example:
 ```C++
     ondemand::parser parser;
@@ -1371,7 +1382,9 @@ Consider the following example:
       std::cout << "negative: " << val.is_negative() << " ";
       std::cout << "is_integer: " << val.is_integer() << " ";
       ondemand::number num = val.get_number();
-      ondemand::number_type t = num.get_number_type();
+      // direct computation without materializing the number:
+      ondemand::number_type dt = val.get_number_type();
+      if(t != dt) { throw std::runtime_error("bug"); }
       switch(t) {
         case ondemand::number_type::signed_integer:
           std::cout  << "integer: " << int64_t(num) << " ";
