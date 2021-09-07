@@ -1,4 +1,4 @@
-/* auto-generated on 2021-09-02 22:45:49 -0400. Do not edit! */
+/* auto-generated on 2021-09-07 14:34:40 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -22835,6 +22835,21 @@ public:
    * safe to continue.
    */
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+   /**
+   * This method scans the object and counts the number of key-value pairs.
+   * The count_fields method should always be called before you have begun
+   * iterating through the object: it is expected that you are pointing at
+   * the beginning of the object.
+   * The runtime complexity is linear in the size of the object. After
+   * calling this function, if successful, the object is 'rewinded' at its
+   * beginning as if it had never been accessed. If the JSON is malformed (e.g.,
+   * there is a missing comma), then an error is returned and it is no longer
+   * safe to continue.
+   *
+   * To check that an object is empty, it is more performant to use
+   * the is_empty() method.
+   */
+  simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
   /**
    * Get the value at the given index in the array. This function has linear-time complexity.
    * This function should only be called once as the array iterator is not reset between each call.
@@ -23138,6 +23153,7 @@ public:
   simdjson_really_inline operator value() noexcept(false);
 #endif
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+  simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
   simdjson_really_inline simdjson_result<value> at(size_t index) & noexcept;
   simdjson_really_inline simdjson_result<array_iterator> begin() & noexcept;
   simdjson_really_inline simdjson_result<array_iterator> end() & noexcept;
@@ -23205,6 +23221,7 @@ public:
   simdjson_really_inline operator SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value() noexcept(false);
 #endif
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+  simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> at(size_t index) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::array_iterator> begin() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::array_iterator> end() & noexcept;
@@ -23264,6 +23281,7 @@ public:
   simdjson_really_inline operator SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value() noexcept(false);
 #endif
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+  simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> at(size_t index) & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::array_iterator> begin() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::array_iterator> end() & noexcept;
@@ -24126,6 +24144,21 @@ public:
    */
   inline simdjson_result<bool> is_empty() & noexcept;
   /**
+   * This method scans the object and counts the number of key-value pairs.
+   * The count_fields method should always be called before you have begun
+   * iterating through the object: it is expected that you are pointing at
+   * the beginning of the object.
+   * The runtime complexity is linear in the size of the object. After
+   * calling this function, if successful, the object is 'rewinded' at its
+   * beginning as if it had never been accessed. If the JSON is malformed (e.g.,
+   * there is a missing comma), then an error is returned and it is no longer
+   * safe to continue.
+   *
+   * To check that an object is empty, it is more performant to use
+   * the is_empty() method.
+   */
+  simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
+  /**
    * Consumes the object and returns a string_view instance corresponding to the
    * object as represented in JSON. It points inside the original byte array containg
    * the JSON document.
@@ -24176,6 +24209,7 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   inline simdjson_result<bool> reset() noexcept;
   inline simdjson_result<bool> is_empty() noexcept;
+  inline simdjson_result<size_t> count_fields() & noexcept;
 
 };
 
@@ -27109,6 +27143,7 @@ simdjson_really_inline simdjson_result<std::string_view> array::raw_json() noexc
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 
+SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcept {
   size_t count{0};
   // Important: we do not consume any of the values.
@@ -27368,6 +27403,16 @@ simdjson_really_inline simdjson_result<size_t> document::count_elements() & noex
   }
   return answer;
 }
+simdjson_really_inline simdjson_result<size_t> document::count_fields() & noexcept {
+  auto a = get_object();
+  simdjson_result<size_t> answer = a.count_fields();
+  /* If there was an array, we are now left pointing at its first element. */
+  if(answer.error() == SUCCESS) {
+    iter._depth = 1 ; /* undoing the increment so we go back at the doc depth.*/
+    iter.assert_at_document_depth();
+  }
+  return answer;
+}
 simdjson_really_inline simdjson_result<value> document::at(size_t index) & noexcept {
   auto a = get_array();
   return a.at(index);
@@ -27492,6 +27537,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand
 simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::count_elements() & noexcept {
   if (error()) { return error(); }
   return first.count_elements();
+}
+simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::count_fields() & noexcept {
+  if (error()) { return error(); }
+  return first.count_fields();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::at(size_t index) & noexcept {
   if (error()) { return error(); }
@@ -27728,6 +27777,7 @@ simdjson_really_inline document_reference::operator bool() noexcept(false) { ret
 simdjson_really_inline document_reference::operator value() noexcept(false) { return value(*doc); }
 #endif
 simdjson_really_inline simdjson_result<size_t> document_reference::count_elements() & noexcept { return doc->count_elements(); }
+simdjson_really_inline simdjson_result<size_t> document_reference::count_fields() & noexcept { return doc->count_fields(); }
 simdjson_really_inline simdjson_result<value> document_reference::at(size_t index) & noexcept { return doc->at(index); }
 simdjson_really_inline simdjson_result<array_iterator> document_reference::begin() & noexcept { return doc->begin(); }
 simdjson_really_inline simdjson_result<array_iterator> document_reference::end() & noexcept { return doc->end(); }
@@ -27763,6 +27813,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand
 simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::count_elements() & noexcept {
   if (error()) { return error(); }
   return first.count_elements();
+}
+simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::count_fields() & noexcept {
+  if (error()) { return error(); }
+  return first.count_fields();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::at(size_t index) & noexcept {
   if (error()) { return error(); }
@@ -28536,6 +28590,17 @@ inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) 
   return child;
 }
 
+simdjson_really_inline simdjson_result<size_t> object::count_fields() & noexcept {
+  size_t count{0};
+  // Important: we do not consume any of the values.
+  for(simdjson_unused auto v : *this) { count++; }
+  // The above loop will always succeed, but we want to report errors.
+  if(iter.error()) { return iter.error(); }
+  // We need to move back at the start because we expect users to iterate through
+  // the object after counting the number of elements.
+  iter.reset_object();
+  return count;
+}
 
 simdjson_really_inline simdjson_result<bool> object::is_empty() & noexcept {
   bool is_not_empty;
@@ -28605,6 +28670,11 @@ inline simdjson_result<bool> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::on
 inline simdjson_result<bool> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::object>::is_empty() noexcept {
   if (error()) { return error(); }
   return first.is_empty();
+}
+
+simdjson_really_inline  simdjson_result<size_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::object>::count_fields() & noexcept {
+  if (error()) { return error(); }
+  return first.count_fields();
 }
 
 } // namespace simdjson
