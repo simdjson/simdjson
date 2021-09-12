@@ -19,7 +19,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
       return 0;
     }
 
-  size_t bool_count=0;
+  [[maybe_unused]] size_t bool_count=0;
   for (auto doc : docs) {
     bool_count+=doc.is_bool();
   }
