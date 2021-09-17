@@ -863,7 +863,8 @@ namespace document_stream_tests {
 
   bool fuzzaccess() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = "^ {}"_padded;
+    // Issue 38801 in oss-fuzz
+    auto json = "\xff         \n~~\n{}"_padded;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream docs;
     ASSERT_SUCCESS(parser.parse_many(json).get(docs));
