@@ -517,12 +517,13 @@ namespace document_stream_tests {
         auto json = "\xff         \n~~\n{}"_padded;
         ondemand::parser parser;
         ondemand::document_stream docs;
-        ASSERT_SUCCESS(parser.parse_many(json).get(docs));
+        ASSERT_SUCCESS(parser.iterate_many(json).get(docs));
         size_t bool_count = 0;
         size_t total_count = 0;
         for (auto doc : docs) {
           total_count++;
-          bool_count += doc.is_bool();
+          bool b;
+          if(doc.get_bool().get(b) == SUCCESS) { bool_count +=b; }
         }
         return (bool_count == 0) && (bool_count == 0);
     }
