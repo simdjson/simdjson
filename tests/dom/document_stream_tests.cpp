@@ -861,6 +861,23 @@ namespace document_stream_tests {
     return true;
   }
 
+  bool fuzzaccess() {
+    std::cout << "Running " << __func__ << std::endl;
+    // Issue 38801 in oss-fuzz
+    auto json = "\xff         \n~~\n{}"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream docs;
+    ASSERT_SUCCESS(parser.parse_many(json).get(docs));
+    size_t bool_count = 0;
+    size_t total_count = 0;
+
+    for (auto doc : docs) {
+      total_count++;
+      bool_count += doc.is_bool();
+    }
+    return (bool_count == 0) && (bool_count == 0);
+  }
+
   bool baby_fuzzer() {
     std::cout << "Running " << __func__ << std::endl;
     std::mt19937 gen(637);
@@ -892,7 +909,8 @@ namespace document_stream_tests {
   }
 
   bool run() {
-    return baby_fuzzer() &&
+    return fuzzaccess() &&
+           baby_fuzzer() &&
            issue1649() &&
            adversarial_single_document_array() &&
            adversarial_single_document() &&
