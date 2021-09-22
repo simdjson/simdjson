@@ -728,7 +728,6 @@ There are currently additional technical limitations which we expect to resolve 
 
 * The simdjson library offers runtime dispatching which allows you to compile one binary and have it run at full speed on different processors, taking advantage of the specific features of the processor. The On Demand API has limited runtime dispatch support. Under x64 systems, to fully benefit from the On Demand API, we recommend that you compile your code for a specific processor. E.g., if your processor supports AVX2 instructions, you should compile your binary executable with AVX2 instruction support (by using your compiler's commands). If you are sufficiently technically proficient, you can implement runtime dispatching within your application, by compiling your On Demand code for different processors.
 * There is an initial phase which scans the entire document quickly, irrespective of the size of the document. We plan to break this phase into distinct steps for large files in a future release as we have done with other components of our API (e.g., `parse_many`).
-* The On Demand API does not support JSON Pointer. This capability is currently limited to our core API.
 
 ### Applicability of the On Demand Approach
 
