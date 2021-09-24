@@ -525,11 +525,12 @@ namespace document_stream_tests {
           bool b;
           if(doc.get_bool().get(b) == SUCCESS) { bool_count +=b; }
         }
-        return (bool_count == 0) && (total_count == 0);
+        return (bool_count == 0) && (total_count == 1);
     }
 
     bool run() {
         return
+            fuzzaccess() &&
             issue1683() &&
             issue1668() &&
             issue1668_long() &&
