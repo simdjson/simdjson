@@ -875,7 +875,7 @@ namespace document_stream_tests {
       total_count++;
       bool_count += doc.is_bool();
     }
-    return (bool_count == 0) && (bool_count == 0);
+    return (bool_count == 0) && (total_count == 0);
   }
 
   bool baby_fuzzer() {
