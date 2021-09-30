@@ -346,8 +346,49 @@ namespace json_pointer_tests {
         TEST_SUCCEED();
     }
 
+#if SIMDJSON_EXCEPTIONS
+    bool json_pointer_invalidation_exceptions() {
+        TEST_START();
+        auto cars_json = R"( [
+        { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+        { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+        { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+        ] )"_padded;
+
+        ondemand::parser parser;
+        std::vector<double> measured;
+        ondemand::document cars = parser.iterate(cars_json);
+        std::vector<car_type> content;
+        for (int i = 0; i < 3; i++) {
+            std::string json_pointer = "/" + std::to_string(i);
+            // Each successive at_pointer call invalidates
+            // previously parsed values, strings, objects and array.
+            ondemand::object obj(cars.at_pointer(json_pointer).get_object());
+            // We materialize the object.
+            std::string_view make = obj["make"];
+            std::string_view model = obj["model"];
+            uint64_t year(obj["year"].get(year));
+            // We materialize the array.
+            ondemand::array arr(obj["tire_pressure"].get_array());
+            std::vector<double> values;
+            for(auto x : arr) {
+                double value_double(x.get_double());
+                values.push_back(value_double);
+            }
+            content.emplace_back(make, model, year, std::move(values));
+        }
+        std::string expected[] = {"Toyota", "Kia", "Toyota"};
+        for (car_type c : content) {
+            std::cout << c.make << " " << c.model << " " << c.year << "\n";
+        }
+        TEST_SUCCEED();
+    }
+#endif
     bool run() {
         return
+#if SIMDJSON_EXCEPTIONS
+                json_pointer_invalidation_exceptions() &&
+#endif
                 many_json_pointers_array() &&
                 many_json_pointers_object() &&
                 many_json_pointers_object_array() &&

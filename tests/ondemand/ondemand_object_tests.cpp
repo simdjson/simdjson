@@ -6,6 +6,61 @@ using namespace simdjson;
 namespace object_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
+
+  bool issue1723() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata =  R"({
+    "contents":
+    {
+      "bids":[
+         {"offset":"1", "price":"1.1", "size":"4.1"}
+      ],
+      "asks":[
+        {"offset":"1111", "price":"1.100", "size":"114.1"}
+      ]
+
+    }
+    })"_padded;
+    simdjson::ondemand::document doc;
+    auto error = parser.iterate(docdata).get(doc);
+    if(error) { return false; }
+    ondemand::object content;
+    error = doc.get_object().find_field("contents").get(content);
+    if(error) { return false; }
+    ondemand::array bids;
+    error = content["bids"].get_array().get(bids);
+    if(error) { return false; }
+    for (auto aux : bids) {
+      uint64_t id;
+      error = aux["offset"].get_uint64_in_string().get(id);
+      if(error) { return false; }
+      double price;
+      error = aux["price"].get_double_in_string().get(price);
+      if(error) { return false; }
+      double size;
+      error = aux["size"].get_double_in_string().get(size);
+      if(error) { return false; }
+      std::cout << id << " " << price << " " << size << std::endl;
+    }
+    ondemand::array asks;
+    error = content["asks"].get_array().get(asks);
+    if(error) { return false; }
+    for (auto aux : asks) {
+      uint64_t id;
+      error = aux["offset"].get_uint64_in_string().get(id);
+      if(error) { return false; }
+      double price;
+      error = aux["price"].get_double_in_string().get(price);
+      if(error) { return false; }
+      double size;
+      error = aux["size"].get_double_in_string().get(size);
+      if(error) { return false; }
+      std::cout << id << " " << price << " " << size << std::endl;
+    }
+    return true;
+  }
+
   // In this test, no non-trivial object in an array have a missing key
   bool no_missing_keys() {
     TEST_START();
@@ -123,6 +178,42 @@ namespace object_tests {
   }
 
 #if SIMDJSON_EXCEPTIONS
+
+  bool issue1723_except() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata =  R"({
+    "contents":
+    {
+      "bids":[
+         {"offset":"1", "price":"1.1", "size":"4.1"}
+      ],
+      "asks":[
+        {"offset":"1111", "price":"1.100", "size":"114.1"}
+      ]
+
+    }
+    })"_padded;
+    simdjson::ondemand::document doc = parser.iterate(docdata);
+    ondemand::object content = doc.get_object().find_field("contents");
+    ondemand::array bids = content["bids"].get_array();
+    std::cout << "bids:" << std::endl;
+    for (auto aux : bids) {
+      uint64_t id = aux["offset"].get_uint64_in_string();
+      double price = aux["price"].get_double_in_string();
+      double size = aux["size"].get_double_in_string();
+      std::cout << id << " " << price << " " << size << std::endl;
+    }
+    ondemand::array asks = content["asks"].get_array();
+    std::cout << "asks:" << std::endl;
+    for (auto aux : asks) {
+      uint64_t id = aux["offset"].get_uint64_in_string();
+      double price = aux["price"].get_double_in_string();
+      double size = aux["size"].get_double_in_string();
+      std::cout << id << " " << price << " " << size << std::endl;
+    }
+    return true;
+  }
   // used in issue_1521
   // difficult to use as a lambda because it is recursive.
   void broken_descend(ondemand::object node) {
@@ -824,12 +915,14 @@ namespace object_tests {
 
   bool run() {
     return
+           issue1723() &&
            value_search_unescaped_key() &&
            missing_key_continue() &&
            no_missing_keys() &&
            missing_keys() &&
            missing_keys_for_empty_top_level_object() &&
 #if SIMDJSON_EXCEPTIONS
+           issue1723_except() &&
            fixed_broken_issue_1521() &&
            issue_1521() &&
            broken_issue_1521() &&
