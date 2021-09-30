@@ -303,6 +303,12 @@ public:
    * **Raw Keys:** The lookup will be done against the *raw* key, and will not unescape keys.
    * e.g. `object["a"]` will match `{ "a": 1 }`, but will *not* match `{ "\u0061": 1 }`.
    *
+   *
+   * You must consume the fields on an object one at a time. A request for a new key
+   * invalidates previous field values: it makes them unsafe. E.g., the array
+   * given by content["bids"].get_array() should not be accessed after you have called
+   * content["asks"].get_array().
+   *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
    */
@@ -325,6 +331,11 @@ public:
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
    * field wasn't there when they aren't).
+   *
+   * You must consume the fields on an object one at a time. A request for a new key
+   * invalidates previous field values: it makes them unsafe. E.g., the array
+   * given by content["bids"].get_array() should not be accessed after you have called
+   * content["asks"].get_array().
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
