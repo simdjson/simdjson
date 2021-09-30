@@ -367,7 +367,7 @@ namespace json_pointer_tests {
             // We materialize the object.
             std::string_view make = obj["make"];
             std::string_view model = obj["model"];
-            uint64_t year(obj["year"].get(year));
+            uint64_t year(obj["year"]);
             // We materialize the array.
             ondemand::array arr(obj["tire_pressure"].get_array());
             std::vector<double> values;
