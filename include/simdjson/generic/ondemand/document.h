@@ -307,7 +307,9 @@ public:
    * You must consume the fields on an object one at a time. A request for a new key
    * invalidates previous field values: it makes them unsafe. E.g., the array
    * given by content["bids"].get_array() should not be accessed after you have called
-   * content["asks"].get_array().
+   * content["asks"].get_array(). You can detect such mistakes by first compiling and running
+   * the code in Debug mode (or with the macro `SIMDJSON_DEVELOPMENT_CHECKS` set to 1): an
+   * OUT_OF_ORDER_ITERATION error is generated.
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -335,7 +337,9 @@ public:
    * You must consume the fields on an object one at a time. A request for a new key
    * invalidates previous field values: it makes them unsafe. E.g., the array
    * given by content["bids"].get_array() should not be accessed after you have called
-   * content["asks"].get_array().
+   * content["asks"].get_array(). You can detect such mistakes by first compiling and running
+   * the code in Debug mode (or with the macro `SIMDJSON_DEVELOPMENT_CHECKS` set to 1): an
+   * OUT_OF_ORDER_ITERATION error is generated.
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.

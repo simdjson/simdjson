@@ -232,6 +232,15 @@ transcode the UTF-8 strings produced by the simdjson library to other formats. S
 Using the Parsed JSON
 ---------------------
 
+We recommend that you first compile and run your code in Debug mode (with `NDEBUG`
+undefined). When you do so, the simdjson library runs additional sanity tests on
+your code to help ensure that you are using the library in a safe manner. Once
+your code has been tested, you can then run it in Release mode (with `NDEBUG`
+defined) for best performance. Alternatively, you can set the macro
+`SIMDJSON_DEVELOPMENT_CHECKS` to 1 prior to including the `simdjson.h` header
+to enable these additional checks: just make sure you remove the definition once your
+code has been tested.
+
 Once you have a document (`simdjson::ondemand::document`), you can navigate it with
 idiomatic C++ iterators, operators and casts. Besides the documents instances and
 native types (`double`, `uint64_t`, `int64_t`, `bool`), we also access
@@ -270,6 +279,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   comparison. For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do
   not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. Furthermore, you can only consume one field at a time, on the same object. Thus
   if you have retrieved `content["bids"].get_array()` and you later call `content["asks"].get_array()`, then the first array should no longer be accessed: it would be unsafe to do so.
+  You can detect such mistakes by first compiling and running the code in Debug mode: an OUT_OF_ORDER_ITERATION error is generated.
 
   > NOTE: JSON allows you to escape characters in keys. E.g., the key `"date"` may be written as
   > `"\u0064\u0061\u0074\u0065"`. By default, simdjson does *not* unescape keys when matching by default.
