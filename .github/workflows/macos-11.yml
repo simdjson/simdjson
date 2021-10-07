@@ -16,7 +16,7 @@ jobs:
           key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
       - name: Use cmake
         run: |
-          xcversion select 11.2.1
+          xcversion select 11.7
           mkdir builddebug &&
           cd builddebug &&
           cmake -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF ..  &&
