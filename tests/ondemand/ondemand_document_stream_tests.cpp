@@ -14,6 +14,8 @@ namespace document_stream_tests {
         return true;
     }
     bool issue1729() {
+        // This example is not a good application of iterate_many since there is
+        // a single JSON document.
         TEST_START();
         std::string json = R"({
 	"t": 5649,
