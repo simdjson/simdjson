@@ -13,6 +13,145 @@ namespace document_stream_tests {
         ASSERT_EQUAL(val, 5);
         return true;
     }
+    bool issue1729() {
+        TEST_START();
+        std::string json = R"({
+	"t": 5649,
+	"ng": 5,
+	"lu": 4086,
+	"g": [{
+			"t": "Temps",
+			"xvy": 0,
+			"pd": 60,
+			"sz": 3,
+			"l": [
+				"Low Temp",
+				"High Temp",
+				"Smooth Avg"
+			],
+			"c": [
+				"green",
+				"orange",
+				"cyan"
+			],
+			"d": [
+				80.48750305,
+				80.82499694,
+				80.65625
+			]
+		},
+		{
+			"t": "Pump Status",
+			"xvy": 0,
+			"pd": 60,
+			"sz": 3,
+			"l": [
+				"Pump",
+				"Thermal",
+				"Light"
+			],
+			"c": [
+				"green",
+				"orange",
+				"cyan"
+			],
+			"d": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"t": "Lux",
+			"xvy": 0,
+			"pd": 60,
+			"sz": 4,
+			"l": [
+				"Value",
+				"Smooth",
+				"Low",
+				"High"
+			],
+			"c": [
+				"green",
+				"orange",
+				"cyan",
+				"yellow"
+			],
+			"d": [
+				2274.62939453,
+				2277.45947265,
+				4050,
+				4500
+			]
+		},
+		{
+			"t": "Temp Diff",
+			"xvy": 0,
+			"pd": 60,
+			"sz": 4,
+			"l": [
+				"dFarenheit",
+				"sum",
+				"Low",
+				"High"
+			],
+			"c": [
+				"green",
+				"orange",
+				"cyan",
+				"yellow"
+			],
+			"d": [
+				0,
+				0,
+				0.5,
+				10
+			]
+		},
+		{
+			"t": "Power",
+			"xvy": 0,
+			"pd": 60,
+			"sz": 3,
+			"l": [
+				"watts (est. ligth) ",
+				"watts (1.9~gpm) ",
+				"watts (1gpm) "
+			],
+			"c": [
+				"green",
+				"orange",
+				"cyan"
+			],
+			"d": [
+				181.78063964,
+				114.88922882,
+				59.35943603
+			]
+		}
+	]
+})";
+
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        auto oderror = parser.iterate_many(json).get(stream);
+        if (oderror) {
+          std::cerr << "ondemand iterate_many error: " << oderror << std::endl;
+          return false;
+        }
+        auto i = stream.begin();
+        for (; i != stream.end(); ++i) {
+            ondemand::document_reference doc;
+            auto err = (*i).get(doc);
+            if(err != SUCCESS) {
+              std::cerr << "ondemand iterate_many error: " << err << std::endl;
+              return false;
+            }
+        }
+        TEST_SUCCEED();
+    }
+
 
     bool issue1683() {
         TEST_START();
@@ -536,6 +675,7 @@ namespace document_stream_tests {
 
     bool run() {
         return
+            issue1729() &&
             fuzzaccess() &&
             issue1683() &&
             issue1668() &&
