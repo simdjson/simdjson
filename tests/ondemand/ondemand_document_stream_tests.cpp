@@ -41,6 +41,10 @@ namespace document_stream_tests {
               return false;
             }
         }
+        if(document_index < 1) {
+          std::cerr << "ondemand should have accessed at least one document" std::endl;
+          return false;
+        }
         TEST_SUCCEED();
     }
     bool issue1729() {
