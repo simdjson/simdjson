@@ -9,7 +9,6 @@ namespace document_stream_tests {
     bool process_doc(T &docref) {
         int64_t val;
         ASSERT_SUCCESS(docref.at_pointer("/4").get(val));
-        //ASSERT_SUCCESS(err);
         ASSERT_EQUAL(val, 5);
         return true;
     }
@@ -31,7 +30,13 @@ namespace document_stream_tests {
             ondemand::document_reference doc;
             auto err = (*i).get(doc);
             document_index++;
-            std::cout << err << std::endl;
+            // With the fallback routine, we might detect a 'document' since
+            // it does not do UTF-8 validation in stage one, but it will do
+            // so when we access the document.
+            if(err == SUCCESS) {
+                ondemand::json_type t;
+                err = doc.type().get(t);
+            }
             if((err == SUCCESS) && (document_index != 1)) {
               std::cerr << "Only the first document should be valid." << std::endl;
               return false;
