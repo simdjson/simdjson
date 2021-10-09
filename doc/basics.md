@@ -246,11 +246,11 @@ to enable these additional checks: just make sure you remove the definition once
 code has been tested.
 
 Once you have a document (`simdjson::ondemand::document`), you can navigate it with
-idiomatic C++ iterators, operators and casts. Besides the documents instances and
+idiomatic C++ iterators, operators and casts. Besides the document instances and
 native types (`double`, `uint64_t`, `int64_t`, `bool`), we also access
 Unicode (UTF-8) strings (`std::string_view`), objects (`simdjson::ondemand::object`)
 and arrays (`simdjson::ondemand::array`).
-We also have a generic type (`simdjson::ondemand::value`) which represent a potential
+We also have a generic type (`simdjson::ondemand::value`) which represents a potential
 array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`, string) inside an array or an object. Both generic types (`simdjson::ondemand::document` and `simdjson::ondemand::value`) have a `type()` method returning
 a `json_type` value describing the value (`json_type::array`, `json_type::object`, `json_type::number`, `json_type::string`, `json_type::boolean`, `json_type::null`).
 
@@ -259,6 +259,7 @@ should review our section [dynamic number types](#dynamic-number-types). Indeed,
 we have an additional `ondemand::number` type which may represent either integers
 or floating-point values, depending on how the numbers are formatted.
 floating-point values followed by an integer.
+
 While you are accessing the document, the `document` instance should remain in scope:
 it is your "iterator" which keeps track of where you are in the JSON document.
 By design, there is one and only one `document` instance per JSON document.
