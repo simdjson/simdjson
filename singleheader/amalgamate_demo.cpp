@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "Please specify at least one file name and" << std::endl;
     std::cerr << "up to two files." << std::endl;
     std::cerr << "The first file should be a JSON document." << std::endl;
-    std::cerr << "The secod file should container many JSON documents."
+    std::cerr << "The second file should container many JSON documents."
               << std::endl;
     std::cerr << "Try the test files: jsonexamples/twitter.json "
                  "jsonexamples/amazon_cellphones.ndjson"
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     std::cout << error << std::endl;
     return EXIT_FAILURE;
   }
-  std::cout << "document has the following type at the root: " << type
+  std::cout << "if valid, the document has the following type at the root: " << type
             << std::endl;
 
   if (argc == 2) {
@@ -73,8 +73,9 @@ int main(int argc, char *argv[]) {
     std::cout << error << std::endl;
     return EXIT_FAILURE;
   } else {
-    std::cout << "iterate_many valid" << std::endl;
-    std::cout << "found " << counter << " documents" << std::endl;
+    std::cout << "I found " << counter << " potential JSON documents." << std::endl;
   }
+  std::cout << "For more information on how simdjson works, please refer to our documentation." << std::endl;
+  std::cout << "https://github.com/simdjson/simdjson/blob/master/doc/basics.md" << std::endl;
   return EXIT_SUCCESS;
 }
