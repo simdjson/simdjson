@@ -232,6 +232,15 @@ transcode the UTF-8 strings produced by the simdjson library to other formats. S
 Using the Parsed JSON
 ---------------------
 
+We recommend that you first compile and run your code in Debug mode (with `NDEBUG`
+undefined). When you do so, the simdjson library runs additional sanity tests on
+your code to help ensure that you are using the library in a safe manner. Once
+your code has been tested, you can then run it in Release mode (with `NDEBUG`
+defined) for best performance. Alternatively, you can set the macro
+`SIMDJSON_DEVELOPMENT_CHECKS` to 1 prior to including the `simdjson.h` header
+to enable these additional checks: just make sure you remove the definition once your
+code has been tested.
+
 Once you have a document (`simdjson::ondemand::document`), you can navigate it with
 idiomatic C++ iterators, operators and casts. Besides the documents instances and
 native types (`double`, `uint64_t`, `int64_t`, `bool`), we also access
@@ -268,7 +277,9 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
   scan through the object looking for the field with the matching string, doing a character-by-character
   comparison. For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do
-  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance.
+  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. Furthermore, you can only consume one field at a time, on the same object. Thus
+  if you have retrieved `content["bids"].get_array()` and you later call `content["asks"].get_array()`, then the first array should no longer be accessed: it would be unsafe to do so.
+  You can detect such mistakes by first compiling and running the code in Debug mode: an OUT_OF_ORDER_ITERATION error is generated.
 
   > NOTE: JSON allows you to escape characters in keys. E.g., the key `"date"` may be written as
   > `"\u0064\u0061\u0074\u0065"`. By default, simdjson does *not* unescape keys when matching by default.
@@ -683,30 +694,23 @@ auto cars_json = R"( [
 ] )"_padded;
 
 ondemand::parser parser;
-ondemand::document cars;
 std::vector<double> measured;
-parser.iterate(cars_json).get(cars);
+ondemand::document cars = parser.iterate(cars_json);
 std::vector<car_type> content;
 for (int i = 0; i < 3; i++) {
-    ondemand::object obj;
     std::string json_pointer = "/" + std::to_string(i);
     // Each successive at_pointer call invalidates
     // previously parsed values, strings, objects and array.
-    cars.at_pointer(json_pointer).get(obj);
+    ondemand::object obj(cars.at_pointer(json_pointer).get_object());
     // We materialize the object.
-    std::string_view make;
-    ASSERT_SUCCESS(obj["make"].get(make));
-    std::string_view model;
-    ASSERT_SUCCESS(obj["model"].get(model));
-    uint64_t year;
-    ASSERT_SUCCESS(obj["year"].get(year));
+    std::string_view make = obj["make"];
+    std::string_view model = obj["model"];
+    uint64_t year(obj["year"]);
     // We materialize the array.
-    ondemand::array arr;
-    ASSERT_SUCCESS(obj["tire_pressure"].get(arr));
+    ondemand::array arr(obj["tire_pressure"].get_array());
     std::vector<double> values;
     for(auto x : arr) {
-        double value_double;
-        ASSERT_SUCCESS(x.get(value_double));
+        double value_double(x.get_double());
         values.push_back(value_double);
     }
     content.emplace_back(make, model, year, std::move(values));
