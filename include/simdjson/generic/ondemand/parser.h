@@ -54,6 +54,11 @@ public:
    *   ondemand::parser parser;
    *   document doc = parser.iterate(json);
    *
+   * It is expected that the content is a valid UTF-8 file, containing a valid JSON document.
+   * Otherwise the iterate method may return an error. In particular, the whole input should be
+   * valid: we do not attempt to tolerate incorrect content either before or after a JSON
+   * document.
+   *
    * ### IMPORTANT: Validate what you use
    *
    * Calling iterate on an invalid JSON document may not immediately trigger an error. The call to
@@ -166,13 +171,15 @@ public:
    * ### Format
    *
    * The buffer must contain a series of one or more JSON documents, concatenated into a single
-   * buffer, separated by whitespace. It effectively parses until it has a fully valid document,
+   * buffer, separated by ASCII whitespace. It effectively parses until it has a fully valid document,
    * then starts parsing the next document at that point. (It does this with more parallelism and
    * lookahead than you might think, though.)
    *
    * documents that consist of an object or array may omit the whitespace between them, concatenating
-   * with no separator. documents that consist of a single primitive (i.e. documents that are not
-   * arrays or objects) MUST be separated with whitespace.
+   * with no separator. Documents that consist of a single primitive (i.e. documents that are not
+   * arrays or objects) MUST be separated with ASCII whitespace.
+   *
+   * The characters inside a JSON document, and between JSON documents, must be valid Unicode (UTF-8).
    *
    * The documents must not exceed batch_size bytes (by default 1MB) or they will fail to parse.
    * Setting batch_size to excessively large or excesively small values may impact negatively the

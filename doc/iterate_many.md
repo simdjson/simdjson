@@ -1,7 +1,9 @@
 iterate_many
 ==========
 
-An interface providing features to work with files or streams containing multiple small JSON documents. Given an input such as
+When serializing large databases, it is often better to write out many independent JSON
+documents, instead of one large monolithic document containing many records. The simdjson
+library provides high-speed access to files or streams containing multiple small JSON documents separated by ASCII white-space characters. Given an input such as
 ```JSON
 {"text":"a"}
 {"text":"b"}
@@ -114,7 +116,9 @@ Whitespace Characters:
 - **Linefeed**
 - **Carriage return**
 - **Horizontal tab**
-- **Nothing**
+
+If your documents are all objects or arrays, then you may even have nothing between them.
+E.g., `[1,2]{"32":1}` is recognized as two documents.
 
 Some official formats **(non-exhaustive list)**:
 - [Newline-Delimited JSON (NDJSON)](http://ndjson.org/)

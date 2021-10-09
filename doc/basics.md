@@ -127,19 +127,23 @@ The Basics: Loading and Parsing JSON Documents
 ----------------------------------------------
 
 The simdjson library allows you to navigate and validate JSON documents ([RFC 8259](https://www.tbray.org/ongoing/When/201x/2017/12/14/rfc8259.html)).
-As required by the standard, your JSON document should be Unicode (UTF-8) strings.
+As required by the standard, your JSON document should be in a Unicode (UTF-8) string. The whole
+string, from the beginning to the end, needs to be valid: we do not attempt to tolerate bad
+inputs before or after a document.
 
-
-The simdjson library offers a tree-like [API](https://en.wikipedia.org/wiki/API), which you can access by creating a `ondemand::parser` and calling the `iterate()` method:
+The simdjson library offers a tree-like [API](https://en.wikipedia.org/wiki/API), which you can
+access by creating a `ondemand::parser` and calling the `iterate()` method. The iterate method
+quickly indexes the input string and may detect some errors. The following example illustrates
+how to get started with an input JSON file (`"twitter.json"`):
 
 ```c++
 ondemand::parser parser;
-auto json = padded_string::load("twitter.json");
+auto json = padded_string::load("twitter.json"); // load JSON file 'twitter.json'.
 ondemand::document doc = parser.iterate(json); // position a pointer at the beginning of the JSON data
 ```
 
-Or by creating a padded string---for efficiency reasons, simdjson requires a string with a few
- bytes (`simdjson::SIMDJSON_PADDING`) at the end---and calling `iterate()`:
+You can also create a padded string---for efficiency reasons, simdjson requires a string
+with a few bytes (`simdjson::SIMDJSON_PADDING`) at the end---and calling `iterate()`:
 
 ```c++
 ondemand::parser parser;
@@ -1157,11 +1161,19 @@ The `raw_json_token()` should be fast and free of allocation.
 Newline-Delimited JSON (ndjson) and JSON lines
 ----------------------------------------------
 
-The simdjson library also supports multithreaded JSON streaming through a large file containing many
-smaller JSON documents in either [ndjson](http://ndjson.org) or [JSON lines](http://jsonlines.org)
-format. If your JSON documents all contain arrays or objects, we even support direct file
-concatenation without whitespace. The concatenated file has no size restrictions (including larger
-than 4GB), though each individual document must be no larger than 4 GB.
+When processing large inputs (e.g., in the context of data engineering), engineers commonly
+serialize data into streams of multiple JSON documents. That is, instead of one large
+(e.g., 2 GB) JSON document containing multiple records, it is often preferable to
+write out multiple records as independent JSON documents, to be read one-by-one.
+
+The simdjson library also supports multithreaded JSON streaming through a large file
+containing many smaller JSON documents in either [ndjson](http://ndjson.org)
+or [JSON lines](http://jsonlines.org) format. If your JSON documents all contain arrays
+or objects, we even support direct file concatenation without whitespace. However, if there
+is content between your JSON documents, it should be exclusively ASCII white-space characters.
+
+The concatenated file has no size restrictions (including larger than 4GB), though each
+individual document must be no larger than 4 GB.
 
 Here is an example:
 
