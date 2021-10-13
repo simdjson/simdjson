@@ -9,10 +9,190 @@ namespace document_stream_tests {
     bool process_doc(T &docref) {
         int64_t val;
         ASSERT_SUCCESS(docref.at_pointer("/4").get(val));
-        //ASSERT_SUCCESS(err);
         ASSERT_EQUAL(val, 5);
         return true;
     }
+    bool truncated_utf8() {
+        TEST_START();
+        // truncated UTF-8
+        auto json = "\"document1\" \xC3"_padded;
+
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        auto oderror = parser.iterate_many(json).get(stream);
+        if (oderror) {
+          std::cerr << "ondemand iterate_many error: " << oderror << std::endl;
+          return false;
+        }
+        int document_index = 0;
+        auto i = stream.begin();
+        for (; i != stream.end(); ++i) {
+            ondemand::document_reference doc;
+            auto err = (*i).get(doc);
+            document_index++;
+            // With the fallback routine, we might detect a 'document' since
+            // it does not do UTF-8 validation in stage one, but it will do
+            // so when we access the document.
+            if(err == SUCCESS) {
+                ondemand::json_type t;
+                err = doc.type().get(t);
+            }
+            if((err == SUCCESS) && (document_index != 1)) {
+              std::cerr << "Only the first document should be valid." << std::endl;
+              return false;
+            }
+            if((err != SUCCESS) && (document_index != 2)) {
+              std::cerr << "ondemand iterate_many error: " << err << std::endl;
+              return false;
+            }
+        }
+        if(document_index < 1) {
+          std::cerr << "ondemand should have accessed at least one document" << std::endl;
+          return false;
+        }
+        TEST_SUCCEED();
+    }
+    bool issue1729() {
+        // This example is not a good application of iterate_many since there is
+        // a single JSON document.
+        TEST_START();
+        auto json = R"({
+	"t": 5649,
+	"ng": 5,
+	"lu": 4086,
+	"g": [{
+			"t": "Temps",
+			"xvy": 0,
+			"pd": 60,
+			"sz": 3,
+			"l": [
+				"Low Temp",
+				"High Temp",
+				"Smooth Avg"
+			],
+			"c": [
+				"green",
+				"orange",
+				"cyan"
+			],
+			"d": [
+				80.48750305,
+				80.82499694,
+				80.65625
+			]
+		},
+		{
+			"t": "Pump Status",
+			"xvy": 0,
+			"pd": 60,
+			"sz": 3,
+			"l": [
+				"Pump",
+				"Thermal",
+				"Light"
+			],
+			"c": [
+				"green",
+				"orange",
+				"cyan"
+			],
+			"d": [
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"t": "Lux",
+			"xvy": 0,
+			"pd": 60,
+			"sz": 4,
+			"l": [
+				"Value",
+				"Smooth",
+				"Low",
+				"High"
+			],
+			"c": [
+				"green",
+				"orange",
+				"cyan",
+				"yellow"
+			],
+			"d": [
+				2274.62939453,
+				2277.45947265,
+				4050,
+				4500
+			]
+		},
+		{
+			"t": "Temp Diff",
+			"xvy": 0,
+			"pd": 60,
+			"sz": 4,
+			"l": [
+				"dFarenheit",
+				"sum",
+				"Low",
+				"High"
+			],
+			"c": [
+				"green",
+				"orange",
+				"cyan",
+				"yellow"
+			],
+			"d": [
+				0,
+				0,
+				0.5,
+				10
+			]
+		},
+		{
+			"t": "Power",
+			"xvy": 0,
+			"pd": 60,
+			"sz": 3,
+			"l": [
+				"watts (est. ligth) ",
+				"watts (1.9~gpm) ",
+				"watts (1gpm) "
+			],
+			"c": [
+				"green",
+				"orange",
+				"cyan"
+			],
+			"d": [
+				181.78063964,
+				114.88922882,
+				59.35943603
+			]
+		}
+	]
+})"_padded;
+
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        auto oderror = parser.iterate_many(json).get(stream);
+        if (oderror) {
+          std::cerr << "ondemand iterate_many error: " << oderror << std::endl;
+          return false;
+        }
+        auto i = stream.begin();
+        for (; i != stream.end(); ++i) {
+            ondemand::document_reference doc;
+            auto err = (*i).get(doc);
+            if(err != SUCCESS) {
+              std::cerr << "ondemand iterate_many error: " << err << std::endl;
+              return false;
+            }
+        }
+        TEST_SUCCEED();
+    }
+
 
     bool issue1683() {
         TEST_START();
@@ -536,6 +716,8 @@ namespace document_stream_tests {
 
     bool run() {
         return
+            truncated_utf8() &&
+            issue1729() &&
             fuzzaccess() &&
             issue1683() &&
             issue1668() &&
