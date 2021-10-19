@@ -556,6 +556,7 @@ public:
   simdjson_really_inline document_reference() noexcept;
   simdjson_really_inline document_reference(document &d) noexcept;
   simdjson_really_inline document_reference(const document_reference &other) noexcept = default;
+  simdjson_really_inline document_reference& operator=(const document_reference &other) noexcept = default;
   simdjson_really_inline void rewind() noexcept;
   simdjson_really_inline simdjson_result<array> get_array() & noexcept;
   simdjson_really_inline simdjson_result<object> get_object() & noexcept;
