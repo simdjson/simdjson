@@ -832,7 +832,9 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned_
     // - Therefore, if the number is positive and lower than that, it's overflow.
     // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
     //
-    if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INCORRECT_TYPE; }
+    // Note: we use src[1] and not src[0] because src[0] is the quote character in this
+    // instance.
+    if (src[1] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INCORRECT_TYPE; }
   }
 
   return i;
