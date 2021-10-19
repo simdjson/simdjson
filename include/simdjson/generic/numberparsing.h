@@ -609,7 +609,7 @@ simdjson_really_inline error_code parse_number(const uint8_t *const src, W &writ
     // - That is smaller than the smallest possible 20-digit number the user could write:
     //   10,000,000,000,000,000,000.
     // - Therefore, if the number is positive and lower than that, it's overflow.
-    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    // - The value we are looking at is less than or equal to INT64_MAX.
     //
     }  else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INVALID_NUMBER(src); }
   }
@@ -732,7 +732,7 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(
     // - That is smaller than the smallest possible 20-digit number the user could write:
     //   10,000,000,000,000,000,000.
     // - Therefore, if the number is positive and lower than that, it's overflow.
-    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    // - The value we are looking at is less than or equal to INT64_MAX.
     //
     if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INCORRECT_TYPE; }
   }
@@ -782,7 +782,7 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(
     // - That is smaller than the smallest possible 20-digit number the user could write:
     //   10,000,000,000,000,000,000.
     // - Therefore, if the number is positive and lower than that, it's overflow.
-    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    // - The value we are looking at is less than or equal to INT64_MAX.
     //
     if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INCORRECT_TYPE; }
   }
@@ -830,7 +830,7 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned_
     // - That is smaller than the smallest possible 20-digit number the user could write:
     //   10,000,000,000,000,000,000.
     // - Therefore, if the number is positive and lower than that, it's overflow.
-    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    // - The value we are looking at is less than or equal to INT64_MAX.
     //
     // Note: we use src[1] and not src[0] because src[0] is the quote character in this
     // instance.
