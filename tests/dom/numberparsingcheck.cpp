@@ -179,7 +179,6 @@ static bool has_extension(const char *filename, const char *extension) {
 
 bool validate(const char *dirname) {
   parse_error = 0;
-  size_t total_count = 0;
   const char *extension = ".json";
   size_t dirlen = std::strlen(dirname);
   struct dirent **entry_list;
@@ -215,7 +214,6 @@ bool validate(const char *dirname) {
       float_count = 0;
       int_count = 0;
       invalid_count = 0;
-      total_count += float_count + int_count + invalid_count;
       simdjson::dom::parser parser;
       auto err = parser.parse(p).error();
       bool isok = (err == simdjson::error_code::SUCCESS);

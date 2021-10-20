@@ -858,7 +858,7 @@ namespace document_stream_tests {
     for (auto doc : docs) {
       bool_count += doc.is_bool();
     }
-    return true;
+    return (bool_count == 0);
   }
 
   bool fuzzaccess() {

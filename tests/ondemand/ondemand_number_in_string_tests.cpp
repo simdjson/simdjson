@@ -54,12 +54,12 @@ namespace number_in_string_tests {
 
     bool array_int() {
         TEST_START();
-        auto json = R"(["1", "2", "-3", "1000", "-7844"])"_padded;
+        auto json = R"(["1", "2", "-3", "1000", "-7844", "-9223372036854775807", "9223372036854775807"])"_padded;
         ondemand::parser parser;
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
         size_t counter{0};
-        std::vector<int> expected = {1, 2, -3, 1000, -7844};
+        std::vector<int64_t> expected = {1, 2, -3, 1000, -7844, INT64_C(-9223372036854775807), INT64_C(9223372036854775807) };
         int64_t i;
         for (auto value : doc) {
             ASSERT_SUCCESS(value.get_int64_in_string().get(i));
@@ -70,12 +70,12 @@ namespace number_in_string_tests {
 
     bool array_unsigned() {
         TEST_START();
-        auto json = R"(["1", "2", "24", "9000", "156934"])"_padded;
+        auto json = R"(["1", "2", "24", "9000", "156934", "10588030077111859193", "18446744073709551615"])"_padded;
         ondemand::parser parser;
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
         size_t counter{0};
-        std::vector<int> expected = {1, 2, 24, 9000, 156934};
+        std::vector<uint64_t> expected = {1, 2, 24, 9000, 156934, UINT64_C(10588030077111859193), UINT64_C(18446744073709551615)};
         uint64_t u;
         for (auto value : doc) {
             ASSERT_SUCCESS(value.get_uint64_in_string().get(u));
@@ -86,7 +86,7 @@ namespace number_in_string_tests {
 
     bool object() {
         TEST_START();
-        auto json = R"({"a":"1.2", "b":"-2.342e2", "c":"22", "d":"-112358", "e":"1080", "f":"123456789"})"_padded;
+        auto json = R"({"a":"1.2", "b":"-2.342e2", "c":"22", "d":"-112358", "e":"1080", "f":"123456789", "g":"10588030077111859193"})"_padded;
         ondemand::parser parser;
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
@@ -110,6 +110,8 @@ namespace number_in_string_tests {
         ASSERT_EQUAL(u,expected[counter++]);
         ASSERT_SUCCESS(doc.find_field("f").get_uint64_in_string().get(u));
         ASSERT_EQUAL(u,expected[counter++]);
+        ASSERT_SUCCESS(doc.find_field("g").get_uint64_in_string().get(u));
+        ASSERT_EQUAL(u, UINT64_C(10588030077111859193));
         TEST_SUCCEED();
     }
 
