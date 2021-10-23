@@ -426,6 +426,11 @@ public:
   simdjson_really_inline std::string_view raw_json_token() noexcept;
 
   /**
+   * Returns the current location in the document if in bounds.
+   */
+  simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
+
+  /**
    * Get the value associated with the given JSON pointer.  We use the RFC 6901
    * https://tools.ietf.org/html/rfc6901 standard.
    *
@@ -623,6 +628,9 @@ public:
 
   /** @copydoc simdjson_really_inline std::string_view value::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+
+  /** @copydoc simdjson_really_inline simdjson_result<const char *> current_location() noexcept */
+  simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
 
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
 };
