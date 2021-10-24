@@ -237,6 +237,27 @@ namespace error_location_tests {
         ASSERT_EQUAL(ptr, "13.34.514 ");
         TEST_SUCCEED();
     }
+    bool current_location_in_value() {
+      TEST_START();
+      auto json = R"( {"a": {"b": "c"}} )"_padded;
+      ondemand::parser parser;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      simdjson_result<ondemand::value> a = doc["a"];
+      ASSERT_SUCCESS(a);
+      const char * ptr;
+      ASSERT_SUCCESS(a.current_location().get(ptr));
+      ASSERT_EQUAL(ptr, R"({"b": "c"}} )");
+      simdjson_result<ondemand::value> b = a["b"];
+      ASSERT_SUCCESS(b);
+      ASSERT_SUCCESS(b.current_location().get(ptr));
+      ASSERT_EQUAL(ptr, R"("c"}} )");
+      double d;
+      ASSERT_ERROR(b.get_double().get(d), INCORRECT_TYPE);
+      ASSERT_SUCCESS(b.current_location().get(ptr));
+      ASSERT_EQUAL(ptr, R"("c"}} )");
+      TEST_SUCCEED();
+    }
 
     bool run() {
         return  array() &&
@@ -253,6 +274,7 @@ namespace error_location_tests {
                 object_with_no_such_field() &&
                 number_parsing_error() &&
                 number_parsing_root_error() &&
+                current_location_in_value() &&
                 true;
     }
 
