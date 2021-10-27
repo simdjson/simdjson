@@ -53,17 +53,6 @@ inline void json_iterator::rewind() noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child(depth_t parent_depth) noexcept {
-  /***
-   * WARNING:
-   * Inside an object, a string value is a depth of +1 compared to the object. Yet a key
-   * is at the same depth as the object.
-   * But json_iterator cannot easily tell whether we are pointing at a key or a string value.
-   * Instead, it assumes that if you are pointing at a string, then it is a value, not a key.
-   * To be clear...
-   * the following code assumes that we are *not* pointing at a key. If we are then a bug
-   * will follow. Unfortunately, it is not possible for the json_iterator its to make this
-   * check.
-   */
   if (depth() <= parent_depth) { return SUCCESS; }
   switch (*return_current_and_advance()) {
     // TODO consider whether matching braces is a requirement: if non-matching braces indicates
@@ -91,19 +80,18 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child
       if (at_end()) { return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Missing [ or { at start"); }
 #endif // SIMDJSON_CHECK_EOF
       break;
-    /*case '"':
+    case '"':
       if(*peek() == ':') {
-        // we are at a key!!! This is
-        // only possible if someone searched
-        // for a key in an object and the key
-        // was not found but our code then
-        // decided the consume the separating
-        // comma before returning.
+        // We are at a key!!!
+        // This might happen if you just started an object and you skip it immediately.
+        // Performance note: it would be nice to get rid of this check as it is somewhat
+        // expensive.
+        // https://github.com/simdjson/simdjson/issues/1742
         logger::log_value(*this, "key");
-        advance(); // eat up the ':'
+        return_current_and_advance(); // eat up the ':'
         break; // important!!!
       }
-      simdjson_fallthrough;*/
+      simdjson_fallthrough;
     // Anything else must be a scalar value
     default:
       // For the first scalar, we will have incremented depth already, so we decrement it here.
