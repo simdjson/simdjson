@@ -808,6 +808,43 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
+  bool issue1742() {
+    TEST_START();
+    auto json = R"( {
+  "code": 0,
+  "method": "subscribe",
+  "result": {
+    "instrument_name": "DAI_USDC",
+    "subscription": "trade.DAI_USDC",
+    "channel": "trade",
+    "data": [
+      {
+        "dataTime": 1635315736764,
+        "d": 1928673075051012900,
+        "s": "SELL",
+        "p": 1.0004,
+        "q": 0.01,
+        "t": 1635315736763,
+        "i": "DAI_USDC"
+      }
+    ]
+  }
+} )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    simdjson::ondemand::array data;
+    ASSERT_SUCCESS(doc["result"]["data"].get_array().get(data));
+    for (auto d : data) {
+      simdjson::ondemand::object obj;
+      ASSERT_SUCCESS(d.get_object().get(obj));
+      size_t count;
+      ASSERT_SUCCESS(obj.count_fields().get(count));
+      ASSERT_EQUAL(count, 7);
+    }
+    TEST_SUCCEED();
+  }
+
   bool iterate_basic_object_count() {
     TEST_START();
     auto json = R"( {"a":-55, "b":3.23, "c":100000000000000000000, "d":true, "e":null} )"_padded;
@@ -915,6 +952,7 @@ namespace object_tests {
 
   bool run() {
     return
+           issue1742() &&
            issue1723() &&
            value_search_unescaped_key() &&
            missing_key_continue() &&

@@ -423,6 +423,36 @@ namespace array_tests {
     ASSERT_TRUE(is_empty);
     return true;
   }
+
+  bool issue1742() {
+    TEST_START();
+    auto json = R"( {
+  "code": 0,
+  "method": "subscribe",
+  "result": {
+    "instrument_name": "DAI_USDC",
+    "subscription": "trade.DAI_USDC",
+    "channel": "trade",
+    "data": [
+      [1,2,3,4]
+    ]
+  }
+} )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    simdjson::ondemand::array data;
+    ASSERT_SUCCESS(doc["result"]["data"].get_array().get(data));
+    for (auto d : data) {
+      simdjson::ondemand::array obj;
+      ASSERT_SUCCESS(d.get_array().get(obj));
+      size_t count;
+      ASSERT_SUCCESS(d.count_elements().get(count));
+      ASSERT_EQUAL(count, 4);
+    }
+    TEST_SUCCEED();
+  }
+
   bool value_to_array(simdjson::ondemand::value val) {
     ondemand::json_type t;
     ASSERT_SUCCESS(val.type().get(t));
@@ -780,6 +810,7 @@ namespace array_tests {
 
   bool run() {
     return
+           issue1742() &&
            empty_rewind_convoluted() &&
            empty_rewind() &&
            iterate_empty_array_count() &&
