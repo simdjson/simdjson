@@ -1,4 +1,4 @@
-/* auto-generated on 2021-10-20 12:15:35 -0400. Do not edit! */
+/* auto-generated on 2021-10-27 19:25:23 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -2189,7 +2189,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 1.0.1
+#define SIMDJSON_VERSION 1.0.2
 
 namespace simdjson {
 enum {
@@ -2204,7 +2204,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 1
+  SIMDJSON_VERSION_REVISION = 2
 };
 } // namespace simdjson
 
@@ -23585,6 +23585,21 @@ public:
    */
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
   /**
+   * This method scans the object and counts the number of key-value pairs.
+   * The count_fields method should always be called before you have begun
+   * iterating through the object: it is expected that you are pointing at
+   * the beginning of the object.
+   * The runtime complexity is linear in the size of the object. After
+   * calling this function, if successful, the object is 'rewinded' at its
+   * beginning as if it had never been accessed. If the JSON is malformed (e.g.,
+   * there is a missing comma), then an error is returned and it is no longer
+   * safe to continue.
+   *
+   * To check that an object is empty, it is more performant to use
+   * the is_empty() method on the object instance.
+   */
+  simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
+  /**
    * Get the value at the given index in the array. This function has linear-time complexity.
    * This function should only be called once as the array iterator is not reset between each call.
    *
@@ -23766,6 +23781,11 @@ public:
   simdjson_really_inline std::string_view raw_json_token() noexcept;
 
   /**
+   * Returns the current location in the document if in bounds.
+   */
+  simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
+
+  /**
    * Get the value associated with the given JSON pointer.  We use the RFC 6901
    * https://tools.ietf.org/html/rfc6901 standard.
    *
@@ -23892,6 +23912,7 @@ public:
   simdjson_really_inline operator bool() noexcept(false);
 #endif
   simdjson_really_inline simdjson_result<size_t> count_elements() & noexcept;
+  simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> at(size_t index) noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::array_iterator> begin() & noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::array_iterator> end() & noexcept;
@@ -23963,6 +23984,9 @@ public:
 
   /** @copydoc simdjson_really_inline std::string_view value::raw_json_token() const noexcept */
   simdjson_really_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+
+  /** @copydoc simdjson_really_inline simdjson_result<const char *> current_location() noexcept */
+  simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
 
   simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
 };
@@ -25660,17 +25684,6 @@ inline void json_iterator::rewind() noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child(depth_t parent_depth) noexcept {
-  /***
-   * WARNING:
-   * Inside an object, a string value is a depth of +1 compared to the object. Yet a key
-   * is at the same depth as the object.
-   * But json_iterator cannot easily tell whether we are pointing at a key or a string value.
-   * Instead, it assumes that if you are pointing at a string, then it is a value, not a key.
-   * To be clear...
-   * the following code assumes that we are *not* pointing at a key. If we are then a bug
-   * will follow. Unfortunately, it is not possible for the json_iterator its to make this
-   * check.
-   */
   if (depth() <= parent_depth) { return SUCCESS; }
   switch (*return_current_and_advance()) {
     // TODO consider whether matching braces is a requirement: if non-matching braces indicates
@@ -25698,19 +25711,18 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::skip_child
       if (at_end()) { return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Missing [ or { at start"); }
 #endif // SIMDJSON_CHECK_EOF
       break;
-    /*case '"':
+    case '"':
       if(*peek() == ':') {
-        // we are at a key!!! This is
-        // only possible if someone searched
-        // for a key in an object and the key
-        // was not found but our code then
-        // decided the consume the separating
-        // comma before returning.
+        // We are at a key!!!
+        // This might happen if you just started an object and you skip it immediately.
+        // Performance note: it would be nice to get rid of this check as it is somewhat
+        // expensive.
+        // https://github.com/simdjson/simdjson/issues/1742
         logger::log_value(*this, "key");
-        advance(); // eat up the ':'
+        return_current_and_advance(); // eat up the ':'
         break; // important!!!
       }
-      simdjson_fallthrough;*/
+      simdjson_fallthrough;
     // Anything else must be a scalar value
     default:
       // For the first scalar, we will have incremented depth already, so we decrement it here.
@@ -28148,6 +28160,13 @@ simdjson_really_inline simdjson_result<size_t> value::count_elements() & noexcep
   iter.move_at_start();
   return answer;
 }
+simdjson_really_inline simdjson_result<size_t> value::count_fields() & noexcept {
+  simdjson_result<size_t> answer;
+  auto a = get_object();
+  answer = a.count_fields();
+  iter.move_at_start();
+  return answer;
+}
 simdjson_really_inline simdjson_result<value> value::at(size_t index) noexcept {
   auto a = get_array();
   return a.at(index);
@@ -28203,6 +28222,10 @@ simdjson_really_inline std::string_view value::raw_json_token() noexcept {
   return std::string_view(reinterpret_cast<const char*>(iter.peek_start()), iter.peek_start_length());
 }
 
+simdjson_really_inline simdjson_result<const char *> value::current_location() noexcept {
+  return iter.json_iter().current_location();
+}
+
 simdjson_really_inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
   json_type t;
   SIMDJSON_TRY(type().get(t));
@@ -28240,6 +28263,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand
 simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::count_elements() & noexcept {
   if (error()) { return error(); }
   return first.count_elements();
+}
+simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::count_fields() & noexcept {
+  if (error()) { return error(); }
+  return first.count_fields();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::at(size_t index) noexcept {
   if (error()) { return error(); }
@@ -28411,6 +28438,11 @@ simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand
 simdjson_really_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::raw_json_token() noexcept {
   if (error()) { return error(); }
   return first.raw_json_token();
+}
+
+simdjson_really_inline simdjson_result<const char *> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::current_location() noexcept {
+  if (error()) { return error(); }
+  return first.current_location();
 }
 
 simdjson_really_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::at_pointer(std::string_view json_pointer) noexcept {
