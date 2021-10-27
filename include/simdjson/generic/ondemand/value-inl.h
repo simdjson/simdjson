@@ -114,6 +114,13 @@ simdjson_really_inline simdjson_result<size_t> value::count_elements() & noexcep
   iter.move_at_start();
   return answer;
 }
+simdjson_really_inline simdjson_result<size_t> value::count_fields() & noexcept {
+  simdjson_result<size_t> answer;
+  auto a = get_object();
+  answer = a.count_fields();
+  iter.move_at_start();
+  return answer;
+}
 simdjson_really_inline simdjson_result<value> value::at(size_t index) noexcept {
   auto a = get_array();
   return a.at(index);
@@ -210,6 +217,10 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
 simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::count_elements() & noexcept {
   if (error()) { return error(); }
   return first.count_elements();
+}
+simdjson_really_inline simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::count_fields() & noexcept {
+  if (error()) { return error(); }
+  return first.count_fields();
 }
 simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::at(size_t index) noexcept {
   if (error()) { return error(); }

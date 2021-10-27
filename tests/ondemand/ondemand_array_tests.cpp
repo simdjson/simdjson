@@ -444,10 +444,10 @@ namespace array_tests {
     simdjson::ondemand::array data;
     ASSERT_SUCCESS(doc["result"]["data"].get_array().get(data));
     for (auto d : data) {
-      simdjson::ondemand::array obj;
-      ASSERT_SUCCESS(d.get_array().get(obj));
+      simdjson::ondemand::array arr;
+      ASSERT_SUCCESS(d.get_array().get(arr));
       size_t count;
-      ASSERT_SUCCESS(d.count_elements().get(count));
+      ASSERT_SUCCESS(arr.count_elements().get(count));
       ASSERT_EQUAL(count, 4);
     }
     TEST_SUCCEED();
