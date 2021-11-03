@@ -6,6 +6,53 @@ using namespace simdjson;
 namespace object_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
+  bool issue1745() {
+    TEST_START();
+    auto json = R"({
+  "keys": [
+    {
+      "kid": "bbd2ac7c4c5eb8adc8eeffbc8f5a2dd6cf7545e4",
+      "e": "AQAB",
+      "alg": "RS256",
+      "use": "sig",
+      "n": "y930dtGTeMG52IPsKmMuEpPHLaxuYQlduZd6BqFVjc2-UFZR8fNqtnYzAjbXWJD_Tqxgdlj_MW4vogvX4sHwVpZONvdyeGoIyDQtis6iuGQhQamV85F_JbrEUnEw3QCO87Liz5UXG6BK2HRyPhDfMex1_tO0ROmySLFdCTS17D0wah71Ibpi0gI8LUi6kzVRjYDIC1oE-iK3Y9s88Bi4ZGYJxXAbnNwbwVkGOKCXja9k0jjBGRxZD-4KDuf493lFOOEGSLDA2Qp9rDqrURP12XYgvf_zJx_kSDipnr0gL6Vz2n3H4-XN4tA45zuzRkHoE7-XexPq-tv7kQ8pSjY2uQ",
+      "kty": "RSA"
+    },
+    {
+      "kty": "RSA",
+      "n": "zMHxWuxztMKXdBhv3rImlUvW_yp6nO03cVXPyA0Vyq0-M7LfOJJIF-OdNoRGdsFPHVKCFoo6qGhR8rBCmMxA4fM-Ubk5qKuUqCN9eP3yZJq8Cw9tUrt_qh7uW-qfMr0upcyeSHhC_zW1lTGs5sowDorKN_jQ1Sfh9hfBxfc8T7dQAAgEqqMcE3u-2J701jyhJz0pvurCfziiB3buY6SGREhBQwNwpnQjt_lE2U4km8FS0woPzt0ccE3zsGL2qM-LWZbOm9aXquSnqNJLt3tGVvShnev-GiJ1XfQ3EWm0f4w0TX9fTOkxstl0vo_vW_FjGQ0D1pXSjqb7n-hAdXwc9w",
+      "alg": "RS256",
+      "kid": "85828c59284a69b54b27483e487c3bd46cd2a2b3",
+      "e": "AQAB",
+      "use": "sig"
+    }
+  ]
+}
+
+  })"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    for (auto items_instance : doc["keys"]) {
+      ondemand::object items;
+      ASSERT_SUCCESS(items_instance.get_object().get(items));
+      std::string_view kty_value;
+      ASSERT_SUCCESS(items["kty"].get_string().get(kty_value));
+      std::string_view use_value;
+      ASSERT_SUCCESS(items["use"].get_string().get(use_value));
+      if (kty_value != "RSA" && use_value != "sig") { continue; }
+      std::string_view str;
+      ASSERT_SUCCESS(items["alg"].get_string().get(str));
+      ASSERT_EQUAL(str, "RS256");
+      ASSERT_EQUAL(use_value, "sig");
+      ASSERT_EQUAL(kty_value, "RSA");
+      ASSERT_SUCCESS(items["n"].get_string().get(str));
+      ASSERT_EQUAL(str.size(), 342);
+      ASSERT_SUCCESS(items["e"].get_string().get(str));
+      ASSERT_EQUAL(str, "AQAB");
+    }
+    TEST_SUCCEED();
+  }
 
   bool issue1723() {
     TEST_START();
@@ -178,6 +225,47 @@ namespace object_tests {
   }
 
 #if SIMDJSON_EXCEPTIONS
+  bool issue1745_with_exceptions() {
+    TEST_START();
+    auto json = R"({
+  "keys": [
+    {
+      "kid": "bbd2ac7c4c5eb8adc8eeffbc8f5a2dd6cf7545e4",
+      "e": "AQAB",
+      "alg": "RS256",
+      "use": "sig",
+      "n": "y930dtGTeMG52IPsKmMuEpPHLaxuYQlduZd6BqFVjc2-UFZR8fNqtnYzAjbXWJD_Tqxgdlj_MW4vogvX4sHwVpZONvdyeGoIyDQtis6iuGQhQamV85F_JbrEUnEw3QCO87Liz5UXG6BK2HRyPhDfMex1_tO0ROmySLFdCTS17D0wah71Ibpi0gI8LUi6kzVRjYDIC1oE-iK3Y9s88Bi4ZGYJxXAbnNwbwVkGOKCXja9k0jjBGRxZD-4KDuf493lFOOEGSLDA2Qp9rDqrURP12XYgvf_zJx_kSDipnr0gL6Vz2n3H4-XN4tA45zuzRkHoE7-XexPq-tv7kQ8pSjY2uQ",
+      "kty": "RSA"
+    },
+    {
+      "kty": "RSA",
+      "n": "zMHxWuxztMKXdBhv3rImlUvW_yp6nO03cVXPyA0Vyq0-M7LfOJJIF-OdNoRGdsFPHVKCFoo6qGhR8rBCmMxA4fM-Ubk5qKuUqCN9eP3yZJq8Cw9tUrt_qh7uW-qfMr0upcyeSHhC_zW1lTGs5sowDorKN_jQ1Sfh9hfBxfc8T7dQAAgEqqMcE3u-2J701jyhJz0pvurCfziiB3buY6SGREhBQwNwpnQjt_lE2U4km8FS0woPzt0ccE3zsGL2qM-LWZbOm9aXquSnqNJLt3tGVvShnev-GiJ1XfQ3EWm0f4w0TX9fTOkxstl0vo_vW_FjGQ0D1pXSjqb7n-hAdXwc9w",
+      "alg": "RS256",
+      "kid": "85828c59284a69b54b27483e487c3bd46cd2a2b3",
+      "e": "AQAB",
+      "use": "sig"
+    }
+  ]
+}
+
+  })"_padded;
+    ondemand::parser parser;
+    ondemand::document doc = parser.iterate(json);
+    for (auto items : doc["keys"]) {
+      std::string_view kty_value = items["kty"].get_string();
+      std::string_view use_value = items["use"].get_string();
+      if (kty_value != "RSA" && use_value != "sig") { continue; }
+      std::string_view str = items["alg"].get_string();
+      if(str != "RS256") { return false; }
+      if(use_value != "sig") { return false; }
+      if(kty_value != "RSA") { return false; }
+      str = items["n"].get_string();
+      if(str.size() != 342) { return false; }
+      str = items["e"].get_string();
+      if(str != "AQAB") { return false; }
+    }
+    TEST_SUCCEED();
+  }
 
   bool issue1723_except() {
     TEST_START();
@@ -988,6 +1076,7 @@ namespace object_tests {
 
   bool run() {
     return
+           issue1745() &&
            issue1742() &&
            issue1742_value() &&
            issue1723() &&
@@ -997,6 +1086,7 @@ namespace object_tests {
            missing_keys() &&
            missing_keys_for_empty_top_level_object() &&
 #if SIMDJSON_EXCEPTIONS
+           issue1745_with_exceptions() &&
            issue1723_except() &&
            fixed_broken_issue_1521() &&
            issue_1521() &&
