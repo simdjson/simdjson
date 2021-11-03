@@ -80,25 +80,25 @@ public:
   /**
    * Log that a value has been found.
    *
-   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   * Set LOG_ENABLED=true in logger.h to see logging.
    */
   simdjson_really_inline void log_value(const char *type) const noexcept;
   /**
    * Log the start of a multipart value.
    *
-   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   * Set LOG_ENABLED=true in logger.h to see logging.
    */
   simdjson_really_inline void log_start_value(const char *type) const noexcept;
   /**
    * Log the end of a multipart value.
    *
-   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   * Set LOG_ENABLED=true in logger.h to see logging.
    */
   simdjson_really_inline void log_end_value(const char *type) const noexcept;
   /**
    * Log an error.
    *
-   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   * Set LOG_ENABLED=true in logger.h to see logging.
    */
   simdjson_really_inline void log_error(const char *error) const noexcept;
 
