@@ -94,6 +94,8 @@ public:
    *
    * The string is guaranteed to be valid UTF-8.
    *
+   * Important: Calling get_string() twice on the same document is an error.
+   *
    * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
    *          time it parses a document or when it is destroyed.
    * @returns INCORRECT_TYPE if the JSON value is not a string.
@@ -311,6 +313,10 @@ public:
    * the code in Debug mode (or with the macro `SIMDJSON_DEVELOPMENT_CHECKS` set to 1): an
    * OUT_OF_ORDER_ITERATION error is generated.
    *
+   * You are expected to access keys only once. You should access the value corresponding to
+   * a key a single time. Doing object["mykey"].to_string()and then again object["mykey"].to_string()
+   * is an error.
+   *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
    */
@@ -340,6 +346,10 @@ public:
    * content["asks"].get_array(). You can detect such mistakes by first compiling and running
    * the code in Debug mode (or with the macro `SIMDJSON_DEVELOPMENT_CHECKS` set to 1): an
    * OUT_OF_ORDER_ITERATION error is generated.
+   *
+   * You are expected to access keys only once. You should access the value corresponding to a key
+   * a single time. Doing object["mykey"].to_string() and then again object["mykey"].to_string()
+   * is an error.
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.

@@ -121,6 +121,9 @@ public:
    *
    * Equivalent to get<std::string_view>().
    *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
+   *
    * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
    *          time it parses a document or when it is destroyed.
    * @returns INCORRECT_TYPE if the JSON value is not a string.
