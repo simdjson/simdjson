@@ -3,8 +3,8 @@ The Document-Object-Model (DOM) front-end
 
 An overview of what you need to know to use simdjson, with examples.
 
-* [DOM vs On Demand](#dom-vs-ondemand)
-* [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents)
+* [DOM vs On Demand](#dom-vs-on-demand)
+* [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents-using-the-dom-front-end)
 * [Using the Parsed JSON](#using-the-parsed-json)
 * [C++17 Support](#c17-support)
 * [JSON Pointer](#json-pointer)
