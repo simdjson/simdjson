@@ -124,11 +124,11 @@ simdjson_really_inline uint64_t follows(const uint64_t match, uint64_t &overflow
 
 simdjson_really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
   json_string_block strings = string_scanner.next(in);
-  // identifies the white-space and the structurat characters
+  // identifies the white-space and the structural characters
   json_character_block characters = json_character_block::classify(in);
   // The term "scalar" refers to anything except structural characters and white space
   // (so letters, numbers, quotes).
-  // We want  follows_scalar to mark anything that follows a non-quote scalar (so letters and numbers).
+  // We want follows_scalar to mark anything that follows a non-quote scalar (so letters and numbers).
   //
   // A terminal quote should either be followed by a structural character (comma, brace, bracket, colon)
   // or nothing. However, we still want ' "a string"true ' to mark the 't' of 'true' as a potential
