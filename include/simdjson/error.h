@@ -7,7 +7,12 @@
 namespace simdjson {
 
 /**
- * All possible errors returned by simdjson.
+ * All possible errors returned by simdjson. These error codes are subject to change
+ * and not all simdjson kernel returns the same error code given the same input: it is not
+ * well defined which error a given input should produce.
+ *
+ * Only SUCCESS evaluates to false as a Boolean. All other error codes will evaluate
+ * to true as a Boolean.
  */
 enum error_code {
   SUCCESS = 0,                ///< No error

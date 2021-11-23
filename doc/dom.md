@@ -249,7 +249,11 @@ auto error = parser.parse(json).get(doc);
 if (error) { cerr << error << endl; exit(1); }
 ```
 
-When you use the code this way, it is your responsibility to check for error before using the
+When there is no error, the error code simdjson::SUCCESS is returned: it evaluates as false as a Boolean.
+We have several error codes to indicate errors, they all evaluate to true as a Boolean: your software should not generally not depend on exact
+error codes. We may change the error codes in future releases and the exact error codes could vary depending on your system.
+
+When you use the code without exceptions, it is your responsibility to check for error before using the
 result: if there is an error, the result value will not be valid and using it will caused undefined
 behavior.
 
