@@ -111,7 +111,6 @@ protected:
     uint64_t unsigned_integer;
   } payload{0};
   number_type type{number_type::signed_integer};
-  friend class value_iterator;
 };
 
 /**
