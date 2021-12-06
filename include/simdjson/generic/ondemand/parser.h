@@ -182,7 +182,7 @@ public:
    * The characters inside a JSON document, and between JSON documents, must be valid Unicode (UTF-8).
    *
    * The documents must not exceed batch_size bytes (by default 1MB) or they will fail to parse.
-   * Setting batch_size to excessively large or excesively small values may impact negatively the
+   * Setting batch_size to excessively large or excessively small values may impact negatively the
    * performance.
    *
    * ### REQUIRED: Buffer Padding
