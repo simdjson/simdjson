@@ -156,7 +156,7 @@ namespace document_stream_tests {
 			"pd": 60,
 			"sz": 3,
 			"l": [
-				"watts (est. ligth) ",
+				"watts (est. light) ",
 				"watts (1.9~gpm) ",
 				"watts (1gpm) "
 			],

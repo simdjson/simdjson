@@ -133,7 +133,7 @@ namespace number_in_string_tests {
         ASSERT_SUCCESS(parser.iterate(int_doc).get(doc));
         ASSERT_SUCCESS(doc.get_int64_in_string().get(i));
         ASSERT_EQUAL(i,-243);
-        // Unsinged integer
+        // Unsigned integer
         ASSERT_SUCCESS(parser.iterate(uint_doc).get(doc));
         ASSERT_SUCCESS(doc.get_uint64_in_string().get(u));
         ASSERT_EQUAL(u,212213);
