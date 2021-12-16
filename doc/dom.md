@@ -81,7 +81,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`
 * **Object Iteration:** You can iterate through an object's fields, too: `for (auto [key, value] : object)`
 * **Array Index:** To get at an array value by index, use the at() method: `array.at(0)` gets the
-  first element.
+  first element. The at() method has linear-time complexity so it should not be used to iterate over the values of an array.
   > Note that array[0] does not compile, because implementing [] gives the impression indexing is a
   > O(1) operation, which it is not presently in simdjson. Instead, you should iterate over the elements
   > using a for-loop, as in our examples.
@@ -321,6 +321,9 @@ int main(void) {
   return EXIT_SUCCESS;
 }
 ```
+
+The `at()` method has linear-time complexity: it should not be used to iterate
+over the content of an array.
 
 ### Error Handling Example
 
