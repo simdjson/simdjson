@@ -263,7 +263,7 @@ void basics_ndjson_parse_many() {
   }
 }
 void implementation_selection_1() {
-  cout << "simdjson v" << STRINGIFY(SIMDJSON_VERSION) << endl;
+  cout << "simdjson v" << SIMDJSON_STRINGIFY(SIMDJSON_VERSION) << endl;
   cout << "Detected the best implementation for your machine: " << simdjson::active_implementation->name();
   cout << "(" << simdjson::active_implementation->description() << ")" << endl;
 }

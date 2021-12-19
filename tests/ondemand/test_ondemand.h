@@ -41,7 +41,7 @@ bool test_ondemand_doc(const simdjson::padded_string &json, const F& f) {
 }
 
 const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
-#define SIMDJSON_SHOW_DEFINE(x) printf("%s=%s\n", #x, STRINGIFY(x))
+#define SIMDJSON_SHOW_DEFINE(x) printf("%s=%s\n", #x, SIMDJSON_STRINGIFY(x))
 
 template<typename F>
 int test_main(int argc, char *argv[], const F& test_function) {

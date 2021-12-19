@@ -154,7 +154,7 @@ simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) noexcept {
 }
 
 const implementation * builtin_implementation() {
-  static const implementation * builtin_impl = available_implementations[STRINGIFY(SIMDJSON_BUILTIN_IMPLEMENTATION)];
+  static const implementation * builtin_impl = available_implementations[SIMDJSON_STRINGIFY(SIMDJSON_BUILTIN_IMPLEMENTATION)];
   assert(builtin_impl);
   return builtin_impl;
 }

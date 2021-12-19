@@ -361,7 +361,7 @@ error_code slow_float_parsing(simdjson_unused const uint8_t * src, W writer) {
 }
 
 template<typename I>
-NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
+SIMDJSON_NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
 simdjson_really_inline bool parse_digit(const uint8_t c, I &i) {
   const uint8_t digit = static_cast<uint8_t>(c - '0');
   if (digit > 9) {

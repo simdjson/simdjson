@@ -8,7 +8,7 @@ namespace {
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
-NO_SANITIZE_UNDEFINED
+SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_really_inline int trailing_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
@@ -73,7 +73,7 @@ simdjson_really_inline uint64_t reverse_bits(uint64_t input_num) {
  * greating or equal to 63 in which case we trigger undefined behavior, but the output
  * of such undefined behavior is never used.
  **/
-NO_SANITIZE_UNDEFINED
+SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_really_inline uint64_t zero_leading_bit(uint64_t rev_bits, int leading_zeroes) {
   return rev_bits ^ (uint64_t(0x8000000000000000) >> leading_zeroes);
 }
