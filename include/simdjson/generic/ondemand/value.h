@@ -264,7 +264,7 @@ public:
   simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
   /**
    * Get the value at the given index in the array. This function has linear-time complexity.
-   * This function should only be called once as the array iterator is not reset between each call.
+   * This function should only be called once on an array instance since the array iterator is not reset between each call.
    *
    * @return The value at the given index, or:
    *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length

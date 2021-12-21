@@ -892,6 +892,8 @@ int main(void) {
 }
 ```
 
+The `at` method can only be called once on an array. It cannot be used
+to iterate through the values of an array.
 
 ### Error Handling Examples without Exceptions
 
