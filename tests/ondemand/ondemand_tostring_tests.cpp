@@ -13,6 +13,26 @@
 #include <vector>
 
 #include "simdjson.h"
+
+
+/**
+ * What follows is merely a compilation test to verify
+ * https://github.com/simdjson/simdjson/issues/1768
+ * It deliberately resides before any namespace declaration
+ * within this file.
+ */
+namespace issue1768 {
+  template <typename T> void print(const T &a) { std::cout << a; }
+} // namespace NA
+
+void issue1768_test() {
+  simdjson::ondemand::object obj;
+  issue1768::print(obj);
+}
+/**
+ * End of 1768 compilation check.
+ */
+
 using namespace simdjson;
 
 #include "test_ondemand.h"
@@ -437,6 +457,9 @@ bool run() {
 }
 
 } // namespace tostring_tests
+
+
+
 
 int main(int argc, char *argv[]) {
   return test_main(argc, argv, tostring_tests::run);

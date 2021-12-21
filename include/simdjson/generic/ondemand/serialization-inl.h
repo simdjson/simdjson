@@ -99,6 +99,7 @@ inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON
 }
 } // namespace simdjson
 
+namespace simdjson { namespace SIMDJSON_IMPLEMENTATION { namespace ondemand {
 
 #if SIMDJSON_EXCEPTIONS
 inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value x) {
@@ -216,3 +217,4 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTA
   }
 }
 #endif
+}}} // namespace simdjson::SIMDJSON_IMPLEMENTATION::ondemand

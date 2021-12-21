@@ -29,6 +29,14 @@ inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON
 inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> x);
 } // namespace simdjson
 
+/**
+ * We want to support argument-dependent lookup (ADL).
+ * Hence we should define operator<< in the namespace
+ * where the argument (here value, object, etc.) resides.
+ * Credit: @madhur4127
+ * See https://github.com/simdjson/simdjson/issues/1768
+ */
+namespace simdjson { namespace SIMDJSON_IMPLEMENTATION { namespace ondemand {
 
 /**
  * Print JSON to an output stream.
@@ -78,3 +86,4 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTA
 #if SIMDJSON_EXCEPTIONS
 inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object> x);
 #endif
+}}} // namespace simdjson::SIMDJSON_IMPLEMENTATION::ondemand
