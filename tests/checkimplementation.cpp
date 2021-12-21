@@ -3,7 +3,7 @@
 #include <cstring>
 
 int main(int argc, const char *argv[]) {
-  std::cout << "simdjson v" << STRINGIFY(SIMDJSON_VERSION) << " is running the " << simdjson::active_implementation->name() << " implementation." << std::endl;
+  std::cout << "simdjson v" << SIMDJSON_STRINGIFY(SIMDJSON_VERSION) << " is running the " << simdjson::active_implementation->name() << " implementation." << std::endl;
   const char *expected_implementation = nullptr;
   if (argc > 1) {
     expected_implementation = argv[1];

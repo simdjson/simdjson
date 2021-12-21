@@ -71,10 +71,10 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 #endif // SIMDJSON_IS_32BITS
 
 // this is almost standard?
-#undef STRINGIFY_IMPLEMENTATION_
-#undef STRINGIFY
-#define STRINGIFY_IMPLEMENTATION_(a) #a
-#define STRINGIFY(a) STRINGIFY_IMPLEMENTATION_(a)
+#undef SIMDJSON_STRINGIFY_IMPLEMENTATION_
+#undef SIMDJSON_STRINGIFY
+#define SIMDJSON_STRINGIFY_IMPLEMENTATION_(a) #a
+#define SIMDJSON_STRINGIFY(a) SIMDJSON_STRINGIFY_IMPLEMENTATION_(a)
 
 // Our fast kernels require 64-bit systems.
 //
@@ -98,13 +98,13 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 // til 8.0 so SIMDJSON_TARGET_REGION and SIMDJSON_UNTARGET_REGION must be *outside* of a
 // namespace.
 #define SIMDJSON_TARGET_REGION(T)                                                       \
-  _Pragma(STRINGIFY(                                                           \
+  _Pragma(SIMDJSON_STRINGIFY(                                                           \
       clang attribute push(__attribute__((target(T))), apply_to = function)))
 #define SIMDJSON_UNTARGET_REGION _Pragma("clang attribute pop")
 #elif defined(__GNUC__)
 // GCC is easier
 #define SIMDJSON_TARGET_REGION(T)                                                       \
-  _Pragma("GCC push_options") _Pragma(STRINGIFY(GCC target(T)))
+  _Pragma("GCC push_options") _Pragma(SIMDJSON_STRINGIFY(GCC target(T)))
 #define SIMDJSON_UNTARGET_REGION _Pragma("GCC pop_options")
 #endif // clang then gcc
 
@@ -138,11 +138,11 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 
 
 #if defined(__clang__)
-#define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
+#define SIMDJSON_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
 #elif defined(__GNUC__)
-#define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
+#define SIMDJSON_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
 #else
-#define NO_SANITIZE_UNDEFINED
+#define SIMDJSON_NO_SANITIZE_UNDEFINED
 #endif
 
 #ifdef SIMDJSON_VISUAL_STUDIO
