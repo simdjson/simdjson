@@ -50,7 +50,7 @@ Inspecting the Detected Implementation
 You can check what implementation is running with `active_implementation`:
 
 ```c++
-cout << "simdjson v" << STRINGIFY(SIMDJSON_VERSION) << endl;
+cout << "simdjson v" << SIMDJSON_STRINGIFY(SIMDJSON_VERSION) << endl;
 cout << "Detected the best implementation for your machine: " << simdjson::active_implementation->name();
 cout << "(" << simdjson::active_implementation->description() << ")" << endl;
 ```
