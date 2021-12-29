@@ -1,4 +1,4 @@
-/* auto-generated on 2021-10-27 19:25:23 -0400. Do not edit! */
+/* auto-generated on 2021-12-29 22:23:52 +0000. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -160,10 +160,10 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 #endif // SIMDJSON_IS_32BITS
 
 // this is almost standard?
-#undef STRINGIFY_IMPLEMENTATION_
-#undef STRINGIFY
-#define STRINGIFY_IMPLEMENTATION_(a) #a
-#define STRINGIFY(a) STRINGIFY_IMPLEMENTATION_(a)
+#undef SIMDJSON_STRINGIFY_IMPLEMENTATION_
+#undef SIMDJSON_STRINGIFY
+#define SIMDJSON_STRINGIFY_IMPLEMENTATION_(a) #a
+#define SIMDJSON_STRINGIFY(a) SIMDJSON_STRINGIFY_IMPLEMENTATION_(a)
 
 // Our fast kernels require 64-bit systems.
 //
@@ -187,13 +187,13 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 // til 8.0 so SIMDJSON_TARGET_REGION and SIMDJSON_UNTARGET_REGION must be *outside* of a
 // namespace.
 #define SIMDJSON_TARGET_REGION(T)                                                       \
-  _Pragma(STRINGIFY(                                                           \
+  _Pragma(SIMDJSON_STRINGIFY(                                                           \
       clang attribute push(__attribute__((target(T))), apply_to = function)))
 #define SIMDJSON_UNTARGET_REGION _Pragma("clang attribute pop")
 #elif defined(__GNUC__)
 // GCC is easier
 #define SIMDJSON_TARGET_REGION(T)                                                       \
-  _Pragma("GCC push_options") _Pragma(STRINGIFY(GCC target(T)))
+  _Pragma("GCC push_options") _Pragma(SIMDJSON_STRINGIFY(GCC target(T)))
 #define SIMDJSON_UNTARGET_REGION _Pragma("GCC pop_options")
 #endif // clang then gcc
 
@@ -227,11 +227,11 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 
 
 #if defined(__clang__)
-#define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
+#define SIMDJSON_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
 #elif defined(__GNUC__)
-#define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
+#define SIMDJSON_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
 #else
-#define NO_SANITIZE_UNDEFINED
+#define SIMDJSON_NO_SANITIZE_UNDEFINED
 #endif
 
 #ifdef SIMDJSON_VISUAL_STUDIO
@@ -2219,7 +2219,12 @@ enum {
 namespace simdjson {
 
 /**
- * All possible errors returned by simdjson.
+ * All possible errors returned by simdjson. These error codes are subject to change
+ * and not all simdjson kernel returns the same error code given the same input: it is not
+ * well defined which error a given input should produce.
+ *
+ * Only SUCCESS evaluates to false as a Boolean. All other error codes will evaluate
+ * to true as a Boolean.
  */
 enum error_code {
   SUCCESS = 0,                ///< No error
@@ -3247,7 +3252,7 @@ public:
   /**
    * The name of this implementation.
    *
-   *     const implementation *impl = simdjson::active_implementation;
+   *     const implementation *impl = simdjson::get_active_implementation();
    *     cout << "simdjson is optimized for " << impl->name() << "(" << impl->description() << ")" << endl;
    *
    * @return the name of the implementation, e.g. "haswell", "westmere", "arm64"
@@ -3257,7 +3262,7 @@ public:
   /**
    * The description of this implementation.
    *
-   *     const implementation *impl = simdjson::active_implementation;
+   *     const implementation *impl = simdjson::get_active_implementation();
    *     cout << "simdjson is optimized for " << impl->name() << "(" << impl->description() << ")" << endl;
    *
    * @return the name of the implementation, e.g. "haswell", "westmere", "arm64"
@@ -3286,7 +3291,7 @@ public:
   /**
    * @private For internal implementation use
    *
-   *     const implementation *impl = simdjson::active_implementation;
+   *     const implementation *impl = simdjson::get_active_implementation();
    *     cout << "simdjson is optimized for " << impl->name() << "(" << impl->description() << ")" << endl;
    *
    * @param capacity The largest document that will be passed to the parser.
@@ -3380,10 +3385,10 @@ public:
    *
    * Case sensitive.
    *
-   *     const implementation *impl = simdjson::available_implementations["westmere"];
+   *     const implementation *impl = simdjson::get_available_implementations()["westmere"];
    *     if (!impl) { exit(1); }
    *     if (!imp->supported_by_runtime_system()) { exit(1); }
-   *     simdjson::active_implementation = impl;
+   *     simdjson::get_active_implementation() = impl;
    *
    * @param name the implementation to find, e.g. "westmere", "haswell", "arm64"
    * @return the implementation, or nullptr if the parse failed.
@@ -3401,7 +3406,7 @@ public:
    * This is used to initialize the implementation on startup.
    *
    *     const implementation *impl = simdjson::available_implementation::detect_best_supported();
-   *     simdjson::active_implementation = impl;
+   *     simdjson::get_active_implementation() = impl;
    *
    * @return the most advanced supported implementation for the current host, or an
    *         implementation that returns UNSUPPORTED_ARCHITECTURE if there is no supported
@@ -3433,14 +3438,14 @@ private:
 /**
  * The list of available implementations compiled into simdjson.
  */
-extern SIMDJSON_DLLIMPORTEXPORT const internal::available_implementation_list available_implementations;
+extern SIMDJSON_DLLIMPORTEXPORT const internal::available_implementation_list& get_available_implementations();
 
 /**
   * The active implementation.
   *
   * Automatically initialized on first use to the most advanced implementation supported by this hardware.
   */
-extern SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation> active_implementation;
+extern SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation>& get_active_implementation();
 
 } // namespace simdjson
 
@@ -8672,7 +8677,7 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   if (implementation) {
     err = implementation->allocate(capacity, max_depth);
   } else {
-    err = simdjson::active_implementation->create_dom_parser_implementation(capacity, max_depth, implementation);
+    err = simdjson::get_active_implementation()->create_dom_parser_implementation(capacity, max_depth, implementation);
   }
   if (err) { return err; }
   return SUCCESS;
@@ -9420,9 +9425,13 @@ extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
 #ifndef SIMDJSON_IMPLEMENTATION_HASWELL
 #define SIMDJSON_IMPLEMENTATION_HASWELL (SIMDJSON_IS_X86_64)
 #endif
+#ifdef _MSC_VER
 // To see why  (__BMI__) && (__PCLMUL__) && (__LZCNT__) are not part of this next line, see
 // https://github.com/simdjson/simdjson/issues/1247
 #define SIMDJSON_CAN_ALWAYS_RUN_HASWELL ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__))
+#else
+#define SIMDJSON_CAN_ALWAYS_RUN_HASWELL ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__))
+#endif
 
 // Default Westmere to on if this is x86-64, unless we'll always select Haswell.
 #ifndef SIMDJSON_IMPLEMENTATION_WESTMERE
@@ -9598,7 +9607,7 @@ namespace {
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
-NO_SANITIZE_UNDEFINED
+SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_really_inline int trailing_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
@@ -9663,7 +9672,7 @@ simdjson_really_inline uint64_t reverse_bits(uint64_t input_num) {
  * greating or equal to 63 in which case we trigger undefined behavior, but the output
  * of such undefined behavior is never used.
  **/
-NO_SANITIZE_UNDEFINED
+SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_really_inline uint64_t zero_leading_bit(uint64_t rev_bits, int leading_zeroes) {
   return rev_bits ^ (uint64_t(0x8000000000000000) >> leading_zeroes);
 }
@@ -11021,7 +11030,7 @@ error_code slow_float_parsing(simdjson_unused const uint8_t * src, W writer) {
 }
 
 template<typename I>
-NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
+SIMDJSON_NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
 simdjson_really_inline bool parse_digit(const uint8_t c, I &i) {
   const uint8_t digit = static_cast<uint8_t>(c - '0');
   if (digit > 9) {
@@ -12854,7 +12863,7 @@ error_code slow_float_parsing(simdjson_unused const uint8_t * src, W writer) {
 }
 
 template<typename I>
-NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
+SIMDJSON_NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
 simdjson_really_inline bool parse_digit(const uint8_t c, I &i) {
   const uint8_t digit = static_cast<uint8_t>(c - '0');
   if (digit > 9) {
@@ -13961,7 +13970,7 @@ namespace {
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
-NO_SANITIZE_UNDEFINED
+SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_really_inline int trailing_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   return (int)_tzcnt_u64(input_num);
@@ -15172,7 +15181,7 @@ error_code slow_float_parsing(simdjson_unused const uint8_t * src, W writer) {
 }
 
 template<typename I>
-NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
+SIMDJSON_NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
 simdjson_really_inline bool parse_digit(const uint8_t c, I &i) {
   const uint8_t digit = static_cast<uint8_t>(c - '0');
   if (digit > 9) {
@@ -16234,7 +16243,7 @@ namespace {
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
-NO_SANITIZE_UNDEFINED
+SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_really_inline int trailing_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
@@ -17589,7 +17598,7 @@ error_code slow_float_parsing(simdjson_unused const uint8_t * src, W writer) {
 }
 
 template<typename I>
-NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
+SIMDJSON_NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
 simdjson_really_inline bool parse_digit(const uint8_t c, I &i) {
   const uint8_t digit = static_cast<uint8_t>(c - '0');
   if (digit > 9) {
@@ -18672,7 +18681,7 @@ namespace {
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
-NO_SANITIZE_UNDEFINED
+SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_really_inline int trailing_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
@@ -19864,7 +19873,7 @@ error_code slow_float_parsing(simdjson_unused const uint8_t * src, W writer) {
 }
 
 template<typename I>
-NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
+SIMDJSON_NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
 simdjson_really_inline bool parse_digit(const uint8_t c, I &i) {
   const uint8_t digit = static_cast<uint8_t>(c - '0');
   if (digit > 9) {
@@ -21048,7 +21057,6 @@ protected:
     uint64_t unsigned_integer;
   } payload{0};
   number_type type{number_type::signed_integer};
-  friend class value_iterator;
 };
 
 /**
@@ -22512,7 +22520,7 @@ public:
 
   /**
    * Get the value at the given index. This function has linear-time complexity.
-   * This function should only be called once on an array instance since the iterator is not reset between each call.
+   * This function should only be called once on an array instance since the array iterator is not reset between each call.
    *
    * @return The value at the given index, or:
    *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
@@ -22694,6 +22702,8 @@ public:
    *
    * The string is guaranteed to be valid UTF-8.
    *
+   * Important: Calling get_string() twice on the same document is an error.
+   *
    * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
    *          time it parses a document or when it is destroyed.
    * @returns INCORRECT_TYPE if the JSON value is not a string.
@@ -22867,7 +22877,7 @@ public:
   simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
   /**
    * Get the value at the given index in the array. This function has linear-time complexity.
-   * This function should only be called once as the array iterator is not reset between each call.
+   * This function should only be called once on an array instance since the array iterator is not reset between each call.
    *
    * @return The value at the given index, or:
    *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
@@ -22911,6 +22921,10 @@ public:
    * the code in Debug mode (or with the macro `SIMDJSON_DEVELOPMENT_CHECKS` set to 1): an
    * OUT_OF_ORDER_ITERATION error is generated.
    *
+   * You are expected to access keys only once. You should access the value corresponding to
+   * a key a single time. Doing object["mykey"].to_string()and then again object["mykey"].to_string()
+   * is an error.
+   *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
    */
@@ -22940,6 +22954,10 @@ public:
    * content["asks"].get_array(). You can detect such mistakes by first compiling and running
    * the code in Debug mode (or with the macro `SIMDJSON_DEVELOPMENT_CHECKS` set to 1): an
    * OUT_OF_ORDER_ITERATION error is generated.
+   *
+   * You are expected to access keys only once. You should access the value corresponding to a key
+   * a single time. Doing object["mykey"].to_string() and then again object["mykey"].to_string()
+   * is an error.
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -23113,7 +23131,7 @@ public:
   simdjson_really_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
   /**
    * Consumes the document and returns a string_view instance corresponding to the
-   * document as represented in JSON. It points inside the original byte array containg
+   * document as represented in JSON. It points inside the original byte array containing
    * the JSON document.
    */
   simdjson_really_inline simdjson_result<std::string_view> raw_json() noexcept;
@@ -23461,6 +23479,9 @@ public:
    *
    * Equivalent to get<std::string_view>().
    *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
+   *
    * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
    *          time it parses a document or when it is destroyed.
    * @returns INCORRECT_TYPE if the JSON value is not a string.
@@ -23601,7 +23622,7 @@ public:
   simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
   /**
    * Get the value at the given index in the array. This function has linear-time complexity.
-   * This function should only be called once as the array iterator is not reset between each call.
+   * This function should only be called once on an array instance since the array iterator is not reset between each call.
    *
    * @return The value at the given index, or:
    *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
@@ -24112,6 +24133,10 @@ public:
    * the code in Debug mode (or with the macro `SIMDJSON_DEVELOPMENT_CHECKS` set to 1): an
    * OUT_OF_ORDER_ITERATION error is generated.
    *
+   * You are expected to access keys only once. You should access the value corresponding to a
+   * key a single time. Doing object["mykey"].to_string() and then again object["mykey"].to_string()
+   * is an error.
+   *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
    */
@@ -24144,6 +24169,9 @@ public:
    * content["asks"].get_array(). You can detect such mistakes by first compiling and running
    * the code in Debug mode (or with the macro `SIMDJSON_DEVELOPMENT_CHECKS` set to 1): an
    * OUT_OF_ORDER_ITERATION error is generated.
+   *
+   * You are expected to access keys only once. You should access the value corresponding to a key
+   * a single time. Doing object["mykey"].to_string() and then again object["mykey"].to_string() is an error.
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -24468,7 +24496,7 @@ public:
    * The characters inside a JSON document, and between JSON documents, must be valid Unicode (UTF-8).
    *
    * The documents must not exceed batch_size bytes (by default 1MB) or they will fail to parse.
-   * Setting batch_size to excessively large or excesively small values may impact negatively the
+   * Setting batch_size to excessively large or excessively small values may impact negatively the
    * performance.
    *
    * ### REQUIRED: Buffer Padding
@@ -24930,6 +24958,14 @@ inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON
 inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::array> x);
 } // namespace simdjson
 
+/**
+ * We want to support argument-dependent lookup (ADL).
+ * Hence we should define operator<< in the namespace
+ * where the argument (here value, object, etc.) resides.
+ * Credit: @madhur4127
+ * See https://github.com/simdjson/simdjson/issues/1768
+ */
+namespace simdjson { namespace SIMDJSON_BUILTIN_IMPLEMENTATION { namespace ondemand {
 
 /**
  * Print JSON to an output stream.
@@ -24979,6 +25015,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_BUILTIN_IM
 #if SIMDJSON_EXCEPTIONS
 inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::object> x);
 #endif
+}}} // namespace simdjson::SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand
 /* end file include/simdjson/generic/ondemand/serialization.h */
 /* end file include/simdjson/generic/ondemand.h */
 
@@ -28787,7 +28824,7 @@ simdjson_warn_unused simdjson_really_inline error_code parser::allocate(size_t n
     SIMDJSON_TRY( implementation->set_capacity(new_capacity) );
     SIMDJSON_TRY( implementation->set_max_depth(new_max_depth) );
   } else {
-    SIMDJSON_TRY( simdjson::active_implementation->create_dom_parser_implementation(new_capacity, new_max_depth, implementation) );
+    SIMDJSON_TRY( simdjson::get_active_implementation()->create_dom_parser_implementation(new_capacity, new_max_depth, implementation) );
   }
   _capacity = new_capacity;
   _max_depth = new_max_depth;
@@ -29407,6 +29444,7 @@ inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON
 }
 } // namespace simdjson
 
+namespace simdjson { namespace SIMDJSON_BUILTIN_IMPLEMENTATION { namespace ondemand {
 
 #if SIMDJSON_EXCEPTIONS
 inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value x) {
@@ -29524,6 +29562,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_BUILTIN_IM
   }
 }
 #endif
+}}} // namespace simdjson::SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand
 /* end file include/simdjson/generic/ondemand/serialization-inl.h */
 /* end file include/simdjson/generic/ondemand-inl.h */
 

@@ -31,7 +31,7 @@ int main(int argc, const char *argv[]) {
   std::stringstream ss;
   ss << "Parser implementation (by default, detects the most advanced implementation supported on the host machine)."  << std::endl;
   ss << "Available parser implementations:" << std::endl;
-  for (auto impl : simdjson::available_implementations) {
+  for (auto impl : simdjson::get_available_implementations()) {
     if(impl->supported_by_runtime_system()) {
       ss << "-a " << std::left << std::setw(9) << impl->name() << " - Use the " << impl->description() << " parser implementation." << std::endl;
     }
@@ -55,7 +55,7 @@ int main(int argc, const char *argv[]) {
     return EXIT_FAILURE;
   }
   if(result.count("arch")) {
-    const simdjson::implementation *impl = simdjson::available_implementations[result["arch"].as<std::string>().c_str()];
+    const simdjson::implementation *impl = simdjson::get_available_implementations()[result["arch"].as<std::string>().c_str()];
     if(!impl) {
       usage("Unsupported implementation.");
       return EXIT_FAILURE;
@@ -64,7 +64,7 @@ int main(int argc, const char *argv[]) {
       usage("The selected implementation does not match your current CPU.");
       return EXIT_FAILURE;
     }
-    simdjson::active_implementation = impl;
+    simdjson::get_active_implementation() = impl;
   }
 
   std::string filename = result["file"].as<std::string>();
@@ -77,7 +77,7 @@ int main(int argc, const char *argv[]) {
   }
   simdjson::padded_string copy(p.length()); // does not need to be padded after all!
   size_t copy_len;
-  error = simdjson::active_implementation->minify((const uint8_t*)p.data(), p.length(), (uint8_t*)copy.data(), copy_len);
+  error = simdjson::get_active_implementation()->minify((const uint8_t*)p.data(), p.length(), (uint8_t*)copy.data(), copy_len);
   if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   printf("%s", copy.data());
   return EXIT_SUCCESS;

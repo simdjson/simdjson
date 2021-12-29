@@ -97,9 +97,9 @@ struct option_struct {
         verbose = true;
         break;
       case 'a': {
-          auto impl = simdjson::available_implementations[optarg];
+          auto impl = simdjson::get_available_implementations()[optarg];
           if(impl && impl->supported_by_runtime_system()) {
-            simdjson::active_implementation = impl;
+            simdjson::get_active_implementation() = impl;
           } else {
             std::cerr << "implementation " << optarg << " not found or not supported " << std::endl;
           }

@@ -56,7 +56,7 @@ public:
   /**
    * The name of this implementation.
    *
-   *     const implementation *impl = simdjson::active_implementation;
+   *     const implementation *impl = simdjson::get_active_implementation();
    *     cout << "simdjson is optimized for " << impl->name() << "(" << impl->description() << ")" << endl;
    *
    * @return the name of the implementation, e.g. "haswell", "westmere", "arm64"
@@ -66,7 +66,7 @@ public:
   /**
    * The description of this implementation.
    *
-   *     const implementation *impl = simdjson::active_implementation;
+   *     const implementation *impl = simdjson::get_active_implementation();
    *     cout << "simdjson is optimized for " << impl->name() << "(" << impl->description() << ")" << endl;
    *
    * @return the name of the implementation, e.g. "haswell", "westmere", "arm64"
@@ -95,7 +95,7 @@ public:
   /**
    * @private For internal implementation use
    *
-   *     const implementation *impl = simdjson::active_implementation;
+   *     const implementation *impl = simdjson::get_active_implementation();
    *     cout << "simdjson is optimized for " << impl->name() << "(" << impl->description() << ")" << endl;
    *
    * @param capacity The largest document that will be passed to the parser.
@@ -189,10 +189,10 @@ public:
    *
    * Case sensitive.
    *
-   *     const implementation *impl = simdjson::available_implementations["westmere"];
+   *     const implementation *impl = simdjson::get_available_implementations()["westmere"];
    *     if (!impl) { exit(1); }
    *     if (!imp->supported_by_runtime_system()) { exit(1); }
-   *     simdjson::active_implementation = impl;
+   *     simdjson::get_active_implementation() = impl;
    *
    * @param name the implementation to find, e.g. "westmere", "haswell", "arm64"
    * @return the implementation, or nullptr if the parse failed.
@@ -210,7 +210,7 @@ public:
    * This is used to initialize the implementation on startup.
    *
    *     const implementation *impl = simdjson::available_implementation::detect_best_supported();
-   *     simdjson::active_implementation = impl;
+   *     simdjson::get_active_implementation() = impl;
    *
    * @return the most advanced supported implementation for the current host, or an
    *         implementation that returns UNSUPPORTED_ARCHITECTURE if there is no supported
@@ -242,14 +242,14 @@ private:
 /**
  * The list of available implementations compiled into simdjson.
  */
-extern SIMDJSON_DLLIMPORTEXPORT const internal::available_implementation_list available_implementations;
+extern SIMDJSON_DLLIMPORTEXPORT const internal::available_implementation_list& get_available_implementations();
 
 /**
   * The active implementation.
   *
   * Automatically initialized on first use to the most advanced implementation supported by this hardware.
   */
-extern SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation> active_implementation;
+extern SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation>& get_active_implementation();
 
 } // namespace simdjson
 

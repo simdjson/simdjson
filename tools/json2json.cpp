@@ -22,7 +22,7 @@ int main(int argc, const char *argv[]) {
   std::string progUsage = "json2json version ";
   progUsage += SIMDJSON_STRINGIFY(SIMDJSON_VERSION);
   progUsage += " (";
-  progUsage += simdjson::active_implementation->name();
+  progUsage += simdjson::get_active_implementation()->name();
   progUsage += ")\n";
   progUsage += "Reads json in, out the result of the parsing.\n";
   progUsage += argv[0];

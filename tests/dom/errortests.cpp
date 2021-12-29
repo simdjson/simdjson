@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
   while ((c = getopt(argc, argv, "a:")) != -1) {
     switch (c) {
     case 'a': {
-      const simdjson::implementation *impl = simdjson::available_implementations[optarg];
+      const simdjson::implementation *impl = simdjson::get_available_implementations()[optarg];
       if (!impl) {
         fprintf(stderr, "Unsupported architecture value -a %s\n", optarg);
         return EXIT_FAILURE;
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "The selected implementation does not match your current CPU: -a %s\n", optarg);
         return EXIT_FAILURE;
       }
-      simdjson::active_implementation = impl;
+      simdjson::get_active_implementation() = impl;
       break;
     }
     default:
@@ -214,12 +214,12 @@ int main(int argc, char *argv[]) {
 
   // this is put here deliberately to check that the documentation is correct (README),
   // should this fail to compile, you should update the documentation:
-  if (simdjson::active_implementation->name() == "unsupported") {
+  if (simdjson::get_active_implementation()->name() == "unsupported") {
     printf("unsupported CPU\n");
   }
   // We want to know what we are testing.
-  std::cout << "Running tests against this implementation: " << simdjson::active_implementation->name();
-  std::cout << " (" << simdjson::active_implementation->description() << ")" << std::endl;
+  std::cout << "Running tests against this implementation: " << simdjson::get_active_implementation()->name();
+  std::cout << " (" << simdjson::get_active_implementation()->description() << ")" << std::endl;
   std::cout << "------------------------------------------------------------" << std::endl;
   std::cout << "Running error tests." << std::endl;
   if (!(true
