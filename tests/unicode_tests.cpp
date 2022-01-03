@@ -255,7 +255,7 @@ void puzzler() {
   }
   std::cout << "\"" << std::endl;
   bool is_ok{true};
-  for(const auto& e: simdjson::available_implementations) {
+  for(const auto& e: simdjson::get_available_implementations()) {
       if(!e->supported_by_runtime_system()) { continue; }
       const bool current = e->validate_utf8(bad64, length);
       std::cout << e->name() << " returns " << current << std::endl;

@@ -176,7 +176,7 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   if (implementation) {
     err = implementation->allocate(capacity, max_depth);
   } else {
-    err = simdjson::active_implementation->create_dom_parser_implementation(capacity, max_depth, implementation);
+    err = simdjson::get_active_implementation()->create_dom_parser_implementation(capacity, max_depth, implementation);
   }
   if (err) { return err; }
   return SUCCESS;

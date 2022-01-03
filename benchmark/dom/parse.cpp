@@ -66,7 +66,7 @@ void print_usage(ostream& out) {
   out << "-H           - Make the buffers hot (reduce page allocation and related OS tasks during parsing) [default]" << endl;
   out << "-a IMPL      - Use the given parser implementation. By default, detects the most advanced" << endl;
   out << "               implementation supported on the host machine." << endl;
-  for (auto impl : simdjson::available_implementations) {
+  for (auto impl : simdjson::get_available_implementations()) {
     if(impl->supported_by_runtime_system()) {
       out << "-a " << std::left << std::setw(9) << impl->name() << " - Use the " << impl->description() << " parser implementation." << endl;
     }
@@ -116,10 +116,10 @@ struct option_struct {
         verbose = true;
         break;
       case 'a': {
-        const implementation *impl = simdjson::available_implementations[optarg];
+        const implementation *impl = simdjson::get_available_implementations()[optarg];
         if ((!impl) || (!impl->supported_by_runtime_system())) {
           std::string exit_message = string("Unsupported option value -a ") + optarg + ": expected -a  with one of ";
-          for (auto imple : simdjson::available_implementations) {
+          for (auto imple : simdjson::get_available_implementations()) {
             if(imple->supported_by_runtime_system()) {
               exit_message += imple->name();
               exit_message += " ";
@@ -127,7 +127,7 @@ struct option_struct {
           }
           exit_usage(exit_message);
         }
-        simdjson::active_implementation = impl;
+        simdjson::get_active_implementation() = impl;
         break;
       }
       case 'C':
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
   option_struct options(argc, argv);
   if (options.verbose) {
     verbose_stream = &cout;
-    verbose() << "Implementation: " << simdjson::active_implementation->name() << endl;
+    verbose() << "Implementation: " << simdjson::get_active_implementation()->name() << endl;
   }
 
   // Start collecting events. We put this early so if it prints an error message, it's the

@@ -17,7 +17,7 @@
 std::vector<const simdjson::implementation*>
 get_runtime_supported_implementations() {
     std::vector<const simdjson::implementation*> ret;
-    for(auto& e: simdjson::available_implementations) {
+    for(auto& e: simdjson::get_available_implementations()) {
         if(e->supported_by_runtime_system()) {
             ret.emplace_back(e);
         }
