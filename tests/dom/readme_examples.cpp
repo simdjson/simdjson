@@ -264,8 +264,8 @@ void basics_ndjson_parse_many() {
 }
 void implementation_selection_1() {
   cout << "simdjson v" << SIMDJSON_STRINGIFY(SIMDJSON_VERSION) << endl;
-  cout << "Detected the best implementation for your machine: " << simdjson::active_implementation->name();
-  cout << "(" << simdjson::active_implementation->description() << ")" << endl;
+  cout << "Detected the best implementation for your machine: " << simdjson::get_active_implementation()->name();
+  cout << "(" << simdjson::get_active_implementation()->description() << ")" << endl;
 }
 
 void unescaped_key() {
@@ -288,32 +288,32 @@ void unescaped_key() {
 }
 
 void implementation_selection_2() {
-  for (auto implementation : simdjson::available_implementations) {
+  for (auto implementation : simdjson::get_available_implementations()) {
     cout << implementation->name() << ": " << implementation->description() << endl;
   }
 }
 
 void implementation_selection_2_safe() {
-  for (auto implementation : simdjson::available_implementations) {
+  for (auto implementation : simdjson::get_available_implementations()) {
     if(implementation->supported_by_runtime_system()) {
       cout << implementation->name() << ": " << implementation->description() << endl;
     }
   }
 }
 void implementation_selection_3() {
-  cout << simdjson::available_implementations["fallback"]->description() << endl;
+  cout << simdjson::get_available_implementations()["fallback"]->description() << endl;
 }
 
 void implementation_selection_safe() {
-  auto my_implementation = simdjson::available_implementations["haswell"];
+  auto my_implementation = simdjson::get_available_implementations()["haswell"];
   if(! my_implementation) { exit(1); }
   if(! my_implementation->supported_by_runtime_system()) { exit(1); }
-  simdjson::active_implementation = my_implementation;
+  simdjson::get_active_implementation() = my_implementation;
 }
 
 void implementation_selection_4() {
   // Use the fallback implementation, even though my machine is fast enough for anything
-  simdjson::active_implementation = simdjson::available_implementations["fallback"];
+  simdjson::get_active_implementation() = simdjson::get_available_implementations()["fallback"];
 }
 
 void ondemand_performance_1() {

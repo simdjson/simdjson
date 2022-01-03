@@ -21,7 +21,7 @@ simdjson_warn_unused simdjson_really_inline error_code parser::allocate(size_t n
     SIMDJSON_TRY( implementation->set_capacity(new_capacity) );
     SIMDJSON_TRY( implementation->set_max_depth(new_max_depth) );
   } else {
-    SIMDJSON_TRY( simdjson::active_implementation->create_dom_parser_implementation(new_capacity, new_max_depth, implementation) );
+    SIMDJSON_TRY( simdjson::get_active_implementation()->create_dom_parser_implementation(new_capacity, new_max_depth, implementation) );
   }
   _capacity = new_capacity;
   _max_depth = new_max_depth;
