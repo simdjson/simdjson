@@ -62,6 +62,7 @@ template<> simdjson_really_inline simdjson_result<array> value::get() noexcept {
 template<> simdjson_really_inline simdjson_result<object> value::get() noexcept { return get_object(); }
 template<> simdjson_really_inline simdjson_result<raw_json_string> value::get() noexcept { return get_raw_json_string(); }
 template<> simdjson_really_inline simdjson_result<std::string_view> value::get() noexcept { return get_string(); }
+template<> simdjson_really_inline simdjson_result<number> value::get() noexcept { return get_number(); }
 template<> simdjson_really_inline simdjson_result<double> value::get() noexcept { return get_double(); }
 template<> simdjson_really_inline simdjson_result<uint64_t> value::get() noexcept { return get_uint64(); }
 template<> simdjson_really_inline simdjson_result<int64_t> value::get() noexcept { return get_int64(); }
