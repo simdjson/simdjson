@@ -1,7 +1,11 @@
 #ifndef SIMDJSON_PPC64_NUMBERPARSING_H
 #define SIMDJSON_PPC64_NUMBERPARSING_H
 
+#if defined(__linux__)
 #include <byteswap.h>
+#elif defined(__FreeBSD__)
+#include <sys/endian.h>
+#endif
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -14,7 +18,11 @@ parse_eight_digits_unrolled(const uint8_t *chars) {
   uint64_t val;
   std::memcpy(&val, chars, sizeof(uint64_t));
 #ifdef __BIG_ENDIAN__
+#if defined(__linux__)
   val = bswap_64(val);
+#elif defined(__FreeBSD__)
+  val = bswap64(val);
+#endif
 #endif
   val = (val & 0x0F0F0F0F0F0F0F0F) * 2561 >> 8;
   val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
