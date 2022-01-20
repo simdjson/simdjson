@@ -70,7 +70,7 @@ struct base8 : base<simd8<T>> {
   simdjson_really_inline base8(const __m128i _value) : base<simd8<T>>(_value) {}
 
   friend simdjson_really_inline Mask operator==(const simd8<T> lhs, const simd8<T> rhs) {
-    return (__m128i)vec_cmpeq(this->value, (__m128i)other);
+    return (__m128i)vec_cmpeq(lhs.value, (__m128i)rhs);
   }
 
   static const int SIZE = sizeof(base<simd8<T>>::value);
