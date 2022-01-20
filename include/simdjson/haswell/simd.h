@@ -45,7 +45,7 @@ namespace simd {
     simdjson_really_inline base8() : base<simd8<T>>() {}
     simdjson_really_inline base8(const __m256i _value) : base<simd8<T>>(_value) {}
 
-    simdjson_really_inline Mask operator==(const simd8<T> other) const { return _mm256_cmpeq_epi8(*this, other); }
+    friend simdjson_really_inline Mask operator==(const simd8<T> lhs, const simd8<T> rhs) { return _mm256_cmpeq_epi8(lhs, rhs); }
 
     static const int SIZE = sizeof(base<T>::value);
 
