@@ -56,7 +56,6 @@ For best performance, a `parser` instance should be reused over several files: o
 If you need a lower-level interface, you may call the function `parser.parse(const char * p, size_t l)` on a pointer `p` while specifying the
 length of your input `l` in bytes. To see how to get the very best performance from a low-level approach, you way want to read our [performance notes](https://github.com/simdjson/simdjson/blob/master/doc/performance.md#padding-and-temporary-copies) on this topic (see the Padding and Temporary Copies section).
 
-
 Using the Parsed JSON
 ---------------------
 
@@ -67,6 +66,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   dom::object and dom::array. An exception (`simdjson::simdjson_error`) is thrown if the cast is not possible.
 * **Extracting Values (without exceptions):** You can use a variant usage of `get()` with error codes to avoid exceptions. You first declare the variable of the appropriate type (`double`, `uint64_t`, `int64_t`, `bool`,
   `dom::object` and `dom::array`) and pass it by reference to `get()` which gives you back an error code: e.g.,
+
   ```c++
   simdjson::error_code error;
   simdjson::padded_string numberstring = "1.2"_padded; // our JSON input ("1.2")
@@ -76,6 +76,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   std::cout << "I parsed " << value << " from " << numberstring.data() << std::endl;
   ```
+
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`.
 * **Array Iteration:** To iterate through an array, use `for (auto value : array) { ... }`. If you
   know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`
@@ -149,7 +150,6 @@ for (dom::object obj : parser.parse(abstract_json)) {
 
 And another one:
 
-
 ```C++
   auto abstract_json = R"(
     {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
@@ -157,7 +157,6 @@ And another one:
   double v = parser.parse(abstract_json)["str"]["123"]["abc"];
   cout << "number: " << v << endl;
 ```
-
 
 C++17 Support
 -------------
@@ -188,7 +187,6 @@ for (dom::key_value_pair field : object) {
   cout << field.key << " = " << field.value << endl;
 }
 ```
-
 
 JSON Pointer
 ------------
@@ -235,8 +233,6 @@ for (dom::element car_element : cars) {
 }
 ```
 
-
-
 Error Handling
 --------------
 
@@ -258,6 +254,7 @@ result: if there is an error, the result value will not be valid and using it wi
 behavior.
 
 We can write a "quick start" example where we attempt to parse the following JSON file and access some data, without triggering exceptions:
+
 ```JavaScript
 {
   "statuses": [
@@ -299,9 +296,9 @@ int main(void) {
 The following is a similar example where one wants to get the id of the first tweet without
 triggering exceptions. To do this, we use `["statuses"].at(0)["id"]`. We break that expression down:
 
-- Get the list of tweets (the `"statuses"` key of the document) using `["statuses"]`). The result is expected to be an array.
-- Get the first tweet using `.at(0)`. The result is expected to be an object.
-- Get the id of the tweet using ["id"]. We expect the value to be a non-negative integer.
+* Get the list of tweets (the `"statuses"` key of the document) using `["statuses"]`). The result is expected to be an array.
+* Get the first tweet using `.at(0)`. The result is expected to be an object.
+* Get the id of the tweet using ["id"]. We expect the value to be a non-negative integer.
 
 Observe how we use the `at` method when querying an index into an array, and not the bracket operator.
 
@@ -462,7 +459,6 @@ dom::element doc = parser.parse(json); // Throws an exception if there was an er
 When used this way, a `simdjson_error` exception will be thrown if an error occurs, preventing the
 program from continuing if there was an error.
 
-
 If one is willing to trigger exceptions, it is possible to write simpler code:
 
 ```C++
@@ -476,7 +472,6 @@ int main(void) {
   return EXIT_SUCCESS;
 }
 ```
-
 
 Tree Walking and JSON Element Types
 -----------------------------------
@@ -531,8 +526,6 @@ void basics_treewalk_1() {
   print_json(parser.load("twitter.json"));
 }
 ```
-
-
 
 Reusing the parser for maximum efficiency
 -----------------------------------------
@@ -615,7 +608,6 @@ without bound:
   }
   ```
 
-
 Best Use of the DOM API
 -------------------------
 
@@ -630,7 +622,6 @@ disk (`parser.load`), padding is automatically  handled.
 When calling `parser.parse` on a pointer (e.g., `parser.parse(my_char_pointer, my_length_in_bytes)`) a temporary copy  is made by default with adequate padding and you, again, do not need to be concerned with padding.
 
 Some users may not be able use our `padded_string` class or to load the data directly from disk (`parser.load`). They may need to pass data pointers to the library.  If these users wish to avoid temporary copies and corresponding temporary memory allocations, they may want to call `parser.parse` with the `realloc_if_needed` parameter set to false (e.g., `parser.parse(my_char_pointer, my_length_in_bytes, false)`). In such cases, they need to ensure that there are at least SIMDJSON_PADDING extra bytes at the end that can be safely accessed and read. They do not need to initialize the padded bytes to any value in particular. The following example is safe:
-
 
 ```C++
 const char *json      = R"({"key":"value"})";

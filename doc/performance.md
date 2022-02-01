@@ -38,7 +38,6 @@ for(int64_t i : doc.get_array()) {
 }
 ```
 
-
 Reusing string buffers
 -----------------------------------------
 
@@ -50,11 +49,9 @@ We recommend against creating many `std::string` or `simdjson::padded_string` in
 
 or simply
 
-
 ```c++
  auto doc = parser.iterate(json_str, length, capacity);
 ```
-
 
 Server Loops: Long-Running Processes and Memory Capacity
 ---------------------------------
@@ -62,6 +59,7 @@ Server Loops: Long-Running Processes and Memory Capacity
 The On Demand approach also automatically expands its memory capacity when larger documents are parsed. However, for longer processes where very large files are processed (such as server loops), this capacity is not resized down. On Demand also lets you adjust the maximal capacity that the parser can process:
 
 * You can set an upper bound (*max_capacity*) when construction the parser:
+
 ```C++
     ondemand::parser parser(1000*1000);  // Never grows past documents > 1 MB
     auto doc = parser.iterate(json);
@@ -78,6 +76,7 @@ The On Demand approach also automatically expands its memory capacity when large
 The capacity will grow as the parser encounters larger documents up to 1 MB.
 
 * You can also allocate a *fixed capacity* that will never grow:
+
 ```C++
     ondemand::parser parser(1000*1000);
     parser.allocate(1000*1000)  // Fix the capacity to 1 MB
@@ -91,6 +90,7 @@ The capacity will grow as the parser encounters larger documents up to 1 MB.
       // ...
     }
 ```
+
 You can also manually set the maximal capacity using the method `set_max_capacity()`.
 
 Large files and huge page support
@@ -115,7 +115,7 @@ by parsing several large files) to distinguish the time spent parsing from the t
 memory. If you are using the `parse` benchmarking tool provided with the simdjson library, you can
 use the `-H` flag to omit the memory allocation cost from the benchmark results.
 
-```
+```bash
 ./parse largefile # includes memory allocation cost
 ./parse -H largefile # without memory allocation
 ```
@@ -129,11 +129,9 @@ our knowledge, it is not possible, in general, to parse streams of numbers at gi
 using a single core. While using the simdjson library, it is possible that you might be limited to a
 few hundred megabytes per second if your JSON documents are densely packed with floating-point values.
 
-
-- When possible, you should favor integer values written without a decimal point, as it simpler and faster to parse decimal integer values.
-- When serializing numbers, you should not use more digits than necessary: 17 digits is all that is needed to exactly represent double-precision floating-point numbers. Using many more digits than necessary will make your files larger and slower to parse.
-- When benchmarking parsing speeds, always report whether your JSON documents are made mostly of floating-point numbers when it is the case, since number parsing can then dominate the parsing time.
-
+* When possible, you should favor integer values written without a decimal point, as it simpler and faster to parse decimal integer values.
+* When serializing numbers, you should not use more digits than necessary: 17 digits is all that is needed to exactly represent double-precision floating-point numbers. Using many more digits than necessary will make your files larger and slower to parse.
+* When benchmarking parsing speeds, always report whether your JSON documents are made mostly of floating-point numbers when it is the case, since number parsing can then dominate the parsing time.
 
 Visual Studio
 --------------
@@ -146,7 +144,6 @@ Recent versions of Microsoft Visual Studio on Windows provides support for the L
 
 Under Windows, we also support the GNU GCC compiler via MSYS2. The performance of 64-bit MSYS2 under Windows excellent (on par with Linux).
 
-
 Power Usage and Downclocking
 --------------
 
@@ -154,11 +151,10 @@ The simdjson library relies on SIMD instructions. SIMD instructions are the publ
 
 The SIMD instructions that simdjson relies upon (SSE and AVX under x64, NEON under ARM, ALTIVEC under PPC) are routinely part of runtime libraries (e.g., [Go](https://golang.org/src/runtime/memmove_amd64.s), [Glibc](https://github.com/ihtsae/glibc/commit/5f3d0b78e011d2a72f9e88b0e9ef5bc081d18f97), [LLVM](https://github.com/llvm/llvm-project/blob/96f3ea0d21b48ca088355db10d4d1a2e9bc9f884/lldb/tools/debugserver/source/MacOSX/i386/DNBArchImplI386.cpp), [Rust](https://github.com/rust-lang/rust/commit/070fad1701fb36b112853b0a6a9787a7bb7ff34c), [Java](http://hg.openjdk.java.net/jdk8u/jdk8u/hotspot/file/c1374141598c/src/cpu/x86/vm/stubGenerator_x86_64.cpp#l1297), [PHP](https://github.com/php/php-src/blob/e5cb53ec68603d4dbdd780fd3ecfca943b4fd383/ext/standard/string.c)). What distinguishes the simdjson library is that it is built from the ground up to benefit from these instructions.
 
-
 You should not expect the simdjson library to cause *downclocking* of your recent Intel CPU cores. On some Intel processors, using SIMD instructions in a sustained manner on the same CPU core may result in a phenomenon called downclocking whereas the processor initially runs these instructions at a slow speed before reducing the frequency of the core for a short time (milliseconds). Intel refers to these states as licenses. On some current Intel processors, it occurs under two scenarios:
 
-- [Whenever 512-bit AVX-512 instructions are used](https://lemire.me/blog/2018/09/07/avx-512-when-and-how-to-use-these-new-instructions/).
-- Whenever heavy 256-bit or wider instructions are used. Heavy instructions are those involving floating point operations or integer multiplications (since these execute on the floating point unit).
+* [Whenever 512-bit AVX-512 instructions are used](https://lemire.me/blog/2018/09/07/avx-512-when-and-how-to-use-these-new-instructions/).
+* Whenever heavy 256-bit or wider instructions are used. Heavy instructions are those involving floating point operations or integer multiplications (since these execute on the floating point unit).
 
 The simdjson library does not currently support AVX-512 instructions and it does not make use of heavy 256-bit instructions. We do use vectorized multiplications, but only using 128-bit registers. Thus there should be no downclocking due to simdjson on recent processors.
 

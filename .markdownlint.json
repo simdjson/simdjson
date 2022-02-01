@@ -1,0 +1,6 @@
+{
+    "default": true,
+    "MD003": { "style": "setext_with_atx" },
+    "no-inline-html": { "allowed_elements": [ "IMG" ]},
+    "line-length": false
+}

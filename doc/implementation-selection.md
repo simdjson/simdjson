@@ -17,6 +17,7 @@ different version of the JSON parser for different CPU architectures, often with
 algorithms to take better advantage of a given CPU!
 
 The current implementations are:
+
 * haswell: AVX2 (2013 Intel Haswell or later)
 * westmere: SSE4.2 (2010 Westmere or later).
 * arm64: 64-bit ARMv8-A NEON
@@ -34,7 +35,7 @@ WESTMERE, ARM64, PPC64 and FALLBACK).
 The simdjson library automatically sets header flags for each implementation as it compiles; there
 is no need to set architecture-specific flags yourself (e.g., `-mavx2`, `/AVX2`  or
 `-march=haswell`), and it may even break runtime dispatch and your binaries will fail to run on
-older processors. _Note:_ for POWER9 processors make sure you compile it with `-mcpu=power9` and `-mtune=power9` to
+older processors. *Note:* for POWER9 processors make sure you compile it with `-mcpu=power9` and `-mtune=power9` to
 get maximum performance.
 
 Runtime CPU Detection
@@ -73,14 +74,13 @@ And look them up by name:
 ```c++
 cout << simdjson::get_available_implementations()["fallback"]->description() << endl;
 ```
+
 Though the fallback implementation should always be available, others might be missing. When
 an implementation is not available, the bracket call `simdjson::get_available_implementations()[name]`
 will return the null pointer.
 
 The available implementations have been compiled but may not necessarily be run safely on your system
 see [Checking that an Implementation can Run on your System](#checking-that-an-implementation-can-run-on-your-system).
-
-
 
 Manually Selecting the Implementation
 -------------------------------------

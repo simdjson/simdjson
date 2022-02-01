@@ -39,28 +39,29 @@ Such code would be apply to a JSON document such as the following JSON mimicking
 
 ```json
 {
-	"statuses": [{
-			"text": "@aym0566x \n\n名前:前田あゆみ\n第一印象:なんか怖っ！\n今の印象:とりあえずキモい。噛み合わない\n好きなところ:ぶすでキモいとこ😋✨✨\n思い出:んーーー、ありすぎ😊❤️\nLINE交換できる？:あぁ……ごめん✋\nトプ画をみて:照れますがな😘✨\n一言:お前は一生もんのダチ💖",
-			"user": {
-				"name": "AYUMI",
-				"screen_name": "ayuu0123",
-				"followers_count": 262,
-				"friends_count": 252
-			},
-			"retweet_count": 0,
-			"favorite_count": 0
-		},
-		{
-			"text": "RT @KATANA77: えっそれは・・・（一同） http://t.co/PkCJAcSuYK",
-			"user": {
-				"name": "RT&ファボ魔のむっつんさっm",
-				"screen_name": "yuttari1998",
-				"followers_count": 95,
-				"friends_count": 158
-			},
-			"retweet_count": 82,
-			"favorite_count": 42
-		}
+  "statuses": [
+    {
+      "text": "@aym0566x \n\n名前:前田あゆみ\n第一印象:なんか怖っ！\n今の印象:とりあえずキモい。噛み合わない\n好きなところ:ぶすでキモいとこ😋✨✨\n思い出:んーーー、ありすぎ😊❤️\nLINE交換できる？:あぁ……ごめん✋\nトプ画をみて:照れますがな😘✨\n一言:お前は一生もんのダチ💖",
+      "user": {
+        "name": "AYUMI",
+        "screen_name": "ayuu0123",
+        "followers_count": 262,
+        "friends_count": 252
+      },
+      "retweet_count": 0,
+      "favorite_count": 0
+    },
+    {
+      "text": "RT @KATANA77: えっそれは・・・（一同） http://t.co/PkCJAcSuYK",
+      "user": {
+        "name": "RT&ファボ魔のむっつんさっm",
+        "screen_name": "yuttari1998",
+        "followers_count": 95,
+        "friends_count": 158
+      },
+      "retweet_count": 82,
+      "favorite_count": 42
+    }
   ],
   "search_metadata": {
     "count": 100,
@@ -77,22 +78,21 @@ Further, the On Demand API does not parse a value *at all* until you try to conv
 may not convert the pair of characters `82` to the binary integer 82. Because the programmer specifies the data
 type, we avoid branch mispredictions related to data type determination and improve the performance.
 
-
 We expect users of an On Demand API to work in terms of a JSON dialect, which is a set of expectations and
 specifications that come in addition to the [JSON specification](https://www.rfc-editor.org/rfc/rfc8259.txt).
 The On Demand approach is designed around several principles:
 
-* **Streaming (\*):** It avoids preparsing values, keeping the memory usage and the latency down.
-* **Forward-Only:** To prevent reiteration of the same values and to keep the number of variables down (literally), only a single index is maintained and everything uses it (even if you have nested for loops). This means when you are going through an array of arrays, for example, that the inner array loop will advance the index to the next comma, and the array can just pick it up and look at it.
-* **Natural Iteration:** A JSON array or object can be iterated with a normal C++ for loop. Nested arrays and objects are supported by nested for loops.
-* **Use-Specific Parsing:** Parsing is always specific to the type required by the programmer. For example, if the programmer asks for an unsigned integer, we just start parsing digits. If there were no digits, we toss an error. There are even different parsers for `double`, `uint64_t` and `int64_t` values. This use-specific parsing avoids the branchiness of a generic "type switch," and makes the code more inlineable and compact.
-* **Validate What You Use:** On Demand deliberately validates the values you use and the structure leading to it, but nothing else. The goal is a guarantee that the value you asked for is the correct one and is not malformed: there must be no confusion over whether you got the right value.
-
+- **Streaming (\*):** It avoids preparsing values, keeping the memory usage and the latency down.
+- **Forward-Only:** To prevent reiteration of the same values and to keep the number of variables down (literally), only a single index is maintained and everything uses it (even if you have nested for loops). This means when you are going through an array of arrays, for example, that the inner array loop will advance the index to the next comma, and the array can just pick it up and look at it.
+- **Natural Iteration:** A JSON array or object can be iterated with a normal C++ for loop. Nested arrays and objects are supported by nested for loops.
+- **Use-Specific Parsing:** Parsing is always specific to the type required by the programmer. For example, if the programmer asks for an unsigned integer, we just start parsing digits. If there were no digits, we toss an error. There are even different parsers for `double`, `uint64_t` and `int64_t` values. This use-specific parsing avoids the branchiness of a generic "type switch," and makes the code more inlineable and compact.
+- **Validate What You Use:** On Demand deliberately validates the values you use and the structure leading to it, but nothing else. The goal is a guarantee that the value you asked for is the correct one and is not malformed: there must be no confusion over whether you got the right value.
 
 To understand why On Demand is different, it is helpful to review the major
 approaches to parsing and parser APIs in use today.
 
-### DOM Parsers
+DOM Parsers
+-----------
 
 Many of the most usable, popular JSON APIs (including simdjson) deserialize into a **DOM**: an intermediate tree of
 objects, arrays and values. In this model, we convert the input data all at once into a tree-like structure (the DOM).
@@ -121,21 +121,21 @@ for (auto tweet : doc["statuses"]) {
 ```
 
 Pros of the DOM approach:
-* Straightforward, programmer-friendly interface (arrays and objects).
-* Safe: all of the input data has been validated before it is accessed.
-* All of the JSON document is available at once to the programmer.
+
+- Straightforward, programmer-friendly interface (arrays and objects).
+- Safe: all of the input data has been validated before it is accessed.
+- All of the JSON document is available at once to the programmer.
 
 Cons of the DOM approach:
-* The memory usage scales linearly with the size of the input document.
-* Parses and stores everything, using memory and CPU cycles even on unused values.
-* Performance drain from [type blindness](#type-blindness).
 
+- The memory usage scales linearly with the size of the input document.
+- Parses and stores everything, using memory and CPU cycles even on unused values.
+- Performance drain from [type blindness](#type-blindness).
 
 What the simdjson library demonstrates is that a DOM API may be quite fast indeed: we can parse files at speeds
 of several gigabytes per second. However, in some instances, it may be possible to achieve even higher speeds.
 
 ### Event-Based Parsers (SAX, SAJ, etc.)
-
 
 The event-based model (originally from the "Streaming API for XML") uses streaming to eliminate the cost of
 parsing and storing the entire JSON. In the event-based model, a core JSON engine parses the JSON document
@@ -195,21 +195,21 @@ parser.parse(twitter_callbacks());
 This is a large amount of code, requiring mental gymnastics even to read. An actual implementation is  harder to write
 and to maintain.
 
-
 Pros of the event-based approach:
-* Speed and space benefits from low, predictable memory usage.
-* Parsing can be done more lazily: the API can delegate work to the programmer for better performance.
-* It is highly flexible: given enough effort, most tasks can be accomplished efficiently.
+
+- Speed and space benefits from low, predictable memory usage.
+- Parsing can be done more lazily: the API can delegate work to the programmer for better performance.
+- It is highly flexible: given enough effort, most tasks can be accomplished efficiently.
 
 Cons of the event-based approach:
-* Performance drain from context blindness (e.g., switch statements for "where am I in the document")
-* Difficult to use (high code complexity, high maintenance, difficult to debug)
-* Lacks the safety of DOM: malformed documents could be ingested.
+
+- Performance drain from context blindness (e.g., switch statements for "where am I in the document")
+- Difficult to use (high code complexity, high maintenance, difficult to debug)
+- Lacks the safety of DOM: malformed documents could be ingested.
 
 Though an event-based approach might have its niche uses, we believe that it is rarely ideally suited. We suspect that it is mostly used when performance and memory is a concern, and no other option (except DOM) is readily available.
 
 ### Schema-Based Parser Generators
-
 
 In a schema-based model, the programmer provides a description of a data structure, and the parser constructs the data structure in question during parsing. These parsers take a schema--a description of
 your JSON, with field names, types, everything--and generate classes/structs in your language of
@@ -219,18 +219,18 @@ Though not all of these schema-based parser generators generate a parser or even
 streaming, but they are *able* to in principle. Unlike the DOM and the event-based models, a schema-based approach assumes
  that the structure of the document is known at compile-time.
 
-
 Pros of the schema-based approach:
-* Ease of Use is on par with DOM
-* Parsers that generate iterators and lazy values in structs can keep memory pressure down to event-based levels.
-* Type Blindness can be entirely solved with specific parsers for each type, saving many branches.
-* Context Blindness can be solved, especially if object fields are required and in order, saving even more branches.
-* Can be made a safe as DOM: the input can be entirely validated prior to ingestion.
+
+- Ease of Use is on par with DOM
+- Parsers that generate iterators and lazy values in structs can keep memory pressure down to event-based levels.
+- Type Blindness can be entirely solved with specific parsers for each type, saving many branches.
+- Context Blindness can be solved, especially if object fields are required and in order, saving even more branches.
+- Can be made a safe as DOM: the input can be entirely validated prior to ingestion.
 
 Cons of the schema-based approach:
-* It is less flexible than the DOM or event-based approaches, sometimes limited to a deserialization-to-objects scenario.
-* The structure of the data must be fully known at compile-time.
 
+- It is less flexible than the DOM or event-based approaches, sometimes limited to a deserialization-to-objects scenario.
+- The structure of the data must be fully known at compile-time.
 
 ### Type Blindness and Branch Misprediction
 
@@ -433,7 +433,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    }
    ```
 
-4. We get the `"screen_name"` from the `"user"` object.
+5. We get the `"screen_name"` from the `"user"` object.
 
    ```c++
       ondemand::object user        = tweet["user"];
@@ -467,7 +467,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    }
    ```
 
-5. We get `"retweet_count"` as an unsigned integer.
+6. We get `"retweet_count"` as an unsigned integer.
 
    ```c++
    uint64_t         retweets    = tweet["retweet_count"];
@@ -511,7 +511,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    }
    ```
 
-6. We loop to the next tweet.
+7. We loop to the next tweet.
 
    ```c++
    for (ondemand::object tweet : doc["statuses"]) {
@@ -551,7 +551,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    }
    ```
 
-7. This tweet is processed just like the previous one, leaving the iterator here:
+8. This tweet is processed just like the previous one, leaving the iterator here:
 
    ```json
    {
@@ -564,7 +564,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    }
    ```
 
-8. The loop ends. Recall the relevant parts of the statuses loop:
+9. The loop ends. Recall the relevant parts of the statuses loop:
 
    ```c++
    while (iter != statuses.end()) {
@@ -590,7 +590,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    }
    ```
 
-9. The remainder of the file is skipped.
+10. The remainder of the file is skipped.
 
    Because no more action is taken, JSON processing stops: processing only occurs when you ask for
    values.
@@ -644,7 +644,6 @@ has no longer a key (that is by design). Like other strings, the resulting `std:
 from the `unescaped_key()` method has a lifecycle tied to the `parser` instance: once the parser
 is destroyed or reused with another document, the `std::string_view` instance becomes invalid.
 
-
 ```C++
 auto doc = parser.iterate(json);
 for(auto field : doc.get_object())  {
@@ -657,13 +656,13 @@ for(auto field : doc.get_object())  {
 The On Demand API is powerful. To compensate, we add some safeguards to ensure that it can be used without fear
 in production systems:
 
-  - If the value fails to be parsed as one type, the program can try to parse it as something else until the program succeeds. Thus
+- If the value fails to be parsed as one type, the program can try to parse it as something else until the program succeeds. Thus
     the programmer can engineer fall back routines.
-  - If the value succeeds in being parsed or converted to a type, the program cannot try again. An attempt to parse the same node twice will
+- If the value succeeds in being parsed or converted to a type, the program cannot try again. An attempt to parse the same node twice will
     cause the program to abort. We put this safety measure in the API to prevent double iteration of an array which
     would cause inconsistent iterator state or double-unescaping a string which may cause memory
     overruns if done.
-  - Guaranteed Iteration: If you discard a value without using it--perhaps you just wanted to know
+- Guaranteed Iteration: If you discard a value without using it--perhaps you just wanted to know
     if it was `nullptr` but did not care what the actual value was--it will iterate. The destructor automates
     the iteration.
 
@@ -686,7 +685,7 @@ in production systems:
     // if(std::string_view(c2["name"]) != "Daniel") { return false; }
 ```
 
-    A correct usage is given by the following example:
+A correct usage is given by the following example:
 
 ```C++
     ondemand::parser parser;
@@ -713,21 +712,21 @@ in production systems:
 
 We expect that the On Demand approach has many of the performance benefits of the schema-based approach, while providing a flexibility that is similar to that of the DOM-based approach.
 
-* Faster than DOM in some cases. Reduced memory usage.
-* Straightforward, programmer-friendly interface (arrays and objects).
-* Highly expressive, beyond deserialization and pointer queries: many tasks can be accomplished with little code.
+- Faster than DOM in some cases. Reduced memory usage.
+- Straightforward, programmer-friendly interface (arrays and objects).
+- Highly expressive, beyond deserialization and pointer queries: many tasks can be accomplished with little code.
 
 ### Limitations of the On Demand Approach
 
 The On Demand approach has some limitations:
 
-* Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX). (The one exception to this is field lookup, which is more *performant* when the order of lookups matches the order of fields in the document, but which will still work with out-of-order fields, with a performance hit.)
-* The On Demand approach is less safe than DOM: we only validate the components of the JSON document that are used and it is possible to begin ingesting an invalid document only to find out later that the document is invalid. Are you fine ingesting a large JSON document that starts with well formed JSON but ends with invalid JSON content?
+- Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX). (The one exception to this is field lookup, which is more *performant* when the order of lookups matches the order of fields in the document, but which will still work with out-of-order fields, with a performance hit.)
+- The On Demand approach is less safe than DOM: we only validate the components of the JSON document that are used and it is possible to begin ingesting an invalid document only to find out later that the document is invalid. Are you fine ingesting a large JSON document that starts with well formed JSON but ends with invalid JSON content?
 
 There are currently additional technical limitations which we expect to resolve in future releases of the simdjson library:
 
-* The simdjson library offers runtime dispatching which allows you to compile one binary and have it run at full speed on different processors, taking advantage of the specific features of the processor. The On Demand API has limited runtime dispatch support. Under x64 systems, to fully benefit from the On Demand API, we recommend that you compile your code for a specific processor. E.g., if your processor supports AVX2 instructions, you should compile your binary executable with AVX2 instruction support (by using your compiler's commands). If you are sufficiently technically proficient, you can implement runtime dispatching within your application, by compiling your On Demand code for different processors.
-* There is an initial phase which scans the entire document quickly, irrespective of the size of the document. We plan to break this phase into distinct steps for large files in a future release as we have done with other components of our API (e.g., `parse_many`).
+- The simdjson library offers runtime dispatching which allows you to compile one binary and have it run at full speed on different processors, taking advantage of the specific features of the processor. The On Demand API has limited runtime dispatch support. Under x64 systems, to fully benefit from the On Demand API, we recommend that you compile your code for a specific processor. E.g., if your processor supports AVX2 instructions, you should compile your binary executable with AVX2 instruction support (by using your compiler's commands). If you are sufficiently technically proficient, you can implement runtime dispatching within your application, by compiling your On Demand code for different processors.
+- There is an initial phase which scans the entire document quickly, irrespective of the size of the document. We plan to break this phase into distinct steps for large files in a future release as we have done with other components of our API (e.g., `parse_many`).
 
 ### Applicability of the On Demand Approach
 
@@ -740,13 +739,14 @@ At this time we recommend the On Demand API in the following cases:
 
 Good applications for the On Demand API might be:
 
-* You are working from pre-existing large JSON files that have been vetted. You expect them to be well formed according to a known JSON dialect and to have a consistent layout. For example, you might be doing biomedical research or machine learning on top of static data dumps in JSON.
-* Both the generation and the consumption of JSON data is within your system. Your team controls both the software that produces the JSON and the software the parses it, your team knows and control the hardware. Thus you can fully test your system.
-* You are working with stable JSON APIs which have a consistent layout and JSON dialect.
+- You are working from pre-existing large JSON files that have been vetted. You expect them to be well formed according to a known JSON dialect and to have a consistent layout. For example, you might be doing biomedical research or machine learning on top of static data dumps in JSON.
+- Both the generation and the consumption of JSON data is within your system. Your team controls both the software that produces the JSON and the software the parses it, your team knows and control the hardware. Thus you can fully test your system.
+- You are working with stable JSON APIs which have a consistent layout and JSON dialect.
 
-## Checking Your CPU Selection (x64 systems)
+Checking Your CPU Selection (x64 systems)
+-----------------------------------------
 
-The On Demand API uses advanced architecture-specific code for many common processors to make JSON preprocessing and string parsing faster. By default, however, most c++ compilers will compile to the	least common denominator (since the program could theoretically be run anywhere). Since On Demand is inlined into your own code, it cannot always use these advanced versions unless the compiler is told to target them.
+The On Demand API uses advanced architecture-specific code for many common processors to make JSON preprocessing and string parsing faster. By default, however, most c++ compilers will compile to the least common denominator (since the program could theoretically be run anywhere). Since On Demand is inlined into your own code, it cannot always use these advanced versions unless the compiler is told to target them.
 
 On relevant systems, the On Demand API provides some support for runtime dispatching: that is, it will attempt to detect, at runtime, the instructions that your processor supports and optimize the code accordingly. However, it cannot always make full use of the features of your processor.
 
@@ -762,14 +762,14 @@ If the `simdjson::builtin_implementation()->name()` call does not return the arc
 
 If you are using CMake for your C++ project, then you can pass compilation flags to your compiler by using the `CMAKE_CXX_FLAGS` variable:
 
-```
+```bash
 cmake  -DCMAKE_CXX_FLAGS="-march=haswell" -B build_haswell
 cmake --build build_haswell
 ```
 
 You can also pass the flags directly to your compiler when compiling 'by hand':
 
-````
+````bash
 c++ -march=haswell -O3 myproject.cpp simdjson.cpp
 ````
 
@@ -777,6 +777,6 @@ In these examples, the `-march=haswell` flags targets a haswell processor and th
 
 Instead of specifying a specific microarchitecture, you can let your compiler do the work. The `-march=native` flags says "target the current computer," which is a reasonable default for many applications which both compile and run on the same processor.
 
-Passing `-march=native` to the compiler may make On Demand faster by allowing it to use optimizations specific to your machine. You cannot do this, however, if you are compiling code	that might be run on less advanced machines. That is, be mindful that when compiling with the `-march=native` flag, the resulting binary will run on the current system but may not run on other systems (e.g., on an old processor).
+Passing `-march=native` to the compiler may make On Demand faster by allowing it to use optimizations specific to your machine. You cannot do this, however, if you are compiling code that might be run on less advanced machines. That is, be mindful that when compiling with the `-march=native` flag, the resulting binary will run on the current system but may not run on other systems (e.g., on an old processor).
 
 If you are compiling on an ARM or POWER system, you do not need to be concerned with CPU selection during compilation. The `-march=native` flag useful for best performance on x64 (e.g., Intel) systems but it is generally unsupported on some platforms such as ARM (aarch64) or POWER.

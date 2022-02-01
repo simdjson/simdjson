@@ -28,12 +28,11 @@ An overview of what you need to know to use simdjson, with examples.
 * [Thread Safety](#thread-safety)
 * [Standard Compliance](#standard-compliance)
 
-
 Requirements
 ------------------
 
-- A recent compiler (LLVM clang6 or better, GNU GCC 7.4 or better, Xcode 11 or better) on a 64-bit (PPC, ARM or x64 Intel/AMD) POSIX systems such as macOS, freeBSD or Linux. We require that the compiler supports the C++11 standard or better.
-- Visual Studio 2017 or better under 64-bit Windows. Users should target a 64-bit build (x64) instead of a 32-bit build (x86). We support the LLVM clang compiler under Visual Studio (clangcl) as well as as the regular Visual Studio compiler. We also support MinGW 64-bit under Windows.
+* A recent compiler (LLVM clang6 or better, GNU GCC 7.4 or better, Xcode 11 or better) on a 64-bit (PPC, ARM or x64 Intel/AMD) POSIX systems such as macOS, freeBSD or Linux. We require that the compiler supports the C++11 standard or better.
+* Visual Studio 2017 or better under 64-bit Windows. Users should target a 64-bit build (x64) instead of a 32-bit build (x86). We support the LLVM clang compiler under Visual Studio (clangcl) as well as as the regular Visual Studio compiler. We also support MinGW 64-bit under Windows.
 
 Including simdjson
 ------------------
@@ -48,13 +47,14 @@ using namespace simdjson; // optional
 
 You can compile with:
 
-```
+```bash
 c++ myproject.cpp simdjson.cpp
 ```
 
 Note:
-- Users on macOS and other platforms where default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ -std=c++17 myproject.cpp simdjson.cpp`).
-- The library relies on [runtime CPU detection](implementation-selection.md): avoid specifying an architecture at compile time (e.g., `-march-native`).
+
+* Users on macOS and other platforms where default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ -std=c++17 myproject.cpp simdjson.cpp`).
+* The library relies on [runtime CPU detection](implementation-selection.md): avoid specifying an architecture at compile time (e.g., `-march-native`).
 
 Using simdjson with package managers
 ------------------
@@ -93,7 +93,6 @@ See [our CMake demonstration](https://github.com/simdjson/cmake_demo_single_file
 
 The CMake build in simdjson can be taylored with a few variables. You can see the available variables and their default values by entering the `cmake -LA` command.
 
-
 Versions
 ------------------
 
@@ -110,7 +109,7 @@ are made of three numbers prefixed by the letter `v` and separated by periods.
 
 You can always find the latest release at the following hyperlink:
 
-https://github.com/simdjson/simdjson/releases/latest/
+<https://github.com/simdjson/simdjson/releases/latest/>
 
 The archive you download at this location contains its own corresponding
 documentation.
@@ -119,7 +118,7 @@ You can also choose to browse a specific version
 of the documentation and the code using GitHub,
 by appending the version number to the hyperlink, like so:
 
-https://github.com/simdjson/simdjson/blob/vx.y.z/doc/basics.md
+<https://github.com/simdjson/simdjson/blob/vx.y.z/doc/basics.md>
 
 where `x.y.z` should correspond to the version number you have
 chosen.
@@ -188,8 +187,8 @@ documents.
 
 For code safety, you should keep (1) the `parser` instance, (2) the input string and (3) the document instance alive throughout your parsing. Additionally, you should follow the following rules:
 
-- A `parser` may have at most one document open at a time, since it holds allocated memory used for the parsing.
-- By design, you should only have one `document` instance per JSON document. Thus, if you must pass a document instance to a function, you should avoid passing it by value: choose to pass it by reference instance to avoid the copy. (We also provide a `document_reference` class if you need to pass by value.)
+* A `parser` may have at most one document open at a time, since it holds allocated memory used for the parsing.
+* By design, you should only have one `document` instance per JSON document. Thus, if you must pass a document instance to a function, you should avoid passing it by value: choose to pass it by reference instance to avoid the copy. (We also provide a `document_reference` class if you need to pass by value.)
 
 During the `iterate` call, the original JSON text is never modified--only read. After you are done
 with the document, the source (whether file or string) can be safely discarded.
@@ -237,8 +236,6 @@ transcode the UTF-8 strings produced by the simdjson library to other formats. S
 Using the Parsed JSON
 ---------------------
 
-
-
 We recommend that you first compile and run your code in Debug mode (with `NDEBUG`
 undefined). When you do so, the simdjson library runs additional sanity tests on
 your code to help ensure that you are using the library in a safe manner. Once
@@ -266,6 +263,7 @@ or floating-point values, depending on how the numbers are formatted.
 floating-point values followed by an integer.
 
 We invite you to keep the following rules in mind:
+
 1. While you are accessing the document, the `document` instance should remain in scope: it is your "iterator" which keeps track of where you are in the JSON document. By design, there is one and only one `document` instance per JSON document.
 2. Because On Demand is really just an iterator, you must fully consume the current object or array before accessing a sibling object or array.
 3. Values can only be consumed once, you should get the values and store them if you plan to need them multiple times. You are expected to access the keys of an object just once. You are expected to go through the values of an array just once.
@@ -304,6 +302,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > to support escaped keys, the method `unescaped_key()` provides the desired unescaped keys by
   > parsing and writing out the unescaped keys to a string buffer and returning a `std::string_view`
   > instance. You should expect a performance penalty when using `unescaped_key()`.
+  >
   > ```c++
   > auto json = R"({"k\u0065y": 1})"_padded;
   > ondemand::parser parser;
@@ -342,29 +341,34 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > double y = doc["y"]; // The cursor is now after the 2 (at })
   > double x = doc["x"]; // Success: [] loops back around to find "x"
   > ```
+  >
 * **Array Iteration:** To iterate through an array, use `for (auto value : array) { ... }`. This will
   step through each value in the JSON array.
 
   If you know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`.
 * **Object Iteration:** You can iterate through an object's fields, as well: `for (auto field : object) { ... }`
-  - `field.unescaped_key()` will get you the unescaped key string.
-  - `field.value()` will get you the value, which you can then use all these other methods on.
+  * `field.unescaped_key()` will get you the unescaped key string.
+  * `field.value()` will get you the value, which you can then use all these other methods on.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index by index. Instead,
   you should iterate through the array and keep an index yourself.
 * **Output to strings:** Given a document, a value, an array or an object in a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_json_string(element)`. A call to `to_json_string` consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document. The `simdjson::to_json_string` does not allocate memory. The `to_json_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes).
+  >
   > ```C++
   > // serialize a JSON to an escaped std::string instance so that it can be parsed again as JSON
   > auto silly_json = R"( { "test": "result"  }  )"_padded;
   > ondemand::document doc = parser.iterate(silly_json);
   > std::cout << simdjson::to_json_string(doc["test"]) << std::endl; // Requires simdjson 1.0 or better
   >````
+  >
   > ```C++
   > // retrieves an unescaped string value as a string_view instance
   > auto silly_json = R"( { "test": "result"  }  )"_padded;
   > ondemand::document doc = parser.iterate(silly_json);
   > std::cout << std::string_view(doc["test"]) << std::endl;
   >````
+  >
   You can use `to_json_string` to efficiently extract components of a JSON document to reconstruct a new JSON document, as in the following example:
+  >
   > ```C++
   > auto cars_json = R"( [
   >   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
@@ -393,6 +397,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > auto json_string = oss.str();
   > // json_string == "[[ 40.1, 39.9, 37.7, 40.4 ],[ 30.1, 31.0, 28.6, 28.7 ]]"
   >````
+  >
 * **Extracting Values (without exceptions):** You can use a variant usage of `get()` with error
   codes to avoid exceptions. You first declare the variable of the appropriate type (`double`,
   `uint64_t`, `int64_t`, `bool`, `ondemand::object` and `ondemand::array`) and pass it by reference
@@ -410,6 +415,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   cout << value << endl; // Prints 3.14
   ```
+
   This examples also show how we can string several operations and only check for the error once, a strategy we call  *error chaining*.
   Though error chaining makes the code very compact, it also makes error reporting less precise: in this instance, you may get the
   same error whether the field "str", "123" or "abc" is missing. If you need to break down error handling per operation, avoid error chaining.
@@ -426,8 +432,10 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   size_t index = 0;
   for(double x : doc) { values[index++] = x; }
   ```
+
   If you access an array inside a document, you can use the `count_elements` method as follow.
   You should not let the array instance go out of scope before consuming it after calling the `count_elements` method:
+
   ``` C++
   ondemand::parser parser;
   auto cars_json = R"( { "test":[ { "val1":1, "val2":2 }, { "val1":1, "val2":2 } ] }   )"_padded;
@@ -439,6 +447,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
      std::cout << simdjson::to_string(elem);
   }
   ```
+
 * **Counting fields in objects:** Other times, it is useful to scan an object to determine the number of fields prior to
   parsing it.
   For this purpose, `object` instances have a `count_fields` method. Again, users should be
@@ -452,8 +461,10 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   size_t count = doc.count_fields(); // requires simdjson 1.0 or better
   std::cout << "Number of fields: " <<  new_count << std::endl; // Prints "Number of fields: 1"
   ```
+
   Similarly to `count_elements`, you should not let an object instance go out of scope before consuming it after calling
   the `count_fields` method. If you access an object inside a document, you can use the `count_fields` method as follow.
+
   ``` C++
   ondemand::parser parser;
   auto json = R"( { "test":{ "val1":1, "val2":2 } }   )"_padded;
@@ -462,10 +473,12 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   size_t count = test_object.count_fields(); // requires simdjson 1.0 or better
   std::cout << "Number of fields: " <<  count << std::endl; // Prints "Number of fields: 2"
   ```
+
 * **Tree Walking and JSON Element Types:** Sometimes you don't necessarily have a document
   with a known type, and are trying to generically inspect or walk over JSON elements. To do that, you can use iterators and the `type()` method. You can also represent arbitrary JSON values with
   `ondemand::value` instances: it can represent anything except a scalar document (lone number, string, null or Boolean). You can check for scalar documents with the method `scalar()`.
   For example, the following is a quick and dirty recursive function that verbosely prints the JSON document as JSON. This example also illustrates lifecycle requirements: the `document` instance holds the iterator. The document must remain in scope while you are accessing instances of `value`, `object` and `array`.
+
   ```c++
   void recursive_print_json(ondemand::value element) {
     bool add_comma;
@@ -532,7 +545,6 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   ```
 
 ### Using the Parsed JSON: Additional examples
-
 
 Let us review these concepts with some additional examples. For simplicity, we omit the include clauses (`#include "simdjson.h"`) as well as namespace-using clauses (`using namespace simdjson;`).
 
@@ -628,7 +640,6 @@ In some cases, you may have valid JSON strings that you do not wish to parse but
 
 Though it does not validate the JSON input, it will detect when the document ends with an unterminated string. E.g., it would refuse to minify the string `"this string is not terminated` because of the missing final quote.
 
-
 UTF-8 validation (alone)
 ----------------------
 
@@ -644,7 +655,7 @@ The UTF-8 validation function merely checks that the input is valid UTF-8: it wo
 
 Your input string does not need any padding. Any string will do. The `validate_utf8` function does not do any memory allocation on the heap, and it does not throw exceptions.
 
-If you find yourself needing only fast Unicode functions, consider using the simdutf library instead: https://github.com/simdutf/simdutf
+If you find yourself needing only fast Unicode functions, consider using the simdutf library instead: <https://github.com/simdutf/simdutf>
 
 JSON Pointer
 ------------
@@ -745,7 +756,7 @@ ondemand::parser parser;
 auto doc = parser.iterate(json);
 std::cout << doc.at_pointer("/k1/1") << std::endl; // Prints 26
 std::cout << doc.at_pointer("/k2") << std::endl; // Prints true
-doc.rewind();	// Need to manually rewind to be able to use find_field properly from start of document
+doc.rewind(); // Need to manually rewind to be able to use find_field properly from start of document
 std::cout << doc.find_field("k0") << std::endl; // Prints 27
 ```
 
@@ -821,6 +832,7 @@ Notice how we can retrieve the exact error condition (in this instance `simdjson
 from the exception.
 
 We can write a "quick start" example where we attempt to parse the following JSON file and access some data, without triggering exceptions:
+
 ```JavaScript
 {
   "statuses": [
@@ -839,7 +851,6 @@ We can write a "quick start" example where we attempt to parse the following JSO
 
 Our program loads the file, selects value corresponding to key `"search_metadata"` which expected to be an object, and then
 it selects the key `"count"` within that object.
-
 
 ```C++
 #include <iostream>
@@ -866,12 +877,11 @@ int main(void) {
 The following is a similar example where one wants to get the id of the first tweet without
 triggering exceptions. To do this, we use `["statuses"].at(0)["id"]`. We break that expression down:
 
-- Get the list of tweets (the `"statuses"` key of the document) using `["statuses"]`). The result is expected to be an array.
-- Get the first tweet using `.at(0)`. The result is expected to be an object.
-- Get the id of the tweet using ["id"]. We expect the value to be a non-negative integer.
+* Get the list of tweets (the `"statuses"` key of the document) using `["statuses"]`). The result is expected to be an array.
+* Get the first tweet using `.at(0)`. The result is expected to be an object.
+* Get the id of the tweet using ["id"]. We expect the value to be a non-negative integer.
 
 Observe how we use the `at` method when querying an index into an array, and not the bracket operator.
-
 
 ```C++
 #include <iostream>
@@ -953,9 +963,9 @@ bool parse() {
 }
 ```
 
-
 The following examples illustrates how to iterate through the content of an object without
 having to handle exceptions.
+
 ```c++
   auto json = R"({"k\u0065y": 1})"_padded;
   ondemand::parser parser;
@@ -996,7 +1006,6 @@ simdjson::ondemande::document doc = parser.iterate(json); // Throws an exception
 
 When used this way, a `simdjson_error` exception will be thrown if an error occurs, preventing the
 program from continuing if there was an error.
-
 
 If one is willing to trigger exceptions, it is possible to write simpler code:
 
@@ -1175,8 +1184,6 @@ string_view token = obj["value"].raw_json_token();
 
 The `raw_json_token()` should be fast and free of allocation.
 
-
-
 Newline-Delimited JSON (ndjson) and JSON lines
 ----------------------------------------------
 
@@ -1206,15 +1213,12 @@ for (auto doc : docs) {
 // Prints 1 2 3
 ```
 
-
 Unlike `parser.iterate`, `parser.iterate_many` may parse "on demand" (lazily). That is, no parsing may have been done before you enter the loop
 `for (auto doc : docs) {` and you should expect the parser to only ever fully parse one JSON document at a time.
 
 As with `parser.iterate`, when calling  `parser.iterate_many(string)`, no copy is made of the provided string input. The provided memory buffer may be accessed each time a JSON document is parsed.  Calling `parser.iterate_many(string)` on a  temporary string buffer (e.g., `docs = parser.parse_many("[1,2,3]"_padded)`) is unsafe (and will not compile) because the  `document_stream` instance needs access to the buffer to return the JSON documents.
 
-
 The `iterate_many` function can also take an optional parameter `size_t batch_size` which defines the window processing size. It is set by default to a large value (`1000000` corresponding to 1 MB). None of your JSON documents should exceed this window size, or else you will get  the error `simdjson::CAPACITY`. You cannot set this window size larger than 4 GB: you will get  the error `simdjson::CAPACITY`. The smaller the window size is, the less memory the function will use. Setting the window size too small (e.g., less than 100 kB) may also impact performance negatively. Leaving it to 1 MB is expected to be a good choice, unless you have some larger documents.
-
 
 The following toy examples illustrates how to get capacity errors. It is an artificial example since you should never use a `batch_size` of 50 bytes (it is far too small).
 
@@ -1251,7 +1255,7 @@ for (auto doc: stream) {
 
 This example should print out:
 
-```
+```text
 5 = 5
 5 = 5
 5 = 5
@@ -1265,8 +1269,6 @@ This parser can't support a document that big
 If your documents are large (e.g., larger than a megabyte), then the `iterate_many` function is maybe ill-suited. It is really meant to support reading efficiently streams of relatively small documents (e.g., a few kilobytes each). If you have larger documents, you should use other functions like `iterate`.
 
 See [iterate_many.md](iterate_many.md) for detailed information and design.
-
-
 
 Parsing Numbers Inside Strings
 ------------------------------
@@ -1361,9 +1363,9 @@ if (error) {
   else { /* Handle wrong value */ }
 }
 ```
+
 It is also important to note that when dealing an invalid number inside a string, simdjson will report a `NUMBER_ERROR` error if the string begins with a number whereas simdjson
 will report a `INCORRECT_TYPE` error otherwise.
-
 
 Dynamic Number Types
 ------------------------------
@@ -1388,14 +1390,12 @@ If you need to determine both the type of the number (integer or floating-point)
 its value efficiently, you may call the `get_number()` method on the `ondemand::value`
 instance. Upon success, it returns an `ondemand::number` instance.
 
-
 An `ondemand::number` instance may contain an integer value or a floating-point value.
 Thus it is a dynamically typed number. Before accessing the value, you must determine the detected type:
 
 * `number.get_number_type()` has value `number_type::signed_integer` if we have a integer in [-9223372036854775808,9223372036854775808). You can recover the value by the `get_int64()` method applied on the `ondemand::number` instance. When `number.get_number_type()` has value `number_type::signed_integer`, you also have that `number.is_int64()` is true. Calling `get_int64()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::signed_integer` is unsafe. You may replace `get_int64()` by a cast to a `int64_t` value.
 * `number.get_number_type()` has value `number_type::unsigned_integer` if we have a integer in [9223372036854775808,18446744073709551616). You can recover the value by the `get_uint64()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::unsigned_integer`, you also have that `number.is_uint64()` is true.  Calling `get_uint64()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::unsigned_integer` is unsafe. You may replace `get_uint64()` by a cast to a `uint64_t` value.
 * `number.get_number_type()` has value `number_type::floating_point_number` if we have and we have a floating-point (binary64) number. You can recover the value by the `get_double()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::floating_point_number`, you also have that `number.is_double()` is true.  Calling `get_double()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::floating_point_number` is unsafe. You may replace `get_double()` by a cast to a `double` value.
-
 
 You must check the type before accessing the value: it is an error to call `get_int64()` when `number.get_number_type()` is not `number_type::signed_integer` and when `number.is_int64()` is false. You are responsible for this check as the user of the library.
 
@@ -1407,6 +1407,7 @@ a `document` or `value` instance, you should call directly the faster method
 intermediate `number` instance.
 
 Consider the following example:
+
 ```C++
     ondemand::parser parser;
     padded_string docdata = R"([1.0, 3, 1, 3.1415,-13231232,9999999999999999999])"_padded;
@@ -1439,7 +1440,7 @@ Consider the following example:
 
 It will output:
 
-```
+```text
 1.0 negative: 0 is_integer: 0 float: 1 float: 1
 3 negative: 0 is_integer: 1 integer: 3 integer: 3
 1 negative: 0 is_integer: 1 integer: 1 integer: 1
@@ -1455,7 +1456,6 @@ We built simdjson with thread safety in mind.
 
 The simdjson library is single-threaded except for [`iterate_many`](iterate_many.md) and [`parse_many`](parse_many.md) which may use secondary threads under their control when the library is compiled with thread support.
 
-
 We recommend using one `parser` object per thread. When using the On Demand front-end (our default), you should access the `document` instances in a single-threaded manner since it
 acts as an iterator (and is therefore not thread safe).
 
@@ -1469,18 +1469,17 @@ Standard Compliance
 
 The simdjson library is fully compliant with  the [RFC 8259](https://www.tbray.org/ongoing/When/201x/2017/12/14/rfc8259.html) JSON specification.
 
-- The only insignificant whitespace characters allowed are the space, the horizontal tab, the line feed and the carriage return. In particular, a JSON document may not contain an unespaced null character.
-- A single string or a single number is considered to be a valid JSON document.
-- We fully validate the numbers according to the JSON specification. For example,  the string `01` is not valid JSON document since the specification states that *leading zeros are not allowed*.
-- The specification allows implementations to set limits on the range and precision of numbers accepted.  We support 64-bit floating-point numbers as well as integer values.
-  - We parse integers and floating-point numbers afloating-point number followed by an integer.s separate types which allows us to support all signed (two's complement) 64-bit integersfloating-point number followed by an integer., like a Java `long` or a C/C++ `long long` and all 64-bit unsigned integers. When we cannot represent exactly an integer as a signed or unsigned 64-bit value, we reject the JSON document.
-  - We support the full range of 64-bit floating-point numbers (binary64). The values range from `std::numeric_limits<double>::lowest()`  to `std::numefloating-point number followed by an integer.ric_limits<double>::max()`, so from -1.7976e308 all the way to 1.7975e308. Extreme values (less or equal to -1e308, greater or equal to 1e308) are rejected: we refuse to parse the input document. Numbers are parsed with a perfect accuracy (ULP 0): the nearest floating-point value is chosen, rounding to even when needed. If you serialized your floating-point numbers with 17floating-point value  followed by an integer. significant digits in a standard compliant manner, the simdjson library is guaranfloating-point number followed by an integer.teed to recover the same numbers, exactly.
-- The specification states that JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8. The simdjson library does full UTF-8 validation as part of the parsing. The specification states that implementations MUST NOT add a byte order mark: the simdjson library rejects documents starting with a  byte order mark.
-- The simdjson library validates string content for unescaped characters. Unescaped line breaks and tabs in strings are not allowed.
-- The simdjson library accepts objects with repeated keys: all of the name/value pairs, including duplicates, are reported. We do not enforce key uniqueness.
-- The specification states that an implementation may set limits on the size of texts that it accepts. The simdjson library limits single JSON documents to 4 GiB. It will refuse to parse a JSON document larger than 4294967295 bytes. (This limitation does not apply to streams of JSON documents, only to single JSON documents.)
-- The specification states that an implementation may set limits on the maximum depth of nesting. By default, the simdjson will refuse to parse documents with a depth exceeding 1024.
-
+* The only insignificant whitespace characters allowed are the space, the horizontal tab, the line feed and the carriage return. In particular, a JSON document may not contain an unespaced null character.
+* A single string or a single number is considered to be a valid JSON document.
+* We fully validate the numbers according to the JSON specification. For example,  the string `01` is not valid JSON document since the specification states that *leading zeros are not allowed*.
+* The specification allows implementations to set limits on the range and precision of numbers accepted.  We support 64-bit floating-point numbers as well as integer values.
+  * We parse integers and floating-point numbers afloating-point number followed by an integer.s separate types which allows us to support all signed (two's complement) 64-bit integersfloating-point number followed by an integer., like a Java `long` or a C/C++ `long long` and all 64-bit unsigned integers. When we cannot represent exactly an integer as a signed or unsigned 64-bit value, we reject the JSON document.
+  * We support the full range of 64-bit floating-point numbers (binary64). The values range from `std::numeric_limits<double>::lowest()`  to `std::numefloating-point number followed by an integer.ric_limits<double>::max()`, so from -1.7976e308 all the way to 1.7975e308. Extreme values (less or equal to -1e308, greater or equal to 1e308) are rejected: we refuse to parse the input document. Numbers are parsed with a perfect accuracy (ULP 0): the nearest floating-point value is chosen, rounding to even when needed. If you serialized your floating-point numbers with 17floating-point value  followed by an integer. significant digits in a standard compliant manner, the simdjson library is guaranfloating-point number followed by an integer.teed to recover the same numbers, exactly.
+* The specification states that JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8. The simdjson library does full UTF-8 validation as part of the parsing. The specification states that implementations MUST NOT add a byte order mark: the simdjson library rejects documents starting with a  byte order mark.
+* The simdjson library validates string content for unescaped characters. Unescaped line breaks and tabs in strings are not allowed.
+* The simdjson library accepts objects with repeated keys: all of the name/value pairs, including duplicates, are reported. We do not enforce key uniqueness.
+* The specification states that an implementation may set limits on the size of texts that it accepts. The simdjson library limits single JSON documents to 4 GiB. It will refuse to parse a JSON document larger than 4294967295 bytes. (This limitation does not apply to streams of JSON documents, only to single JSON documents.)
+* The specification states that an implementation may set limits on the maximum depth of nesting. By default, the simdjson will refuse to parse documents with a depth exceeding 1024.
 
 Backwards Compatibility
 -----------------------
