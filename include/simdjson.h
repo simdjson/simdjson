@@ -34,6 +34,7 @@
     }
  */
 
+#include "simdjson/simdjson_version.h"
 #include "simdjson/dom.h"
 #include "simdjson/builtin.h"
 
