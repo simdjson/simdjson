@@ -1,4 +1,4 @@
-name: VS16-Ninja-CI
+name: VS17-Ninja-CI
 
 on: [push, pull_request]
 
@@ -7,7 +7,7 @@ jobs:
     if: >-
       ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
       ! contains(toJSON(github.event.commits.*.message), '[skip github]')
-    name: windows-vs16
+    name: windows-vs17
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
@@ -15,7 +15,7 @@ jobs:
       with:
         path: dependencies/.cache
         key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
-    - name: 'Run CMake with VS16'
+    - name: 'Run CMake with VS17'
       uses: lukka/run-cmake@v2
       with:
         cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
