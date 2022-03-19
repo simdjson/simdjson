@@ -8,7 +8,7 @@ jobs:
       ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
       ! contains(toJSON(github.event.commits.*.message), '[skip github]')
     name: windows-vs15
-    runs-on: windows-2016
+    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
