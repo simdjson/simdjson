@@ -1,13 +1,10 @@
-name: VS16-CLANG-CI
+name: VS17-NoExcept-CI
 
 on: [push, pull_request]
 
 jobs:
   ci:
-    if: >-
-      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
-      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
-    name: windows-vs16
+    name: windows-vs17
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
@@ -15,7 +12,7 @@ jobs:
       with:
         path: dependencies/.cache
         key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
-    - name: 'Run CMake with VS16 Clang'
+    - name: 'Run CMake with VS17'
       uses: lukka/run-cmake@v3
       with:
         cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
@@ -23,9 +20,11 @@ jobs:
         buildDirectory: "${{ github.workspace }}/../../_temp/windows"
         cmakeBuildType: Release
         buildWithCMake: true
-        cmakeAppendedArgs:  -T ClangCL -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF
+        cmakeGenerator: VS16Win64
+        cmakeAppendedArgs: -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_DEVELOPER_MODE=ON  -DSIMDJSON_EXCEPTIONS=OFF
         buildWithCMakeArgs: --config Release
 
     - name: 'Run CTest'
-      run: ctest -C Release -LE explicitonly  --output-on-failure
+      run: ctest -C Release  -LE explicitonly  --output-on-failure
       working-directory: "${{ github.workspace }}/../../_temp/windows"
+
