@@ -49,10 +49,6 @@ endif()
 if(is_top_project)
   option(SIMDJSON_DEVELOPER_MODE "Enable targets for developing simdjson" OFF)
   option(BUILD_SHARED_LIBS "Build simdjson as a shared library" OFF)
-
-  if("$ENV{CI}")
-    set(SIMDJSON_DEVELOPER_MODE ON CACHE INTERNAL "")
-  endif()
 endif()
 
 include(cmake/handle-deprecations.cmake)
