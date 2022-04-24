@@ -72,6 +72,10 @@ set_target_properties(
     WINDOWS_EXPORT_ALL_SYMBOLS YES
 )
 
+if(NOT WIN32)
+  target_compile_options(simdjson PUBLIC -fPIC)
+endif()
+
 # FIXME: Use proper CMake integration for exports
 if(MSVC AND BUILD_SHARED_LIBS)
   target_compile_definitions(
