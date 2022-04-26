@@ -1146,7 +1146,7 @@ Direct Access to the Raw String
 
 The simdjson library makes explicit assumptions about types. For examples, numbers
 must be integers (up to 64-bit integers) or binary64 floating-point numbers. Some users
-have different needs. For example, or example, some users might want to support big integers.
+have different needs. For example, some users might want to support big integers.
 The library makes this possible by providing a `raw_json_token` method which returns
 a `std::string_view` instance containing the value as a string which you may then
 parse as you see fit.
