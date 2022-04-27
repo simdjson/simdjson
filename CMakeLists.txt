@@ -52,12 +52,7 @@ if(is_top_project)
 endif()
 
 include(cmake/handle-deprecations.cmake)
-
-if(SIMDJSON_DEVELOPER_MODE)
-  include(cmake/developer-options.cmake)
-else()
-  message(STATUS "Building only the library. Advanced users may want to turn SIMDJSON_DEVELOPER_MODE to ON, e.g., via -D SIMDJSON_DEVELOPER_MODE=ON.")
-endif()
+include(cmake/developer-options.cmake)
 
 # ---- simdjson library ----
 
@@ -176,6 +171,7 @@ endif()
 # ---- Developer mode extras ----
 
 if(NOT SIMDJSON_DEVELOPER_MODE)
+  message(STATUS "Building only the library. Advanced users may want to turn SIMDJSON_DEVELOPER_MODE to ON, e.g., via -D SIMDJSON_DEVELOPER_MODE=ON.")
   return()
 elseif(NOT is_top_project)
   message(AUTHOR_WARNING "Developer mode is intended for developers of simdjson")
