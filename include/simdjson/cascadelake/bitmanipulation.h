@@ -1,0 +1,1 @@
+../haswell/bitmanipulation.h

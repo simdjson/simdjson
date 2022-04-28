@@ -41,6 +41,9 @@
 
 #if defined(__x86_64__) || defined(_M_AMD64)
 #define SIMDJSON_IS_X86_64 1
+#if ((__AVX512F__) && (__AVX512DQ__) && (__AVX512CD__) && (__AVX512BW__) && (__AVX512VL__))
+#define SIMDJSON_IS_AVX512 1
+#endif
 #elif defined(__aarch64__) || defined(_M_ARM64)
 #define SIMDJSON_IS_ARM64 1
 #elif defined(__PPC64__) || defined(_M_PPC64)
