@@ -761,7 +761,7 @@ The entire simdjson API is usable with and without exceptions. All simdjson APIs
 pair. You can retrieve the value with .get() without generating an exception, like so:
 
 ```c++
-ondemand::element doc;
+ondemand::document doc;
 auto error = parser.iterate(json).get(doc);
 if (error) { cerr << error << endl; exit(1); }
 ```
