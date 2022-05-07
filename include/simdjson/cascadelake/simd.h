@@ -120,6 +120,8 @@ namespace simd {
     // Design consideration: it seems like a function with the
     // signature simd8<L> compress(uint32_t mask) would be
     // sensible, but the AVX ISA makes this kind of approach difficult.
+    // TODO: Sadly cascade lake won't support vpcompressb. It can be introduce for some
+    // latest platform.
     template<typename L>
     simdjson_really_inline void compress(uint64_t mask, L * output) const {
       using internal::thintable_epi8;
@@ -138,16 +140,15 @@ namespace simd {
       // next line just loads the 64-bit values thintable_epi8[mask1] and
       // thintable_epi8[mask2] into a 128-bit register, using only
       // two instructions on most compilers.
-      __m512i shufmask =  _mm512_set_epi64(thintable_epi8[mask8], thintable_epi8[mask7],
+      __m512i shufmask = _mm512_set_epi64(thintable_epi8[mask8], thintable_epi8[mask7],
               thintable_epi8[mask6], thintable_epi8[mask5],
               thintable_epi8[mask4], thintable_epi8[mask3],
               thintable_epi8[mask2], thintable_epi8[mask1]);
 
       // we increment by 0x08 the second half of the mask and so forth
-      shufmask =
-      _mm512_add_epi8(shufmask, _mm512_set_epi32(0x38383838, 0x38383838,
-          0x30303030, 0x30303030, 0x28282828, 0x28282828, 0x20202020, 0x20202020,
-          0x18181818, 0x18181818, 0x10101010, 0x10101010, 0x08080808, 0x08080808, 0, 0));
+      shufmask = _mm512_add_epi8(shufmask, _mm512_set_epi32(0x38383838, 0x38383838,
+                  0x30303030, 0x30303030, 0x28282828, 0x28282828, 0x20202020, 0x20202020,
+                  0x18181818, 0x18181818, 0x10101010, 0x10101010, 0x08080808, 0x08080808, 0, 0));
 
       // this is the version "nearly pruned"
       __m512i pruned = _mm512_shuffle_epi8(*this, shufmask);
@@ -345,7 +346,7 @@ namespace simd {
   template<typename T>
   struct simd8x64 {
     static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
-    static_assert(NUM_CHUNKS == 1, "Cascadelake kernel should use two registers per 64-byte block.");
+    static_assert(NUM_CHUNKS == 1, "Cascadelake kernel should use one register per 64-byte block.");
     const simd8<T> chunks[NUM_CHUNKS];
 
     simd8x64(const simd8x64<T>& o) = delete; // no copy allowed
