@@ -120,8 +120,8 @@ namespace simd {
     // Design consideration: it seems like a function with the
     // signature simd8<L> compress(uint32_t mask) would be
     // sensible, but the AVX ISA makes this kind of approach difficult.
-    // TODO: Sadly cascade lake won't support vpcompressb. It can be introduce for some
-    // latest platform.
+    // TODO: Sadly cascade lake processors do support vpcompressb. Future kernels should
+    // consider using it.
     template<typename L>
     simdjson_really_inline void compress(uint64_t mask, L * output) const {
       using internal::thintable_epi8;
