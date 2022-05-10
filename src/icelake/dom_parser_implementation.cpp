@@ -1,4 +1,4 @@
-#include "simdjson/cascadelake/begin.h"
+#include "simdjson/icelake/begin.h"
 
 //
 // Stage 1
@@ -128,17 +128,17 @@ simdjson_really_inline uint64_t json_string_scanner::find_escaped(uint64_t backs
 } // unnamed namespace
 
 simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
-  return cascadelake::stage1::json_minifier::minify<128>(buf, len, dst, dst_len);
+  return icelake::stage1::json_minifier::minify<128>(buf, len, dst, dst_len);
 }
 
 simdjson_warn_unused error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, stage1_mode streaming) noexcept {
   this->buf = _buf;
   this->len = _len;
-  return cascadelake::stage1::json_structural_indexer::index<128>(_buf, _len, *this, streaming);
+  return icelake::stage1::json_structural_indexer::index<128>(_buf, _len, *this, streaming);
 }
 
 simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
-  return cascadelake::stage1::generic_validate_utf8(buf,len);
+  return icelake::stage1::generic_validate_utf8(buf,len);
 }
 
 simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
@@ -158,4 +158,4 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#include "simdjson/cascadelake/end.h"
+#include "simdjson/icelake/end.h"

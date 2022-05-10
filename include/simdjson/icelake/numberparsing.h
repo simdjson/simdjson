@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_CASCADELAKE_NUMBERPARSING_H
-#define SIMDJSON_CASCADELAKE_NUMBERPARSING_H
+#ifndef SIMDJSON_ICELAKE_NUMBERPARSING_H
+#define SIMDJSON_ICELAKE_NUMBERPARSING_H
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -31,4 +31,4 @@ static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t
 
 #include "simdjson/generic/numberparsing.h"
 
-#endif // SIMDJSON_CASCADELAKE_NUMBERPARSING_H
+#endif // SIMDJSON_ICELAKE_NUMBERPARSING_H

@@ -13,22 +13,22 @@
 #endif
 #define SIMDJSON_CAN_ALWAYS_RUN_ARM64 SIMDJSON_IMPLEMENTATION_ARM64 && SIMDJSON_IS_ARM64
 
-// Cascadelake
-#ifndef SIMDJSON_IMPLEMENTATION_CASCADELAKE
-#define SIMDJSON_IMPLEMENTATION_CASCADELAKE (SIMDJSON_IS_X86_64 && SIMDJSON_IS_AVX512)
+// Icelake
+#ifndef SIMDJSON_IMPLEMENTATION_ICELAKE
+#define SIMDJSON_IMPLEMENTATION_ICELAKE (SIMDJSON_IS_X86_64 && SIMDJSON_IS_AVX512)
 #endif
 #ifdef _MSC_VER
 // To see why  (__BMI__) && (__PCLMUL__) && (__LZCNT__) are not part of this next line, see
 // https://github.com/simdjson/simdjson/issues/1247
-#define SIMDJSON_CAN_ALWAYS_RUN_CASCADELAKE ((SIMDJSON_IMPLEMENTATION_CASCADELAKE) && (SIMDJSON_IS_X86_64) && (__AVX2__))
+#define SIMDJSON_CAN_ALWAYS_RUN_ICELAKE ((SIMDJSON_IMPLEMENTATION_ICELAKE) && (SIMDJSON_IS_X86_64) && (__AVX2__))
 #else
-#define SIMDJSON_CAN_ALWAYS_RUN_CASCADELAKE ((SIMDJSON_IMPLEMENTATION_CASCADELAKE) && (SIMDJSON_IS_X86_64) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__) && (__AVX512F__) && (__AVX512DQ__) && (__AVX512CD__) && (__AVX512BW__) && (__AVX512VL__))
+#define SIMDJSON_CAN_ALWAYS_RUN_ICELAKE ((SIMDJSON_IMPLEMENTATION_ICELAKE) && (SIMDJSON_IS_X86_64) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__) && (__AVX512F__) && (__AVX512DQ__) && (__AVX512CD__) && (__AVX512BW__) && (__AVX512VL__))
 #endif
 
 // Default Haswell to on if this is x86-64. Even if we're not compiled for it, it could be selected
 // at runtime.
 #ifndef SIMDJSON_IMPLEMENTATION_HASWELL
-#define SIMDJSON_IMPLEMENTATION_HASWELL (SIMDJSON_IS_X86_64 && !SIMDJSON_IMPLEMENTATION_CASCADELAKE)
+#define SIMDJSON_IMPLEMENTATION_HASWELL (SIMDJSON_IS_X86_64 && !SIMDJSON_IMPLEMENTATION_ICELAKE)
 #endif
 #ifdef _MSC_VER
 // To see why  (__BMI__) && (__PCLMUL__) && (__LZCNT__) are not part of this next line, see
@@ -40,7 +40,7 @@
 
 // Default Westmere to on if this is x86-64, unless we'll always select Haswell.
 #ifndef SIMDJSON_IMPLEMENTATION_WESTMERE
-#define SIMDJSON_IMPLEMENTATION_WESTMERE (SIMDJSON_IS_X86_64 && !SIMDJSON_REQUIRES_HASWELL && !SIMDJSON_IMPLEMENTATION_CASCADELAKE)
+#define SIMDJSON_IMPLEMENTATION_WESTMERE (SIMDJSON_IS_X86_64 && !SIMDJSON_REQUIRES_HASWELL && !SIMDJSON_IMPLEMENTATION_ICELAKE)
 #endif
 #define SIMDJSON_CAN_ALWAYS_RUN_WESTMERE (SIMDJSON_IMPLEMENTATION_WESTMERE && SIMDJSON_IS_X86_64 && __SSE4_2__ && __PCLMUL__)
 
@@ -61,7 +61,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 // Implementations
 #include "simdjson/arm64.h"
 #include "simdjson/fallback.h"
-#include "simdjson/cascadelake.h"
+#include "simdjson/icelake.h"
 #include "simdjson/haswell.h"
 #include "simdjson/ppc64.h"
 #include "simdjson/westmere.h"
