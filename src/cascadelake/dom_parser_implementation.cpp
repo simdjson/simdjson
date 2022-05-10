@@ -103,7 +103,51 @@ simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>
 } // namespace simdjson
 
 #include "generic/stage1/utf8_lookup4_algorithm.h"
+// defining SIMDJSON_CUSTOM_BIT_INDEXER allows us to provide our own bit_indexer::write
+#define SIMDJSON_CUSTOM_BIT_INDEXER
 #include "generic/stage1/json_structural_indexer.h"
+// We must not forget to undefine it now:
+#undef SIMDJSON_CUSTOM_BIT_INDEXER
+
+/**
+ * We provide a custom version of bit_indexer::write using
+ * naked intrinsics.
+ * TODO: make this code more elegant.
+ */
+namespace simdjson { namespace SIMDJSON_IMPLEMENTATION { namespace { namespace stage1 {
+simdjson_really_inline void bit_indexer::write(uint32_t idx, uint64_t bits) {
+    // In some instances, the next branch is expensive because it is mispredicted.
+    // Unfortunately, in other cases,
+    // it helps tremendously.
+    if (bits == 0) { return; }
+    __m512i start_index = _mm512_set1_epi32(idx);
+    __m512i base_index = _mm512_setr_epi32(0,1,2,3,4,5,
+      6,7,8,9,10,11,12,13,14,15);
+    base_index = _mm512_add_epi32(base_index, start_index);
+    uint16_t mask;
+    mask = bits & 0xFFFF;
+    _mm512_mask_compressstoreu_epi32(this->tail,
+      mask, base_index);
+    this->tail += count_ones(mask);
+    const __m512i constant16 = _mm512_set1_epi32(16);
+    base_index = _mm512_add_epi32(base_index, constant16);
+    mask = (bits>>16) & 0xFFFF;
+    _mm512_mask_compressstoreu_epi32(this->tail,
+      mask, base_index);
+    this->tail += count_ones(mask);
+    base_index = _mm512_add_epi32(base_index, constant16);
+    mask = (bits>>32) & 0xFFFF;
+    _mm512_mask_compressstoreu_epi32(this->tail,
+      mask, base_index);
+    this->tail += count_ones(mask);
+    base_index = _mm512_add_epi32(base_index, constant16);
+    mask = bits>>48;
+    _mm512_mask_compressstoreu_epi32(this->tail,
+      mask, base_index);
+    this->tail += count_ones(mask);
+}
+}}}}
+
 #include "generic/stage1/utf8_validator.h"
 
 //

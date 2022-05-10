@@ -17,7 +17,7 @@
 // Default Cascadelake to on if this is x86-64. Even if we're not compiled for it, it could be selected
 // at runtime.
 #ifndef SIMDJSON_IMPLEMENTATION_CASCADELAKE
-#define SIMDJSON_IMPLEMENTATION_CASCADELAKE SIMDJSON_IS_X86_64
+#define SIMDJSON_IMPLEMENTATION_CASCADELAKE ((SIMDJSON_IS_X86_64) && (SIMDJSON_AVX512_ALLOWED))
 #endif
 
 
