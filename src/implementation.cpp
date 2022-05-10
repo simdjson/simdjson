@@ -13,7 +13,12 @@ namespace internal {
 
 // Static array of known implementations. We're hoping these get baked into the executable
 // without requiring a static initializer.
-
+#if SIMDJSON_IMPLEMENTATION_SUNNYCOVE
+static const sunnycove::implementation* get_sunnycove_singleton() {
+  static const sunnycove::implementation sunnycove_singleton{};
+  return &sunnycove_singleton;
+}
+#endif
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 static const haswell::implementation* get_haswell_singleton() {
   static const haswell::implementation haswell_singleton{};
@@ -73,6 +78,9 @@ private:
 
 static const std::initializer_list<const implementation *>& get_available_implementation_pointers() {
   static const std::initializer_list<const implementation *> available_implementation_pointers {
+#if SIMDJSON_IMPLEMENTATION_SUNNYCOVE
+    get_sunnycove_singleton(),
+#endif
 #if SIMDJSON_IMPLEMENTATION_HASWELL
     get_haswell_singleton(),
 #endif

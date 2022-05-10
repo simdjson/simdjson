@@ -12,11 +12,15 @@
 #define SIMDJSON_IMPLEMENTATION_ARM64 (SIMDJSON_IS_ARM64)
 #endif
 #define SIMDJSON_CAN_ALWAYS_RUN_ARM64 SIMDJSON_IMPLEMENTATION_ARM64 && SIMDJSON_IS_ARM64
-
+// Default Haswell to on if this is x86-64.
+#ifndef SIMDJSON_IMPLEMENTATION_SUNNYCOVE
+#define SIMDJSON_IMPLEMENTATION_SUNNYCOVE (SIMDJSON_IS_X86_64)
+#endif
+#define SIMDJSON_CAN_ALWAYS_RUN_SUNNYCOVE ((SIMDJSON_IMPLEMENTATION_SUNNYCOVE) && (SIMDJSON_IS_X86_64) && (__AVX2__) && (__AVX512F__))
 // Default Haswell to on if this is x86-64. Even if we're not compiled for it, it could be selected
 // at runtime.
 #ifndef SIMDJSON_IMPLEMENTATION_HASWELL
-#define SIMDJSON_IMPLEMENTATION_HASWELL (SIMDJSON_IS_X86_64)
+#define SIMDJSON_IMPLEMENTATION_HASWELL (SIMDJSON_IS_X86_64 && !SIMDJSON_REQUIRES_SUNNYCOVE)
 #endif
 #ifdef _MSC_VER
 // To see why  (__BMI__) && (__PCLMUL__) && (__LZCNT__) are not part of this next line, see
@@ -28,7 +32,7 @@
 
 // Default Westmere to on if this is x86-64, unless we'll always select Haswell.
 #ifndef SIMDJSON_IMPLEMENTATION_WESTMERE
-#define SIMDJSON_IMPLEMENTATION_WESTMERE (SIMDJSON_IS_X86_64 && !SIMDJSON_REQUIRES_HASWELL)
+#define SIMDJSON_IMPLEMENTATION_WESTMERE (SIMDJSON_IS_X86_64 && !SIMDJSON_REQUIRES_HASWELL  && !SIMDJSON_REQUIRES_SUNNYCOVE)
 #endif
 #define SIMDJSON_CAN_ALWAYS_RUN_WESTMERE (SIMDJSON_IMPLEMENTATION_WESTMERE && SIMDJSON_IS_X86_64 && __SSE4_2__ && __PCLMUL__)
 
@@ -50,6 +54,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "simdjson/arm64.h"
 #include "simdjson/fallback.h"
 #include "simdjson/haswell.h"
+#include "simdjson/sunnycove.h"
 #include "simdjson/ppc64.h"
 #include "simdjson/westmere.h"
 

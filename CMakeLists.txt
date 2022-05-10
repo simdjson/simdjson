@@ -49,10 +49,21 @@ endif()
 if(is_top_project)
   option(SIMDJSON_DEVELOPER_MODE "Enable targets for developing simdjson" OFF)
   option(BUILD_SHARED_LIBS "Build simdjson as a shared library" OFF)
+
+  if("$ENV{CI}")
+    set(SIMDJSON_DEVELOPER_MODE ON CACHE INTERNAL "")
+  endif()
 endif()
 
 include(cmake/handle-deprecations.cmake)
-include(cmake/developer-options.cmake)
+
+if(SIMDJSON_DEVELOPER_MODE)
+  include(cmake/developer-options.cmake)
+else()
+  message(STATUS "Building only the library. Advanced users may want to turn SIMDJSON_DEVELOPER_MODE to ON, e.g., via -D SIMDJSON_DEVELOPER_MODE=ON.")
+endif()
+
+option(SIMDJSON_ENABLE_AVX512 "Enable avx-512" ON)
 
 # ---- simdjson library ----
 
@@ -93,6 +104,12 @@ if(
       target_compile_options PRIVATE
       -mno-avx256-split-unaligned-load -mno-avx256-split-unaligned-store
   )
+  if(SIMDJSON_ENABLE_AVX512)
+    simdjson_add_props(
+      target_compile_options PRIVATE
+      -march=icelake-server
+    )
+  endif()
 endif()
 
 if(SIMDJSON_ENABLE_THREADS)
@@ -171,7 +188,6 @@ endif()
 # ---- Developer mode extras ----
 
 if(NOT SIMDJSON_DEVELOPER_MODE)
-  message(STATUS "Building only the library. Advanced users may want to turn SIMDJSON_DEVELOPER_MODE to ON, e.g., via -D SIMDJSON_DEVELOPER_MODE=ON.")
   return()
 elseif(NOT is_top_project)
   message(AUTHOR_WARNING "Developer mode is intended for developers of simdjson")

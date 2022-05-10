@@ -66,7 +66,8 @@ enum instruction_set {
   PCLMULQDQ = 0x10,
   BMI1 = 0x20,
   BMI2 = 0x40,
-  ALTIVEC = 0x80
+  ALTIVEC = 0x80,
+  AVX512 = 0x100
 };
 
 #if defined(__PPC64__)
@@ -101,6 +102,7 @@ constexpr uint32_t cpuid_bmi1_bit = 1 << 3;      ///< @private bit 3 of EBX for 
 constexpr uint32_t cpuid_bmi2_bit = 1 << 8;      ///< @private bit 8 of EBX for EAX=0x7
 constexpr uint32_t cpuid_sse42_bit = 1 << 20;    ///< @private bit 20 of ECX for EAX=0x1
 constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1; ///< @private bit  1 of ECX for EAX=0x1
+constexpr uint32_t cpuid_avx512_bit = 1 << 31;   ///< @private bit 31 of EBX for EAX=0x7
 }
 
 
@@ -135,6 +137,9 @@ static inline uint32_t detect_supported_architectures() {
   eax = 0x7;
   ecx = 0x0;
   cpuid(&eax, &ebx, &ecx, &edx);
+  if (ebx & cpuid_avx512_bit) {
+    host_isa |= instruction_set::AVX512;
+  }
   if (ebx & cpuid_avx2_bit) {
     host_isa |= instruction_set::AVX2;
   }

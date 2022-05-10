@@ -154,9 +154,11 @@ using namespace simd;
         this->error |= this->prev_incomplete;
       } else {
         // you might think that a for-loop would work, but under Visual Studio, it is not good enough.
-        static_assert((simd8x64<uint8_t>::NUM_CHUNKS == 2) || (simd8x64<uint8_t>::NUM_CHUNKS == 4),
-            "We support either two or four chunks per 64-byte block.");
-        if(simd8x64<uint8_t>::NUM_CHUNKS == 2) {
+        static_assert((simd8x64<uint8_t>::NUM_CHUNKS == 1) || (simd8x64<uint8_t>::NUM_CHUNKS == 2) || (simd8x64<uint8_t>::NUM_CHUNKS == 4),
+            "We support either one or two or four chunks per 64-byte block.");
+        if(simd8x64<uint8_t>::NUM_CHUNKS == 1) {
+          this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
+        } else if(simd8x64<uint8_t>::NUM_CHUNKS == 2) {
           this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
           this->check_utf8_bytes(input.chunks[1], input.chunks[0]);
         } else if(simd8x64<uint8_t>::NUM_CHUNKS == 4) {

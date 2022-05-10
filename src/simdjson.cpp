@@ -31,5 +31,9 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "westmere/implementation.cpp"
 #include "westmere/dom_parser_implementation.cpp"
 #endif
+#if SIMDJSON_IMPLEMENTATION_SUNNYCOVE
+#include "sunnycove/implementation.cpp"
+#include "sunnycove/dom_parser_implementation.cpp"
+#endif
 
 SIMDJSON_POP_DISABLE_WARNINGS

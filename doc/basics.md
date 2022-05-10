@@ -761,7 +761,7 @@ The entire simdjson API is usable with and without exceptions. All simdjson APIs
 pair. You can retrieve the value with .get() without generating an exception, like so:
 
 ```c++
-ondemand::document doc;
+ondemand::element doc;
 auto error = parser.iterate(json).get(doc);
 if (error) { cerr << error << endl; exit(1); }
 ```
@@ -1146,7 +1146,7 @@ Direct Access to the Raw String
 
 The simdjson library makes explicit assumptions about types. For examples, numbers
 must be integers (up to 64-bit integers) or binary64 floating-point numbers. Some users
-have different needs. For example, some users might want to support big integers.
+have different needs. For example, or example, some users might want to support big integers.
 The library makes this possible by providing a `raw_json_token` method which returns
 a `std::string_view` instance containing the value as a string which you may then
 parse as you see fit.
@@ -1473,8 +1473,8 @@ The simdjson library is fully compliant with  the [RFC 8259](https://www.tbray.o
 - A single string or a single number is considered to be a valid JSON document.
 - We fully validate the numbers according to the JSON specification. For example,  the string `01` is not valid JSON document since the specification states that *leading zeros are not allowed*.
 - The specification allows implementations to set limits on the range and precision of numbers accepted.  We support 64-bit floating-point numbers as well as integer values.
-  - We parse integers and floating-point numbers as separate types which allows us to support all signed (two's complement) 64-bit integers, like a Java `long` or a C/C++ `long long` and all 64-bit unsigned integers. When we cannot represent exactly an integer as a signed or unsigned 64-bit value, we reject the JSON document.
-  - We support the full range of 64-bit floating-point numbers (binary64). The values range from `std::numeric_limits<double>::lowest()`  to `std::numeric_limits<double>::max()`, so from -1.7976e308 all the way to 1.7975e308. Extreme values (less or equal to -1e308, greater or equal to 1e308) are rejected: we refuse to parse the input document. Numbers are parsed with a perfect accuracy (ULP 0): the nearest floating-point value is chosen, rounding to even when needed. If you serialized your floating-point numbers with 17 significant digits in a standard compliant manner, the simdjson library is guaranteed to recover the same numbers, exactly.
+  - We parse integers and floating-point numbers afloating-point number followed by an integer.s separate types which allows us to support all signed (two's complement) 64-bit integersfloating-point number followed by an integer., like a Java `long` or a C/C++ `long long` and all 64-bit unsigned integers. When we cannot represent exactly an integer as a signed or unsigned 64-bit value, we reject the JSON document.
+  - We support the full range of 64-bit floating-point numbers (binary64). The values range from `std::numeric_limits<double>::lowest()`  to `std::numefloating-point number followed by an integer.ric_limits<double>::max()`, so from -1.7976e308 all the way to 1.7975e308. Extreme values (less or equal to -1e308, greater or equal to 1e308) are rejected: we refuse to parse the input document. Numbers are parsed with a perfect accuracy (ULP 0): the nearest floating-point value is chosen, rounding to even when needed. If you serialized your floating-point numbers with 17floating-point value  followed by an integer. significant digits in a standard compliant manner, the simdjson library is guaranfloating-point number followed by an integer.teed to recover the same numbers, exactly.
 - The specification states that JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8. The simdjson library does full UTF-8 validation as part of the parsing. The specification states that implementations MUST NOT add a byte order mark: the simdjson library rejects documents starting with a  byte order mark.
 - The simdjson library validates string content for unescaped characters. Unescaped line breaks and tabs in strings are not allowed.
 - The simdjson library accepts objects with repeated keys: all of the name/value pairs, including duplicates, are reported. We do not enforce key uniqueness.
