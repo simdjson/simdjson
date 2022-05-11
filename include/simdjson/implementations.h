@@ -24,9 +24,9 @@
 #ifdef _MSC_VER
 // To see why  (__BMI__) && (__PCLMUL__) && (__LZCNT__) are not part of this next line, see
 // https://github.com/simdjson/simdjson/issues/1247
-#define SIMDJSON_CAN_ALWAYS_RUN_ICELAKE ((SIMDJSON_IS_X86_64) && (__AVX2__) && (__AVX512F__) && (__AVX512DQ__) && (__AVX512CD__) && (__AVX512BW__) && (__AVX512VL__) && (__AVX512VBMI2__))
+#define SIMDJSON_CAN_ALWAYS_RUN_ICELAKE ((SIMDJSON_IMPLEMENTATION_ICELAKE) && (__AVX2__) && (__AVX512F__) && (__AVX512DQ__) && (__AVX512CD__) && (__AVX512BW__) && (__AVX512VL__) && (__AVX512VBMI2__))
 #else
-#define SIMDJSON_CAN_ALWAYS_RUN_ICELAKE ((SIMDJSON_IS_X86_64) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__) && (__AVX512F__) && (__AVX512DQ__) && (__AVX512CD__) && (__AVX512BW__) && (__AVX512VL__) && (__AVX512VBMI2__))
+#define SIMDJSON_CAN_ALWAYS_RUN_ICELAKE ((SIMDJSON_IMPLEMENTATION_ICELAKE) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__) && (__AVX512F__) && (__AVX512DQ__) && (__AVX512CD__) && (__AVX512BW__) && (__AVX512VL__) && (__AVX512VBMI2__))
 #endif
 
 // Default Haswell to on if this is x86-64. Even if we're not compiled for it, it could be selected
