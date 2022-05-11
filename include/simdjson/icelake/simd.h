@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_CASCADELAKE_SIMD_H
-#define SIMDJSON_CASCADELAKE_SIMD_H
+#ifndef SIMDJSON_ICELAKE_SIMD_H
+#define SIMDJSON_ICELAKE_SIMD_H
 
 #include "simdjson/internal/simdprune_tables.h"
 
@@ -346,7 +346,7 @@ namespace simd {
   template<typename T>
   struct simd8x64 {
     static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
-    static_assert(NUM_CHUNKS == 1, "Cascadelake kernel should use one register per 64-byte block.");
+    static_assert(NUM_CHUNKS == 1, "Icelake kernel should use one register per 64-byte block.");
     const simd8<T> chunks[NUM_CHUNKS];
 
     simd8x64(const simd8x64<T>& o) = delete; // no copy allowed
@@ -398,4 +398,4 @@ namespace simd {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#endif // SIMDJSON_CASCADELAKE_SIMD_H
+#endif // SIMDJSON_ICELAKE_SIMD_H

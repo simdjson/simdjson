@@ -1,9 +1,9 @@
-#ifndef SIMDJSON_CASCADELAKE_STRINGPARSING_H
-#define SIMDJSON_CASCADELAKE_STRINGPARSING_H
+#ifndef SIMDJSON_ICELAKE_STRINGPARSING_H
+#define SIMDJSON_ICELAKE_STRINGPARSING_H
 
 #include "simdjson/base.h"
-#include "simdjson/cascadelake/simd.h"
-#include "simdjson/cascadelake/bitmanipulation.h"
+#include "simdjson/icelake/simd.h"
+#include "simdjson/icelake/bitmanipulation.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -45,4 +45,4 @@ simdjson_really_inline backslash_and_quote backslash_and_quote::copy_and_find(co
 
 #include "simdjson/generic/stringparsing.h"
 
-#endif // SIMDJSON_CASCADELAKE_STRINGPARSING_H
+#endif // SIMDJSON_ICELAKE_STRINGPARSING_H

@@ -1,4 +1,4 @@
-#include "simdjson/cascadelake/begin.h"
+#include "simdjson/icelake/begin.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -20,5 +20,5 @@ simdjson_warn_unused error_code implementation::create_dom_parser_implementation
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#include "simdjson/cascadelake/end.h"
+#include "simdjson/icelake/end.h"
 
