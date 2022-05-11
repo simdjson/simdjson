@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_CASCADELAKE_INTRINSICS_H
-#define SIMDJSON_CASCADELAKE_INTRINSICS_H
+#ifndef SIMDJSON_ICELAKE_INTRINSICS_H
+#define SIMDJSON_ICELAKE_INTRINSICS_H
 
 #include "simdjson/base.h"
 
@@ -41,12 +41,12 @@
 // has it as a macro.
 #ifndef _blsr_u64
 // we roll our own
-SIMDJSON_TARGET_CASCADELAKE
+SIMDJSON_TARGET_ICELAKE
 static simdjson_really_inline uint64_t _blsr_u64(uint64_t n) {
   return (n - 1) & n;
 }
-SIMDJSON_UNTARGET_CASCADELAKE
+SIMDJSON_UNTARGET_ICELAKE
 #endif //  _blsr_u64
 #endif // SIMDJSON_CLANG_VISUAL_STUDIO
 
-#endif // SIMDJSON_CASCADELAKE_INTRINSICS_H
+#endif // SIMDJSON_ICELAKE_INTRINSICS_H

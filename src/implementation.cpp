@@ -14,10 +14,10 @@ namespace internal {
 // Static array of known implementations. We're hoping these get baked into the executable
 // without requiring a static initializer.
 
-#if SIMDJSON_IMPLEMENTATION_CASCADELAKE
-static const cascadelake::implementation* get_cascadelake_singleton() {
-  static const cascadelake::implementation cascadelake_singleton{};
-  return &cascadelake_singleton;
+#if SIMDJSON_IMPLEMENTATION_ICELAKE
+static const icelake::implementation* get_icelake_singleton() {
+  static const icelake::implementation icelake_singleton{};
+  return &icelake_singleton;
 }
 #endif
 #if SIMDJSON_IMPLEMENTATION_HASWELL
@@ -79,8 +79,8 @@ private:
 
 static const std::initializer_list<const implementation *>& get_available_implementation_pointers() {
   static const std::initializer_list<const implementation *> available_implementation_pointers {
-#if SIMDJSON_IMPLEMENTATION_CASCADELAKE
-    get_cascadelake_singleton(),
+#if SIMDJSON_IMPLEMENTATION_ICELAKE
+    get_icelake_singleton(),
 #endif
 #if SIMDJSON_IMPLEMENTATION_HASWELL
     get_haswell_singleton(),

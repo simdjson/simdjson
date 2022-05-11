@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_CASCADELAKE_BITMANIPULATION_H
-#define SIMDJSON_CASCADELAKE_BITMANIPULATION_H
+#ifndef SIMDJSON_ICELAKE_BITMANIPULATION_H
+#define SIMDJSON_ICELAKE_BITMANIPULATION_H
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -58,4 +58,4 @@ simdjson_really_inline bool add_overflow(uint64_t value1, uint64_t value2,
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#endif // SIMDJSON_CASCADELAKE_BITMANIPULATION_H
+#endif // SIMDJSON_ICELAKE_BITMANIPULATION_H

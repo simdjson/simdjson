@@ -111,7 +111,7 @@ using namespace simd;
   simdjson_really_inline simd8<uint8_t> is_incomplete(const simd8<uint8_t> input) {
     // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
     // ... 1111____ 111_____ 11______
-#if SIMDJSON_IMPLEMENTATION_CASCADELAKE
+#if SIMDJSON_IMPLEMENTATION_ICELAKE
     static const uint8_t max_array[64] = {
       255, 255, 255, 255, 255, 255, 255, 255,
       255, 255, 255, 255, 255, 255, 255, 255,

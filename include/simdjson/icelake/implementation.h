@@ -1,20 +1,20 @@
-#ifndef SIMDJSON_CASCADELAKE_IMPLEMENTATION_H
-#define SIMDJSON_CASCADELAKE_IMPLEMENTATION_H
+#ifndef SIMDJSON_ICELAKE_IMPLEMENTATION_H
+#define SIMDJSON_ICELAKE_IMPLEMENTATION_H
 
 #include "simdjson/implementation.h"
 
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_CASCADELAKE
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_ICELAKE
 namespace simdjson {
-namespace cascadelake {
+namespace icelake {
 
 using namespace simdjson;
 
 class implementation final : public simdjson::implementation {
 public:
   simdjson_really_inline implementation() : simdjson::implementation(
-      "cascadelake",
+      "icelake",
       "Intel/AMD AVX512",
-      internal::instruction_set::AVX2 | internal::instruction_set::PCLMULQDQ | internal::instruction_set::BMI1 | internal::instruction_set::BMI2 | internal::instruction_set::AVX512F | internal::instruction_set::AVX512DQ | internal::instruction_set::AVX512CD | internal::instruction_set::AVX512BW | internal::instruction_set::AVX512VL
+      internal::instruction_set::AVX2 | internal::instruction_set::PCLMULQDQ | internal::instruction_set::BMI1 | internal::instruction_set::BMI2 | internal::instruction_set::AVX512F | internal::instruction_set::AVX512DQ | internal::instruction_set::AVX512CD | internal::instruction_set::AVX512BW | internal::instruction_set::AVX512VL | internal::instruction_set::AVX512VBMI2
   ) {}
   simdjson_warn_unused error_code create_dom_parser_implementation(
     size_t capacity,
@@ -25,7 +25,7 @@ public:
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
 };
 
-} // namespace cascadelake
+} // namespace icelake
 } // namespace simdjson
 
-#endif // SIMDJSON_CASCADELAKE_IMPLEMENTATION_H
+#endif // SIMDJSON_ICELAKE_IMPLEMENTATION_H
