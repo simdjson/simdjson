@@ -120,71 +120,9 @@ namespace simd {
     // Design consideration: it seems like a function with the
     // signature simd8<L> compress(uint32_t mask) would be
     // sensible, but the AVX ISA makes this kind of approach difficult.
-    // TODO: Sadly cascade lake processors do support vpcompressb. Future kernels should
-    // consider using it.
     template<typename L>
     simdjson_really_inline void compress(uint64_t mask, L * output) const {
-      using internal::thintable_epi8;
-      using internal::BitsSetTable256mul2;
-      using internal::pshufb_combine_table;
-      // this particular implementation was inspired by work done by @animetosho
-      // we do it in four steps, first 8 bytes and then second 8 bytes...
-      uint8_t mask1 = uint8_t(mask); // least significant 8 bits
-      uint8_t mask2 = uint8_t(mask >> 8); // second least significant 8 bits
-      uint8_t mask3 = uint8_t(mask >> 16); // ...
-      uint8_t mask4 = uint8_t(mask >> 24); // ...
-      uint8_t mask5 = uint8_t(mask >> 32); // ...
-      uint8_t mask6 = uint8_t(mask >> 40); // ...
-      uint8_t mask7 = uint8_t(mask >> 48); // ...
-      uint8_t mask8 = uint8_t(mask >> 56); // ...
-      // next line just loads the 64-bit values thintable_epi8[mask1] and
-      // thintable_epi8[mask2] into a 128-bit register, using only
-      // two instructions on most compilers.
-      __m512i shufmask = _mm512_set_epi64(thintable_epi8[mask8], thintable_epi8[mask7],
-              thintable_epi8[mask6], thintable_epi8[mask5],
-              thintable_epi8[mask4], thintable_epi8[mask3],
-              thintable_epi8[mask2], thintable_epi8[mask1]);
-
-      // we increment by 0x08 the second half of the mask and so forth
-      shufmask = _mm512_add_epi8(shufmask, _mm512_set_epi32(0x38383838, 0x38383838,
-                  0x30303030, 0x30303030, 0x28282828, 0x28282828, 0x20202020, 0x20202020,
-                  0x18181818, 0x18181818, 0x10101010, 0x10101010, 0x08080808, 0x08080808, 0, 0));
-
-      // this is the version "nearly pruned"
-      __m512i pruned = _mm512_shuffle_epi8(*this, shufmask);
-      // we still need to put the  pieces back together.
-      // we compute the popcount of the first words:
-      int pop1 = BitsSetTable256mul2[mask1];
-      int pop3 = BitsSetTable256mul2[mask3];
-      int pop5 = BitsSetTable256mul2[mask5];
-      int pop7 = BitsSetTable256mul2[mask7];
-
-      // then load the corresponding mask
-      // could be done with _mm256_loadu2_m128i but many standard libraries omit this intrinsic.
-      __m512i v512 = _mm512_castsi128_si512 (
-        _mm_loadu_si128(reinterpret_cast<const __m128i *>(pshufb_combine_table + pop1 * 8)));
-      __m512i compactmask = _mm512_inserti32x4 (v512,
-        _mm_loadu_si128(reinterpret_cast<const __m128i *>(pshufb_combine_table + pop3 * 8)), 1);
-      compactmask = _mm512_inserti32x4 (compactmask,
-        _mm_loadu_si128(reinterpret_cast<const __m128i *>(pshufb_combine_table + pop5 * 8)), 2);
-      compactmask = _mm512_inserti32x4 (compactmask,
-        _mm_loadu_si128(reinterpret_cast<const __m128i *>(pshufb_combine_table + pop7 * 8)), 3);
-      __m512i almostthere =  _mm512_shuffle_epi8(pruned, compactmask);
-
-      // We just need to write out the result.
-      // This is the tricky bit that is hard to do
-      // if we want to return a SIMD register, since there
-      // is no single-instruction approach to recombine
-      // the two 128-bit lanes with an offset.
-      __m128i v128;
-      v128 = _mm512_castsi512_si128(almostthere);
-      _mm_storeu_si128(reinterpret_cast<__m128i *>(output), v128);
-      v128 = _mm512_extracti32x4_epi32(almostthere, 1);
-      _mm_storeu_si128(reinterpret_cast<__m128i *>(output + 16 - count_ones(mask & 0xFFFF)), v128);
-      v128 = _mm512_extracti32x4_epi32(almostthere, 2);
-      _mm_storeu_si128(reinterpret_cast<__m128i *>(output + 32 - count_ones(mask & 0xFFFFFFFF)), v128);
-      v128 = _mm512_extracti32x4_epi32(almostthere, 3);
-      _mm_storeu_si128(reinterpret_cast<__m128i *>(output + 48 - count_ones(mask & 0xFFFFFFFFFFFF)), v128);
+      _mm512_mask_compressstoreu_epi8 (output,~mask,*this);
     }
 
     template<typename L>
@@ -253,8 +191,8 @@ namespace simd {
     simdjson_really_inline simd8<int8_t> max_val(const simd8<int8_t> other) const { return _mm512_max_epi8(*this, other); }
     simdjson_really_inline simd8<int8_t> min_val(const simd8<int8_t> other) const { return _mm512_min_epi8(*this, other); }
 
-    simdjson_really_inline simd8<bool> operator>(const simd8<int8_t> other) const { return _mm512_maskz_abs_epi8(_mm512_cmpgt_epi8_mask(*this, other),_mm512_set1_epi8(0x80)); }
-    simdjson_really_inline simd8<bool> operator<(const simd8<int8_t> other) const { return _mm512_maskz_abs_epi8(_mm512_cmpgt_epi8_mask(other, *this),_mm512_set1_epi8(0x80)); }
+    simdjson_really_inline simd8<bool> operator>(const simd8<int8_t> other) const { return _mm512_maskz_abs_epi8(_mm512_cmpgt_epi8_mask(*this, other),_mm512_set1_epi8(uint8_t(0x80))); }
+    simdjson_really_inline simd8<bool> operator<(const simd8<int8_t> other) const { return _mm512_maskz_abs_epi8(_mm512_cmpgt_epi8_mask(other, *this),_mm512_set1_epi8(uint8_t(0x80))); }
   };
 
   // Unsigned bytes

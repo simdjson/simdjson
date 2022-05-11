@@ -120,31 +120,32 @@ simdjson_really_inline void bit_indexer::write(uint32_t idx, uint64_t bits) {
     // Unfortunately, in other cases,
     // it helps tremendously.
     if (bits == 0) { return; }
-    __m512i start_index = _mm512_set1_epi32(idx);
-    __m512i base_index = _mm512_setr_epi32(0,1,2,3,4,5,
-      6,7,8,9,10,11,12,13,14,15);
-    base_index = _mm512_add_epi32(base_index, start_index);
-    uint16_t mask;
-    mask = bits & 0xFFFF;
-    _mm512_mask_compressstoreu_epi32(this->tail,
-      mask, base_index);
-    this->tail += count_ones(mask);
-    const __m512i constant16 = _mm512_set1_epi32(16);
-    base_index = _mm512_add_epi32(base_index, constant16);
-    mask = (bits>>16) & 0xFFFF;
-    _mm512_mask_compressstoreu_epi32(this->tail,
-      mask, base_index);
-    this->tail += count_ones(mask);
-    base_index = _mm512_add_epi32(base_index, constant16);
-    mask = (bits>>32) & 0xFFFF;
-    _mm512_mask_compressstoreu_epi32(this->tail,
-      mask, base_index);
-    this->tail += count_ones(mask);
-    base_index = _mm512_add_epi32(base_index, constant16);
-    mask = bits>>48;
-    _mm512_mask_compressstoreu_epi32(this->tail,
-      mask, base_index);
-    this->tail += count_ones(mask);
+
+    const __m512i indexes = _mm512_maskz_compress_epi8(bits, _mm512_set_epi32(
+      0x3f3e3d3c, 0x3b3a3938, 0x37363534, 0x33323130,
+      0x2f2e2d2c, 0x2b2a2928, 0x27262524, 0x23222120,
+      0x1f1e1d1c, 0x1b1a1918, 0x17161514, 0x13121110,
+      0x0f0e0d0c, 0x0b0a0908, 0x07060504, 0x03020100
+    ));
+    const __m512i start_index = _mm512_set1_epi32(idx);
+
+    const int count = count_ones(bits);
+    __m512i t0 = _mm512_cvtepu8_epi32(_mm512_castsi512_si128(indexes));
+    _mm512_storeu_si512(this->tail, _mm512_add_epi32(t0, start_index));
+
+    if(count > 16) {
+      const __m512i t1 = _mm512_cvtepu8_epi32(_mm512_extracti32x4_epi32(indexes, 1));
+      _mm512_storeu_si512(this->tail + 16, _mm512_add_epi32(t1, start_index));
+      if(count > 32) {
+        const __m512i t2 = _mm512_cvtepu8_epi32(_mm512_extracti32x4_epi32(indexes, 2));
+        _mm512_storeu_si512(this->tail + 32, _mm512_add_epi32(t2, start_index));
+        if(count > 48) {
+          const __m512i t3 = _mm512_cvtepu8_epi32(_mm512_extracti32x4_epi32(indexes, 3));
+          _mm512_storeu_si512(this->tail + 48, _mm512_add_epi32(t3, start_index));
+        }
+      }
+    }
+    this->tail += count;
 }
 }}}}
 
