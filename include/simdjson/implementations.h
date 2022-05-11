@@ -17,7 +17,7 @@
 // How do we detect that a compiler supports vbmi2?
 // For sure if the following header is found, we are ok?
 #if __has_include(<avx512vbmi2intrin.h>)
-#define SIMDJSON_COMPILER_SUPPORTS_VBMI2
+#define SIMDJSON_COMPILER_SUPPORTS_VBMI2 1
 #endif
 #endif
 
