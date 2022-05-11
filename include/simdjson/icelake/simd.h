@@ -253,8 +253,8 @@ namespace simd {
     simdjson_really_inline simd8<int8_t> max_val(const simd8<int8_t> other) const { return _mm512_max_epi8(*this, other); }
     simdjson_really_inline simd8<int8_t> min_val(const simd8<int8_t> other) const { return _mm512_min_epi8(*this, other); }
 
-    simdjson_really_inline simd8<bool> operator>(const simd8<int8_t> other) const { return _mm512_mask_blend_epi8(_mm512_cmpgt_epi8_mask(*this, other), _mm512_set1_epi8(0), _mm512_set1_epi8(-1)); }
-    simdjson_really_inline simd8<bool> operator<(const simd8<int8_t> other) const { return _mm512_mask_blend_epi8(_mm512_cmpgt_epi8_mask(other, *this), _mm512_set1_epi8(0), _mm512_set1_epi8(-1)); }
+    simdjson_really_inline simd8<bool> operator>(const simd8<int8_t> other) const { return _mm512_maskz_abs_epi8(_mm512_cmpgt_epi8_mask(*this, other),_mm512_set1_epi8(0x80)); }
+    simdjson_really_inline simd8<bool> operator<(const simd8<int8_t> other) const { return _mm512_maskz_abs_epi8(_mm512_cmpgt_epi8_mask(other, *this),_mm512_set1_epi8(0x80)); }
   };
 
   // Unsigned bytes
