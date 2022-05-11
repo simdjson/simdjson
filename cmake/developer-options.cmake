@@ -179,12 +179,12 @@ endif()
 
 option(
     SIMDJSON_AVX512_ALLOWED
-    "Enable AVX-512 instructions (only affects processors with AVX-512 support)."
+    "Enable AVX-512 instructions (only affects processors and compilers with AVX-512 support)."
     ON
 )
 if(SIMDJSON_AVX512_ALLOWED)
   add_compile_definitions(SIMDJSON_AVX512_ALLOWED=1)
-  message(STATUS "AVX-512 instructions allowed if the CPU supports it.")
+  message(STATUS "AVX-512 instructions allowed if the CPU and compiler support it.")
 endif()
 
 include(CheckSymbolExists)
