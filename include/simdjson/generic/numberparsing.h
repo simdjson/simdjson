@@ -1067,6 +1067,11 @@ simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> ge
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    // We have an integer.
+    // If the number is negative and valid, it must be a signed integer.
+    if(negative) { return ondemand::number_type::signed_integer; }
+    // We want values larger or equal to 9223372036854775808 to be unsigned
+    // integers, and the other values to be signed integers.
     int digit_count = int(p - src);
     if(digit_count >= 19) {
       const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
@@ -1076,6 +1081,7 @@ simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> ge
     }
     return ondemand::number_type::signed_integer;
   }
+  // Hopefully, we have 'e' or 'E' or '.'.
   return ondemand::number_type::floating_point_number;
 }
 
