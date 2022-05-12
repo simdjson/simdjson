@@ -197,16 +197,18 @@ namespace number_tests {
   bool get_number_tests() {
     TEST_START();
     ondemand::parser parser;
-    padded_string docdata = R"([1.0, 3, 1, 3.1415,-13231232,9999999999999999999])"_padded;
+    padded_string docdata = R"([1.0, 3, 1, 3.1415,-13231232,9999999999999999999,-9223372036854775807,-9223372036854775808])"_padded;
     ondemand::number_type expectedtypes[] = {ondemand::number_type::floating_point_number,
                                  ondemand::number_type::signed_integer,
                                  ondemand::number_type::signed_integer,
                                  ondemand::number_type::floating_point_number,
                                  ondemand::number_type::signed_integer,
-                                 ondemand::number_type::unsigned_integer
+                                 ondemand::number_type::unsigned_integer,
+                                 ondemand::number_type::signed_integer,
+                                 ondemand::number_type::signed_integer
                                  };
-    bool is_negative[] = {false, false, false, false, true, false};
-    bool is_integer[] = {false, true, true, false, true, true};
+    bool is_negative[] = {false, false, false, false, true, false, true, true};
+    bool is_integer[] = {false, true, true, false, true, true, true, true};
 
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
