@@ -175,8 +175,6 @@ if(CMAKE_C_COMPILER_ID MATCHES "Intel")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-intel")
 endif()
 
-
-
 option(
     SIMDJSON_AVX512_ALLOWED
     "Enable AVX-512 instructions (only affects processors and compilers with AVX-512 support)."
@@ -184,7 +182,9 @@ option(
 )
 if(SIMDJSON_AVX512_ALLOWED)
   add_compile_definitions(SIMDJSON_AVX512_ALLOWED=1)
-  message(STATUS "AVX-512 instructions allowed if the CPU and compiler support it.")
+else()
+  add_compile_definitions(SIMDJSON_AVX512_ALLOWED=0)
+  message(STATUS "AVX-512 instructions are not allowed.")
 endif()
 
 include(CheckSymbolExists)

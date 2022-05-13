@@ -13,16 +13,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {gen: Visual Studio 17 2022, arch: Win32, static: ON}
-          - {gen: Visual Studio 17 2022, arch: Win32, static: OFF}
-          - {gen: Visual Studio 17 2022, arch: x64, static: ON}
-          - {gen: Visual Studio 17 2022, arch: x64, static: OFF}
+          - {gen: Visual Studio 17 2022, arch: Win32, shared: ON}
+          - {gen: Visual Studio 17 2022, arch: Win32, shared: OFF}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: ON}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF}
     steps:
     - name: checkout
       uses: actions/checkout@v2
     - name: Configure
       run: |
-        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_BUILD_STATIC=${{matrix.static}} -B build
+        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -DBUILD_SHARED_LIBS=${{matrix.shared}} -B build
     - name: Build Debug
       run: cmake --build build --config Debug --verbose
     - name: Build Release

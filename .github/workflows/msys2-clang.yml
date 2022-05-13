@@ -38,6 +38,6 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DSIMDJSON_DEVELOPER_MODE=ON -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT=ON ..
+          cmake -DSIMDJSON_DEVELOPER_MODE=ON -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT=ON ..
           cmake --build . --verbose
           ctest -j4 --output-on-failure -LE explicitonly
