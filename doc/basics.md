@@ -1401,10 +1401,6 @@ You must check the type before accessing the value: it is an error to call `get_
 
 The `get_number()` function is designed with performance in mind. When calling `get_number()`, you scan the number string only once, determining efficiently the type and storing it in an efficient manner.
 
-If you only need to compute `v.get_number().get_number_type()` on
-a `document` or `value` instance, you should call directly the faster method
-`v.get_number_type()` which does not generate an
-intermediate `number` instance.
 
 Consider the following example:
 ```C++
@@ -1417,9 +1413,7 @@ Consider the following example:
       std::cout << "negative: " << val.is_negative() << " ";
       std::cout << "is_integer: " << val.is_integer() << " ";
       ondemand::number num = val.get_number();
-      // direct computation without materializing the number:
-      ondemand::number_type dt = val.get_number_type();
-      if(t != dt) { throw std::runtime_error("bug"); }
+      ondemand::number_type t = num.get_number_type();
       switch(t) {
         case ondemand::number_type::signed_integer:
           std::cout  << "integer: " << int64_t(num) << " ";

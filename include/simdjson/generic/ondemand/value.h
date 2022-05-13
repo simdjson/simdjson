@@ -369,7 +369,14 @@ public:
    */
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
   /**
-   * Determine the number type (integer or floating-point number).
+   * Determine the number type (integer or floating-point number) as quickly
+   * as possible. This function does not fully validate the input. It is
+   * useful when you only need to classify the numbers, without parsing them.
+   *
+   * If you are planning to retrieve the value or you need full validation,
+   * consider using the get_number() method instead: it will fully parse
+   * and validate the input, and give you access to the type:
+   * get_number().get_number_type().
    *
    * get_number_type() is number_type::unsigned_integer if we have
    * an integer greater or equal to 9223372036854775808
