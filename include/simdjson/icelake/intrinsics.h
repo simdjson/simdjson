@@ -37,15 +37,19 @@
 #include <avxintrin.h>
 #include <avx2intrin.h>
 #include <wmmintrin.h>   // for  _mm_clmulepi64_si128
+// Important: we need the AVX-512 headers:
+#include <avx512fintrin.h>
+#include <avx512dqintrin.h>
+#include <avx512cdintrin.h>
+#include <avx512bwintrin.h>
+#include <avx512vlintrin.h>
+#include <avx512vbmiintrin.h>
+#include <avx512vbmi2intrin.h>
 // unfortunately, we may not get _blsr_u64, but, thankfully, clang
 // has it as a macro.
 #ifndef _blsr_u64
 // we roll our own
-SIMDJSON_TARGET_ICELAKE
-static simdjson_really_inline uint64_t _blsr_u64(uint64_t n) {
-  return (n - 1) & n;
-}
-SIMDJSON_UNTARGET_ICELAKE
+#define _blsr_u64(n) ((n - 1) & n)
 #endif //  _blsr_u64
 #endif // SIMDJSON_CLANG_VISUAL_STUDIO
 

@@ -50,9 +50,9 @@ simdjson_really_inline void simdjson_process_atom(stat_t &s,
   } else if(element.is<double>()) {
     s.float_count++;
   } else if (element.is<bool>()) {
-    simdjson::error_code err;
     bool v;
-    err = element.get(v);
+    simdjson::error_code error;
+    if ((error = element.get(v))) { std::cerr << error << std::endl; abort(); }
     if (v) {
       s.true_count++;
     } else {
