@@ -109,6 +109,85 @@ bool basics_treewalk() {
   return true;
 }
 
+void print_depth_space(ondemand::value element) {
+  for(auto i = 0; i < element.current_depth(); i++) {
+    cout << " ";
+  }
+}
+
+void recursive_print_json_breakline(ondemand::value element) {
+    bool add_comma;
+    switch (element.type()) {
+    case ondemand::json_type::array:
+      cout << endl;
+      print_depth_space(element);
+      cout << "[";
+      add_comma = false;
+      for (auto child : element.get_array()) {
+        if (add_comma) {
+          print_depth_space(element);
+          cout << ",";
+        }
+        // We need the call to value() to get
+        // an ondemand::value type.
+        recursive_print_json_breakline(child.value());
+        add_comma = true;
+      }
+      cout << "]";
+      break;
+    case ondemand::json_type::object:
+      cout << endl;
+      print_depth_space(element);
+      cout << "{";
+      add_comma = false;
+      for (auto field : element.get_object()) {
+        if (add_comma) {
+          print_depth_space(element);
+          cout << ",";
+        }
+        // key() returns the key as it appears in the raw
+        // JSON document, if we want the unescaped key,
+        // we should do field.unescaped_key().
+        cout << "\"" << field.key() << "\": ";
+        recursive_print_json_breakline(field.value());
+        add_comma = true;
+      }
+      cout << "}\n";
+      break;
+    case ondemand::json_type::number:
+      // assume it fits in a double
+      cout << element.get_double();
+      break;
+    case ondemand::json_type::string:
+      // get_string() would return escaped string, but
+      // we are happy with unescaped string.
+      cout << "\"" << element.get_raw_json_string() << "\"";
+      break;
+    case ondemand::json_type::boolean:
+      cout << element.get_bool();
+      break;
+    case ondemand::json_type::null:
+      cout << "null";
+      break;
+    }
+}
+
+bool basics_treewalk_breakline() {
+  padded_string json[3] = {R"( [
+    { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+    { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+    { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  ] )"_padded, R"( {"key":"value"} )"_padded, "[12,3]"_padded};
+  ondemand::parser parser;
+  for(size_t i = 0 ; i < 3; i++) {
+    ondemand::document doc = parser.iterate(json[i]);
+    ondemand::value val = doc;
+    recursive_print_json_breakline(val);
+    std::cout << std::endl;
+  }
+  return true;
+}
+
 bool basics_1() {
   TEST_START();
 
@@ -882,6 +961,7 @@ bool current_location_no_error() {
 int main() {
 #if SIMDJSON_EXCEPTIONS
   basics_treewalk();
+  basics_treewalk_breakline();
 #endif
   if (
     true
