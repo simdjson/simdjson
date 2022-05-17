@@ -24,6 +24,10 @@ inline simdjson_result<const char *> document::current_location() noexcept {
   return iter.current_location();
 }
 
+inline int32_t document::current_depth() const noexcept {
+  return iter.depth();
+}
+
 inline bool document::is_alive() noexcept {
   return iter.is_alive();
 }
@@ -471,6 +475,11 @@ simdjson_really_inline simdjson_result<const char *> simdjson_result<SIMDJSON_IM
   return first.current_location();
 }
 
+simdjson_really_inline int32_t simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::current_depth() const noexcept {
+  if (error()) { return error(); }
+  return first.current_depth();
+}
+
 simdjson_really_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::raw_json_token() noexcept {
   if (error()) { return error(); }
   return first.raw_json_token();
@@ -528,6 +537,7 @@ simdjson_really_inline simdjson_result<value> document_reference::find_field_uno
 simdjson_really_inline simdjson_result<json_type> document_reference::type() noexcept { return doc->type(); }
 simdjson_really_inline simdjson_result<bool> document_reference::is_scalar() noexcept { return doc->is_scalar(); }
 simdjson_really_inline simdjson_result<const char *> document_reference::current_location() noexcept { return doc->current_location(); }
+simdjson_really_inline int32_t document_reference::current_depth() const noexcept { return doc->current_depth(); }
 simdjson_really_inline bool document_reference::is_negative() noexcept { return doc->is_negative(); }
 simdjson_really_inline simdjson_result<bool> document_reference::is_integer() noexcept { return doc->is_integer(); }
 simdjson_really_inline simdjson_result<number_type> document_reference::get_number_type() noexcept { return doc->get_number_type(); }

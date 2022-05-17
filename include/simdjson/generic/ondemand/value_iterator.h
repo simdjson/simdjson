@@ -76,7 +76,7 @@ public:
   /**
    * Get the depth of this value.
    */
-  simdjson_really_inline depth_t depth() const noexcept;
+  simdjson_really_inline int32_t depth() const noexcept;
 
   /**
    * Get the JSON type of this value.

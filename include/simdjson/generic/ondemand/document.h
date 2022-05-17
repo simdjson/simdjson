@@ -496,6 +496,17 @@ public:
   inline simdjson_result<const char *> current_location() noexcept;
 
   /**
+   * Returns the current depth in the document if in bounds.
+   *
+   * E.g.,
+   *  0 = finished with document
+   *  1 = document root value (could be [ or {, not yet known)
+   *  2 = , or } inside root array/object
+   *  3 = key or value inside root array/object.
+   */
+  simdjson_really_inline int32_t current_depth() const noexcept;
+
+  /**
    * Get the value associated with the given JSON pointer.  We use the RFC 6901
    * https://tools.ietf.org/html/rfc6901 standard.
    *
@@ -615,6 +626,7 @@ public:
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
 
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
+  simdjson_really_inline int32_t current_depth() const noexcept;
   simdjson_really_inline bool is_negative() noexcept;
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
   simdjson_really_inline simdjson_result<number_type> get_number_type() noexcept;
@@ -681,6 +693,7 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
+  simdjson_really_inline int32_t current_depth() const noexcept;
   simdjson_really_inline bool is_negative() noexcept;
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
@@ -741,6 +754,7 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
+  simdjson_really_inline int32_t current_depth() const noexcept;
   simdjson_really_inline bool is_negative() noexcept;
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
