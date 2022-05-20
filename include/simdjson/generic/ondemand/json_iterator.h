@@ -154,7 +154,7 @@ public:
    * This is not null-terminated; it is a view into the JSON.
    *
    * You may be pointing outside of the input buffer: it is not generally
-   * safe to derefence this pointer.
+   * safe to dereference this pointer.
    */
   simdjson_really_inline const uint8_t *unsafe_pointer() const noexcept;
   /**
