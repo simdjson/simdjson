@@ -85,7 +85,7 @@ inline void log_headers() noexcept {
       printf("# skip says 'this is a structural or value I am skipping'\n");
       printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
       printf("#\n");
-      printf("# The identation of the terms (array, string,...) indicates the depth,\n");
+      printf("# The indentation of the terms (array, string,...) indicates the depth,\n");
       printf("# in addition to the depth being displayed.\n");
       printf("#\n");
       printf("# Every token in the document has a single depth determined by the tokens before it,\n");

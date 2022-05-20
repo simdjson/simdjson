@@ -497,7 +497,7 @@ public:
    * to call at_pointer on the same array.
    *
    * You may call at_pointer more than once on an object, but each time the pointer is advanced
-   * to be within the value matched by the key indicated by the JSON pointer query. Thus any preceeding
+   * to be within the value matched by the key indicated by the JSON pointer query. Thus any preceding
    * key (as well as the current key) can no longer be used with following JSON pointer calls.
    *
    * Also note that at_pointer() relies on find_field() which implies that we do not unescape keys when matching
