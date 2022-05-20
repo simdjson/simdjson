@@ -9,6 +9,7 @@ import subprocess
 import os
 import re
 import shutil
+import datetime
 
 if sys.version_info < (3, 0):
     sys.stdout.write("Sorry, requires Python 3.x or better\n")
@@ -121,8 +122,12 @@ def dofile(fid, prepath, filename):
 # does not change with locale and timezone at time of generation.
 # Forcing it to be UTC is difficult, because it needs to be portable
 # between gnu date and busybox date.
-timestamp = subprocess.run(['git', 'show', '-s', '--format=%ci', 'HEAD'],
+try:
+    timestamp = subprocess.run(['git', 'show', '-s', '--format=%ci', 'HEAD'],
                            stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
+except:
+    print("git not found, timestamp based on current time")
+    timestamp = str(datetime.datetime.now())
 print(f"timestamp is {timestamp}")
 
 os.makedirs(AMALGAMATE_OUTPUT_PATH, exist_ok=True)
