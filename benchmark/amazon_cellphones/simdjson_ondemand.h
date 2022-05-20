@@ -8,12 +8,16 @@ namespace amazon_cellphones {
 
 using namespace simdjson;
 
+template<bool threaded>
 struct simdjson_ondemand {
   using StringType = std::string;
 
   ondemand::parser parser{};
 
   bool run(simdjson::padded_string &json, std::map<StringType, brand> &result) {
+#ifdef SIMDJSON_THREADS_ENABLED
+    parser.threaded = threaded;
+#endif
     ondemand::document_stream stream = parser.iterate_many(json);
     ondemand::document_stream::iterator i = stream.begin();
     ++i;  // Skip first line
@@ -58,7 +62,10 @@ struct simdjson_ondemand {
 
 };
 
-BENCHMARK_TEMPLATE(amazon_cellphones, simdjson_ondemand)->UseManualTime();
+BENCHMARK_TEMPLATE(amazon_cellphones, simdjson_ondemand<UNTHREADED>)->UseManualTime();
+#ifdef SIMDJSON_THREADS_ENABLED
+BENCHMARK_TEMPLATE(amazon_cellphones, simdjson_ondemand<THREADED>)->UseManualTime();
+#endif
 
 } // namespace amazon_cellphones
 

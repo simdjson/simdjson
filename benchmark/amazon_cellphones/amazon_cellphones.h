@@ -4,7 +4,11 @@
 #include <map>
 #include <string>
 
+
 namespace amazon_cellphones {
+
+const bool UNTHREADED = false;
+const bool THREADED = true;
 
 using namespace json_benchmark;
 
@@ -59,10 +63,11 @@ struct runner : public file_runner<I> {
     }
 };
 
+template<bool threaded>
 struct simdjson_dom;
 
 template<typename I> simdjson_really_inline static void amazon_cellphones(benchmark::State &state) {
-  run_json_benchmark<runner<I>, runner<simdjson_dom>>(state);
+  run_json_benchmark<runner<I>, runner<simdjson_dom<UNTHREADED>>>(state);
 }
 
 }   // namespace amazon_cellphones
