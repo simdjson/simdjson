@@ -118,7 +118,7 @@ public:
    * instance: there is no rewind and no invalidation.
    *
    * You may call at_pointer more than once on an object, but each time the pointer is advanced
-   * to be within the value matched by the key indicated by the JSON pointer query. Thus any preceeding
+   * to be within the value matched by the key indicated by the JSON pointer query. Thus any preceding
    * key (as well as the current key) can no longer be used with following JSON pointer calls.
    *
    * Also note that at_pointer() relies on find_field() which implies that we do not unescape keys when matching.
@@ -168,7 +168,7 @@ public:
   simdjson_really_inline simdjson_result<size_t> count_fields() & noexcept;
   /**
    * Consumes the object and returns a string_view instance corresponding to the
-   * object as represented in JSON. It points inside the original byte array containg
+   * object as represented in JSON. It points inside the original byte array containing
    * the JSON document.
    */
   simdjson_really_inline simdjson_result<std::string_view> raw_json() noexcept;

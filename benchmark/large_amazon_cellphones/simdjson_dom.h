@@ -9,12 +9,16 @@ namespace large_amazon_cellphones {
 
 using namespace simdjson;
 
+template<bool threaded>
 struct simdjson_dom {
   using StringType = std::string;
 
   dom::parser parser{};
 
   bool run(simdjson::padded_string &json, std::map<StringType, brand> &result) {
+#ifdef SIMDJSON_THREADS_ENABLED
+    parser.threaded = threaded;
+#endif
     auto stream = parser.parse_many(json);
     auto i = stream.begin();
     ++i;  // Skip first line
@@ -38,7 +42,10 @@ struct simdjson_dom {
 
 };
 
-BENCHMARK_TEMPLATE(large_amazon_cellphones, simdjson_dom)->UseManualTime();
+BENCHMARK_TEMPLATE(large_amazon_cellphones, simdjson_dom<UNTHREADED>)->UseManualTime();
+#ifdef SIMDJSON_THREADS_ENABLED
+BENCHMARK_TEMPLATE(large_amazon_cellphones, simdjson_dom<THREADED>)->UseManualTime();
+#endif
 
 } // namespace large_amazon_cellphones
 

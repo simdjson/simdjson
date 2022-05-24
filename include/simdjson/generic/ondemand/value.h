@@ -369,7 +369,14 @@ public:
    */
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
   /**
-   * Determine the number type (integer or floating-point number).
+   * Determine the number type (integer or floating-point number) as quickly
+   * as possible. This function does not fully validate the input. It is
+   * useful when you only need to classify the numbers, without parsing them.
+   *
+   * If you are planning to retrieve the value or you need full validation,
+   * consider using the get_number() method instead: it will fully parse
+   * and validate the input, and give you access to the type:
+   * get_number().get_number_type().
    *
    * get_number_type() is number_type::unsigned_integer if we have
    * an integer greater or equal to 9223372036854775808
@@ -449,6 +456,17 @@ public:
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
 
   /**
+   * Returns the current depth in the document if in bounds.
+   *
+   * E.g.,
+   *  0 = finished with document
+   *  1 = document root value (could be [ or {, not yet known)
+   *  2 = , or } inside root array/object
+   *  3 = key or value inside root array/object.
+   */
+  simdjson_really_inline int32_t current_depth() const noexcept;
+
+  /**
    * Get the value associated with the given JSON pointer.  We use the RFC 6901
    * https://tools.ietf.org/html/rfc6901 standard.
    *
@@ -479,7 +497,7 @@ public:
    * to call at_pointer on the same array.
    *
    * You may call at_pointer more than once on an object, but each time the pointer is advanced
-   * to be within the value matched by the key indicated by the JSON pointer query. Thus any preceeding
+   * to be within the value matched by the key indicated by the JSON pointer query. Thus any preceding
    * key (as well as the current key) can no longer be used with following JSON pointer calls.
    *
    * Also note that at_pointer() relies on find_field() which implies that we do not unescape keys when matching
@@ -650,7 +668,8 @@ public:
 
   /** @copydoc simdjson_really_inline simdjson_result<const char *> current_location() noexcept */
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
-
+  /** @copydoc simdjson_really_inline int32_t current_depth() const noexcept */
+  simdjson_really_inline int32_t current_depth() const noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
 };
 

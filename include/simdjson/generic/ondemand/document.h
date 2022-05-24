@@ -399,7 +399,14 @@ public:
    */
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
   /**
-   * Determine the number type (integer or floating-point number).
+   * Determine the number type (integer or floating-point number) as quickly
+   * as possible. This function does not fully validate the input. It is
+   * useful when you only need to classify the numbers, without parsing them.
+   *
+   * If you are planning to retrieve the value or you need full validation,
+   * consider using the get_number() method instead: it will fully parse
+   * and validate the input, and give you access to the type:
+   * get_number().get_number_type().
    *
    * get_number_type() is number_type::unsigned_integer if we have
    * an integer greater or equal to 9223372036854775808
@@ -407,8 +414,7 @@ public:
    * integer that is less than 9223372036854775808
    * Otherwise, get_number_type() has value number_type::floating_point_number
    *
-   * This function req
-   * uires processing the number string, but it is expected
+   * This function requires processing the number string, but it is expected
    * to be faster than get_number().get_number_type() because it is does not
    * parse the number value.
    *
@@ -488,6 +494,17 @@ public:
    * Returns the current location in the document if in bounds.
    */
   inline simdjson_result<const char *> current_location() noexcept;
+
+  /**
+   * Returns the current depth in the document if in bounds.
+   *
+   * E.g.,
+   *  0 = finished with document
+   *  1 = document root value (could be [ or {, not yet known)
+   *  2 = , or } inside root array/object
+   *  3 = key or value inside root array/object.
+   */
+  simdjson_really_inline int32_t current_depth() const noexcept;
 
   /**
    * Get the value associated with the given JSON pointer.  We use the RFC 6901
@@ -609,6 +626,7 @@ public:
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
 
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
+  simdjson_really_inline int32_t current_depth() const noexcept;
   simdjson_really_inline bool is_negative() noexcept;
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
   simdjson_really_inline simdjson_result<number_type> get_number_type() noexcept;
@@ -675,6 +693,7 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
+  simdjson_really_inline int32_t current_depth() const noexcept;
   simdjson_really_inline bool is_negative() noexcept;
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
@@ -735,6 +754,7 @@ public:
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_really_inline simdjson_result<bool> is_scalar() noexcept;
   simdjson_really_inline simdjson_result<const char *> current_location() noexcept;
+  simdjson_really_inline int32_t current_depth() const noexcept;
   simdjson_really_inline bool is_negative() noexcept;
   simdjson_really_inline simdjson_result<bool> is_integer() noexcept;
   simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
