@@ -102,7 +102,7 @@ simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#include "generic/stage1/utf8_lookup4_algorithm.h"
+#include "icelake/utf8_lookup4_algorithm.h"
 // defining SIMDJSON_CUSTOM_BIT_INDEXER allows us to provide our own bit_indexer::write
 #define SIMDJSON_CUSTOM_BIT_INDEXER
 #include "generic/stage1/json_structural_indexer.h"

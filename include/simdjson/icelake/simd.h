@@ -328,6 +328,8 @@ namespace simd {
       const simd8<T> mask = simd8<T>::splat(m);
       return this->chunks[0] <= mask;
     }
+    simdjson_really_inline operator __m512i() const { return __m512i(this->chunks[0]); }
+
   }; // struct simd8x64<T>
 
 } // namespace simd
