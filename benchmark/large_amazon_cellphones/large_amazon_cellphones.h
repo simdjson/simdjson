@@ -6,6 +6,9 @@
 
 namespace large_amazon_cellphones {
 
+const bool UNTHREADED = false;
+const bool THREADED = true;
+
 static const simdjson::padded_string &get_built_json();
 
 using namespace json_benchmark;
@@ -81,11 +84,11 @@ static const simdjson::padded_string &get_built_json() {
   return json;
 }
 
-
+template<bool threaded>
 struct simdjson_dom;
 
 template<typename I> simdjson_really_inline static void large_amazon_cellphones(benchmark::State &state) {
-  run_json_benchmark<runner<I>, runner<simdjson_dom>>(state);
+  run_json_benchmark<runner<I>, runner<simdjson_dom<UNTHREADED>>>(state);
 }
 
 }   // namespace large_amazon_cellphones
