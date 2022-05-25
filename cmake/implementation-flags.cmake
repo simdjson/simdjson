@@ -1,7 +1,7 @@
 #
 # Implementation selection
 #
-set(SIMDJSON_ALL_IMPLEMENTATIONS fallback westmere haswell arm64 ppc64)
+set(SIMDJSON_ALL_IMPLEMENTATIONS fallback westmere haswell icelake arm64 ppc64)
 
 set(
     SIMDJSON_IMPLEMENTATION ""
@@ -15,7 +15,7 @@ set(
     SIMDJSON_EXCLUDE_IMPLEMENTATION ""
     CACHE STRING "\
 Semicolon-separated list of implementations to exclude \
-(haswell/westmere/arm64/ppc64/fallback). By default, excludes any \
+(icelake/haswell/westmere/arm64/ppc64/fallback). By default, excludes any \
 implementations that are unsupported at compile time or cannot be selected at \
 runtime."
 )

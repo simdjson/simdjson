@@ -25,6 +25,12 @@ public:
   // base_ptr[base] incrementing base as we go
   // will potentially store extra values beyond end of valid bits, so base_ptr
   // needs to be large enough to handle this
+  //
+  // If the kernel sets SIMDJSON_CUSTOM_BIT_INDEXER, then it will provide its own
+  // version of the code.
+#ifdef SIMDJSON_CUSTOM_BIT_INDEXER
+  simdjson_really_inline void write(uint32_t idx, uint64_t bits);
+#else
   simdjson_really_inline void write(uint32_t idx, uint64_t bits) {
     // In some instances, the next branch is expensive because it is mispredicted.
     // Unfortunately, in other cases,
@@ -117,6 +123,8 @@ public:
     this->tail += cnt;
 #endif
   }
+#endif // SIMDJSON_CUSTOM_BIT_INDEXER
+
 };
 
 class json_structural_indexer {

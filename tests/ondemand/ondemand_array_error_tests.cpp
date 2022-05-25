@@ -16,7 +16,7 @@ namespace array_error_tests {
     size_t count = 0;
     for (auto elem : std::forward<T>(array)) {
       std::cout << "-"; std::cout.flush();
-      V actual;
+      V actual{};
       auto actual_error = elem.get(actual);
       if (count >= N) {
         if (count >= (N+N2)) {

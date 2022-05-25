@@ -8,7 +8,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_IMPLEMENTATION=icelake;haswell;westmere;fallback
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
@@ -19,6 +19,7 @@ steps:
     - cmake $CMAKE_FLAGS ..
     - cmake --build . $BUILD_FLAGS
     - ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=icelake ctest $CTEST_FLAGS -L per_implementation
     - SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation
     - SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation
     - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
@@ -35,7 +36,7 @@ steps:
     CC: clang-6.0
     CXX: clang++-6.0
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_IMPLEMENTATION=icelake;haswell;westmere;fallback
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - mkdir build
@@ -43,6 +44,7 @@ steps:
     - cmake $CMAKE_FLAGS ..
     - cmake --build . $BUILD_FLAGS
     - ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=icelake ctest $CTEST_FLAGS -L per_implementation
     - SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation
     - SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation
     - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
@@ -100,7 +102,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
-    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_IMPLEMENTATION=icelake;haswell;westmere;fallback
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
     - echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
@@ -111,6 +113,7 @@ steps:
     - cmake $CMAKE_FLAGS ..
     - cmake --build . $BUILD_FLAGS
     - ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=icelake ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
     - SIMDJSON_FORCE_IMPLEMENTATION=haswell ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
     - SIMDJSON_FORCE_IMPLEMENTATION=westmere ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
     - SIMDJSON_FORCE_IMPLEMENTATION=fallback ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
@@ -126,7 +129,7 @@ steps:
   environment:
     CC: clang-9
     CXX: clang++-9
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_IMPLEMENTATION=haswell;westmere;fallback
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_IMPLEMENTATION=icelake;haswell;westmere;fallback
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure -LE explicitonly
   commands:
@@ -135,6 +138,7 @@ steps:
     - cmake $CMAKE_FLAGS ..
     - cmake --build . $BUILD_FLAGS
     - ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=icelake ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
     - SIMDJSON_FORCE_IMPLEMENTATION=haswell ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
     - SIMDJSON_FORCE_IMPLEMENTATION=westmere ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
     - SIMDJSON_FORCE_IMPLEMENTATION=fallback ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation

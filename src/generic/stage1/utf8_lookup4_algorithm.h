@@ -111,12 +111,25 @@ using namespace simd;
   simdjson_really_inline simd8<uint8_t> is_incomplete(const simd8<uint8_t> input) {
     // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
     // ... 1111____ 111_____ 11______
+#if SIMDJSON_IMPLEMENTATION_ICELAKE
+    static const uint8_t max_array[64] = {
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 0b11110000u-1, 0b11100000u-1, 0b11000000u-1
+    };
+#else
     static const uint8_t max_array[32] = {
       255, 255, 255, 255, 255, 255, 255, 255,
       255, 255, 255, 255, 255, 255, 255, 255,
       255, 255, 255, 255, 255, 255, 255, 255,
       255, 255, 255, 255, 255, 0b11110000u-1, 0b11100000u-1, 0b11000000u-1
     };
+#endif
     const simd8<uint8_t> max_value(&max_array[sizeof(max_array)-sizeof(simd8<uint8_t>)]);
     return input.gt_bits(max_value);
   }
@@ -154,9 +167,13 @@ using namespace simd;
         this->error |= this->prev_incomplete;
       } else {
         // you might think that a for-loop would work, but under Visual Studio, it is not good enough.
-        static_assert((simd8x64<uint8_t>::NUM_CHUNKS == 2) || (simd8x64<uint8_t>::NUM_CHUNKS == 4),
-            "We support either two or four chunks per 64-byte block.");
-        if(simd8x64<uint8_t>::NUM_CHUNKS == 2) {
+        static_assert((simd8x64<uint8_t>::NUM_CHUNKS == 1)
+                ||(simd8x64<uint8_t>::NUM_CHUNKS == 2)
+                || (simd8x64<uint8_t>::NUM_CHUNKS == 4),
+                "We support one, two or four chunks per 64-byte block.");
+        if(simd8x64<uint8_t>::NUM_CHUNKS == 1) {
+          this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
+        } if(simd8x64<uint8_t>::NUM_CHUNKS == 2) {
           this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
           this->check_utf8_bytes(input.chunks[1], input.chunks[0]);
         } else if(simd8x64<uint8_t>::NUM_CHUNKS == 4) {

@@ -66,7 +66,16 @@ enum instruction_set {
   PCLMULQDQ = 0x10,
   BMI1 = 0x20,
   BMI2 = 0x40,
-  ALTIVEC = 0x80
+  ALTIVEC = 0x80,
+  AVX512F = 0x100,
+  AVX512DQ = 0x200,
+  AVX512IFMA = 0x400,
+  AVX512PF = 0x800,
+  AVX512ER = 0x1000,
+  AVX512CD = 0x2000,
+  AVX512BW = 0x4000,
+  AVX512VL = 0x8000,
+  AVX512VBMI2 = 0x10000
 };
 
 #if defined(__PPC64__)
@@ -96,11 +105,20 @@ static inline uint32_t detect_supported_architectures() {
 
 namespace {
 // Can be found on Intel ISA Reference for CPUID
-constexpr uint32_t cpuid_avx2_bit = 1 << 5;      ///< @private Bit 5 of EBX for EAX=0x7
-constexpr uint32_t cpuid_bmi1_bit = 1 << 3;      ///< @private bit 3 of EBX for EAX=0x7
-constexpr uint32_t cpuid_bmi2_bit = 1 << 8;      ///< @private bit 8 of EBX for EAX=0x7
-constexpr uint32_t cpuid_sse42_bit = 1 << 20;    ///< @private bit 20 of ECX for EAX=0x1
-constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1; ///< @private bit  1 of ECX for EAX=0x1
+constexpr uint32_t cpuid_avx2_bit = 1 << 5;         ///< @private Bit 5 of EBX for EAX=0x7
+constexpr uint32_t cpuid_bmi1_bit = 1 << 3;         ///< @private bit 3 of EBX for EAX=0x7
+constexpr uint32_t cpuid_bmi2_bit = 1 << 8;         ///< @private bit 8 of EBX for EAX=0x7
+constexpr uint32_t cpuid_avx512f_bit = 1 << 16;     ///< @private bit 16 of EBX for EAX=0x7
+constexpr uint32_t cpuid_avx512dq_bit = 1 << 17;    ///< @private bit 17 of EBX for EAX=0x7
+constexpr uint32_t cpuid_avx512ifma_bit = 1 << 21;  ///< @private bit 21 of EBX for EAX=0x7
+constexpr uint32_t cpuid_avx512pf_bit = 1 << 26;    ///< @private bit 26 of EBX for EAX=0x7
+constexpr uint32_t cpuid_avx512er_bit = 1 << 27;    ///< @private bit 27 of EBX for EAX=0x7
+constexpr uint32_t cpuid_avx512cd_bit = 1 << 28;    ///< @private bit 28 of EBX for EAX=0x7
+constexpr uint32_t cpuid_avx512bw_bit = 1 << 30;    ///< @private bit 30 of EBX for EAX=0x7
+constexpr uint32_t cpuid_avx512vl_bit = 1 << 31;    ///< @private bit 31 of EBX for EAX=0x7
+constexpr uint32_t cpuid_avx512vbmi2_bit = 1 << 6;  ///< @private bit 6 of ECX for EAX=0x7
+constexpr uint32_t cpuid_sse42_bit = 1 << 20;       ///< @private bit 20 of ECX for EAX=0x1
+constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1;    ///< @private bit  1 of ECX for EAX=0x1
 }
 
 
@@ -144,6 +162,42 @@ static inline uint32_t detect_supported_architectures() {
 
   if (ebx & cpuid_bmi2_bit) {
     host_isa |= instruction_set::BMI2;
+  }
+
+  if (ebx & cpuid_avx512f_bit) {
+    host_isa |= instruction_set::AVX512F;
+  }
+
+  if (ebx & cpuid_avx512dq_bit) {
+    host_isa |= instruction_set::AVX512DQ;
+  }
+
+  if (ebx & cpuid_avx512ifma_bit) {
+    host_isa |= instruction_set::AVX512IFMA;
+  }
+
+  if (ebx & cpuid_avx512pf_bit) {
+    host_isa |= instruction_set::AVX512PF;
+  }
+
+  if (ebx & cpuid_avx512er_bit) {
+    host_isa |= instruction_set::AVX512ER;
+  }
+
+  if (ebx & cpuid_avx512cd_bit) {
+    host_isa |= instruction_set::AVX512CD;
+  }
+
+  if (ebx & cpuid_avx512bw_bit) {
+    host_isa |= instruction_set::AVX512BW;
+  }
+
+  if (ebx & cpuid_avx512vl_bit) {
+    host_isa |= instruction_set::AVX512VL;
+  }
+
+  if (ecx & cpuid_avx512vbmi2_bit) {
+    host_isa |= instruction_set::AVX512VBMI2;
   }
 
   // EBX for EAX=0x1

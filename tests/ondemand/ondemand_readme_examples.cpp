@@ -752,7 +752,7 @@ bool stream_capacity_example() {
   if( error ) { /* handle the error */ }
   for (auto doc: stream) {
     if(counter < 6) {
-      int64_t val;
+      int64_t val{};
       error = doc.at_pointer("/4").get(val);
       if( error ) { /* handle the error */ }
       std::cout << "5 = " << val << std::endl;

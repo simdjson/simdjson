@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_HASWELL_INTRINSICS_H
-#define SIMDJSON_HASWELL_INTRINSICS_H
+#ifndef SIMDJSON_ICELAKE_INTRINSICS_H
+#define SIMDJSON_ICELAKE_INTRINSICS_H
 
 #include "simdjson/base.h"
 
@@ -37,6 +37,14 @@
 #include <avxintrin.h>
 #include <avx2intrin.h>
 #include <wmmintrin.h>   // for  _mm_clmulepi64_si128
+// Important: we need the AVX-512 headers:
+#include <avx512fintrin.h>
+#include <avx512dqintrin.h>
+#include <avx512cdintrin.h>
+#include <avx512bwintrin.h>
+#include <avx512vlintrin.h>
+#include <avx512vbmiintrin.h>
+#include <avx512vbmi2intrin.h>
 // unfortunately, we may not get _blsr_u64, but, thankfully, clang
 // has it as a macro.
 #ifndef _blsr_u64
@@ -45,4 +53,4 @@
 #endif //  _blsr_u64
 #endif // SIMDJSON_CLANG_VISUAL_STUDIO
 
-#endif // SIMDJSON_HASWELL_INTRINSICS_H
+#endif // SIMDJSON_ICELAKE_INTRINSICS_H
