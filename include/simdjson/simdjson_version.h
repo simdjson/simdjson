@@ -4,14 +4,14 @@
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 1.0.2
+#define SIMDJSON_VERSION 2.0.0
 
 namespace simdjson {
 enum {
   /**
    * The major version (MAJOR.minor.revision) of simdjson being used.
    */
-  SIMDJSON_VERSION_MAJOR = 1,
+  SIMDJSON_VERSION_MAJOR = 2,
   /**
    * The minor version (major.MINOR.revision) of simdjson being used.
    */
@@ -19,7 +19,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 2
+  SIMDJSON_VERSION_REVISION = 0
 };
 } // namespace simdjson
 
