@@ -2,7 +2,7 @@
 #define __BENCHMARKER_H
 
 #include "event_counter.h"
-#include "simdjson.h" // For SIMDJSON_DISABLE_DEPRECATED_WARNINGS
+#include "simdjson.h"
 
 #include <cassert>
 #include <cctype>
