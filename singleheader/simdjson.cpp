@@ -1,4 +1,4 @@
-/* auto-generated on 2022-05-25 11:24:40 -0400. Do not edit! */
+/* auto-generated on 2022-05-25 18:22:17 -0400. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -7589,6 +7589,9 @@ simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_imp
  * naked intrinsics.
  * TODO: make this code more elegant.
  */
+// Under GCC 12, the intrinsic _mm512_extracti32x4_epi32 may generate 'maybe uninitialized'.
+// as a workaround, we disable warnings within the following function.
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 namespace simdjson { namespace icelake { namespace { namespace stage1 {
 simdjson_really_inline void bit_indexer::write(uint32_t idx, uint64_t bits) {
     // In some instances, the next branch is expensive because it is mispredicted.
@@ -7623,6 +7626,7 @@ simdjson_really_inline void bit_indexer::write(uint32_t idx, uint64_t bits) {
     this->tail += count;
 }
 }}}}
+SIMDJSON_POP_DISABLE_WARNINGS
 
 /* begin file src/generic/stage1/utf8_validator.h */
 namespace simdjson {

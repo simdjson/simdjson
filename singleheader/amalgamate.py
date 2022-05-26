@@ -81,8 +81,10 @@ def dofile(fid, prepath, filename):
     # print(f"// dofile: invoked with prepath={prepath}, filename={filename}",file=fid)
     file = os.path.join(prepath, filename)
     RELFILE = os.path.relpath(file, PROJECTPATH)
+    # Windows use \ as a directory separator, but we do not want that:
+    OSRELFILE = RELFILE.replace('\\','/')
     # Last lines are always ignored. Files should end by an empty lines.
-    print(f"/* begin file {RELFILE} */", file=fid)
+    print(f"/* begin file {OSRELFILE} */", file=fid)
     includepattern = re.compile('^#include "(.*)"')
     redefines_simdjson_implementation = re.compile('^#define\s+SIMDJSON_IMPLEMENTATION\s+(.*)')
     undefines_simdjson_implementation = re.compile('^#undef\s+SIMDJSON_IMPLEMENTATION\s*$')
@@ -114,7 +116,7 @@ def dofile(fid, prepath, filename):
                 else:
                     # copy the line, with SIMDJSON_IMPLEMENTATION replace to what it is currently defined to
                     print(uses_simdjson_implementation.sub(current_implementation+"\\1",line), file=fid)
-    print(f"/* end file {RELFILE} */", file=fid)
+    print(f"/* end file {OSRELFILE} */", file=fid)
 
 
 # Get the generation date from git, so the output is reproducible.

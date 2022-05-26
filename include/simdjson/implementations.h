@@ -21,6 +21,11 @@
 #endif
 #endif
 
+// By default, we allow AVX512.
+#ifndef SIMDJSON_AVX512_ALLOWED
+#define SIMDJSON_AVX512_ALLOWED 1
+#endif
+
 // Default Icelake to on if this is x86-64. Even if we're not compiled for it, it could be selected
 // at runtime.
 #ifndef SIMDJSON_IMPLEMENTATION_ICELAKE
