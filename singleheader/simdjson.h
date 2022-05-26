@@ -1,4 +1,4 @@
-/* auto-generated on 2022-05-25 18:22:17 -0400. Do not edit! */
+/* auto-generated on 2022-05-26 14:07:15 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -414,6 +414,22 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
   #define SIMDJSON_PUSH_DISABLE_WARNINGS _Pragma("GCC diagnostic push")
   // gcc doesn't seem to disable all warnings with all and extra, add warnings here as necessary
+  // We do it separately for clang since it has different warnings.
+  #ifdef __clang__
+  // clang is missing -Wmaybe-uninitialized.
+  #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS SIMDJSON_PUSH_DISABLE_WARNINGS \
+    SIMDJSON_DISABLE_GCC_WARNING(-Weffc++) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wall) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wconversion) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wextra) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wattributes) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wimplicit-fallthrough) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wnon-virtual-dtor) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wreturn-type) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wshadow) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wunused-parameter) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wunused-variable)
+  #else // __clang__
   #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS SIMDJSON_PUSH_DISABLE_WARNINGS \
     SIMDJSON_DISABLE_GCC_WARNING(-Weffc++) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wall) \
@@ -427,6 +443,8 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
     SIMDJSON_DISABLE_GCC_WARNING(-Wunused-parameter) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wunused-variable) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wmaybe-uninitialized)
+  #endif // __clang__
+
   #define SIMDJSON_PRAGMA(P) _Pragma(#P)
   #define SIMDJSON_DISABLE_GCC_WARNING(WARNING) SIMDJSON_PRAGMA(GCC diagnostic ignored #WARNING)
   #if defined(SIMDJSON_CLANG_VISUAL_STUDIO)
