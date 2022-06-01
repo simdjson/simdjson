@@ -1,4 +1,4 @@
-/* auto-generated on 2022-05-26 16:25:57 -0400. Do not edit! */
+/* auto-generated on 2022-06-01 16:39:41 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -14175,7 +14175,7 @@ simdjson_really_inline uint64_t prefix_xor(const uint64_t bitmask) {
 #if defined(__GNUC__) && !defined(__clang__)
 #if __GNUC__ == 8
 #define SIMDJSON_GCC8 1
-#endif //  __GNUC__ < 10
+#endif //  __GNUC__ == 8
 #endif // defined(__GNUC__) && !defined(__clang__)
 
 #if SIMDJSON_GCC8

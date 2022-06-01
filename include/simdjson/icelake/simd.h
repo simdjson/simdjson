@@ -8,7 +8,7 @@
 #if defined(__GNUC__) && !defined(__clang__)
 #if __GNUC__ == 8
 #define SIMDJSON_GCC8 1
-#endif //  __GNUC__ < 10
+#endif //  __GNUC__ == 8
 #endif // defined(__GNUC__) && !defined(__clang__)
 
 #if SIMDJSON_GCC8
