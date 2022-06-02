@@ -5,7 +5,14 @@
 #include <sys/types.h>
 #include "simdjson.h"
 
+
+// We get spurious "maybe used uninitialized" warnings under GCC 12.
 using namespace simdjson;
+#if defined(__GNUC__) && !defined(__clang__)
+#if __GNUC__ >= 12
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+#endif
+#endif
 
 // This ensures the compiler can't rearrange them into the proper order (which causes it to work!)
 simdjson_never_inline bool check_point(simdjson_result<ondemand::value> xval, simdjson_result<ondemand::value> yval) {
