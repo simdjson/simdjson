@@ -15,7 +15,7 @@ jobs:
           path: dependencies/.cache
           key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
       - name: Install gcc12
-          run: sudo apt-get install -y g++-12
+        run: sudo apt-get install -y g++-12
       - name: Use cmake
         run: |
           mkdir build &&
