@@ -21,6 +21,14 @@
 #endif
 #endif
 
+#ifdef _MSC_VER
+#if _MSC_VER >= 1920
+// Visual Studio 2019 and up support VBMI2 under x64 even if the header
+// avx512vbmi2intrin.h is not found.
+#define SIMDJSON_COMPILER_SUPPORTS_VBMI2 1
+#endif
+#endif
+
 // By default, we allow AVX512.
 #ifndef SIMDJSON_AVX512_ALLOWED
 #define SIMDJSON_AVX512_ALLOWED 1
