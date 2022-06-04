@@ -14,7 +14,7 @@ jobs:
            - {arch: ARM64}
      steps:
        - name: checkout
-         uses: actions/checkout@v2
+         uses: actions/checkout@v3
        - name: Use cmake
          run: |
            cmake -A ${{ matrix.arch }} -DCMAKE_CROSSCOMPILING=1 -DSIMDJSON_DEVELOPER_MODE=ON -D SIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_EXCEPTIONS=OFF -B build  &&
