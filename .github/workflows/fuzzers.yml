@@ -37,14 +37,14 @@ jobs:
         chmod +x llvm.sh
         sudo ./llvm.sh $CLANGVERSION
 
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: dependencies/.cache
         key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       id: cache-corpus
       with:
         path: out/

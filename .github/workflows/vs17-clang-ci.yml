@@ -16,7 +16,7 @@ jobs:
           - {gen: Visual Studio 17 2022, arch: x64}
     steps:
     - name: checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Configure
       run: |
         cmake -G "${{matrix.gen}}" -A ${{matrix.arch}}  -T ClangCL -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -B build
