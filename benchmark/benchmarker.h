@@ -423,7 +423,7 @@ struct benchmarker {
         stage.instructions() / static_cast<double>(stats->structurals),
         stage.instructions() / static_cast<double>(stage.cycles())
       );
-
+#if !SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
       // NOTE: removed cycles/miss because it is a somewhat misleading stat
       printf("%s%-13s: %7.0f branch misses (%6.2f%%) - %.0f cache misses (%6.2f%%) - %.2f cache references\n",
         prefix,
@@ -434,6 +434,7 @@ struct benchmarker {
         percent(stage.cache_misses(), all_stages_without_allocation.cache_misses()),
         stage.cache_references()
       );
+#endif
     }
   }
 

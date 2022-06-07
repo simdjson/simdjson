@@ -1,6 +1,15 @@
 #ifndef __EVENT_COUNTER_H
 #define __EVENT_COUNTER_H
 
+#ifndef SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
+#ifdef __aarch64__
+// on ARM, we use just cycles and instructions
+#define SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS 1
+#else
+// elsewhere, we try to use four counters.
+#define SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS 0
+#endif
+#endif
 #include <cassert>
 #include <cctype>
 #ifndef _MSC_VER
@@ -46,6 +55,12 @@ struct event_count {
   event_count(const event_count& other): elapsed(other.elapsed), event_counts(other.event_counts) { }
 
   // The types of counters (so we can read the getter more easily)
+  #if SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
+  enum event_counter_types {
+    CPU_CYCLES,
+    INSTRUCTIONS
+  };
+  #else
   enum event_counter_types {
     CPU_CYCLES,
     INSTRUCTIONS,
@@ -53,15 +68,16 @@ struct event_count {
     CACHE_REFERENCES,
     CACHE_MISSES
   };
-
+  #endif
   double elapsed_sec() const { return duration<double>(elapsed).count(); }
   double elapsed_ns() const { return duration<double, std::nano>(elapsed).count(); }
   double cycles() const { return static_cast<double>(event_counts[CPU_CYCLES]); }
   double instructions() const { return static_cast<double>(event_counts[INSTRUCTIONS]); }
+#if !SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
   double branch_misses() const { return static_cast<double>(event_counts[BRANCH_MISSES]); }
   double cache_references() const { return static_cast<double>(event_counts[CACHE_REFERENCES]); }
   double cache_misses() const { return static_cast<double>(event_counts[CACHE_MISSES]); }
-
+#endif
   event_count& operator=(const event_count& other) {
     this->elapsed = other.elapsed;
     this->event_counts = other.event_counts;
@@ -105,9 +121,11 @@ struct event_aggregate {
   double elapsed_ns() const { return total.elapsed_ns() / iterations; }
   double cycles() const { return total.cycles() / iterations; }
   double instructions() const { return total.instructions() / iterations; }
+#if !SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
   double branch_misses() const { return total.branch_misses() / iterations; }
   double cache_references() const { return total.cache_references() / iterations; }
   double cache_misses() const { return total.cache_misses() / iterations; }
+#endif
 };
 
 struct event_collector {
@@ -117,11 +135,16 @@ struct event_collector {
 #if defined(__linux__)
   LinuxEvents<PERF_TYPE_HARDWARE> linux_events;
   event_collector(bool quiet = false) : linux_events(vector<int>{
+  #if SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
+    PERF_COUNT_HW_CPU_CYCLES,
+    PERF_COUNT_HW_INSTRUCTIONS,
+  #else
     PERF_COUNT_HW_CPU_CYCLES,
     PERF_COUNT_HW_INSTRUCTIONS,
     PERF_COUNT_HW_BRANCH_MISSES,
     PERF_COUNT_HW_CACHE_REFERENCES,
     PERF_COUNT_HW_CACHE_MISSES
+  #endif
   }, quiet) {}
   bool has_events() {
     return linux_events.is_working();
