@@ -58,10 +58,11 @@ template<typename B, typename R> static void run_json_benchmark(benchmark::State
   if (collector.has_events()) {
     state.counters["instructions"] = events.instructions();
     state.counters["cycles"]       = events.cycles();
+#if !SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
     state.counters["branch_miss"]  = events.branch_misses();
     state.counters["cache_miss"]   = events.cache_misses();
     state.counters["cache_ref"]    = events.cache_references();
-
+#endif
     state.counters["instructions_per_byte"]  = events.instructions() / double(bench.bytes_per_iteration());
     state.counters["instructions_per_cycle"] = events.instructions() / events.cycles();
     state.counters["cycles_per_byte"]        = events.cycles()       / double(bench.bytes_per_iteration());
@@ -69,9 +70,11 @@ template<typename B, typename R> static void run_json_benchmark(benchmark::State
 
     state.counters["best_instructions"] = events.best.instructions();
     state.counters["best_cycles"]       = events.best.cycles();
+#if !SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
     state.counters["best_branch_miss"]  = events.best.branch_misses();
     state.counters["best_cache_miss"]   = events.best.cache_misses();
     state.counters["best_cache_ref"]    = events.best.cache_references();
+#endif
 
     state.counters["best_instructions_per_byte"]  = events.best.instructions() / double(bench.bytes_per_iteration());
     state.counters["best_instructions_per_cycle"] = events.best.instructions() / events.best.cycles();
@@ -92,9 +95,11 @@ template<typename B, typename R> static void run_json_benchmark(benchmark::State
   if (collector.has_events()) {
     label << " instructions=" << setw(12) << uint64_t(events.best.instructions())     << setw(0);
     label << " cycles="       << setw(12) << uint64_t(events.best.cycles())           << setw(0);
+#if !SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
     label << " branch_miss="  << setw(8)  << uint64_t(events.best.branch_misses())    << setw(0);
     label << " cache_miss="   << setw(8)  << uint64_t(events.best.cache_misses())     << setw(0);
     label << " cache_ref="    << setw(10) << uint64_t(events.best.cache_references()) << setw(0);
+#endif
   }
 
   label << " items=" << setw(10) << bench.items_per_iteration() << setw(0);
