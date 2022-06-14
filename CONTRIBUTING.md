@@ -62,13 +62,13 @@ Pull Requests
 
 Pull requests are always invited. However, we ask that you follow these guidelines:
 
-- It is wiser to discuss your ideas first as part of an issue before you start coding. If you omit this step and code first, be prepare to have your code receive scrutiny and be dropped.
-- Users should provide a rationale for their changes. Does it improve performance? Does it add a feature? Does it improve maintainability? Does fix a bug? This must be explicitly stated as part of the pull request. Do not propose changes based on taste or intuition. We do not delegate programming to tools: that some tool suggested a code change is not reason enough to change the code.
+- It is wise to discuss your ideas first as part of an issue before you start coding. If you omit this step and code first, be prepared to have your code receive scrutiny and be dropped.
+- Users should provide a rationale for their changes. Does it improve performance? Does it add a feature? Does it improve maintainability? Does it fix a bug? This must be explicitly stated as part of the pull request. Do not propose changes based on taste or intuition. We do not delegate programming to tools: that some tool suggested a code change is not reason enough to change the code.
    1. When your code improves performance, please document the gains with a benchmark using hard numbers.
-   2. If your code fixes a bug, please be either fix a failing test, or propose a new test.
+   2. If your code fixes a bug, please either fix a failing test, or propose a new test.
    3. Other types of changes must be clearly motivated. We openly discourage changes with no identifiable benefits.
 - Changes should be focused and minimal. You should change as few lines of code as possible. Please do not reformat or touch files needlessly.
-- New features must be accompanied of new tests, in general.
+- New features must be accompanied by new tests, in general.
 - Your code should pass our continuous-integration tests. It is your responsibility to ensure that your proposal pass the tests. We do not merge pull requests that would break our build.
    - An exception to this would be changes to non-code files, such as documentation and assets, or trivial changes to code, such as comments, where it is encouraged to explicitly ask for skipping a CI run using the `[skip ci]` prefix in your Pull Request title **and** in the first line of the most recent commit in a push. Example for such a commit: `[skip ci] Fixed typo in power_of_ten's docs`
    This benefits the project in such a way that the CI pipeline is not burdened by running jobs on changes that don't change any behavior in the code, which reduces wait times for other Pull Requests that do change behavior and require testing.
