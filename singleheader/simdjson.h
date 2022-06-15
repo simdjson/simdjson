@@ -1,4 +1,4 @@
-/* auto-generated on 2022-06-02 13:56:20 -0400. Do not edit! */
+/* auto-generated on 2022-06-15 15:21:33 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -43,7 +43,7 @@
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 2.0.3
+#define SIMDJSON_VERSION 2.0.4
 
 namespace simdjson {
 enum {
@@ -58,7 +58,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 3
+  SIMDJSON_VERSION_REVISION = 4
 };
 } // namespace simdjson
 
@@ -14246,7 +14246,9 @@ namespace simd {
     simdjson_really_inline base8() : base<simd8<T>>() {}
     simdjson_really_inline base8(const __m512i _value) : base<simd8<T>>(_value) {}
 
-    simdjson_really_inline uint64_t operator==(const simd8<T> other) const { return _mm512_cmpeq_epi8_mask(*this, other); }
+    friend simdjson_really_inline uint64_t operator==(const simd8<T> lhs, const simd8<T> rhs) {
+      return _mm512_cmpeq_epi8_mask(lhs, rhs);
+    }
 
     static const int SIZE = sizeof(base<T>::value);
 
@@ -24219,6 +24221,13 @@ public:
    * as if it had just been created.
    */
   inline void rewind() noexcept;
+  /**
+   * This checks whether the {,},[,] are balanced so that the document
+   * ends with proper zero depth. This requires scanning the whole document
+   * and it may be expensive. It is expected that it will be rarely called.
+   * It does not attempt to match { with } and [ with ].
+   */
+  inline bool balanced() const noexcept;
 protected:
   simdjson_really_inline json_iterator(const uint8_t *buf, ondemand::parser *parser) noexcept;
   /// The last token before the end
@@ -28231,6 +28240,27 @@ inline void json_iterator::rewind() noexcept {
   _depth = 1;
 }
 
+inline bool json_iterator::balanced() const noexcept {
+  token_iterator ti(token);
+  int32_t count{0};
+  ti.set_position( root_position() );
+  while(ti.peek() <= peek_last()) {
+    switch (*ti.return_current_and_advance())
+    {
+    case '[': case '{':
+      count++;
+      break;
+    case ']': case '}':
+      count--;
+      break;
+    default:
+      break;
+    }
+  }
+  return count == 0;
+}
+
+
 // GCC 7 warns when the first line of this function is inlined away into oblivion due to the caller
 // relating depth and parent_depth, which is a desired effect. The warning does not show up if the
 // skip_child() function is not marked inline).
@@ -28577,9 +28607,22 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   // current document. It only works in the normal mode where we have indexed a single document.
   // Note that adding a check for 'streaming' is not expensive since we only have at most
   // one root element.
-  if (! _json_iter->streaming() && (*_json_iter->peek_last() != '}')) {
-    _json_iter->abandon();
-    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing } at end");
+  if ( ! _json_iter->streaming() ) {
+    if (*_json_iter->peek_last() != '}') {
+      _json_iter->abandon();
+      return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing } at end");
+    }
+    // If the last character is } *and* the first gibberish character is also '}'
+    // then on-demand could accidentally go over. So we need additional checks.
+    // https://github.com/simdjson/simdjson/issues/1834
+    // Checking that the document is balanced requires a full scan which is potentially
+    // expensive, but it only happens in edge cases where the first padding character is
+    // a closing bracket.
+    if ((*_json_iter->peek(_json_iter->end_position()) == '}') && (!_json_iter->balanced())) {
+      _json_iter->abandon();
+      // The exact error would require more work. It will typically be an unclosed object.
+      return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "the document is unbalanced");
+    }
   }
   return started_object();
 }
@@ -28946,9 +28989,22 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   // current document. It only works in the normal mode where we have indexed a single document.
   // Note that adding a check for 'streaming' is not expensive since we only have at most
   // one root element.
-  if ( ! _json_iter->streaming() && (*_json_iter->peek_last() != ']')) {
-    _json_iter->abandon();
-    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing ] at end");
+  if ( ! _json_iter->streaming() ) {
+    if (*_json_iter->peek_last() != ']') {
+      _json_iter->abandon();
+      return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing ] at end");
+    }
+    // If the last character is ] *and* the first gibberish character is also ']'
+    // then on-demand could accidentally go over. So we need additional checks.
+    // https://github.com/simdjson/simdjson/issues/1834
+    // Checking that the document is balanced requires a full scan which is potentially
+    // expensive, but it only happens in edge cases where the first padding character is
+    // a closing bracket.
+    if ((*_json_iter->peek(_json_iter->end_position()) == ']') && (!_json_iter->balanced())) {
+      _json_iter->abandon();
+      // The exact error would require more work. It will typically be an unclosed array.
+      return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "the document is unbalanced");
+    }
   }
   return started_array();
 }
