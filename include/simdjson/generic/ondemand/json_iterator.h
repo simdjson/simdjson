@@ -251,6 +251,13 @@ public:
    * as if it had just been created.
    */
   inline void rewind() noexcept;
+  /**
+   * This checks whether the {,},[,] are balanced so that the document
+   * ends with proper zero depth. This requires scanning the whole document
+   * and it may be expensive. It is expected that it will be rarely called.
+   * It does not attempt to match { with } and [ with ].
+   */
+  inline bool balanced() const noexcept;
 protected:
   simdjson_really_inline json_iterator(const uint8_t *buf, ondemand::parser *parser) noexcept;
   /// The last token before the end

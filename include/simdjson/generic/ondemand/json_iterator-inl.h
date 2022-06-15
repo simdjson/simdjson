@@ -47,6 +47,27 @@ inline void json_iterator::rewind() noexcept {
   _depth = 1;
 }
 
+inline bool json_iterator::balanced() const noexcept {
+  token_iterator ti(token);
+  int32_t count{0};
+  ti.set_position( root_position() );
+  while(ti.peek() <= peek_last()) {
+    switch (*ti.return_current_and_advance())
+    {
+    case '[': case '{':
+      count++;
+      break;
+    case ']': case '}':
+      count--;
+      break;
+    default:
+      break;
+    }
+  }
+  return count == 0;
+}
+
+
 // GCC 7 warns when the first line of this function is inlined away into oblivion due to the caller
 // relating depth and parent_depth, which is a desired effect. The warning does not show up if the
 // skip_child() function is not marked inline).

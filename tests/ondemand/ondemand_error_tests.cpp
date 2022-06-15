@@ -6,6 +6,26 @@ using namespace simdjson;
 namespace error_tests {
   using namespace std;
 
+  bool issue1834() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = "[[]"_padded;
+    json.data()[json.size()] = ']';
+    auto doc = parser.iterate(json);
+    size_t cnt{};
+    auto error = doc.count_elements().get(cnt);
+    return error != simdjson::SUCCESS;
+  }
+  bool issue1834_2() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = "{\"a\":{}"_padded;
+    json.data()[json.size()] = '}';
+    auto doc = parser.iterate(json);
+    size_t cnt{};
+    auto error = doc.count_fields().get(cnt);
+    return error != simdjson::SUCCESS;
+  }
   bool empty_document_error() {
     TEST_START();
     ondemand::parser parser;
@@ -272,6 +292,8 @@ namespace error_tests {
 
   bool run() {
     return
+           issue1834() &&
+           issue1834_2() &&
 #if SIMDJSON_EXCEPTIONS
            raw_json_string_except() &&
            raw_json_string_except_with_io() &&
