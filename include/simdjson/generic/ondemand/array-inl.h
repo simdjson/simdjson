@@ -101,6 +101,7 @@ simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcep
   iter.reset_array();
   return count;
 }
+SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_really_inline simdjson_result<bool> array::is_empty() & noexcept {
   bool is_not_empty;
