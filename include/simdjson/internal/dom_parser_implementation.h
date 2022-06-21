@@ -163,6 +163,7 @@ public:
    */
   simdjson_warn_unused inline error_code allocate(size_t capacity, size_t max_depth) noexcept;
 
+
 protected:
   /**
    * The maximum document length this parser supports.
