@@ -26,6 +26,7 @@ simdjson_really_inline bool object_iterator::operator!=(const object_iterator &)
   return iter.is_open();
 }
 
+SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_really_inline object_iterator &object_iterator::operator++() noexcept {
   // TODO this is a safety rail ... users should exit loops as soon as they receive an error.
