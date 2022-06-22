@@ -17,12 +17,19 @@ class json_iterator;
  *
  * This class is deliberately simplistic and has little functionality. You can
  * compare a raw_json_string instance with an unescaped C string, but
- * that is pretty much all you can do.
+ * that is nearly all you can do.
  *
- * They originate typically from field instance which in turn represent key-value pairs from
- * object instances. From a field instance, you get the raw_json_string instance by calling key().
- * You can, if you want a more usable string_view instance, call the unescaped_key() method
- * on the field instance.
+ * The raw_json_string is unescaped. If you wish to write an unescaped version of it to your own
+ * buffer, you may do so using the parser.unescape(string, buff) method, using an ondemand::parser
+ * instance. Doing so requires you to have a sufficiently large buffer.
+ *
+ * The raw_json_string instances originate typically from field instance which in turn represent
+ * key-value pairs from object instances. From a field instance, you get the raw_json_string
+ * instance by calling key(). You can, if you want a more usable string_view instance, call
+ * the unescaped_key() method on the field instance. You may also create a raw_json_string from
+ * any other string value, with the value.get_raw_json_string() method. Again, you can get
+ * a more usable string_view instance by calling get_string().
+ *
  */
 class raw_json_string {
 public:
