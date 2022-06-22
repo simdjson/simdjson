@@ -117,6 +117,14 @@ simdjson_really_inline void parser::set_max_capacity(size_t max_capacity) noexce
   }
 }
 
+simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> parser::unescape(raw_json_string in, uint8_t *&dst) const noexcept {
+  uint8_t *end = implementation->parse_string(in.buf, dst);
+  if (!end) { return STRING_ERROR; }
+  std::string_view result(reinterpret_cast<const char *>(dst), end-dst);
+  dst = end;
+  return result;
+}
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

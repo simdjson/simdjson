@@ -116,26 +116,6 @@ public:
   static simdjson_really_inline bool is_free_from_unescaped_quote(std::string_view target) noexcept;
   static simdjson_really_inline bool is_free_from_unescaped_quote(const char* target) noexcept;
 
-  /**
-   * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a user-provided buffer.
-   * The provided pointer is advanced to the end of the string by reference, and a string_view instance
-   * is returned. You can ensure that your buffer is large enough by allocating a block of memory at least
-   * as large as the input JSON plus SIMDJSON_PADDING and then unescape all strings to this one buffer.
-   *
-   * This unescape function is a low-level function. If you want a more user-friendly approach, you should
-   * avoid raw_json_string instances (e.g., by calling unescaped_key() instead of key() or get_string()
-   * instead of get_raw_json_string()).
-   *
-   * ## IMPORTANT: string_view lifetime
-   *
-   * The string_view is only valid as long as the bytes in dst.
-   *
-   * @param dst A pointer to a buffer at least large enough to write this string as well as
-   *            an additional SIMDJSON_PADDING bytes.
-   * @return A string_view pointing at the unescaped string in dst
-   * @error STRING_ERROR if escapes are incorrect.
-   */
-  simdjson_really_inline simdjson_result<std::string_view> unescape(uint8_t *&dst) const noexcept;
 private:
 
 
@@ -164,6 +144,7 @@ private:
   const uint8_t * buf{};
   friend class object;
   friend class field;
+  friend class parser;
   friend struct simdjson_result<raw_json_string>;
 };
 
@@ -194,7 +175,6 @@ public:
   simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
 
   simdjson_really_inline simdjson_result<const char *> raw() const noexcept;
-  simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(uint8_t *&dst) const noexcept;
   simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept;
 };
 

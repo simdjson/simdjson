@@ -127,15 +127,6 @@ simdjson_warn_unused simdjson_really_inline uint8_t *parse_string(const uint8_t 
   return nullptr;
 }
 
-simdjson_unused simdjson_warn_unused simdjson_really_inline error_code parse_string_to_buffer(const uint8_t *src, uint8_t *&current_string_buf_loc, std::string_view &s) {
-  if (*(src++) != '"') { return STRING_ERROR; }
-  auto end = stringparsing::parse_string(src, current_string_buf_loc);
-  if (!end) { return STRING_ERROR; }
-  s = std::string_view(reinterpret_cast<const char *>(current_string_buf_loc), end-current_string_buf_loc);
-  current_string_buf_loc = end;
-  return SUCCESS;
-}
-
 } // namespace stringparsing
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION

@@ -72,9 +72,6 @@ public:
   simdjson_warn_unused bool validate_utf8(const char * buf, size_t len) const noexcept final override {
     return set_best()->validate_utf8(buf, len);
   }
-  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst) const noexcept final override {
-    return set_best()->parse_string(src, dst);
-  }
   simdjson_really_inline detect_best_supported_implementation_on_first_use() noexcept : implementation("best_supported_detector", "Detects the best supported implementation and sets it", 0) {}
 private:
   const implementation *set_best() const noexcept;
@@ -126,9 +123,6 @@ public:
     // implementation. And, when it does happen (that we have an unsupported implementation),
     // what are the chances that the programmer has a fallback? Given that *we* provide the
     // fallback, it implies that the programmer would need a fallback for our fallback.
-  }
-  simdjson_warn_unused uint8_t *parse_string(const uint8_t *, uint8_t *) const noexcept final override {
-    return nullptr;
   }
   unsupported_implementation() : implementation("unsupported", "Unsupported CPU (no detected SIMD instructions)", 0) {}
 };
@@ -193,9 +187,6 @@ simdjson_warn_unused error_code minify(const char *buf, size_t len, char *dst, s
 }
 simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) noexcept {
   return get_active_implementation()->validate_utf8(buf, len);
-}
-simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst) noexcept {
-  return get_active_implementation()->parse_string(src, dst);
 }
 const implementation * builtin_implementation() {
   static const implementation * builtin_impl = get_available_implementations()[SIMDJSON_STRINGIFY(SIMDJSON_BUILTIN_IMPLEMENTATION)];

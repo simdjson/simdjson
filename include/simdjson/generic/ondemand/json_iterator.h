@@ -233,7 +233,14 @@ public:
   template<int N> simdjson_warn_unused simdjson_really_inline bool copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t (&tmpbuf)[N]) noexcept;
 
   simdjson_really_inline token_position position() const noexcept;
+  /**
+   * Write the raw_json_string to the string buffer and return a string_view.
+   * Each raw_json_string should be unescaped once, or else the string buffer might
+   * overflow.
+   */
+  simdjson_really_inline simdjson_result<std::string_view> unescape(raw_json_string in) noexcept;
   simdjson_really_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
+
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
   simdjson_really_inline token_position start_position(depth_t depth) const noexcept;
   simdjson_really_inline void set_start_position(depth_t depth, token_position position) noexcept;

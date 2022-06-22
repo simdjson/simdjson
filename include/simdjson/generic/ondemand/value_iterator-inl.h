@@ -473,7 +473,7 @@ simdjson_really_inline bool value_iterator::parse_null(const uint8_t *json) cons
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> value_iterator::get_string() noexcept {
-  return get_raw_json_string().unescape(_json_iter->string_buf_loc());
+  return get_raw_json_string().unescape(json_iter());
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::get_raw_json_string() noexcept {
   auto json = peek_scalar("string");

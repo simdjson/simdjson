@@ -38,20 +38,6 @@ simdjson_really_inline simdjson_warn_unused bool validate_utf8(const std::string
   return validate_utf8(s.data(), s.size());
 }
 
-/**
- * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
- * must be an unescaped quote terminating the string. It returns the final output
- * position as pointer. In case of error (e.g., the string has bad escaped codes),
- * then null_nullptrptr is returned. It is assumed that the output buffer is large
- * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
- * SIMDJSON_PADDING bytes.
- *
- * @param str pointer to the beginning of a valid UTF-8 JSON string, must end with an unescaped quote.
- * @param dst pointer to a destination buffer, it must point a region in memory of sufficient size.
- * @return end of the of the written region (exclusive) or nullptr in case of error.
- */
-simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst) noexcept;
-
 namespace dom {
   class document;
 } // namespace dom
@@ -147,22 +133,6 @@ public:
    * @return true if and only if the string is valid UTF-8.
    */
   simdjson_warn_unused virtual bool validate_utf8(const char *buf, size_t len) const noexcept = 0;
-
-  /**
-   * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
-   * must be an unescaped quote terminating the string. It returns the final output
-   * position as pointer. In case of error (e.g., the string has bad escaped codes),
-   * then null_nullptrptr is returned. It is assumed that the output buffer is large
-   * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
-   * SIMDJSON_PADDING bytes.
-   *
-   * Overridden by each implementation.
-   *
-   * @param str pointer to the beginning of a valid UTF-8 JSON string, must end with an unescaped quote.
-   * @param dst pointer to a destination buffer, it must point a region in memory of sufficient size.
-   * @return end of the of the written region (exclusive) or nullptr in case of error.
-   */
-  simdjson_warn_unused virtual uint8_t *parse_string(const uint8_t *src, uint8_t *dst) const noexcept = 0;
 
 protected:
   /** @private Construct an implementation with the given name and description. For subclasses. */
