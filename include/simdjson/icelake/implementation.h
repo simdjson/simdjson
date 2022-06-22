@@ -23,7 +23,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst) const noexcept final;
 };
 
 } // namespace icelake
