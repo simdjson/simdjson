@@ -17,6 +17,7 @@ different version of the JSON parser for different CPU architectures, often with
 algorithms to take better advantage of a given CPU!
 
 The current implementations are:
+* icelake: AVX-512F, AVX-512VBMI, etc. 
 * haswell: AVX2 (2013 Intel Haswell or later)
 * westmere: SSE4.2 (2010 Westmere or later).
 * arm64: 64-bit ARMv8-A NEON
