@@ -839,7 +839,8 @@ bool simple_error_example() {
       doc = parser.iterate(broken_json);
       return int64_t(doc["integer"]);
     } catch(simdjson_error& err) {
-      std::cerr << doc.current_location() << std::endl;
+      std::cout << err.error() << std::endl;
+      std::cout << doc.current_location() << std::endl;
       TEST_SUCCEED();
     }
     TEST_FAIL("I expected an exception!");
@@ -986,7 +987,6 @@ bool current_location_no_error() {
 
 bool run() {
   return
-    true
 #if SIMDJSON_EXCEPTIONS
 //    && basics_1() // Fails because twitter.json isn't in current directory. Compile test only.
     &&  basics_treewalk()
@@ -1027,9 +1027,8 @@ bool run() {
     && number_tests()
     && current_location_tape_error_with_except()
   #endif
-  ;
+  true;
 }
-
 
 int main(int argc, char *argv[]) {
   return test_main(argc, argv, run);
