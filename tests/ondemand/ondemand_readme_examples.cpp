@@ -1027,7 +1027,7 @@ bool run() {
     && number_tests()
     && current_location_tape_error_with_except()
   #endif
-  true;
+  && true;
 }
 
 int main(int argc, char *argv[]) {
