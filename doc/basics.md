@@ -3,30 +3,35 @@ The Basics
 
 An overview of what you need to know to use simdjson, with examples.
 
-* [Requirements](#requirements)
-* [Including simdjson](#including-simdjson)
-* [Using simdjson with package managers](#using-simdjson-with-package-managers)
-* [Using simdjson as a CMake dependency](#using-simdjson-as-a-cmake-dependency)
-* [Versions](#versions)
-* [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents)
-* [Documents are Iterators](#documents-are-iterators)
-* [C++11 Support and string_view](#c11-support-and-string_view)
-* [Using the Parsed JSON](#using-the-parsed-json)
-* [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
-* [UTF-8 validation (alone)](#utf-8-validation-alone)
-* [JSON Pointer](#json-pointer)
-* [Error Handling](#error-handling)
-  * [Error Handling Example without Exceptions](#error-handling-examples-without-exceptions)
-  * [Disabling Exceptions](#disabling-exceptions)
-  * [Exceptions](#exceptions)
-  * [Current location in document](#current-location-in-document)
-* [Rewinding](#rewinding)
-* [Direct Access to the Raw String](#direct-access-to-the-raw-string)
-* [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
-* [Parsing Numbers Inside Strings](#parsing-numbers-inside-strings)
-* [Dynamic Number Types](#dynamic-number-types)
-* [Thread Safety](#thread-safety)
-* [Standard Compliance](#standard-compliance)
+- [The Basics](#the-basics)
+  - [Requirements](#requirements)
+  - [Including simdjson](#including-simdjson)
+  - [Using simdjson with package managers](#using-simdjson-with-package-managers)
+  - [Using simdjson as a CMake dependency](#using-simdjson-as-a-cmake-dependency)
+  - [Versions](#versions)
+  - [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents)
+  - [Documents are Iterators](#documents-are-iterators)
+    - [Parser, Document and JSON Scope](#parser-document-and-json-scope)
+  - [C++11 Support and string_view](#c11-support-and-string_view)
+  - [Using the Parsed JSON](#using-the-parsed-json)
+    - [Using the Parsed JSON: Additional examples](#using-the-parsed-json-additional-examples)
+  - [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
+  - [UTF-8 validation (alone)](#utf-8-validation-alone)
+  - [JSON Pointer](#json-pointer)
+  - [Error Handling](#error-handling)
+    - [Error Handling Examples without Exceptions](#error-handling-examples-without-exceptions)
+    - [Disabling Exceptions](#disabling-exceptions)
+    - [Exceptions](#exceptions)
+    - [Current location in document](#current-location-in-document)
+  - [Rewinding](#rewinding)
+  - [Direct Access to the Raw String](#direct-access-to-the-raw-string)
+  - [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
+  - [Parsing Numbers Inside Strings](#parsing-numbers-inside-strings)
+  - [Dynamic Number Types](#dynamic-number-types)
+  - [Raw Strings](#raw-strings)
+  - [Thread Safety](#thread-safety)
+  - [Standard Compliance](#standard-compliance)
+  - [Backwards Compatibility](#backwards-compatibility)
 
 
 Requirements
@@ -467,7 +472,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   ```
 * **Tree Walking and JSON Element Types:** Sometimes you don't necessarily have a document
   with a known type, and are trying to generically inspect or walk over JSON elements. To do that, you can use iterators and the `type()` method. You can also represent arbitrary JSON values with
-  `ondemand::value` instances: it can represent anything except a scalar document (lone number, string, null or Boolean). You can check for scalar documents with the method `scalar()`.
+  `ondemand::value` instances: it can represent anything except a scalar document (lone number, string, null or Boolean). You can check for scalar documents with the method `scalar()`. You may also access [raw strings](#raw-strings).
   For example, the following is a quick and dirty recursive function that verbosely prints the JSON document as JSON. This example also illustrates lifecycle requirements: the `document` instance holds the iterator. The document must remain in scope while you are accessing instances of `value`, `object` and `array`.
   ```c++
   void recursive_print_json(ondemand::value element) {
@@ -1443,6 +1448,42 @@ It will output:
 3.1415 negative: 0 is_integer: 0 float: 3.1415 float: 3.1415
 -13231232 negative: 1 is_integer: 1 integer: -13231232 integer: -13231232
 9999999999999999999 negative: 0 is_integer: 1 large 64-bit integer: 9999999999999999999 large 64-bit integer: 9999999999999999999
+```
+
+Raw Strings
+-----------
+
+It is sometimes useful to have access to a raw (unescaped) string: we make available a
+minimalist `raw_json_string` data type which contains a pointer inside the string in the
+original document, right after the quote. It is accessible via `get_raw_json_string()` on a
+string instance and returned by the `key()` method on an object's field instance. It is always
+optional: replacing `get_raw_json_string()` with `get_string()` and `key()` by
+`unescaped_key()` returns an `string_view` instance of the unescaped string.
+
+You can quickly compare a `raw_json_string` instance with a target string. You may also
+unescape  the `raw_json_string` on your own string buffer: `parser.unescape(mystr, ptr)`
+advances the provided pointer `ptr` and returns a string_view instance on the newly serialized
+string upon success, otherwise it returns an error. When unescaping to your own string buffer,
+you should ensure that you have sufficient memory space: the total size of the strings plus
+`simdjson::SIMDJSON_PADDING` bytes. The following example illustrates how we can unescape
+JSON string to a user-provided buffer:
+
+```C++
+    auto json = R"( {"name": "Jack The Ripper \u0033"} )"_padded;
+    // We create a buffer large enough to store all strings we need:
+    std::unique_ptr<uint8_t[]> buffer(new uint8_t[json.size() + simdjson::SIMDJSON_PADDING]);
+    uint8_t * ptr = buffer.get();
+    ondemand::parser parser;
+    ondemand::document doc = parser.iterate(json);
+    // We store our strings as 'string_view' instances in a vector:
+    std::vector<std::string_view> mystrings;
+    for (auto key_value : doc.get_object()) {
+      std::string_view keysv = parser.unescape(key_value.key(), ptr);// writes 'name'
+      mystrings.push_back(keysv);
+      std::string_view valuesv = parser.unescape(key_value.value().get_raw_json_string(), ptr);
+      // writes 'Jack The Ripper 3', escaping the \u0033
+      mystrings.push_back(valuesv);
+    }
 ```
 
 Thread Safety
