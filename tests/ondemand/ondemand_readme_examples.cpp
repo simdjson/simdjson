@@ -986,7 +986,7 @@ bool current_location_no_error() {
 }
 
 bool run() {
-  return
+  return true
 #if SIMDJSON_EXCEPTIONS
 //    && basics_1() // Fails because twitter.json isn't in current directory. Compile test only.
     &&  basics_treewalk()
@@ -1027,7 +1027,7 @@ bool run() {
     && number_tests()
     && current_location_tape_error_with_except()
   #endif
-  && true;
+  ;
 }
 
 int main(int argc, char *argv[]) {
