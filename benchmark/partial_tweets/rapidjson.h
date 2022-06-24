@@ -70,7 +70,7 @@ BENCHMARK_TEMPLATE(partial_tweets, rapidjson)->UseManualTime();
 
 struct rapidjson_insitu : rapidjson_base {
   bool run(simdjson::padded_string &json, std::vector<tweet<std::string_view>> &result) {
-    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), result);
+    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag|kParseInsituFlag>(json.data()), result);
   }
 };
 BENCHMARK_TEMPLATE(partial_tweets, rapidjson_insitu)->UseManualTime();
