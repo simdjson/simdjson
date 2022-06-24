@@ -103,6 +103,22 @@ public:
   simdjson_warn_unused virtual error_code stage2_next(dom::document &doc) noexcept = 0;
 
   /**
+   * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
+   * must be an unescaped quote terminating the string. It returns the final output
+   * position as pointer. In case of error (e.g., the string has bad escaped codes),
+   * then null_nullptrptr is returned. It is assumed that the output buffer is large
+   * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
+   * SIMDJSON_PADDING bytes.
+   *
+   * Overridden by each implementation.
+   *
+   * @param str pointer to the beginning of a valid UTF-8 JSON string, must end with an unescaped quote.
+   * @param dst pointer to a destination buffer, it must point a region in memory of sufficient size.
+   * @return end of the of the written region (exclusive) or nullptr in case of error.
+   */
+  simdjson_warn_unused virtual uint8_t *parse_string(const uint8_t *src, uint8_t *dst) const noexcept = 0;
+
+  /**
    * Change the capacity of this parser.
    *
    * The capacity can never exceed SIMDJSON_MAXSIZE_BYTES (e.g., 4 GB)
@@ -162,6 +178,7 @@ public:
    * @return The error, if there is one.
    */
   simdjson_warn_unused inline error_code allocate(size_t capacity, size_t max_depth) noexcept;
+
 
 protected:
   /**

@@ -158,6 +158,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 //
 // Stage 2
 //
+#include "generic/stage2/stringparsing.h"
 #include "generic/stage2/tape_builder.h"
 
 //
@@ -196,6 +197,10 @@ simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document 
 
 simdjson_warn_unused error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<true>(*this, _doc);
+}
+
+simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst) const noexcept {
+  return icelake::stringparsing::parse_string(src, dst);
 }
 
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {

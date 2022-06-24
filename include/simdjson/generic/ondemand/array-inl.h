@@ -89,6 +89,7 @@ simdjson_really_inline simdjson_result<std::string_view> array::raw_json() noexc
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 
+SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcept {
   size_t count{0};
@@ -101,6 +102,7 @@ simdjson_really_inline simdjson_result<size_t> array::count_elements() & noexcep
   iter.reset_array();
   return count;
 }
+SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_really_inline simdjson_result<bool> array::is_empty() & noexcept {
   bool is_not_empty;

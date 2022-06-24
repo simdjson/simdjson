@@ -180,6 +180,8 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   return false;
 }
 
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::find_field_unordered_raw(const std::string_view key) noexcept {
   /**
    * When find_field_unordered_raw is called, we can either be pointing at the
@@ -367,6 +369,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   // never reach this point.
   return false;
 }
+SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::field_key() noexcept {
   assert_at_next();
@@ -470,7 +473,7 @@ simdjson_really_inline bool value_iterator::parse_null(const uint8_t *json) cons
 }
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<std::string_view> value_iterator::get_string() noexcept {
-  return get_raw_json_string().unescape(_json_iter->string_buf_loc());
+  return get_raw_json_string().unescape(json_iter());
 }
 simdjson_warn_unused simdjson_really_inline simdjson_result<raw_json_string> value_iterator::get_raw_json_string() noexcept {
   auto json = peek_scalar("string");

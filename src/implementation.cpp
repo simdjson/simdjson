@@ -188,7 +188,6 @@ simdjson_warn_unused error_code minify(const char *buf, size_t len, char *dst, s
 simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) noexcept {
   return get_active_implementation()->validate_utf8(buf, len);
 }
-
 const implementation * builtin_implementation() {
   static const implementation * builtin_impl = get_available_implementations()[SIMDJSON_STRINGIFY(SIMDJSON_BUILTIN_IMPLEMENTATION)];
   assert(builtin_impl);

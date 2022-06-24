@@ -6,13 +6,7 @@ namespace ondemand {
 simdjson_really_inline raw_json_string::raw_json_string(const uint8_t * _buf) noexcept : buf{_buf} {}
 
 simdjson_really_inline const char * raw_json_string::raw() const noexcept { return reinterpret_cast<const char *>(buf); }
-simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(uint8_t *&dst) const noexcept {
-  uint8_t *end = stringparsing::parse_string(buf, dst);
-  if (!end) { return STRING_ERROR; }
-  std::string_view result(reinterpret_cast<const char *>(dst), end-dst);
-  dst = end;
-  return result;
-}
+
 
 simdjson_really_inline bool raw_json_string::is_free_from_unescaped_quote(std::string_view target) noexcept {
   size_t pos{0};
@@ -150,7 +144,7 @@ simdjson_unused simdjson_really_inline bool operator!=(std::string_view c, const
 
 
 simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(json_iterator &iter) const noexcept {
-  return unescape(iter.string_buf_loc());
+  return iter.unescape(*this);
 }
 
 
@@ -182,10 +176,6 @@ simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_js
 simdjson_really_inline simdjson_result<const char *> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::raw() const noexcept {
   if (error()) { return error(); }
   return first.raw();
-}
-simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::unescape(uint8_t *&dst) const noexcept {
-  if (error()) { return error(); }
-  return first.unescape(dst);
 }
 simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept {
   if (error()) { return error(); }

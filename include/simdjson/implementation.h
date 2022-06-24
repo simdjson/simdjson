@@ -18,8 +18,6 @@ namespace simdjson {
  * @return true if the string is valid UTF-8.
  */
 simdjson_warn_unused bool validate_utf8(const char * buf, size_t len) noexcept;
-
-
 /**
  * Validate the UTF-8 string.
  *

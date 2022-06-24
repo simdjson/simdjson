@@ -39,7 +39,6 @@ using error_code=simdjson::error_code;
       }
     }
     return true;
-
   }
 
 void recursive_print_json(ondemand::value element) {
@@ -792,6 +791,29 @@ bool simple_error_example() {
 
 
 #if SIMDJSON_EXCEPTIONS
+  bool raw_string() {
+    TEST_START();
+    auto json = R"( {"name": "Jack The Ripper \u0033"} )"_padded;
+    // We create a buffer large enough to store all strings we need:
+    std::unique_ptr<uint8_t[]> buffer(new uint8_t[json.size() + simdjson::SIMDJSON_PADDING]);
+    uint8_t * ptr = buffer.get();
+    ondemand::parser parser;
+    ondemand::document doc = parser.iterate(json);
+    // We store our strings as 'string_view' instances in a vector:
+    std::vector<std::string_view> mystrings;
+    for (auto key_value : doc.get_object()) {
+      std::string_view keysv = parser.unescape(key_value.key(), ptr);// writes 'name'
+      mystrings.push_back(keysv);
+      std::string_view valuesv = parser.unescape(key_value.value().get_raw_json_string(), ptr);
+      // writes 'Jack The Ripper 3', escaping the \u0033
+      mystrings.push_back(valuesv);
+    }
+    ASSERT_EQUAL(mystrings[0],"name");
+    ASSERT_EQUAL(mystrings[1],"Jack The Ripper 3");
+    TEST_SUCCEED();
+  }
+
+
   bool simple_error_example_except() {
     TEST_START();
     ondemand::parser parser;
@@ -800,30 +822,34 @@ bool simple_error_example() {
       ondemand::document doc = parser.iterate(json);
       double x = doc["bad number"].get_double();
       std::cout << "Got " << x << std::endl;
-      return true;
+      TEST_SUCCEED();
     } catch(simdjson_error& e) {
       // e.error() == NUMBER_ERROR
       std::cout << e.error() << std::endl;
-      return false;
+      TEST_FAIL("I did not expect an exception");
     }
   }
 
   int64_t current_location_tape_error_with_except() {
+    TEST_START();
     auto broken_json = R"( {"double": 13.06, false, "integer": -343} )"_padded;
     ondemand::parser parser;
-    ondemand::document doc = parser.iterate(broken_json);
+    ondemand::document doc;
     try {
+      doc = parser.iterate(broken_json);
       return int64_t(doc["integer"]);
     } catch(simdjson_error& err) {
-      std::cerr << err.error() << std::endl;
-      std::cerr << doc.current_location() << std::endl;
-      return -1;
+      std::cout << err.error() << std::endl;
+      std::cout << doc.current_location() << std::endl;
+      TEST_SUCCEED();
     }
+    TEST_FAIL("I expected an exception!");
   }
 
 #endif
 
 int load_example() {
+  TEST_START();
   simdjson::ondemand::parser parser;
   simdjson::ondemand::document tweets;
   padded_string json;
@@ -872,6 +898,7 @@ int example_1() {
 }
 #if SIMDJSON_EXCEPTIONS
 int load_example_except() {
+  TEST_START();
   simdjson::ondemand::parser parser;
   padded_string json = padded_string::load("twitter.json");
   simdjson::ondemand::document tweets = parser.iterate(json);
@@ -958,15 +985,12 @@ bool current_location_no_error() {
   TEST_SUCCEED();
 }
 
-int main() {
-#if SIMDJSON_EXCEPTIONS
-  basics_treewalk();
-  basics_treewalk_breakline();
-#endif
-  if (
-    true
+bool run() {
+  return true
 #if SIMDJSON_EXCEPTIONS
 //    && basics_1() // Fails because twitter.json isn't in current directory. Compile test only.
+    &&  basics_treewalk()
+    &&  basics_treewalk_breakline()
     && json_value_with_array_count()
     && json_array_with_array_count()
     && json_array_count_complex()
@@ -999,12 +1023,13 @@ int main() {
     && current_location_out_of_bounds()
     && current_location_no_error()
   #if SIMDJSON_EXCEPTIONS
+    && raw_string()
     && number_tests()
     && current_location_tape_error_with_except()
   #endif
-  ) {
-    return 0;
-  } else {
-    return 1;
-  }
+  ;
+}
+
+int main(int argc, char *argv[]) {
+  return test_main(argc, argv, run);
 }
