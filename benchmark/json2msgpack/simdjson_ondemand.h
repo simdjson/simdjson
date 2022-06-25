@@ -73,9 +73,10 @@ simdjson2msgpack::to_msgpack(const simdjson::padded_string &json,
       // impossible
       break;
     }
+  } else {
+    simdjson::ondemand::value val = doc;
+    recursive_processor(val);
   }
-  simdjson::ondemand::value val = doc;
-  recursive_processor(val);
   return std::string_view(reinterpret_cast<char *>(buf), size_t(buff - buf));
 }
 
@@ -84,6 +85,7 @@ void simdjson2msgpack::write_double(const double d) noexcept {
   ::memcpy(buff, &d, sizeof(d));
   buff += sizeof(d);
 }
+
 void simdjson2msgpack::write_byte(const uint8_t b) noexcept {
   *buff = b;
   buff++;
@@ -99,6 +101,7 @@ uint8_t *simdjson2msgpack::skip_uint32() noexcept {
   buff += sizeof(uint32_t);
   return ret;
 }
+
 void simdjson2msgpack::write_uint32_at(const uint32_t w, uint8_t *p) noexcept {
   ::memcpy(p, &w, sizeof(w));
 }

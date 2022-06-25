@@ -6,35 +6,18 @@ namespace json2msgpack {
 
 using namespace json_benchmark;
 
-inline bool diff_str(const std::string_view &result,
-                     const std::string_view &reference) {
-  if (result != reference) {
-    std::stringstream str;
-    str << "result incorrect: " << result << " ... reference: " << reference;
-    printf("result 1 : ");
-    for (size_t i = 0; i < result.size(); i++) {
-      printf("%x ", uint32_t(result[i]));
-    }
-    printf("\n");
-    printf("result 2 : ");
-    for (size_t i = 0; i < reference.size(); i++) {
-      printf("%x ", uint32_t(reference[i]));
-    }
-    printf("\n");
-    return false;
-  }
-  return true;
-}
-
 template <typename I> struct runner : public file_runner<I> {
   std::string_view result;
   std::unique_ptr<char[]> buffer;
 
   bool setup(benchmark::State &state) {
     bool isok = this->load_json(state, TWITTER_JSON);
+    //this->json = "\"a\""_padded;
+    //this->original_json = "\"a\""_padded;
+
     if (isok) {
       // Let us allocate a sizeable buffer.
-      buffer = std::unique_ptr<char[]>(new char[this->json.size() * 4]);
+      buffer = std::unique_ptr<char[]>(new char[this->json.size() * 4 + 1024]);
     }
     return isok;
   }
@@ -44,7 +27,7 @@ template <typename I> struct runner : public file_runner<I> {
       return false;
     }
     // Clear the buffer.
-    ::memset(buffer.get(), 0, this->json.size() * 4);
+    ::memset(buffer.get(), 0, this->json.size() * 4 + 1024);
     return true;
   }
 
@@ -54,8 +37,7 @@ template <typename I> struct runner : public file_runner<I> {
 
   template <typename R>
   bool diff(benchmark::State &state, runner<R> &reference) {
-    diff_str(result, reference.result);
-    return diff_results(state, result, reference.result, diff_flags::NONE);
+    return diff_results(state, result.size(), reference.result.size(), diff_flags::NONE);
   }
 };
 

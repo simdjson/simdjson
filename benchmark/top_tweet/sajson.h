@@ -11,6 +11,7 @@ struct sajson {
 
   size_t ast_buffer_size{0};
   size_t *ast_buffer{nullptr};
+  ~sajson() { free(ast_buffer); }
 
   bool run(simdjson::padded_string &json, int32_t max_retweet_count, top_tweet_result<StringType> &result) {
     if (!ast_buffer) {

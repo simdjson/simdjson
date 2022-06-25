@@ -11,26 +11,28 @@ using namespace rapidjson;
 
 template <int parseflag>
 struct rapidjson2msgpack {
-
-  inline std::string_view to_msgpack(const char *json, uint8_t *buf);
+  inline std::string_view to_msgpack(char *json, uint8_t *buf);
 
 private:
   inline void write_double(const double d) noexcept;
   inline void write_byte(const uint8_t b) noexcept;
   inline void write_uint32(const uint32_t w) noexcept;
-  inline uint8_t *skip_uint32() noexcept;
   inline void write_uint32_at(const uint32_t w, uint8_t *p) noexcept;
-  void write_string(const std::string &str) noexcept;
-  inline void recursive_processor(const rapidjson::Value &v);
+  void write_string(const char * s, size_t length) noexcept;
+  inline void recursive_processor(rapidjson::Value &v);
 
   rapidjson::Document doc{};
   uint8_t *buff{};
 };
 
 template <int parseflag>
-std::string_view rapidjson2msgpack<parseflag>::to_msgpack(const char *json, uint8_t *buf) {
+std::string_view rapidjson2msgpack<parseflag>::to_msgpack(char *json, uint8_t *buf) {
   buff = buf;
-  doc.Parse<parseflag>(json);
+  if(parseflag & kParseInsituFlag) {
+    doc.ParseInsitu<parseflag>(json);
+  } else {
+    doc.Parse<parseflag>(json);
+  }
   recursive_processor(doc);
   return std::string_view(reinterpret_cast<char *>(buf), size_t(buff - buf));
 }
@@ -49,11 +51,11 @@ void rapidjson2msgpack<parseflag>::write_byte(const uint8_t b) noexcept {
 }
 
 template <int parseflag>
-void rapidjson2msgpack<parseflag>::write_string(const std::string &str) noexcept {
+void rapidjson2msgpack<parseflag>::write_string(const char * c, size_t len) noexcept {
   write_byte(0xdb);
-  write_uint32(str.size());
-  ::memcpy(buff, str.data(), str.size());
-  buff += str.size();
+  write_uint32(len);
+  ::memcpy(buff, c, len);
+  buff += len;
 }
 
 template <int parseflag>
@@ -63,41 +65,31 @@ void rapidjson2msgpack<parseflag>::write_uint32(const uint32_t w) noexcept {
 }
 
 template <int parseflag>
-uint8_t *rapidjson2msgpack<parseflag>::skip_uint32() noexcept {
-  uint8_t *ret = buff;
-  buff += sizeof(uint32_t);
-  return ret;
-}
-
-template <int parseflag>
 void rapidjson2msgpack<parseflag>::write_uint32_at(const uint32_t w, uint8_t *p) noexcept {
   ::memcpy(p, &w, sizeof(w));
 }
 
 template <int parseflag>
-void rapidjson2msgpack<parseflag>::recursive_processor(const rapidjson::Value &v) {
+void rapidjson2msgpack<parseflag>::recursive_processor(rapidjson::Value &v) {
   switch (v.GetType()) {
-
   case kArrayType:
     write_byte(0xdd);
     write_uint32(v.Size());
-    for (Value::ConstValueIterator i = v.Begin(); i != v.End(); ++i) {
+    for (Value::ValueIterator i = v.Begin(); i != v.End(); ++i) {
       recursive_processor(*i);
     }
     break;
-
   case kObjectType:
     write_byte(0xdf);
-    write_uint32(v.Size());
-    for (Value::ConstMemberIterator m = v.MemberBegin(); m != v.MemberEnd();
+    write_uint32(v.MemberEnd()-v.MemberBegin());
+    for (Value::MemberIterator m = v.MemberBegin(); m != v.MemberEnd();
          ++m) {
-      write_string(m->name.GetString());
+      write_string(m->name.GetString(), m->name.GetStringLength());
       recursive_processor(m->value);
     }
     break;
-
   case kStringType:
-    write_string(v.GetString());
+    write_string(v.GetString(), v.GetStringLength());
     break;
   case kNumberType:
     write_double(v.GetDouble());
@@ -115,7 +107,7 @@ void rapidjson2msgpack<parseflag>::recursive_processor(const rapidjson::Value &v
 }
 
 template <int parseflag>
-struct rapidjson {
+struct rapidjson_base {
   using StringType = std::string_view;
 
   rapidjson2msgpack<parseflag> parser{};
@@ -129,9 +121,21 @@ struct rapidjson {
   }
 };
 
-using rapidjson_lossless = rapidjson<kParseValidateEncodingFlag|kParseFullPrecisionFlag>;
+
+using rapidjson_lossless = rapidjson_base<kParseValidateEncodingFlag|kParseFullPrecisionFlag>;
 
 BENCHMARK_TEMPLATE(json2msgpack, rapidjson_lossless)->UseManualTime();
+
+
+using rapidjson = rapidjson_base<kParseValidateEncodingFlag>;
+
+BENCHMARK_TEMPLATE(json2msgpack, rapidjson)->UseManualTime();
+
+
+
+using rapidjson_insitu = rapidjson_base<kParseValidateEncodingFlag|kParseInsituFlag>;
+
+BENCHMARK_TEMPLATE(json2msgpack, rapidjson_insitu)->UseManualTime();
 
 } // namespace json2msgpack
 
