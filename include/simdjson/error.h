@@ -144,13 +144,6 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
   simdjson_really_inline error_code get(T &value) && noexcept;
 
   /**
-   * Move the value to the provided variable.
-   *
-   * @param value The variable to assign the value to. May not be set if there is an error.
-   */
-  simdjson_really_inline const T &value(error_code &error) const & noexcept;
-
-  /**
    * The error.
    */
   simdjson_really_inline error_code error() const noexcept;
