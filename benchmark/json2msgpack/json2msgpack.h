@@ -12,8 +12,8 @@ template <typename I> struct runner : public file_runner<I> {
 
   bool setup(benchmark::State &state) {
     bool isok = this->load_json(state, TWITTER_JSON);
-    //this->json = "\"a\""_padded;
-    //this->original_json = "\"a\""_padded;
+    //this->json = "[\"a\"]"_padded;
+   // this->original_json = "[\"a\"]"_padded;
 
     if (isok) {
       // Let us allocate a sizeable buffer.

@@ -149,6 +149,8 @@ void simdjson2msgpack::recursive_processor(simdjson::ondemand::value element) {
   case simdjson::ondemand::json_type::null:
     write_byte(0xc0);
     break;
+  defaut:
+    SIMDJSON_UNREACHABLE();
   }
 }
 
