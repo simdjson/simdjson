@@ -28,7 +28,7 @@ std::string_view yyjson2msgpack::to_msgpack(yyjson_doc *doc, uint8_t *buf) {
 
 void yyjson2msgpack::write_string(const char *c, size_t len) noexcept {
   write_byte(0xdb);
-  write_uint32(len);
+  write_uint32(uint32_t(len));
   ::memcpy(buff, c, len);
   buff += len;
 }
@@ -59,12 +59,12 @@ void yyjson2msgpack::recursive_processor(yyjson_val *obj) {
     break;
   case YYJSON_TYPE_ARR:
     write_byte(0xdf);
-    write_uint32(yyjson_arr_size(obj));
+    write_uint32(uint32_t(yyjson_arr_size(obj)));
     yyjson_arr_foreach(obj, idx, max, val) { recursive_processor(val); }
    break;
   case YYJSON_TYPE_OBJ:
     write_byte(0xdd);
-    write_uint32(yyjson_obj_size(obj));
+    write_uint32(uint32_t(yyjson_obj_size(obj)));
     yyjson_obj_foreach(obj, idx, max, key, val) {
       write_string(yyjson_get_str(key), yyjson_get_len(key));
       recursive_processor(val);
@@ -79,10 +79,10 @@ void yyjson2msgpack::recursive_processor(yyjson_val *obj) {
   case YYJSON_TYPE_NUM:
     switch (yyjson_get_subtype(obj)) {
     case YYJSON_SUBTYPE_UINT:
-      write_double(yyjson_get_uint(obj));
+      write_double(double(yyjson_get_uint(obj)));
       break;
     case YYJSON_SUBTYPE_SINT:
-      write_double(yyjson_get_sint(obj));
+      write_double(double(yyjson_get_sint(obj)));
       break;
     case YYJSON_SUBTYPE_REAL:
       write_double(yyjson_get_real(obj));

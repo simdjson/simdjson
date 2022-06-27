@@ -19,15 +19,15 @@ private:
   inline void write_uint32(const uint32_t w) noexcept;
   inline void write_uint32_at(const uint32_t w, uint8_t *p) noexcept;
   void write_string(const char * s, size_t length) noexcept;
-  inline void recursive_processor(rapidjson::Value &v);
+  inline void recursive_processor(Value &v);
 
-  rapidjson::Document doc{};
   uint8_t *buff{};
 };
 
 template <int parseflag>
 std::string_view rapidjson2msgpack<parseflag>::to_msgpack(char *json, uint8_t *buf) {
   buff = buf;
+  Document doc{};
   if(parseflag & kParseInsituFlag) {
     doc.ParseInsitu<parseflag>(json);
   } else {
@@ -53,7 +53,7 @@ void rapidjson2msgpack<parseflag>::write_byte(const uint8_t b) noexcept {
 template <int parseflag>
 void rapidjson2msgpack<parseflag>::write_string(const char * c, size_t len) noexcept {
   write_byte(0xdb);
-  write_uint32(len);
+  write_uint32(uint32_t(len));
   ::memcpy(buff, c, len);
   buff += len;
 }
@@ -70,7 +70,7 @@ void rapidjson2msgpack<parseflag>::write_uint32_at(const uint32_t w, uint8_t *p)
 }
 
 template <int parseflag>
-void rapidjson2msgpack<parseflag>::recursive_processor(rapidjson::Value &v) {
+void rapidjson2msgpack<parseflag>::recursive_processor(Value &v) {
   switch (v.GetType()) {
   case kArrayType:
     write_byte(0xdd);
@@ -81,7 +81,7 @@ void rapidjson2msgpack<parseflag>::recursive_processor(rapidjson::Value &v) {
     break;
   case kObjectType:
     write_byte(0xdf);
-    write_uint32(v.MemberEnd()-v.MemberBegin());
+    write_uint32(uint32_t(v.MemberEnd()-v.MemberBegin()));
     for (Value::MemberIterator m = v.MemberBegin(); m != v.MemberEnd();
          ++m) {
       write_string(m->name.GetString(), m->name.GetStringLength());

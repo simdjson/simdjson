@@ -34,7 +34,7 @@ struct nlohmann_json_sax {
             return true;
         }
         bool number_unsigned(number_unsigned_t val) override {
-            buffer[k] = val;
+            buffer[k] = double(val);
             if (k == 2) {
                 result.emplace_back(json_benchmark::point{buffer[0],buffer[1],buffer[2]});
                 k = 0;

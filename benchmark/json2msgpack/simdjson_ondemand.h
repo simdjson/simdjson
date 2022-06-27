@@ -8,13 +8,23 @@ namespace json2msgpack {
 using namespace simdjson;
 
 /**
- * @brief Recommended usage:
+ * @brief The simdjson2msgpack struct is used to quickly convert
+ * JSON strings to msgpack views. You must provide a pointer to
+ * a large memory region where the msgpack gets written. The
+ * buffer should be large enough to store the msgpack output (which
+ * can never be 3x larger than the input JSON) with an additional
+ * simdjson::SIMDJSON_PADDING bytes.
+ *
+ * Recommended usage:
  *
  * simdjson2msgpack parser{};
  * simdjson::padded_string json = "[1,2]"_padded; // some JSON
- * uint8_t * buffer = new uint8_t[4*json.size()]; // large buffer
+ * uint8_t * buffer = new uint8_t[3*json.size() + simdjson::SIMDJSON_PADDING]; // large buffer
  *
  * std::string_view msgpack = parser.to_msgpack(json, buffer);
+ *
+ * The result (msgpack) is a string view to a msgpack serialization of the input JSON,
+ * it points inside the buffer you provided.
  *
  * You may reuse the simdjson2msgpack instance though you should use
  * one per thread.
@@ -111,7 +121,7 @@ void simdjson2msgpack::write_raw_string(
   write_byte(0xdb);
   uint8_t *location = skip_uint32();
   std::string_view v = parser.unescape(in, buff);
-  write_uint32_at(v.size(), location);
+  write_uint32_at(uint32_t(v.size()), location);
 }
 
 void simdjson2msgpack::recursive_processor(simdjson::ondemand::value element) {
@@ -149,7 +159,7 @@ void simdjson2msgpack::recursive_processor(simdjson::ondemand::value element) {
   case simdjson::ondemand::json_type::null:
     write_byte(0xc0);
     break;
-  defaut:
+  default:
     SIMDJSON_UNREACHABLE();
   }
 }

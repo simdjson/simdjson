@@ -44,7 +44,7 @@ std::string_view sajson2msgpack::to_msgpack(char *json, size_t size, uint8_t *bu
 
 void sajson2msgpack::write_string(const char * c, size_t len) noexcept {
   write_byte(0xdb);
-  write_uint32(len);
+  write_uint32(uint32_t(len));
   ::memcpy(buff, c, len);
   buff += len;
 }
@@ -80,7 +80,7 @@ void sajson2msgpack::recursive_processor(const sajson::value &node) {
   case TYPE_ARRAY: {
     auto length = node.get_length();
     write_byte(0xdf);
-    write_uint32(length);
+    write_uint32(uint32_t(length));
     for (size_t i = 0; i < length; ++i) {
       recursive_processor(node.get_array_element(i));
     }
@@ -89,7 +89,7 @@ void sajson2msgpack::recursive_processor(const sajson::value &node) {
   case TYPE_OBJECT: {
     auto length = node.get_length();
     write_byte(0xdd);
-    write_uint32(length);
+    write_uint32(uint32_t(length));
     for (auto i = 0u; i < length; ++i) {
       auto s = node.get_object_key(i);
       write_string(s.data(), s.length());

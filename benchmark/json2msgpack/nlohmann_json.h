@@ -47,26 +47,26 @@ void nlohmann_json2msgpack::write_uint32(const uint32_t w) noexcept {
 
 void nlohmann_json2msgpack::write_string(const std::string & str) {
   write_byte(0xdb);
-  write_uint32(str.size());
+  write_uint32(uint32_t(str.size()));
   ::memcpy(buff, str.data(), str.size());
   buff += str.size();
 }
 
-void nlohmann_json2msgpack::recursive_processor(basic_json<> element) {
+void nlohmann_json2msgpack::recursive_processor(json element) {
   switch (element.type()) {
   case nlohmann::detail::value_t::array: {
     uint32_t counter = 0;
     write_byte(0xdd);
-    std::vector<basic_json<>> array(element);
-    write_uint32(array.size());
+    std::vector<json> array = element.get<std::vector<json>>();
+    write_uint32(uint32_t(array.size()));
     for (auto child : array) {
        recursive_processor(child);
     }
   } break;
   case nlohmann::detail::value_t::object: {
     write_byte(0xdf);
-    std::map<std::string,basic_json<>> object(element);
-    write_uint32(object.size());
+    std::map<std::string,json> object = element.get<std::map<std::string,json>>();
+    write_uint32(uint32_t(object.size()));
     for (auto field : object) {
       write_string(field.first);
       recursive_processor(field.second);
