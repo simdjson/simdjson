@@ -1,5 +1,5 @@
 #pragma once
-#if SIMDJSON_EXCEPTIONS
+#ifdef SIMDJSON_COMPETITION_SAJSON
 
 #include "json2msgpack.h"
 
@@ -128,4 +128,4 @@ BENCHMARK_TEMPLATE(json2msgpack, sajson)->UseManualTime();
 
 } // namespace json2msgpack
 
-#endif // SIMDJSON_EXCEPTIONS
+#endif // SIMDJSON_COMPETITION_SAJSON

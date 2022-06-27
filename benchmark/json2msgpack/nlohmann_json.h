@@ -1,5 +1,5 @@
 #pragma once
-#if SIMDJSON_EXCEPTIONS
+#ifdef SIMDJSON_COMPETITION_NLOHMANN_JSON
 
 #include "json2msgpack.h"
 
@@ -111,7 +111,7 @@ BENCHMARK_TEMPLATE(json2msgpack, nlohmann_json)->UseManualTime();
 
 } // namespace json2msgpack
 
-#endif // SIMDJSON_EXCEPTIONS
+#endif // SIMDJSON_COMPETITION_NLOHMANN_JSON
 
 
 

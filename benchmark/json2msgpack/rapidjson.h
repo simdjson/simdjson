@@ -1,7 +1,7 @@
 
 
 #pragma once
-#if SIMDJSON_EXCEPTIONS
+#ifdef SIMDJSON_COMPETITION_RAPIDJSON
 
 #include "json2msgpack.h"
 
@@ -131,12 +131,10 @@ using rapidjson = rapidjson_base<kParseValidateEncodingFlag>;
 
 BENCHMARK_TEMPLATE(json2msgpack, rapidjson)->UseManualTime();
 
-
-
 using rapidjson_insitu = rapidjson_base<kParseValidateEncodingFlag|kParseInsituFlag>;
 
 BENCHMARK_TEMPLATE(json2msgpack, rapidjson_insitu)->UseManualTime();
 
 } // namespace json2msgpack
 
-#endif // SIMDJSON_EXCEPTIONS
+#endif // SIMDJSON_COMPETITION_RAPIDJSON

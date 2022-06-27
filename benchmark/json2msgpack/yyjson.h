@@ -1,10 +1,9 @@
 #pragma once
-#if SIMDJSON_EXCEPTIONS
+#ifdef SIMDJSON_COMPETITION_YYJSON
 
 #include "json2msgpack.h"
 
 namespace json2msgpack {
-
 
 struct yyjson2msgpack {
   inline std::string_view to_msgpack(yyjson_doc *doc, uint8_t *buf);
@@ -120,4 +119,4 @@ BENCHMARK_TEMPLATE(json2msgpack, yyjson_insitu)->UseManualTime();
 
 } // namespace json2msgpack
 
-#endif // SIMDJSON_EXCEPTIONS
+#endif // SIMDJSON_COMPETITION_YYJSON
