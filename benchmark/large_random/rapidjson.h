@@ -48,7 +48,7 @@ BENCHMARK_TEMPLATE(large_random, rapidjson_lossless)->UseManualTime();
 
 struct rapidjson_insitu : rapidjson_base {
   bool run(simdjson::padded_string &json, std::vector<point> &result) {
-    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag>(json.data()), result);
+    return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag|kParseInsituFlag>(json.data()), result);
   }
 };
 BENCHMARK_TEMPLATE(large_random, rapidjson_insitu)->UseManualTime();

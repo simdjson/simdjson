@@ -48,7 +48,7 @@ struct nlohmann_json_sax {
         }
         bool number_unsigned(number_unsigned_t val) override {
             if (values & key_rt && !(values & found_rt)) {   // retweet_count
-                rt = val;
+                rt = int(val);
                 values &= ~(key_rt);
                 values |= (found_rt);
                 if (rt <= max_rt && rt >= result.retweet_count) {    // Check if current tweet has more retweet than previous top tweet

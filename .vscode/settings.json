@@ -86,6 +86,16 @@
         "vector": "cpp",
         "*.ipp": "cpp",
         "__functional_base_03": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "*.inc": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "variant": "cpp",
+        "__bits": "cpp",
+        "csignal": "cpp",
+        "future": "cpp",
+        "queue": "cpp",
+        "shared_mutex": "cpp",
+        "ranges": "cpp"
     }
 }
