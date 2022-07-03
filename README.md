@@ -111,10 +111,12 @@ For NDJSON files, we can exceed 3 GB/s with [our  multithreaded parsing function
 Real-world usage
 ----------------
 
-- [Microsoft FishStore](https://github.com/microsoft/FishStore)
-- [Yandex ClickHouse](https://github.com/yandex/ClickHouse)
+- [ClickHouse](https://github.com/ClickHouse/ClickHouse)
 - [Clang Build Analyzer](https://github.com/aras-p/ClangBuildAnalyzer)
 - [Shopify HeapProfiler](https://github.com/Shopify/heap-profiler)
+- [StarRocks](https://github.com/StarRocks/starrocks)
+- [Microsoft FishStore](https://github.com/microsoft/FishStore)
+
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
