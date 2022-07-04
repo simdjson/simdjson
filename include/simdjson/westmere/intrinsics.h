@@ -22,6 +22,6 @@
 #include <wmmintrin.h>  // for  _mm_clmulepi64_si128
 #endif
 
-
+static_assert(sizeof(__m128i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for westmere");
 
 #endif // SIMDJSON_WESTMERE_INTRINSICS_H

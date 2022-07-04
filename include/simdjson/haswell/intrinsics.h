@@ -45,4 +45,6 @@
 #endif //  _blsr_u64
 #endif // SIMDJSON_CLANG_VISUAL_STUDIO
 
+static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for haswell kernel.");
+
 #endif // SIMDJSON_HASWELL_INTRINSICS_H

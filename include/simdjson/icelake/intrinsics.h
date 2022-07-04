@@ -53,4 +53,6 @@
 #endif //  _blsr_u64
 #endif // SIMDJSON_CLANG_VISUAL_STUDIO
 
+static_assert(sizeof(__m512i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for icelake");
+
 #endif // SIMDJSON_ICELAKE_INTRINSICS_H
