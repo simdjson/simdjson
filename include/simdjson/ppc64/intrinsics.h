@@ -16,4 +16,6 @@
 #undef vector
 #endif
 
+static_assert(sizeof(__vector unsigned char) <= simdjson::SIMDJSON_PADDING, "insufficient padding for ppc64");
+
 #endif //  SIMDJSON_PPC64_INTRINSICS_H

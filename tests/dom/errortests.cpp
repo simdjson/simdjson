@@ -146,7 +146,7 @@ namespace parser_load {
 }
 
 namespace adversarial {
-  #define PADDING_FILLED_WITH_NUMBERS "222222222222222222222222222222222"
+  #define PADDING_FILLED_WITH_NUMBERS "22222222222222222222222222222222222222222222222222222222222222222"
   bool number_overrun_at_root() {
     TEST_START();
     constexpr const char *json = "1" PADDING_FILLED_WITH_NUMBERS ",";
@@ -179,8 +179,9 @@ namespace adversarial {
     TEST_SUCCEED();
   }
   bool run() {
-    static_assert(33 > SIMDJSON_PADDING, "corruption test doesn't have enough padding"); // 33 = std::strlen(PADDING_FILLED_WITH_NUMBERS)
-    return true
+    constexpr size_t filler_size = 65;
+    static_assert(filler_size > SIMDJSON_PADDING, "corruption test doesn't have enough padding"); // 33 = std::strlen(PADDING_FILLED_WITH_NUMBERS)
+    return (std::strlen(PADDING_FILLED_WITH_NUMBERS) == filler_size)
       && number_overrun_at_root()
       && number_overrun_in_array()
       && number_overrun_in_object()

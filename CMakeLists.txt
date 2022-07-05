@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 project(
     simdjson
     # The version number is modified by tools/release.py
-    VERSION 2.1.0
+    VERSION 2.2.0
     DESCRIPTION "Parsing gigabytes of JSON per second"
     HOMEPAGE_URL "https://simdjson.org/"
     LANGUAGES CXX C
@@ -20,8 +20,8 @@ string(
 # ---- Options, variables ----
 
 # These version numbers are modified by tools/release.py
-set(SIMDJSON_LIB_VERSION "12.0.0" CACHE STRING "simdjson library version")
-set(SIMDJSON_LIB_SOVERSION "12" CACHE STRING "simdjson library soversion")
+set(SIMDJSON_LIB_VERSION "13.0.0" CACHE STRING "simdjson library version")
+set(SIMDJSON_LIB_SOVERSION "13" CACHE STRING "simdjson library soversion")
 
 option(SIMDJSON_ENABLE_THREADS "Link with thread support" ON)
 
