@@ -46,8 +46,8 @@ namespace parse_api_tests {
   bool parser_iterate_padded() {
     TEST_START();
     ondemand::parser parser;
-    const char json_str[] = "12\0                              "; // 32 padding
-    ASSERT_EQUAL(sizeof(json_str), 34);
+    const char json_str[] = "12\0                                                              ";// 64 bytes of padding
+    ASSERT_EQUAL(sizeof(json_str), 66);
     ASSERT_EQUAL(strlen(json_str), 2);
 
     {
@@ -84,8 +84,8 @@ namespace parse_api_tests {
   bool parser_iterate_padded_string_view() {
     TEST_START();
     ondemand::parser parser;
-    const char json_str[] = "12\0                              "; // 32 padding
-    ASSERT_EQUAL(sizeof(json_str), 34);
+    const char json_str[] = "12\0                                                              "; // 64 bytes of padding
+    ASSERT_EQUAL(sizeof(json_str), 66);
     ASSERT_EQUAL(strlen(json_str), 2);
 
     {
@@ -122,14 +122,14 @@ namespace parse_api_tests {
   bool parser_iterate_insufficient_padding() {
     TEST_START();
     ondemand::parser parser;
-    constexpr char json_str[] = "12\0                             "; // 31 padding
-    ASSERT_EQUAL(sizeof(json_str), 33);
+    constexpr char json_str[] = "12\0                                                             "; // 63 bytes of padding
+    ASSERT_EQUAL(sizeof(json_str), 65);
     ASSERT_EQUAL(strlen(json_str), 2);
-    ASSERT_EQUAL(padded_string_view(json_str, strlen(json_str), sizeof(json_str)).padding(), 31);
-    ASSERT_EQUAL(SIMDJSON_PADDING, 32);
+    ASSERT_EQUAL(padded_string_view(json_str, strlen(json_str), sizeof(json_str)).padding(), 63);
+    ASSERT_EQUAL(SIMDJSON_PADDING, 64);
 
     {
-      cout << "- char*, 31 padding" << endl;
+      cout << "- char*, 63 padding" << endl;
       ASSERT_ERROR( parser.iterate(json_str, strlen(json_str), sizeof(json_str)), INSUFFICIENT_PADDING );
       cout << "- char*, 0 padding" << endl;
       ASSERT_ERROR( parser.iterate(json_str, strlen(json_str), strlen(json_str)), INSUFFICIENT_PADDING );
@@ -137,7 +137,7 @@ namespace parse_api_tests {
 
     {
       std::string_view json(json_str);
-      cout << "- string_view, 31 padding" << endl;
+      cout << "- string_view, 63 padding" << endl;
       ASSERT_ERROR( parser.iterate(json, sizeof(json_str)), INSUFFICIENT_PADDING );
       cout << "- string_view, 0 padding" << endl;
       ASSERT_ERROR( parser.iterate(json, strlen(json_str)), INSUFFICIENT_PADDING );
