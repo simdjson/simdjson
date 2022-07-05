@@ -1,4 +1,4 @@
-/* auto-generated on 2022-06-30 10:29:50 -0400. Do not edit! */
+/* auto-generated on 2022-07-04 20:04:25 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -43,7 +43,7 @@
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 2.1.0
+#define SIMDJSON_VERSION 2.2.0
 
 namespace simdjson {
 enum {
@@ -54,7 +54,7 @@ enum {
   /**
    * The minor version (major.MINOR.revision) of simdjson being used.
    */
-  SIMDJSON_VERSION_MINOR = 1,
+  SIMDJSON_VERSION_MINOR = 2,
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
@@ -329,12 +329,12 @@ constexpr size_t SIMDJSON_MAXSIZE_BYTES = 0xFFFFFFFF;
 /**
  * The amount of padding needed in a buffer to parse JSON.
  *
- * the input buf should be readable up to buf + SIMDJSON_PADDING
+ * The input buf should be readable up to buf + SIMDJSON_PADDING
  * this is a stopgap; there should be a better description of the
  * main loop and its behavior that abstracts over this
  * See https://github.com/simdjson/simdjson/issues/174
  */
-constexpr size_t SIMDJSON_PADDING = 32;
+constexpr size_t SIMDJSON_PADDING = 64;
 
 /**
  * By default, simdjson supports this many nested objects and arrays.
@@ -9711,6 +9711,8 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 // you use visual studio or other compilers.
 #include <arm_neon.h>
 
+static_assert(sizeof(uint8x16_t) <= simdjson::SIMDJSON_PADDING, "insufficient padding for arm64");
+
 #endif //  SIMDJSON_ARM64_INTRINSICS_H
 /* end file include/simdjson/arm64/intrinsics.h */
 /* begin file include/simdjson/arm64/bitmanipulation.h */
@@ -13724,6 +13726,8 @@ public:
 #endif //  _blsr_u64
 #endif // SIMDJSON_CLANG_VISUAL_STUDIO
 
+static_assert(sizeof(__m512i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for icelake");
+
 #endif // SIMDJSON_ICELAKE_INTRINSICS_H
 /* end file include/simdjson/icelake/intrinsics.h */
 
@@ -15913,6 +15917,8 @@ public:
 #define _blsr_u64(n) ((n - 1) & n)
 #endif //  _blsr_u64
 #endif // SIMDJSON_CLANG_VISUAL_STUDIO
+
+static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for haswell kernel.");
 
 #endif // SIMDJSON_HASWELL_INTRINSICS_H
 /* end file include/simdjson/haswell/intrinsics.h */
@@ -18148,6 +18154,8 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 #undef vector
 #endif
 
+static_assert(sizeof(__vector unsigned char) <= simdjson::SIMDJSON_PADDING, "insufficient padding for ppc64");
+
 #endif //  SIMDJSON_PPC64_INTRINSICS_H
 /* end file include/simdjson/ppc64/intrinsics.h */
 /* begin file include/simdjson/ppc64/bitmanipulation.h */
@@ -20369,7 +20377,7 @@ public:
 #include <wmmintrin.h>  // for  _mm_clmulepi64_si128
 #endif
 
-
+static_assert(sizeof(__m128i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for westmere");
 
 #endif // SIMDJSON_WESTMERE_INTRINSICS_H
 /* end file include/simdjson/westmere/intrinsics.h */
