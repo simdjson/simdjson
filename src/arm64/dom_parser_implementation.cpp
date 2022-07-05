@@ -76,13 +76,13 @@ simdjson_really_inline json_character_block json_character_block::classify(const
 
 simdjson_really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
     simd8<uint8_t> bits = input.reduce_or();
-    return bits.max_val() < 0b10000000u;
+    return bits.max_val() < 0x80u;
 }
 
 simdjson_unused simdjson_really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
-    simd8<bool> is_second_byte = prev1 >= uint8_t(0b11000000u);
-    simd8<bool> is_third_byte  = prev2 >= uint8_t(0b11100000u);
-    simd8<bool> is_fourth_byte = prev3 >= uint8_t(0b11110000u);
+    simd8<bool> is_second_byte = prev1 >= uint8_t(0xc0u);
+    simd8<bool> is_third_byte  = prev2 >= uint8_t(0xe0u);
+    simd8<bool> is_fourth_byte = prev3 >= uint8_t(0xf0u);
     // Use ^ instead of | for is_*_byte, because ^ is commutative, and the caller is using ^ as well.
     // This will work fine because we only have to report errors for cases with 0-1 lead bytes.
     // Multiple lead bytes implies 2 overlapping multibyte characters, and if that happens, there is
@@ -92,8 +92,8 @@ simdjson_unused simdjson_really_inline simd8<bool> must_be_continuation(const si
 }
 
 simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
-    simd8<bool> is_third_byte  = prev2 >= uint8_t(0b11100000u);
-    simd8<bool> is_fourth_byte = prev3 >= uint8_t(0b11110000u);
+    simd8<bool> is_third_byte  = prev2 >= uint8_t(0xe0u);
+    simd8<bool> is_fourth_byte = prev3 >= uint8_t(0xf0u);
     return is_third_byte ^ is_fourth_byte;
 }
 
