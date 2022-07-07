@@ -168,7 +168,17 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #endif // MSC_VER
 
-#define simdjson_inline simdjson_really_inline
+#if defined(simdjson_inline)
+  // Prefer the user's definition of simdjson_inline; don't define it ourselves.
+#elif defined(__GNUC__) && !defined(__OPTIMIZE__)
+  // If optimizations are disabled, forcing inlining can lead to significant
+  // code bloat and high compile times. Don't use simdjson_really_inline for
+  // unoptimized builds.
+  #define simdjson_inline inline
+#else
+  // Force inlining for most simdjson functions.
+  #define simdjson_inline simdjson_really_inline
+#endif
 
 #if defined(SIMDJSON_VISUAL_STUDIO)
     /**
