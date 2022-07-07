@@ -70,11 +70,11 @@ int main() {}
   target_include_directories(jsmn SYSTEM PUBLIC "${jsmn_SOURCE_DIR}")
   target_compile_definitions(jsmn INTERFACE SIMDJSON_COMPETITION_JSMN)
 
-  message(STATUS "Importing json (nlohmann/json@v3.9.1)")
+  message(STATUS "Importing json (nlohmann/json@v3.10.5)")
   set(nlohmann_json_SOURCE_DIR "${dep_root}/json")
   if(NOT EXISTS "${nlohmann_json_SOURCE_DIR}")
     file(DOWNLOAD
-            "https://github.com/nlohmann/json/releases/download/v3.9.1/json.hpp"
+            "https://github.com/nlohmann/json/releases/download/v3.10.5/json.hpp"
             "${nlohmann_json_SOURCE_DIR}/nlohmann/json.hpp")
   endif()
   add_library(nlohmann_json INTERFACE)
