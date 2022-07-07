@@ -42,13 +42,13 @@ struct simdjson2msgpack {
                                      uint8_t *buf);
 
 private:
-  simdjson_really_inline void write_double(const double d) noexcept;
-  simdjson_really_inline void write_byte(const uint8_t b) noexcept;
-  simdjson_really_inline void write_uint32(const uint32_t w) noexcept;
-  simdjson_really_inline uint8_t *skip_uint32() noexcept;
-  simdjson_really_inline void write_uint32_at(const uint32_t w,
+  simdjson_inline void write_double(const double d) noexcept;
+  simdjson_inline void write_byte(const uint8_t b) noexcept;
+  simdjson_inline void write_uint32(const uint32_t w) noexcept;
+  simdjson_inline uint8_t *skip_uint32() noexcept;
+  simdjson_inline void write_uint32_at(const uint32_t w,
                                               uint8_t *p) noexcept;
-  simdjson_really_inline void
+  simdjson_inline void
   write_raw_string(simdjson::ondemand::raw_json_string rjs);
   inline void recursive_processor(simdjson::ondemand::value element);
 

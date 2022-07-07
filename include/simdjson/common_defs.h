@@ -168,6 +168,8 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #endif // MSC_VER
 
+#define simdjson_inline simdjson_really_inline
+
 #if defined(SIMDJSON_VISUAL_STUDIO)
     /**
      * Windows users need to do some extra work when building

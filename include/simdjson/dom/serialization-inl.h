@@ -107,19 +107,19 @@ namespace internal {
  * Minifier/formatter code.
  **/
 
-simdjson_really_inline void mini_formatter::number(uint64_t x) {
+simdjson_inline void mini_formatter::number(uint64_t x) {
   char number_buffer[24];
   char *newp = fast_itoa(number_buffer, x);
   buffer.insert(buffer.end(), number_buffer, newp);
 }
 
-simdjson_really_inline void mini_formatter::number(int64_t x) {
+simdjson_inline void mini_formatter::number(int64_t x) {
   char number_buffer[24];
   char *newp = fast_itoa(number_buffer, x);
   buffer.insert(buffer.end(), number_buffer, newp);
 }
 
-simdjson_really_inline void mini_formatter::number(double x) {
+simdjson_inline void mini_formatter::number(double x) {
   char number_buffer[24];
   // Currently, passing the nullptr to the second argument is
   // safe because our implementation does not check the second
@@ -128,31 +128,31 @@ simdjson_really_inline void mini_formatter::number(double x) {
   buffer.insert(buffer.end(), number_buffer, newp);
 }
 
-simdjson_really_inline void mini_formatter::start_array() { one_char('['); }
-simdjson_really_inline void mini_formatter::end_array() { one_char(']'); }
-simdjson_really_inline void mini_formatter::start_object() { one_char('{'); }
-simdjson_really_inline void mini_formatter::end_object() { one_char('}'); }
-simdjson_really_inline void mini_formatter::comma() { one_char(','); }
+simdjson_inline void mini_formatter::start_array() { one_char('['); }
+simdjson_inline void mini_formatter::end_array() { one_char(']'); }
+simdjson_inline void mini_formatter::start_object() { one_char('{'); }
+simdjson_inline void mini_formatter::end_object() { one_char('}'); }
+simdjson_inline void mini_formatter::comma() { one_char(','); }
 
 
-simdjson_really_inline void mini_formatter::true_atom() {
+simdjson_inline void mini_formatter::true_atom() {
   const char * s = "true";
   buffer.insert(buffer.end(), s, s + 4);
 }
-simdjson_really_inline void mini_formatter::false_atom() {
+simdjson_inline void mini_formatter::false_atom() {
   const char * s = "false";
   buffer.insert(buffer.end(), s, s + 5);
 }
-simdjson_really_inline void mini_formatter::null_atom() {
+simdjson_inline void mini_formatter::null_atom() {
   const char * s = "null";
   buffer.insert(buffer.end(), s, s + 4);
 }
-simdjson_really_inline void mini_formatter::one_char(char c) { buffer.push_back(c); }
-simdjson_really_inline void mini_formatter::key(std::string_view unescaped) {
+simdjson_inline void mini_formatter::one_char(char c) { buffer.push_back(c); }
+simdjson_inline void mini_formatter::key(std::string_view unescaped) {
   string(unescaped);
   one_char(':');
 }
-simdjson_really_inline void mini_formatter::string(std::string_view unescaped) {
+simdjson_inline void mini_formatter::string(std::string_view unescaped) {
   one_char('\"');
   size_t i = 0;
   // Fast path for the case where we have no control character, no ", and no backslash.
@@ -235,7 +235,7 @@ inline void mini_formatter::clear() {
   buffer.clear();
 }
 
-simdjson_really_inline std::string_view mini_formatter::str() const {
+simdjson_inline std::string_view mini_formatter::str() const {
   return std::string_view(buffer.data(), buffer.size());
 }
 
@@ -406,18 +406,18 @@ inline void string_builder<serializer>::append(simdjson::dom::array value) {
 }
 
 template <class serializer>
-simdjson_really_inline void string_builder<serializer>::append(simdjson::dom::key_value_pair kv) {
+simdjson_inline void string_builder<serializer>::append(simdjson::dom::key_value_pair kv) {
   format.key(kv.key);
   append(kv.value);
 }
 
 template <class serializer>
-simdjson_really_inline void string_builder<serializer>::clear() {
+simdjson_inline void string_builder<serializer>::clear() {
   format.clear();
 }
 
 template <class serializer>
-simdjson_really_inline std::string_view string_builder<serializer>::str() const {
+simdjson_inline std::string_view string_builder<serializer>::str() const {
   return format.str();
 }
 

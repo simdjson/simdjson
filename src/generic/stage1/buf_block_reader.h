@@ -6,10 +6,10 @@ namespace {
 template<size_t STEP_SIZE>
 struct buf_block_reader {
 public:
-  simdjson_really_inline buf_block_reader(const uint8_t *_buf, size_t _len);
-  simdjson_really_inline size_t block_index();
-  simdjson_really_inline bool has_full_block() const;
-  simdjson_really_inline const uint8_t *full_block() const;
+  simdjson_inline buf_block_reader(const uint8_t *_buf, size_t _len);
+  simdjson_inline size_t block_index();
+  simdjson_inline bool has_full_block() const;
+  simdjson_inline const uint8_t *full_block() const;
   /**
    * Get the last block, padded with spaces.
    *
@@ -19,8 +19,8 @@ public:
    *
    * @return the number of effective characters in the last block.
    */
-  simdjson_really_inline size_t get_remainder(uint8_t *dst) const;
-  simdjson_really_inline void advance();
+  simdjson_inline size_t get_remainder(uint8_t *dst) const;
+  simdjson_inline void advance();
 private:
   const uint8_t *buf;
   const size_t len;
@@ -59,23 +59,23 @@ simdjson_unused static char * format_mask(uint64_t mask) {
 }
 
 template<size_t STEP_SIZE>
-simdjson_really_inline buf_block_reader<STEP_SIZE>::buf_block_reader(const uint8_t *_buf, size_t _len) : buf{_buf}, len{_len}, lenminusstep{len < STEP_SIZE ? 0 : len - STEP_SIZE}, idx{0} {}
+simdjson_inline buf_block_reader<STEP_SIZE>::buf_block_reader(const uint8_t *_buf, size_t _len) : buf{_buf}, len{_len}, lenminusstep{len < STEP_SIZE ? 0 : len - STEP_SIZE}, idx{0} {}
 
 template<size_t STEP_SIZE>
-simdjson_really_inline size_t buf_block_reader<STEP_SIZE>::block_index() { return idx; }
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::block_index() { return idx; }
 
 template<size_t STEP_SIZE>
-simdjson_really_inline bool buf_block_reader<STEP_SIZE>::has_full_block() const {
+simdjson_inline bool buf_block_reader<STEP_SIZE>::has_full_block() const {
   return idx < lenminusstep;
 }
 
 template<size_t STEP_SIZE>
-simdjson_really_inline const uint8_t *buf_block_reader<STEP_SIZE>::full_block() const {
+simdjson_inline const uint8_t *buf_block_reader<STEP_SIZE>::full_block() const {
   return &buf[idx];
 }
 
 template<size_t STEP_SIZE>
-simdjson_really_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) const {
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) const {
   if(len == idx) { return 0; } // memcpy(dst, null, 0) will trigger an error with some sanitizers
   std::memset(dst, 0x20, STEP_SIZE); // std::memset STEP_SIZE because it's more efficient to write out 8 or 16 bytes at once.
   std::memcpy(dst, buf + idx, len - idx);
@@ -83,7 +83,7 @@ simdjson_really_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t
 }
 
 template<size_t STEP_SIZE>
-simdjson_really_inline void buf_block_reader<STEP_SIZE>::advance() {
+simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
   idx += STEP_SIZE;
 }
 

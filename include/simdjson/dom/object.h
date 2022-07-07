@@ -22,7 +22,7 @@ class key_value_pair;
 class object {
 public:
   /** Create a new, invalid object */
-  simdjson_really_inline object() noexcept;
+  simdjson_inline object() noexcept;
 
   class iterator {
   public:
@@ -92,7 +92,7 @@ public:
     iterator(const iterator&) noexcept = default;
     iterator& operator=(const iterator&) noexcept = default;
   private:
-    simdjson_really_inline iterator(const internal::tape_ref &tape) noexcept;
+    simdjson_inline iterator(const internal::tape_ref &tape) noexcept;
 
     internal::tape_ref tape;
 
@@ -206,7 +206,7 @@ public:
   inline simdjson_result<element> at_key_case_insensitive(std::string_view key) const noexcept;
 
 private:
-  simdjson_really_inline object(const internal::tape_ref &tape) noexcept;
+  simdjson_inline object(const internal::tape_ref &tape) noexcept;
 
   internal::tape_ref tape;
 
@@ -227,7 +227,7 @@ public:
   element value;
 
 private:
-  simdjson_really_inline key_value_pair(std::string_view _key, element _value) noexcept;
+  simdjson_inline key_value_pair(std::string_view _key, element _value) noexcept;
   friend class object;
 };
 
@@ -237,9 +237,9 @@ private:
 template<>
 struct simdjson_result<dom::object> : public internal::simdjson_result_base<dom::object> {
 public:
-  simdjson_really_inline simdjson_result() noexcept; ///< @private
-  simdjson_really_inline simdjson_result(dom::object value) noexcept; ///< @private
-  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
+  simdjson_inline simdjson_result() noexcept; ///< @private
+  simdjson_inline simdjson_result(dom::object value) noexcept; ///< @private
+  simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
 
   inline simdjson_result<dom::element> operator[](std::string_view key) const noexcept;
   inline simdjson_result<dom::element> operator[](const char *key) const noexcept;

@@ -26,28 +26,28 @@ const char *TRUENULL_JSON = SIMDJSON_BENCHMARK_SMALLDATA_DIR  "truenull.json";
 
 // For the ASSERT_EQUAL macro
 template<typename A, typename E>
-simdjson_really_inline bool equals_expected(A actual, E expected) {
+simdjson_inline bool equals_expected(A actual, E expected) {
   return actual == A(expected);
 }
 template<>
-simdjson_really_inline bool equals_expected<const char *, const char *>(const char *actual, const char *expected) {
+simdjson_inline bool equals_expected<const char *, const char *>(const char *actual, const char *expected) {
   return !strcmp(actual, expected);
 }
 template<>
-simdjson_really_inline bool equals_expected<simdjson::ondemand::raw_json_string, const char *>(simdjson::ondemand::raw_json_string actual, const char * expected) {
+simdjson_inline bool equals_expected<simdjson::ondemand::raw_json_string, const char *>(simdjson::ondemand::raw_json_string actual, const char * expected) {
   return actual == expected;
 }
 
-simdjson_really_inline simdjson::error_code to_error_code(simdjson::error_code error) {
+simdjson_inline simdjson::error_code to_error_code(simdjson::error_code error) {
   return error;
 }
 template<typename T>
-simdjson_really_inline simdjson::error_code to_error_code(const simdjson::simdjson_result<T> &result) {
+simdjson_inline simdjson::error_code to_error_code(const simdjson::simdjson_result<T> &result) {
   return result.error();
 }
 
 template<typename T>
-simdjson_really_inline bool assert_success(const T &actual, const char *operation = "result") {
+simdjson_inline bool assert_success(const T &actual, const char *operation = "result") {
   simdjson::error_code error = to_error_code(actual);
   if (error) {
     std::cerr << "FAIL: " << operation << " returned error: " << error << " (" << int(error) << ")" << std::endl;
@@ -56,7 +56,7 @@ simdjson_really_inline bool assert_success(const T &actual, const char *operatio
   return true;
 }
 template<typename A, typename E=A>
-simdjson_really_inline bool assert_equal(const A &actual, const E &expected, const char *operation = "result") {
+simdjson_inline bool assert_equal(const A &actual, const E &expected, const char *operation = "result") {
   if (!equals_expected(actual, expected)) {
     std::cerr << "FAIL: " << operation << " returned '" << actual << "' (expected '" << expected << "')" << std::flush;
     std::cerr << std::endl;
@@ -65,7 +65,7 @@ simdjson_really_inline bool assert_equal(const A &actual, const E &expected, con
   return true;
 }
 template<typename T>
-simdjson_really_inline bool assert_error(const T &actual_result, simdjson::error_code expected, const char *operation = "result") {
+simdjson_inline bool assert_error(const T &actual_result, simdjson::error_code expected, const char *operation = "result") {
   simdjson::error_code actual = to_error_code(actual_result);
   if (actual != expected) {
     if (actual) {
@@ -79,19 +79,19 @@ simdjson_really_inline bool assert_error(const T &actual_result, simdjson::error
   return true;
 }
 template<typename A, typename E>
-simdjson_really_inline bool assert_result(simdjson::simdjson_result<A> &&actual_result, const E &expected, const char *operation = "result") {
+simdjson_inline bool assert_result(simdjson::simdjson_result<A> &&actual_result, const E &expected, const char *operation = "result") {
   E actual;
   return assert_success(std::forward<simdjson::simdjson_result<A>>(actual_result).get(actual))
       && assert_equal(actual, expected, operation);
 }
-simdjson_really_inline bool assert_true(bool value, const char *operation = "result") {
+simdjson_inline bool assert_true(bool value, const char *operation = "result") {
   if (!value) {
     std::cerr << "FAIL: " << operation << " was false!" << std::endl;
     return false;
   }
   return true;
 }
-simdjson_really_inline bool assert_false(bool value, const char *operation = "result") {
+simdjson_inline bool assert_false(bool value, const char *operation = "result") {
   if (value) {
     std::cerr << "FAIL: " << operation << " was true!" << std::endl;
     return false;
@@ -99,7 +99,7 @@ simdjson_really_inline bool assert_false(bool value, const char *operation = "re
   return true;
 }
 template<typename T>
-simdjson_really_inline bool assert_iterate_error(T &arr, simdjson::error_code expected, const char *operation = "result") {
+simdjson_inline bool assert_iterate_error(T &arr, simdjson::error_code expected, const char *operation = "result") {
   int count = 0;
   for (auto element : arr) {
     count++;

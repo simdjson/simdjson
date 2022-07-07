@@ -34,46 +34,46 @@ struct number {
    *        unsigned_integer         /// a positive integer larger or equal to 1<<63
    *    };
    */
-  simdjson_really_inline number_type get_number_type() const noexcept;
+  simdjson_inline number_type get_number_type() const noexcept;
   /**
    * return true if the automatically determined type of
    * the number is number_type::unsigned_integer.
    */
-  simdjson_really_inline bool is_uint64() const noexcept;
+  simdjson_inline bool is_uint64() const noexcept;
   /**
    * return the value as a uint64_t, only valid if is_uint64() is true.
    */
-  simdjson_really_inline uint64_t get_uint64() const noexcept;
-  simdjson_really_inline operator uint64_t() const noexcept;
+  simdjson_inline uint64_t get_uint64() const noexcept;
+  simdjson_inline operator uint64_t() const noexcept;
 
   /**
    * return true if the automatically determined type of
    * the number is number_type::signed_integer.
    */
-  simdjson_really_inline bool is_int64() const noexcept;
+  simdjson_inline bool is_int64() const noexcept;
   /**
    * return the value as a int64_t, only valid if is_int64() is true.
    */
-  simdjson_really_inline int64_t get_int64() const noexcept;
-  simdjson_really_inline operator int64_t() const noexcept;
+  simdjson_inline int64_t get_int64() const noexcept;
+  simdjson_inline operator int64_t() const noexcept;
 
 
   /**
    * return true if the automatically determined type of
    * the number is number_type::floating_point_number.
    */
-  simdjson_really_inline bool is_double() const noexcept;
+  simdjson_inline bool is_double() const noexcept;
   /**
    * return the value as a double, only valid if is_double() is true.
    */
-  simdjson_really_inline double get_double() const noexcept;
-  simdjson_really_inline operator double() const noexcept;
+  simdjson_inline double get_double() const noexcept;
+  simdjson_inline operator double() const noexcept;
 
   /**
    * Convert the number to a double. Though it always succeed, the conversion
    * may be lossy if the number cannot be represented exactly.
    */
-  simdjson_really_inline double as_double() const noexcept;
+  simdjson_inline double as_double() const noexcept;
 
 
 protected:
@@ -90,13 +90,13 @@ protected:
   template<typename W>
   friend error_code numberparsing::slow_float_parsing(simdjson_unused const uint8_t * src, W writer);
   /** Store a signed 64-bit value to the number. */
-  simdjson_really_inline void append_s64(int64_t value) noexcept;
+  simdjson_inline void append_s64(int64_t value) noexcept;
   /** Store an unsigned 64-bit value to the number. */
-  simdjson_really_inline void append_u64(uint64_t value) noexcept;
+  simdjson_inline void append_u64(uint64_t value) noexcept;
   /** Store a double value to the number. */
-  simdjson_really_inline void append_double(double value) noexcept;
+  simdjson_inline void append_double(double value) noexcept;
   /** Specifies that the value is a double, but leave it undefined. */
-  simdjson_really_inline void skip_double() noexcept;
+  simdjson_inline void skip_double() noexcept;
   /**
    * End of friend declarations.
    */
@@ -144,10 +144,10 @@ namespace simdjson {
 template<>
 struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> : public SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::json_type> {
 public:
-  simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::json_type &&value) noexcept; ///< @private
-  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
-  simdjson_really_inline simdjson_result() noexcept = default;
-  simdjson_really_inline ~simdjson_result() noexcept = default; ///< @private
+  simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::json_type &&value) noexcept; ///< @private
+  simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
+  simdjson_inline simdjson_result() noexcept = default;
+  simdjson_inline ~simdjson_result() noexcept = default; ///< @private
 };
 
 } // namespace simdjson

@@ -10,28 +10,28 @@ using namespace simdjson;
 
 class Iter {
 public:
-  simdjson_really_inline bool Run(const padded_string &json);
+  simdjson_inline bool Run(const padded_string &json);
 
-  simdjson_really_inline const std::vector<my_point> &Result() { return container; }
-  simdjson_really_inline size_t ItemCount() { return container.size(); }
+  simdjson_inline const std::vector<my_point> &Result() { return container; }
+  simdjson_inline size_t ItemCount() { return container.size(); }
 
 private:
   ondemand::parser parser{};
   std::vector<my_point> container{};
 
-  simdjson_really_inline double first_double(ondemand::json_iterator &iter) {
+  simdjson_inline double first_double(ondemand::json_iterator &iter) {
     if (iter.start_object().error() || iter.field_key().error() || iter.field_value()) { throw "Invalid field"; }
     return iter.consume_double();
   }
 
-  simdjson_really_inline double next_double(ondemand::json_iterator &iter) {
+  simdjson_inline double next_double(ondemand::json_iterator &iter) {
     if (!iter.has_next_field() || iter.field_key().error() || iter.field_value()) { throw "Invalid field"; }
     return iter.consume_double();
   }
 
 };
 
-simdjson_really_inline bool Iter::Run(const padded_string &json) {
+simdjson_inline bool Iter::Run(const padded_string &json) {
   container.clear();
 
   auto iter = parser.iterate_raw(json).value();

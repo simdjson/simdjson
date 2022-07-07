@@ -13,12 +13,12 @@ struct sajson {
   size_t *ast_buffer{nullptr};
   ~sajson() { free(ast_buffer); }
 
-  simdjson_really_inline std::string_view get_string_view(const ::sajson::value &obj, std::string_view key) {
+  simdjson_inline std::string_view get_string_view(const ::sajson::value &obj, std::string_view key) {
     auto val = obj.get_value_of_key({key.data(), key.length()});
     if (val.get_type() != ::sajson::TYPE_STRING) { throw "field is not a string"; }
     return { val.as_cstring(), val.get_string_length() };
   }
-  simdjson_really_inline uint64_t get_uint52(const ::sajson::value &obj, std::string_view key) {
+  simdjson_inline uint64_t get_uint52(const ::sajson::value &obj, std::string_view key) {
     auto val = obj.get_value_of_key({key.data(), key.length()});
     switch (val.get_type()) {
       case ::sajson::TYPE_INTEGER: {
@@ -30,7 +30,7 @@ struct sajson {
         throw "field not integer";
     }
   }
-  simdjson_really_inline uint64_t get_str_uint64(const ::sajson::value &obj, std::string_view key) {
+  simdjson_inline uint64_t get_str_uint64(const ::sajson::value &obj, std::string_view key) {
     // Since sajson only supports 53-bit numbers, and IDs in twitter.json can be > 53 bits, we read the corresponding id_str and parse that.
     auto val = obj.get_value_of_key({key.data(), key.length()});
     if (val.get_type() != ::sajson::TYPE_STRING) { throw "field not a string"; }
@@ -40,7 +40,7 @@ struct sajson {
     if (endptr != &str[val.get_string_length()]) { throw "field is a string, but not an integer string"; }
     return result;
   }
-  simdjson_really_inline uint64_t get_nullable_str_uint64(const ::sajson::value &obj, std::string_view key) {
+  simdjson_inline uint64_t get_nullable_str_uint64(const ::sajson::value &obj, std::string_view key) {
     auto val = obj.get_value_of_key({key.data(), key.length()});
     if (val.get_type() == ::sajson::TYPE_NULL) { return 0; }
     if (val.get_type() != ::sajson::TYPE_STRING) { throw "field not a string"; }
@@ -50,7 +50,7 @@ struct sajson {
     if (endptr != &str[val.get_string_length()]) { throw "field is a string, but not an integer string"; }
     return result;
   }
-  simdjson_really_inline partial_tweets::twitter_user<std::string_view> get_user(const ::sajson::value &obj, std::string_view key) {
+  simdjson_inline partial_tweets::twitter_user<std::string_view> get_user(const ::sajson::value &obj, std::string_view key) {
     auto user = obj.get_value_of_key({key.data(), key.length()});
     if (user.get_type() != ::sajson::TYPE_OBJECT) { throw "user is not an object"; }
     return { get_str_uint64(user, "id_str"), get_string_view(user, "screen_name") };

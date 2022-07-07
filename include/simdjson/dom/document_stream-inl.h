@@ -81,7 +81,7 @@ inline void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_
 }
 #endif
 
-simdjson_really_inline document_stream::document_stream(
+simdjson_inline document_stream::document_stream(
   dom::parser &_parser,
   const uint8_t *_buf,
   size_t _len,
@@ -103,7 +103,7 @@ simdjson_really_inline document_stream::document_stream(
 #endif
 }
 
-simdjson_really_inline document_stream::document_stream() noexcept
+simdjson_inline document_stream::document_stream() noexcept
   : parser{nullptr},
     buf{nullptr},
     len{0},
@@ -115,31 +115,31 @@ simdjson_really_inline document_stream::document_stream() noexcept
 {
 }
 
-simdjson_really_inline document_stream::~document_stream() noexcept {
+simdjson_inline document_stream::~document_stream() noexcept {
 #ifdef SIMDJSON_THREADS_ENABLED
   worker.reset();
 #endif
 }
 
-simdjson_really_inline document_stream::iterator::iterator() noexcept
+simdjson_inline document_stream::iterator::iterator() noexcept
   : stream{nullptr}, finished{true} {
 }
 
-simdjson_really_inline document_stream::iterator document_stream::begin() noexcept {
+simdjson_inline document_stream::iterator document_stream::begin() noexcept {
   start();
   // If there are no documents, we're finished.
   return iterator(this, error == EMPTY);
 }
 
-simdjson_really_inline document_stream::iterator document_stream::end() noexcept {
+simdjson_inline document_stream::iterator document_stream::end() noexcept {
   return iterator(this, true);
 }
 
-simdjson_really_inline document_stream::iterator::iterator(document_stream* _stream, bool is_end) noexcept
+simdjson_inline document_stream::iterator::iterator(document_stream* _stream, bool is_end) noexcept
   : stream{_stream}, finished{is_end} {
 }
 
-simdjson_really_inline document_stream::iterator::reference document_stream::iterator::operator*() noexcept {
+simdjson_inline document_stream::iterator::reference document_stream::iterator::operator*() noexcept {
   // Note that in case of error, we do not yet mark
   // the iterator as "finished": this detection is done
   // in the operator++ function since it is possible
@@ -149,7 +149,7 @@ simdjson_really_inline document_stream::iterator::reference document_stream::ite
   return stream->parser->doc.root();
 }
 
-simdjson_really_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {
+simdjson_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {
   // If there is an error, then we want the iterator
   // to be finished, no matter what. (E.g., we do not
   // keep generating documents with errors, or go beyond
@@ -176,7 +176,7 @@ simdjson_really_inline document_stream::iterator& document_stream::iterator::ope
   return *this;
 }
 
-simdjson_really_inline bool document_stream::iterator::operator!=(const document_stream::iterator &other) const noexcept {
+simdjson_inline bool document_stream::iterator::operator!=(const document_stream::iterator &other) const noexcept {
   return finished != other.finished;
 }
 
@@ -207,11 +207,11 @@ inline void document_stream::start() noexcept {
   next();
 }
 
-simdjson_really_inline size_t document_stream::iterator::current_index() const noexcept {
+simdjson_inline size_t document_stream::iterator::current_index() const noexcept {
   return stream->doc_index;
 }
 
-simdjson_really_inline std::string_view document_stream::iterator::source() const noexcept {
+simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
   const char* start = reinterpret_cast<const char*>(stream->buf) + current_index();
   bool object_or_array = ((*start == '[') || (*start == '{'));
   if(object_or_array) {
@@ -304,32 +304,32 @@ inline void document_stream::start_stage1_thread() noexcept {
 
 } // namespace dom
 
-simdjson_really_inline simdjson_result<dom::document_stream>::simdjson_result() noexcept
+simdjson_inline simdjson_result<dom::document_stream>::simdjson_result() noexcept
   : simdjson_result_base() {
 }
-simdjson_really_inline simdjson_result<dom::document_stream>::simdjson_result(error_code error) noexcept
+simdjson_inline simdjson_result<dom::document_stream>::simdjson_result(error_code error) noexcept
   : simdjson_result_base(error) {
 }
-simdjson_really_inline simdjson_result<dom::document_stream>::simdjson_result(dom::document_stream &&value) noexcept
+simdjson_inline simdjson_result<dom::document_stream>::simdjson_result(dom::document_stream &&value) noexcept
   : simdjson_result_base(std::forward<dom::document_stream>(value)) {
 }
 
 #if SIMDJSON_EXCEPTIONS
-simdjson_really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept(false) {
+simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.begin();
 }
-simdjson_really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept(false) {
+simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.end();
 }
 #else // SIMDJSON_EXCEPTIONS
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
-simdjson_really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept {
+simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept {
   first.error = error();
   return first.begin();
 }
-simdjson_really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept {
+simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept {
   first.error = error();
   return first.end();
 }

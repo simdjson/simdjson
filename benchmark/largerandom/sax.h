@@ -11,13 +11,13 @@ using namespace simdjson::builtin::stage2;
 
 class Sax {
 public:
-  simdjson_really_inline bool Run(const padded_string &json) noexcept;
+  simdjson_inline bool Run(const padded_string &json) noexcept;
 
-  simdjson_really_inline const std::vector<my_point> &Result() { return container; }
-  simdjson_really_inline size_t ItemCount() { return container.size(); }
+  simdjson_inline const std::vector<my_point> &Result() { return container; }
+  simdjson_inline size_t ItemCount() { return container.size(); }
 
 private:
-  simdjson_really_inline error_code RunNoExcept(const padded_string &json) noexcept;
+  simdjson_inline error_code RunNoExcept(const padded_string &json) noexcept;
   error_code Allocate(size_t new_capacity);
   std::unique_ptr<uint8_t[]> string_buf{};
   size_t capacity{};
@@ -34,21 +34,21 @@ public:
 
   explicit sax_point_reader_visitor(std::vector<my_point> &_points) : points(_points) {}
 
-  simdjson_really_inline error_code visit_object_start(json_iterator &) {
+  simdjson_inline error_code visit_object_start(json_iterator &) {
     idx = 0;
     return SUCCESS;
   }
-  simdjson_really_inline error_code visit_primitive(json_iterator &, const uint8_t *value) {
+  simdjson_inline error_code visit_primitive(json_iterator &, const uint8_t *value) {
     if(idx == GOT_SOMETHING_ELSE) { return simdjson::SUCCESS; }
     return numberparsing::parse_double(value).get(buffer[idx]);
   }
-  simdjson_really_inline error_code visit_object_end(json_iterator &)  {
+  simdjson_inline error_code visit_object_end(json_iterator &)  {
     points.emplace_back(my_point{buffer[0], buffer[1], buffer[2]});
     return SUCCESS;
   }
 
-  simdjson_really_inline error_code visit_document_start(json_iterator &) { return SUCCESS; }
-  simdjson_really_inline error_code visit_key(json_iterator &, const uint8_t * key) {
+  simdjson_inline error_code visit_document_start(json_iterator &) { return SUCCESS; }
+  simdjson_inline error_code visit_key(json_iterator &, const uint8_t * key) {
     switch(key[1]) {
       // Technically, we should check the other characters
       // in the key, but we are cheating to go as fast
@@ -67,13 +67,13 @@ public:
     }
     return SUCCESS;
   }
-  simdjson_really_inline error_code visit_array_start(json_iterator &)  { return SUCCESS; }
-  simdjson_really_inline error_code visit_array_end(json_iterator &) { return SUCCESS; }
-  simdjson_really_inline error_code visit_document_end(json_iterator &)  { return SUCCESS; }
-  simdjson_really_inline error_code visit_empty_array(json_iterator &)  { return SUCCESS; }
-  simdjson_really_inline error_code visit_empty_object(json_iterator &)  { return SUCCESS; }
-  simdjson_really_inline error_code visit_root_primitive(json_iterator &, const uint8_t *)  { return SUCCESS; }
-  simdjson_really_inline error_code increment_count(json_iterator &) { return SUCCESS; }
+  simdjson_inline error_code visit_array_start(json_iterator &)  { return SUCCESS; }
+  simdjson_inline error_code visit_array_end(json_iterator &) { return SUCCESS; }
+  simdjson_inline error_code visit_document_end(json_iterator &)  { return SUCCESS; }
+  simdjson_inline error_code visit_empty_array(json_iterator &)  { return SUCCESS; }
+  simdjson_inline error_code visit_empty_object(json_iterator &)  { return SUCCESS; }
+  simdjson_inline error_code visit_root_primitive(json_iterator &, const uint8_t *)  { return SUCCESS; }
+  simdjson_inline error_code increment_count(json_iterator &) { return SUCCESS; }
 };
 
 // NOTE: this assumes the dom_parser is already allocated
