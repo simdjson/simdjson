@@ -26,7 +26,7 @@ static unsigned char _BitScanReverse64(unsigned long* ret, uint64_t x) {
 #endif
 
 /* result might be undefined when input_num is zero */
-simdjson_really_inline int leading_zeroes(uint64_t input_num) {
+simdjson_inline int leading_zeroes(uint64_t input_num) {
 #ifdef _MSC_VER
   unsigned long leading_zero = 0;
   // Search the mask data from most significant bit (MSB)

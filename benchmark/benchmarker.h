@@ -308,7 +308,7 @@ struct benchmarker {
     return all_stages_without_allocation.iterations;
   }
 
-  simdjson_really_inline void run_iteration(bool stage1_only, bool hotbuffers=false) {
+  simdjson_inline void run_iteration(bool stage1_only, bool hotbuffers=false) {
     // Allocate dom::parser
     collector.start();
     dom::parser parser;
@@ -384,7 +384,7 @@ struct benchmarker {
     loop << all_loop_count;
   }
 
-  simdjson_really_inline void run_iterations(size_t iterations, bool stage1_only, bool hotbuffers=false) {
+  simdjson_inline void run_iterations(size_t iterations, bool stage1_only, bool hotbuffers=false) {
     for (size_t i = 0; i<iterations; i++) {
       run_iteration(stage1_only, hotbuffers);
     }

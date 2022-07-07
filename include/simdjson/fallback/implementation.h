@@ -13,7 +13,7 @@ using namespace simdjson::dom;
 
 class implementation final : public simdjson::implementation {
 public:
-  simdjson_really_inline implementation() : simdjson::implementation(
+  simdjson_inline implementation() : simdjson::implementation(
       "fallback",
       "Generic fallback implementation",
       0

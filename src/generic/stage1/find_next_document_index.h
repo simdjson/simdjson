@@ -27,7 +27,7 @@ namespace {
   * complete document, therefore the last json buffer location is the end of the
   * batch.
   */
-simdjson_really_inline uint32_t find_next_document_index(dom_parser_implementation &parser) {
+simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &parser) {
   // Variant: do not count separately, just figure out depth
   if(parser.n_structural_indexes == 0) { return 0; }
   auto arr_cnt = 0;

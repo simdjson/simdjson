@@ -3,12 +3,12 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
-simdjson_really_inline raw_json_string::raw_json_string(const uint8_t * _buf) noexcept : buf{_buf} {}
+simdjson_inline raw_json_string::raw_json_string(const uint8_t * _buf) noexcept : buf{_buf} {}
 
-simdjson_really_inline const char * raw_json_string::raw() const noexcept { return reinterpret_cast<const char *>(buf); }
+simdjson_inline const char * raw_json_string::raw() const noexcept { return reinterpret_cast<const char *>(buf); }
 
 
-simdjson_really_inline bool raw_json_string::is_free_from_unescaped_quote(std::string_view target) noexcept {
+simdjson_inline bool raw_json_string::is_free_from_unescaped_quote(std::string_view target) noexcept {
   size_t pos{0};
   // if the content has no escape character, just scan through it quickly!
   for(;pos < target.size() && target[pos] != '\\';pos++) {}
@@ -26,7 +26,7 @@ simdjson_really_inline bool raw_json_string::is_free_from_unescaped_quote(std::s
   return true;
 }
 
-simdjson_really_inline bool raw_json_string::is_free_from_unescaped_quote(const char* target) noexcept {
+simdjson_inline bool raw_json_string::is_free_from_unescaped_quote(const char* target) noexcept {
   size_t pos{0};
   // if the content has no escape character, just scan through it quickly!
   for(;target[pos] && target[pos] != '\\';pos++) {}
@@ -45,12 +45,12 @@ simdjson_really_inline bool raw_json_string::is_free_from_unescaped_quote(const 
 }
 
 
-simdjson_really_inline bool raw_json_string::unsafe_is_equal(size_t length, std::string_view target) const noexcept {
+simdjson_inline bool raw_json_string::unsafe_is_equal(size_t length, std::string_view target) const noexcept {
   // If we are going to call memcmp, then we must know something about the length of the raw_json_string.
   return (length >= target.size()) && (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
 }
 
-simdjson_really_inline bool raw_json_string::unsafe_is_equal(std::string_view target) const noexcept {
+simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) const noexcept {
   // Assumptions: does not contain unescaped quote characters, and
   // the raw content is quote terminated within a valid JSON string.
   if(target.size() <= SIMDJSON_PADDING) {
@@ -65,7 +65,7 @@ simdjson_really_inline bool raw_json_string::unsafe_is_equal(std::string_view ta
   return true;
 }
 
-simdjson_really_inline bool raw_json_string::is_equal(std::string_view target) const noexcept {
+simdjson_inline bool raw_json_string::is_equal(std::string_view target) const noexcept {
   const char * r{raw()};
   size_t pos{0};
   bool escaping{false};
@@ -89,7 +89,7 @@ simdjson_really_inline bool raw_json_string::is_equal(std::string_view target) c
 }
 
 
-simdjson_really_inline bool raw_json_string::unsafe_is_equal(const char * target) const noexcept {
+simdjson_inline bool raw_json_string::unsafe_is_equal(const char * target) const noexcept {
   // Assumptions: 'target' does not contain unescaped quote characters, is null terminated and
   // the raw content is quote terminated within a valid JSON string.
   const char * r{raw()};
@@ -101,7 +101,7 @@ simdjson_really_inline bool raw_json_string::unsafe_is_equal(const char * target
   return true;
 }
 
-simdjson_really_inline bool raw_json_string::is_equal(const char* target) const noexcept {
+simdjson_inline bool raw_json_string::is_equal(const char* target) const noexcept {
   // Assumptions: does not contain unescaped quote characters, and
   // the raw content is quote terminated within a valid JSON string.
   const char * r{raw()};
@@ -126,29 +126,29 @@ simdjson_really_inline bool raw_json_string::is_equal(const char* target) const 
   return true;
 }
 
-simdjson_unused simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view c) noexcept {
+simdjson_unused simdjson_inline bool operator==(const raw_json_string &a, std::string_view c) noexcept {
   return a.unsafe_is_equal(c);
 }
 
-simdjson_unused simdjson_really_inline bool operator==(std::string_view c, const raw_json_string &a) noexcept {
+simdjson_unused simdjson_inline bool operator==(std::string_view c, const raw_json_string &a) noexcept {
   return a == c;
 }
 
-simdjson_unused simdjson_really_inline bool operator!=(const raw_json_string &a, std::string_view c) noexcept {
+simdjson_unused simdjson_inline bool operator!=(const raw_json_string &a, std::string_view c) noexcept {
   return !(a == c);
 }
 
-simdjson_unused simdjson_really_inline bool operator!=(std::string_view c, const raw_json_string &a) noexcept {
+simdjson_unused simdjson_inline bool operator!=(std::string_view c, const raw_json_string &a) noexcept {
   return !(a == c);
 }
 
 
-simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(json_iterator &iter) const noexcept {
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(json_iterator &iter) const noexcept {
   return iter.unescape(*this);
 }
 
 
-simdjson_unused simdjson_really_inline std::ostream &operator<<(std::ostream &out, const raw_json_string &str) noexcept {
+simdjson_unused simdjson_inline std::ostream &operator<<(std::ostream &out, const raw_json_string &str) noexcept {
   bool in_escape = false;
   const char *s = str.raw();
   while (true) {
@@ -168,16 +168,16 @@ simdjson_unused simdjson_really_inline std::ostream &operator<<(std::ostream &ou
 
 namespace simdjson {
 
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string &&value) noexcept
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string &&value) noexcept
     : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>(std::forward<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>(value)) {}
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::simdjson_result(error_code error) noexcept
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::simdjson_result(error_code error) noexcept
     : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>(error) {}
 
-simdjson_really_inline simdjson_result<const char *> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::raw() const noexcept {
+simdjson_inline simdjson_result<const char *> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::raw() const noexcept {
   if (error()) { return error(); }
   return first.raw();
 }
-simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept {
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept {
   if (error()) { return error(); }
   return first.unescape(iter);
 }

@@ -5,7 +5,7 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 
-static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
+static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
   // this actually computes *16* values so we are being wasteful.
   const __m128i ascii0 = _mm_set1_epi8('0');
   const __m128i mul_1_10 =

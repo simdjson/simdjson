@@ -9,7 +9,7 @@ namespace large_random {
 struct yyjson_base {
   static constexpr diff_flags DiffFlags = diff_flags::NONE;
 
-  simdjson_really_inline double get_double(yyjson_val *obj, std::string_view key) {
+  simdjson_inline double get_double(yyjson_val *obj, std::string_view key) {
     yyjson_val *val = yyjson_obj_getn(obj, key.data(), key.length());
     if (!val) { throw "missing point field!"; }
     if (yyjson_get_type(val) != YYJSON_TYPE_NUM) { throw "Number is not a type!"; }

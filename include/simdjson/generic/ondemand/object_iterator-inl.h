@@ -6,11 +6,11 @@ namespace ondemand {
 // object_iterator
 //
 
-simdjson_really_inline object_iterator::object_iterator(const value_iterator &_iter) noexcept
+simdjson_inline object_iterator::object_iterator(const value_iterator &_iter) noexcept
   : iter{_iter}
 {}
 
-simdjson_really_inline simdjson_result<field> object_iterator::operator*() noexcept {
+simdjson_inline simdjson_result<field> object_iterator::operator*() noexcept {
   error_code error = iter.error();
   if (error) { iter.abandon(); return error; }
   auto result = field::start(iter);
@@ -19,16 +19,16 @@ simdjson_really_inline simdjson_result<field> object_iterator::operator*() noexc
   if (result.error()) { iter.abandon(); }
   return result;
 }
-simdjson_really_inline bool object_iterator::operator==(const object_iterator &other) const noexcept {
+simdjson_inline bool object_iterator::operator==(const object_iterator &other) const noexcept {
   return !(*this != other);
 }
-simdjson_really_inline bool object_iterator::operator!=(const object_iterator &) const noexcept {
+simdjson_inline bool object_iterator::operator!=(const object_iterator &) const noexcept {
   return iter.is_open();
 }
 
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
-simdjson_really_inline object_iterator &object_iterator::operator++() noexcept {
+simdjson_inline object_iterator &object_iterator::operator++() noexcept {
   // TODO this is a safety rail ... users should exit loops as soon as they receive an error.
   // Nonetheless, let's see if performance is OK with this if statement--the compiler may give it to us for free.
   if (!iter.is_open()) { return *this; } // Iterator will be released if there is an error
@@ -89,34 +89,34 @@ SIMDJSON_POP_DISABLE_WARNINGS
 
 namespace simdjson {
 
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::simdjson_result(
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::simdjson_result(
   SIMDJSON_IMPLEMENTATION::ondemand::object_iterator &&value
 ) noexcept
   : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>(std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>(value))
 {
   first.iter.assert_is_valid();
 }
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::simdjson_result(error_code error) noexcept
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::simdjson_result(error_code error) noexcept
   : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>({}, error)
 {
 }
 
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator*() noexcept {
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator*() noexcept {
   if (error()) { return error(); }
   return *first;
 }
 // If we're iterating and there is an error, return the error once.
-simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &other) const noexcept {
+simdjson_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &other) const noexcept {
   if (!first.iter.is_valid()) { return !error(); }
   return first == other.first;
 }
 // If we're iterating and there is an error, return the error once.
-simdjson_really_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &other) const noexcept {
+simdjson_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &other) const noexcept {
   if (!first.iter.is_valid()) { return error(); }
   return first != other.first;
 }
 // Checks for ']' and ','
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator++() noexcept {
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator++() noexcept {
   // Clear the error if there is one, so we don't yield it twice
   if (error()) { second = SUCCESS; return *this; }
   ++first;

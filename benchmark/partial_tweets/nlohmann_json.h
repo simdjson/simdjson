@@ -9,7 +9,7 @@ namespace partial_tweets {
 struct nlohmann_json {
   using StringType=std::string;
 
-  simdjson_really_inline uint64_t nullable_int(nlohmann::json value) {
+  simdjson_inline uint64_t nullable_int(nlohmann::json value) {
     if (value.is_null()) { return 0; }
     return value;
   }

@@ -12,11 +12,11 @@ namespace simdjson {
 //
 // simdjson_result<dom::object> inline implementation
 //
-simdjson_really_inline simdjson_result<dom::object>::simdjson_result() noexcept
+simdjson_inline simdjson_result<dom::object>::simdjson_result() noexcept
     : internal::simdjson_result_base<dom::object>() {}
-simdjson_really_inline simdjson_result<dom::object>::simdjson_result(dom::object value) noexcept
+simdjson_inline simdjson_result<dom::object>::simdjson_result(dom::object value) noexcept
     : internal::simdjson_result_base<dom::object>(std::forward<dom::object>(value)) {}
-simdjson_really_inline simdjson_result<dom::object>::simdjson_result(error_code error) noexcept
+simdjson_inline simdjson_result<dom::object>::simdjson_result(error_code error) noexcept
     : internal::simdjson_result_base<dom::object>(error) {}
 
 inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](std::string_view key) const noexcept {
@@ -62,8 +62,8 @@ namespace dom {
 //
 // object inline implementation
 //
-simdjson_really_inline object::object() noexcept : tape{} {}
-simdjson_really_inline object::object(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
+simdjson_inline object::object() noexcept : tape{} {}
+simdjson_inline object::object(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 inline object::iterator object::begin() const noexcept {
   return internal::tape_ref(tape.doc, tape.json_index + 1);
 }
@@ -149,7 +149,7 @@ inline simdjson_result<element> object::at_key_case_insensitive(std::string_view
 //
 // object::iterator inline implementation
 //
-simdjson_really_inline object::iterator::iterator(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
+simdjson_inline object::iterator::iterator(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 inline const key_value_pair object::iterator::operator*() const noexcept {
   return key_value_pair(key(), value());
 }

@@ -10,7 +10,7 @@ namespace {
 //
 // For example, prefix_xor(00100100) == 00011100
 //
-simdjson_really_inline uint64_t prefix_xor(uint64_t bitmask) {
+simdjson_inline uint64_t prefix_xor(uint64_t bitmask) {
   /////////////
   // We could do this with PMULL, but it is apparently slow.
   //

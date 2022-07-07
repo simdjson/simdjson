@@ -18,7 +18,7 @@ class bit_indexer {
 public:
   uint32_t *tail;
 
-  simdjson_really_inline bit_indexer(uint32_t *index_buf) : tail(index_buf) {}
+  simdjson_inline bit_indexer(uint32_t *index_buf) : tail(index_buf) {}
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
   // plus their position in the bitvector, and store these indexes at
@@ -29,9 +29,9 @@ public:
   // If the kernel sets SIMDJSON_CUSTOM_BIT_INDEXER, then it will provide its own
   // version of the code.
 #ifdef SIMDJSON_CUSTOM_BIT_INDEXER
-  simdjson_really_inline void write(uint32_t idx, uint64_t bits);
+  simdjson_inline void write(uint32_t idx, uint64_t bits);
 #else
-  simdjson_really_inline void write(uint32_t idx, uint64_t bits) {
+  simdjson_inline void write(uint32_t idx, uint64_t bits) {
     // In some instances, the next branch is expensive because it is mispredicted.
     // Unfortunately, in other cases,
     // it helps tremendously.
@@ -140,11 +140,11 @@ public:
   static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, stage1_mode partial) noexcept;
 
 private:
-  simdjson_really_inline json_structural_indexer(uint32_t *structural_indexes);
+  simdjson_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
-  simdjson_really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
-  simdjson_really_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
+  simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
+  simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
+  simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
 
   json_scanner scanner{};
   utf8_checker checker{};
@@ -153,10 +153,10 @@ private:
   uint64_t unescaped_chars_error = 0;
 };
 
-simdjson_really_inline json_structural_indexer::json_structural_indexer(uint32_t *structural_indexes) : indexer{structural_indexes} {}
+simdjson_inline json_structural_indexer::json_structural_indexer(uint32_t *structural_indexes) : indexer{structural_indexes} {}
 
 // Skip the last character if it is partial
-simdjson_really_inline size_t trim_partial_utf8(const uint8_t *buf, size_t len) {
+simdjson_inline size_t trim_partial_utf8(const uint8_t *buf, size_t len) {
   if (simdjson_unlikely(len < 3)) {
     switch (len) {
       case 2:
@@ -221,7 +221,7 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
 }
 
 template<>
-simdjson_really_inline void json_structural_indexer::step<128>(const uint8_t *block, buf_block_reader<128> &reader) noexcept {
+simdjson_inline void json_structural_indexer::step<128>(const uint8_t *block, buf_block_reader<128> &reader) noexcept {
   simd::simd8x64<uint8_t> in_1(block);
   simd::simd8x64<uint8_t> in_2(block+64);
   json_block block_1 = scanner.next(in_1);
@@ -232,14 +232,14 @@ simdjson_really_inline void json_structural_indexer::step<128>(const uint8_t *bl
 }
 
 template<>
-simdjson_really_inline void json_structural_indexer::step<64>(const uint8_t *block, buf_block_reader<64> &reader) noexcept {
+simdjson_inline void json_structural_indexer::step<64>(const uint8_t *block, buf_block_reader<64> &reader) noexcept {
   simd::simd8x64<uint8_t> in_1(block);
   json_block block_1 = scanner.next(in_1);
   this->next(in_1, block_1, reader.block_index());
   reader.advance();
 }
 
-simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx) {
+simdjson_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx) {
   uint64_t unescaped = in.lteq(0x1F);
   checker.check_next_input(in);
   indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
@@ -247,7 +247,7 @@ simdjson_really_inline void json_structural_indexer::next(const simd::simd8x64<u
   unescaped_chars_error |= block.non_quote_inside_string(unescaped);
 }
 
-simdjson_really_inline error_code json_structural_indexer::finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial) {
+simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial) {
   // Write out the final iteration's structurals
   indexer.write(uint32_t(idx-64), prev_structurals);
   error_code error = scanner.finish();

@@ -36,14 +36,14 @@ public:
    * - increment_count(iter) - each time a value is found in an array or object.
    */
   template<bool STREAMING, typename V>
-  simdjson_warn_unused simdjson_really_inline error_code walk_document(V &visitor) noexcept;
+  simdjson_warn_unused simdjson_inline error_code walk_document(V &visitor) noexcept;
 
   /**
    * Create an iterator capable of walking a JSON document.
    *
    * The document must have already passed through stage 1.
    */
-  simdjson_really_inline json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index);
+  simdjson_inline json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index);
 
   /**
    * Look at the next token.
@@ -52,7 +52,7 @@ public:
    *
    * They may include invalid JSON as well (such as `1.2.3` or `ture`).
    */
-  simdjson_really_inline const uint8_t *peek() const noexcept;
+  simdjson_inline const uint8_t *peek() const noexcept;
   /**
    * Advance to the next token.
    *
@@ -60,56 +60,56 @@ public:
    *
    * They may include invalid JSON as well (such as `1.2.3` or `ture`).
    */
-  simdjson_really_inline const uint8_t *advance() noexcept;
+  simdjson_inline const uint8_t *advance() noexcept;
   /**
    * Get the remaining length of the document, from the start of the current token.
    */
-  simdjson_really_inline size_t remaining_len() const noexcept;
+  simdjson_inline size_t remaining_len() const noexcept;
   /**
    * Check if we are at the end of the document.
    *
    * If this is true, there are no more tokens.
    */
-  simdjson_really_inline bool at_eof() const noexcept;
+  simdjson_inline bool at_eof() const noexcept;
   /**
    * Check if we are at the beginning of the document.
    */
-  simdjson_really_inline bool at_beginning() const noexcept;
-  simdjson_really_inline uint8_t last_structural() const noexcept;
+  simdjson_inline bool at_beginning() const noexcept;
+  simdjson_inline uint8_t last_structural() const noexcept;
 
   /**
    * Log that a value has been found.
    *
    * Set LOG_ENABLED=true in logger.h to see logging.
    */
-  simdjson_really_inline void log_value(const char *type) const noexcept;
+  simdjson_inline void log_value(const char *type) const noexcept;
   /**
    * Log the start of a multipart value.
    *
    * Set LOG_ENABLED=true in logger.h to see logging.
    */
-  simdjson_really_inline void log_start_value(const char *type) const noexcept;
+  simdjson_inline void log_start_value(const char *type) const noexcept;
   /**
    * Log the end of a multipart value.
    *
    * Set LOG_ENABLED=true in logger.h to see logging.
    */
-  simdjson_really_inline void log_end_value(const char *type) const noexcept;
+  simdjson_inline void log_end_value(const char *type) const noexcept;
   /**
    * Log an error.
    *
    * Set LOG_ENABLED=true in logger.h to see logging.
    */
-  simdjson_really_inline void log_error(const char *error) const noexcept;
+  simdjson_inline void log_error(const char *error) const noexcept;
 
   template<typename V>
-  simdjson_warn_unused simdjson_really_inline error_code visit_root_primitive(V &visitor, const uint8_t *value) noexcept;
+  simdjson_warn_unused simdjson_inline error_code visit_root_primitive(V &visitor, const uint8_t *value) noexcept;
   template<typename V>
-  simdjson_warn_unused simdjson_really_inline error_code visit_primitive(V &visitor, const uint8_t *value) noexcept;
+  simdjson_warn_unused simdjson_inline error_code visit_primitive(V &visitor, const uint8_t *value) noexcept;
 };
 
 template<bool STREAMING, typename V>
-simdjson_warn_unused simdjson_really_inline error_code json_iterator::walk_document(V &visitor) noexcept {
+simdjson_warn_unused simdjson_inline error_code json_iterator::walk_document(V &visitor) noexcept {
   logger::log_start();
 
   //
@@ -234,52 +234,52 @@ document_end:
 
 } // walk_document()
 
-simdjson_really_inline json_iterator::json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
+simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
   : buf{_dom_parser.buf},
     next_structural{&_dom_parser.structural_indexes[start_structural_index]},
     dom_parser{_dom_parser} {
 }
 
-simdjson_really_inline const uint8_t *json_iterator::peek() const noexcept {
+simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
   return &buf[*(next_structural)];
 }
-simdjson_really_inline const uint8_t *json_iterator::advance() noexcept {
+simdjson_inline const uint8_t *json_iterator::advance() noexcept {
   return &buf[*(next_structural++)];
 }
-simdjson_really_inline size_t json_iterator::remaining_len() const noexcept {
+simdjson_inline size_t json_iterator::remaining_len() const noexcept {
   return dom_parser.len - *(next_structural-1);
 }
 
-simdjson_really_inline bool json_iterator::at_eof() const noexcept {
+simdjson_inline bool json_iterator::at_eof() const noexcept {
   return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
 }
-simdjson_really_inline bool json_iterator::at_beginning() const noexcept {
+simdjson_inline bool json_iterator::at_beginning() const noexcept {
   return next_structural == dom_parser.structural_indexes.get();
 }
-simdjson_really_inline uint8_t json_iterator::last_structural() const noexcept {
+simdjson_inline uint8_t json_iterator::last_structural() const noexcept {
   return buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]];
 }
 
-simdjson_really_inline void json_iterator::log_value(const char *type) const noexcept {
+simdjson_inline void json_iterator::log_value(const char *type) const noexcept {
   logger::log_line(*this, "", type, "");
 }
 
-simdjson_really_inline void json_iterator::log_start_value(const char *type) const noexcept {
+simdjson_inline void json_iterator::log_start_value(const char *type) const noexcept {
   logger::log_line(*this, "+", type, "");
   if (logger::LOG_ENABLED) { logger::log_depth++; }
 }
 
-simdjson_really_inline void json_iterator::log_end_value(const char *type) const noexcept {
+simdjson_inline void json_iterator::log_end_value(const char *type) const noexcept {
   if (logger::LOG_ENABLED) { logger::log_depth--; }
   logger::log_line(*this, "-", type, "");
 }
 
-simdjson_really_inline void json_iterator::log_error(const char *error) const noexcept {
+simdjson_inline void json_iterator::log_error(const char *error) const noexcept {
   logger::log_line(*this, "", "ERROR", error);
 }
 
 template<typename V>
-simdjson_warn_unused simdjson_really_inline error_code json_iterator::visit_root_primitive(V &visitor, const uint8_t *value) noexcept {
+simdjson_warn_unused simdjson_inline error_code json_iterator::visit_root_primitive(V &visitor, const uint8_t *value) noexcept {
   switch (*value) {
     case '"': return visitor.visit_root_string(*this, value);
     case 't': return visitor.visit_root_true_atom(*this, value);
@@ -295,7 +295,7 @@ simdjson_warn_unused simdjson_really_inline error_code json_iterator::visit_root
   }
 }
 template<typename V>
-simdjson_warn_unused simdjson_really_inline error_code json_iterator::visit_primitive(V &visitor, const uint8_t *value) noexcept {
+simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V &visitor, const uint8_t *value) noexcept {
   switch (*value) {
     case '"': return visitor.visit_string(*this, value);
     case 't': return visitor.visit_true_atom(*this, value);

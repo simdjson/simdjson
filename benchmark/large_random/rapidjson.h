@@ -13,7 +13,7 @@ struct rapidjson_base {
 
   Document doc;
 
-  simdjson_really_inline double get_double(Value &object, std::string_view key) {
+  simdjson_inline double get_double(Value &object, std::string_view key) {
     auto field = object.FindMember(key.data());
     if (field == object.MemberEnd()) { throw "Missing double field"; }
     if (!field->value.IsNumber()) { throw "Field is not double"; }

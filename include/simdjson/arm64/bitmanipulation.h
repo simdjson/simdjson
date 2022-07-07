@@ -9,7 +9,7 @@ namespace {
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
 SIMDJSON_NO_SANITIZE_UNDEFINED
-simdjson_really_inline int trailing_zeroes(uint64_t input_num) {
+simdjson_inline int trailing_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
   // Search the mask data from least significant bit (LSB)
@@ -22,12 +22,12 @@ simdjson_really_inline int trailing_zeroes(uint64_t input_num) {
 }
 
 /* result might be undefined when input_num is zero */
-simdjson_really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
+simdjson_inline uint64_t clear_lowest_bit(uint64_t input_num) {
   return input_num & (input_num-1);
 }
 
 /* result might be undefined when input_num is zero */
-simdjson_really_inline int leading_zeroes(uint64_t input_num) {
+simdjson_inline int leading_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long leading_zero = 0;
   // Search the mask data from most significant bit (MSB)
@@ -42,7 +42,7 @@ simdjson_really_inline int leading_zeroes(uint64_t input_num) {
 }
 
 /* result might be undefined when input_num is zero */
-simdjson_really_inline int count_ones(uint64_t input_num) {
+simdjson_inline int count_ones(uint64_t input_num) {
    return vaddv_u8(vcnt_u8(vcreate_u8(input_num)));
 }
 
@@ -61,7 +61,7 @@ simdjson_really_inline int count_ones(uint64_t input_num) {
 #define SIMDJSON_PREFER_REVERSE_BITS 1
 
 /* reverse the bits */
-simdjson_really_inline uint64_t reverse_bits(uint64_t input_num) {
+simdjson_inline uint64_t reverse_bits(uint64_t input_num) {
   uint64_t rev_bits;
   __asm("rbit %0, %1" : "=r"(rev_bits) : "r"(input_num));
   return rev_bits;
@@ -74,13 +74,13 @@ simdjson_really_inline uint64_t reverse_bits(uint64_t input_num) {
  * of such undefined behavior is never used.
  **/
 SIMDJSON_NO_SANITIZE_UNDEFINED
-simdjson_really_inline uint64_t zero_leading_bit(uint64_t rev_bits, int leading_zeroes) {
+simdjson_inline uint64_t zero_leading_bit(uint64_t rev_bits, int leading_zeroes) {
   return rev_bits ^ (uint64_t(0x8000000000000000) >> leading_zeroes);
 }
 
 #endif
 
-simdjson_really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
+simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   *result = value1 + value2;
   return *result < value1;

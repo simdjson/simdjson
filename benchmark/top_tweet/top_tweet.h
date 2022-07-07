@@ -13,13 +13,13 @@ struct top_tweet_result {
   StringType screen_name{};
   StringType text{};
   template<typename OtherStringType>
-  simdjson_really_inline bool operator==(const top_tweet_result<OtherStringType> &other) const {
+  simdjson_inline bool operator==(const top_tweet_result<OtherStringType> &other) const {
     return retweet_count == other.retweet_count &&
            screen_name == other.screen_name &&
            text == other.text;
   }
   template<typename OtherStringType>
-  simdjson_really_inline bool operator!=(const top_tweet_result<OtherStringType> &other) const { return !(*this == other); }
+  simdjson_inline bool operator!=(const top_tweet_result<OtherStringType> &other) const { return !(*this == other); }
 };
 
 template<typename StringType>
@@ -60,7 +60,7 @@ struct runner : public file_runner<I> {
 
 struct simdjson_dom;
 
-template<typename I> simdjson_really_inline static void top_tweet(benchmark::State &state) {
+template<typename I> simdjson_inline static void top_tweet(benchmark::State &state) {
   json_benchmark::run_json_benchmark<runner<I>, runner<simdjson_dom>>(state);
 }
 

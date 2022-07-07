@@ -13,12 +13,12 @@ struct sajson {
   size_t *ast_buffer{nullptr};
   ~sajson() { free(ast_buffer); }
 
-  simdjson_really_inline std::string_view get_string_view(const ::sajson::value &obj, std::string_view key) {
+  simdjson_inline std::string_view get_string_view(const ::sajson::value &obj, std::string_view key) {
     auto val = obj.get_value_of_key({key.data(), key.length()});
     if (val.get_type() != ::sajson::TYPE_STRING) { throw "field is not a string"; }
     return { val.as_cstring(), val.get_string_length() };
   }
-  simdjson_really_inline uint64_t get_str_uint64(const ::sajson::value &obj, std::string_view key) {
+  simdjson_inline uint64_t get_str_uint64(const ::sajson::value &obj, std::string_view key) {
     // Since sajson only supports 53-bit numbers, and IDs in twitter.json can be > 53 bits, we read the corresponding id_str and parse that.
     auto val = obj.get_value_of_key({key.data(), key.length()});
     if (val.get_type() != ::sajson::TYPE_STRING) { throw "field not a string"; }

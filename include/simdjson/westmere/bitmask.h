@@ -10,7 +10,7 @@ namespace {
 //
 // For example, prefix_xor(00100100) == 00011100
 //
-simdjson_really_inline uint64_t prefix_xor(const uint64_t bitmask) {
+simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
   // There should be no such thing with a processing supporting avx2
   // but not clmul.
   __m128i all_ones = _mm_set1_epi8('\xFF');

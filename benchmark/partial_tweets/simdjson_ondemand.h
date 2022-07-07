@@ -13,12 +13,12 @@ struct simdjson_ondemand {
 
   ondemand::parser parser{};
 
-  simdjson_really_inline uint64_t nullable_int(ondemand::value value) {
+  simdjson_inline uint64_t nullable_int(ondemand::value value) {
     if (value.is_null()) { return 0; }
     return value;
   }
 
-  simdjson_really_inline twitter_user<std::string_view> read_user(ondemand::object user) {
+  simdjson_inline twitter_user<std::string_view> read_user(ondemand::object user) {
     return { user.find_field("id"), user.find_field("screen_name") };
   }
 
