@@ -261,11 +261,15 @@ idiomatic C++ iterators, operators and casts. Besides the document instances and
 native types (`double`, `uint64_t`, `int64_t`, `bool`), we also access
 Unicode (UTF-8) strings (`std::string_view`), objects (`simdjson::ondemand::object`)
 and arrays (`simdjson::ondemand::array`).
-We also have a generic type (`simdjson::ondemand::value`) which represents a potential
+We also have a generic ephemeral type (`simdjson::ondemand::value`) which represents a potential
 array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`, string) inside
 an array or an object. Both generic types (`simdjson::ondemand::document` and
 `simdjson::ondemand::value`) have a `type()` method returning a `json_type` value describing the
-value (`json_type::array`, `json_type::object`, `json_type::number`, `json_type::string`, `json_type::boolean`, `json_type::null`).
+value (`json_type::array`, `json_type::object`, `json_type::number`, `json_type::string`,
+`json_type::boolean`, `json_type::null`). A generic value (`simdjson::ondemand::value`)
+is only valid temporarily, as soon as you access other values, other keys in objects, etc.
+it becomes invalid: you should therefore consume the value immediately by converting it to a
+scalar type, an array or an object.
 
 Advanced users who need to determine the number types (integer or float) dynamically,
 should review our section [dynamic number types](#dynamic-number-types). Indeed,
@@ -300,10 +304,12 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   comparison. For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do
   not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. If you consume an
   object twice: `std::string_view(object["foo"]` followed by `std::string_view(object["foo"]`, your code
-  is in error. Furthermore, you can only consume one field at a time, on the same object. Thus
-  if you have retrieved `content["bids"].get_array()` and you later call `content["asks"].get_array()`, then the
-  first array should no longer be accessed: it would be unsafe to do so. You can detect such mistakes by first
-  compiling and running the code in Debug mode: an OUT_OF_ORDER_ITERATION error is generated.
+  is in error. Furthermore, you can only consume one field at a time, on the same object. The
+  value instance you get from  `content["bids"]` becomes invalid when you call `content["asks"]`.
+  If you have retrieved `content["bids"].get_array()` and you later call
+  `content["asks"].get_array()`, then the first array should no longer be accessed: it would be
+  unsafe to do so. You can detect such mistakes by first compiling and running the code in
+  Debug mode: an OUT_OF_ORDER_ITERATION error is generated.
 
   > NOTE: JSON allows you to escape characters in keys. E.g., the key `"date"` may be written as
   > `"\u0064\u0061\u0074\u0065"`. By default, simdjson does *not* unescape keys when matching by default.

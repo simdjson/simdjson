@@ -11,7 +11,8 @@ class object;
 class raw_json_string;
 
 /**
- * An ephemeral JSON value returned during iteration.
+ * An ephemeral JSON value returned during iteration. It is only valid for as long as you do
+ * not access more data in the JSON document.
  */
 class value {
 public:

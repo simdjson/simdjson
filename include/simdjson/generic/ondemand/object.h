@@ -38,7 +38,8 @@ public:
    * e.g. `object["a"]` will match `{ "a": 1 }`, but will *not* match `{ "\u0061": 1 }`.
    *
    * You must consume the fields on an object one at a time. A request for a new key
-   * invalidates previous field values: it makes them unsafe. E.g., the array
+   * invalidates previous field values: it makes them unsafe. The value instance you get
+   * from  `content["bids"]` becomes invalid when you call `content["asks"]`. The array
    * given by content["bids"].get_array() should not be accessed after you have called
    * content["asks"].get_array(). You can detect such mistakes by first compiling and running
    * the code in Debug mode (or with the macro `SIMDJSON_DEVELOPMENT_CHECKS` set to 1): an
@@ -75,7 +76,8 @@ public:
    * that only one field is returned.
    *
    * You must consume the fields on an object one at a time. A request for a new key
-   * invalidates previous field values: it makes them unsafe. E.g., the array
+   * invalidates previous field values: it makes them unsafe. The value instance you get
+   * from  `content["bids"]` becomes invalid when you call `content["asks"]`. The array
    * given by content["bids"].get_array() should not be accessed after you have called
    * content["asks"].get_array(). You can detect such mistakes by first compiling and running
    * the code in Debug mode (or with the macro `SIMDJSON_DEVELOPMENT_CHECKS` set to 1): an
