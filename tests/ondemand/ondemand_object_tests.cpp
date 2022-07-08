@@ -1074,8 +1074,111 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
+
+  bool test_strager() {
+    // Find exactly one of a/myint or b/myint, if both or none are present,
+    // return false.
+    auto process = [](ondemand::object root) -> std::pair<bool,uint64_t> {
+      ///////////////////////////////////////////////////////////
+      // The core idea with On-Demand is that you should visit everything only
+      // once.
+      //
+      // Thus, with On-Demand, you must consume a field once you have accessed it.
+      // Thus if you do root["a"], you must full consume the corresponding
+      // value (if present) before you move to another field (e.g., root["a"]).
+      //
+      // If, somehow, you only want the value corresponding to "a" if some
+      // other key is not present, then you must still parse/consume the value
+      // corresponding to "a", and later throw the result away.
+      ///////////////////////////////////////////////////////////
+      uint64_t myint;
+      // Notice in the line below that I use chaining... I do not
+      // first convert root["a"] to an object and then seek
+      // "myint" into. Chaining works in this instance because
+      // I only need to access the object 'root["a"]' for a single
+      // key, if I needed to do more work on root["a"], then I should
+      // create an object.
+      if(root["a"]["myint"].get(myint) == SUCCESS) {
+        // We want myint to be discarded if "b" is also present.
+        if(! root["b"].error() ) {
+          // Oops, the other key is also present!!! We must throw
+          // away 'myint' and return false.
+          // Notice how I do not parse the value corresponding to
+          // '"b"', as it is unneeded.
+          return std::make_pair(false, 0);
+        }
+        // All is good,
+        return std::make_pair(true,myint);
+      }
+      // Now we know that "a" is not present, so seek "b".
+      if(root["b"]["myint"].get(myint) == SUCCESS) {
+        return std::make_pair(true, myint);
+      }
+      // None are present.
+      return std::make_pair(false, 0);
+    };
+
+    TEST_START();
+
+    {
+      ondemand::parser parser;
+      padded_string json = R"({ "a": { "myint": 42 } })"_padded;
+      std::cout << " - Subtest 'a' - JSON: " << (json) << " ..." << std::endl;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ondemand::object obj;
+      ASSERT_SUCCESS(doc.get_object().get(obj));
+      std::pair<bool,uint64_t> ret = process(obj);
+      ASSERT_TRUE(ret.first);
+      ASSERT_EQUAL(ret.second, 42);
+    }
+
+    {
+      ondemand::parser parser;
+      padded_string json = R"({ "b": { "myint": 42 } })"_padded;
+      std::cout << " - Subtest 'b' - JSON: " << (json) << " ..." << std::endl;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ondemand::object obj;
+      ASSERT_SUCCESS(doc.get_object().get(obj));
+      std::pair<bool,uint64_t> ret = process(obj);
+      ASSERT_TRUE(ret.first);
+      ASSERT_EQUAL(ret.second, 42);
+    }
+
+
+    {
+      ondemand::parser parser;
+      padded_string json = R"({ "b": { "myint": 42 }, "a": { "myint": 42 } })"_padded;
+      std::cout << " - Subtest 'b&a' - JSON: " << (json) << " ..." << std::endl;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ondemand::object obj;
+      ASSERT_SUCCESS(doc.get_object().get(obj));
+      std::pair<bool,uint64_t> ret = process(obj);
+      ASSERT_FALSE(ret.first);
+      ASSERT_EQUAL(ret.second, 0);
+    }
+
+    {
+      ondemand::parser parser;
+      padded_string json = R"({ "z": { "myint": 42 }, "y": { "myint": 42 } })"_padded;
+      std::cout << " - Subtest 'none' - JSON: " << (json) << " ..." << std::endl;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ondemand::object obj;
+      ASSERT_SUCCESS(doc.get_object().get(obj));
+      std::pair<bool,uint64_t> ret = process(obj);
+      ASSERT_FALSE(ret.first);
+      ASSERT_EQUAL(ret.second, 0);
+    }
+
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return
+           test_strager() &&
            issue1745() &&
            issue1742() &&
            issue1742_value() &&
