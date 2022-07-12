@@ -53,7 +53,6 @@ private:
   inline void recursive_processor(simdjson::ondemand::value element);
 
   simdjson::ondemand::parser parser;
-  simdjson::ondemand::document doc;
   uint8_t *buff{};
 };
 

@@ -29,10 +29,9 @@ private:
   simdjson_really_inline void write_uint32_at(const uint32_t w,
                                               uint8_t *p) noexcept;
 
-  inline void recursive_processor(simdjson::ondemand::value element);
+  inline void recursive_processor(simdjson::dom::element element);
 
-  simdjson::ondemand::parser parser;
-  simdjson::ondemand::document doc;
+  dom::parser parser;
   uint8_t *buff{};
 };
 
@@ -40,8 +39,8 @@ std::string_view
 simdjsondom2msgpack::to_msgpack(const simdjson::padded_string &json,
                              uint8_t *buf) {
   buff = buf;
-  dom::parser parser;
-  recursive_processor(parser.load("twitter.json"));
+
+  recursive_processor(parser.parse(json));
   return std::string_view(reinterpret_cast<char *>(buf), size_t(buff - buf));
 }
 void simdjsondom2msgpack::write_string(const std::string_view v) noexcept {
@@ -77,9 +76,7 @@ void simdjsondom2msgpack::write_uint32_at(const uint32_t w, uint8_t *p) noexcept
 }
 
 
-void simdjsondom2msgpack::recursive_processor(simdjson::ondemand::value element) {
-
-void print_json(dom::element element) {
+void simdjsondom2msgpack::recursive_processor(simdjson::dom::element element) {
   switch (element.type()) {
     case dom::element_type::ARRAY: {
       uint32_t counter = 0;
@@ -87,7 +84,7 @@ void print_json(dom::element element) {
       uint8_t *location = skip_uint32();
       for (auto child : dom::array(element)) {
         counter++;
-        recursive_processor(child.value());
+        recursive_processor(child);
       }
       write_uint32_at(counter, location);}
       break;
@@ -113,49 +110,12 @@ void print_json(dom::element element) {
       break;
     case dom::element_type::BOOL:
       write_byte(0xc2 + bool(element));
-      cout << bool(element) << endl;
       break;
     case dom::element_type::NULL_VALUE:
       write_byte(0xc0);
       break;
-  }
-}
-  switch (element.type()) {
-  case simdjson::ondemand::json_type::array: {
-    uint32_t counter = 0;
-    write_byte(0xdd);
-    uint8_t *location = skip_uint32();
-    for (auto child : element.get_array()) {
-      counter++;
-      recursive_processor(child.value());
-    }
-    write_uint32_at(counter, location);
-  } break;
-  case simdjson::ondemand::json_type::object: {
-    uint32_t counter = 0;
-    write_byte(0xdf);
-    uint8_t *location = skip_uint32();
-    for (auto field : element.get_object()) {
-      counter++;
-      write_raw_string(field.key());
-      recursive_processor(field.value());
-    }
-    write_uint32_at(counter, location);
-  } break;
-  case simdjson::ondemand::json_type::number:
-    write_double(element.get_double());
-    break;
-  case simdjson::ondemand::json_type::string:
-    write_raw_string(element.get_raw_json_string());
-    break;
-  case simdjson::ondemand::json_type::boolean:
-    write_byte(0xc2 + element.get_bool());
-    break;
-  case simdjson::ondemand::json_type::null:
-    write_byte(0xc0);
-    break;
-  default:
-    SIMDJSON_UNREACHABLE();
+    default:
+      break;
   }
 }
 
