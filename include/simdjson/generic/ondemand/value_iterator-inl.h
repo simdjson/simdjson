@@ -22,7 +22,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
 
 simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator::started_object() noexcept {
   assert_at_container_start();
-#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+#if SIMDJSON_DEVELOPMENT_CHECKS
   _json_iter->set_start_position(_depth, start_position());
 #endif
   if (*_json_iter->peek() == '}') {
@@ -111,7 +111,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //    ```
   //
   } else if (!is_open()) {
-#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+#if SIMDJSON_DEVELOPMENT_CHECKS
     // If we're past the end of the object, we're being iterated out of order.
     // Note: this isn't perfect detection. It's possible the user is inside some other object; if so,
     // this object iterator will blithely scan that object for fields.
@@ -136,7 +136,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   } else {
     if ((error = skip_child() )) { abandon(); return error; }
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
-#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+#if SIMDJSON_DEVELOPMENT_CHECKS
     if (_json_iter->start_position(_depth) != start_position()) { return OUT_OF_ORDER_ITERATION; }
 #endif
   }
@@ -223,7 +223,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
   //
   } else if (!is_open()) {
 
-#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+#if SIMDJSON_DEVELOPMENT_CHECKS
     // If we're past the end of the object, we're being iterated out of order.
     // Note: this isn't perfect detection. It's possible the user is inside some other object; if so,
     // this object iterator will blithely scan that object for fields.
@@ -252,7 +252,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     if ((error = skip_child() )) { abandon(); return error; }
     search_start = _json_iter->position();
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
-#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+#if SIMDJSON_DEVELOPMENT_CHECKS
     if (_json_iter->start_position(_depth) != start_position()) { return OUT_OF_ORDER_ITERATION; }
 #endif
   }
@@ -413,7 +413,7 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<bool> value_iterator
     return false;
   }
   _json_iter->descend_to(depth()+1);
-#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+#if SIMDJSON_DEVELOPMENT_CHECKS
   _json_iter->set_start_position(_depth, start_position());
 #endif
   return true;
@@ -774,7 +774,7 @@ simdjson_really_inline error_code value_iterator::start_container(uint8_t start_
   // If we're not at the position anymore, we don't want to advance the cursor.
   const uint8_t *json;
   if (!is_at_start()) {
-#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+#if SIMDJSON_DEVELOPMENT_CHECKS
     if (!is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
 #endif
     json = peek_start();

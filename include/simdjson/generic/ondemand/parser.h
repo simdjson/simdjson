@@ -280,7 +280,7 @@ private:
   size_t _max_capacity;
   size_t _max_depth{DEFAULT_MAX_DEPTH};
   std::unique_ptr<uint8_t[]> string_buf{};
-#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+#if SIMDJSON_DEVELOPMENT_CHECKS
   std::unique_ptr<token_position[]> start_positions{};
 #endif
 

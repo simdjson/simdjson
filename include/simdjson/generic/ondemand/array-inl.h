@@ -64,7 +64,7 @@ simdjson_really_inline simdjson_result<array> array::started(value_iterator &ite
 }
 
 simdjson_really_inline simdjson_result<array_iterator> array::begin() noexcept {
-#ifdef SIMDJSON_DEVELOPMENT_CHECKS
+#if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return array_iterator(iter);

@@ -266,10 +266,35 @@ namespace std {
 /// If EXPR is an error, returns it.
 #define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }
 
+// Unless the programmer has already set SIMDJSON_DEVELOPMENT_CHECKS,
+// we want to set it under debug builds. We detect a debug build
+// under Visual Studio when the _DEBUG macro is set. Under the other
+// compilers, we use the fact that they define __OPTIMIZE__ whenever
+// they allow optimizations.
+// It is possible that this could miss some cases where SIMDJSON_DEVELOPMENT_CHECKS
+// is helpful, but the programmer can set the macro SIMDJSON_DEVELOPMENT_CHECKS.
+// It could also wrongly set SIMDJSON_DEVELOPMENT_CHECKS (e.g., if the programmer
+// sets _DEBUG in a release build under Visual Studio, or if some compiler fails to
+// set the __OPTIMIZE__ macro).
 #ifndef SIMDJSON_DEVELOPMENT_CHECKS
-#ifndef NDEBUG
-#define SIMDJSON_DEVELOPMENT_CHECKS
-#endif
+#ifdef _MSC_VER
+// Visual Studio seems to set _DEBUG for debug builds.
+#ifdef _DEBUG
+#define SIMDJSON_DEVELOPMENT_CHECKS 1
+#endif // _DEBUG
+#else // _MSC_VER
+// All other compilers appear to set __OPTIMIZE__ to a positive integer
+// when the compiler is optimizing.
+#ifndef __OPTIMIZE__
+#define SIMDJSON_DEVELOPMENT_CHECKS 1
+#endif // __OPTIMIZE__
+#endif // _MSC_VER
+#endif // SIMDJSON_DEVELOPMENT_CHECKS
+
+#ifdef _DEBUG
+#define SIMDJSON_DEVELOPMENT_CHECKS 1
+#else
+    std::cout << "release build\n";
 #endif
 
 // The SIMDJSON_CHECK_EOF macro is a feature flag for the "don't require padding"
