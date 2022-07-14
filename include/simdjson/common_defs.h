@@ -291,12 +291,6 @@ namespace std {
 #endif // _MSC_VER
 #endif // SIMDJSON_DEVELOPMENT_CHECKS
 
-#ifdef _DEBUG
-#define SIMDJSON_DEVELOPMENT_CHECKS 1
-#else
-    std::cout << "release build\n";
-#endif
-
 // The SIMDJSON_CHECK_EOF macro is a feature flag for the "don't require padding"
 // feature.
 
