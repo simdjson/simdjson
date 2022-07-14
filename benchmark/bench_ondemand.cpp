@@ -25,6 +25,7 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 #include <benchmark/benchmark.h>
 
 SIMDJSON_POP_DISABLE_WARNINGS
+#include "json2msgpack/simdjson_dom.h"
 #include "json2msgpack/simdjson_ondemand.h"
 #include "json2msgpack/rapidjson.h"
 #include "json2msgpack/yyjson.h"
