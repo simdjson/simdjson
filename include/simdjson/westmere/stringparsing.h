@@ -41,6 +41,4 @@ simdjson_really_inline backslash_and_quote backslash_and_quote::copy_and_find(co
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#include "simdjson/generic/stringparsing.h"
-
 #endif // SIMDJSON_WESTMERE_STRINGPARSING_H

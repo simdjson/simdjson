@@ -60,6 +60,4 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#include "simdjson/generic/stringparsing.h"
-
 #endif // SIMDJSON_PPC64_STRINGPARSING_H

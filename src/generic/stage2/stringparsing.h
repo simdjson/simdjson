@@ -47,7 +47,12 @@ simdjson_really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   // multilingual plane check
   uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
   *src_ptr += 6;
-  // check for low surrogate for characters outside the Basic
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+  }
+
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
   // Multilingual Plane.
   if (code_point >= 0xd800 && code_point < 0xdc00) {
     if (((*src_ptr)[0] != '\\') || (*src_ptr)[1] != 'u') {
@@ -67,6 +72,10 @@ simdjson_really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
     code_point =
         (((code_point - 0xd800) << 10) | (code_point_2 - 0xdc00)) + 0x10000;
     *src_ptr += 6;
+  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
+      // If we encounter a low surrogate (not preceded by a high surrogate)
+      // then we have an error.
+      return false;
   }
   size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
   *dst_ptr += offset;
