@@ -10,11 +10,11 @@ namespace internal {
 //
 // tape_ref inline implementation
 //
-simdjson_really_inline tape_ref::tape_ref() noexcept : doc{nullptr}, json_index{0} {}
-simdjson_really_inline tape_ref::tape_ref(const dom::document *_doc, size_t _json_index) noexcept : doc{_doc}, json_index{_json_index} {}
+simdjson_inline tape_ref::tape_ref() noexcept : doc{nullptr}, json_index{0} {}
+simdjson_inline tape_ref::tape_ref(const dom::document *_doc, size_t _json_index) noexcept : doc{_doc}, json_index{_json_index} {}
 
 
-simdjson_really_inline bool tape_ref::is_document_root() const noexcept {
+simdjson_inline bool tape_ref::is_document_root() const noexcept {
   return json_index == 1; // should we ever change the structure of the tape, this should get updated.
 }
 
@@ -22,27 +22,27 @@ simdjson_really_inline bool tape_ref::is_document_root() const noexcept {
 // to check the type by doing a word-to-word comparison instead of extracting the
 // most significant 8 bits.
 
-simdjson_really_inline bool tape_ref::is_double() const noexcept {
+simdjson_inline bool tape_ref::is_double() const noexcept {
   constexpr uint64_t tape_double = uint64_t(tape_type::DOUBLE)<<56;
   return doc->tape[json_index] == tape_double;
 }
-simdjson_really_inline bool tape_ref::is_int64() const noexcept {
+simdjson_inline bool tape_ref::is_int64() const noexcept {
   constexpr uint64_t tape_int64 = uint64_t(tape_type::INT64)<<56;
   return doc->tape[json_index] == tape_int64;
 }
-simdjson_really_inline bool tape_ref::is_uint64() const noexcept {
+simdjson_inline bool tape_ref::is_uint64() const noexcept {
   constexpr uint64_t tape_uint64 = uint64_t(tape_type::UINT64)<<56;
   return doc->tape[json_index] == tape_uint64;
 }
-simdjson_really_inline bool tape_ref::is_false() const noexcept {
+simdjson_inline bool tape_ref::is_false() const noexcept {
   constexpr uint64_t tape_false = uint64_t(tape_type::FALSE_VALUE)<<56;
   return doc->tape[json_index] == tape_false;
 }
-simdjson_really_inline bool tape_ref::is_true() const noexcept {
+simdjson_inline bool tape_ref::is_true() const noexcept {
   constexpr uint64_t tape_true = uint64_t(tape_type::TRUE_VALUE)<<56;
   return doc->tape[json_index] == tape_true;
 }
-simdjson_really_inline bool tape_ref::is_null_on_tape() const noexcept {
+simdjson_inline bool tape_ref::is_null_on_tape() const noexcept {
   constexpr uint64_t tape_null = uint64_t(tape_type::NULL_VALUE)<<56;
   return doc->tape[json_index] == tape_null;
 }
@@ -60,21 +60,21 @@ inline size_t tape_ref::after_element() const noexcept {
       return json_index + 1;
   }
 }
-simdjson_really_inline tape_type tape_ref::tape_ref_type() const noexcept {
+simdjson_inline tape_type tape_ref::tape_ref_type() const noexcept {
   return static_cast<tape_type>(doc->tape[json_index] >> 56);
 }
-simdjson_really_inline uint64_t internal::tape_ref::tape_value() const noexcept {
+simdjson_inline uint64_t internal::tape_ref::tape_value() const noexcept {
   return doc->tape[json_index] & internal::JSON_VALUE_MASK;
 }
-simdjson_really_inline uint32_t internal::tape_ref::matching_brace_index() const noexcept {
+simdjson_inline uint32_t internal::tape_ref::matching_brace_index() const noexcept {
   return uint32_t(doc->tape[json_index]);
 }
-simdjson_really_inline uint32_t internal::tape_ref::scope_count() const noexcept {
+simdjson_inline uint32_t internal::tape_ref::scope_count() const noexcept {
   return uint32_t((doc->tape[json_index] >> 32) & internal::JSON_COUNT_MASK);
 }
 
 template<typename T>
-simdjson_really_inline T tape_ref::next_tape_value() const noexcept {
+simdjson_inline T tape_ref::next_tape_value() const noexcept {
   static_assert(sizeof(T) == sizeof(uint64_t), "next_tape_value() template parameter must be 64-bit");
   // Though the following is tempting...
   //  return *reinterpret_cast<const T*>(&doc->tape[json_index + 1]);
@@ -85,14 +85,14 @@ simdjson_really_inline T tape_ref::next_tape_value() const noexcept {
   return x;
 }
 
-simdjson_really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
+simdjson_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
   size_t string_buf_index = size_t(tape_value());
   uint32_t len;
   std::memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
   return len;
 }
 
-simdjson_really_inline const char * internal::tape_ref::get_c_str() const noexcept {
+simdjson_inline const char * internal::tape_ref::get_c_str() const noexcept {
   size_t string_buf_index = size_t(tape_value());
   return reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]);
 }

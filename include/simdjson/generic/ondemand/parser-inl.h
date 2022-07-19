@@ -2,11 +2,11 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
-simdjson_really_inline parser::parser(size_t max_capacity) noexcept
+simdjson_inline parser::parser(size_t max_capacity) noexcept
   : _max_capacity{max_capacity} {
 }
 
-simdjson_warn_unused simdjson_really_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
+simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
   if (new_capacity > max_capacity()) { return CAPACITY; }
   if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
 
@@ -28,7 +28,7 @@ simdjson_warn_unused simdjson_really_inline error_code parser::allocate(size_t n
   return SUCCESS;
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(padded_string_view json) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(padded_string_view json) & noexcept {
   if (json.padding() < SIMDJSON_PADDING) { return INSUFFICIENT_PADDING; }
 
   // Allocate if needed
@@ -41,37 +41,37 @@ simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::it
   return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this });
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const char *json, size_t len, size_t allocated) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const char *json, size_t len, size_t allocated) & noexcept {
   return iterate(padded_string_view(json, len, allocated));
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const uint8_t *json, size_t len, size_t allocated) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const uint8_t *json, size_t len, size_t allocated) & noexcept {
   return iterate(padded_string_view(json, len, allocated));
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(std::string_view json, size_t allocated) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(std::string_view json, size_t allocated) & noexcept {
   return iterate(padded_string_view(json, allocated));
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const std::string &json) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const std::string &json) & noexcept {
   return iterate(padded_string_view(json));
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string_view> &result) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string_view> &result) & noexcept {
   // We don't presently have a way to temporarily get a const T& from a simdjson_result<T> without throwing an exception
   SIMDJSON_TRY( result.error() );
   padded_string_view json = result.value_unsafe();
   return iterate(json);
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string> &result) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string> &result) & noexcept {
   // We don't presently have a way to temporarily get a const T& from a simdjson_result<T> without throwing an exception
   SIMDJSON_TRY( result.error() );
   const padded_string &json = result.value_unsafe();
   return iterate(json);
 }
 
-simdjson_warn_unused simdjson_really_inline simdjson_result<json_iterator> parser::iterate_raw(padded_string_view json) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<json_iterator> parser::iterate_raw(padded_string_view json) & noexcept {
   if (json.padding() < SIMDJSON_PADDING) { return INSUFFICIENT_PADDING; }
 
   // Allocate if needed
@@ -98,17 +98,17 @@ inline simdjson_result<document_stream> parser::iterate_many(const padded_string
   return iterate_many(s.data(), s.length(), batch_size);
 }
 
-simdjson_really_inline size_t parser::capacity() const noexcept {
+simdjson_inline size_t parser::capacity() const noexcept {
   return _capacity;
 }
-simdjson_really_inline size_t parser::max_capacity() const noexcept {
+simdjson_inline size_t parser::max_capacity() const noexcept {
   return _max_capacity;
 }
-simdjson_really_inline size_t parser::max_depth() const noexcept {
+simdjson_inline size_t parser::max_depth() const noexcept {
   return _max_depth;
 }
 
-simdjson_really_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
+simdjson_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
   size_t MINIMAL_DOCUMENT_CAPACITY = 32;
   if(max_capacity < MINIMAL_DOCUMENT_CAPACITY) {
     _max_capacity = max_capacity;
@@ -117,7 +117,7 @@ simdjson_really_inline void parser::set_max_capacity(size_t max_capacity) noexce
   }
 }
 
-simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> parser::unescape(raw_json_string in, uint8_t *&dst) const noexcept {
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::unescape(raw_json_string in, uint8_t *&dst) const noexcept {
   uint8_t *end = implementation->parse_string(in.buf, dst);
   if (!end) { return STRING_ERROR; }
   std::string_view result(reinterpret_cast<const char *>(dst), end-dst);
@@ -131,9 +131,9 @@ simdjson_really_inline simdjson_warn_unused simdjson_result<std::string_view> pa
 
 namespace simdjson {
 
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser>::simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::parser &&value) noexcept
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser>::simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::parser &&value) noexcept
     : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::parser>(std::forward<SIMDJSON_IMPLEMENTATION::ondemand::parser>(value)) {}
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser>::simdjson_result(error_code error) noexcept
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser>::simdjson_result(error_code error) noexcept
     : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::parser>(error) {}
 
 } // namespace simdjson

@@ -24,7 +24,7 @@ simdjson_warn_unused bool validate_utf8(const char * buf, size_t len) noexcept;
  * @param sv the string_view to validate.
  * @return true if the string is valid UTF-8.
  */
-simdjson_really_inline simdjson_warn_unused bool validate_utf8(const std::string_view sv) noexcept {
+simdjson_inline simdjson_warn_unused bool validate_utf8(const std::string_view sv) noexcept {
   return validate_utf8(sv.data(), sv.size());
 }
 
@@ -34,7 +34,7 @@ simdjson_really_inline simdjson_warn_unused bool validate_utf8(const std::string
  * @param p the string to validate.
  * @return true if the string is valid UTF-8.
  */
-simdjson_really_inline simdjson_warn_unused bool validate_utf8(const std::string& s) noexcept {
+simdjson_inline simdjson_warn_unused bool validate_utf8(const std::string& s) noexcept {
   return validate_utf8(s.data(), s.size());
 }
 
@@ -136,7 +136,7 @@ public:
 
 protected:
   /** @private Construct an implementation with the given name and description. For subclasses. */
-  simdjson_really_inline implementation(
+  simdjson_inline implementation(
     std::string_view name,
     std::string_view description,
     uint32_t required_instruction_sets
@@ -174,7 +174,7 @@ namespace internal {
 class available_implementation_list {
 public:
   /** Get the list of available implementations compiled into simdjson */
-  simdjson_really_inline available_implementation_list() {}
+  simdjson_inline available_implementation_list() {}
   /** Number of implementations */
   size_t size() const noexcept;
   /** STL const begin() iterator */

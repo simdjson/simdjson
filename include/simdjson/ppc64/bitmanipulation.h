@@ -9,7 +9,7 @@ namespace {
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
 SIMDJSON_NO_SANITIZE_UNDEFINED
-simdjson_really_inline int trailing_zeroes(uint64_t input_num) {
+simdjson_inline int trailing_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
   // Search the mask data from least significant bit (LSB)
@@ -22,12 +22,12 @@ simdjson_really_inline int trailing_zeroes(uint64_t input_num) {
 }
 
 /* result might be undefined when input_num is zero */
-simdjson_really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
+simdjson_inline uint64_t clear_lowest_bit(uint64_t input_num) {
   return input_num & (input_num - 1);
 }
 
 /* result might be undefined when input_num is zero */
-simdjson_really_inline int leading_zeroes(uint64_t input_num) {
+simdjson_inline int leading_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long leading_zero = 0;
   // Search the mask data from most significant bit (MSB)
@@ -42,17 +42,17 @@ simdjson_really_inline int leading_zeroes(uint64_t input_num) {
 }
 
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
-simdjson_really_inline int count_ones(uint64_t input_num) {
+simdjson_inline int count_ones(uint64_t input_num) {
   // note: we do not support legacy 32-bit Windows
   return __popcnt64(input_num); // Visual Studio wants two underscores
 }
 #else
-simdjson_really_inline int count_ones(uint64_t input_num) {
+simdjson_inline int count_ones(uint64_t input_num) {
   return __builtin_popcountll(input_num);
 }
 #endif
 
-simdjson_really_inline bool add_overflow(uint64_t value1, uint64_t value2,
+simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
                                          uint64_t *result) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   *result = value1 + value2;

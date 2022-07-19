@@ -13,7 +13,7 @@ namespace stage1 {
 class structural_scanner {
 public:
 
-simdjson_really_inline structural_scanner(dom_parser_implementation &_parser, stage1_mode _partial)
+simdjson_inline structural_scanner(dom_parser_implementation &_parser, stage1_mode _partial)
   : buf{_parser.buf},
     next_structural_index{_parser.structural_indexes.get()},
     parser{_parser},
@@ -21,16 +21,16 @@ simdjson_really_inline structural_scanner(dom_parser_implementation &_parser, st
     partial{_partial} {
 }
 
-simdjson_really_inline void add_structural() {
+simdjson_inline void add_structural() {
   *next_structural_index = idx;
   next_structural_index++;
 }
 
-simdjson_really_inline bool is_continuation(uint8_t c) {
+simdjson_inline bool is_continuation(uint8_t c) {
   return (c & 0xc0) == 0x80;
 }
 
-simdjson_really_inline void validate_utf8_character() {
+simdjson_inline void validate_utf8_character() {
   // Continuation
   if (simdjson_unlikely((buf[idx] & 0x40) == 0)) {
     // extra continuation
@@ -92,7 +92,7 @@ simdjson_really_inline void validate_utf8_character() {
 }
 
 // Returns true if the string is unclosed.
-simdjson_really_inline bool validate_string() {
+simdjson_inline bool validate_string() {
   idx++; // skip first quote
   while (idx < len && buf[idx] != '"') {
     if (buf[idx] == '\\') {
@@ -108,7 +108,7 @@ simdjson_really_inline bool validate_string() {
   return false;
 }
 
-simdjson_really_inline bool is_whitespace_or_operator(uint8_t c) {
+simdjson_inline bool is_whitespace_or_operator(uint8_t c) {
   switch (c) {
     case '{': case '}': case '[': case ']': case ',': case ':':
     case ' ': case '\r': case '\n': case '\t':
@@ -121,7 +121,7 @@ simdjson_really_inline bool is_whitespace_or_operator(uint8_t c) {
 //
 // Parse the entire input in STEP_SIZE-byte chunks.
 //
-simdjson_really_inline error_code scan() {
+simdjson_inline error_code scan() {
   bool unclosed_string = false;
   for (;idx<len;idx++) {
     switch (buf[idx]) {

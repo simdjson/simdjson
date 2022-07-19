@@ -14,7 +14,7 @@ using namespace simdjson::dom;
 
 class implementation final : public simdjson::implementation {
 public:
-  simdjson_really_inline implementation() : simdjson::implementation("westmere", "Intel/AMD SSE4.2", internal::instruction_set::SSE42 | internal::instruction_set::PCLMULQDQ) {}
+  simdjson_inline implementation() : simdjson::implementation("westmere", "Intel/AMD SSE4.2", internal::instruction_set::SSE42 | internal::instruction_set::PCLMULQDQ) {}
   simdjson_warn_unused error_code create_dom_parser_implementation(
     size_t capacity,
     size_t max_length,

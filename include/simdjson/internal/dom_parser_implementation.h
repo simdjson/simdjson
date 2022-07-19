@@ -160,14 +160,14 @@ public:
    *
    * @return Current capacity, in bytes.
    */
-  simdjson_really_inline size_t capacity() const noexcept;
+  simdjson_inline size_t capacity() const noexcept;
 
   /**
    * The maximum level of nested object and arrays supported by this parser.
    *
    * @return Maximum depth, in bytes.
    */
-  simdjson_really_inline size_t max_depth() const noexcept;
+  simdjson_inline size_t max_depth() const noexcept;
 
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
@@ -196,23 +196,23 @@ protected:
   size_t _max_depth{0};
 
   // Declaring these so that subclasses can use them to implement their constructors.
-  simdjson_really_inline dom_parser_implementation() noexcept;
-  simdjson_really_inline dom_parser_implementation(dom_parser_implementation &&other) noexcept;
-  simdjson_really_inline dom_parser_implementation &operator=(dom_parser_implementation &&other) noexcept;
+  simdjson_inline dom_parser_implementation() noexcept;
+  simdjson_inline dom_parser_implementation(dom_parser_implementation &&other) noexcept;
+  simdjson_inline dom_parser_implementation &operator=(dom_parser_implementation &&other) noexcept;
 
-  simdjson_really_inline dom_parser_implementation(const dom_parser_implementation &) noexcept = delete;
-  simdjson_really_inline dom_parser_implementation &operator=(const dom_parser_implementation &other) noexcept = delete;
+  simdjson_inline dom_parser_implementation(const dom_parser_implementation &) noexcept = delete;
+  simdjson_inline dom_parser_implementation &operator=(const dom_parser_implementation &other) noexcept = delete;
 }; // class dom_parser_implementation
 
-simdjson_really_inline dom_parser_implementation::dom_parser_implementation() noexcept = default;
-simdjson_really_inline dom_parser_implementation::dom_parser_implementation(dom_parser_implementation &&other) noexcept = default;
-simdjson_really_inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parser_implementation &&other) noexcept = default;
+simdjson_inline dom_parser_implementation::dom_parser_implementation() noexcept = default;
+simdjson_inline dom_parser_implementation::dom_parser_implementation(dom_parser_implementation &&other) noexcept = default;
+simdjson_inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parser_implementation &&other) noexcept = default;
 
-simdjson_really_inline size_t dom_parser_implementation::capacity() const noexcept {
+simdjson_inline size_t dom_parser_implementation::capacity() const noexcept {
   return _capacity;
 }
 
-simdjson_really_inline size_t dom_parser_implementation::max_depth() const noexcept {
+simdjson_inline size_t dom_parser_implementation::max_depth() const noexcept {
   return _max_depth;
 }
 

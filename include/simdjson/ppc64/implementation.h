@@ -14,7 +14,7 @@ using namespace simdjson::dom;
 
 class implementation final : public simdjson::implementation {
 public:
-  simdjson_really_inline implementation()
+  simdjson_inline implementation()
       : simdjson::implementation("ppc64", "PPC64 ALTIVEC",
                                  internal::instruction_set::ALTIVEC) {}
   simdjson_warn_unused error_code create_dom_parser_implementation(

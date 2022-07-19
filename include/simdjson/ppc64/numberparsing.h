@@ -13,7 +13,7 @@ namespace {
 
 // we don't have appropriate instructions, so let us use a scalar function
 // credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
-static simdjson_really_inline uint32_t
+static simdjson_inline uint32_t
 parse_eight_digits_unrolled(const uint8_t *chars) {
   uint64_t val;
   std::memcpy(&val, chars, sizeof(uint64_t));

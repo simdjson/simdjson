@@ -11,7 +11,7 @@ namespace {
 //
 // For example, prefix_xor(00100100) == 00011100
 //
-simdjson_really_inline uint64_t prefix_xor(uint64_t bitmask) {
+simdjson_inline uint64_t prefix_xor(uint64_t bitmask) {
   // You can use the version below, however gcc sometimes miscompiles
   // vec_pmsum_be, it happens somewhere around between 8 and 9th version.
   // The performance boost was not noticeable, falling back to a usual

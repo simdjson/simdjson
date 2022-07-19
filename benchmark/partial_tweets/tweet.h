@@ -32,7 +32,7 @@ struct tweet {
   uint64_t retweet_count{};
   uint64_t favorite_count{};
   template<typename OtherStringType>
-  simdjson_really_inline bool operator==(const tweet<OtherStringType> &other) const {
+  simdjson_inline bool operator==(const tweet<OtherStringType> &other) const {
     return created_at == other.created_at &&
            id == other.id &&
            result == other.result &&
@@ -42,7 +42,7 @@ struct tweet {
            favorite_count == other.favorite_count;
   }
   template<typename OtherStringType>
-  simdjson_really_inline bool operator!=(const tweet<OtherStringType> &other) const { return !(*this == other); }
+  simdjson_inline bool operator!=(const tweet<OtherStringType> &other) const { return !(*this == other); }
 };
 
 template<typename StringType>

@@ -40,7 +40,7 @@ public:
   /** Append an object to the builder (to be printed) **/
   inline void append(simdjson::dom::object value);
   /** Reset the builder (so that it would print the empty string) **/
-  simdjson_really_inline void clear();
+  simdjson_inline void clear();
   /**
    * Get access to the string. The string_view is owned by the builder
    * and it is invalid to use it after the string_builder has been
@@ -48,9 +48,9 @@ public:
    * However you can make a copy of the string_view on memory that you
    * own.
    */
-  simdjson_really_inline std::string_view str() const;
+  simdjson_inline std::string_view str() const;
   /** Append a key_value_pair to the builder (to be printed) **/
-  simdjson_really_inline void append(simdjson::dom::key_value_pair value);
+  simdjson_inline void append(simdjson::dom::key_value_pair value);
 private:
   formatter format{};
 };
@@ -64,43 +64,43 @@ class mini_formatter {
 public:
   mini_formatter() = default;
   /** Add a comma **/
-  simdjson_really_inline void comma();
+  simdjson_inline void comma();
   /** Start an array, prints [ **/
-  simdjson_really_inline void start_array();
+  simdjson_inline void start_array();
   /** End an array, prints ] **/
-  simdjson_really_inline void end_array();
+  simdjson_inline void end_array();
   /** Start an array, prints { **/
-  simdjson_really_inline void start_object();
+  simdjson_inline void start_object();
   /** Start an array, prints } **/
-  simdjson_really_inline void end_object();
+  simdjson_inline void end_object();
   /** Prints a true **/
-  simdjson_really_inline void true_atom();
+  simdjson_inline void true_atom();
   /** Prints a false **/
-  simdjson_really_inline void false_atom();
+  simdjson_inline void false_atom();
   /** Prints a null **/
-  simdjson_really_inline void null_atom();
+  simdjson_inline void null_atom();
   /** Prints a number **/
-  simdjson_really_inline void number(int64_t x);
+  simdjson_inline void number(int64_t x);
   /** Prints a number **/
-  simdjson_really_inline void number(uint64_t x);
+  simdjson_inline void number(uint64_t x);
   /** Prints a number **/
-  simdjson_really_inline void number(double x);
+  simdjson_inline void number(double x);
   /** Prints a key (string + colon) **/
-  simdjson_really_inline void key(std::string_view unescaped);
+  simdjson_inline void key(std::string_view unescaped);
   /** Prints a string. The string is escaped as needed. **/
-  simdjson_really_inline void string(std::string_view unescaped);
+  simdjson_inline void string(std::string_view unescaped);
   /** Clears out the content. **/
-  simdjson_really_inline void clear();
+  simdjson_inline void clear();
   /**
    * Get access to the buffer, it is owned by the instance, but
    * the user can make a copy.
    **/
-  simdjson_really_inline std::string_view str() const;
+  simdjson_inline std::string_view str() const;
 
 private:
   // implementation details (subject to change)
   /** Prints one character **/
-  simdjson_really_inline void one_char(char c);
+  simdjson_inline void one_char(char c);
   /** Backing buffer **/
   std::vector<char> buffer{}; // not ideal!
 };

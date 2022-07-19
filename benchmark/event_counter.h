@@ -156,13 +156,13 @@ struct event_collector {
   }
 #endif
 
-  simdjson_really_inline void start() {
+  simdjson_inline void start() {
 #if defined(__linux)
     linux_events.start();
 #endif
     start_clock = steady_clock::now();
   }
-  simdjson_really_inline event_count& end() {
+  simdjson_inline event_count& end() {
     time_point<steady_clock> end_clock = steady_clock::now();
 #if defined(__linux)
     linux_events.end(count.event_counts);
