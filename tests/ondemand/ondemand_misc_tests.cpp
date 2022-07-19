@@ -52,6 +52,17 @@ namespace misc_tests {
     TEST_SUCCEED();
   }
 
+  bool issue1870() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = R"("\uDC00")"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    std::string_view view;
+    ASSERT_ERROR( doc.get_string().get(view), STRING_ERROR );
+    TEST_SUCCEED();
+  }
+
   bool issue1660() {
     TEST_START();
     ondemand::parser parser;
@@ -447,6 +458,7 @@ namespace misc_tests {
 
   bool run() {
     return
+           issue1870() &&
            is_alive_root_array() &&
            is_alive_root_object() &&
            is_alive_array() &&

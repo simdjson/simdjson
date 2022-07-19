@@ -48,6 +48,4 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#include "simdjson/generic/stringparsing.h"
-
 #endif // SIMDJSON_ARM64_STRINGPARSING_H
