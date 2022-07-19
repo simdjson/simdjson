@@ -72,7 +72,7 @@ public:
   simdjson_warn_unused bool validate_utf8(const char * buf, size_t len) const noexcept final override {
     return set_best()->validate_utf8(buf, len);
   }
-  simdjson_really_inline detect_best_supported_implementation_on_first_use() noexcept : implementation("best_supported_detector", "Detects the best supported implementation and sets it", 0) {}
+  simdjson_inline detect_best_supported_implementation_on_first_use() noexcept : implementation("best_supported_detector", "Detects the best supported implementation and sets it", 0) {}
 private:
   const implementation *set_best() const noexcept;
 };

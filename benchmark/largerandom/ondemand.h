@@ -10,16 +10,16 @@ using namespace simdjson;
 
 class OnDemand {
 public:
-  simdjson_really_inline bool Run(const padded_string &json);
-  simdjson_really_inline const std::vector<my_point> &Result() { return container; }
-  simdjson_really_inline size_t ItemCount() { return container.size(); }
+  simdjson_inline bool Run(const padded_string &json);
+  simdjson_inline const std::vector<my_point> &Result() { return container; }
+  simdjson_inline size_t ItemCount() { return container.size(); }
 
 private:
   ondemand::parser parser{};
   std::vector<my_point> container{};
 };
 
-simdjson_really_inline bool OnDemand::Run(const padded_string &json) {
+simdjson_inline bool OnDemand::Run(const padded_string &json) {
   container.clear();
 
   auto doc = parser.iterate(json);

@@ -39,7 +39,7 @@ struct runner : public file_runner<I> {
 
 struct simdjson_dom;
 
-template<typename I> simdjson_really_inline static void partial_tweets(benchmark::State &state) {
+template<typename I> simdjson_inline static void partial_tweets(benchmark::State &state) {
   run_json_benchmark<runner<I>, runner<simdjson_dom>>(state);
 }
 

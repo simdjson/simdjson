@@ -79,7 +79,7 @@ static const simdjson::padded_string &get_built_json_array() {
 
 struct simdjson_dom;
 
-template<typename I> simdjson_really_inline static void kostya(benchmark::State &state) {
+template<typename I> simdjson_inline static void kostya(benchmark::State &state) {
   run_json_benchmark<runner<I>, runner<simdjson_dom>>(state);
 }
 

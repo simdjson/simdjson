@@ -41,9 +41,9 @@ public:
   inline explicit parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
 
   inline parser(parser &&other) noexcept = default;
-  simdjson_really_inline parser(const parser &other) = delete;
-  simdjson_really_inline parser &operator=(const parser &other) = delete;
-  simdjson_really_inline parser &operator=(parser &&other) noexcept = default;
+  simdjson_inline parser(const parser &other) = delete;
+  simdjson_inline parser &operator=(const parser &other) = delete;
+  simdjson_inline parser &operator=(parser &&other) noexcept = default;
 
   /** Deallocate the JSON parser. */
   inline ~parser() noexcept = default;
@@ -226,12 +226,12 @@ public:
   simdjson_result<document_stream> iterate_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
 
   /** The capacity of this parser (the largest document it can process). */
-  simdjson_really_inline size_t capacity() const noexcept;
+  simdjson_inline size_t capacity() const noexcept;
   /** The maximum capacity of this parser (the largest document it is allowed to process). */
-  simdjson_really_inline size_t max_capacity() const noexcept;
-  simdjson_really_inline void set_max_capacity(size_t max_capacity) noexcept;
+  simdjson_inline size_t max_capacity() const noexcept;
+  simdjson_inline void set_max_capacity(size_t max_capacity) noexcept;
   /** The maximum depth of this parser (the most deeply nested objects and arrays it can process). */
-  simdjson_really_inline size_t max_depth() const noexcept;
+  simdjson_inline size_t max_depth() const noexcept;
 
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
@@ -272,7 +272,7 @@ public:
    * @return A string_view pointing at the unescaped string in dst
    * @error STRING_ERROR if escapes are incorrect.
    */
-  simdjson_really_inline simdjson_result<std::string_view> unescape(raw_json_string in, uint8_t *&dst) const noexcept;
+  simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, uint8_t *&dst) const noexcept;
 private:
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<internal::dom_parser_implementation> implementation{};
@@ -297,9 +297,9 @@ namespace simdjson {
 template<>
 struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser> : public SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::parser> {
 public:
-  simdjson_really_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::parser &&value) noexcept; ///< @private
-  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
-  simdjson_really_inline simdjson_result() noexcept = default;
+  simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::parser &&value) noexcept; ///< @private
+  simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
+  simdjson_inline simdjson_result() noexcept = default;
 };
 
 } // namespace simdjson

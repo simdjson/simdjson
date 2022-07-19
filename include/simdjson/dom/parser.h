@@ -68,20 +68,20 @@ public:
    *    to allocate an initial capacity, call allocate() after constructing the parser.
    *    Defaults to SIMDJSON_MAXSIZE_BYTES (the largest single document simdjson can process).
    */
-  simdjson_really_inline explicit parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
+  simdjson_inline explicit parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
   /**
    * Take another parser's buffers and state.
    *
    * @param other The parser to take. Its capacity is zeroed.
    */
-  simdjson_really_inline parser(parser &&other) noexcept;
+  simdjson_inline parser(parser &&other) noexcept;
   parser(const parser &) = delete; ///< @private Disallow copying
   /**
    * Take another parser's buffers and state.
    *
    * @param other The parser to take. Its capacity is zeroed.
    */
-  simdjson_really_inline parser &operator=(parser &&other) noexcept;
+  simdjson_inline parser &operator=(parser &&other) noexcept;
   parser &operator=(const parser &) = delete; ///< @private Disallow copying
 
   /** Deallocate the JSON parser. */
@@ -191,17 +191,17 @@ public:
   inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) & noexcept;
   inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  simdjson_really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) & noexcept;
-  simdjson_really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) && =delete;
+  simdjson_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  simdjson_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  simdjson_really_inline simdjson_result<element> parse(const std::string &s) & noexcept;
-  simdjson_really_inline simdjson_result<element> parse(const std::string &s) && =delete;
+  simdjson_inline simdjson_result<element> parse(const std::string &s) & noexcept;
+  simdjson_inline simdjson_result<element> parse(const std::string &s) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  simdjson_really_inline simdjson_result<element> parse(const padded_string &s) & noexcept;
-  simdjson_really_inline simdjson_result<element> parse(const padded_string &s) && =delete;
+  simdjson_inline simdjson_result<element> parse(const padded_string &s) & noexcept;
+  simdjson_inline simdjson_result<element> parse(const padded_string &s) && =delete;
 
   /** @private We do not want to allow implicit conversion from C string to std::string. */
-  simdjson_really_inline simdjson_result<element> parse(const char *buf) noexcept = delete;
+  simdjson_inline simdjson_result<element> parse(const char *buf) noexcept = delete;
 
   /**
    * Parse a JSON document into a provide document instance and return a temporary reference to it.
@@ -250,17 +250,17 @@ public:
   inline simdjson_result<element> parse_into_document(document& doc, const uint8_t *buf, size_t len, bool realloc_if_needed = true) & noexcept;
   inline simdjson_result<element> parse_into_document(document& doc, const uint8_t *buf, size_t len, bool realloc_if_needed = true) && =delete;
   /** @overload parse_into_document(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const char *buf, size_t len, bool realloc_if_needed = true) & noexcept;
-  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const char *buf, size_t len, bool realloc_if_needed = true) && =delete;
+  simdjson_inline simdjson_result<element> parse_into_document(document& doc, const char *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  simdjson_inline simdjson_result<element> parse_into_document(document& doc, const char *buf, size_t len, bool realloc_if_needed = true) && =delete;
   /** @overload parse_into_document(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const std::string &s) & noexcept;
-  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const std::string &s) && =delete;
+  simdjson_inline simdjson_result<element> parse_into_document(document& doc, const std::string &s) & noexcept;
+  simdjson_inline simdjson_result<element> parse_into_document(document& doc, const std::string &s) && =delete;
   /** @overload parse_into_document(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const padded_string &s) & noexcept;
-  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const padded_string &s) && =delete;
+  simdjson_inline simdjson_result<element> parse_into_document(document& doc, const padded_string &s) & noexcept;
+  simdjson_inline simdjson_result<element> parse_into_document(document& doc, const padded_string &s) && =delete;
 
   /** @private We do not want to allow implicit conversion from C string to std::string. */
-  simdjson_really_inline simdjson_result<element> parse_into_document(document& doc, const char *buf) noexcept = delete;
+  simdjson_inline simdjson_result<element> parse_into_document(document& doc, const char *buf) noexcept = delete;
 
   /**
    * Load a file containing many JSON documents.
@@ -472,7 +472,7 @@ public:
    *
    * @return Current capacity, in bytes.
    */
-  simdjson_really_inline size_t capacity() const noexcept;
+  simdjson_inline size_t capacity() const noexcept;
 
   /**
    * The largest document this parser can automatically support.
@@ -481,14 +481,14 @@ public:
    *
    * @return Maximum capacity, in bytes.
    */
-  simdjson_really_inline size_t max_capacity() const noexcept;
+  simdjson_inline size_t max_capacity() const noexcept;
 
   /**
    * The maximum level of nested object and arrays supported by this parser.
    *
    * @return Maximum depth, in bytes.
    */
-  simdjson_really_inline size_t max_depth() const noexcept;
+  simdjson_inline size_t max_depth() const noexcept;
 
   /**
    * Set max_capacity. This is the largest document this parser can automatically support.
@@ -504,7 +504,7 @@ public:
    *
    * @param max_capacity The new maximum capacity, in bytes.
    */
-  simdjson_really_inline void set_max_capacity(size_t max_capacity) noexcept;
+  simdjson_inline void set_max_capacity(size_t max_capacity) noexcept;
 
 #ifdef SIMDJSON_THREADS_ENABLED
   /**

@@ -28,7 +28,7 @@ namespace {
  * You should not use this function except for compile-time constants:
  * it is not efficient.
  */
-simdjson_really_inline uint8x16_t make_uint8x16_t(uint8_t x1,  uint8_t x2,  uint8_t x3,  uint8_t x4,
+simdjson_inline uint8x16_t make_uint8x16_t(uint8_t x1,  uint8_t x2,  uint8_t x3,  uint8_t x4,
                                          uint8_t x5,  uint8_t x6,  uint8_t x7,  uint8_t x8,
                                          uint8_t x9,  uint8_t x10, uint8_t x11, uint8_t x12,
                                          uint8_t x13, uint8_t x14, uint8_t x15, uint8_t x16) {
@@ -57,7 +57,7 @@ simdjson_really_inline uint8x16_t make_uint8x16_t(uint8_t x1,  uint8_t x2,  uint
   return x;
 }
 
-simdjson_really_inline uint8x8_t make_uint8x8_t(uint8_t x1,  uint8_t x2,  uint8_t x3,  uint8_t x4,
+simdjson_inline uint8x8_t make_uint8x8_t(uint8_t x1,  uint8_t x2,  uint8_t x3,  uint8_t x4,
                                          uint8_t x5,  uint8_t x6,  uint8_t x7,  uint8_t x8) {
   uint8x8_t x{};
   x = vset_lane_u8(x1, x, 0);
@@ -72,7 +72,7 @@ simdjson_really_inline uint8x8_t make_uint8x8_t(uint8_t x1,  uint8_t x2,  uint8_
 }
 
 // We have to do the same work for make_int8x16_t
-simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_t x4,
+simdjson_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_t x4,
                                        int8_t x5,  int8_t x6,  int8_t x7,  int8_t x8,
                                        int8_t x9,  int8_t x10, int8_t x11, int8_t x12,
                                        int8_t x13, int8_t x14, int8_t x15, int8_t x16) {
@@ -118,24 +118,24 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     static const int SIZE = sizeof(value);
 
     // Conversion from/to SIMD register
-    simdjson_really_inline base_u8(const uint8x16_t _value) : value(_value) {}
-    simdjson_really_inline operator const uint8x16_t&() const { return this->value; }
-    simdjson_really_inline operator uint8x16_t&() { return this->value; }
+    simdjson_inline base_u8(const uint8x16_t _value) : value(_value) {}
+    simdjson_inline operator const uint8x16_t&() const { return this->value; }
+    simdjson_inline operator uint8x16_t&() { return this->value; }
 
     // Bit operations
-    simdjson_really_inline simd8<T> operator|(const simd8<T> other) const { return vorrq_u8(*this, other); }
-    simdjson_really_inline simd8<T> operator&(const simd8<T> other) const { return vandq_u8(*this, other); }
-    simdjson_really_inline simd8<T> operator^(const simd8<T> other) const { return veorq_u8(*this, other); }
-    simdjson_really_inline simd8<T> bit_andnot(const simd8<T> other) const { return vbicq_u8(*this, other); }
-    simdjson_really_inline simd8<T> operator~() const { return *this ^ 0xFFu; }
-    simdjson_really_inline simd8<T>& operator|=(const simd8<T> other) { auto this_cast = static_cast<simd8<T>*>(this); *this_cast = *this_cast | other; return *this_cast; }
-    simdjson_really_inline simd8<T>& operator&=(const simd8<T> other) { auto this_cast = static_cast<simd8<T>*>(this); *this_cast = *this_cast & other; return *this_cast; }
-    simdjson_really_inline simd8<T>& operator^=(const simd8<T> other) { auto this_cast = static_cast<simd8<T>*>(this); *this_cast = *this_cast ^ other; return *this_cast; }
+    simdjson_inline simd8<T> operator|(const simd8<T> other) const { return vorrq_u8(*this, other); }
+    simdjson_inline simd8<T> operator&(const simd8<T> other) const { return vandq_u8(*this, other); }
+    simdjson_inline simd8<T> operator^(const simd8<T> other) const { return veorq_u8(*this, other); }
+    simdjson_inline simd8<T> bit_andnot(const simd8<T> other) const { return vbicq_u8(*this, other); }
+    simdjson_inline simd8<T> operator~() const { return *this ^ 0xFFu; }
+    simdjson_inline simd8<T>& operator|=(const simd8<T> other) { auto this_cast = static_cast<simd8<T>*>(this); *this_cast = *this_cast | other; return *this_cast; }
+    simdjson_inline simd8<T>& operator&=(const simd8<T> other) { auto this_cast = static_cast<simd8<T>*>(this); *this_cast = *this_cast & other; return *this_cast; }
+    simdjson_inline simd8<T>& operator^=(const simd8<T> other) { auto this_cast = static_cast<simd8<T>*>(this); *this_cast = *this_cast ^ other; return *this_cast; }
 
-    friend simdjson_really_inline Mask operator==(const simd8<T> lhs, const simd8<T> rhs) { return vceqq_u8(lhs, rhs); }
+    friend simdjson_inline Mask operator==(const simd8<T> lhs, const simd8<T> rhs) { return vceqq_u8(lhs, rhs); }
 
     template<int N=1>
-    simdjson_really_inline simd8<T> prev(const simd8<T> prev_chunk) const {
+    simdjson_inline simd8<T> prev(const simd8<T> prev_chunk) const {
       return vextq_u8(prev_chunk, *this, 16 - N);
     }
   };
@@ -146,17 +146,17 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     typedef uint16_t bitmask_t;
     typedef uint32_t bitmask2_t;
 
-    static simdjson_really_inline simd8<bool> splat(bool _value) { return vmovq_n_u8(uint8_t(-(!!_value))); }
+    static simdjson_inline simd8<bool> splat(bool _value) { return vmovq_n_u8(uint8_t(-(!!_value))); }
 
-    simdjson_really_inline simd8(const uint8x16_t _value) : base_u8<bool>(_value) {}
+    simdjson_inline simd8(const uint8x16_t _value) : base_u8<bool>(_value) {}
     // False constructor
-    simdjson_really_inline simd8() : simd8(vdupq_n_u8(0)) {}
+    simdjson_inline simd8() : simd8(vdupq_n_u8(0)) {}
     // Splat constructor
-    simdjson_really_inline simd8(bool _value) : simd8(splat(_value)) {}
+    simdjson_inline simd8(bool _value) : simd8(splat(_value)) {}
 
     // We return uint32_t instead of uint16_t because that seems to be more efficient for most
     // purposes (cutting it down to uint16_t costs performance in some compilers).
-    simdjson_really_inline uint32_t to_bitmask() const {
+    simdjson_inline uint32_t to_bitmask() const {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
       const uint8x16_t bit_mask =  make_uint8x16_t(0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
                                                    0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80);
@@ -170,26 +170,26 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
       tmp = vpaddq_u8(tmp, tmp);
       return vgetq_lane_u16(vreinterpretq_u16_u8(tmp), 0);
     }
-    simdjson_really_inline bool any() const { return vmaxvq_u8(*this) != 0; }
+    simdjson_inline bool any() const { return vmaxvq_u8(*this) != 0; }
   };
 
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base_u8<uint8_t> {
-    static simdjson_really_inline uint8x16_t splat(uint8_t _value) { return vmovq_n_u8(_value); }
-    static simdjson_really_inline uint8x16_t zero() { return vdupq_n_u8(0); }
-    static simdjson_really_inline uint8x16_t load(const uint8_t* values) { return vld1q_u8(values); }
+    static simdjson_inline uint8x16_t splat(uint8_t _value) { return vmovq_n_u8(_value); }
+    static simdjson_inline uint8x16_t zero() { return vdupq_n_u8(0); }
+    static simdjson_inline uint8x16_t load(const uint8_t* values) { return vld1q_u8(values); }
 
-    simdjson_really_inline simd8(const uint8x16_t _value) : base_u8<uint8_t>(_value) {}
+    simdjson_inline simd8(const uint8x16_t _value) : base_u8<uint8_t>(_value) {}
     // Zero constructor
-    simdjson_really_inline simd8() : simd8(zero()) {}
+    simdjson_inline simd8() : simd8(zero()) {}
     // Array constructor
-    simdjson_really_inline simd8(const uint8_t values[16]) : simd8(load(values)) {}
+    simdjson_inline simd8(const uint8_t values[16]) : simd8(load(values)) {}
     // Splat constructor
-    simdjson_really_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
+    simdjson_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
     // Member-by-member initialization
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
-    simdjson_really_inline simd8(
+    simdjson_inline simd8(
       uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
       uint8_t v8,  uint8_t v9,  uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15
     ) : simd8(make_uint8x16_t(
@@ -197,7 +197,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
       v8, v9, v10,v11,v12,v13,v14,v15
     )) {}
 #else
-    simdjson_really_inline simd8(
+    simdjson_inline simd8(
       uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
       uint8_t v8,  uint8_t v9,  uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15
     ) : simd8(uint8x16_t{
@@ -207,7 +207,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
 #endif
 
     // Repeat 16 values as many times as necessary (usually for lookup tables)
-    simdjson_really_inline static simd8<uint8_t> repeat_16(
+    simdjson_inline static simd8<uint8_t> repeat_16(
       uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
       uint8_t v8,  uint8_t v9,  uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15
     ) {
@@ -218,44 +218,44 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     }
 
     // Store to array
-    simdjson_really_inline void store(uint8_t dst[16]) const { return vst1q_u8(dst, *this); }
+    simdjson_inline void store(uint8_t dst[16]) const { return vst1q_u8(dst, *this); }
 
     // Saturated math
-    simdjson_really_inline simd8<uint8_t> saturating_add(const simd8<uint8_t> other) const { return vqaddq_u8(*this, other); }
-    simdjson_really_inline simd8<uint8_t> saturating_sub(const simd8<uint8_t> other) const { return vqsubq_u8(*this, other); }
+    simdjson_inline simd8<uint8_t> saturating_add(const simd8<uint8_t> other) const { return vqaddq_u8(*this, other); }
+    simdjson_inline simd8<uint8_t> saturating_sub(const simd8<uint8_t> other) const { return vqsubq_u8(*this, other); }
 
     // Addition/subtraction are the same for signed and unsigned
-    simdjson_really_inline simd8<uint8_t> operator+(const simd8<uint8_t> other) const { return vaddq_u8(*this, other); }
-    simdjson_really_inline simd8<uint8_t> operator-(const simd8<uint8_t> other) const { return vsubq_u8(*this, other); }
-    simdjson_really_inline simd8<uint8_t>& operator+=(const simd8<uint8_t> other) { *this = *this + other; return *this; }
-    simdjson_really_inline simd8<uint8_t>& operator-=(const simd8<uint8_t> other) { *this = *this - other; return *this; }
+    simdjson_inline simd8<uint8_t> operator+(const simd8<uint8_t> other) const { return vaddq_u8(*this, other); }
+    simdjson_inline simd8<uint8_t> operator-(const simd8<uint8_t> other) const { return vsubq_u8(*this, other); }
+    simdjson_inline simd8<uint8_t>& operator+=(const simd8<uint8_t> other) { *this = *this + other; return *this; }
+    simdjson_inline simd8<uint8_t>& operator-=(const simd8<uint8_t> other) { *this = *this - other; return *this; }
 
     // Order-specific operations
-    simdjson_really_inline uint8_t max_val() const { return vmaxvq_u8(*this); }
-    simdjson_really_inline uint8_t min_val() const { return vminvq_u8(*this); }
-    simdjson_really_inline simd8<uint8_t> max_val(const simd8<uint8_t> other) const { return vmaxq_u8(*this, other); }
-    simdjson_really_inline simd8<uint8_t> min_val(const simd8<uint8_t> other) const { return vminq_u8(*this, other); }
-    simdjson_really_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return vcleq_u8(*this, other); }
-    simdjson_really_inline simd8<bool> operator>=(const simd8<uint8_t> other) const { return vcgeq_u8(*this, other); }
-    simdjson_really_inline simd8<bool> operator<(const simd8<uint8_t> other) const { return vcltq_u8(*this, other); }
-    simdjson_really_inline simd8<bool> operator>(const simd8<uint8_t> other) const { return vcgtq_u8(*this, other); }
+    simdjson_inline uint8_t max_val() const { return vmaxvq_u8(*this); }
+    simdjson_inline uint8_t min_val() const { return vminvq_u8(*this); }
+    simdjson_inline simd8<uint8_t> max_val(const simd8<uint8_t> other) const { return vmaxq_u8(*this, other); }
+    simdjson_inline simd8<uint8_t> min_val(const simd8<uint8_t> other) const { return vminq_u8(*this, other); }
+    simdjson_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return vcleq_u8(*this, other); }
+    simdjson_inline simd8<bool> operator>=(const simd8<uint8_t> other) const { return vcgeq_u8(*this, other); }
+    simdjson_inline simd8<bool> operator<(const simd8<uint8_t> other) const { return vcltq_u8(*this, other); }
+    simdjson_inline simd8<bool> operator>(const simd8<uint8_t> other) const { return vcgtq_u8(*this, other); }
     // Same as >, but instead of guaranteeing all 1's == true, false = 0 and true = nonzero. For ARM, returns all 1's.
-    simdjson_really_inline simd8<uint8_t> gt_bits(const simd8<uint8_t> other) const { return simd8<uint8_t>(*this > other); }
+    simdjson_inline simd8<uint8_t> gt_bits(const simd8<uint8_t> other) const { return simd8<uint8_t>(*this > other); }
     // Same as <, but instead of guaranteeing all 1's == true, false = 0 and true = nonzero. For ARM, returns all 1's.
-    simdjson_really_inline simd8<uint8_t> lt_bits(const simd8<uint8_t> other) const { return simd8<uint8_t>(*this < other); }
+    simdjson_inline simd8<uint8_t> lt_bits(const simd8<uint8_t> other) const { return simd8<uint8_t>(*this < other); }
 
     // Bit-specific operations
-    simdjson_really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return vtstq_u8(*this, bits); }
-    simdjson_really_inline bool any_bits_set_anywhere() const { return this->max_val() != 0; }
-    simdjson_really_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set_anywhere(); }
+    simdjson_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return vtstq_u8(*this, bits); }
+    simdjson_inline bool any_bits_set_anywhere() const { return this->max_val() != 0; }
+    simdjson_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set_anywhere(); }
     template<int N>
-    simdjson_really_inline simd8<uint8_t> shr() const { return vshrq_n_u8(*this, N); }
+    simdjson_inline simd8<uint8_t> shr() const { return vshrq_n_u8(*this, N); }
     template<int N>
-    simdjson_really_inline simd8<uint8_t> shl() const { return vshlq_n_u8(*this, N); }
+    simdjson_inline simd8<uint8_t> shl() const { return vshlq_n_u8(*this, N); }
 
     // Perform a lookup assuming the value is between 0 and 16 (undefined behavior for out of range values)
     template<typename L>
-    simdjson_really_inline simd8<L> lookup_16(simd8<L> lookup_table) const {
+    simdjson_inline simd8<L> lookup_16(simd8<L> lookup_table) const {
       return lookup_table.apply_lookup_16_to(*this);
     }
 
@@ -268,7 +268,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     // signature simd8<L> compress(uint16_t mask) would be
     // sensible, but the AVX ISA makes this kind of approach difficult.
     template<typename L>
-    simdjson_really_inline void compress(uint16_t mask, L * output) const {
+    simdjson_inline void compress(uint16_t mask, L * output) const {
       using internal::thintable_epi8;
       using internal::BitsSetTable256mul2;
       using internal::pshufb_combine_table;
@@ -305,7 +305,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     // Copies all bytes corresponding to a 0 in the low half of the mask (interpreted as a
     // bitset) to output1, then those corresponding to a 0 in the high half to output2.
     template<typename L>
-    simdjson_really_inline void compress_halves(uint16_t mask, L *output1, L *output2) const {
+    simdjson_inline void compress_halves(uint16_t mask, L *output1, L *output2) const {
       using internal::thintable_epi8;
       uint8_t mask1 = uint8_t(mask); // least significant 8 bits
       uint8_t mask2 = uint8_t(mask >> 8); // most significant 8 bits
@@ -324,7 +324,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     }
 
     template<typename L>
-    simdjson_really_inline simd8<L> lookup_16(
+    simdjson_inline simd8<L> lookup_16(
         L replace0,  L replace1,  L replace2,  L replace3,
         L replace4,  L replace5,  L replace6,  L replace7,
         L replace8,  L replace9,  L replace10, L replace11,
@@ -338,7 +338,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     }
 
     template<typename T>
-    simdjson_really_inline simd8<uint8_t> apply_lookup_16_to(const simd8<T> original) {
+    simdjson_inline simd8<uint8_t> apply_lookup_16_to(const simd8<T> original) {
       return vqtbl1q_u8(*this, simd8<uint8_t>(original));
     }
   };
@@ -348,24 +348,24 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
   struct simd8<int8_t> {
     int8x16_t value;
 
-    static simdjson_really_inline simd8<int8_t> splat(int8_t _value) { return vmovq_n_s8(_value); }
-    static simdjson_really_inline simd8<int8_t> zero() { return vdupq_n_s8(0); }
-    static simdjson_really_inline simd8<int8_t> load(const int8_t values[16]) { return vld1q_s8(values); }
+    static simdjson_inline simd8<int8_t> splat(int8_t _value) { return vmovq_n_s8(_value); }
+    static simdjson_inline simd8<int8_t> zero() { return vdupq_n_s8(0); }
+    static simdjson_inline simd8<int8_t> load(const int8_t values[16]) { return vld1q_s8(values); }
 
     // Conversion from/to SIMD register
-    simdjson_really_inline simd8(const int8x16_t _value) : value{_value} {}
-    simdjson_really_inline operator const int8x16_t&() const { return this->value; }
-    simdjson_really_inline operator int8x16_t&() { return this->value; }
+    simdjson_inline simd8(const int8x16_t _value) : value{_value} {}
+    simdjson_inline operator const int8x16_t&() const { return this->value; }
+    simdjson_inline operator int8x16_t&() { return this->value; }
 
     // Zero constructor
-    simdjson_really_inline simd8() : simd8(zero()) {}
+    simdjson_inline simd8() : simd8(zero()) {}
     // Splat constructor
-    simdjson_really_inline simd8(int8_t _value) : simd8(splat(_value)) {}
+    simdjson_inline simd8(int8_t _value) : simd8(splat(_value)) {}
     // Array constructor
-    simdjson_really_inline simd8(const int8_t* values) : simd8(load(values)) {}
+    simdjson_inline simd8(const int8_t* values) : simd8(load(values)) {}
     // Member-by-member initialization
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
-    simdjson_really_inline simd8(
+    simdjson_inline simd8(
       int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3, int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
       int8_t v8,  int8_t v9,  int8_t v10, int8_t v11, int8_t v12, int8_t v13, int8_t v14, int8_t v15
     ) : simd8(make_int8x16_t(
@@ -373,7 +373,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
       v8, v9, v10,v11,v12,v13,v14,v15
     )) {}
 #else
-    simdjson_really_inline simd8(
+    simdjson_inline simd8(
       int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3, int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
       int8_t v8,  int8_t v9,  int8_t v10, int8_t v11, int8_t v12, int8_t v13, int8_t v14, int8_t v15
     ) : simd8(int8x16_t{
@@ -382,7 +382,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     }) {}
 #endif
     // Repeat 16 values as many times as necessary (usually for lookup tables)
-    simdjson_really_inline static simd8<int8_t> repeat_16(
+    simdjson_inline static simd8<int8_t> repeat_16(
       int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3,  int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
       int8_t v8,  int8_t v9,  int8_t v10, int8_t v11, int8_t v12, int8_t v13, int8_t v14, int8_t v15
     ) {
@@ -393,7 +393,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     }
 
     // Store to array
-    simdjson_really_inline void store(int8_t dst[16]) const { return vst1q_s8(dst, *this); }
+    simdjson_inline void store(int8_t dst[16]) const { return vst1q_s8(dst, *this); }
 
     // Explicit conversion to/from unsigned
     //
@@ -401,35 +401,35 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     // In theory, we could check this occurrence with std::same_as and std::enabled_if but it is C++14
     // and relatively ugly and hard to read.
 #ifndef SIMDJSON_REGULAR_VISUAL_STUDIO
-    simdjson_really_inline explicit simd8(const uint8x16_t other): simd8(vreinterpretq_s8_u8(other)) {}
+    simdjson_inline explicit simd8(const uint8x16_t other): simd8(vreinterpretq_s8_u8(other)) {}
 #endif
-    simdjson_really_inline explicit operator simd8<uint8_t>() const { return vreinterpretq_u8_s8(this->value); }
+    simdjson_inline explicit operator simd8<uint8_t>() const { return vreinterpretq_u8_s8(this->value); }
 
     // Math
-    simdjson_really_inline simd8<int8_t> operator+(const simd8<int8_t> other) const { return vaddq_s8(*this, other); }
-    simdjson_really_inline simd8<int8_t> operator-(const simd8<int8_t> other) const { return vsubq_s8(*this, other); }
-    simdjson_really_inline simd8<int8_t>& operator+=(const simd8<int8_t> other) { *this = *this + other; return *this; }
-    simdjson_really_inline simd8<int8_t>& operator-=(const simd8<int8_t> other) { *this = *this - other; return *this; }
+    simdjson_inline simd8<int8_t> operator+(const simd8<int8_t> other) const { return vaddq_s8(*this, other); }
+    simdjson_inline simd8<int8_t> operator-(const simd8<int8_t> other) const { return vsubq_s8(*this, other); }
+    simdjson_inline simd8<int8_t>& operator+=(const simd8<int8_t> other) { *this = *this + other; return *this; }
+    simdjson_inline simd8<int8_t>& operator-=(const simd8<int8_t> other) { *this = *this - other; return *this; }
 
     // Order-sensitive comparisons
-    simdjson_really_inline simd8<int8_t> max_val(const simd8<int8_t> other) const { return vmaxq_s8(*this, other); }
-    simdjson_really_inline simd8<int8_t> min_val(const simd8<int8_t> other) const { return vminq_s8(*this, other); }
-    simdjson_really_inline simd8<bool> operator>(const simd8<int8_t> other) const { return vcgtq_s8(*this, other); }
-    simdjson_really_inline simd8<bool> operator<(const simd8<int8_t> other) const { return vcltq_s8(*this, other); }
-    simdjson_really_inline simd8<bool> operator==(const simd8<int8_t> other) const { return vceqq_s8(*this, other); }
+    simdjson_inline simd8<int8_t> max_val(const simd8<int8_t> other) const { return vmaxq_s8(*this, other); }
+    simdjson_inline simd8<int8_t> min_val(const simd8<int8_t> other) const { return vminq_s8(*this, other); }
+    simdjson_inline simd8<bool> operator>(const simd8<int8_t> other) const { return vcgtq_s8(*this, other); }
+    simdjson_inline simd8<bool> operator<(const simd8<int8_t> other) const { return vcltq_s8(*this, other); }
+    simdjson_inline simd8<bool> operator==(const simd8<int8_t> other) const { return vceqq_s8(*this, other); }
 
     template<int N=1>
-    simdjson_really_inline simd8<int8_t> prev(const simd8<int8_t> prev_chunk) const {
+    simdjson_inline simd8<int8_t> prev(const simd8<int8_t> prev_chunk) const {
       return vextq_s8(prev_chunk, *this, 16 - N);
     }
 
     // Perform a lookup assuming no value is larger than 16
     template<typename L>
-    simdjson_really_inline simd8<L> lookup_16(simd8<L> lookup_table) const {
+    simdjson_inline simd8<L> lookup_16(simd8<L> lookup_table) const {
       return lookup_table.apply_lookup_16_to(*this);
     }
     template<typename L>
-    simdjson_really_inline simd8<L> lookup_16(
+    simdjson_inline simd8<L> lookup_16(
         L replace0,  L replace1,  L replace2,  L replace3,
         L replace4,  L replace5,  L replace6,  L replace7,
         L replace8,  L replace9,  L replace10, L replace11,
@@ -443,7 +443,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     }
 
     template<typename T>
-    simdjson_really_inline simd8<int8_t> apply_lookup_16_to(const simd8<T> original) {
+    simdjson_inline simd8<int8_t> apply_lookup_16_to(const simd8<T> original) {
       return vqtbl1q_s8(*this, simd8<uint8_t>(original));
     }
   };
@@ -458,22 +458,22 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
     simd8x64<T>& operator=(const simd8<T>& other) = delete; // no assignment allowed
     simd8x64() = delete; // no default constructor allowed
 
-    simdjson_really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
-    simdjson_really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
+    simdjson_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
+    simdjson_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
 
-    simdjson_really_inline void store(T ptr[64]) const {
+    simdjson_inline void store(T ptr[64]) const {
       this->chunks[0].store(ptr+sizeof(simd8<T>)*0);
       this->chunks[1].store(ptr+sizeof(simd8<T>)*1);
       this->chunks[2].store(ptr+sizeof(simd8<T>)*2);
       this->chunks[3].store(ptr+sizeof(simd8<T>)*3);
     }
 
-    simdjson_really_inline simd8<T> reduce_or() const {
+    simdjson_inline simd8<T> reduce_or() const {
       return (this->chunks[0] | this->chunks[1]) | (this->chunks[2] | this->chunks[3]);
     }
 
 
-    simdjson_really_inline uint64_t compress(uint64_t mask, T * output) const {
+    simdjson_inline uint64_t compress(uint64_t mask, T * output) const {
       uint64_t popcounts = vget_lane_u64(vreinterpret_u64_u8(vcnt_u8(vcreate_u8(~mask))), 0);
       // compute the prefix sum of the popcounts of each byte
       uint64_t offsets = popcounts * 0x0101010101010101;
@@ -484,7 +484,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
       return offsets >> 56;
     }
 
-    simdjson_really_inline uint64_t to_bitmask() const {
+    simdjson_inline uint64_t to_bitmask() const {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
       const uint8x16_t bit_mask = make_uint8x16_t(
         0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
@@ -504,7 +504,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
       return vgetq_lane_u64(vreinterpretq_u64_u8(sum0), 0);
     }
 
-    simdjson_really_inline uint64_t eq(const T m) const {
+    simdjson_inline uint64_t eq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
       return  simd8x64<bool>(
         this->chunks[0] == mask,
@@ -514,7 +514,7 @@ simdjson_really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x
       ).to_bitmask();
     }
 
-    simdjson_really_inline uint64_t lteq(const T m) const {
+    simdjson_inline uint64_t lteq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
       return  simd8x64<bool>(
         this->chunks[0] <= mask,

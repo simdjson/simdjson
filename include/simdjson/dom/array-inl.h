@@ -12,11 +12,11 @@ namespace simdjson {
 //
 // simdjson_result<dom::array> inline implementation
 //
-simdjson_really_inline simdjson_result<dom::array>::simdjson_result() noexcept
+simdjson_inline simdjson_result<dom::array>::simdjson_result() noexcept
     : internal::simdjson_result_base<dom::array>() {}
-simdjson_really_inline simdjson_result<dom::array>::simdjson_result(dom::array value) noexcept
+simdjson_inline simdjson_result<dom::array>::simdjson_result(dom::array value) noexcept
     : internal::simdjson_result_base<dom::array>(std::forward<dom::array>(value)) {}
-simdjson_really_inline simdjson_result<dom::array>::simdjson_result(error_code error) noexcept
+simdjson_inline simdjson_result<dom::array>::simdjson_result(error_code error) noexcept
     : internal::simdjson_result_base<dom::array>(error) {}
 
 #if SIMDJSON_EXCEPTIONS
@@ -50,8 +50,8 @@ namespace dom {
 //
 // array inline implementation
 //
-simdjson_really_inline array::array() noexcept : tape{} {}
-simdjson_really_inline array::array(const internal::tape_ref &_tape) noexcept : tape{_tape} {}
+simdjson_inline array::array() noexcept : tape{} {}
+simdjson_inline array::array(const internal::tape_ref &_tape) noexcept : tape{_tape} {}
 inline array::iterator array::begin() const noexcept {
   return internal::tape_ref(tape.doc, tape.json_index + 1);
 }
@@ -116,7 +116,7 @@ inline simdjson_result<element> array::at(size_t index) const noexcept {
 //
 // array::iterator inline implementation
 //
-simdjson_really_inline array::iterator::iterator(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
+simdjson_inline array::iterator::iterator(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 inline element array::iterator::operator*() const noexcept {
   return element(tape);
 }

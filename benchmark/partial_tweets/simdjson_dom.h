@@ -13,7 +13,7 @@ struct simdjson_dom {
 
   dom::parser parser{};
 
-  simdjson_really_inline uint64_t nullable_int(dom::element element) {
+  simdjson_inline uint64_t nullable_int(dom::element element) {
     if (element.is_null()) { return 0; }
     return element;
   }

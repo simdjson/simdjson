@@ -80,7 +80,7 @@ inline void stage1_worker::run(document_stream * ds, parser * stage1, size_t nex
 
 #endif  // SIMDJSON_THREADS_ENABLED
 
-simdjson_really_inline document_stream::document_stream(
+simdjson_inline document_stream::document_stream(
   ondemand::parser &_parser,
   const uint8_t *_buf,
   size_t _len,
@@ -102,7 +102,7 @@ simdjson_really_inline document_stream::document_stream(
 #endif
 }
 
-simdjson_really_inline document_stream::document_stream() noexcept
+simdjson_inline document_stream::document_stream() noexcept
   : parser{nullptr},
     buf{nullptr},
     len{0},
@@ -114,7 +114,7 @@ simdjson_really_inline document_stream::document_stream() noexcept
 {
 }
 
-simdjson_really_inline document_stream::~document_stream() noexcept
+simdjson_inline document_stream::~document_stream() noexcept
 {
   #ifdef SIMDJSON_THREADS_ENABLED
   worker.reset();
@@ -130,20 +130,20 @@ inline size_t document_stream::truncated_bytes() const noexcept {
   return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
 }
 
-simdjson_really_inline document_stream::iterator::iterator() noexcept
+simdjson_inline document_stream::iterator::iterator() noexcept
   : stream{nullptr}, finished{true} {
 }
 
-simdjson_really_inline document_stream::iterator::iterator(document_stream* _stream, bool is_end) noexcept
+simdjson_inline document_stream::iterator::iterator(document_stream* _stream, bool is_end) noexcept
   : stream{_stream}, finished{is_end} {
 }
 
-simdjson_really_inline simdjson_result<ondemand::document_reference> document_stream::iterator::operator*() noexcept {
+simdjson_inline simdjson_result<ondemand::document_reference> document_stream::iterator::operator*() noexcept {
   //if(stream->error) { return stream->error; }
   return simdjson_result<ondemand::document_reference>(stream->doc, stream->error);
 }
 
-simdjson_really_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {
+simdjson_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {
   // If there is an error, then we want the iterator
   // to be finished, no matter what. (E.g., we do not
   // keep generating documents with errors, or go beyond
@@ -170,17 +170,17 @@ simdjson_really_inline document_stream::iterator& document_stream::iterator::ope
   return *this;
 }
 
-simdjson_really_inline bool document_stream::iterator::operator!=(const document_stream::iterator &other) const noexcept {
+simdjson_inline bool document_stream::iterator::operator!=(const document_stream::iterator &other) const noexcept {
   return finished != other.finished;
 }
 
-simdjson_really_inline document_stream::iterator document_stream::begin() noexcept {
+simdjson_inline document_stream::iterator document_stream::begin() noexcept {
   start();
   // If there are no documents, we're finished.
   return iterator(this, error == EMPTY);
 }
 
-simdjson_really_inline document_stream::iterator document_stream::end() noexcept {
+simdjson_inline document_stream::iterator document_stream::end() noexcept {
   return iterator(this, true);
 }
 
@@ -310,11 +310,11 @@ inline error_code document_stream::run_stage1(ondemand::parser &p, size_t _batch
   }
 }
 
-simdjson_really_inline size_t document_stream::iterator::current_index() const noexcept {
+simdjson_inline size_t document_stream::iterator::current_index() const noexcept {
   return stream->doc_index;
 }
 
-simdjson_really_inline std::string_view document_stream::iterator::source() const noexcept {
+simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
   auto depth = stream->doc.iter.depth();
   auto cur_struct_index = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
 
@@ -389,13 +389,13 @@ inline void document_stream::start_stage1_thread() noexcept {
 
 namespace simdjson {
 
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_stream>::simdjson_result(
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_stream>::simdjson_result(
   error_code error
 ) noexcept :
     implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::document_stream>(error)
 {
 }
-simdjson_really_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_stream>::simdjson_result(
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_stream>::simdjson_result(
   SIMDJSON_IMPLEMENTATION::ondemand::document_stream &&value
 ) noexcept :
     implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::document_stream>(

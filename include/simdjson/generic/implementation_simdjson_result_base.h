@@ -30,22 +30,22 @@ struct implementation_simdjson_result_base {
   /**
    * Create a new empty result with error = UNINITIALIZED.
    */
-  simdjson_really_inline implementation_simdjson_result_base() noexcept = default;
+  simdjson_inline implementation_simdjson_result_base() noexcept = default;
 
   /**
    * Create a new error result.
    */
-  simdjson_really_inline implementation_simdjson_result_base(error_code error) noexcept;
+  simdjson_inline implementation_simdjson_result_base(error_code error) noexcept;
 
   /**
    * Create a new successful result.
    */
-  simdjson_really_inline implementation_simdjson_result_base(T &&value) noexcept;
+  simdjson_inline implementation_simdjson_result_base(T &&value) noexcept;
 
   /**
    * Create a new result with both things (use if you don't want to branch when creating the result).
    */
-  simdjson_really_inline implementation_simdjson_result_base(T &&value, error_code error) noexcept;
+  simdjson_inline implementation_simdjson_result_base(T &&value, error_code error) noexcept;
 
   /**
    * Move the value and the error to the provided variables.
@@ -53,19 +53,19 @@ struct implementation_simdjson_result_base {
    * @param value The variable to assign the value to. May not be set if there is an error.
    * @param error The variable to assign the error to. Set to SUCCESS if there is no error.
    */
-  simdjson_really_inline void tie(T &value, error_code &error) && noexcept;
+  simdjson_inline void tie(T &value, error_code &error) && noexcept;
 
   /**
    * Move the value to the provided variable.
    *
    * @param value The variable to assign the value to. May not be set if there is an error.
    */
-  simdjson_really_inline error_code get(T &value) && noexcept;
+  simdjson_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
    */
-  simdjson_really_inline error_code error() const noexcept;
+  simdjson_inline error_code error() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -74,28 +74,28 @@ struct implementation_simdjson_result_base {
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_really_inline T& value() & noexcept(false);
+  simdjson_inline T& value() & noexcept(false);
 
   /**
    * Take the result value (move it).
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_really_inline T&& value() && noexcept(false);
+  simdjson_inline T&& value() && noexcept(false);
 
   /**
    * Take the result value (move it).
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_really_inline T&& take_value() && noexcept(false);
+  simdjson_inline T&& take_value() && noexcept(false);
 
   /**
    * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_really_inline operator T&&() && noexcept(false);
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -104,17 +104,17 @@ struct implementation_simdjson_result_base {
    * Get the result value. This function is safe if and only
    * the error() method returns a value that evaluates to false.
    */
-  simdjson_really_inline const T& value_unsafe() const& noexcept;
+  simdjson_inline const T& value_unsafe() const& noexcept;
   /**
    * Get the result value. This function is safe if and only
    * the error() method returns a value that evaluates to false.
    */
-  simdjson_really_inline T& value_unsafe() & noexcept;
+  simdjson_inline T& value_unsafe() & noexcept;
   /**
    * Take the result value (move it). This function is safe if and only
    * the error() method returns a value that evaluates to false.
    */
-  simdjson_really_inline T&& value_unsafe() && noexcept;
+  simdjson_inline T&& value_unsafe() && noexcept;
 protected:
   /** users should never directly access first and second. **/
   T first{}; /** Users should never directly access 'first'. **/

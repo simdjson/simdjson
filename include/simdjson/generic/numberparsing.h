@@ -37,7 +37,7 @@ namespace {
 // Convert a mantissa, an exponent and a sign bit into an ieee64 double.
 // The real_exponent needs to be in [0, 2046] (technically real_exponent = 2047 would be acceptable).
 // The mantissa should be in [0,1<<53). The bit at index (1ULL << 52) while be zeroed.
-simdjson_really_inline double to_double(uint64_t mantissa, uint64_t real_exponent, bool negative) {
+simdjson_inline double to_double(uint64_t mantissa, uint64_t real_exponent, bool negative) {
     double d;
     mantissa &= ~(1ULL << 52);
     mantissa |= real_exponent << 52;
@@ -52,7 +52,7 @@ simdjson_really_inline double to_double(uint64_t mantissa, uint64_t real_exponen
 // set to false. This should work *most of the time* (like 99% of the time).
 // We assume that power is in the [smallest_power,
 // largest_power] interval: the caller is responsible for this check.
-simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, double &d) {
+simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, double &d) {
   // we start with a fast path
   // It was described in
   // Clinger WD. How to read floating point numbers accurately.
@@ -335,7 +335,7 @@ static bool parse_float_fallback(const uint8_t *ptr, const uint8_t *end_ptr, dou
 // check quickly whether the next 8 chars are made of digits
 // at a glance, it looks better than Mula's
 // http://0x80.pl/articles/swar-digits-validate.html
-simdjson_really_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
+simdjson_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
   uint64_t val;
   // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
@@ -362,7 +362,7 @@ error_code slow_float_parsing(simdjson_unused const uint8_t * src, W writer) {
 
 template<typename I>
 SIMDJSON_NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
-simdjson_really_inline bool parse_digit(const uint8_t c, I &i) {
+simdjson_inline bool parse_digit(const uint8_t c, I &i) {
   const uint8_t digit = static_cast<uint8_t>(c - '0');
   if (digit > 9) {
     return false;
@@ -372,7 +372,7 @@ simdjson_really_inline bool parse_digit(const uint8_t c, I &i) {
   return true;
 }
 
-simdjson_really_inline error_code parse_decimal(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+simdjson_inline error_code parse_decimal(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -400,7 +400,7 @@ simdjson_really_inline error_code parse_decimal(simdjson_unused const uint8_t *c
   return SUCCESS;
 }
 
-simdjson_really_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -451,7 +451,7 @@ simdjson_really_inline error_code parse_exponent(simdjson_unused const uint8_t *
   return SUCCESS;
 }
 
-simdjson_really_inline size_t significant_digits(const uint8_t * start_digits, size_t digit_count) {
+simdjson_inline size_t significant_digits(const uint8_t * start_digits, size_t digit_count) {
   // It is possible that the integer had an overflow.
   // We have to handle the case where we have 0.0000somenumber.
   const uint8_t *start = start_digits;
@@ -461,7 +461,7 @@ simdjson_really_inline size_t significant_digits(const uint8_t * start_digits, s
 }
 
 template<typename W>
-simdjson_really_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
+simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
@@ -517,20 +517,20 @@ simdjson_really_inline error_code write_float(const uint8_t *const src, bool neg
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_really_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
 
-simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept { return 0; }
-simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer(const uint8_t * const src) noexcept { return 0; }
-simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(const uint8_t * const src) noexcept { return 0; }
-simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned_in_string(const uint8_t * const src) noexcept { return 0; }
-simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer_in_string(const uint8_t * const src) noexcept { return 0; }
-simdjson_unused simdjson_really_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
-simdjson_unused simdjson_really_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
-simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
-simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept { return ondemand::number_type::signed_integer; }
+simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept { return 0; }
+simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer(const uint8_t * const src) noexcept { return 0; }
+simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8_t * const src) noexcept { return 0; }
+simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned_in_string(const uint8_t * const src) noexcept { return 0; }
+simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string(const uint8_t * const src) noexcept { return 0; }
+simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
+simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept { return ondemand::number_type::signed_integer; }
 #else
 
 // parse the number at src
@@ -543,7 +543,7 @@ simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> ge
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_really_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
 
   //
   // Check for minus sign
@@ -693,7 +693,7 @@ const uint8_t integer_string_finisher[256] = {
     NUMBER_ERROR};
 
 // Parse any number from 0 to 18,446,744,073,709,551,615
-simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
+simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
   const uint8_t *p = src;
   //
   // Parse the integer part.
@@ -743,7 +743,7 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(
 
 // Parse any number from 0 to 18,446,744,073,709,551,615
 // Never read at src_end or beyond
-simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src, const uint8_t * const src_end) noexcept {
+simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src, const uint8_t * const src_end) noexcept {
   const uint8_t *p = src;
   //
   // Parse the integer part.
@@ -791,7 +791,7 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(
 }
 
 // Parse any number from 0 to 18,446,744,073,709,551,615
-simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned_in_string(const uint8_t * const src) noexcept {
+simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned_in_string(const uint8_t * const src) noexcept {
   const uint8_t *p = src + 1;
   //
   // Parse the integer part.
@@ -841,7 +841,7 @@ simdjson_unused simdjson_really_inline simdjson_result<uint64_t> parse_unsigned_
 }
 
 // Parse any number from  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
-simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) noexcept {
+simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) noexcept {
   //
   // Check for minus sign
   //
@@ -884,7 +884,7 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer(co
 
 // Parse any number from  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
 // Never read at src_end or beyond
-simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer(const uint8_t * const src, const uint8_t * const src_end) noexcept {
+simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer(const uint8_t * const src, const uint8_t * const src_end) noexcept {
   //
   // Check for minus sign
   //
@@ -927,7 +927,7 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer(co
 }
 
 // Parse any number from  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
-simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer_in_string(const uint8_t *src) noexcept {
+simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string(const uint8_t *src) noexcept {
   //
   // Check for minus sign
   //
@@ -968,7 +968,7 @@ simdjson_unused simdjson_really_inline simdjson_result<int64_t> parse_integer_in
   return negative ? (~i+1) : i;
 }
 
-simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept {
+simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept {
   //
   // Check for minus sign
   //
@@ -1046,11 +1046,11 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
   return d;
 }
 
-simdjson_unused simdjson_really_inline bool is_negative(const uint8_t * src) noexcept {
+simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept {
   return (*src == '-');
 }
 
-simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
   bool negative = (*src == '-');
   src += negative;
   const uint8_t *p = src;
@@ -1060,7 +1060,7 @@ simdjson_unused simdjson_really_inline simdjson_result<bool> is_integer(const ui
   return false;
 }
 
-simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept {
+simdjson_unused simdjson_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept {
   bool negative = (*src == '-');
   src += negative;
   const uint8_t *p = src;
@@ -1086,7 +1086,7 @@ simdjson_unused simdjson_really_inline simdjson_result<ondemand::number_type> ge
 }
 
 // Never read at src_end or beyond
-simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(const uint8_t * src, const uint8_t * const src_end) noexcept {
+simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8_t * src, const uint8_t * const src_end) noexcept {
   if(src == src_end) { return NUMBER_ERROR; }
   //
   // Check for minus sign
@@ -1167,7 +1167,7 @@ simdjson_unused simdjson_really_inline simdjson_result<double> parse_double(cons
   return d;
 }
 
-simdjson_unused simdjson_really_inline simdjson_result<double> parse_double_in_string(const uint8_t * src) noexcept {
+simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(const uint8_t * src) noexcept {
   //
   // Check for minus sign
   //
