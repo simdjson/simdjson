@@ -106,6 +106,7 @@ struct yyjson : yyjson2msgpack {
 
 BENCHMARK_TEMPLATE(json2msgpack, yyjson)->UseManualTime();
 
+#if SIMDJSON_COMPETITION_ONDEMAND_INSITU
 struct yyjson_insitu : yyjson2msgpack {
   bool run(simdjson::padded_string &json, char *buffer,
            std::string_view &result) {
@@ -116,7 +117,7 @@ struct yyjson_insitu : yyjson2msgpack {
   }
 };
 BENCHMARK_TEMPLATE(json2msgpack, yyjson_insitu)->UseManualTime();
-
+#endif // SIMDJSON_COMPETITION_ONDEMAND_INSITU
 } // namespace json2msgpack
 
 #endif // SIMDJSON_COMPETITION_YYJSON

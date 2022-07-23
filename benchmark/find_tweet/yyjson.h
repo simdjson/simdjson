@@ -40,14 +40,14 @@ struct yyjson : yyjson_base {
   }
 };
 BENCHMARK_TEMPLATE(find_tweet, yyjson)->UseManualTime();
-
+#if SIMDJSON_COMPETITION_ONDEMAND_INSITU
 struct yyjson_insitu : yyjson_base {
   bool run(simdjson::padded_string &json, uint64_t find_id, std::string_view &result) {
     return yyjson_base::run(yyjson_read_opts(json.data(), json.size(), YYJSON_READ_INSITU, 0, 0), find_id, result);
   }
 };
 BENCHMARK_TEMPLATE(find_tweet, yyjson_insitu)->UseManualTime();
-
+#endif // SIMDJSON_COMPETITION_ONDEMAND_INSITU
 } // namespace find_tweet
 
 #endif // SIMDJSON_COMPETITION_YYJSON
