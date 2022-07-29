@@ -1,0 +1,33 @@
+name: Debian
+
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: sh
+
+permissions:
+  contents: read
+
+jobs:
+  pkg-config:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:testing
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        apt -y update
+        apt -y --no-install-recommends install g++ cmake make pkg-config
+
+    - name: Build and install
+      run: |
+        cmake -B build
+        cmake --build build
+        cmake --install build
+
+    - name: Test pkg-config
+      run: g++ examples/quickstart/quickstart.cpp $(pkg-config --cflags --libs simdjson)
