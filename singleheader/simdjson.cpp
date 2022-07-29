@@ -1,4 +1,4 @@
-/* auto-generated on 2022-07-19 16:40:02 -0400. Do not edit! */
+/* auto-generated on 2022-07-28 21:45:54 -0400. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -4183,8 +4183,6 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   // multilingual plane check
   uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
   *src_ptr += 6;
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-  }
 
   // If we found a high surrogate, we must
   // check for low surrogate for characters
@@ -5659,8 +5657,6 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   // multilingual plane check
   uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
   *src_ptr += 6;
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-  }
 
   // If we found a high surrogate, we must
   // check for low surrogate for characters
@@ -8013,8 +8009,6 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   // multilingual plane check
   uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
   *src_ptr += 6;
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-  }
 
   // If we found a high surrogate, we must
   // check for low surrogate for characters
@@ -10349,8 +10343,6 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   // multilingual plane check
   uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
   *src_ptr += 6;
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-  }
 
   // If we found a high surrogate, we must
   // check for low surrogate for characters
@@ -12648,8 +12640,6 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   // multilingual plane check
   uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
   *src_ptr += 6;
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-  }
 
   // If we found a high surrogate, we must
   // check for low surrogate for characters
@@ -14982,8 +14972,6 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   // multilingual plane check
   uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
   *src_ptr += 6;
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-  }
 
   // If we found a high surrogate, we must
   // check for low surrogate for characters

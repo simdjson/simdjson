@@ -1,4 +1,4 @@
-/* auto-generated on 2022-07-19 16:40:02 -0400. Do not edit! */
+/* auto-generated on 2022-07-28 21:45:54 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -43,7 +43,7 @@
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 2.2.1
+#define SIMDJSON_VERSION 2.2.2
 
 namespace simdjson {
 enum {
@@ -58,7 +58,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 1
+  SIMDJSON_VERSION_REVISION = 2
 };
 } // namespace simdjson
 
@@ -25318,6 +25318,9 @@ public:
    * beginning as if it had never been accessed. If the JSON is malformed (e.g.,
    * there is a missing comma), then an error is returned and it is no longer
    * safe to continue.
+   *
+   * Performance hint: You should only call count_elements() as a last
+   * resort as it may require scanning the document twice or more.
    */
   simdjson_inline simdjson_result<size_t> count_elements() & noexcept;
   /**
@@ -25333,6 +25336,9 @@ public:
    *
    * To check that an object is empty, it is more performant to use
    * the is_empty() method on the object instance.
+   *
+   * Performance hint: You should only call count_fields() as a last
+   * resort as it may require scanning the document twice or more.
    */
   simdjson_inline simdjson_result<size_t> count_fields() & noexcept;
   /**
@@ -25989,6 +25995,9 @@ public:
    *
    * To check that an object is empty, it is more performant to use
    * the is_empty() method.
+   *
+   * Performance hint: You should only call count_fields() as a last
+   * resort as it may require scanning the document twice or more.
    */
   simdjson_inline simdjson_result<size_t> count_fields() & noexcept;
   /**
@@ -29308,20 +29317,14 @@ simdjson_inline simdjson_result<size_t> document::count_elements() & noexcept {
   auto a = get_array();
   simdjson_result<size_t> answer = a.count_elements();
   /* If there was an array, we are now left pointing at its first element. */
-  if(answer.error() == SUCCESS) {
-    iter._depth = 1 ; /* undoing the increment so we go back at the doc depth.*/
-    iter.assert_at_document_depth();
-  }
+  if(answer.error() == SUCCESS) { rewind(); }
   return answer;
 }
 simdjson_inline simdjson_result<size_t> document::count_fields() & noexcept {
   auto a = get_object();
   simdjson_result<size_t> answer = a.count_fields();
-  /* If there was an array, we are now left pointing at its first element. */
-  if(answer.error() == SUCCESS) {
-    iter._depth = 1 ; /* undoing the increment so we go back at the doc depth.*/
-    iter.assert_at_document_depth();
-  }
+  /* If there was an object, we are now left pointing at its first element. */
+  if(answer.error() == SUCCESS) { rewind(); }
   return answer;
 }
 simdjson_inline simdjson_result<value> document::at(size_t index) & noexcept {
