@@ -142,7 +142,7 @@ namespace array_tests {
     ASSERT_EQUAL(count, 0);
     for (auto element : arr) {
       double value;
-      ASSERT_SUCCESS(element.value().get_double().get(value));
+      ASSERT_SUCCESS(element.get_double().get(value));
       std::cout << value << std::endl;
     }
     TEST_SUCCEED();
