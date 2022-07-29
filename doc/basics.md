@@ -433,7 +433,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 * **Counting elements in arrays:** Sometimes it is useful to scan an array to determine its length prior to parsing it.
   For this purpose, `array` instances have a `count_elements` method. Users should be
   aware that the `count_elements` method can be costly since it requires scanning the
-  whole array. You may use it as follows if your document is itself an array:
+  whole array. You should only call `count_elements` as a last resort as it may
+  require scanning the document twice or more. You may use it as follows if your document is itself an array:
 
   ```C++
   auto cars_json = R"( [ 40.1, 39.9, 37.7, 40.4 ] )"_padded;
@@ -460,7 +461,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   parsing it.
   For this purpose, `object` instances have a `count_fields` method. Again, users should be
   aware that the `count_fields` method can be costly since it requires scanning the
-  whole objects. You may use it as follows if your document is itself an object:
+  whole objects. You should only call `count_fields` as a last resort as it may
+  require scanning the document twice or more.  You may use it as follows if your document is itself an object:
 
   ```C++
   ondemand::parser parser;

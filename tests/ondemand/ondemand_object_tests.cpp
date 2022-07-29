@@ -896,6 +896,49 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
+  bool issue1876a() {
+    TEST_START();
+    auto json = R"( {} )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::object obj;
+    ASSERT_SUCCESS(doc.get_object().get(obj));
+    size_t count;
+    ASSERT_SUCCESS(obj.count_fields().get(count));
+    ASSERT_EQUAL(count, 0);
+    for (auto field : obj) {
+      std::string_view key;
+      ASSERT_SUCCESS(field.unescaped_key().get(key));
+      double value;
+      ASSERT_SUCCESS(field.value().get_double().get(value));
+      std::cout << key << " " << value << std::endl;
+    }
+    TEST_SUCCEED();
+  }
+
+  bool issue1876() {
+    TEST_START();
+    auto json = R"( {} )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    size_t count;
+    ASSERT_SUCCESS(doc.count_fields().get(count));
+    ondemand::object obj;
+    ASSERT_SUCCESS(doc.get_object().get(obj));
+
+    ASSERT_EQUAL(count, 0);
+    for (auto field : obj) {
+      std::string_view key;
+      ASSERT_SUCCESS(field.unescaped_key().get(key));
+      double value;
+      ASSERT_SUCCESS(field.value().get_double().get(value));
+      std::cout << key << " " << value << std::endl;
+    }
+    TEST_SUCCEED();
+  }
+
   bool issue1742() {
     TEST_START();
     auto json = R"( {
@@ -1178,6 +1221,8 @@ namespace object_tests {
 
   bool run() {
     return
+           issue1876a() &&
+           issue1876() &&
            test_strager() &&
            issue1745() &&
            issue1742() &&

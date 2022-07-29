@@ -128,6 +128,26 @@ namespace array_tests {
     TEST_SUCCEED();
   }
 
+  bool issue1876() {
+    TEST_START();
+    auto json = R"( [] )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    size_t count;
+    ASSERT_SUCCESS(doc.count_elements().get(count));
+    ondemand::array arr;
+    ASSERT_SUCCESS(doc.get_array().get(arr));
+
+    ASSERT_EQUAL(count, 0);
+    for (auto element : arr) {
+      double value;
+      ASSERT_SUCCESS(element.get_double().get(value));
+      std::cout << value << std::endl;
+    }
+    TEST_SUCCEED();
+  }
+
   bool iterate_complex_array_count() {
     TEST_START();
     ondemand::parser parser;
@@ -810,6 +830,7 @@ namespace array_tests {
 
   bool run() {
     return
+           issue1876() &&
            issue1742() &&
            empty_rewind_convoluted() &&
            empty_rewind() &&

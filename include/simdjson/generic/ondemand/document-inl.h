@@ -139,20 +139,14 @@ simdjson_inline simdjson_result<size_t> document::count_elements() & noexcept {
   auto a = get_array();
   simdjson_result<size_t> answer = a.count_elements();
   /* If there was an array, we are now left pointing at its first element. */
-  if(answer.error() == SUCCESS) {
-    iter._depth = 1 ; /* undoing the increment so we go back at the doc depth.*/
-    iter.assert_at_document_depth();
-  }
+  if(answer.error() == SUCCESS) { rewind(); }
   return answer;
 }
 simdjson_inline simdjson_result<size_t> document::count_fields() & noexcept {
   auto a = get_object();
   simdjson_result<size_t> answer = a.count_fields();
-  /* If there was an array, we are now left pointing at its first element. */
-  if(answer.error() == SUCCESS) {
-    iter._depth = 1 ; /* undoing the increment so we go back at the doc depth.*/
-    iter.assert_at_document_depth();
-  }
+  /* If there was an object, we are now left pointing at its first element. */
+  if(answer.error() == SUCCESS) { rewind(); }
   return answer;
 }
 simdjson_inline simdjson_result<value> document::at(size_t index) & noexcept {
