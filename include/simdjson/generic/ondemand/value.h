@@ -246,6 +246,9 @@ public:
    * beginning as if it had never been accessed. If the JSON is malformed (e.g.,
    * there is a missing comma), then an error is returned and it is no longer
    * safe to continue.
+   *
+   * Performance hint: You should only call count_elements() as a last
+   * resort as it may require scanning the document twice or more.
    */
   simdjson_inline simdjson_result<size_t> count_elements() & noexcept;
   /**
@@ -261,6 +264,9 @@ public:
    *
    * To check that an object is empty, it is more performant to use
    * the is_empty() method on the object instance.
+   *
+   * Performance hint: You should only call count_fields() as a last
+   * resort as it may require scanning the document twice or more.
    */
   simdjson_inline simdjson_result<size_t> count_fields() & noexcept;
   /**
