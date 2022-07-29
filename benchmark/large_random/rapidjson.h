@@ -31,28 +31,30 @@ struct rapidjson_base {
     return true;
   }
 };
-
-struct rapidjson : rapidjson_base {
+#if SIMDJSON_COMPETITION_ONDEMAND_APPROX
+struct rapidjson_approx : rapidjson_base {
   bool run(simdjson::padded_string &json, std::vector<point> &result) {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag>(json.data()), result);
   }
 };
-BENCHMARK_TEMPLATE(large_random, rapidjson)->UseManualTime();
+BENCHMARK_TEMPLATE(large_random, rapidjson_approx)->UseManualTime();
+#endif // SIMDJSON_COMPETITION_ONDEMAND_APPROX
 
-struct rapidjson_lossless : rapidjson_base {
+struct rapidjson : rapidjson_base {
   bool run(simdjson::padded_string &json, std::vector<point> &result) {
     return rapidjson_base::run(doc.Parse<kParseValidateEncodingFlag | kParseFullPrecisionFlag>(json.data()), result);
   }
 };
-BENCHMARK_TEMPLATE(large_random, rapidjson_lossless)->UseManualTime();
+BENCHMARK_TEMPLATE(large_random, rapidjson)->UseManualTime();
 
+#if SIMDJSON_COMPETITION_ONDEMAND_INSITU
 struct rapidjson_insitu : rapidjson_base {
   bool run(simdjson::padded_string &json, std::vector<point> &result) {
     return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag|kParseInsituFlag>(json.data()), result);
   }
 };
 BENCHMARK_TEMPLATE(large_random, rapidjson_insitu)->UseManualTime();
-
+#endif // SIMDJSON_COMPETITION_ONDEMAND_INSITU
 
 } // namespace large_random
 

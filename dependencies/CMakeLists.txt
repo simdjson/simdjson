@@ -91,7 +91,7 @@ int main() {}
   target_include_directories(jsoncpp SYSTEM PUBLIC "${jsoncpp_SOURCE_DIR}")
   target_compile_definitions(jsoncpp INTERFACE SIMDJSON_COMPETITION_JSONCPP)
 
-  import_dependency(rapidjson Tencent/rapidjson b32cd94)
+  import_dependency(rapidjson Tencent/rapidjson f54b0e4)
   add_library(rapidjson INTERFACE)
   target_compile_definitions(rapidjson INTERFACE RAPIDJSON_HAS_STDSTRING)
   target_include_directories(rapidjson SYSTEM INTERFACE
@@ -114,7 +114,7 @@ int main() {}
           "${ujson4c_SOURCE_DIR}/3rdparty")
   target_compile_definitions(ujson4c INTERFACE SIMDJSON_COMPETITION_UJSON4C)
 
-  import_dependency(yyjson ibireme/yyjson aa33ec5)
+  import_dependency(yyjson ibireme/yyjson c385651)
   add_library(yyjson STATIC "${yyjson_SOURCE_DIR}/src/yyjson.c")
   target_include_directories(yyjson SYSTEM PUBLIC "${yyjson_SOURCE_DIR}/src")
   target_compile_definitions(yyjson INTERFACE SIMDJSON_COMPETITION_YYJSON)

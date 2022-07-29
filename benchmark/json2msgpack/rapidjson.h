@@ -122,19 +122,21 @@ struct rapidjson_base {
 };
 
 
-using rapidjson_lossless = rapidjson_base<kParseValidateEncodingFlag|kParseFullPrecisionFlag>;
-
-BENCHMARK_TEMPLATE(json2msgpack, rapidjson_lossless)->UseManualTime();
-
-
-using rapidjson = rapidjson_base<kParseValidateEncodingFlag>;
+using rapidjson = rapidjson_base<kParseValidateEncodingFlag|kParseFullPrecisionFlag>;
 
 BENCHMARK_TEMPLATE(json2msgpack, rapidjson)->UseManualTime();
 
+#if SIMDJSON_COMPETITION_ONDEMAND_APPROX
+using rapidjson_approx = rapidjson_base<kParseValidateEncodingFlag>;
+
+BENCHMARK_TEMPLATE(json2msgpack, rapidjson_approx)->UseManualTime();
+#endif // SIMDJSON_COMPETITION_ONDEMAND_APPROX
+
+#if SIMDJSON_COMPETITION_ONDEMAND_INSITU
 using rapidjson_insitu = rapidjson_base<kParseValidateEncodingFlag|kParseInsituFlag>;
 
 BENCHMARK_TEMPLATE(json2msgpack, rapidjson_insitu)->UseManualTime();
-
+#endif // SIMDJSON_COMPETITION_ONDEMAND_INSITU
 } // namespace json2msgpack
 
 #endif // SIMDJSON_COMPETITION_RAPIDJSON

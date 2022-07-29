@@ -67,14 +67,14 @@ struct rapidjson : rapidjson_base {
   }
 };
 BENCHMARK_TEMPLATE(partial_tweets, rapidjson)->UseManualTime();
-
+#if SIMDJSON_COMPETITION_ONDEMAND_INSITU
 struct rapidjson_insitu : rapidjson_base {
   bool run(simdjson::padded_string &json, std::vector<tweet<std::string_view>> &result) {
     return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag|kParseInsituFlag>(json.data()), result);
   }
 };
 BENCHMARK_TEMPLATE(partial_tweets, rapidjson_insitu)->UseManualTime();
-
+#endif // SIMDJSON_COMPETITION_ONDEMAND_INSITU
 } // namespace partial_tweets
 
 #endif // SIMDJSON_COMPETITION_RAPIDJSON

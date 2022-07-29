@@ -56,14 +56,14 @@ struct rapidjson : rapidjson_base {
   }
 };
 BENCHMARK_TEMPLATE(top_tweet, rapidjson)->UseManualTime();
-
+#if SIMDJSON_COMPETITION_ONDEMAND_INSITU
 struct rapidjson_insitu : rapidjson_base {
   bool run(simdjson::padded_string &json, int64_t max_retweet_count, top_tweet_result<StringType> &result) {
     return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag|kParseInsituFlag>(json.data()), max_retweet_count, result);
   }
 };
 BENCHMARK_TEMPLATE(top_tweet, rapidjson_insitu)->UseManualTime();
-
+#endif // SIMDJSON_COMPETITION_ONDEMAND_INSITU
 } // namespace top_tweet
 
 #endif // SIMDJSON_COMPETITION_RAPIDJSON

@@ -40,13 +40,14 @@ struct rapidjson : rapidjson_base {
 };
 BENCHMARK_TEMPLATE(find_tweet, rapidjson)->UseManualTime();
 
+#if SIMDJSON_COMPETITION_ONDEMAND_INSITU
 struct rapidjson_insitu : rapidjson_base {
   bool run(simdjson::padded_string &json, uint64_t find_id, std::string_view &result) {
     return rapidjson_base::run(doc.ParseInsitu<kParseValidateEncodingFlag|kParseInsituFlag>(json.data()), find_id, result);
   }
 };
 BENCHMARK_TEMPLATE(find_tweet, rapidjson_insitu)->UseManualTime();
-
+#endif // SIMDJSON_COMPETITION_ONDEMAND_INSITU
 } // namespace find_tweet
 
 #endif // SIMDJSON_COMPETITION_RAPIDJSON
