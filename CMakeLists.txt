@@ -153,6 +153,10 @@ install(
 )
 
 # pkg-config
+include(cmake/JoinPaths.cmake)
+join_paths(PKGCONFIG_INCLUDEDIR "\${prefix}" "${CMAKE_INSTALL_INCLUDEDIR}")
+join_paths(PKGCONFIG_LIBDIR "\${prefix}" "${CMAKE_INSTALL_LIBDIR}")
+
 if(SIMDJSON_ENABLE_THREADS)
   set(PKGCONFIG_CFLAGS "-DSIMDJSON_THREADS_ENABLED=1")
   if(CMAKE_THREAD_LIBS_INIT)
