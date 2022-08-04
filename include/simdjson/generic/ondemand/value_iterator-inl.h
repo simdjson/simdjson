@@ -541,6 +541,7 @@ simdjson_inline simdjson_result<number> value_iterator::get_number() noexcept {
 }
 
 simdjson_inline simdjson_result<bool> value_iterator::is_root_integer() noexcept {
+  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("is_root_integer");
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
@@ -551,6 +552,7 @@ simdjson_inline simdjson_result<bool> value_iterator::is_root_integer() noexcept
 }
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> value_iterator::get_root_number_type() noexcept {
+  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("number");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
@@ -564,6 +566,7 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> 
   return numberparsing::get_number_type(tmpbuf);
 }
 simdjson_inline simdjson_result<number> value_iterator::get_root_number() noexcept {
+  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("number");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
@@ -588,6 +591,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
   return get_raw_json_string();
 }
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64() noexcept {
+  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
@@ -600,6 +604,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64_in_string() noexcept {
+  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
@@ -612,6 +617,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64() noexcept {
+  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
   uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
@@ -625,6 +631,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64_in_string() noexcept {
+  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
   uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
@@ -638,6 +645,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get_root_double() noexcept {
+  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("double");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
@@ -654,6 +662,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
 }
 
 simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get_root_double_in_string() noexcept {
+  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("double");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
@@ -669,6 +678,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_root_bool() noexcept {
+  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("bool");
   uint8_t tmpbuf[5+1];
@@ -678,6 +688,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_r
   return result;
 }
 simdjson_inline bool value_iterator::is_root_null() noexcept {
+  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("null");
   bool result = (max_len >= 4 && !atomparsing::str4ncmp(json, "null") &&

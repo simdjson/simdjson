@@ -154,6 +154,10 @@ simdjson_inline bool json_iterator::at_root() const noexcept {
   return position() == root_position();
 }
 
+simdjson_inline bool json_iterator::is_single_token() const noexcept {
+  return parser->implementation->n_structural_indexes == 1;
+}
+
 simdjson_inline bool json_iterator::streaming() const noexcept {
   return _streaming;
 }
