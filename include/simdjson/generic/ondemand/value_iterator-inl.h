@@ -688,7 +688,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_r
   return result;
 }
 simdjson_inline bool value_iterator::is_root_null() noexcept {
-  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+  // If there is trailing content, then then document is not null.
+  if (!_json_iter->is_single_token()) { return false; }
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("null");
   bool result = (max_len >= 4 && !atomparsing::str4ncmp(json, "null") &&
