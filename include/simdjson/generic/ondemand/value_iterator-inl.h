@@ -547,10 +547,16 @@ simdjson_inline simdjson_result<bool> value_iterator::is_root_integer() noexcept
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
     return false; // if there are more than 20 characters, it cannot be represented as an integer.
   }
-  return numberparsing::is_integer(tmpbuf);
+  auto answer = numberparsing::is_integer(tmpbuf);
+  // If the parsing was a success, we must still check that it is
+  // a single scalar. Note that we parse first because of cases like '[]' where
+  // getting TRAILING_CONTENT is wrong.
+  if((answer.error() == SUCCESS) && (!_json_iter->is_single_token())) { return TRAILING_CONTENT; }
+  return answer;
 }
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> value_iterator::get_root_number_type() noexcept {
+  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("number");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
@@ -561,7 +567,12 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> 
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
   }
-  return numberparsing::get_number_type(tmpbuf);
+  // If the parsing was a success, we must still check that it is
+  // a single scalar. Note that we parse first because of cases like '[]' where
+  // getting TRAILING_CONTENT is wrong.
+  auto answer = numberparsing::get_number_type(tmpbuf);
+  if((answer.error() == SUCCESS) && (!_json_iter->is_single_token())) { return TRAILING_CONTENT; }
+  return answer;
 }
 simdjson_inline simdjson_result<number> value_iterator::get_root_number() noexcept {
   auto max_len = peek_start_length();
@@ -577,6 +588,7 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number() noexce
   number num;
   error_code error =  numberparsing::parse_number(tmpbuf, num);
   if(error) { return error; }
+  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   advance_root_scalar("number");
   return num;
 }
@@ -596,7 +608,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
     return NUMBER_ERROR;
   }
   auto result = numberparsing::parse_unsigned(tmpbuf);
-  if(result.error() == SUCCESS) { advance_root_scalar("uint64"); }
+  if(result.error() == SUCCESS) {
+    if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    advance_root_scalar("uint64");
+  }
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64_in_string() noexcept {
@@ -608,7 +623,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
     return NUMBER_ERROR;
   }
   auto result = numberparsing::parse_unsigned_in_string(tmpbuf);
-  if(result.error() == SUCCESS) { advance_root_scalar("uint64"); }
+  if(result.error() == SUCCESS) {
+    if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    advance_root_scalar("uint64");
+  }
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64() noexcept {
@@ -621,7 +639,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
   }
 
   auto result = numberparsing::parse_integer(tmpbuf);
-  if(result.error() == SUCCESS) { advance_root_scalar("int64"); }
+  if(result.error() == SUCCESS) {
+    if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    advance_root_scalar("int64");
+  }
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64_in_string() noexcept {
@@ -634,7 +655,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
   }
 
   auto result = numberparsing::parse_integer_in_string(tmpbuf);
-  if(result.error() == SUCCESS) { advance_root_scalar("int64"); }
+  if(result.error() == SUCCESS) {
+    if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    advance_root_scalar("int64");
+  }
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get_root_double() noexcept {
@@ -649,7 +673,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
     return NUMBER_ERROR;
   }
   auto result = numberparsing::parse_double(tmpbuf);
-  if(result.error() == SUCCESS) { advance_root_scalar("double"); }
+  if(result.error() == SUCCESS) {
+    if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    advance_root_scalar("double");
+  }
   return result;
 }
 
@@ -665,7 +692,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
     return NUMBER_ERROR;
   }
   auto result = numberparsing::parse_double_in_string(tmpbuf);
-  if(result.error() == SUCCESS) { advance_root_scalar("double"); }
+  if(result.error() == SUCCESS) {
+    if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    advance_root_scalar("double");
+  }
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_root_bool() noexcept {
@@ -674,10 +704,15 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_r
   uint8_t tmpbuf[5+1];
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { return incorrect_type_error("Not a boolean"); }
   auto result = parse_bool(tmpbuf);
-  if(result.error() == SUCCESS) { advance_root_scalar("bool"); }
+  if(result.error() == SUCCESS) {
+    if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    advance_root_scalar("bool");
+  }
   return result;
 }
 simdjson_inline bool value_iterator::is_root_null() noexcept {
+  // If there is trailing content, then the document is not null.
+  if (!_json_iter->is_single_token()) { return false; }
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("null");
   bool result = (max_len >= 4 && !atomparsing::str4ncmp(json, "null") &&

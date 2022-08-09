@@ -118,6 +118,14 @@ public:
   simdjson_inline const uint8_t *return_current_and_advance() noexcept;
 
   /**
+   * Returns true if there is a single token in the index (i.e., it is
+   * a JSON with a scalar value such as a single number).
+   *
+   * @return whether there is a single token
+   */
+  simdjson_inline bool is_single_token() const noexcept;
+
+  /**
    * Assert that there are at least the given number of tokens left.
    *
    * Has no effect in release builds.

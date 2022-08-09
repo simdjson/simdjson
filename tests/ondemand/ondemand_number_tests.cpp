@@ -264,6 +264,61 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  bool issue1878() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = R"(123_abc)"_padded;
+    for (char ch : {'_', '%', 'z', '&', '\\', '/', '*'}) {
+      json.data()[3] = ch;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc.get_int64().error(), NUMBER_ERROR);
+    }
+    for (char ch : {'[', ']', '{', '}', ',', ' '}) {
+      json.data()[3] = ch;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc.get_int64().error(), TRAILING_CONTENT);
+    }
+    for (char ch : {'_', '%', 'z', '&', '\\', '/', '*'}) {
+      json.data()[3] = ch;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc.get_uint64().error(), NUMBER_ERROR);
+    }
+    for (char ch : {'[', ']', '{', '}', ',', ' '}) {
+      json.data()[3] = ch;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc.get_uint64().error(), TRAILING_CONTENT);
+    }
+    for (char ch : {'_', '%', 'z', '&', '\\', '/', '*'}) {
+      json.data()[3] = ch;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc.get_double().error(), NUMBER_ERROR);
+    }
+    for (char ch : {'[', ']', '{', '}', ',', ' '}) {
+      json.data()[3] = ch;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc.get_double().error(), TRAILING_CONTENT);
+    }
+    for (char ch : {'_', '%', 'z', '&', '\\', '/', '*'}) {
+      json.data()[3] = ch;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc.get_number().error(), NUMBER_ERROR);
+    }
+    for (char ch : {'[', ']', '{', '}', ',', ' '}) {
+      json.data()[3] = ch;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc.get_number().error(), TRAILING_CONTENT);
+    }
+    TEST_SUCCEED();
+  }
+
   bool get_root_number_tests() {
     TEST_START();
     ondemand::parser parser;
@@ -321,7 +376,8 @@ namespace number_tests {
     TEST_SUCCEED();
   }
   bool run() {
-    return get_root_number_tests() &&
+    return issue1878() &&
+           get_root_number_tests() &&
            get_number_tests()&&
            small_integers() &&
            powers_of_two() &&
