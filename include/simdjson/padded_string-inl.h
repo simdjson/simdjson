@@ -45,7 +45,7 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
 } // namespace internal
 
 
-inline padded_string::padded_string() noexcept {}
+inline padded_string::padded_string() noexcept = default;
 inline padded_string::padded_string(size_t length) noexcept
     : viable_size(length), data_ptr(internal::allocate_padded_buffer(length)) {
 }
@@ -127,7 +127,13 @@ inline simdjson_result<padded_string> padded_string::load(std::string_view filen
   }
 
   // Get the file size
-  if(std::fseek(fp, 0, SEEK_END) < 0) {
+  int ret;
+#if defined(SIMDJSON_VISUAL_STUDIO) && !SIMDJSON_IS_32BITS
+  ret = _fseeki64(fp, 0, SEEK_END);
+#else
+  ret = std::fseek(fp, 0, SEEK_END);
+#endif // _WIN64
+  if(ret < 0) {
     std::fclose(fp);
     return IO_ERROR;
   }
