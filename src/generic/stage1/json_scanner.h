@@ -96,7 +96,7 @@ private:
  */
 class json_scanner {
 public:
-  json_scanner() {}
+  json_scanner() = default;
   simdjson_inline json_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
   simdjson_inline error_code finish();
