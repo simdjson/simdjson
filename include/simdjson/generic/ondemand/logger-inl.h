@@ -152,7 +152,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
       printf(" ");
     }
     // printf("| %5u ", *(index+1));
-    printf("| %5u ", depth);
+    printf("| %5i ", depth);
     printf("| %.*s ", int(detail.size()), detail.data());
     printf("|\n");
     fflush(stdout);
