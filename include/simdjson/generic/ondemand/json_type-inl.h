@@ -85,7 +85,10 @@ simdjson_inline double number::as_double() const noexcept {
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma gcc diagnostic push
+#pragma gcc diagnostic ignored "-Wunused-parameter"
 simdjson_inline void number::append_s64(int64_t value, uint32_t index) noexcept {
+#pragma gcc diagnostic pop
 #pragma clang diagnostic pop
   payload.signed_integer = value;
   type = number_type::signed_integer;
@@ -93,7 +96,10 @@ simdjson_inline void number::append_s64(int64_t value, uint32_t index) noexcept 
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma gcc diagnostic push
+#pragma gcc diagnostic ignored "-Wunused-parameter"
 simdjson_inline void number::append_u64(uint64_t value, uint32_t index) noexcept {
+#pragma gcc diagnostic pop
 #pragma clang diagnostic pop
   payload.unsigned_integer = value;
   type = number_type::unsigned_integer;
@@ -101,7 +107,10 @@ simdjson_inline void number::append_u64(uint64_t value, uint32_t index) noexcept
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma gcc diagnostic push
+#pragma gcc diagnostic ignored "-Wunused-parameter"
 simdjson_inline void number::append_double(double value, uint32_t index) noexcept {
+#pragma gcc diagnostic pop
 #pragma clang diagnostic pop
   payload.floating_point_number = value;
   type = number_type::floating_point_number;
