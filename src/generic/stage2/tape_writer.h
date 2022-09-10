@@ -52,29 +52,20 @@ private:
    * all 64 bits, such as double and uint64_t.
    */
   template<typename T>
-  simdjson_inline void append_number(uint64_t val, T val2, internal::tape_type t) noexcept;
+  simdjson_inline void append2(uint64_t val, T val2, internal::tape_type t) noexcept;
 }; // struct number_writer
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-parameter"
 simdjson_inline void tape_writer::append_s64(int64_t value, uint32_t index) noexcept {
-#pragma clang diagnostic pop
-  append_number(0, value, internal::tape_type::INT64);
+  append2(index, value, internal::tape_type::INT64);
 }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-parameter"
 simdjson_inline void tape_writer::append_u64(uint64_t value, uint32_t index) noexcept {
-#pragma clang diagnostic pop
-  append_number(0, value, internal::tape_type::UINT64);
+  append2(index, value, internal::tape_type::UINT64);
 }
 
 /** Write a double value to tape. */
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-parameter"
 simdjson_inline void tape_writer::append_double(double value, uint32_t index) noexcept {
-#pragma clang diagnostic pop
-  append_number(0, value, internal::tape_type::DOUBLE);
+  append2(index, value, internal::tape_type::DOUBLE);
 }
 
 simdjson_inline void tape_writer::skip() noexcept {
@@ -95,9 +86,8 @@ simdjson_inline void tape_writer::append(uint64_t val, internal::tape_type t) no
 }
 
 template<typename T>
-simdjson_inline void tape_writer::append_number(uint64_t val, T val2, internal::tape_type t, uint32_t index) noexcept {
-  *next_tape_loc = val | ((uint64_t(char(t))) << 56) | index;
-  next_tape_loc++;
+simdjson_inline void tape_writer::append2(uint64_t val, T val2, internal::tape_type t) noexcept {
+  append(val, t);
   static_assert(sizeof(val2) == sizeof(*next_tape_loc), "Type is not 64 bits!");
   memcpy(next_tape_loc, &val2, sizeof(val2));
   next_tape_loc++;
