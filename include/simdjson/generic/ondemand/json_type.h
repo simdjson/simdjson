@@ -84,17 +84,17 @@ protected:
    */
   friend class value_iterator;
   template<typename W>
-  friend error_code numberparsing::write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer);
+  friend error_code numberparsing::write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer, uint32_t index);
   template<typename W>
-  friend error_code numberparsing::parse_number(const uint8_t *const src, W &writer);
+  friend error_code numberparsing::parse_number(const uint8_t *const src, W &writer, uint32_t index);
   template<typename W>
-  friend error_code numberparsing::slow_float_parsing(simdjson_unused const uint8_t * src, W writer);
+  friend error_code numberparsing::slow_float_parsing(simdjson_unused const uint8_t * src, W writer, uint32_t index);
   /** Store a signed 64-bit value to the number. */
-  simdjson_inline void append_s64(int64_t value) noexcept;
+  simdjson_inline void append_s64(int64_t value, uint32_t index) noexcept;
   /** Store an unsigned 64-bit value to the number. */
-  simdjson_inline void append_u64(uint64_t value) noexcept;
+  simdjson_inline void append_u64(uint64_t value, uint32_t index) noexcept;
   /** Store a double value to the number. */
-  simdjson_inline void append_double(double value) noexcept;
+  simdjson_inline void append_double(double value, uint32_t index) noexcept;
   /** Specifies that the value is a double, but leave it undefined. */
   simdjson_inline void skip_double() noexcept;
   /**

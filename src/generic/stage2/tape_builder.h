@@ -160,7 +160,7 @@ simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_string(
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
   iter.log_value("number");
-  return numberparsing::parse_number(value, tape);
+  return numberparsing::parse_number(value, tape, (uint32_t)(value - iter.buf));
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
