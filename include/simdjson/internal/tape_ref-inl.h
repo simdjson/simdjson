@@ -23,16 +23,16 @@ simdjson_inline bool tape_ref::is_document_root() const noexcept {
 // most significant 8 bits.
 
 simdjson_inline bool tape_ref::is_double() const noexcept {
-  constexpr uint64_t tape_double = uint64_t(tape_type::DOUBLE)<<56;
-  return doc->tape[json_index] == tape_double;
+  constexpr uint64_t tape_double = uint64_t(tape_type::DOUBLE);
+  return (doc->tape[json_index] >> 56) == tape_double;
 }
 simdjson_inline bool tape_ref::is_int64() const noexcept {
-  constexpr uint64_t tape_int64 = uint64_t(tape_type::INT64)<<56;
-  return doc->tape[json_index] == tape_int64;
+  constexpr uint64_t tape_int64 = uint64_t(tape_type::INT64);
+  return (doc->tape[json_index] >> 56) == tape_int64;
 }
 simdjson_inline bool tape_ref::is_uint64() const noexcept {
-  constexpr uint64_t tape_uint64 = uint64_t(tape_type::UINT64)<<56;
-  return doc->tape[json_index] == tape_uint64;
+  constexpr uint64_t tape_uint64 = uint64_t(tape_type::UINT64);
+  return (doc->tape[json_index] >> 56) == tape_uint64;
 }
 simdjson_inline bool tape_ref::is_false() const noexcept {
   constexpr uint64_t tape_false = uint64_t(tape_type::FALSE_VALUE)<<56;
