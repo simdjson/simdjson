@@ -90,6 +90,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 * **Checking an Element Type:** You can check an element's type with `element.type()`. It
   returns an `element_type` with values such as `simdjson::dom::element_type::ARRAY`, `simdjson::dom::element_type::OBJECT`, `simdjson::dom::element_type::INT64`,  `simdjson::dom::element_type::UINT64`,`simdjson::dom::element_type::DOUBLE`, `simdjson::dom::element_type::BOOL` or, `simdjson::dom::element_type::NULL_VALUE`.
 * **Output to streams and strings:** Given a document or an element (or node) out of a JSON document, you can output a minified string version using the C++ stream idiom (`out << element`). You can also request the construction of a minified string version (`simdjson::minify(element)`). Numbers are serialized as 64-bit floating-point numbers (`double`).
+* **Custom parsing of numbers:** In addition to simdjson's parsing of numbers, one may also get the location of a number in the original JSON with `element.get_location_of_number_in_json()` and parse it themselves. This can be helpful when the additional precision is required beyond that of simdjson's number types.
 
 ### Examples
 
