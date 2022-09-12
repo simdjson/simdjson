@@ -310,31 +310,31 @@ namespace number_tests {
 
   bool json_index_for_number() {
     simdjson::dom::parser parser;
-    const auto string_result = parser.parse("\"string\""_padded).get_json_index_of_number();
+    const auto string_result = parser.parse("\"string\""_padded).get_location_of_number_in_json();
     if (!string_result.error()) {
       std::cerr << "Expected error, but failed" << std::endl;
       return false;
     }
-    const auto root_result_1 = parser.parse("1234"_padded).get_json_index_of_number();
+    const auto root_result_1 = parser.parse("1234"_padded).get_location_of_number_in_json();
     if (root_result_1.error()) { std::cerr << root_result_1.error() << std::endl; return false; }
     if (root_result_1.value_unsafe() != 0) {
       std::cerr << "Expected 0, but got " << root_result_1.value_unsafe() << std::endl;
       return false;
     }
-    const auto root_result_2 = parser.parse(" 1234"_padded).get_json_index_of_number();
+    const auto root_result_2 = parser.parse(" 1234"_padded).get_location_of_number_in_json();
     if (root_result_2.error()) { std::cerr << root_result_2.error() << std::endl; return false; }
     if (root_result_2.value_unsafe() != 1) {
       std::cerr << "Expected 1, but got " << root_result_2.value_unsafe() << std::endl;
       return false;
     }
-    const auto root_result_3 = parser.parse("-1234"_padded).get_json_index_of_number();
+    const auto root_result_3 = parser.parse("-1234"_padded).get_location_of_number_in_json();
     if (root_result_3.error()) { std::cerr << root_result_3.error() << std::endl; return false; }
     if (root_result_3.value_unsafe() != 0) {
       std::cerr << "Expected 1, but got " << root_result_3.value_unsafe() << std::endl;
       return false;
     }
     const auto element = parser.parse("{\"a\":1234}"_padded);
-    const auto nested_result_1 = element.get_object().at_key("a").get_json_index_of_number();
+    const auto nested_result_1 = element.get_object().at_key("a").get_location_of_number_in_json();
     if (nested_result_1.error()) { std::cerr << nested_result_1.error() << std::endl; return false; }
     if (nested_result_1.value_unsafe() != 5) {
       std::cerr << "Expected 5, but got " << nested_result_1.value_unsafe() << std::endl;

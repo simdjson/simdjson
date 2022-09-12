@@ -128,7 +128,7 @@ public:
    * @returns A uint32_t index value.
    *          Returns INCORRECT_TYPE if the JSON element is not a number.
    */
-  inline simdjson_result<uint32_t> get_json_index_of_number() const noexcept;
+  inline simdjson_result<uint32_t> get_location_of_number_in_json() const noexcept;
 
   /**
    * Cast this element to a bool.
@@ -512,7 +512,7 @@ public:
   simdjson_inline simdjson_result<int64_t> get_int64() const noexcept;
   simdjson_inline simdjson_result<uint64_t> get_uint64() const noexcept;
   simdjson_inline simdjson_result<double> get_double() const noexcept;
-  simdjson_inline simdjson_result<uint32_t> get_json_index_of_number() const noexcept;
+  simdjson_inline simdjson_result<uint32_t> get_location_of_number_in_json() const noexcept;
   simdjson_inline simdjson_result<bool> get_bool() const noexcept;
 
   simdjson_inline bool is_array() const noexcept;
