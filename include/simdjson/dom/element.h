@@ -119,6 +119,17 @@ public:
    *          Returns INCORRECT_TYPE if the JSON element is not a number.
    */
   inline simdjson_result<double> get_double() const noexcept;
+
+  /**
+   * Gets the index in the original JSON of a number element.
+   * This can be used in conjunction with the JSON (assuming the user still has a copy of it)
+   * to get the number's string back and parse it one's self, e.g. to parse it as an arbitrary-precision number.
+   *
+   * @returns A uint32_t index value.
+   *          Returns INCORRECT_TYPE if the JSON element is not a number.
+   */
+  inline simdjson_result<uint32_t> get_json_index_of_number() const noexcept;
+
   /**
    * Cast this element to a bool.
    *
@@ -501,6 +512,7 @@ public:
   simdjson_inline simdjson_result<int64_t> get_int64() const noexcept;
   simdjson_inline simdjson_result<uint64_t> get_uint64() const noexcept;
   simdjson_inline simdjson_result<double> get_double() const noexcept;
+  simdjson_inline simdjson_result<uint32_t> get_json_index_of_number() const noexcept;
   simdjson_inline simdjson_result<bool> get_bool() const noexcept;
 
   simdjson_inline bool is_array() const noexcept;

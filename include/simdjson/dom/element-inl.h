@@ -70,6 +70,10 @@ simdjson_inline simdjson_result<double> simdjson_result<dom::element>::get_doubl
   if (error()) { return error(); }
   return first.get_double();
 }
+simdjson_inline simdjson_result<uint32_t> simdjson_result<dom::element>::get_json_index_of_number() const noexcept {
+  if (error()) { return error(); }
+  return first.get_json_index_of_number();
+}
 simdjson_inline simdjson_result<bool> simdjson_result<dom::element>::get_bool() const noexcept {
   if (error()) { return error(); }
   return first.get_bool();
@@ -271,6 +275,16 @@ inline simdjson_result<double> element::get_double() const noexcept {
   }
   // this is common:
   return tape.next_tape_value<double>();
+}
+inline simdjson_result<uint32_t> element::get_json_index_of_number() const noexcept {
+  switch (tape.tape_ref_type()) {
+    case internal::tape_type::INT64:
+    case internal::tape_type::DOUBLE:
+    case internal::tape_type::UINT64:
+      return uint32_t(tape.tape_value());
+    default:
+      return INCORRECT_TYPE;
+  }
 }
 inline simdjson_result<array> element::get_array() const noexcept {
   switch (tape.tape_ref_type()) {

@@ -53,7 +53,7 @@ struct tape_builder {
   simdjson_warn_unused simdjson_inline error_code visit_root_primitive(json_iterator &iter, const uint8_t *value) noexcept;
 
   simdjson_warn_unused simdjson_inline error_code visit_string(json_iterator &iter, const uint8_t *value, bool key = false) noexcept;
-  simdjson_warn_unused simdjson_inline error_code visit_number(json_iterator &iter, const uint8_t *value) noexcept;
+  simdjson_warn_unused simdjson_inline error_code visit_number(json_iterator &iter, const uint8_t *value, uint32_t index) noexcept;
   simdjson_warn_unused simdjson_inline error_code visit_true_atom(json_iterator &iter, const uint8_t *value) noexcept;
   simdjson_warn_unused simdjson_inline error_code visit_false_atom(json_iterator &iter, const uint8_t *value) noexcept;
   simdjson_warn_unused simdjson_inline error_code visit_null_atom(json_iterator &iter, const uint8_t *value) noexcept;
@@ -158,9 +158,9 @@ simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_string(
   return visit_string(iter, value);
 }
 
-simdjson_warn_unused simdjson_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
+simdjson_warn_unused simdjson_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value, uint32_t index) noexcept {
   iter.log_value("number");
-  return numberparsing::parse_number(value, tape, uint32_t(value - iter.buf));
+  return numberparsing::parse_number(value, tape, index);
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
@@ -181,7 +181,7 @@ simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_number(
   if (copy.get() == nullptr) { return MEMALLOC; }
   std::memcpy(copy.get(), value, iter.remaining_len());
   std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
-  error_code error = visit_number(iter, copy.get());
+  error_code error = visit_number(iter, copy.get(), uint32_t(value - iter.buf));
   return error;
 }
 
