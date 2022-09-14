@@ -84,12 +84,12 @@ Simple JSON nodes are represented with one tape element:
 ## Integer and Double values
 
 Integer values are represented as two 64-bit tape elements:
-- The 64-bit value `('l' << 56)` followed by the 64-bit integer value literally. Integer values are assumed to be signed 64-bit values, using two's complement notation.
-- The 64-bit value `('u' << 56)` followed by the 64-bit integer value literally. Integer values are assumed to be unsigned 64-bit values.
+- The 64-bit value `('l' << 56) | l`, where `l` is the `uint32_t` location of the number in the JSON, followed by the 64-bit integer value literally. Integer values are assumed to be signed 64-bit values, using two's complement notation.
+- The 64-bit value `('u' << 56) | l`, where `l` is the `uint32_t` location of the number in the JSON, followed by the 64-bit integer value literally. Integer values are assumed to be unsigned 64-bit values.
 
 
 Float values are represented as two 64-bit tape elements:
-- The 64-bit value `('d' << 56)` followed by the 64-bit double value literally in standard IEEE 754 notation.
+- The 64-bit value `('d' << 56) | l`, where `l` is the `uint32_t` location of the number in the JSON, followed by the 64-bit double value literally in standard IEEE 754 notation.
 
 Performance consideration: We store numbers of the main tape because we believe that locality of reference is helpful for performance.
 
