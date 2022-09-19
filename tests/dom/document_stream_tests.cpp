@@ -732,6 +732,10 @@ namespace document_stream_tests {
       }
       count++;
     }
+    if(count != 1) {
+        std::cerr << "bad count" << std::endl;
+        return false;
+    }
 #endif
     return true;
   }
