@@ -972,6 +972,19 @@ bool parse() {
 }
 ```
 
+For safety, you should only use our ondemand instances (e.g., `ondemand::object`)
+after you have initialized them and checked that there is no error:
+
+```c++
+    ondemand::object car;
+    // the `car` instance should not use used before it is initialized
+    error = car_value.get_object().get(car);
+    if(error) {
+      // the `car` instance should not use used
+    } else {
+      // the `car` instance can be safely used
+    }
+```
 
 The following examples illustrates how to iterate through the content of an object without
 having to handle exceptions.
