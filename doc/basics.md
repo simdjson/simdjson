@@ -99,7 +99,7 @@ We recommend CMake version 3.15 or better.
 
 See [our CMake demonstration](https://github.com/simdjson/cmake_demo_single_file). It works under Linux, FreeBSD, macOS and Windows (including Visual Studio).
 
-The CMake build in simdjson can be taylored with a few variables. You can see the available variables and their default values by entering the `cmake -LA` command.
+The CMake build in simdjson can be tailored with a few variables. You can see the available variables and their default values by entering the `cmake -LA` command.
 
 
 Versions
@@ -1023,7 +1023,7 @@ target_compile_definitions(simdjson PUBLIC SIMDJSON_EXCEPTIONS=OFF)
 Users more comfortable with an exception flow may choose to directly cast the `simdjson_result<T>` to the desired type:
 
 ```c++
-simdjson::ondemande::document doc = parser.iterate(json); // Throws an exception if there was an error!
+simdjson::ondemand::document doc = parser.iterate(json); // Throws an exception if there was an error!
 ```
 
 When used this way, a `simdjson_error` exception will be thrown if an error occurs, preventing the
@@ -1531,7 +1531,7 @@ Standard Compliance
 
 The simdjson library is fully compliant with  the [RFC 8259](https://www.tbray.org/ongoing/When/201x/2017/12/14/rfc8259.html) JSON specification.
 
-- The only insignificant whitespace characters allowed are the space, the horizontal tab, the line feed and the carriage return. In particular, a JSON document may not contain an unespaced null character.
+- The only insignificant whitespace characters allowed are the space, the horizontal tab, the line feed and the carriage return. In particular, a JSON document may not contain an unescaped null character.
 - A single string or a single number is considered to be a valid JSON document.
 - We fully validate the numbers according to the JSON specification. For example,  the string `01` is not valid JSON document since the specification states that *leading zeros are not allowed*.
 - The specification allows implementations to set limits on the range and precision of numbers accepted.  We support 64-bit floating-point numbers as well as integer values.
