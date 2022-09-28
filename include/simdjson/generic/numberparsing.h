@@ -549,7 +549,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // Check for minus sign
   //
   bool negative = (*src == '-');
-  const uint8_t *p = src + negative;
+  const uint8_t *p = src + uint8_t(negative);
 
   //
   // Parse the integer part.
@@ -846,7 +846,7 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer(const uin
   // Check for minus sign
   //
   bool negative = (*src == '-');
-  const uint8_t *p = src + negative;
+  const uint8_t *p = src + uint8_t(negative);
 
   //
   // Parse the integer part.
@@ -890,7 +890,7 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer(const uin
   //
   if(src == src_end) { return NUMBER_ERROR; }
   bool negative = (*src == '-');
-  const uint8_t *p = src + negative;
+  const uint8_t *p = src + uint8_t(negative);
 
   //
   // Parse the integer part.
@@ -932,19 +932,19 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string
   // Check for minus sign
   //
   bool negative = (*(src + 1) == '-');
-  const uint8_t *p = src + negative + 1;
+  src += uint8_t(negative) + 1;
 
   //
   // Parse the integer part.
   //
   // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
-  const uint8_t *const start_digits = p;
+  const uint8_t *const start_digits = src;
   uint64_t i = 0;
-  while (parse_digit(*p, i)) { p++; }
+  while (parse_digit(*src, i)) { src++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
-  size_t digit_count = size_t(p - start_digits);
+  size_t digit_count = size_t(src - start_digits);
   // We go from
   // -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
   // so we can never represent numbers that have more than 19 digits.
@@ -956,11 +956,11 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string
   // Here digit_count > 0.
   if (('0' == *start_digits) && (digit_count > 1)) { return NUMBER_ERROR; }
   // We can do the following...
-  // if (!jsoncharutils::is_structural_or_whitespace(*p)) {
-  //  return (*p == '.' || *p == 'e' || *p == 'E') ? INCORRECT_TYPE : NUMBER_ERROR;
+  // if (!jsoncharutils::is_structural_or_whitespace(*src)) {
+  //  return (*src == '.' || *src == 'e' || *src == 'E') ? INCORRECT_TYPE : NUMBER_ERROR;
   // }
   // as a single table lookup:
-  if(*p != '"') { return NUMBER_ERROR; }
+  if(*src != '"') { return NUMBER_ERROR; }
   // Negative numbers have can go down to - INT64_MAX - 1 whereas positive numbers are limited to INT64_MAX.
   // Performance note: This check is only needed when digit_count == longest_digit_count but it is
   // so cheap that we might as well always make it.
@@ -973,7 +973,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
   // Check for minus sign
   //
   bool negative = (*src == '-');
-  src += negative;
+  src += uint8_t(negative);
 
   //
   // Parse the integer part.
@@ -1040,7 +1040,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
   if (simdjson_likely(!overflow)) {
     if (compute_float_64(exponent, i, negative, d)) { return d; }
   }
-  if (!parse_float_fallback(src-negative, &d)) {
+  if (!parse_float_fallback(src - uint8_t(negative), &d)) {
     return NUMBER_ERROR;
   }
   return d;
@@ -1052,7 +1052,7 @@ simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept {
 
 simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
   bool negative = (*src == '-');
-  src += negative;
+  src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
   if ( p == src ) { return NUMBER_ERROR; }
@@ -1062,7 +1062,7 @@ simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t *
 
 simdjson_unused simdjson_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept {
   bool negative = (*src == '-');
-  src += negative;
+  src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
   if ( p == src ) { return NUMBER_ERROR; }
@@ -1092,7 +1092,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
   // Check for minus sign
   //
   bool negative = (*src == '-');
-  src += negative;
+  src += uint8_t(negative);
 
   //
   // Parse the integer part.
@@ -1161,7 +1161,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
   if (simdjson_likely(!overflow)) {
     if (compute_float_64(exponent, i, negative, d)) { return d; }
   }
-  if (!parse_float_fallback(src-negative, src_end, &d)) {
+  if (!parse_float_fallback(src - uint8_t(negative), src_end, &d)) {
     return NUMBER_ERROR;
   }
   return d;
@@ -1172,7 +1172,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
   // Check for minus sign
   //
   bool negative = (*(src + 1) == '-');
-  src += negative + 1;
+  src += uint8_t(negative) + 1;
 
   //
   // Parse the integer part.
@@ -1239,7 +1239,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
   if (simdjson_likely(!overflow)) {
     if (compute_float_64(exponent, i, negative, d)) { return d; }
   }
-  if (!parse_float_fallback(src-negative, &d)) {
+  if (!parse_float_fallback(src - uint8_t(negative), &d)) {
     return NUMBER_ERROR;
   }
   return d;
