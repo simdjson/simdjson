@@ -58,17 +58,18 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
     }
     uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
 
-    // if the first code point is invalid we will get here, as we will go past
-    // the check for being outside the Basic Multilingual plane. If we don't
-    // find a \u immediately afterwards we fail out anyhow, but if we do,
-    // this check catches both the case of the first code point being invalid
-    // or the second code point being invalid.
-    if ((code_point | code_point_2) >> 16) {
+    // We have already checked that the high surrogate is valid and
+    // (code_point - 0xd800) < 1024.
+    //
+    // Check that code_point_2 is in the range 0xdc00..0xdfff
+    // and that code_point_2 was parsed from valid hex.
+    uint32_t low_bit = code_point_2 - 0xdc00;
+    if (low_bit >> 10) {
       return false;
     }
 
     code_point =
-        (((code_point - 0xd800) << 10) | (code_point_2 - 0xdc00)) + 0x10000;
+        (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
     *src_ptr += 6;
   } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
       // If we encounter a low surrogate (not preceded by a high surrogate)
