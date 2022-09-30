@@ -57,7 +57,7 @@ public:
    *     const implementation *impl = simdjson::get_active_implementation();
    *     cout << "simdjson is optimized for " << impl->name() << "(" << impl->description() << ")" << endl;
    *
-   * @return the name of the implementation, e.g. "haswell", "westmere", "arm64"
+   * @return the name of the implementation, e.g. "haswell", "westmere", "arm64".
    */
   virtual const std::string &name() const { return _name; }
 
@@ -67,7 +67,7 @@ public:
    *     const implementation *impl = simdjson::get_active_implementation();
    *     cout << "simdjson is optimized for " << impl->name() << "(" << impl->description() << ")" << endl;
    *
-   * @return the name of the implementation, e.g. "haswell", "westmere", "arm64"
+   * @return the description of the implementation, e.g. "Intel/AMD AVX2", "Intel/AMD SSE4.2", "ARM NEON".
    */
   virtual const std::string &description() const { return _description; }
 
@@ -76,8 +76,7 @@ public:
    * and the current CPU match. This function may poll the current CPU/system
    * and should therefore not be called too often if performance is a concern.
    *
-   *
-   * @return true if the implementation can be safely used on the current system (determined at runtime)
+   * @return true if the implementation can be safely used on the current system (determined at runtime).
    */
   bool supported_by_runtime_system() const;
 
@@ -86,7 +85,7 @@ public:
    *
    * The instruction sets this implementation is compiled against.
    *
-   * @return a mask of all required `internal::instruction_set::` values
+   * @return a mask of all required `internal::instruction_set::` values.
    */
   virtual uint32_t required_instruction_sets() const { return _required_instruction_sets; };
 
@@ -99,7 +98,7 @@ public:
    * @param capacity The largest document that will be passed to the parser.
    * @param max_depth The maximum JSON object/array nesting this parser is expected to handle.
    * @param dst The place to put the resulting parser implementation.
-   * @return the name of the implementation, e.g. "haswell", "westmere", "arm64"
+   * @return the error code, or SUCCESS if there was no error.
    */
   virtual error_code create_dom_parser_implementation(
     size_t capacity,
