@@ -112,7 +112,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
   // In the slow path, we need to adjust i so that it is > 1<<63 which is always
   // possible, except if i == 0, so we handle i == 0 separately.
   if(i == 0) {
-    d = 0.0;
+    d = negative ? -0.0 : 0.0;
     return true;
   }
 
@@ -227,7 +227,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
   if (simdjson_unlikely(real_exponent <= 0)) { // we have a subnormal?
     // Here have that real_exponent <= 0 so -real_exponent >= 0
     if(-real_exponent + 1 >= 64) { // if we have more than 64 bits below the minimum exponent, you have a zero for sure.
-      d = 0.0;
+      d = negative ? -0.0 : 0.0;
       return true;
     }
     // next line is safe because -real_exponent + 1 < 0
@@ -497,7 +497,8 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
     static_assert(simdjson::internal::smallest_power <= -342, "smallest_power is not small enough");
     //
     if((exponent < simdjson::internal::smallest_power) || (i == 0)) {
-      WRITE_DOUBLE(0, src, writer);
+      // E.g. Parse "-0.0e-999" into the same value as "-0.0". See https://en.wikipedia.org/wiki/Signed_zero
+      WRITE_DOUBLE(negative ? -0.0 : 0.0, src, writer);
       return SUCCESS;
     } else { // (exponent > largest_power) and (i != 0)
       // We have, for sure, an infinite value and simdjson refuses to parse infinite values.
