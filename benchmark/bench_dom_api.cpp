@@ -656,6 +656,31 @@ static void error_code_twitter_image_sizes(State& state) noexcept {
 }
 BENCHMARK(error_code_twitter_image_sizes);
 
+static void parse_surrogate_pairs(State& state) {
+  // NOTE: This mostly exists to show there's a tiny benefit to
+  // loading and comparing both bytes of "\\u" simultaneously.
+  // (which should also reduce the compiled code size).
+  // The repeated surrogate pairs make this easier to measure.
+  dom::parser parser;
+  const std::string_view data = "\"\\uD834\\uDD1E\\uD834\\uDD1E\\uD834\\uDD1E\\uD834\\uDD1E\\uD834\\uDD1E\\uD834\\uDD1E\\uD834\\uDD1E\\uD834\\uDD1E\\uD834\\uDD1E\\uD834\\uDD1E\"";
+  padded_string docdata{data};
+  // we do not want mem. alloc. in the loop.
+  auto error = parser.allocate(docdata.size());
+  if (error) {
+    cout << error << endl;
+    return;
+  }
+  for (simdjson_unused auto _ : state) {
+    dom::element doc;
+    if ((error = parser.parse(docdata).get(doc))) {
+      cerr << "could not parse string" << error << endl;
+      return;
+    }
+  }
+}
+BENCHMARK(parse_surrogate_pairs);
+
+
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
 
 SIMDJSON_PUSH_DISABLE_WARNINGS

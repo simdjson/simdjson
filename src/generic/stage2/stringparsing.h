@@ -53,10 +53,12 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   // outside the Basic
   // Multilingual Plane.
   if (code_point >= 0xd800 && code_point < 0xdc00) {
-    if (((*src_ptr)[0] != '\\') || (*src_ptr)[1] != 'u') {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
       return false;
     }
-    uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+    uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
 
     // We have already checked that the high surrogate is valid and
     // (code_point - 0xd800) < 1024.
