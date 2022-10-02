@@ -233,6 +233,64 @@ namespace number_tests {
       auto error = parser.parse(buf.data(), n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
       double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
+      // In floating-point arithmetic, -0.0 == 0.0, so compare signs by checking the inverse of the numbers as well
+      if(actual!=expected || (actual == 0.0 && 1.0/actual!=1.0/expected)) {
+        std::cerr << "JSON '" << buf.data() << " parsed to ";
+        fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
+        SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
+        return false;
+      }
+    }
+    printf("Powers of 10 can be parsed.\n");
+    return true;
+  }
+
+  bool negative_powers_of_ten() {
+    std::cout << __func__ << std::endl;
+    std::vector<char> buf(1024);
+    simdjson::dom::parser parser;
+
+    bool is_pow_correct{-1e-308 == -std::pow(10,-308)};
+    int start_point = is_pow_correct ? -1000 : -307;
+    if(!is_pow_correct) {
+      std::cout << "On your system, the pow function is busted. Sorry about that. " << std::endl;
+    }
+    for (int i = start_point; i <= 308; ++i) {// large negative values should be zero.
+      size_t n = snprintf(buf.data(), buf.size(), "-1e%d", i);
+      if (n >= buf.size()) { abort(); }
+      double actual;
+      auto error = parser.parse(buf.data(), n).get(actual);
+      if (error) { std::cerr << error << std::endl; return false; }
+      double expected = -(((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i)));
+      // In floating-point arithmetic, -0.0 == 0.0, so compare signs by checking the inverse of the numbers as well
+      if(actual!=expected || (actual == 0.0 && 1.0/actual!=1.0/expected)) {
+        std::cerr << "JSON '" << buf.data() << " parsed to ";
+        fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
+        SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
+        return false;
+      }
+    }
+    printf("Negative values of powers of 10 can be parsed.\n");
+    return true;
+  }
+
+  bool signed_zero_underflow_exponent() {
+    std::cout << __func__ << std::endl;
+    std::vector<char> buf(1024);
+    simdjson::dom::parser parser;
+
+    bool is_pow_correct{1e-308 == std::pow(10,-308)};
+    int start_point = is_pow_correct ? -1000 : -307;
+    if(!is_pow_correct) {
+      std::cout << "On your system, the pow function is busted. Sorry about that. " << std::endl;
+    }
+    for (int i = start_point; i <= 308; ++i) {// large negative values should be zero.
+      size_t n = snprintf(buf.data(), buf.size(), "1e%d", i);
+      if (n >= buf.size()) { abort(); }
+      double actual;
+      auto error = parser.parse(buf.data(), n).get(actual);
+      if (error) { std::cerr << error << std::endl; return false; }
+      double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
       if(actual!=expected) {
         std::cerr << "JSON '" << buf.data() << " parsed to ";
         fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
@@ -269,6 +327,13 @@ namespace number_tests {
       std::cerr << error << std::endl;
       return false;
     }
+    if(std::signbit(actual) != std::signbit(val)) {
+      std::cerr  << std::hexfloat << actual << " but I was expecting " << val
+              << std::endl;
+      std::cerr << "string: " << vals << std::endl;
+      std::cout << std::dec;
+      return false;
+    }
     if (actual != val) {
       std::cerr  << std::hexfloat << actual << " but I was expecting " << val
               << std::endl;
@@ -284,16 +349,18 @@ namespace number_tests {
     std::cout << std::dec;
     return true;
   }
+
   bool truncated_borderline() {
     std::cout << __func__ << std::endl;
     std::string round_to_even = "9007199254740993.0";
     for(size_t i = 0; i < 1000; i++) { round_to_even += "0"; }
-    return basic_test_64bit(round_to_even,9007199254740992);
+    return basic_test_64bit(round_to_even, 9007199254740992);
   }
 
   bool specific_tests() {
     std::cout << __func__ << std::endl;
-    return basic_test_64bit("-2402844368454405395.2",-2402844368454405395.2) &&
+    return basic_test_64bit("-1e-999", -0.0) &&
+           basic_test_64bit("-2402844368454405395.2",-2402844368454405395.2) &&
            basic_test_64bit("4503599627370496.5", 4503599627370496.5) &&
            basic_test_64bit("4503599627475352.5", 4503599627475352.5) &&
            basic_test_64bit("4503599627475353.5", 4503599627475353.5) &&
@@ -315,6 +382,7 @@ namespace number_tests {
            small_integers() &&
            powers_of_two() &&
            powers_of_ten() &&
+           negative_powers_of_ten() &&
            nines();
   }
 }
