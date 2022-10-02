@@ -78,6 +78,7 @@
 
 .gitattributes export-ignore
 .gitignore     export-ignore
+.editorconfig  export-ignore
 
 # Sources
 *.c     text eol=lf diff=c
