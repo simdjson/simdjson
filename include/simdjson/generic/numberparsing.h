@@ -497,7 +497,7 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
     static_assert(simdjson::internal::smallest_power <= -342, "smallest_power is not small enough");
     //
     if((exponent < simdjson::internal::smallest_power) || (i == 0)) {
-      WRITE_DOUBLE(0, src, writer);
+      WRITE_DOUBLE(negative ? -0.0 : 0.0, src, writer);
       return SUCCESS;
     } else { // (exponent > largest_power) and (i != 0)
       // We have, for sure, an infinite value and simdjson refuses to parse infinite values.
