@@ -1110,6 +1110,8 @@ for (auto val : doc) {
 std::cout << doc.current_location() << std::endl;   // Throws OUT_OF_BOUNDS
 ```
 
+Conversely, if `doc.current_location()` succeeds, then the document has more content.
+
 Finally, the `current_location()` method may also be used even when no exceptions/errors
 are thrown. This can be helpful for users that want to know the current state of iteration during parsing. For example:
 
