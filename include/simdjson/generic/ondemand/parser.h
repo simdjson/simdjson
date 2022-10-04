@@ -230,8 +230,6 @@ public:
   /** The maximum capacity of this parser (the largest document it is allowed to process). */
   simdjson_inline size_t max_capacity() const noexcept;
   simdjson_inline void set_max_capacity(size_t max_capacity) noexcept;
-  /** The maximum depth of this parser (the most deeply nested objects and arrays it can process). */
-  simdjson_inline size_t max_depth() const noexcept;
 
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
@@ -278,7 +276,6 @@ private:
   std::unique_ptr<internal::dom_parser_implementation> implementation{};
   size_t _capacity{0};
   size_t _max_capacity;
-  size_t _max_depth{DEFAULT_MAX_DEPTH};
   std::unique_ptr<uint8_t[]> string_buf{};
 
   friend class json_iterator;

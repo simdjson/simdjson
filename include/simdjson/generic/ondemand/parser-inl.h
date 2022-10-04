@@ -8,7 +8,7 @@ simdjson_inline parser::parser(size_t max_capacity) noexcept
 
 simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
   if (new_capacity > max_capacity()) { return CAPACITY; }
-  if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
+  if (string_buf && new_capacity == capacity()) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
   _capacity = 0;
@@ -21,7 +21,6 @@ simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capa
     SIMDJSON_TRY( simdjson::get_active_implementation()->create_dom_parser_implementation(new_capacity, new_max_depth, implementation) );
   }
   _capacity = new_capacity;
-  _max_depth = new_max_depth;
   return SUCCESS;
 }
 
@@ -30,7 +29,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(p
 
   // Allocate if needed
   if (capacity() < json.length() || !string_buf) {
-    SIMDJSON_TRY( allocate(json.length(), max_depth()) );
+    SIMDJSON_TRY( allocate(json.length()) );
   }
 
   // Run stage 1.
@@ -73,7 +72,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<json_iterator> parser::iter
 
   // Allocate if needed
   if (capacity() < json.length()) {
-    SIMDJSON_TRY( allocate(json.length(), max_depth()) );
+    SIMDJSON_TRY( allocate(json.length()) );
   }
 
   // Run stage 1.
@@ -100,9 +99,6 @@ simdjson_inline size_t parser::capacity() const noexcept {
 }
 simdjson_inline size_t parser::max_capacity() const noexcept {
   return _max_capacity;
-}
-simdjson_inline size_t parser::max_depth() const noexcept {
-  return _max_depth;
 }
 
 simdjson_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
