@@ -236,7 +236,7 @@ public:
    * and `max_depth` depth.
    *
    * @param capacity The new capacity.
-   * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
+   * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH. (This parameter has no effect.)
    * @return The error, if there is one.
    */
   simdjson_warn_unused error_code allocate(size_t capacity, size_t max_depth=DEFAULT_MAX_DEPTH) noexcept;
