@@ -14,9 +14,6 @@ simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capa
   _capacity = 0;
   size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * new_capacity / 3 + SIMDJSON_PADDING, 64);
   string_buf.reset(new (std::nothrow) uint8_t[string_capacity]);
-#if SIMDJSON_DEVELOPMENT_CHECKS
-  start_positions.reset(new (std::nothrow) token_position[new_max_depth]);
-#endif
   if (implementation) {
     SIMDJSON_TRY( implementation->set_capacity(new_capacity) );
     SIMDJSON_TRY( implementation->set_max_depth(new_max_depth) );
