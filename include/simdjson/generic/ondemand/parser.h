@@ -230,12 +230,21 @@ public:
   /** The maximum capacity of this parser (the largest document it is allowed to process). */
   simdjson_inline size_t max_capacity() const noexcept;
   simdjson_inline void set_max_capacity(size_t max_capacity) noexcept;
-  /** The maximum depth of this parser (the most deeply nested objects and arrays it can process). */
+  /**
+   * The maximum depth of this parser (the most deeply nested objects and arrays it can process).
+   * This parameter is only relevant when the macro SIMDJSON_DEVELOPMENT_CHECKS is set to true.
+   * The document's instance current_depth() method should be used to monitor the parsing
+   * depth and limit it if desired.
+   */
   simdjson_inline size_t max_depth() const noexcept;
 
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
    * and `max_depth` depth.
+   *
+   * The max_depth parameter is only relevant when the macro SIMDJSON_DEVELOPMENT_CHECKS is set to true.
+   * The document's instance current_depth() method should be used to monitor the parsing
+   * depth and limit it if desired.
    *
    * @param capacity The new capacity.
    * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
