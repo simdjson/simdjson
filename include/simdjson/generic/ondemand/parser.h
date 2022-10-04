@@ -230,7 +230,8 @@ public:
   /** The maximum capacity of this parser (the largest document it is allowed to process). */
   simdjson_inline size_t max_capacity() const noexcept;
   simdjson_inline void set_max_capacity(size_t max_capacity) noexcept;
-
+  /** Deprecated method. */
+  simdjson_inline size_t max_depth() const noexcept;
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
    * and `max_depth` depth.

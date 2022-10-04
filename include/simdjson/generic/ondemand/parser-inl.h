@@ -100,7 +100,10 @@ simdjson_inline size_t parser::capacity() const noexcept {
 simdjson_inline size_t parser::max_capacity() const noexcept {
   return _max_capacity;
 }
-
+// deprecated method
+simdjson_inline size_t parser::max_depth() const noexcept {
+  return DEFAULT_MAX_DEPTH;
+}
 simdjson_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
   if(max_capacity < dom::MINIMAL_DOCUMENT_CAPACITY) {
     _max_capacity = max_capacity;
