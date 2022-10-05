@@ -75,16 +75,23 @@ simdjson2msgpack::to_msgpack(const simdjson::padded_string &json,
       break;
     case simdjson::ondemand::json_type::null:
       write_byte(0xc0);
+      // As a side effect, the is_null call advances the document's iterator
+      // so that the current_location check would work in all cases.
+      doc.is_null();
       break;
     case simdjson::ondemand::json_type::array:
     case simdjson::ondemand::json_type::object:
     default:
       // impossible
-      break;
+      SIMDJSON_UNREACHABLE();
     }
   } else {
     simdjson::ondemand::value val = doc;
     recursive_processor(val);
+  }
+  if (doc.current_location().error() == simdjson::SUCCESS) {
+    // Example of error detection - this won't be reached on twitter.json in the benchmark.
+    throw "There are unexpectedly tokens after the end of the json in the json2msgpack sample data";
   }
   return std::string_view(reinterpret_cast<char *>(buf), size_t(buff - buf));
 }
