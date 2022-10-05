@@ -521,8 +521,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_b
 }
 simdjson_inline simdjson_result<bool> value_iterator::is_null() noexcept {
   bool is_null_value;
-  auto error = parse_null(peek_non_root_scalar("null")).get(is_null_value);
-  if(error != SUCCESS) { return error; }
+  SIMDJSON_TRY(parse_null(peek_non_root_scalar("null")).get(is_null_value));
   if(is_null_value) { advance_non_root_scalar("null"); }
   return is_null_value;
 }
