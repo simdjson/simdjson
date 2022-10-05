@@ -482,8 +482,20 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   std::cout << "Number of fields: " <<  count << std::endl; // Prints "Number of fields: 2"
   ```
 * **Tree Walking and JSON Element Types:** Sometimes you don't necessarily have a document
-  with a known type, and are trying to generically inspect or walk over JSON elements. To do that, you can use iterators and the `type()` method. You can also represent arbitrary JSON values with
-  `ondemand::value` instances: it can represent anything except a scalar document (lone number, string, null or Boolean). You can check for scalar documents with the method `scalar()`. You may also access [raw strings](#raw-strings).
+  with a known type, and are trying to generically inspect or walk over JSON elements.
+  You can also represent arbitrary JSON values with
+  `ondemand::value` instances: it can represent anything except a scalar document (lone number, string, null or Boolean). You can check for scalar documents with the method `scalar()`.
+  You can query the type of a document or a value with the `type()` method.
+  The `type()` method does not consume or validate documents and values, but it tells you whether they are
+  - arrays (`json_type::array`),
+  - objects (`json_type::object`)
+  - numbers (`json_type::number`),
+  - strings (`json_type::string`),
+  - Booleans (`json_type::boolean`),
+  - null (`json_type::null`).
+
+  You must still validate and consume the values (e.g., call `is_null()`) after calling `type()`.
+   You may also access [raw strings](#raw-strings).
   For example, the following is a quick and dirty recursive function that verbosely prints the JSON document as JSON. This example also illustrates lifecycle requirements: the `document` instance holds the iterator. The document must remain in scope while you are accessing instances of `value`, `object` and `array`.
   ```c++
   void recursive_print_json(ondemand::value element) {
@@ -532,7 +544,11 @@ support for users who avoid exceptions. See [the simdjson error handling documen
       cout << element.get_bool();
       break;
     case ondemand::json_type::null:
-      cout << "null";
+      // We check that the value is indeed null
+      // otherwise: an error is thrown.
+      if(element.is_null()) {
+        cout << "null";
+      }
       break;
     }
   }
@@ -1110,7 +1126,7 @@ for (auto val : doc) {
 std::cout << doc.current_location() << std::endl;   // Throws OUT_OF_BOUNDS
 ```
 
-Conversely, if `doc.current_location().error() == simdjson::SUCCESS`, 
+Conversely, if `doc.current_location().error() == simdjson::SUCCESS`,
 then the document has more content.
 
 Finally, the `current_location()` method may also be used even when no exceptions/errors

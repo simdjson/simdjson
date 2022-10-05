@@ -87,7 +87,11 @@ void recursive_print_json(ondemand::value element) {
       cout << element.get_bool();
       break;
     case ondemand::json_type::null:
-      cout << "null";
+      // we check that the value is indeed null
+      // otherwise: an error is thrown.
+      if(element.is_null()) {
+        cout << "null";
+      }
       break;
     }
 }
@@ -166,7 +170,11 @@ void recursive_print_json_breakline(ondemand::value element) {
       cout << element.get_bool();
       break;
     case ondemand::json_type::null:
-      cout << "null";
+      // We check that the value is indeed null
+      // otherwise: an error is thrown.
+      if(element.is_null()) {
+        cout << "null";
+      }
       break;
     }
 }

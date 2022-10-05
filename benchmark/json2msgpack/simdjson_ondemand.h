@@ -74,10 +74,11 @@ simdjson2msgpack::to_msgpack(const simdjson::padded_string &json,
       write_byte(0xc2 + doc.get_bool());
       break;
     case simdjson::ondemand::json_type::null:
-      write_byte(0xc0);
-      // As a side effect, the is_null call advances the document's iterator
-      // so that the current_location check would work in all cases.
-      doc.is_null();
+      // We check that the value is indeed null
+      // otherwise: an error is thrown.
+      if(doc.is_null()) {
+        write_byte(0xc0);
+      }
       break;
     case simdjson::ondemand::json_type::array:
     case simdjson::ondemand::json_type::object:
@@ -163,7 +164,11 @@ void simdjson2msgpack::recursive_processor(simdjson::ondemand::value element) {
     write_byte(0xc2 + element.get_bool());
     break;
   case simdjson::ondemand::json_type::null:
-    write_byte(0xc0);
+    // We check that the value is indeed null
+    // otherwise: an error is thrown.
+    if(element.is_null()) {
+      write_byte(0xc0);
+    }
     break;
   default:
     SIMDJSON_UNREACHABLE();

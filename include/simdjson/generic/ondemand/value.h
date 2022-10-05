@@ -334,7 +334,9 @@ public:
   simdjson_inline simdjson_result<value> operator[](const char *key) noexcept;
 
   /**
-   * Get the type of this JSON value.
+   * Get the type of this JSON value. It does not validate or consume the value.
+   * E.g., you must still call "is_null()" to check that a value is null even if
+   * "type()" returns json_type::null.
    *
    * NOTE: If you're only expecting a value to be one type (a typical case), it's generally
    * better to just call .get_double, .get_string, etc. and check for INCORRECT_TYPE (or just
