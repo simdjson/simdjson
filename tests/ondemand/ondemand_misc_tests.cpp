@@ -271,7 +271,9 @@ namespace misc_tests {
       ASSERT_SUCCESS(global.get(global_object));
       ondemand::value shadowable;
       ASSERT_SUCCESS(global_object["shadowable"].get(shadowable));
-      ASSERT_TRUE(!shadowable.is_null());
+      bool is_null_value;
+      ASSERT_SUCCESS(shadowable.is_null().get(is_null_value));
+      ASSERT_TRUE(!is_null_value);
       ondemand::value badvalue;
       auto error = global_object["writable"].get(badvalue);
       if(error == SUCCESS) {
