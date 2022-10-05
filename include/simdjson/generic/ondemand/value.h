@@ -150,11 +150,14 @@ public:
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
 
   /**
-   * Checks if this JSON value is null.
+   * Checks if this JSON value is null. If and only if the value is
+   * null, then it is consumed (we advance). If we find a token that
+   * begins with 'n' but is not 'null', then an error is returned.
    *
    * @returns Whether the value is null.
+   * @returns INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'.
    */
-  simdjson_inline bool is_null() noexcept;
+  simdjson_inline simdjson_result<bool> is_null() noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   /**
@@ -585,7 +588,7 @@ public:
   simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
-  simdjson_inline bool is_null() noexcept;
+  simdjson_inline simdjson_result<bool> is_null() noexcept;
 
   template<typename T> simdjson_inline simdjson_result<T> get() noexcept;
 
@@ -678,7 +681,7 @@ public:
   /** @copydoc simdjson_inline simdjson_result<const char *> current_location() noexcept */
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
   /** @copydoc simdjson_inline int32_t current_depth() const noexcept */
-  simdjson_inline int32_t current_depth() const noexcept;
+  simdjson_inline simdjson_result<int32_t> current_depth() const noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
 };
 

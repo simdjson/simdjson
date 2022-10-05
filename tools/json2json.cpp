@@ -63,6 +63,8 @@ int main(int argc, const char *argv[]) {
     simdjson::ondemand::document doc;
     error = parser.iterate(docdata).get(doc);
     if(error != simdjson::SUCCESS) { std::cout << error << std::endl; return EXIT_FAILURE; }
+    // This locates the document and captures a string_view instance, it does
+    // not validate the document:
     std::cout << doc;
     // check if there is more content
     const char * endofstream;

@@ -94,7 +94,7 @@ simdjson_inline simdjson_result<raw_json_string> document::get_raw_json_string()
 simdjson_inline simdjson_result<bool> document::get_bool() noexcept {
   return get_root_value_iterator().get_root_bool();
 }
-simdjson_inline bool document::is_null() noexcept {
+simdjson_inline simdjson_result<bool> document::is_null() noexcept {
   return get_root_value_iterator().is_root_null();
 }
 
@@ -354,7 +354,7 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
   if (error()) { return error(); }
   return first.get_value();
 }
-simdjson_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::is_null() noexcept {
+simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::is_null() noexcept {
   if (error()) { return error(); }
   return first.is_null();
 }
@@ -504,7 +504,7 @@ simdjson_inline simdjson_result<std::string_view> document_reference::get_string
 simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_json_string() noexcept { return doc->get_raw_json_string(); }
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_bool(); }
 simdjson_inline simdjson_result<value> document_reference::get_value() noexcept { return doc->get_value(); }
-simdjson_inline bool document_reference::is_null() noexcept { return doc->is_null(); }
+simdjson_inline simdjson_result<bool> document_reference::is_null() noexcept { return doc->is_null(); }
 
 #if SIMDJSON_EXCEPTIONS
 simdjson_inline document_reference::operator array() & noexcept(false) { return array(*doc); }
@@ -636,7 +636,7 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
   if (error()) { return error(); }
   return first.get_value();
 }
-simdjson_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::is_null() noexcept {
+simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::is_null() noexcept {
   if (error()) { return error(); }
   return first.is_null();
 }
@@ -648,7 +648,7 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::o
   if (error()) { return error(); }
   return first.is_scalar();
 }
-simdjson_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::is_negative() noexcept {
+simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::is_negative() noexcept {
   if (error()) { return error(); }
   return first.is_negative();
 }
