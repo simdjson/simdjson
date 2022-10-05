@@ -311,7 +311,7 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::o
   return first.get_bool();
 }
 simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::is_null() noexcept {
-  if (error()) { return false; }
+  if (error()) { return error(); }
   return first.is_null();
 }
 
