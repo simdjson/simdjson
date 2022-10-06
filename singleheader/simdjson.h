@@ -1,4 +1,4 @@
-/* auto-generated on 2022-10-02 16:25:39 -0400. Do not edit! */
+/* auto-generated on 2022-10-06 11:47:40 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -43,22 +43,22 @@
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 2.2.3
+#define SIMDJSON_VERSION 3.0.0
 
 namespace simdjson {
 enum {
   /**
    * The major version (MAJOR.minor.revision) of simdjson being used.
    */
-  SIMDJSON_VERSION_MAJOR = 2,
+  SIMDJSON_VERSION_MAJOR = 3,
   /**
    * The minor version (major.MINOR.revision) of simdjson being used.
    */
-  SIMDJSON_VERSION_MINOR = 2,
+  SIMDJSON_VERSION_MINOR = 0,
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 3
+  SIMDJSON_VERSION_REVISION = 0
 };
 } // namespace simdjson
 
@@ -23792,7 +23792,7 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<bool> get_bool() noexcept;
-  simdjson_inline bool is_null() noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<bool> is_null() noexcept;
   simdjson_warn_unused simdjson_inline bool is_negative() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<bool> is_integer() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<number_type> get_number_type() noexcept;
@@ -23853,7 +23853,7 @@ protected:
   inline std::string to_string() const noexcept;
   simdjson_inline value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept;
 
-  simdjson_inline bool parse_null(const uint8_t *json) const noexcept;
+  simdjson_inline simdjson_result<bool> parse_null(const uint8_t *json) const noexcept;
   simdjson_inline simdjson_result<bool> parse_bool(const uint8_t *json) const noexcept;
   simdjson_inline const uint8_t *peek_start() const noexcept;
   simdjson_inline uint32_t peek_start_length() const noexcept;
@@ -24454,11 +24454,14 @@ public:
   simdjson_inline simdjson_result<value> get_value() noexcept;
 
   /**
-   * Checks if this JSON value is null.
+   * Checks if this JSON value is null.  If and only if the value is
+   * null, then it is consumed (we advance). If we find a token that
+   * begins with 'n' but is not 'null', then an error is returned.
    *
    * @returns Whether the value is null.
+   * @returns INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'.
    */
-  simdjson_inline bool is_null() noexcept;
+  simdjson_inline simdjson_result<bool> is_null() noexcept;
 
   /**
    * Get this value as the given type.
@@ -24691,7 +24694,9 @@ public:
   simdjson_inline simdjson_result<value> operator[](const char *key) & noexcept;
 
   /**
-   * Get the type of this JSON value.
+   * Get the type of this JSON value. It does not validate or consume the value.
+   * E.g., you must still call "is_null()" to check that a value is null even if
+   * "type()" returns json_type::null.
    *
    * NOTE: If you're only expecting a value to be one type (a typical case), it's generally
    * better to just call .get_double, .get_string, etc. and check for INCORRECT_TYPE (or just
@@ -24923,7 +24928,7 @@ public:
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<value> get_value() noexcept;
 
-  simdjson_inline bool is_null() noexcept;
+  simdjson_inline simdjson_result<bool> is_null() noexcept;
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
   simdjson_inline operator document&() const noexcept;
 
@@ -24988,7 +24993,7 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> get_value() noexcept;
-  simdjson_inline bool is_null() noexcept;
+  simdjson_inline simdjson_result<bool> is_null() noexcept;
 
   template<typename T> simdjson_inline simdjson_result<T> get() & noexcept;
   template<typename T> simdjson_inline simdjson_result<T> get() && noexcept;
@@ -25055,7 +25060,7 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> get_value() noexcept;
-  simdjson_inline bool is_null() noexcept;
+  simdjson_inline simdjson_result<bool> is_null() noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   simdjson_inline operator SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::array() & noexcept(false);
@@ -25082,8 +25087,8 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_inline simdjson_result<bool> is_scalar() noexcept;
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
-  simdjson_inline int32_t current_depth() const noexcept;
-  simdjson_inline bool is_negative() noexcept;
+  simdjson_inline simdjson_result<int32_t> current_depth() const noexcept;
+  simdjson_inline simdjson_result<bool> is_negative() noexcept;
   simdjson_inline simdjson_result<bool> is_integer() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number> get_number() noexcept;
@@ -25248,11 +25253,14 @@ public:
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
 
   /**
-   * Checks if this JSON value is null.
+   * Checks if this JSON value is null. If and only if the value is
+   * null, then it is consumed (we advance). If we find a token that
+   * begins with 'n' but is not 'null', then an error is returned.
    *
    * @returns Whether the value is null.
+   * @returns INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'.
    */
-  simdjson_inline bool is_null() noexcept;
+  simdjson_inline simdjson_result<bool> is_null() noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   /**
@@ -25432,7 +25440,9 @@ public:
   simdjson_inline simdjson_result<value> operator[](const char *key) noexcept;
 
   /**
-   * Get the type of this JSON value.
+   * Get the type of this JSON value. It does not validate or consume the value.
+   * E.g., you must still call "is_null()" to check that a value is null even if
+   * "type()" returns json_type::null.
    *
    * NOTE: If you're only expecting a value to be one type (a typical case), it's generally
    * better to just call .get_double, .get_string, etc. and check for INCORRECT_TYPE (or just
@@ -25681,7 +25691,7 @@ public:
   simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
-  simdjson_inline bool is_null() noexcept;
+  simdjson_inline simdjson_result<bool> is_null() noexcept;
 
   template<typename T> simdjson_inline simdjson_result<T> get() noexcept;
 
@@ -25774,7 +25784,7 @@ public:
   /** @copydoc simdjson_inline simdjson_result<const char *> current_location() noexcept */
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
   /** @copydoc simdjson_inline int32_t current_depth() const noexcept */
-  simdjson_inline int32_t current_depth() const noexcept;
+  simdjson_inline simdjson_result<int32_t> current_depth() const noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
 };
 
@@ -26315,12 +26325,21 @@ public:
   /** The maximum capacity of this parser (the largest document it is allowed to process). */
   simdjson_inline size_t max_capacity() const noexcept;
   simdjson_inline void set_max_capacity(size_t max_capacity) noexcept;
-  /** The maximum depth of this parser (the most deeply nested objects and arrays it can process). */
+  /**
+   * The maximum depth of this parser (the most deeply nested objects and arrays it can process).
+   * This parameter is only relevant when the macro SIMDJSON_DEVELOPMENT_CHECKS is set to true.
+   * The document's instance current_depth() method should be used to monitor the parsing
+   * depth and limit it if desired.
+   */
   simdjson_inline size_t max_depth() const noexcept;
 
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
    * and `max_depth` depth.
+   *
+   * The max_depth parameter is only relevant when the macro SIMDJSON_DEVELOPMENT_CHECKS is set to true.
+   * The document's instance current_depth() method should be used to monitor the parsing
+   * depth and limit it if desired.
    *
    * @param capacity The new capacity.
    * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
@@ -26725,23 +26744,27 @@ public:
 namespace simdjson {
 /**
  * Create a string-view instance out of a document instance. The string-view instance
- * contains JSON text that is suitable to be parsed as JSON again.
+ * contains JSON text that is suitable to be parsed as JSON again. It does not
+ * validate the content.
  */
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document& x) noexcept;
 /**
  * Create a string-view instance out of a value instance. The string-view instance
  * contains JSON text that is suitable to be parsed as JSON again. The value must
- * not have been accessed previously.
+ * not have been accessed previously. It does not
+ * validate the content.
  */
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value& x) noexcept;
 /**
  * Create a string-view instance out of an object instance. The string-view instance
- * contains JSON text that is suitable to be parsed as JSON again.
+ * contains JSON text that is suitable to be parsed as JSON again. It does not
+ * validate the content.
  */
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::object& x) noexcept;
 /**
  * Create a string-view instance out of an array instance. The string-view instance
- * contains JSON text that is suitable to be parsed as JSON again.
+ * contains JSON text that is suitable to be parsed as JSON again. It does not
+ * validate the content.
  */
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::array& x) noexcept;
 inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document> x);
@@ -26760,7 +26783,8 @@ inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON
 namespace simdjson { namespace SIMDJSON_BUILTIN_IMPLEMENTATION { namespace ondemand {
 
 /**
- * Print JSON to an output stream.
+ * Print JSON to an output stream.  It does not
+ * validate the content.
  *
  * @param out The output stream.
  * @param value The element.
@@ -26771,7 +26795,8 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_BUILTIN_IM
 inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> x);
 #endif
 /**
- * Print JSON to an output stream.
+ * Print JSON to an output stream. It does not
+ * validate the content.
  *
  * @param out The output stream.
  * @param value The array.
@@ -26782,7 +26807,8 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_BUILTIN_IM
 inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::array> x);
 #endif
 /**
- * Print JSON to an output stream.
+ * Print JSON to an output stream. It does not
+ * validate the content.
  *
  * @param out The output stream.
  * @param value The array.
@@ -26797,7 +26823,8 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_BUILTIN_IM
 inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>&& x);
 #endif
 /**
- * Print JSON to an output stream.
+ * Print JSON to an output stream. It does not
+ * validate the content.
  *
  * @param out The output stream.
  * @param value The object.
@@ -27775,6 +27802,7 @@ simdjson_inline void json_iterator::reenter_child(token_position position, depth
   SIMDJSON_ASSUME(_depth == child_depth - 1);
 #if SIMDJSON_DEVELOPMENT_CHECKS
 #ifndef SIMDJSON_CLANG_VISUAL_STUDIO
+  SIMDJSON_ASSUME(size_t(child_depth) < parser->max_depth());
   SIMDJSON_ASSUME(position >= parser->start_positions[child_depth]);
 #endif
 #endif
@@ -27785,11 +27813,13 @@ simdjson_inline void json_iterator::reenter_child(token_position position, depth
 #if SIMDJSON_DEVELOPMENT_CHECKS
 
 simdjson_inline token_position json_iterator::start_position(depth_t depth) const noexcept {
-  return parser->start_positions[depth];
+  SIMDJSON_ASSUME(size_t(depth) < parser->max_depth());
+  return size_t(depth) < parser->max_depth() ? parser->start_positions[depth] : 0;
 }
 
 simdjson_inline void json_iterator::set_start_position(depth_t depth, token_position position) noexcept {
-  parser->start_positions[depth] = position;
+  SIMDJSON_ASSUME(size_t(depth) < parser->max_depth());
+  if(size_t(depth) < parser->max_depth()) { parser->start_positions[depth] = position; }
 }
 
 #endif
@@ -28301,8 +28331,11 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse
   if (error) { return incorrect_type_error("Not a boolean"); }
   return simdjson_result<bool>(!not_true);
 }
-simdjson_inline bool value_iterator::parse_null(const uint8_t *json) const noexcept {
-  return !atomparsing::str4ncmp(json, "null") && jsoncharutils::is_structural_or_whitespace(json[4]);
+simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse_null(const uint8_t *json) const noexcept {
+  bool is_null_string = !atomparsing::str4ncmp(json, "null") && jsoncharutils::is_structural_or_whitespace(json[4]);
+  // if we start with 'n', we must be a null
+  if(!is_null_string && json[0]=='n') { return incorrect_type_error("Not a null but starts with n"); }
+  return is_null_string;
 }
 
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string() noexcept {
@@ -28349,10 +28382,11 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_b
   if(result.error() == SUCCESS) { advance_non_root_scalar("bool"); }
   return result;
 }
-simdjson_inline bool value_iterator::is_null() noexcept {
-  auto result = parse_null(peek_non_root_scalar("null"));
-  if(result) { advance_non_root_scalar("null"); }
-  return result;
+simdjson_inline simdjson_result<bool> value_iterator::is_null() noexcept {
+  bool is_null_value;
+  SIMDJSON_TRY(parse_null(peek_non_root_scalar("null")).get(is_null_value));
+  if(is_null_value) { advance_non_root_scalar("null"); }
+  return is_null_value;
 }
 simdjson_inline bool value_iterator::is_negative() noexcept {
   return numberparsing::is_negative(peek_non_root_scalar("numbersign"));
@@ -29337,7 +29371,7 @@ simdjson_inline simdjson_result<raw_json_string> document::get_raw_json_string()
 simdjson_inline simdjson_result<bool> document::get_bool() noexcept {
   return get_root_value_iterator().get_root_bool();
 }
-simdjson_inline bool document::is_null() noexcept {
+simdjson_inline simdjson_result<bool> document::is_null() noexcept {
   return get_root_value_iterator().is_root_null();
 }
 
@@ -29597,7 +29631,7 @@ simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value
   if (error()) { return error(); }
   return first.get_value();
 }
-simdjson_inline bool simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::is_null() noexcept {
+simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::is_null() noexcept {
   if (error()) { return error(); }
   return first.is_null();
 }
@@ -29747,7 +29781,7 @@ simdjson_inline simdjson_result<std::string_view> document_reference::get_string
 simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_json_string() noexcept { return doc->get_raw_json_string(); }
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_bool(); }
 simdjson_inline simdjson_result<value> document_reference::get_value() noexcept { return doc->get_value(); }
-simdjson_inline bool document_reference::is_null() noexcept { return doc->is_null(); }
+simdjson_inline simdjson_result<bool> document_reference::is_null() noexcept { return doc->is_null(); }
 
 #if SIMDJSON_EXCEPTIONS
 simdjson_inline document_reference::operator array() & noexcept(false) { return array(*doc); }
@@ -29879,7 +29913,7 @@ simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value
   if (error()) { return error(); }
   return first.get_value();
 }
-simdjson_inline bool simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::is_null() noexcept {
+simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::is_null() noexcept {
   if (error()) { return error(); }
   return first.is_null();
 }
@@ -29891,7 +29925,7 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENT
   if (error()) { return error(); }
   return first.is_scalar();
 }
-simdjson_inline bool simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::is_negative() noexcept {
+simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::is_negative() noexcept {
   if (error()) { return error(); }
   return first.is_negative();
 }
@@ -30021,10 +30055,9 @@ simdjson_inline simdjson_result<int64_t> value::get_int64_in_string() noexcept {
 simdjson_inline simdjson_result<bool> value::get_bool() noexcept {
   return iter.get_bool();
 }
-simdjson_inline bool value::is_null() noexcept {
+simdjson_inline simdjson_result<bool> value::is_null() noexcept {
   return iter.is_null();
 }
-
 template<> simdjson_inline simdjson_result<array> value::get() noexcept { return get_array(); }
 template<> simdjson_inline simdjson_result<object> value::get() noexcept { return get_object(); }
 template<> simdjson_inline simdjson_result<raw_json_string> value::get() noexcept { return get_raw_json_string(); }
@@ -30278,8 +30311,8 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENT
   if (error()) { return error(); }
   return first.get_bool();
 }
-simdjson_inline bool simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::is_null() noexcept {
-  if (error()) { return false; }
+simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::is_null() noexcept {
+  if (error()) { return error(); }
   return first.is_null();
 }
 
@@ -30371,7 +30404,7 @@ simdjson_inline simdjson_result<const char *> simdjson_result<SIMDJSON_BUILTIN_I
   return first.current_location();
 }
 
-simdjson_inline int32_t simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::current_depth() const noexcept {
+simdjson_inline simdjson_result<int32_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::current_depth() const noexcept {
   if (error()) { return error(); }
   return first.current_depth();
 }
