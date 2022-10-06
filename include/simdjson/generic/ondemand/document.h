@@ -126,11 +126,14 @@ public:
   simdjson_inline simdjson_result<value> get_value() noexcept;
 
   /**
-   * Checks if this JSON value is null.
+   * Checks if this JSON value is null.  If and only if the value is
+   * null, then it is consumed (we advance). If we find a token that
+   * begins with 'n' but is not 'null', then an error is returned.
    *
    * @returns Whether the value is null.
+   * @returns INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'.
    */
-  simdjson_inline bool is_null() noexcept;
+  simdjson_inline simdjson_result<bool> is_null() noexcept;
 
   /**
    * Get this value as the given type.
@@ -363,7 +366,9 @@ public:
   simdjson_inline simdjson_result<value> operator[](const char *key) & noexcept;
 
   /**
-   * Get the type of this JSON value.
+   * Get the type of this JSON value. It does not validate or consume the value.
+   * E.g., you must still call "is_null()" to check that a value is null even if
+   * "type()" returns json_type::null.
    *
    * NOTE: If you're only expecting a value to be one type (a typical case), it's generally
    * better to just call .get_double, .get_string, etc. and check for INCORRECT_TYPE (or just
@@ -595,7 +600,7 @@ public:
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<value> get_value() noexcept;
 
-  simdjson_inline bool is_null() noexcept;
+  simdjson_inline simdjson_result<bool> is_null() noexcept;
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
   simdjson_inline operator document&() const noexcept;
 
@@ -660,7 +665,7 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> get_value() noexcept;
-  simdjson_inline bool is_null() noexcept;
+  simdjson_inline simdjson_result<bool> is_null() noexcept;
 
   template<typename T> simdjson_inline simdjson_result<T> get() & noexcept;
   template<typename T> simdjson_inline simdjson_result<T> get() && noexcept;
@@ -727,7 +732,7 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> get_value() noexcept;
-  simdjson_inline bool is_null() noexcept;
+  simdjson_inline simdjson_result<bool> is_null() noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false);
@@ -754,8 +759,8 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_inline simdjson_result<bool> is_scalar() noexcept;
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
-  simdjson_inline int32_t current_depth() const noexcept;
-  simdjson_inline bool is_negative() noexcept;
+  simdjson_inline simdjson_result<int32_t> current_depth() const noexcept;
+  simdjson_inline simdjson_result<bool> is_negative() noexcept;
   simdjson_inline simdjson_result<bool> is_integer() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;

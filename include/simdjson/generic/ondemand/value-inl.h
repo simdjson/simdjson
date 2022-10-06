@@ -54,10 +54,9 @@ simdjson_inline simdjson_result<int64_t> value::get_int64_in_string() noexcept {
 simdjson_inline simdjson_result<bool> value::get_bool() noexcept {
   return iter.get_bool();
 }
-simdjson_inline bool value::is_null() noexcept {
+simdjson_inline simdjson_result<bool> value::is_null() noexcept {
   return iter.is_null();
 }
-
 template<> simdjson_inline simdjson_result<array> value::get() noexcept { return get_array(); }
 template<> simdjson_inline simdjson_result<object> value::get() noexcept { return get_object(); }
 template<> simdjson_inline simdjson_result<raw_json_string> value::get() noexcept { return get_raw_json_string(); }
@@ -311,8 +310,8 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::o
   if (error()) { return error(); }
   return first.get_bool();
 }
-simdjson_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::is_null() noexcept {
-  if (error()) { return false; }
+simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::is_null() noexcept {
+  if (error()) { return error(); }
   return first.is_null();
 }
 
@@ -404,7 +403,7 @@ simdjson_inline simdjson_result<const char *> simdjson_result<SIMDJSON_IMPLEMENT
   return first.current_location();
 }
 
-simdjson_inline int32_t simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::current_depth() const noexcept {
+simdjson_inline simdjson_result<int32_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::current_depth() const noexcept {
   if (error()) { return error(); }
   return first.current_depth();
 }

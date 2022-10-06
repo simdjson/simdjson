@@ -160,7 +160,11 @@ namespace ondemand_treewalk {
       cout << element.get_bool();
       break;
     case ondemand::json_type::null:
-      cout << "null";
+      // We check that the value is indeed null
+      // otherwise: an error is thrown.
+      if(element.is_null()) {
+        cout << "null";
+      }
       break;
     }
   }

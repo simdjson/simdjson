@@ -4,23 +4,27 @@
 namespace simdjson {
 /**
  * Create a string-view instance out of a document instance. The string-view instance
- * contains JSON text that is suitable to be parsed as JSON again.
+ * contains JSON text that is suitable to be parsed as JSON again. It does not
+ * validate the content.
  */
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::document& x) noexcept;
 /**
  * Create a string-view instance out of a value instance. The string-view instance
  * contains JSON text that is suitable to be parsed as JSON again. The value must
- * not have been accessed previously.
+ * not have been accessed previously. It does not
+ * validate the content.
  */
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::value& x) noexcept;
 /**
  * Create a string-view instance out of an object instance. The string-view instance
- * contains JSON text that is suitable to be parsed as JSON again.
+ * contains JSON text that is suitable to be parsed as JSON again. It does not
+ * validate the content.
  */
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::object& x) noexcept;
 /**
  * Create a string-view instance out of an array instance. The string-view instance
- * contains JSON text that is suitable to be parsed as JSON again.
+ * contains JSON text that is suitable to be parsed as JSON again. It does not
+ * validate the content.
  */
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::array& x) noexcept;
 inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> x);
@@ -39,7 +43,8 @@ inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON
 namespace simdjson { namespace SIMDJSON_IMPLEMENTATION { namespace ondemand {
 
 /**
- * Print JSON to an output stream.
+ * Print JSON to an output stream.  It does not
+ * validate the content.
  *
  * @param out The output stream.
  * @param value The element.
@@ -50,7 +55,8 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTA
 inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> x);
 #endif
 /**
- * Print JSON to an output stream.
+ * Print JSON to an output stream. It does not
+ * validate the content.
  *
  * @param out The output stream.
  * @param value The array.
@@ -61,7 +67,8 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTA
 inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::array> x);
 #endif
 /**
- * Print JSON to an output stream.
+ * Print JSON to an output stream. It does not
+ * validate the content.
  *
  * @param out The output stream.
  * @param value The array.
@@ -76,7 +83,8 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTA
 inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_reference>&& x);
 #endif
 /**
- * Print JSON to an output stream.
+ * Print JSON to an output stream. It does not
+ * validate the content.
  *
  * @param out The output stream.
  * @param value The object.

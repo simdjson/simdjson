@@ -289,7 +289,7 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<bool> get_bool() noexcept;
-  simdjson_inline bool is_null() noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<bool> is_null() noexcept;
   simdjson_warn_unused simdjson_inline bool is_negative() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<bool> is_integer() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<number_type> get_number_type() noexcept;
@@ -350,7 +350,7 @@ protected:
   inline std::string to_string() const noexcept;
   simdjson_inline value_iterator(json_iterator *json_iter, depth_t depth, token_position start_index) noexcept;
 
-  simdjson_inline bool parse_null(const uint8_t *json) const noexcept;
+  simdjson_inline simdjson_result<bool> parse_null(const uint8_t *json) const noexcept;
   simdjson_inline simdjson_result<bool> parse_bool(const uint8_t *json) const noexcept;
   simdjson_inline const uint8_t *peek_start() const noexcept;
   simdjson_inline uint32_t peek_start_length() const noexcept;

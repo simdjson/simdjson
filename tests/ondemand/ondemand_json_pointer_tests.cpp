@@ -71,7 +71,7 @@ namespace json_pointer_tests {
                ASSERT_SUCCESS(val.get_bool().error());
                break;
             case ondemand::json_type::null:
-               ASSERT_TRUE(val.is_null());
+               ASSERT_SUCCESS(val.is_null().error());
                break;
             default:
                TEST_FAIL("unexpected type");

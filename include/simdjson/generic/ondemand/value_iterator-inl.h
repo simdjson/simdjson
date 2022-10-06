@@ -468,8 +468,11 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse
   if (error) { return incorrect_type_error("Not a boolean"); }
   return simdjson_result<bool>(!not_true);
 }
-simdjson_inline bool value_iterator::parse_null(const uint8_t *json) const noexcept {
-  return !atomparsing::str4ncmp(json, "null") && jsoncharutils::is_structural_or_whitespace(json[4]);
+simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse_null(const uint8_t *json) const noexcept {
+  bool is_null_string = !atomparsing::str4ncmp(json, "null") && jsoncharutils::is_structural_or_whitespace(json[4]);
+  // if we start with 'n', we must be a null
+  if(!is_null_string && json[0]=='n') { return incorrect_type_error("Not a null but starts with n"); }
+  return is_null_string;
 }
 
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string() noexcept {
@@ -516,10 +519,11 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_b
   if(result.error() == SUCCESS) { advance_non_root_scalar("bool"); }
   return result;
 }
-simdjson_inline bool value_iterator::is_null() noexcept {
-  auto result = parse_null(peek_non_root_scalar("null"));
-  if(result) { advance_non_root_scalar("null"); }
-  return result;
+simdjson_inline simdjson_result<bool> value_iterator::is_null() noexcept {
+  bool is_null_value;
+  SIMDJSON_TRY(parse_null(peek_non_root_scalar("null")).get(is_null_value));
+  if(is_null_value) { advance_non_root_scalar("null"); }
+  return is_null_value;
 }
 simdjson_inline bool value_iterator::is_negative() noexcept {
   return numberparsing::is_negative(peek_non_root_scalar("numbersign"));
