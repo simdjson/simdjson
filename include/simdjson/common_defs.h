@@ -322,4 +322,11 @@ namespace std {
 # define simdjson_fallthrough do {} while (0)  /* fallthrough */
 #endif // simdjson_fallthrough
 
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+#define SIMDJSON_DEVELOPMENT_ASSERT(expr) do { assert ((expr)); } while (0)
+#else
+#define SIMDJSON_DEVELOPMENT_ASSERT(expr) do { } while (0)
+#endif
+
 #endif // SIMDJSON_COMMON_DEFS_H

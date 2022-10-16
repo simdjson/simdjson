@@ -167,7 +167,7 @@ While the simdjson library can be used in any project using C++ 11 and above, fi
 ```c++
 padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
 dom::parser parser;
-dom::object object; // invalid until next line
+dom::object object; // invalid until the get() succeeds
 auto error = parser.parse(json).get(object);
 if (error) { cerr << error << endl; return; }
 for (auto [key, value] : object) {
@@ -181,7 +181,7 @@ For comparison, here is the C++ 11 version of the same code:
 // C++ 11 version for comparison
 padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
 dom::parser parser;
-dom::object object; // invalid until next line
+dom::object object; // invalid until the get() succeeds
 auto error = parser.parse(json).get(object);
 if (error) { cerr << error << endl; return; }
 for (dom::key_value_pair field : object) {
@@ -227,7 +227,7 @@ dom::parser parser;
 dom::element cars = parser.parse(cars_json);
 cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
 for (dom::element car_element : cars) {
-    dom::object car; // invalid until after "car_element.get(car)"
+    dom::object car; // invalid until the get() succeeds
     simdjson::error_code error;
     if ((error = car_element.get(car))) { std::cerr << error << std::endl; return; }
     double x = car.at_pointer("/tire_pressure/1");
@@ -283,11 +283,11 @@ it selects the key "count" within that object.
 
 int main(void) {
   simdjson::dom::parser parser;
-  simdjson::dom::element tweets; // invalid until after the next line
+  simdjson::dom::element tweets; // invalid until the get() succeeds
   auto error = parser.load("twitter.json").get(tweets);
   if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
 
-  simdjson::dom::element res; // invalid until after the next line
+  simdjson::dom::element res; // invalid until the get() succeeds
   if ((error = tweets["search_metadata"]["count"].get(res))) {
     std::cerr << "could not access keys" << std::endl;
     return EXIT_FAILURE;
@@ -311,7 +311,7 @@ Observe how we use the `at` method when querying an index into an array, and not
 
 int main(void) {
   simdjson::dom::parser parser;
-  simdjson::dom::element tweets; // invalid until after the next line
+  simdjson::dom::element tweets; // invalid until the get() succeeds
   auto error = parser.load("twitter.json").get(tweets);
   if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   uint64_t identifier;
@@ -336,7 +336,7 @@ auto cars_json = R"( [
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
 ] )"_padded;
 dom::parser parser;
-dom::array cars; // invalid until after the next line
+dom::array cars; // invalid until the get() succeeds
 auto error = parser.parse(cars_json).get(cars);
 if (error) { cerr << error << endl; exit(1); }
 
