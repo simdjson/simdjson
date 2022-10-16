@@ -17,7 +17,9 @@ simdjson_inline tape_ref::tape_ref(const dom::document *_doc, size_t _json_index
 simdjson_inline bool tape_ref::is_document_root() const noexcept {
   return json_index == 1; // should we ever change the structure of the tape, this should get updated.
 }
-
+simdjson_inline bool tape_ref::usable() const noexcept {
+  return doc != nullptr; // when the document pointer is null, this tape_ref is uninitialized (should not be accessed).
+}
 // Some value types have a specific on-tape word value. It can be faster
 // to check the type by doing a word-to-word comparison instead of extracting the
 // most significant 8 bits.

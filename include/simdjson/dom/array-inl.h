@@ -53,18 +53,38 @@ namespace dom {
 simdjson_inline array::array() noexcept : tape{} {}
 simdjson_inline array::array(const internal::tape_ref &_tape) noexcept : tape{_tape} {}
 inline array::iterator array::begin() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   return internal::tape_ref(tape.doc, tape.json_index + 1);
 }
 inline array::iterator array::end() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   return internal::tape_ref(tape.doc, tape.after_element() - 1);
 }
 inline size_t array::size() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   return tape.scope_count();
 }
 inline size_t array::number_of_slots() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   return tape.matching_brace_index() - tape.json_index;
 }
 inline simdjson_result<element> array::at_pointer(std::string_view json_pointer) const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   if(json_pointer.empty()) { // an empty string means that we return the current node
       return element(this->tape); // copy the current node
   } else if(json_pointer[0] != '/') { // otherwise there is an error
@@ -105,6 +125,10 @@ inline simdjson_result<element> array::at_pointer(std::string_view json_pointer)
 }
 
 inline simdjson_result<element> array::at(size_t index) const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   size_t i=0;
   for (auto element : *this) {
     if (i == index) { return element; }

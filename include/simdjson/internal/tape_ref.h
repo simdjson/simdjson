@@ -38,6 +38,7 @@ public:
   simdjson_inline const char * get_c_str() const noexcept;
   inline std::string_view get_string_view() const noexcept;
   simdjson_inline bool is_document_root() const noexcept;
+  simdjson_inline bool usable() const noexcept;
 
   /** The document this element references. */
   const dom::document *doc;

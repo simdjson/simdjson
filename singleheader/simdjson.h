@@ -1,4 +1,4 @@
-/* auto-generated on 2022-10-06 11:47:40 -0400. Do not edit! */
+/* auto-generated on 2022-10-14 21:10:36 +0000. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -4048,6 +4048,7 @@ public:
   simdjson_inline const char * get_c_str() const noexcept;
   inline std::string_view get_string_view() const noexcept;
   simdjson_inline bool is_document_root() const noexcept;
+  simdjson_inline bool usable() const noexcept;
 
   /** The document this element references. */
   const dom::document *doc;
@@ -6844,18 +6845,38 @@ namespace dom {
 simdjson_inline array::array() noexcept : tape{} {}
 simdjson_inline array::array(const internal::tape_ref &_tape) noexcept : tape{_tape} {}
 inline array::iterator array::begin() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   return internal::tape_ref(tape.doc, tape.json_index + 1);
 }
 inline array::iterator array::end() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   return internal::tape_ref(tape.doc, tape.after_element() - 1);
 }
 inline size_t array::size() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   return tape.scope_count();
 }
 inline size_t array::number_of_slots() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   return tape.matching_brace_index() - tape.json_index;
 }
 inline simdjson_result<element> array::at_pointer(std::string_view json_pointer) const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   if(json_pointer.empty()) { // an empty string means that we return the current node
       return element(this->tape); // copy the current node
   } else if(json_pointer[0] != '/') { // otherwise there is an error
@@ -6896,6 +6917,10 @@ inline simdjson_result<element> array::at_pointer(std::string_view json_pointer)
 }
 
 inline simdjson_result<element> array::at(size_t index) const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   size_t i=0;
   for (auto element : *this) {
     if (i == index) { return element; }
@@ -7946,12 +7971,24 @@ namespace dom {
 simdjson_inline object::object() noexcept : tape{} {}
 simdjson_inline object::object(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 inline object::iterator object::begin() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed object is invalid
+#endif
   return internal::tape_ref(tape.doc, tape.json_index + 1);
 }
 inline object::iterator object::end() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed object is invalid
+#endif
   return internal::tape_ref(tape.doc, tape.after_element() - 1);
 }
 inline size_t object::size() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed object is invalid
+#endif
   return tape.scope_count();
 }
 
@@ -7962,6 +7999,10 @@ inline simdjson_result<element> object::operator[](const char *key) const noexce
   return at_key(key);
 }
 inline simdjson_result<element> object::at_pointer(std::string_view json_pointer) const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed object is invalid
+#endif
   if(json_pointer.empty()) { // an empty string means that we return the current node
       return element(this->tape); // copy the current node
   } else if(json_pointer[0] != '/') { // otherwise there is an error
@@ -8873,7 +8914,9 @@ simdjson_inline tape_ref::tape_ref(const dom::document *_doc, size_t _json_index
 simdjson_inline bool tape_ref::is_document_root() const noexcept {
   return json_index == 1; // should we ever change the structure of the tape, this should get updated.
 }
-
+simdjson_inline bool tape_ref::usable() const noexcept {
+  return doc != nullptr; // when the document pointer is null, this tape_ref is uninitialized (should not be accessed).
+}
 // Some value types have a specific on-tape word value. It can be faster
 // to check the type by doing a word-to-word comparison instead of extracting the
 // most significant 8 bits.
