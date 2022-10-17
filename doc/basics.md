@@ -947,11 +947,11 @@ bool parse() {
   // Iterating through an array of objects
   auto error = parser.iterate(cars_json).get(doc);
   if(error) { std::cerr << error << std::endl; return false; }
-  ondemand::array cars;
+  ondemand::array cars; // invalid until the get() succeeds
   error = doc.get_array().get(cars);
 
   for (auto car_value : cars) {
-    ondemand::object car;
+    ondemand::object car; // invalid until the get() succeeds
     error = car_value.get_object().get(car);
     if(error) { std::cerr << error << std::endl; return false; }
 
@@ -992,7 +992,7 @@ For safety, you should only use our ondemand instances (e.g., `ondemand::object`
 after you have initialized them and checked that there is no error:
 
 ```c++
-    ondemand::object car;
+    ondemand::object car; // invalid until the get() succeeds
     // the `car` instance should not use used before it is initialized
     error = car_value.get_object().get(car);
     if(error) {
@@ -1010,7 +1010,7 @@ having to handle exceptions.
   ondemand::document doc;
   auto error = parser.iterate(json).get(doc);
   if(error) { return false; }
-  ondemand::object object;
+  ondemand::object object; // invalid until the get() succeeds
   error = doc.get_object().get(object);
   if(error) { return false; }
   for(auto field : object) {
@@ -1137,7 +1137,7 @@ auto json = R"( [[1,2,3], -23.4, {"key": "value"}, true] )"_padded;
 ondemand::parser parser;
 auto doc = parser.iterate(json);
 for (auto val : doc) {
-  ondemand::object obj;
+  ondemand::object obj; // invalid until the get() succeeds
   auto error = val.get_object().get(obj);     // Only get objects
   if (!error) {
     std::cout << doc.current_location() << std::endl;   // Prints ""key": "value"}, true] "

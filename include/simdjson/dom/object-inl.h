@@ -65,12 +65,15 @@ namespace dom {
 simdjson_inline object::object() noexcept : tape{} {}
 simdjson_inline object::object(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 inline object::iterator object::begin() const noexcept {
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
   return internal::tape_ref(tape.doc, tape.json_index + 1);
 }
 inline object::iterator object::end() const noexcept {
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
   return internal::tape_ref(tape.doc, tape.after_element() - 1);
 }
 inline size_t object::size() const noexcept {
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
   return tape.scope_count();
 }
 
@@ -81,6 +84,7 @@ inline simdjson_result<element> object::operator[](const char *key) const noexce
   return at_key(key);
 }
 inline simdjson_result<element> object::at_pointer(std::string_view json_pointer) const noexcept {
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
   if(json_pointer.empty()) { // an empty string means that we return the current node
       return element(this->tape); // copy the current node
   } else if(json_pointer[0] != '/') { // otherwise there is an error

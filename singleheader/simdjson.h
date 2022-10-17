@@ -1,4 +1,4 @@
-/* auto-generated on 2022-10-06 11:47:40 -0400. Do not edit! */
+/* auto-generated on 2022-10-16 16:59:15 +0000. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -4048,6 +4048,7 @@ public:
   simdjson_inline const char * get_c_str() const noexcept;
   inline std::string_view get_string_view() const noexcept;
   simdjson_inline bool is_document_root() const noexcept;
+  simdjson_inline bool usable() const noexcept;
 
   /** The document this element references. */
   const dom::document *doc;
@@ -6844,18 +6845,38 @@ namespace dom {
 simdjson_inline array::array() noexcept : tape{} {}
 simdjson_inline array::array(const internal::tape_ref &_tape) noexcept : tape{_tape} {}
 inline array::iterator array::begin() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   return internal::tape_ref(tape.doc, tape.json_index + 1);
 }
 inline array::iterator array::end() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   return internal::tape_ref(tape.doc, tape.after_element() - 1);
 }
 inline size_t array::size() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   return tape.scope_count();
 }
 inline size_t array::number_of_slots() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   return tape.matching_brace_index() - tape.json_index;
 }
 inline simdjson_result<element> array::at_pointer(std::string_view json_pointer) const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   if(json_pointer.empty()) { // an empty string means that we return the current node
       return element(this->tape); // copy the current node
   } else if(json_pointer[0] != '/') { // otherwise there is an error
@@ -6896,6 +6917,10 @@ inline simdjson_result<element> array::at_pointer(std::string_view json_pointer)
 }
 
 inline simdjson_result<element> array::at(size_t index) const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed array is invalid
+#endif
   size_t i=0;
   for (auto element : *this) {
     if (i == index) { return element; }
@@ -7130,11 +7155,19 @@ simdjson_inline element::element() noexcept : tape{} {}
 simdjson_inline element::element(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 
 inline element_type element::type() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed element is invalid
+#endif
   auto tape_type = tape.tape_ref_type();
   return tape_type == internal::tape_type::FALSE_VALUE ? element_type::BOOL : static_cast<element_type>(tape_type);
 }
 
 inline simdjson_result<bool> element::get_bool() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed element is invalid
+#endif
   if(tape.is_true()) {
     return true;
   } else if(tape.is_false()) {
@@ -7143,6 +7176,10 @@ inline simdjson_result<bool> element::get_bool() const noexcept {
   return INCORRECT_TYPE;
 }
 inline simdjson_result<const char *> element::get_c_str() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed element is invalid
+#endif
   switch (tape.tape_ref_type()) {
     case internal::tape_type::STRING: {
       return tape.get_c_str();
@@ -7152,6 +7189,10 @@ inline simdjson_result<const char *> element::get_c_str() const noexcept {
   }
 }
 inline simdjson_result<size_t> element::get_string_length() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed element is invalid
+#endif
   switch (tape.tape_ref_type()) {
     case internal::tape_type::STRING: {
       return tape.get_string_length();
@@ -7161,6 +7202,10 @@ inline simdjson_result<size_t> element::get_string_length() const noexcept {
   }
 }
 inline simdjson_result<std::string_view> element::get_string() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed element is invalid
+#endif
   switch (tape.tape_ref_type()) {
     case internal::tape_type::STRING:
       return tape.get_string_view();
@@ -7169,6 +7214,10 @@ inline simdjson_result<std::string_view> element::get_string() const noexcept {
   }
 }
 inline simdjson_result<uint64_t> element::get_uint64() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed element is invalid
+#endif
   if(simdjson_unlikely(!tape.is_uint64())) { // branch rarely taken
     if(tape.is_int64()) {
       int64_t result = tape.next_tape_value<int64_t>();
@@ -7182,6 +7231,10 @@ inline simdjson_result<uint64_t> element::get_uint64() const noexcept {
   return tape.next_tape_value<int64_t>();
 }
 inline simdjson_result<int64_t> element::get_int64() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed element is invalid
+#endif
   if(simdjson_unlikely(!tape.is_int64())) { // branch rarely taken
     if(tape.is_uint64()) {
       uint64_t result = tape.next_tape_value<uint64_t>();
@@ -7196,6 +7249,10 @@ inline simdjson_result<int64_t> element::get_int64() const noexcept {
   return tape.next_tape_value<int64_t>();
 }
 inline simdjson_result<double> element::get_double() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed element is invalid
+#endif
   // Performance considerations:
   // 1. Querying tape_ref_type() implies doing a shift, it is fast to just do a straight
   //   comparison.
@@ -7217,6 +7274,10 @@ inline simdjson_result<double> element::get_double() const noexcept {
   return tape.next_tape_value<double>();
 }
 inline simdjson_result<array> element::get_array() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed element is invalid
+#endif
   switch (tape.tape_ref_type()) {
     case internal::tape_type::START_ARRAY:
       return array(tape);
@@ -7225,6 +7286,10 @@ inline simdjson_result<array> element::get_array() const noexcept {
   }
 }
 inline simdjson_result<object> element::get_object() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed element is invalid
+#endif
   switch (tape.tape_ref_type()) {
     case internal::tape_type::START_OBJECT:
       return object(tape);
@@ -7304,6 +7369,10 @@ inline simdjson_result<element> element::operator[](const char *key) const noexc
 }
 
 inline simdjson_result<element> element::at_pointer(std::string_view json_pointer) const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed element is invalid
+#endif
   switch (tape.tape_ref_type()) {
     case internal::tape_type::START_OBJECT:
       return object(tape).at_pointer(json_pointer);
@@ -7339,6 +7408,10 @@ inline simdjson_result<element> element::at_key_case_insensitive(std::string_vie
 }
 
 inline bool element::dump_raw_tape(std::ostream &out) const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed element is invalid
+#endif
   return tape.doc->dump_raw_tape(out);
 }
 
@@ -7946,12 +8019,24 @@ namespace dom {
 simdjson_inline object::object() noexcept : tape{} {}
 simdjson_inline object::object(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 inline object::iterator object::begin() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed object is invalid
+#endif
   return internal::tape_ref(tape.doc, tape.json_index + 1);
 }
 inline object::iterator object::end() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed object is invalid
+#endif
   return internal::tape_ref(tape.doc, tape.after_element() - 1);
 }
 inline size_t object::size() const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed object is invalid
+#endif
   return tape.scope_count();
 }
 
@@ -7962,6 +8047,10 @@ inline simdjson_result<element> object::operator[](const char *key) const noexce
   return at_key(key);
 }
 inline simdjson_result<element> object::at_pointer(std::string_view json_pointer) const noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // issue https://github.com/simdjson/simdjson/issues/1914
+  assert (tape.usable()); // the default constructed object is invalid
+#endif
   if(json_pointer.empty()) { // an empty string means that we return the current node
       return element(this->tape); // copy the current node
   } else if(json_pointer[0] != '/') { // otherwise there is an error
@@ -8873,7 +8962,9 @@ simdjson_inline tape_ref::tape_ref(const dom::document *_doc, size_t _json_index
 simdjson_inline bool tape_ref::is_document_root() const noexcept {
   return json_index == 1; // should we ever change the structure of the tape, this should get updated.
 }
-
+simdjson_inline bool tape_ref::usable() const noexcept {
+  return doc != nullptr; // when the document pointer is null, this tape_ref is uninitialized (should not be accessed).
+}
 // Some value types have a specific on-tape word value. It can be faster
 // to check the type by doing a word-to-word comparison instead of extracting the
 // most significant 8 bits.

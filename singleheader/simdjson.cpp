@@ -1,4 +1,4 @@
-/* auto-generated on 2022-10-06 11:47:40 -0400. Do not edit! */
+/* auto-generated on 2022-10-16 16:59:15 +0000. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
