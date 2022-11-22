@@ -925,10 +925,8 @@ char *to_chars(char *first, const char *last, double value) {
   {
     *first++ = '0';
     // Make it look like a floating-point number (#362, #378)
-    if(negative) {
-      *first++ = '.';
-      *first++ = '0';
-    }
+    *first++ = '.';
+    *first++ = '0';
     return first;
   }
   // Compute v = buffer * 10^decimal_exponent.
