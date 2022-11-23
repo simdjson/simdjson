@@ -199,6 +199,9 @@ public:
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
   simdjson_inline simdjson_result<element> parse(const padded_string &s) & noexcept;
   simdjson_inline simdjson_result<element> parse(const padded_string &s) && =delete;
+  /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
+  simdjson_inline simdjson_result<element> parse(const padded_string_view &v) & noexcept;
+  simdjson_inline simdjson_result<element> parse(const padded_string_view &v) && =delete;
 
   /** @private We do not want to allow implicit conversion from C string to std::string. */
   simdjson_inline simdjson_result<element> parse(const char *buf) noexcept = delete;

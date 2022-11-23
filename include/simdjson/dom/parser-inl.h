@@ -148,6 +148,9 @@ simdjson_inline simdjson_result<element> parser::parse(const std::string &s) & n
 simdjson_inline simdjson_result<element> parser::parse(const padded_string &s) & noexcept {
   return parse(s.data(), s.length(), false);
 }
+simdjson_inline simdjson_result<element> parser::parse(const padded_string_view &v) & noexcept {
+  return parse(v.data(), v.length(), false);
+}
 
 inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
   if(batch_size < MINIMAL_BATCH_SIZE) { batch_size = MINIMAL_BATCH_SIZE; }
