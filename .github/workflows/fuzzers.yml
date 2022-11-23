@@ -24,7 +24,7 @@ jobs:
       implementations: haswell westmere fallback
       UBSAN_OPTIONS: halt_on_error=1
       MAXLEN: -max_len=4000
-      CLANGVERSION: 11
+      CLANGVERSION: 14
       # which optimization level to use for the sanitizer build (see build_fuzzer.variants.sh)
       OPTLEVEL: -O3
 
@@ -50,12 +50,12 @@ jobs:
         path: out/
         key: corpus-${{ github.run_id }}
         restore-keys: corpus-
-    
+
     - name: show statistics for the cached corpus
       run: |
         echo number of files in github action corpus cache:
         find out -type f |wc -l
-    
+
     - name: Create and prepare the initial seed corpus
       run: |
         fuzz/build_corpus.sh
@@ -92,7 +92,7 @@ jobs:
             export SIMDJSON_FORCE_IMPLEMENTATION=$implementation
             build-sanitizers$OPTLEVEL/fuzz/fuzz_$fuzzer out/$fuzzer $others seedcorpus -max_total_time=20 $MAXLEN
           done
-          echo now have $(ls out/$fuzzer |wc -l) files in corpus        
+          echo now have $(ls out/$fuzzer |wc -l) files in corpus
         done
 
     - name: Fuzz differential impl. fuzzers with sanitizer+asserts (good at detecting errors)
@@ -119,7 +119,7 @@ jobs:
 
     - name: Package the corpus into an artifact
       run: |
-        for fuzzer in $defaultimplfuzzers $implfuzzers; do      
+        for fuzzer in $defaultimplfuzzers $implfuzzers; do
           tar rf corpus.tar out/$fuzzer
         done
 
@@ -141,7 +141,7 @@ jobs:
       run: |
         for fuzzer in $defaultimplfuzzers $implfuzzers; do
           find out/$fuzzer -type f |sort|head -n200|xargs -n40 valgrind build-replay/fuzz/fuzz_$fuzzer 2>&1|tee valgrind-$fuzzer.txt
-        done 
+        done
 
     - name: Compress the valgrind output
       run: tar cf valgrind.tar valgrind-*.txt
