@@ -116,6 +116,7 @@ Real-world usage
 - [Shopify HeapProfiler](https://github.com/Shopify/heap-profiler)
 - [StarRocks](https://github.com/StarRocks/starrocks)
 - [Microsoft FishStore](https://github.com/microsoft/FishStore)
+- [Intel PCM](https://github.com/intel/pcm)
 
 
 If you are planning to use simdjson in a product, please work from one of our releases.
