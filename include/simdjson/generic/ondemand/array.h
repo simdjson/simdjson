@@ -1,4 +1,5 @@
 #include "simdjson/error.h"
+#include "simdjson/expected.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -24,13 +25,15 @@ public:
    *
    * Part of the std::iterable interface.
    */
-  simdjson_inline simdjson_result<array_iterator> begin() noexcept;
+  simdjson_inline expected<array_iterator, error_code> begin() noexcept;
+
   /**
    * Sentinel representing the end of the array.
    *
    * Part of the std::iterable interface.
    */
-  simdjson_inline simdjson_result<array_iterator> end() noexcept;
+  simdjson_inline expected<array_iterator, error_code> end() noexcept;
+
   /**
    * This method scans the array and counts the number of elements.
    * The count_elements method should always be called before you have begun
@@ -45,7 +48,8 @@ public:
    * To check that an array is empty, it is more performant to use
    * the is_empty() method.
    */
-  simdjson_inline simdjson_result<size_t> count_elements() & noexcept;
+  simdjson_inline expected<size_t, error_code> count_elements() &noexcept;
+
   /**
    * This method scans the beginning of the array and checks whether the
    * array is empty.
@@ -55,7 +59,8 @@ public:
    * there is a missing comma), then an error is returned and it is no longer
    * safe to continue.
    */
-  simdjson_inline simdjson_result<bool> is_empty() & noexcept;
+  simdjson_inline expected<bool, error_code> is_empty() &noexcept;
+
   /**
    * Reset the iterator so that we are pointing back at the
    * beginning of the array. You should still consume values only once even if you
@@ -66,7 +71,8 @@ public:
    *
    * @returns true if the array contains some elements (not empty)
    */
-  inline simdjson_result<bool> reset() & noexcept;
+  inline expected<bool, error_code> reset() &noexcept;
+
   /**
    * Get the value associated with the given JSON pointer.  We use the RFC 6901
    * https://tools.ietf.org/html/rfc6901 standard, interpreting the current node
@@ -95,12 +101,14 @@ public:
    *         - INCORRECT_TYPE if a non-integer is used to access an array
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
-  inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
+  inline expected<value, error_code>
+  at_pointer(std::string_view json_pointer) noexcept;
+
   /**
    * Consumes the array and returns a string_view instance corresponding to the
    * array as represented in JSON. It points inside the original document.
    */
-  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
+  simdjson_inline expected<std::string_view, error_code> raw_json() noexcept;
 
   /**
    * Get the value at the given index. This function has linear-time complexity.
@@ -109,7 +117,8 @@ public:
    * @return The value at the given index, or:
    *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
    */
-  simdjson_inline simdjson_result<value> at(size_t index) noexcept;
+  simdjson_inline expected<value, error_code> at(size_t index) noexcept;
+
 protected:
   /**
    * Go to the end of the array, no matter where you are right now.
@@ -123,7 +132,8 @@ protected:
    *        resulting array.
    * @error INCORRECT_TYPE if the iterator is not at [.
    */
-  static simdjson_inline simdjson_result<array> start(value_iterator &iter) noexcept;
+  static simdjson_inline expected<array, error_code>
+  start(value_iterator &iter) noexcept;
   /**
    * Begin array iteration from the root.
    *
@@ -132,7 +142,8 @@ protected:
    * @error INCORRECT_TYPE if the iterator is not at [.
    * @error TAPE_ERROR if there is no closing ] at the end of the document.
    */
-  static simdjson_inline simdjson_result<array> start_root(value_iterator &iter) noexcept;
+  static simdjson_inline expected<array, error_code>
+  start_root(value_iterator &iter) noexcept;
   /**
    * Begin array iteration.
    *
@@ -141,7 +152,8 @@ protected:
    *
    * @param iter The iterator. Must be after the initial [. Will be *moved* into the resulting array.
    */
-  static simdjson_inline simdjson_result<array> started(value_iterator &iter) noexcept;
+  static simdjson_inline expected<array, error_code>
+  started(value_iterator &iter) noexcept;
 
   /**
    * Create an array at the given Internal array creation. Call array::start() or array::started() instead of this.
@@ -161,31 +173,9 @@ protected:
 
   friend class value;
   friend class document;
-  friend struct simdjson_result<value>;
-  friend struct simdjson_result<array>;
   friend class array_iterator;
 };
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
-
-namespace simdjson {
-
-template<>
-struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> : public SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array> {
-public:
-  simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::array &&value) noexcept; ///< @private
-  simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
-  simdjson_inline simdjson_result() noexcept = default;
-
-  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() noexcept;
-  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() noexcept;
-  inline simdjson_result<size_t> count_elements() & noexcept;
-  inline simdjson_result<bool> is_empty() & noexcept;
-  inline simdjson_result<bool> reset() & noexcept;
-  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at(size_t index) noexcept;
-  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
-};
-
 } // namespace simdjson
