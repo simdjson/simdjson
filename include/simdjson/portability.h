@@ -59,8 +59,11 @@
 #endif
 
 #endif // defined(__x86_64__) || defined(_M_AMD64)
+#ifndef SIMDJSON_IS_32BITS
+#define SIMDJSON_IS_32BITS 0
+#endif
 
-#ifdef SIMDJSON_IS_32BITS
+#if SIMDJSON_IS_32BITS
 #ifndef SIMDJSON_NO_PORTABILITY_WARNING
 #pragma message("The simdjson library is designed \
 for 64-bit processors and it seems that you are not \
