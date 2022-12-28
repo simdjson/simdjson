@@ -70,7 +70,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #define SIMDJSON_ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO)
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
 
   #define simdjson_really_inline __forceinline
   #define simdjson_never_inline __declspec(noinline)
@@ -155,7 +155,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
   #define SIMDJSON_PRAGMA(P) _Pragma(#P)
   #define SIMDJSON_DISABLE_GCC_WARNING(WARNING) SIMDJSON_PRAGMA(GCC diagnostic ignored #WARNING)
-  #if defined(SIMDJSON_CLANG_VISUAL_STUDIO)
+  #if SIMDJSON_CLANG_VISUAL_STUDIO
   #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS SIMDJSON_DISABLE_GCC_WARNING(-Wmicrosoft-include)
   #else
   #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS
@@ -180,7 +180,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define simdjson_inline simdjson_really_inline
 #endif
 
-#if defined(SIMDJSON_VISUAL_STUDIO)
+#if SIMDJSON_VISUAL_STUDIO
     /**
      * Windows users need to do some extra work when building
      * or using a dynamic library (DLL). When building, we need

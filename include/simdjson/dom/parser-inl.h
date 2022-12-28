@@ -43,7 +43,7 @@ inline simdjson_result<size_t> parser::read_file(const std::string &path) noexce
 
   // Get the file size
   int ret;
-#if defined(SIMDJSON_VISUAL_STUDIO) && !SIMDJSON_IS_32BITS
+#if SIMDJSON_VISUAL_STUDIO && !SIMDJSON_IS_32BITS
   ret = _fseeki64(fp, 0, SEEK_END);
 #else
   ret = std::fseek(fp, 0, SEEK_END);
@@ -52,7 +52,7 @@ inline simdjson_result<size_t> parser::read_file(const std::string &path) noexce
     std::fclose(fp);
     return IO_ERROR;
   }
-#if defined(SIMDJSON_VISUAL_STUDIO) && !SIMDJSON_IS_32BITS
+#if SIMDJSON_VISUAL_STUDIO && !SIMDJSON_IS_32BITS
   __int64 len = _ftelli64(fp);
   if(len == -1L) {
     std::fclose(fp);

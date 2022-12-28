@@ -128,7 +128,7 @@ inline simdjson_result<padded_string> padded_string::load(std::string_view filen
 
   // Get the file size
   int ret;
-#if defined(SIMDJSON_VISUAL_STUDIO) && !SIMDJSON_IS_32BITS
+#if SIMDJSON_VISUAL_STUDIO && !SIMDJSON_IS_32BITS
   ret = _fseeki64(fp, 0, SEEK_END);
 #else
   ret = std::fseek(fp, 0, SEEK_END);
@@ -137,7 +137,7 @@ inline simdjson_result<padded_string> padded_string::load(std::string_view filen
     std::fclose(fp);
     return IO_ERROR;
   }
-#if defined(SIMDJSON_VISUAL_STUDIO) && !SIMDJSON_IS_32BITS
+#if SIMDJSON_VISUAL_STUDIO && !SIMDJSON_IS_32BITS
   __int64 llen = _ftelli64(fp);
   if(llen == -1L) {
     std::fclose(fp);
