@@ -102,7 +102,7 @@ simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
 #endif // _M_ARM64
-#else // SIMDJSON_REGULAR_VISUAL_STUDIO || defined(SIMDJSON_IS_32BITS)
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
   answer.high = uint64_t(r >> 64);
