@@ -297,8 +297,92 @@ namespace scalar_tests {
 
 #endif // SIMDJSON_EXCEPTIONS
 
+  bool string_with_trailing() {
+    TEST_START();
+    auto json = R"( "a string" badstuff )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    std::string_view view;
+    ASSERT_ERROR(doc.get_string().get(view), TRAILING_CONTENT);
+    TEST_SUCCEED();
+  }
+
+  bool uint64_with_trailing() {
+    TEST_START();
+    auto json = R"( 133 badstuff )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    uint64_t x;
+    ASSERT_ERROR(doc.get_uint64().get(x), TRAILING_CONTENT);
+    TEST_SUCCEED();
+  }
+
+  bool int64_with_trailing() {
+    TEST_START();
+    auto json = R"( 133 badstuff )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    int64_t x;
+    ASSERT_ERROR(doc.get_int64().get(x), TRAILING_CONTENT);
+    TEST_SUCCEED();
+  }
+
+  bool double_with_trailing() {
+    TEST_START();
+    auto json = R"( 133 badstuff )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    double x;
+    ASSERT_ERROR(doc.get_double().get(x), TRAILING_CONTENT);
+    TEST_SUCCEED();
+  }
+
+
+  bool bool_with_trailing() {
+    TEST_START();
+    auto json = R"( true badstuff )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    bool x;
+    ASSERT_ERROR(doc.get_bool().get(x), TRAILING_CONTENT);
+    TEST_SUCCEED();
+  }
+
+  bool null_with_trailing() {
+    TEST_START();
+    auto json = R"( null badstuff )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_ERROR(doc.is_null(), TRAILING_CONTENT);
+    TEST_SUCCEED();
+  }
+
+  bool nully() {
+    TEST_START();
+    auto json = R"( nully )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    bool x;
+    ASSERT_SUCCESS(doc.is_null().get(x));
+    ASSERT_TRUE(!x);
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return
+           nully() &&
+           string_with_trailing() &&
+           uint64_with_trailing() &&
+           int64_with_trailing() &&
+           bool_with_trailing() &&
+           null_with_trailing() &&
            string_value() &&
            numeric_values() &&
            boolean_values() &&

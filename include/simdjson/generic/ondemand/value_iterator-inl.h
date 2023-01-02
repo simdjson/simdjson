@@ -592,12 +592,15 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   advance_root_scalar("number");
   return num;
 }
-
-simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string() noexcept {
-  return get_string();
+simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string(bool check_trailing) noexcept {
+  return get_root_raw_json_string(check_trailing).unescape(json_iter());
 }
-simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iterator::get_root_raw_json_string() noexcept {
-  return get_raw_json_string();
+simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iterator::get_root_raw_json_string(bool check_trailing) noexcept {
+  auto json = peek_scalar("string");
+  if (*json != '"') { return incorrect_type_error("Not a string"); }
+  if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+  advance_scalar("string");
+  return raw_json_string(json+1);
 }
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
@@ -710,14 +713,15 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_r
   }
   return result;
 }
-simdjson_inline bool value_iterator::is_root_null() noexcept {
-  // If there is trailing content, then the document is not null.
-  if (!_json_iter->is_single_token()) { return false; }
+simdjson_inline simdjson_result<bool> value_iterator::is_root_null(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("null");
   bool result = (max_len >= 4 && !atomparsing::str4ncmp(json, "null") &&
-         (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[5])));
-  if(result) { advance_root_scalar("null"); }
+         (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[4])));
+  if(result) { // we have something that looks like a null.
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    advance_root_scalar("null");
+  }
   return result;
 }
 

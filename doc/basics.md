@@ -1419,9 +1419,6 @@ The `*_in_string` methods can also be called on a single document instances:
 e.g., when your document consist solely of a quoted number.
 
 
-
-Newline-Delimited JSON (ndjson) and JSON lines
-
 Dynamic Number Types
 ------------------------------
 
