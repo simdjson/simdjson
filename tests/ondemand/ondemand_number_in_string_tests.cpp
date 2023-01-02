@@ -36,6 +36,93 @@ namespace number_in_string_tests {
     }
     )"_padded;
 
+    bool in_document_int64() {
+        TEST_START();
+        auto json = R"( "-11232321" )"_padded;
+        ondemand::parser parser;
+        auto doc = parser.iterate(json);
+        int64_t result;
+        ASSERT_SUCCESS(doc.get_int64_in_string().get(result));
+        ASSERT_EQUAL(result,-11232321);
+        TEST_SUCCEED();
+    }
+
+    bool in_document_uint64() {
+        TEST_START();
+        auto json = R"( "11232321" )"_padded;
+        ondemand::parser parser;
+        auto doc = parser.iterate(json);
+        uint64_t result;
+        ASSERT_SUCCESS(doc.get_uint64_in_string().get(result));
+        ASSERT_EQUAL(result,11232321);
+        TEST_SUCCEED();
+    }
+
+    bool in_document_double() {
+        TEST_START();
+        auto json = R"( "11232321.12" )"_padded;
+        ondemand::parser parser;
+        auto doc = parser.iterate(json);
+        double result;
+        ASSERT_SUCCESS(doc.get_double_in_string().get(result));
+        ASSERT_EQUAL(result,11232321.12);
+        TEST_SUCCEED();
+    }
+
+    bool stream_of_pure_int64() {
+        TEST_START();
+        auto json = R"( 1 2 3 )"_padded;
+
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+        int document_index = 0;
+        for (auto doc : stream) {
+            document_index++;
+            int64_t result;
+            ASSERT_SUCCESS(doc.get_int64().get(result));
+            ASSERT_EQUAL(result,document_index);
+        }
+        ASSERT_EQUAL(3,document_index);
+        TEST_SUCCEED();
+    }
+
+    bool stream_of_direct_int64() {
+        TEST_START();
+        auto json = R"( "1" "2" "3" )"_padded;
+
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+        int document_index = 0;
+        for (auto doc : stream) {
+            document_index++;
+            int64_t result;
+            ASSERT_SUCCESS(doc.get_int64_in_string().get(result));
+            ASSERT_EQUAL(result,document_index);
+        }
+        ASSERT_EQUAL(3,document_index);
+        TEST_SUCCEED();
+    }
+
+    bool stream_of_int64() {
+        TEST_START();
+        auto json = R"( ["1"] ["2"] ["3"] )"_padded;
+
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+        int document_index = 0;
+        for (auto doc : stream) {
+            document_index++;
+            int64_t result;
+            ASSERT_SUCCESS(doc.get_array().at(0).get_int64_in_string().get(result));
+            ASSERT_EQUAL(result,document_index);
+        }
+        ASSERT_EQUAL(3,document_index);
+        TEST_SUCCEED();
+    }
+
     bool array_double() {
         TEST_START();
         auto json = R"(["1.2","2.3","-42.3","2.43442e3", "-1.234e3"])"_padded;
@@ -255,7 +342,13 @@ namespace number_in_string_tests {
     }
 
     bool run() {
-        return  array_double() &&
+        return  stream_of_pure_int64() &&
+                stream_of_direct_int64() &&
+                stream_of_int64() &&
+                in_document_int64() &&
+                in_document_uint64() &&
+                in_document_double() &&
+                array_double() &&
                 array_int() &&
                 array_unsigned() &&
                 object() &&
