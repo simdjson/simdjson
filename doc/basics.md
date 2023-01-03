@@ -1415,9 +1415,8 @@ if (error) {
 It is also important to note that when dealing an invalid number inside a string, simdjson will report a `NUMBER_ERROR` error if the string begins with a number whereas simdjson
 will report a `INCORRECT_TYPE` error otherwise.
 
-The `*_in_string` methods can also be called on a single document instances:
+The `*_in_string` methods can also be called on a single document instance:
 e.g., when your document consist solely of a quoted number.
-
 
 Dynamic Number Types
 ------------------------------

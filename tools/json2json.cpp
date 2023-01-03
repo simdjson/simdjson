@@ -20,7 +20,7 @@ int main(int argc, const char *argv[]) {
   std::string progName = "json2json";
 
   std::string progUsage = "json2json version ";
-  progUsage += SIMDJSON_STRINGIFY(SIMDJSON_VERSION);
+  progUsage += SIMDJSON_VERSION;
   progUsage += " (";
   progUsage += simdjson::get_active_implementation()->name();
   progUsage += ")\n";
