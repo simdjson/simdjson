@@ -33,7 +33,9 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf);
 // or cygwin.
 //
 // Finally, we want to exclude legacy 32-bit systems.
-#ifndef SIMDJSON_IS_32BITS
+#if SIMDJSON_IS_32BITS
+// we omit 32-bit tests
+#else
 // So we only run some of the floating-point tests under 64-bit linux, apple, regular visual studio, freebsd.
 #define TEST_FLOATS
 // Apple and freebsd need a special header, typically.

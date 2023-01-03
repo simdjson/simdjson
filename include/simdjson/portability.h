@@ -32,7 +32,7 @@
 #endif // __clang__
 #endif // _MSC_VER
 
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
 // https://en.wikipedia.org/wiki/C_alternative_tokens
 // This header should have no effect, except maybe
 // under Visual Studio.
@@ -59,8 +59,11 @@
 #endif
 
 #endif // defined(__x86_64__) || defined(_M_AMD64)
+#ifndef SIMDJSON_IS_32BITS
+#define SIMDJSON_IS_32BITS 0
+#endif
 
-#ifdef SIMDJSON_IS_32BITS
+#if SIMDJSON_IS_32BITS
 #ifndef SIMDJSON_NO_PORTABILITY_WARNING
 #pragma message("The simdjson library is designed \
 for 64-bit processors and it seems that you are not \
@@ -91,7 +94,7 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 //
 
 // We are going to use runtime dispatch.
-#ifdef SIMDJSON_IS_X86_64
+#if SIMDJSON_IS_X86_64
 #ifdef __clang__
 // clang does not have GCC push pop
 // warning: clang attribute push can't be used within a namespace in clang up
@@ -145,7 +148,7 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 #define SIMDJSON_NO_SANITIZE_UNDEFINED
 #endif
 
-#ifdef SIMDJSON_VISUAL_STUDIO
+#if SIMDJSON_VISUAL_STUDIO
 // This is one case where we do not distinguish between
 // regular visual studio and clang under visual studio.
 // clang under Windows has _stricmp (like visual studio) but not strcasecmp (as clang normally has)
@@ -161,7 +164,7 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 
 #ifdef NDEBUG
 
-#ifdef SIMDJSON_VISUAL_STUDIO
+#if SIMDJSON_VISUAL_STUDIO
 #define SIMDJSON_UNREACHABLE() __assume(0)
 #define SIMDJSON_ASSUME(COND) __assume(COND)
 #else

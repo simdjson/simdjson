@@ -10,7 +10,7 @@ namespace {
 // Sadly, sanitizers are not smart enough to figure it out.
 SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline int trailing_zeroes(uint64_t input_num) {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
   return (int)_tzcnt_u64(input_num);
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO
   ////////
@@ -32,7 +32,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
   return int(_lzcnt_u64(input_num));
 }
 
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
   // note: we do not support legacy 32-bit Windows
   return __popcnt64(input_num);// Visual Studio wants two underscores
@@ -45,7 +45,7 @@ simdjson_inline long long int count_ones(uint64_t input_num) {
 
 simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
   return _addcarry_u64(0, value1, value2,
                        reinterpret_cast<unsigned __int64 *>(result));
 #else

@@ -3783,7 +3783,7 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-#if defined(SIMDJSON_PREFER_REVERSE_BITS)
+#if SIMDJSON_PREFER_REVERSE_BITS
     /**
      * ARM lacks a fast trailing zero instruction, but it has a fast
      * bit reversal instruction and a fast leading zero instruction.

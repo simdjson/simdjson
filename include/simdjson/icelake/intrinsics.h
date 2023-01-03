@@ -3,14 +3,14 @@
 
 #include "simdjson/base.h"
 
-#ifdef SIMDJSON_VISUAL_STUDIO
+#if SIMDJSON_VISUAL_STUDIO
 // under clang within visual studio, this will include <x86intrin.h>
 #include <intrin.h>  // visual studio or clang
 #else
 #include <x86intrin.h> // elsewhere
 #endif // SIMDJSON_VISUAL_STUDIO
 
-#ifdef SIMDJSON_CLANG_VISUAL_STUDIO
+#if SIMDJSON_CLANG_VISUAL_STUDIO
 /**
  * You are not supposed, normally, to include these
  * headers directly. Instead you should either include intrin.h

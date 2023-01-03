@@ -1,5 +1,4 @@
 #include "simdjson/fallback/begin.h"
-
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 

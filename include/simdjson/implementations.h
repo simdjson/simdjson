@@ -51,7 +51,12 @@
 // Default Haswell to on if this is x86-64. Even if we're not compiled for it, it could be selected
 // at runtime.
 #ifndef SIMDJSON_IMPLEMENTATION_HASWELL
+#if SIMDJSON_CAN_ALWAYS_RUN_ICELAKE
+// if icelake is always available, never enable haswell.
+#define SIMDJSON_IMPLEMENTATION_HASWELL 0
+#else
 #define SIMDJSON_IMPLEMENTATION_HASWELL SIMDJSON_IS_X86_64
+#endif
 #endif
 #ifdef _MSC_VER
 // To see why  (__BMI__) && (__PCLMUL__) && (__LZCNT__) are not part of this next line, see
@@ -61,9 +66,14 @@
 #define SIMDJSON_CAN_ALWAYS_RUN_HASWELL ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__))
 #endif
 
-// Default Westmere to on if this is x86-64. Note that the macro SIMDJSON_REQUIRES_HASWELL appears unused.
+// Default Westmere to on if this is x86-64.
 #ifndef SIMDJSON_IMPLEMENTATION_WESTMERE
-#define SIMDJSON_IMPLEMENTATION_WESTMERE (SIMDJSON_IS_X86_64 && !SIMDJSON_REQUIRES_HASWELL)
+#if SIMDJSON_CAN_ALWAYS_RUN_ICELAKE || SIMDJSON_CAN_ALWAYS_RUN_HASWELL
+// if icelake or haswell are always available, never enable westmere.
+#define SIMDJSON_IMPLEMENTATION_WESTMERE 0
+#else
+#define SIMDJSON_IMPLEMENTATION_WESTMERE SIMDJSON_IS_X86_64
+#endif
 #endif
 #define SIMDJSON_CAN_ALWAYS_RUN_WESTMERE (SIMDJSON_IMPLEMENTATION_WESTMERE && SIMDJSON_IS_X86_64 && __SSE4_2__ && __PCLMUL__)
 
@@ -74,7 +84,12 @@
 
 // Default Fallback to on unless a builtin implementation has already been selected.
 #ifndef SIMDJSON_IMPLEMENTATION_FALLBACK
-#define SIMDJSON_IMPLEMENTATION_FALLBACK 1 // (!SIMDJSON_CAN_ALWAYS_RUN_ARM64 && !SIMDJSON_CAN_ALWAYS_RUN_HASWELL && !SIMDJSON_CAN_ALWAYS_RUN_WESTMERE && !SIMDJSON_CAN_ALWAYS_RUN_PPC64)
+#if SIMDJSON_CAN_ALWAYS_RUN_ARM64 || SIMDJSON_CAN_ALWAYS_RUN_ICELAKE || SIMDJSON_CAN_ALWAYS_RUN_HASWELL || SIMDJSON_CAN_ALWAYS_RUN_WESTMERE || SIMDJSON_CAN_ALWAYS_RUN_PPC64
+// if anything at all except fallback can always run, then disable fallback.
+#define SIMDJSON_IMPLEMENTATION_FALLBACK 0
+#else
+#define SIMDJSON_IMPLEMENTATION_FALLBACK 1
+#endif
 #endif
 #define SIMDJSON_CAN_ALWAYS_RUN_FALLBACK SIMDJSON_IMPLEMENTATION_FALLBACK
 
