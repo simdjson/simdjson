@@ -21,7 +21,7 @@ The current implementations are:
 * haswell: AVX2 (2013 Intel Haswell or later)
 * westmere: SSE4.2 (2010 Westmere or later).
 * arm64: 64-bit ARMv8-A NEON
-* ppc64: 64-bit POWER8 and POWER9 with VSX and ALTIVEC extensions. Both big endian and little endian are implemented, depends on the compiler you are using.
+* ppc64: 64-bit POWER8 and POWER9 with VSX and ALTIVEC extensions. Both big endian and little endian are implemented, depends on the compiler you are using. Users are advised that the library is not tested on big-endian systems.
 * fallback: A generic implementation that runs on any 64-bit processor.
 
 In many cases, you don't know where your compiled binary is going to run, so simdjson automatically
