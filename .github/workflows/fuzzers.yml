@@ -24,7 +24,7 @@ jobs:
       implementations: haswell westmere fallback
       UBSAN_OPTIONS: halt_on_error=1
       MAXLEN: -max_len=4000
-      CLANGVERSION: 14
+      CLANGVERSION: 15
       # which optimization level to use for the sanitizer build (see build_fuzzer.variants.sh)
       OPTLEVEL: -O3
 
@@ -32,7 +32,7 @@ jobs:
     - name: Install packages necessary for building
       run: |
         sudo apt update
-        sudo apt-get install --quiet ninja-build valgrind zip unzip
+        sudo apt-get install --quiet ninja-build valgrind zip unzip lsb-release wget software-properties-common gnupg
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
         sudo ./llvm.sh $CLANGVERSION
