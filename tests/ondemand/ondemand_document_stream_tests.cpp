@@ -714,8 +714,86 @@ namespace document_stream_tests {
         return (bool_count == 0) && (total_count == 1);
     }
 
+    bool string_with_trailing() {
+        TEST_START();
+        auto json = R"( "a string" badstuff )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream doc;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(doc));
+        std::string_view view;
+        ASSERT_SUCCESS((*doc.begin()).get_string().get(view));
+        ASSERT_EQUAL(view,"a string");
+        TEST_SUCCEED();
+    }
+
+    bool uint64_with_trailing() {
+        TEST_START();
+        auto json = R"( 133 badstuff )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream doc;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(doc));
+        uint64_t x;
+        ASSERT_SUCCESS((*doc.begin()).get_uint64().get(x));
+        ASSERT_EQUAL(x,133);
+        TEST_SUCCEED();
+    }
+
+    bool int64_with_trailing() {
+        TEST_START();
+        auto json = R"( 133 badstuff )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream doc;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(doc));
+        int64_t x;
+        ASSERT_SUCCESS((*doc.begin()).get_int64().get(x));
+        ASSERT_EQUAL(x,133);
+        TEST_SUCCEED();
+    }
+
+    bool double_with_trailing() {
+        TEST_START();
+        auto json = R"( 133 badstuff )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream doc;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(doc));
+        double x;
+        ASSERT_SUCCESS((*doc.begin()).get_double().get(x));
+        ASSERT_EQUAL(x,133);
+        TEST_SUCCEED();
+    }
+
+
+    bool bool_with_trailing() {
+        TEST_START();
+        auto json = R"( true badstuff )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream doc;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(doc));
+        bool x;
+        ASSERT_SUCCESS((*doc.begin()).get_bool().get(x));
+        ASSERT_EQUAL(x,true);
+        TEST_SUCCEED();
+    }
+
+    bool null_with_trailing() {
+        TEST_START();
+        auto json = R"( null badstuff )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream doc;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(doc));
+        bool n;
+        ASSERT_SUCCESS((*doc.begin()).is_null().get(n));
+        ASSERT_EQUAL(n,true);
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return
+            string_with_trailing() &&
+            uint64_with_trailing() &&
+            int64_with_trailing() &&
+            bool_with_trailing() &&
+            null_with_trailing() &&
             truncated_utf8() &&
             issue1729() &&
             fuzzaccess() &&

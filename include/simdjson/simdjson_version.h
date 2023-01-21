@@ -4,7 +4,14 @@
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 3.0.1
+/**
+ * Early versions of simdjson would not put quotes around the string
+ * which required users to add the quotes. If one examines the most
+ * common usage of version macros, they are quoted, as they are meant
+ * to be treated as strings. Thus going forward, the version macro is
+ * quoted. We do not expect this change to break code.
+ **/
+#define SIMDJSON_VERSION "3.0.1"
 
 namespace simdjson {
 enum {

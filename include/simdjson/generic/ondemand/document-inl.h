@@ -67,35 +67,44 @@ simdjson_inline simdjson_result<object> document::get_object() & noexcept {
   auto value = get_root_value_iterator();
   return object::start_root(value);
 }
+
+/**
+ * We decided that calling 'get_double()' on the JSON document '1.233 blabla' should
+ * give an error, so we check for trailing content. We want to disallow trailing
+ * content.
+ * Thus, in several implementations below, we pass a 'true' parameter value to
+ * a get_root_value_iterator() method: this indicates that we disallow trailing content.
+ */
+
 simdjson_inline simdjson_result<uint64_t> document::get_uint64() noexcept {
-  return get_root_value_iterator().get_root_uint64();
+  return get_root_value_iterator().get_root_uint64(true);
 }
 simdjson_inline simdjson_result<uint64_t> document::get_uint64_in_string() noexcept {
-  return get_root_value_iterator().get_root_uint64_in_string();
+  return get_root_value_iterator().get_root_uint64_in_string(true);
 }
 simdjson_inline simdjson_result<int64_t> document::get_int64() noexcept {
-  return get_root_value_iterator().get_root_int64();
+  return get_root_value_iterator().get_root_int64(true);
 }
 simdjson_inline simdjson_result<int64_t> document::get_int64_in_string() noexcept {
-  return get_root_value_iterator().get_root_int64_in_string();
+  return get_root_value_iterator().get_root_int64_in_string(true);
 }
 simdjson_inline simdjson_result<double> document::get_double() noexcept {
-  return get_root_value_iterator().get_root_double();
+  return get_root_value_iterator().get_root_double(true);
 }
 simdjson_inline simdjson_result<double> document::get_double_in_string() noexcept {
-  return get_root_value_iterator().get_root_double_in_string();
+  return get_root_value_iterator().get_root_double_in_string(true);
 }
 simdjson_inline simdjson_result<std::string_view> document::get_string() noexcept {
-  return get_root_value_iterator().get_root_string();
+  return get_root_value_iterator().get_root_string(true);
 }
 simdjson_inline simdjson_result<raw_json_string> document::get_raw_json_string() noexcept {
-  return get_root_value_iterator().get_root_raw_json_string();
+  return get_root_value_iterator().get_root_raw_json_string(true);
 }
 simdjson_inline simdjson_result<bool> document::get_bool() noexcept {
-  return get_root_value_iterator().get_root_bool();
+  return get_root_value_iterator().get_root_bool(true);
 }
 simdjson_inline simdjson_result<bool> document::is_null() noexcept {
-  return get_root_value_iterator().is_root_null();
+  return get_root_value_iterator().is_root_null(true);
 }
 
 template<> simdjson_inline simdjson_result<array> document::get() & noexcept { return get_array(); }
@@ -213,15 +222,15 @@ simdjson_inline bool document::is_negative() noexcept {
 }
 
 simdjson_inline simdjson_result<bool> document::is_integer() noexcept {
-  return get_root_value_iterator().is_root_integer();
+  return get_root_value_iterator().is_root_integer(true);
 }
 
 simdjson_inline simdjson_result<number_type> document::get_number_type() noexcept {
-  return get_root_value_iterator().get_root_number_type();
+  return get_root_value_iterator().get_root_number_type(true);
 }
 
 simdjson_inline simdjson_result<number> document::get_number() noexcept {
-  return get_root_value_iterator().get_root_number();
+  return get_root_value_iterator().get_root_number(true);
 }
 
 
@@ -330,13 +339,25 @@ simdjson_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_IMPLEMENTATIO
   if (error()) { return error(); }
   return first.get_uint64();
 }
+simdjson_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_uint64_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_uint64_in_string();
+}
 simdjson_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_int64() noexcept {
   if (error()) { return error(); }
   return first.get_int64();
 }
+simdjson_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_int64_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_int64_in_string();
+}
 simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_double() noexcept {
   if (error()) { return error(); }
   return first.get_double();
+}
+simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_double_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_double_in_string();
 }
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_string() noexcept {
   if (error()) { return error(); }
@@ -497,24 +518,41 @@ simdjson_inline document_reference::document_reference(document &d) noexcept : d
 simdjson_inline void document_reference::rewind() noexcept { doc->rewind(); }
 simdjson_inline simdjson_result<array> document_reference::get_array() & noexcept { return doc->get_array(); }
 simdjson_inline simdjson_result<object> document_reference::get_object() & noexcept { return doc->get_object(); }
-simdjson_inline simdjson_result<uint64_t> document_reference::get_uint64() noexcept { return doc->get_uint64(); }
-simdjson_inline simdjson_result<int64_t> document_reference::get_int64() noexcept { return doc->get_int64(); }
-simdjson_inline simdjson_result<double> document_reference::get_double() noexcept { return doc->get_double(); }
-simdjson_inline simdjson_result<std::string_view> document_reference::get_string() noexcept { return doc->get_string(); }
-simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_json_string() noexcept { return doc->get_raw_json_string(); }
-simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_bool(); }
+/**
+ * The document_reference instances are used primarily/solely for streams of JSON
+ * documents.
+ * We decided that calling 'get_double()' on the JSON document '1.233 blabla' should
+ * give an error, so we check for trailing content.
+ *
+ * However, for streams of JSON documents, we want to be able to start from
+ * "321" "321" "321"
+ * and parse it successfully as a stream of JSON documents, calling get_uint64_in_string()
+ * successfully each time.
+ *
+ * To achieve this result, we pass a 'false' to a get_root_value_iterator() method:
+ * this indicates that we allow trailing content.
+ */
+simdjson_inline simdjson_result<uint64_t> document_reference::get_uint64() noexcept { return doc->get_root_value_iterator().get_root_uint64(false); }
+simdjson_inline simdjson_result<uint64_t> document_reference::get_uint64_in_string() noexcept { return doc->get_root_value_iterator().get_root_uint64_in_string(false); }
+simdjson_inline simdjson_result<int64_t> document_reference::get_int64() noexcept { return doc->get_root_value_iterator().get_root_int64(false); }
+simdjson_inline simdjson_result<int64_t> document_reference::get_int64_in_string() noexcept { return doc->get_root_value_iterator().get_root_int64_in_string(false); }
+simdjson_inline simdjson_result<double> document_reference::get_double() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
+simdjson_inline simdjson_result<double> document_reference::get_double_in_string() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
+simdjson_inline simdjson_result<std::string_view> document_reference::get_string() noexcept { return doc->get_root_value_iterator().get_root_string(false); }
+simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_json_string() noexcept { return doc->get_root_value_iterator().get_root_raw_json_string(false); }
+simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
 simdjson_inline simdjson_result<value> document_reference::get_value() noexcept { return doc->get_value(); }
-simdjson_inline simdjson_result<bool> document_reference::is_null() noexcept { return doc->is_null(); }
+simdjson_inline simdjson_result<bool> document_reference::is_null() noexcept { return doc->get_root_value_iterator().is_root_null(false); }
 
 #if SIMDJSON_EXCEPTIONS
 simdjson_inline document_reference::operator array() & noexcept(false) { return array(*doc); }
 simdjson_inline document_reference::operator object() & noexcept(false) { return object(*doc); }
-simdjson_inline document_reference::operator uint64_t() noexcept(false) { return uint64_t(*doc); }
-simdjson_inline document_reference::operator int64_t() noexcept(false) { return int64_t(*doc); }
-simdjson_inline document_reference::operator double() noexcept(false) { return double(*doc); }
+simdjson_inline document_reference::operator uint64_t() noexcept(false) { return get_uint64(); }
+simdjson_inline document_reference::operator int64_t() noexcept(false) { return get_int64(); }
+simdjson_inline document_reference::operator double() noexcept(false) { return get_double(); }
 simdjson_inline document_reference::operator std::string_view() noexcept(false) { return std::string_view(*doc); }
 simdjson_inline document_reference::operator raw_json_string() noexcept(false) { return raw_json_string(*doc); }
-simdjson_inline document_reference::operator bool() noexcept(false) { return bool(*doc); }
+simdjson_inline document_reference::operator bool() noexcept(false) { return get_bool(); }
 simdjson_inline document_reference::operator value() noexcept(false) { return value(*doc); }
 #endif
 simdjson_inline simdjson_result<size_t> document_reference::count_elements() & noexcept { return doc->count_elements(); }
@@ -533,9 +571,9 @@ simdjson_inline simdjson_result<bool> document_reference::is_scalar() noexcept {
 simdjson_inline simdjson_result<const char *> document_reference::current_location() noexcept { return doc->current_location(); }
 simdjson_inline int32_t document_reference::current_depth() const noexcept { return doc->current_depth(); }
 simdjson_inline bool document_reference::is_negative() noexcept { return doc->is_negative(); }
-simdjson_inline simdjson_result<bool> document_reference::is_integer() noexcept { return doc->is_integer(); }
-simdjson_inline simdjson_result<number_type> document_reference::get_number_type() noexcept { return doc->get_number_type(); }
-simdjson_inline simdjson_result<number> document_reference::get_number() noexcept { return doc->get_number(); }
+simdjson_inline simdjson_result<bool> document_reference::is_integer() noexcept { return doc->get_root_value_iterator().is_root_integer(false); }
+simdjson_inline simdjson_result<number_type> document_reference::get_number_type() noexcept { return doc->get_root_value_iterator().get_root_number_type(false); }
+simdjson_inline simdjson_result<number> document_reference::get_number() noexcept { return doc->get_root_value_iterator().get_root_number(false); }
 simdjson_inline simdjson_result<std::string_view> document_reference::raw_json_token() noexcept { return doc->raw_json_token(); }
 simdjson_inline simdjson_result<value> document_reference::at_pointer(std::string_view json_pointer) noexcept { return doc->at_pointer(json_pointer); }
 simdjson_inline simdjson_result<std::string_view> document_reference::raw_json() noexcept { return doc->raw_json();}
@@ -612,13 +650,25 @@ simdjson_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_IMPLEMENTATIO
   if (error()) { return error(); }
   return first.get_uint64();
 }
+simdjson_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_uint64_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_uint64_in_string();
+}
 simdjson_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_int64() noexcept {
   if (error()) { return error(); }
   return first.get_int64();
 }
+simdjson_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_int64_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_int64_in_string();
+}
 simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_double() noexcept {
   if (error()) { return error(); }
   return first.get_double();
+}
+simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_double_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_double_in_string();
 }
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_string() noexcept {
   if (error()) { return error(); }

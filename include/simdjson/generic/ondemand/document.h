@@ -577,6 +577,7 @@ protected:
   friend class field;
   friend class token;
   friend class document_stream;
+  friend class document_reference;
 };
 
 
@@ -593,8 +594,11 @@ public:
   simdjson_inline simdjson_result<array> get_array() & noexcept;
   simdjson_inline simdjson_result<object> get_object() & noexcept;
   simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
+  simdjson_inline simdjson_result<uint64_t> get_uint64_in_string() noexcept;
   simdjson_inline simdjson_result<int64_t> get_int64() noexcept;
+  simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
+  simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
   simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -658,9 +662,11 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> get_array() & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> get_object() & noexcept;
   simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
+  simdjson_inline simdjson_result<uint64_t> get_uint64_in_string() noexcept;
   simdjson_inline simdjson_result<int64_t> get_int64() noexcept;
+  simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
-  simdjson_inline simdjson_result<double> get_double_from_string() noexcept;
+  simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -726,8 +732,11 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> get_array() & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> get_object() & noexcept;
   simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
+  simdjson_inline simdjson_result<uint64_t> get_uint64_in_string() noexcept;
   simdjson_inline simdjson_result<int64_t> get_int64() noexcept;
+  simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
+  simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;

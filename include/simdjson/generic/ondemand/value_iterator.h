@@ -295,20 +295,20 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<number_type> get_number_type() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
 
-  simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_string() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_root_raw_json_string() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64_in_string() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<int64_t> get_root_int64() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<int64_t> get_root_int64_in_string() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<double> get_root_double() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<double> get_root_double_in_string() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<bool> get_root_bool() noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_string(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_root_raw_json_string(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64_in_string(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<int64_t> get_root_int64(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<int64_t> get_root_int64_in_string(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<double> get_root_double(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<double> get_root_double_in_string(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<bool> get_root_bool(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline bool is_root_negative() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<bool> is_root_integer() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<number_type> get_root_number_type() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<number> get_root_number() noexcept;
-  simdjson_inline bool is_root_null() noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<bool> is_root_integer(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<number_type> get_root_number_type(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<number> get_root_number(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<bool> is_root_null(bool check_trailing) noexcept;
 
   simdjson_inline error_code error() const noexcept;
   simdjson_inline uint8_t *&string_buf_loc() noexcept;
