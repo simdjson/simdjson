@@ -1,4 +1,4 @@
-/* auto-generated on 2022-11-23 10:31:42 -0500. Do not edit! */
+/* auto-generated on 2023-01-21 15:29:08 -0500. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -5147,7 +5147,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 // redefining SIMDJSON_IMPLEMENTATION to "fallback"
 // #define SIMDJSON_IMPLEMENTATION fallback
 /* end file include/simdjson/fallback/begin.h */
-
 namespace simdjson {
 namespace fallback {
 
@@ -7577,7 +7576,7 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-#if defined(SIMDJSON_PREFER_REVERSE_BITS)
+#if SIMDJSON_PREFER_REVERSE_BITS
     /**
      * ARM lacks a fast trailing zero instruction, but it has a fast
      * bit reversal instruction and a fast leading zero instruction.
@@ -9969,7 +9968,7 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-#if defined(SIMDJSON_PREFER_REVERSE_BITS)
+#if SIMDJSON_PREFER_REVERSE_BITS
     /**
      * ARM lacks a fast trailing zero instruction, but it has a fast
      * bit reversal instruction and a fast leading zero instruction.
@@ -12277,7 +12276,7 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-#if defined(SIMDJSON_PREFER_REVERSE_BITS)
+#if SIMDJSON_PREFER_REVERSE_BITS
     /**
      * ARM lacks a fast trailing zero instruction, but it has a fast
      * bit reversal instruction and a fast leading zero instruction.
@@ -14620,7 +14619,7 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-#if defined(SIMDJSON_PREFER_REVERSE_BITS)
+#if SIMDJSON_PREFER_REVERSE_BITS
     /**
      * ARM lacks a fast trailing zero instruction, but it has a fast
      * bit reversal instruction and a fast leading zero instruction.

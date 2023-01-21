@@ -1,4 +1,4 @@
-/* auto-generated on 2022-11-23 10:31:42 -0500. Do not edit! */
+/* auto-generated on 2023-01-21 15:29:08 -0500. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -43,7 +43,7 @@
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 3.0.1
+#define SIMDJSON_VERSION 3.1.0
 
 namespace simdjson {
 enum {
@@ -54,11 +54,11 @@ enum {
   /**
    * The minor version (major.MINOR.revision) of simdjson being used.
    */
-  SIMDJSON_VERSION_MINOR = 0,
+  SIMDJSON_VERSION_MINOR = 1,
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 1
+  SIMDJSON_VERSION_REVISION = 0
 };
 } // namespace simdjson
 
@@ -149,7 +149,7 @@ enum {
 #endif // __clang__
 #endif // _MSC_VER
 
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
 // https://en.wikipedia.org/wiki/C_alternative_tokens
 // This header should have no effect, except maybe
 // under Visual Studio.
@@ -176,8 +176,11 @@ enum {
 #endif
 
 #endif // defined(__x86_64__) || defined(_M_AMD64)
+#ifndef SIMDJSON_IS_32BITS
+#define SIMDJSON_IS_32BITS 0
+#endif
 
-#ifdef SIMDJSON_IS_32BITS
+#if SIMDJSON_IS_32BITS
 #ifndef SIMDJSON_NO_PORTABILITY_WARNING
 #pragma message("The simdjson library is designed \
 for 64-bit processors and it seems that you are not \
@@ -208,7 +211,7 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 //
 
 // We are going to use runtime dispatch.
-#ifdef SIMDJSON_IS_X86_64
+#if SIMDJSON_IS_X86_64
 #ifdef __clang__
 // clang does not have GCC push pop
 // warning: clang attribute push can't be used within a namespace in clang up
@@ -262,7 +265,7 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 #define SIMDJSON_NO_SANITIZE_UNDEFINED
 #endif
 
-#ifdef SIMDJSON_VISUAL_STUDIO
+#if SIMDJSON_VISUAL_STUDIO
 // This is one case where we do not distinguish between
 // regular visual studio and clang under visual studio.
 // clang under Windows has _stricmp (like visual studio) but not strcasecmp (as clang normally has)
@@ -278,7 +281,7 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 
 #ifdef NDEBUG
 
-#ifdef SIMDJSON_VISUAL_STUDIO
+#if SIMDJSON_VISUAL_STUDIO
 #define SIMDJSON_UNREACHABLE() __assume(0)
 #define SIMDJSON_ASSUME(COND) __assume(COND)
 #else
@@ -362,7 +365,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #define SIMDJSON_ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO)
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
 
   #define simdjson_really_inline __forceinline
   #define simdjson_never_inline __declspec(noinline)
@@ -447,7 +450,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
   #define SIMDJSON_PRAGMA(P) _Pragma(#P)
   #define SIMDJSON_DISABLE_GCC_WARNING(WARNING) SIMDJSON_PRAGMA(GCC diagnostic ignored #WARNING)
-  #if defined(SIMDJSON_CLANG_VISUAL_STUDIO)
+  #if SIMDJSON_CLANG_VISUAL_STUDIO
   #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS SIMDJSON_DISABLE_GCC_WARNING(-Wmicrosoft-include)
   #else
   #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS
@@ -472,7 +475,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define simdjson_inline simdjson_really_inline
 #endif
 
-#if defined(SIMDJSON_VISUAL_STUDIO)
+#if SIMDJSON_VISUAL_STUDIO
     /**
      * Windows users need to do some extra work when building
      * or using a dynamic library (DLL). When building, we need
@@ -3405,7 +3408,7 @@ public:
    *
    * @return a mask of all required `internal::instruction_set::` values.
    */
-  virtual uint32_t required_instruction_sets() const { return _required_instruction_sets; };
+  virtual uint32_t required_instruction_sets() const { return _required_instruction_sets; }
 
   /**
    * @private For internal implementation use
@@ -3887,7 +3890,7 @@ inline simdjson_result<padded_string> padded_string::load(std::string_view filen
 
   // Get the file size
   int ret;
-#if defined(SIMDJSON_VISUAL_STUDIO) && !SIMDJSON_IS_32BITS
+#if SIMDJSON_VISUAL_STUDIO && !SIMDJSON_IS_32BITS
   ret = _fseeki64(fp, 0, SEEK_END);
 #else
   ret = std::fseek(fp, 0, SEEK_END);
@@ -3896,7 +3899,7 @@ inline simdjson_result<padded_string> padded_string::load(std::string_view filen
     std::fclose(fp);
     return IO_ERROR;
   }
-#if defined(SIMDJSON_VISUAL_STUDIO) && !SIMDJSON_IS_32BITS
+#if SIMDJSON_VISUAL_STUDIO && !SIMDJSON_IS_32BITS
   __int64 llen = _ftelli64(fp);
   if(llen == -1L) {
     std::fclose(fp);
@@ -8695,7 +8698,7 @@ inline simdjson_result<size_t> parser::read_file(const std::string &path) noexce
 
   // Get the file size
   int ret;
-#if defined(SIMDJSON_VISUAL_STUDIO) && !SIMDJSON_IS_32BITS
+#if SIMDJSON_VISUAL_STUDIO && !SIMDJSON_IS_32BITS
   ret = _fseeki64(fp, 0, SEEK_END);
 #else
   ret = std::fseek(fp, 0, SEEK_END);
@@ -8704,7 +8707,7 @@ inline simdjson_result<size_t> parser::read_file(const std::string &path) noexce
     std::fclose(fp);
     return IO_ERROR;
   }
-#if defined(SIMDJSON_VISUAL_STUDIO) && !SIMDJSON_IS_32BITS
+#if SIMDJSON_VISUAL_STUDIO && !SIMDJSON_IS_32BITS
   __int64 len = _ftelli64(fp);
   if(len == -1L) {
     std::fclose(fp);
@@ -9620,7 +9623,12 @@ extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
 // Default Haswell to on if this is x86-64. Even if we're not compiled for it, it could be selected
 // at runtime.
 #ifndef SIMDJSON_IMPLEMENTATION_HASWELL
+#if SIMDJSON_CAN_ALWAYS_RUN_ICELAKE
+// if icelake is always available, never enable haswell.
+#define SIMDJSON_IMPLEMENTATION_HASWELL 0
+#else
 #define SIMDJSON_IMPLEMENTATION_HASWELL SIMDJSON_IS_X86_64
+#endif
 #endif
 #ifdef _MSC_VER
 // To see why  (__BMI__) && (__PCLMUL__) && (__LZCNT__) are not part of this next line, see
@@ -9630,9 +9638,14 @@ extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
 #define SIMDJSON_CAN_ALWAYS_RUN_HASWELL ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__))
 #endif
 
-// Default Westmere to on if this is x86-64. Note that the macro SIMDJSON_REQUIRES_HASWELL appears unused.
+// Default Westmere to on if this is x86-64.
 #ifndef SIMDJSON_IMPLEMENTATION_WESTMERE
-#define SIMDJSON_IMPLEMENTATION_WESTMERE (SIMDJSON_IS_X86_64 && !SIMDJSON_REQUIRES_HASWELL)
+#if SIMDJSON_CAN_ALWAYS_RUN_ICELAKE || SIMDJSON_CAN_ALWAYS_RUN_HASWELL
+// if icelake or haswell are always available, never enable westmere.
+#define SIMDJSON_IMPLEMENTATION_WESTMERE 0
+#else
+#define SIMDJSON_IMPLEMENTATION_WESTMERE SIMDJSON_IS_X86_64
+#endif
 #endif
 #define SIMDJSON_CAN_ALWAYS_RUN_WESTMERE (SIMDJSON_IMPLEMENTATION_WESTMERE && SIMDJSON_IS_X86_64 && __SSE4_2__ && __PCLMUL__)
 
@@ -9643,7 +9656,12 @@ extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
 
 // Default Fallback to on unless a builtin implementation has already been selected.
 #ifndef SIMDJSON_IMPLEMENTATION_FALLBACK
-#define SIMDJSON_IMPLEMENTATION_FALLBACK 1 // (!SIMDJSON_CAN_ALWAYS_RUN_ARM64 && !SIMDJSON_CAN_ALWAYS_RUN_HASWELL && !SIMDJSON_CAN_ALWAYS_RUN_WESTMERE && !SIMDJSON_CAN_ALWAYS_RUN_PPC64)
+#if SIMDJSON_CAN_ALWAYS_RUN_ARM64 || SIMDJSON_CAN_ALWAYS_RUN_ICELAKE || SIMDJSON_CAN_ALWAYS_RUN_HASWELL || SIMDJSON_CAN_ALWAYS_RUN_WESTMERE || SIMDJSON_CAN_ALWAYS_RUN_PPC64
+// if anything at all except fallback can always run, then disable fallback.
+#define SIMDJSON_IMPLEMENTATION_FALLBACK 0
+#else
+#define SIMDJSON_IMPLEMENTATION_FALLBACK 1
+#endif
 #endif
 #define SIMDJSON_CAN_ALWAYS_RUN_FALLBACK SIMDJSON_IMPLEMENTATION_FALLBACK
 
@@ -10542,7 +10560,7 @@ simdjson_inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   return 0; // bad r
 }
 
-#ifdef SIMDJSON_IS_32BITS // _umul128 for x86, arm
+#if SIMDJSON_IS_32BITS // _umul128 for x86, arm
 // this is a slow emulation routine for 32-bit
 //
 static simdjson_inline uint64_t __emulu(uint32_t x, uint32_t y) {
@@ -10564,7 +10582,7 @@ using internal::value128;
 
 simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   value128 answer;
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
 #ifdef _M_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
@@ -10572,7 +10590,7 @@ simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
 #endif // _M_ARM64
-#else // defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
   answer.high = uint64_t(r >> 64);
@@ -12249,7 +12267,7 @@ simdjson_inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   return 0; // bad r
 }
 
-#ifdef SIMDJSON_IS_32BITS // _umul128 for x86, arm
+#if SIMDJSON_IS_32BITS // _umul128 for x86, arm
 // this is a slow emulation routine for 32-bit
 //
 static simdjson_inline uint64_t __emulu(uint32_t x, uint32_t y) {
@@ -12271,7 +12289,7 @@ using internal::value128;
 
 simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   value128 answer;
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
 #ifdef _M_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
@@ -12279,7 +12297,7 @@ simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
 #endif // _M_ARM64
-#else // defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
   answer.high = uint64_t(r >> 64);
@@ -13753,14 +13771,14 @@ public:
 #define SIMDJSON_ICELAKE_INTRINSICS_H
 
 
-#ifdef SIMDJSON_VISUAL_STUDIO
+#if SIMDJSON_VISUAL_STUDIO
 // under clang within visual studio, this will include <x86intrin.h>
 #include <intrin.h>  // visual studio or clang
 #else
 #include <x86intrin.h> // elsewhere
 #endif // SIMDJSON_VISUAL_STUDIO
 
-#ifdef SIMDJSON_CLANG_VISUAL_STUDIO
+#if SIMDJSON_CLANG_VISUAL_STUDIO
 /**
  * You are not supposed, normally, to include these
  * headers directly. Instead you should either include intrin.h
@@ -13912,7 +13930,7 @@ namespace {
 // Sadly, sanitizers are not smart enough to figure it out.
 SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline int trailing_zeroes(uint64_t input_num) {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
   return (int)_tzcnt_u64(input_num);
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO
   ////////
@@ -13934,7 +13952,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
   return int(_lzcnt_u64(input_num));
 }
 
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
   // note: we do not support legacy 32-bit Windows
   return __popcnt64(input_num);// Visual Studio wants two underscores
@@ -13947,7 +13965,7 @@ simdjson_inline long long int count_ones(uint64_t input_num) {
 
 simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
   return _addcarry_u64(0, value1, value2,
                        reinterpret_cast<unsigned __int64 *>(result));
 #else
@@ -14436,7 +14454,7 @@ simdjson_inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   return 0; // bad r
 }
 
-#ifdef SIMDJSON_IS_32BITS // _umul128 for x86, arm
+#if SIMDJSON_IS_32BITS // _umul128 for x86, arm
 // this is a slow emulation routine for 32-bit
 //
 static simdjson_inline uint64_t __emulu(uint32_t x, uint32_t y) {
@@ -14458,7 +14476,7 @@ using internal::value128;
 
 simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   value128 answer;
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
 #ifdef _M_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
@@ -14466,7 +14484,7 @@ simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
 #endif // _M_ARM64
-#else // defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
   answer.high = uint64_t(r >> 64);
@@ -15951,14 +15969,14 @@ public:
 #define SIMDJSON_HASWELL_INTRINSICS_H
 
 
-#ifdef SIMDJSON_VISUAL_STUDIO
+#if SIMDJSON_VISUAL_STUDIO
 // under clang within visual studio, this will include <x86intrin.h>
 #include <intrin.h>  // visual studio or clang
 #else
 #include <x86intrin.h> // elsewhere
 #endif // SIMDJSON_VISUAL_STUDIO
 
-#ifdef SIMDJSON_CLANG_VISUAL_STUDIO
+#if SIMDJSON_CLANG_VISUAL_STUDIO
 /**
  * You are not supposed, normally, to include these
  * headers directly. Instead you should either include intrin.h
@@ -16102,7 +16120,7 @@ namespace {
 // Sadly, sanitizers are not smart enough to figure it out.
 SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline int trailing_zeroes(uint64_t input_num) {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
   return (int)_tzcnt_u64(input_num);
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO
   ////////
@@ -16124,7 +16142,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
   return int(_lzcnt_u64(input_num));
 }
 
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
   // note: we do not support legacy 32-bit Windows
   return __popcnt64(input_num);// Visual Studio wants two underscores
@@ -16137,7 +16155,7 @@ simdjson_inline long long int count_ones(uint64_t input_num) {
 
 simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
   return _addcarry_u64(0, value1, value2,
                        reinterpret_cast<unsigned __int64 *>(result));
 #else
@@ -16620,7 +16638,7 @@ simdjson_inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   return 0; // bad r
 }
 
-#ifdef SIMDJSON_IS_32BITS // _umul128 for x86, arm
+#if SIMDJSON_IS_32BITS // _umul128 for x86, arm
 // this is a slow emulation routine for 32-bit
 //
 static simdjson_inline uint64_t __emulu(uint32_t x, uint32_t y) {
@@ -16642,7 +16660,7 @@ using internal::value128;
 
 simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   value128 answer;
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
 #ifdef _M_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
@@ -16650,7 +16668,7 @@ simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
 #endif // _M_ARM64
-#else // defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
   answer.high = uint64_t(r >> 64);
@@ -18244,7 +18262,7 @@ namespace {
 // Sadly, sanitizers are not smart enough to figure it out.
 SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline int trailing_zeroes(uint64_t input_num) {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
   // Search the mask data from least significant bit (LSB)
   // to the most significant bit (MSB) for a set bit (1).
@@ -18262,7 +18280,7 @@ simdjson_inline uint64_t clear_lowest_bit(uint64_t input_num) {
 
 /* result might be undefined when input_num is zero */
 simdjson_inline int leading_zeroes(uint64_t input_num) {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long leading_zero = 0;
   // Search the mask data from most significant bit (MSB)
   // to least significant bit (LSB) for a set bit (1).
@@ -18275,7 +18293,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 #endif // SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline int count_ones(uint64_t input_num) {
   // note: we do not support legacy 32-bit Windows
   return __popcnt64(input_num); // Visual Studio wants two underscores
@@ -18288,7 +18306,7 @@ simdjson_inline int count_ones(uint64_t input_num) {
 
 simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
                                          uint64_t *result) {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
   *result = value1 + value2;
   return *result < value1;
 #else
@@ -18891,7 +18909,7 @@ simdjson_inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   return 0; // bad r
 }
 
-#ifdef SIMDJSON_IS_32BITS // _umul128 for x86, arm
+#if SIMDJSON_IS_32BITS // _umul128 for x86, arm
 // this is a slow emulation routine for 32-bit
 //
 static simdjson_inline uint64_t __emulu(uint32_t x, uint32_t y) {
@@ -18913,7 +18931,7 @@ using internal::value128;
 
 simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   value128 answer;
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
 #ifdef _M_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
@@ -18921,7 +18939,7 @@ simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
 #endif // _M_ARM64
-#else // defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
   answer.high = uint64_t(r >> 64);
@@ -20427,7 +20445,7 @@ public:
 #ifndef SIMDJSON_WESTMERE_INTRINSICS_H
 #define SIMDJSON_WESTMERE_INTRINSICS_H
 
-#ifdef SIMDJSON_VISUAL_STUDIO
+#if SIMDJSON_VISUAL_STUDIO
 // under clang within visual studio, this will include <x86intrin.h>
 #include <intrin.h> // visual studio or clang
 #else
@@ -20435,7 +20453,7 @@ public:
 #endif // SIMDJSON_VISUAL_STUDIO
 
 
-#ifdef SIMDJSON_CLANG_VISUAL_STUDIO
+#if SIMDJSON_CLANG_VISUAL_STUDIO
 /**
  * You are not supposed, normally, to include these
  * headers directly. Instead you should either include intrin.h
@@ -20557,7 +20575,7 @@ namespace {
 // Sadly, sanitizers are not smart enough to figure it out.
 SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline int trailing_zeroes(uint64_t input_num) {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
   // Search the mask data from least significant bit (LSB)
   // to the most significant bit (MSB) for a set bit (1).
@@ -20575,7 +20593,7 @@ simdjson_inline uint64_t clear_lowest_bit(uint64_t input_num) {
 
 /* result might be undefined when input_num is zero */
 simdjson_inline int leading_zeroes(uint64_t input_num) {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long leading_zero = 0;
   // Search the mask data from most significant bit (MSB)
   // to least significant bit (LSB) for a set bit (1).
@@ -20588,7 +20606,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 #endif// SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
   // note: we do not support legacy 32-bit Windows
   return __popcnt64(input_num);// Visual Studio wants two underscores
@@ -20601,7 +20619,7 @@ simdjson_inline long long int count_ones(uint64_t input_num) {
 
 simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
   return _addcarry_u64(0, value1, value2,
                        reinterpret_cast<unsigned __int64 *>(result));
 #else
@@ -21055,7 +21073,7 @@ simdjson_inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   return 0; // bad r
 }
 
-#ifdef SIMDJSON_IS_32BITS // _umul128 for x86, arm
+#if SIMDJSON_IS_32BITS // _umul128 for x86, arm
 // this is a slow emulation routine for 32-bit
 //
 static simdjson_inline uint64_t __emulu(uint32_t x, uint32_t y) {
@@ -21077,7 +21095,7 @@ using internal::value128;
 
 simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   value128 answer;
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
 #ifdef _M_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
@@ -21085,7 +21103,7 @@ simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
 #endif // _M_ARM64
-#else // defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
   answer.high = uint64_t(r >> 64);
@@ -23836,20 +23854,20 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<number_type> get_number_type() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
 
-  simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_string() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_root_raw_json_string() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64_in_string() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<int64_t> get_root_int64() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<int64_t> get_root_int64_in_string() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<double> get_root_double() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<double> get_root_double_in_string() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<bool> get_root_bool() noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_string(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_root_raw_json_string(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64_in_string(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<int64_t> get_root_int64(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<int64_t> get_root_int64_in_string(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<double> get_root_double(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<double> get_root_double_in_string(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<bool> get_root_bool(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline bool is_root_negative() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<bool> is_root_integer() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<number_type> get_root_number_type() noexcept;
-  simdjson_warn_unused simdjson_inline simdjson_result<number> get_root_number() noexcept;
-  simdjson_inline bool is_root_null() noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<bool> is_root_integer(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<number_type> get_root_number_type(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<number> get_root_number(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<bool> is_root_null(bool check_trailing) noexcept;
 
   simdjson_inline error_code error() const noexcept;
   simdjson_inline uint8_t *&string_buf_loc() noexcept;
@@ -24943,6 +24961,7 @@ protected:
   friend class field;
   friend class token;
   friend class document_stream;
+  friend class document_reference;
 };
 
 
@@ -24959,8 +24978,11 @@ public:
   simdjson_inline simdjson_result<array> get_array() & noexcept;
   simdjson_inline simdjson_result<object> get_object() & noexcept;
   simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
+  simdjson_inline simdjson_result<uint64_t> get_uint64_in_string() noexcept;
   simdjson_inline simdjson_result<int64_t> get_int64() noexcept;
+  simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
+  simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
   simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -25024,9 +25046,11 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::array> get_array() & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::object> get_object() & noexcept;
   simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
+  simdjson_inline simdjson_result<uint64_t> get_uint64_in_string() noexcept;
   simdjson_inline simdjson_result<int64_t> get_int64() noexcept;
+  simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
-  simdjson_inline simdjson_result<double> get_double_from_string() noexcept;
+  simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -25092,8 +25116,11 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::array> get_array() & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::object> get_object() & noexcept;
   simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
+  simdjson_inline simdjson_result<uint64_t> get_uint64_in_string() noexcept;
   simdjson_inline simdjson_result<int64_t> get_int64() noexcept;
+  simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
+  simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -27217,9 +27244,15 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
     {
       // Print the current structural.
       printf("| ");
-      auto current_structural = &buf[*index];
-      for (int i=0;i<LOG_BUFFER_LEN;i++) {
-        printf("%c", printable_char(current_structural[i]));
+      // Before we begin, the index might point right before the document.
+      // This could be unsafe, see https://github.com/simdjson/simdjson/discussions/1938
+      if(index < iter._root) {
+        printf("%*s", LOG_BUFFER_LEN, "");
+      } else {
+        auto current_structural = &buf[*index];
+        for (int i=0;i<LOG_BUFFER_LEN;i++) {
+            printf("%c", printable_char(current_structural[i]));
+        }
       }
       printf(" ");
     }
@@ -27234,7 +27267,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
     }
     // printf("| %5u ", *(index+1));
     printf("| %5i ", depth);
-    printf("| %.*s ", int(detail.size()), detail.data());
+    printf("| %6.*s ", int(detail.size()) , detail.data());
     printf("|\n");
     fflush(stdout);
   }
@@ -28445,7 +28478,7 @@ simdjson_inline simdjson_result<number> value_iterator::get_number() noexcept {
   return num;
 }
 
-simdjson_inline simdjson_result<bool> value_iterator::is_root_integer() noexcept {
+simdjson_inline simdjson_result<bool> value_iterator::is_root_integer(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("is_root_integer");
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
@@ -28456,12 +28489,11 @@ simdjson_inline simdjson_result<bool> value_iterator::is_root_integer() noexcept
   // If the parsing was a success, we must still check that it is
   // a single scalar. Note that we parse first because of cases like '[]' where
   // getting TRAILING_CONTENT is wrong.
-  if((answer.error() == SUCCESS) && (!_json_iter->is_single_token())) { return TRAILING_CONTENT; }
+  if(check_trailing && (answer.error() == SUCCESS) && (!_json_iter->is_single_token())) { return TRAILING_CONTENT; }
   return answer;
 }
 
-simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number_type> value_iterator::get_root_number_type() noexcept {
-  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number_type> value_iterator::get_root_number_type(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("number");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
@@ -28472,14 +28504,11 @@ simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::numbe
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
   }
-  // If the parsing was a success, we must still check that it is
-  // a single scalar. Note that we parse first because of cases like '[]' where
-  // getting TRAILING_CONTENT is wrong.
   auto answer = numberparsing::get_number_type(tmpbuf);
-  if((answer.error() == SUCCESS) && (!_json_iter->is_single_token())) { return TRAILING_CONTENT; }
+  if (check_trailing && (answer.error() == SUCCESS)  && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   return answer;
 }
-simdjson_inline simdjson_result<number> value_iterator::get_root_number() noexcept {
+simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("number");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
@@ -28493,18 +28522,21 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number() noexce
   number num;
   error_code error =  numberparsing::parse_number(tmpbuf, num);
   if(error) { return error; }
-  if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+  if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   advance_root_scalar("number");
   return num;
 }
-
-simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string() noexcept {
-  return get_string();
+simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string(bool check_trailing) noexcept {
+  return get_root_raw_json_string(check_trailing).unescape(json_iter());
 }
-simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iterator::get_root_raw_json_string() noexcept {
-  return get_raw_json_string();
+simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iterator::get_root_raw_json_string(bool check_trailing) noexcept {
+  auto json = peek_scalar("string");
+  if (*json != '"') { return incorrect_type_error("Not a string"); }
+  if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+  advance_scalar("string");
+  return raw_json_string(json+1);
 }
-simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64() noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
@@ -28514,12 +28546,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
   }
   auto result = numberparsing::parse_unsigned(tmpbuf);
   if(result.error() == SUCCESS) {
-    if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("uint64");
   }
   return result;
 }
-simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64_in_string() noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
@@ -28529,12 +28561,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
   }
   auto result = numberparsing::parse_unsigned_in_string(tmpbuf);
   if(result.error() == SUCCESS) {
-    if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("uint64");
   }
   return result;
 }
-simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64() noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
   uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
@@ -28545,12 +28577,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
 
   auto result = numberparsing::parse_integer(tmpbuf);
   if(result.error() == SUCCESS) {
-    if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("int64");
   }
   return result;
 }
-simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64_in_string() noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
   uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
@@ -28561,12 +28593,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
 
   auto result = numberparsing::parse_integer_in_string(tmpbuf);
   if(result.error() == SUCCESS) {
-    if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("int64");
   }
   return result;
 }
-simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get_root_double() noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get_root_double(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("double");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
@@ -28579,13 +28611,13 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   }
   auto result = numberparsing::parse_double(tmpbuf);
   if(result.error() == SUCCESS) {
-    if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("double");
   }
   return result;
 }
 
-simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get_root_double_in_string() noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get_root_double_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("double");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
@@ -28598,31 +28630,32 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   }
   auto result = numberparsing::parse_double_in_string(tmpbuf);
   if(result.error() == SUCCESS) {
-    if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("double");
   }
   return result;
 }
-simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_root_bool() noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_root_bool(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("bool");
   uint8_t tmpbuf[5+1];
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { return incorrect_type_error("Not a boolean"); }
   auto result = parse_bool(tmpbuf);
   if(result.error() == SUCCESS) {
-    if (!_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("bool");
   }
   return result;
 }
-simdjson_inline bool value_iterator::is_root_null() noexcept {
-  // If there is trailing content, then the document is not null.
-  if (!_json_iter->is_single_token()) { return false; }
+simdjson_inline simdjson_result<bool> value_iterator::is_root_null(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("null");
   bool result = (max_len >= 4 && !atomparsing::str4ncmp(json, "null") &&
-         (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[5])));
-  if(result) { advance_root_scalar("null"); }
+         (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[4])));
+  if(result) { // we have something that looks like a null.
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    advance_root_scalar("null");
+  }
   return result;
 }
 
@@ -29382,35 +29415,44 @@ simdjson_inline simdjson_result<object> document::get_object() & noexcept {
   auto value = get_root_value_iterator();
   return object::start_root(value);
 }
+
+/**
+ * We decided that calling 'get_double()' on the JSON document '1.233 blabla' should
+ * give an error, so we check for trailing content. We want to disallow trailing
+ * content.
+ * Thus, in several implementations below, we pass a 'true' parameter value to
+ * a get_root_value_iterator() method: this indicates that we disallow trailing content.
+ */
+
 simdjson_inline simdjson_result<uint64_t> document::get_uint64() noexcept {
-  return get_root_value_iterator().get_root_uint64();
+  return get_root_value_iterator().get_root_uint64(true);
 }
 simdjson_inline simdjson_result<uint64_t> document::get_uint64_in_string() noexcept {
-  return get_root_value_iterator().get_root_uint64_in_string();
+  return get_root_value_iterator().get_root_uint64_in_string(true);
 }
 simdjson_inline simdjson_result<int64_t> document::get_int64() noexcept {
-  return get_root_value_iterator().get_root_int64();
+  return get_root_value_iterator().get_root_int64(true);
 }
 simdjson_inline simdjson_result<int64_t> document::get_int64_in_string() noexcept {
-  return get_root_value_iterator().get_root_int64_in_string();
+  return get_root_value_iterator().get_root_int64_in_string(true);
 }
 simdjson_inline simdjson_result<double> document::get_double() noexcept {
-  return get_root_value_iterator().get_root_double();
+  return get_root_value_iterator().get_root_double(true);
 }
 simdjson_inline simdjson_result<double> document::get_double_in_string() noexcept {
-  return get_root_value_iterator().get_root_double_in_string();
+  return get_root_value_iterator().get_root_double_in_string(true);
 }
 simdjson_inline simdjson_result<std::string_view> document::get_string() noexcept {
-  return get_root_value_iterator().get_root_string();
+  return get_root_value_iterator().get_root_string(true);
 }
 simdjson_inline simdjson_result<raw_json_string> document::get_raw_json_string() noexcept {
-  return get_root_value_iterator().get_root_raw_json_string();
+  return get_root_value_iterator().get_root_raw_json_string(true);
 }
 simdjson_inline simdjson_result<bool> document::get_bool() noexcept {
-  return get_root_value_iterator().get_root_bool();
+  return get_root_value_iterator().get_root_bool(true);
 }
 simdjson_inline simdjson_result<bool> document::is_null() noexcept {
-  return get_root_value_iterator().is_root_null();
+  return get_root_value_iterator().is_root_null(true);
 }
 
 template<> simdjson_inline simdjson_result<array> document::get() & noexcept { return get_array(); }
@@ -29528,15 +29570,15 @@ simdjson_inline bool document::is_negative() noexcept {
 }
 
 simdjson_inline simdjson_result<bool> document::is_integer() noexcept {
-  return get_root_value_iterator().is_root_integer();
+  return get_root_value_iterator().is_root_integer(true);
 }
 
 simdjson_inline simdjson_result<number_type> document::get_number_type() noexcept {
-  return get_root_value_iterator().get_root_number_type();
+  return get_root_value_iterator().get_root_number_type(true);
 }
 
 simdjson_inline simdjson_result<number> document::get_number() noexcept {
-  return get_root_value_iterator().get_root_number();
+  return get_root_value_iterator().get_root_number(true);
 }
 
 
@@ -29645,13 +29687,25 @@ simdjson_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_BUILTIN_IMPLE
   if (error()) { return error(); }
   return first.get_uint64();
 }
+simdjson_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::get_uint64_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_uint64_in_string();
+}
 simdjson_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::get_int64() noexcept {
   if (error()) { return error(); }
   return first.get_int64();
 }
+simdjson_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::get_int64_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_int64_in_string();
+}
 simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::get_double() noexcept {
   if (error()) { return error(); }
   return first.get_double();
+}
+simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::get_double_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_double_in_string();
 }
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::get_string() noexcept {
   if (error()) { return error(); }
@@ -29812,24 +29866,41 @@ simdjson_inline document_reference::document_reference(document &d) noexcept : d
 simdjson_inline void document_reference::rewind() noexcept { doc->rewind(); }
 simdjson_inline simdjson_result<array> document_reference::get_array() & noexcept { return doc->get_array(); }
 simdjson_inline simdjson_result<object> document_reference::get_object() & noexcept { return doc->get_object(); }
-simdjson_inline simdjson_result<uint64_t> document_reference::get_uint64() noexcept { return doc->get_uint64(); }
-simdjson_inline simdjson_result<int64_t> document_reference::get_int64() noexcept { return doc->get_int64(); }
-simdjson_inline simdjson_result<double> document_reference::get_double() noexcept { return doc->get_double(); }
-simdjson_inline simdjson_result<std::string_view> document_reference::get_string() noexcept { return doc->get_string(); }
-simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_json_string() noexcept { return doc->get_raw_json_string(); }
-simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_bool(); }
+/**
+ * The document_reference instances are used primarily/solely for streams of JSON
+ * documents.
+ * We decided that calling 'get_double()' on the JSON document '1.233 blabla' should
+ * give an error, so we check for trailing content.
+ *
+ * However, for streams of JSON documents, we want to be able to start from
+ * "321" "321" "321"
+ * and parse it successfully as a stream of JSON documents, calling get_uint64_in_string()
+ * successfully each time.
+ *
+ * To achieve this result, we pass a 'false' to a get_root_value_iterator() method:
+ * this indicates that we allow trailing content.
+ */
+simdjson_inline simdjson_result<uint64_t> document_reference::get_uint64() noexcept { return doc->get_root_value_iterator().get_root_uint64(false); }
+simdjson_inline simdjson_result<uint64_t> document_reference::get_uint64_in_string() noexcept { return doc->get_root_value_iterator().get_root_uint64_in_string(false); }
+simdjson_inline simdjson_result<int64_t> document_reference::get_int64() noexcept { return doc->get_root_value_iterator().get_root_int64(false); }
+simdjson_inline simdjson_result<int64_t> document_reference::get_int64_in_string() noexcept { return doc->get_root_value_iterator().get_root_int64_in_string(false); }
+simdjson_inline simdjson_result<double> document_reference::get_double() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
+simdjson_inline simdjson_result<double> document_reference::get_double_in_string() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
+simdjson_inline simdjson_result<std::string_view> document_reference::get_string() noexcept { return doc->get_root_value_iterator().get_root_string(false); }
+simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_json_string() noexcept { return doc->get_root_value_iterator().get_root_raw_json_string(false); }
+simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
 simdjson_inline simdjson_result<value> document_reference::get_value() noexcept { return doc->get_value(); }
-simdjson_inline simdjson_result<bool> document_reference::is_null() noexcept { return doc->is_null(); }
+simdjson_inline simdjson_result<bool> document_reference::is_null() noexcept { return doc->get_root_value_iterator().is_root_null(false); }
 
 #if SIMDJSON_EXCEPTIONS
 simdjson_inline document_reference::operator array() & noexcept(false) { return array(*doc); }
 simdjson_inline document_reference::operator object() & noexcept(false) { return object(*doc); }
-simdjson_inline document_reference::operator uint64_t() noexcept(false) { return uint64_t(*doc); }
-simdjson_inline document_reference::operator int64_t() noexcept(false) { return int64_t(*doc); }
-simdjson_inline document_reference::operator double() noexcept(false) { return double(*doc); }
+simdjson_inline document_reference::operator uint64_t() noexcept(false) { return get_uint64(); }
+simdjson_inline document_reference::operator int64_t() noexcept(false) { return get_int64(); }
+simdjson_inline document_reference::operator double() noexcept(false) { return get_double(); }
 simdjson_inline document_reference::operator std::string_view() noexcept(false) { return std::string_view(*doc); }
 simdjson_inline document_reference::operator raw_json_string() noexcept(false) { return raw_json_string(*doc); }
-simdjson_inline document_reference::operator bool() noexcept(false) { return bool(*doc); }
+simdjson_inline document_reference::operator bool() noexcept(false) { return get_bool(); }
 simdjson_inline document_reference::operator value() noexcept(false) { return value(*doc); }
 #endif
 simdjson_inline simdjson_result<size_t> document_reference::count_elements() & noexcept { return doc->count_elements(); }
@@ -29848,9 +29919,9 @@ simdjson_inline simdjson_result<bool> document_reference::is_scalar() noexcept {
 simdjson_inline simdjson_result<const char *> document_reference::current_location() noexcept { return doc->current_location(); }
 simdjson_inline int32_t document_reference::current_depth() const noexcept { return doc->current_depth(); }
 simdjson_inline bool document_reference::is_negative() noexcept { return doc->is_negative(); }
-simdjson_inline simdjson_result<bool> document_reference::is_integer() noexcept { return doc->is_integer(); }
-simdjson_inline simdjson_result<number_type> document_reference::get_number_type() noexcept { return doc->get_number_type(); }
-simdjson_inline simdjson_result<number> document_reference::get_number() noexcept { return doc->get_number(); }
+simdjson_inline simdjson_result<bool> document_reference::is_integer() noexcept { return doc->get_root_value_iterator().is_root_integer(false); }
+simdjson_inline simdjson_result<number_type> document_reference::get_number_type() noexcept { return doc->get_root_value_iterator().get_root_number_type(false); }
+simdjson_inline simdjson_result<number> document_reference::get_number() noexcept { return doc->get_root_value_iterator().get_root_number(false); }
 simdjson_inline simdjson_result<std::string_view> document_reference::raw_json_token() noexcept { return doc->raw_json_token(); }
 simdjson_inline simdjson_result<value> document_reference::at_pointer(std::string_view json_pointer) noexcept { return doc->at_pointer(json_pointer); }
 simdjson_inline simdjson_result<std::string_view> document_reference::raw_json() noexcept { return doc->raw_json();}
@@ -29927,13 +29998,25 @@ simdjson_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_BUILTIN_IMPLE
   if (error()) { return error(); }
   return first.get_uint64();
 }
+simdjson_inline simdjson_result<uint64_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::get_uint64_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_uint64_in_string();
+}
 simdjson_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::get_int64() noexcept {
   if (error()) { return error(); }
   return first.get_int64();
 }
+simdjson_inline simdjson_result<int64_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::get_int64_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_int64_in_string();
+}
 simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::get_double() noexcept {
   if (error()) { return error(); }
   return first.get_double();
+}
+simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::get_double_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_double_in_string();
 }
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::get_string() noexcept {
   if (error()) { return error(); }
