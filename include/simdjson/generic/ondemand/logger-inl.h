@@ -136,9 +136,15 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
     {
       // Print the current structural.
       printf("| ");
-      auto current_structural = &buf[*index];
-      for (int i=0;i<LOG_BUFFER_LEN;i++) {
-        printf("%c", printable_char(current_structural[i]));
+      // Before we begin, the index might point right before the document.
+      // This could be unsafe, see https://github.com/simdjson/simdjson/discussions/1938
+      if(index < iter._root) {
+        printf("%*s", LOG_BUFFER_LEN, "");
+      } else {
+        auto current_structural = &buf[*index];
+        for (int i=0;i<LOG_BUFFER_LEN;i++) {
+            printf("%c", printable_char(current_structural[i]));
+        }
       }
       printf(" ");
     }
@@ -153,7 +159,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
     }
     // printf("| %5u ", *(index+1));
     printf("| %5i ", depth);
-    printf("| %.*s ", int(detail.size()), detail.data());
+    printf("| %6.*s ", int(detail.size()) , detail.data());
     printf("|\n");
     fflush(stdout);
   }
