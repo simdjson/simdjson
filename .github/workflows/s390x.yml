@@ -1,0 +1,28 @@
+name: Ubuntu s390x (GCC 11)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: uraimo/run-on-arch-action@v2
+        name: Test
+        id: runcmd
+        with:
+          arch: s390x
+          distro: ubuntu_latest
+          install: |
+            apt-get update -q -y
+            apt-get install -y cmake make g++
+          run: |
+            cmake -DCMAKE_BUILD_TYPE=Release -B build
+            cmake --build build -j=2
+            ctest --output-on-failure --test-dir build
