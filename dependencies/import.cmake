@@ -40,7 +40,7 @@ macro(add_dependency NAME)
     message(FATAL_ERROR "Missing ${NAME}_SOURCE_DIR variable")
   endif()
 
-  add_subdirectory("${${NAME}_SOURCE_DIR}" "${PROJECT_BINARY_DIR}/_deps/${NAME}")
+  add_subdirectory("${${NAME}_SOURCE_DIR}" "${PROJECT_BINARY_DIR}/_deps/${NAME}" EXCLUDE_FROM_ALL)
 endmacro()
 
 function(set_off NAME)
