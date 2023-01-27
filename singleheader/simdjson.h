@@ -1,4 +1,4 @@
-/* auto-generated on 2023-01-21 15:29:08 -0500. Do not edit! */
+/* auto-generated on 2023-01-21 18:07:06 -0500. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -43,7 +43,7 @@
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 3.1.0
+#define SIMDJSON_VERSION "3.1.0"
 
 namespace simdjson {
 enum {
