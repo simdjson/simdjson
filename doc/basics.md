@@ -43,7 +43,7 @@ Requirements
 
 Support for AVX-512 require a processor with AVX512-VBMI2 support (Ice Lake or better) under a 64-bit system and a recent compiler (LLVM clang 6 or better, GCC 8 or better, Visual Studio 2019 or better). You need a correspondingly recent assembler such as gas (2.30+) or nasm (2.14+): recent compilers usually come with recent assemblers. If you mix a recent compiler with an incompatible/old assembler (e.g., when using a recent compiler with an old Linux distribution), you may get errors at build time because the compiler produces instructions that the assembler does not recognize: you should update your assembler to match your compiler (e.g., upgrade binutils to version 2.30 or better under Linux) or use an older compiler matching the capabilities of your assembler.
 
-Because big-endian systems are effectively limited commercially to IBM mainframes today, the simdjson library is only tested on little-endian systems. Users who require big-endian support are invited to contribute to the library.
+We test the library on a big-endian system (IBM s390x with Linux) .
 
 Including simdjson
 ------------------
