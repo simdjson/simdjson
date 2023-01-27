@@ -3,10 +3,10 @@ name: Ubuntu s390x (GCC 11)
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   build:
