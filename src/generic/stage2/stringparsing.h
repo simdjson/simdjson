@@ -42,6 +42,8 @@ static const uint8_t escape_map[256] = {
 simdjson_warn_unused
 simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
                                             uint8_t **dst_ptr) {
+  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
+  constexpr uint32_t substitution_code_point = 0xfffd;
   // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
   // conversion isn't valid; we defer the check for this to inside the
   // multilingual plane check
@@ -56,27 +58,28 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
     const uint8_t *src_data = *src_ptr;
     /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
     if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      return false;
-    }
-    uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+      code_point = 0x3fffd;
+    } else {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
 
-    // We have already checked that the high surrogate is valid and
-    // (code_point - 0xd800) < 1024.
-    //
-    // Check that code_point_2 is in the range 0xdc00..0xdfff
-    // and that code_point_2 was parsed from valid hex.
-    uint32_t low_bit = code_point_2 - 0xdc00;
-    if (low_bit >> 10) {
-      return false;
-    }
+      // We have already checked that the high surrogate is valid and
+      // (code_point - 0xd800) < 1024.
+      //
+      // Check that code_point_2 is in the range 0xdc00..0xdfff
+      // and that code_point_2 was parsed from valid hex.
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if (low_bit >> 10) {
+        code_point = 0x3fffd;
+      } else {
+        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
 
-    code_point =
-        (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-    *src_ptr += 6;
+    }
   } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
       // If we encounter a low surrogate (not preceded by a high surrogate)
       // then we have an error.
-      return false;
+      code_point = 0x3fffd;
   }
   size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
   *dst_ptr += offset;
