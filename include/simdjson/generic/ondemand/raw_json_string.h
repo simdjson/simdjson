@@ -146,8 +146,9 @@ private:
    * The string_view is only valid until the next parse() call on the parser.
    *
    * @param iter A json_iterator, which contains a buffer where the string will be written.
+   * @param allow_replacement Whether we allow replacement of invalid surrogate pairs.
    */
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(json_iterator &iter) const noexcept;
+  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(json_iterator &iter, bool allow_replacement) const noexcept;
 
   /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
@@ -194,7 +195,7 @@ public:
   simdjson_inline ~simdjson_result() noexcept = default; ///< @private
 
   simdjson_inline simdjson_result<const char *> raw() const noexcept;
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept;
+  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter, bool allow_replacement) const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_wobbly(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept;
 };
 

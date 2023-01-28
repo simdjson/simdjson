@@ -5,6 +5,22 @@ using namespace simdjson;
 
 namespace misc_tests {
   using namespace std;
+  bool replacement_char() {
+    auto fun_phrase = R"( ["I \u2665 Unicode. Even broken \ud800 Unicode." ])"_padded;
+    std::string_view expected_fun = "I \xe2\x99\xa5 Unicode. Even broken \xef\xbf\xbd Unicode.";
+
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(fun_phrase).get(doc));
+    ondemand::array arr;
+    ASSERT_SUCCESS( doc.get_array().get(arr));
+    std::string_view view;
+    ASSERT_SUCCESS( arr.at(0).get_string(true).get(view));
+    ASSERT_EQUAL(view, expected_fun);
+    TEST_SUCCEED();
+  }
+
   bool wobbly_tests() {
     auto lone_surrogate = R"( "\ud800" )"_padded;
     std::string_view expected_lone = "\xed\xa0\x80";
@@ -35,9 +51,6 @@ namespace misc_tests {
     ASSERT_SUCCESS( doc.get_object().get(obj));
     ASSERT_SUCCESS( obj["input"].get_wobbly_string().get(view));
 
-    for(size_t i = 0; i < view.size() ; i ++) {
-      printf("%c %x %x %s\n", view[i], view[i]&0xff, expected_insane[i]&0xff, ((view[i]!=expected_insane[i])? "BAD": "GOOD") );
-    }
     ASSERT_EQUAL(view, expected_insane);
     TEST_SUCCEED();
   }
@@ -557,6 +570,7 @@ namespace misc_tests {
 
   bool run() {
     return
+           replacement_char() &&
            wobbly_tests() &&
            issue_uffff() &&
            issue_backslash() &&

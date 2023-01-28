@@ -279,10 +279,11 @@ public:
    * @param raw_json_string input
    * @param dst A pointer to a buffer at least large enough to write this string as well as
    *            an additional SIMDJSON_PADDING bytes.
+   * @param allow_replacement Whether we allow a replacement if the input string contains unmatched surrogate pairs.
    * @return A string_view pointing at the unescaped string in dst
    * @error STRING_ERROR if escapes are incorrect.
    */
-  simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, uint8_t *&dst) const noexcept;
+  simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, uint8_t *&dst, bool allow_replacement = false) const noexcept;
 
   /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a user-provided buffer.

@@ -475,8 +475,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse
   return is_null_string;
 }
 
-simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string() noexcept {
-  return get_raw_json_string().unescape(json_iter());
+simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string(bool allow_replacement) noexcept {
+  return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
   return get_raw_json_string().unescape_wobbly(json_iter());
@@ -595,8 +595,8 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   advance_root_scalar("number");
   return num;
 }
-simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string(bool check_trailing) noexcept {
-  return get_root_raw_json_string(check_trailing).unescape(json_iter());
+simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string(bool check_trailing, bool allow_replacement) noexcept {
+  return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
   return get_root_raw_json_string(check_trailing).unescape_wobbly(json_iter());

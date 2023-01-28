@@ -114,9 +114,10 @@ public:
    *
    * @param str pointer to the beginning of a valid UTF-8 JSON string, must end with an unescaped quote.
    * @param dst pointer to a destination buffer, it must point a region in memory of sufficient size.
+   * @param allow_replacement whether we allow a replacement character when the UTF-8 contains unmatched surrogate pairs.
    * @return end of the of the written region (exclusive) or nullptr in case of error.
    */
-  simdjson_warn_unused virtual uint8_t *parse_string(const uint8_t *src, uint8_t *dst) const noexcept = 0;
+  simdjson_warn_unused virtual uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept = 0;
 
   /**
    * Unescape a NON-valid UTF-8 string from src to dst, stopping at a final unescaped quote. There

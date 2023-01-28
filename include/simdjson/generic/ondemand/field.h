@@ -28,7 +28,7 @@ public:
    * This consumes the key: once you have called unescaped_key(), you cannot
    * call it again nor can you call key().
    */
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescaped_key() noexcept;
+  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescaped_key(bool allow_replacement) noexcept;
   /**
    * Get the key as a raw_json_string. Can be used for direct comparison with
    * an unescaped C string: e.g., key() == "test".
@@ -64,7 +64,7 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<std::string_view> unescaped_key() noexcept;
+  simdjson_inline simdjson_result<std::string_view> unescaped_key(bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> key() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> value() noexcept;
 };

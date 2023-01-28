@@ -96,11 +96,12 @@ public:
    *
    * Important: Calling get_string() twice on the same document is an error.
    *
+   * @param Whether to allow a replacement character for unmatched surrogate pairs.
    * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
    *          time it parses a document or when it is destroyed.
    * @returns INCORRECT_TYPE if the JSON value is not a string.
    */
-  simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
   /**
    * Cast this JSON value to a string.
    *
@@ -611,7 +612,7 @@ public:
   simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
-  simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -680,7 +681,7 @@ public:
   simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
-  simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -751,7 +752,7 @@ public:
   simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
-  simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;

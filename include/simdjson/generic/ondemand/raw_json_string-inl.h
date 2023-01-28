@@ -143,8 +143,8 @@ simdjson_unused simdjson_inline bool operator!=(std::string_view c, const raw_js
 }
 
 
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(json_iterator &iter) const noexcept {
-  return iter.unescape(*this);
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(json_iterator &iter, bool allow_replacement) const noexcept {
+  return iter.unescape(*this, allow_replacement);
 }
 
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_wobbly(json_iterator &iter) const noexcept {
@@ -180,9 +180,9 @@ simdjson_inline simdjson_result<const char *> simdjson_result<SIMDJSON_IMPLEMENT
   if (error()) { return error(); }
   return first.raw();
 }
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept {
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter, bool allow_replacement) const noexcept {
   if (error()) { return error(); }
-  return first.unescape(iter);
+  return first.unescape(iter, allow_replacement);
 }
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::unescape_wobbly(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept {
   if (error()) { return error(); }

@@ -41,7 +41,7 @@ static const uint8_t escape_map[256] = {
 // We work in little-endian then swap at write time
 simdjson_warn_unused
 simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr) {
+                                            uint8_t **dst_ptr, bool allow_replacement) {
   // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
   constexpr uint32_t substitution_code_point = 0xfffd;
   // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
@@ -58,7 +58,8 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
     const uint8_t *src_data = *src_ptr;
     /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
     if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      code_point = 0x3fffd;
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
     } else {
       uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
 
@@ -69,7 +70,8 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
       // and that code_point_2 was parsed from valid hex.
       uint32_t low_bit = code_point_2 - 0xdc00;
       if (low_bit >> 10) {
-        code_point = 0x3fffd;
+        if(!allow_replacement) { return false; }
+        code_point = substitution_code_point;
       } else {
         code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
         *src_ptr += 6;
@@ -79,7 +81,8 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
       // If we encounter a low surrogate (not preceded by a high surrogate)
       // then we have an error.
-      code_point = 0x3fffd;
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
   }
   size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
   *dst_ptr += offset;
@@ -136,7 +139,7 @@ simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
  * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
  * SIMDJSON_PADDING bytes.
  */
-simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst) {
+simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
     auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
@@ -155,7 +158,7 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, u
            within the unicode codepoint handling code. */
         src += bs_dist;
         dst += bs_dist;
-        if (!handle_unicode_codepoint(&src, &dst)) {
+        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
           return nullptr;
         }
       } else {
