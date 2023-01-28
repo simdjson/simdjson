@@ -320,6 +320,10 @@ simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_js
   return parser->unescape(in, _string_buf_loc);
 }
 
+simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_wobbly(raw_json_string in) noexcept {
+  return parser->unescape_wobbly(in, _string_buf_loc);
+}
+
 simdjson_inline void json_iterator::reenter_child(token_position position, depth_t child_depth) noexcept {
   SIMDJSON_ASSUME(child_depth >= 1 && child_depth < INT32_MAX);
   SIMDJSON_ASSUME(_depth == child_depth - 1);

@@ -157,6 +157,10 @@ simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint
   return haswell::stringparsing::parse_string(src, dst);
 }
 
+simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(const uint8_t *src, uint8_t *dst) const noexcept {
+  return haswell::stringparsing::parse_wobbly_string(src, dst);
+}
+
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }

@@ -102,6 +102,18 @@ public:
    */
   simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
   /**
+   * Cast this JSON value to a string.
+   *
+   * The string is not guaranteed to be valid UTF-8. See https://simonsapin.github.io/wtf-8/
+   *
+   * Important: Calling get_wobbly_string() twice on the same document is an error.
+   *
+   * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
+   *          time it parses a document or when it is destroyed.
+   * @returns INCORRECT_TYPE if the JSON value is not a string.
+   */
+  simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
+  /**
    * Cast this JSON value to a raw_json_string.
    *
    * The string is guaranteed to be valid UTF-8, and may have escapes in it (e.g. \\ or \n).
@@ -600,6 +612,7 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<value> get_value() noexcept;
@@ -668,6 +681,7 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> get_value() noexcept;
@@ -738,6 +752,7 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> get_value() noexcept;

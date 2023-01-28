@@ -247,6 +247,7 @@ public:
    * overflow.
    */
   simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in) noexcept;
+  simdjson_inline simdjson_result<std::string_view> unescape_wobbly(raw_json_string in) noexcept;
   simdjson_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
 
 #if SIMDJSON_DEVELOPMENT_CHECKS

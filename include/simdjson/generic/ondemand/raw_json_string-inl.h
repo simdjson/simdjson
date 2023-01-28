@@ -147,6 +147,9 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_
   return iter.unescape(*this);
 }
 
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_wobbly(json_iterator &iter) const noexcept {
+  return iter.unescape_wobbly(*this);
+}
 
 simdjson_unused simdjson_inline std::ostream &operator<<(std::ostream &out, const raw_json_string &str) noexcept {
   bool in_escape = false;
@@ -181,5 +184,8 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
   if (error()) { return error(); }
   return first.unescape(iter);
 }
-
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::unescape_wobbly(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept {
+  if (error()) { return error(); }
+  return first.unescape_wobbly(iter);
+}
 } // namespace simdjson

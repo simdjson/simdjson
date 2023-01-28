@@ -33,6 +33,9 @@ simdjson_inline simdjson_result<raw_json_string> value::get_raw_json_string() no
 simdjson_inline simdjson_result<std::string_view> value::get_string() noexcept {
   return iter.get_string();
 }
+simdjson_inline simdjson_result<std::string_view> value::get_wobbly_string() noexcept {
+  return iter.get_wobbly_string();
+}
 simdjson_inline simdjson_result<double> value::get_double() noexcept {
   return iter.get_double();
 }
@@ -301,6 +304,10 @@ simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION:
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_string() noexcept {
   if (error()) { return error(); }
   return first.get_string();
+}
+simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_wobbly_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_wobbly_string();
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_raw_json_string() noexcept {
   if (error()) { return error(); }
