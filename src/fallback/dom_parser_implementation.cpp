@@ -360,8 +360,8 @@ simdjson_warn_unused error_code dom_parser_implementation::stage2_next(dom::docu
   return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
 
-simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst) const noexcept {
-  return fallback::stringparsing::parse_string(src, dst);
+simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst, bool replacement_char) const noexcept {
+  return fallback::stringparsing::parse_string(src, dst, replacement_char);
 }
 
 simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(const uint8_t *src, uint8_t *dst) const noexcept {
