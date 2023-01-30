@@ -24,7 +24,7 @@ jobs:
         run: sudo apt-get install doxygen graphviz -y
       - run: mkdir docs
       - name: Install theme
-        run: ./tools/prepare-doxygen.sh
+        run: ./tools/prepare_doxygen.sh
       - name: Generate Doxygen Documentation
         run: doxygen
       - name: Deploy to GitHub Pages
