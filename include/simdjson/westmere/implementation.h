@@ -12,6 +12,9 @@ using namespace simdjson;
 using namespace simdjson::dom;
 }
 
+/**
+ * @private
+ */
 class implementation final : public simdjson::implementation {
 public:
   simdjson_inline implementation() : simdjson::implementation("westmere", "Intel/AMD SSE4.2", internal::instruction_set::SSE42 | internal::instruction_set::PCLMULQDQ) {}

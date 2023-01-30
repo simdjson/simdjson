@@ -11,6 +11,9 @@ using namespace simdjson;
 using namespace simdjson::dom;
 }
 
+/**
+ * @private
+ */
 class implementation final : public simdjson::implementation {
 public:
   simdjson_inline implementation() : simdjson::implementation(
