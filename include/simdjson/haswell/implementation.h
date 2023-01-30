@@ -9,6 +9,9 @@ namespace haswell {
 
 using namespace simdjson;
 
+/**
+ * @private
+ */
 class implementation final : public simdjson::implementation {
 public:
   simdjson_inline implementation() : simdjson::implementation(
