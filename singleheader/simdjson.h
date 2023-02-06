@@ -1,4 +1,4 @@
-/* auto-generated on 2023-01-21 18:07:06 -0500. Do not edit! */
+/* auto-generated on 2023-02-06 18:28:54 -0500. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -43,7 +43,7 @@
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "3.1.0"
+#define SIMDJSON_VERSION 3.1.1
 
 namespace simdjson {
 enum {
@@ -58,7 +58,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 0
+  SIMDJSON_VERSION_REVISION = 1
 };
 } // namespace simdjson
 
@@ -9697,6 +9697,9 @@ using namespace simdjson;
 using namespace simdjson::dom;
 }
 
+/**
+ * @private
+ */
 class implementation final : public simdjson::implementation {
 public:
   simdjson_inline implementation() : simdjson::implementation("arm64", "ARM NEON", internal::instruction_set::NEON) {}
@@ -12037,6 +12040,9 @@ using namespace simdjson;
 using namespace simdjson::dom;
 }
 
+/**
+ * @private
+ */
 class implementation final : public simdjson::implementation {
 public:
   simdjson_inline implementation() : simdjson::implementation(
@@ -13745,6 +13751,9 @@ namespace icelake {
 
 using namespace simdjson;
 
+/**
+ * @private
+ */
 class implementation final : public simdjson::implementation {
 public:
   simdjson_inline implementation() : simdjson::implementation(
@@ -14088,13 +14097,9 @@ namespace simd {
 
     template<int N=1>
     simdjson_inline simd8<T> prev(const simd8<T> prev_chunk) const {
-#if SIMDJSON_GCC8
      // workaround for compilers unable to figure out that 16 - N is a constant (GCC 8)
       constexpr int shift = 16 - N;
       return _mm512_alignr_epi8(*this, _mm512_permutex2var_epi64(prev_chunk, _mm512_set_epi64(13, 12, 11, 10, 9, 8, 7, 6), *this), shift);
-#else
-      return _mm512_alignr_epi8(*this, _mm512_permutex2var_epi64(prev_chunk, _mm512_set_epi64(13, 12, 11, 10, 9, 8, 7, 6), *this), 16 - N);
-#endif
     }
   };
 
@@ -15943,6 +15948,9 @@ namespace haswell {
 
 using namespace simdjson;
 
+/**
+ * @private
+ */
 class implementation final : public simdjson::implementation {
 public:
   simdjson_inline implementation() : simdjson::implementation(
@@ -18118,6 +18126,9 @@ using namespace simdjson;
 using namespace simdjson::dom;
 } // namespace
 
+/**
+ * @private
+ */
 class implementation final : public simdjson::implementation {
 public:
   simdjson_inline implementation()
@@ -20424,6 +20435,9 @@ using namespace simdjson;
 using namespace simdjson::dom;
 }
 
+/**
+ * @private
+ */
 class implementation final : public simdjson::implementation {
 public:
   simdjson_inline implementation() : simdjson::implementation("westmere", "Intel/AMD SSE4.2", internal::instruction_set::SSE42 | internal::instruction_set::PCLMULQDQ) {}
