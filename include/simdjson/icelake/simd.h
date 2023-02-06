@@ -79,13 +79,9 @@ namespace simd {
 
     template<int N=1>
     simdjson_inline simd8<T> prev(const simd8<T> prev_chunk) const {
-#if SIMDJSON_GCC8
      // workaround for compilers unable to figure out that 16 - N is a constant (GCC 8)
       constexpr int shift = 16 - N;
       return _mm512_alignr_epi8(*this, _mm512_permutex2var_epi64(prev_chunk, _mm512_set_epi64(13, 12, 11, 10, 9, 8, 7, 6), *this), shift);
-#else
-      return _mm512_alignr_epi8(*this, _mm512_permutex2var_epi64(prev_chunk, _mm512_set_epi64(13, 12, 11, 10, 9, 8, 7, 6), *this), 16 - N);
-#endif
     }
   };
 
