@@ -1,5 +1,9 @@
 var NAVTREEINDEX4 =
 {
+"parsedjson__iterator_8h_source.html":[12,0,0,0,1,13],
+"portability_8h_source.html":[12,0,0,0,30],
+"ppc64_2begin_8h_source.html":[12,0,0,0,8,0],
+"ppc64_2bitmanipulation_8h_source.html":[12,0,0,0,8,1],
 "ppc64_2bitmask_8h_source.html":[12,0,0,0,8,2],
 "ppc64_2end_8h_source.html":[12,0,0,0,8,3],
 "ppc64_2implementation_8h_source.html":[12,0,0,0,8,4],
@@ -130,8 +134,8 @@ var NAVTREEINDEX4 =
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a567b835f20e2f854f4303e83f4d3bd74":[11,0,0,10,12],
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a59a47cbdb4c226a7d33e0315cce62984":[11,0,0,10,39],
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a5a4d779ce258cac95b1799f16b49695b":[11,0,0,10,46],
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a6024d17789cc49d3147445b3def018f6":[11,0,0,10,22],
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a6024d17789cc49d3147445b3def018f6":[11,0,0,10,21],
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a6024d17789cc49d3147445b3def018f6":[11,0,0,10,22],
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a61c56912d76a1a730e4cf9b5aea5d69f":[11,0,0,10,37],
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a662ec28f78a9fcba046eaa4509efa6a3":[11,0,0,10,40],
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a696390da51f64f6955aa43484b2e8c41":[11,0,0,10,27],
@@ -245,9 +249,5 @@ var NAVTREEINDEX4 =
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser_01_4.html":[11,0,0,18],
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser_01_4.html#ae42db86bd32544ab81e4996ae96da060":[11,0,0,18,0],
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string_01_4.html":[11,0,0,19],
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string_01_4.html#a8f2b2692aa9a494d63d17acc818023d5":[11,0,0,19,0],
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string_01_4.html#ab025cd6b344dc3dd6673b42663976de3":[11,0,0,19,2],
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string_01_4.html#af320d3d4d980f92005c56a48be336339":[11,0,0,19,1],
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1token__iterator_01_4.html":[11,0,0,20],
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1token__iterator_01_4.html#a4d5c1002a553306a95c86d28e9f511fa":[11,0,0,20,0]
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string_01_4.html#a8f2b2692aa9a494d63d17acc818023d5":[11,0,0,19,0]
 };

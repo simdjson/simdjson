@@ -1,5 +1,9 @@
 var NAVTREEINDEX2 =
 {
+"classsimdjson_1_1dom_1_1object_1_1iterator.html#a9f49fe89534f63d3d2543d5d4bad3180":[11,0,0,0,4,0,1],
+"classsimdjson_1_1dom_1_1object_1_1iterator.html#aa26738ad08b7de3be4621a75863118ab":[11,0,0,0,4,0,11],
+"classsimdjson_1_1dom_1_1object_1_1iterator.html#aaab37cb500deb6ae49a712b8999d6ca3":[11,0,0,0,4,0,13],
+"classsimdjson_1_1dom_1_1object_1_1iterator.html#aba9ad6e2eea839fb4fb1603e63f1ee4b":[11,0,0,0,4,0,18],
 "classsimdjson_1_1dom_1_1object_1_1iterator.html#ac82e68be1f179df92423d879114fbf55":[11,0,0,0,4,0,3],
 "classsimdjson_1_1dom_1_1object_1_1iterator.html#af9f5a66a6cd5a6bbacdbdc83b576b80c":[11,0,0,0,4,0,0],
 "classsimdjson_1_1dom_1_1parser.html":[11,0,0,0,6],
@@ -123,8 +127,8 @@ var NAVTREEINDEX2 =
 "functions_d.html":[11,3,0,3],
 "functions_e.html":[11,3,0,4],
 "functions_f.html":[11,3,0,5],
-"functions_func.html":[11,3,1,0],
 "functions_func.html":[11,3,1],
+"functions_func.html":[11,3,1,0],
 "functions_func_b.html":[11,3,1,1],
 "functions_func_c.html":[11,3,1,2],
 "functions_func_d.html":[11,3,1,3],
@@ -245,9 +249,5 @@ var NAVTREEINDEX2 =
 "logger-inl_8h.html#aa220611a86e2a544368f650b7f7315fb":[10,0,0,1,0,0,3],
 "logger-inl_8h.html#aaa4c1a2ef6eb08bb02a8ea6e49d2a786":[10,0,0,1,0,0,11],
 "logger-inl_8h.html#ab8082fd58a3d7e115016a3fc52ee8936":[10,0,0,1,0,0,0],
-"logger-inl_8h.html#ab8b9add577d4aba4fc244fa5a5bcb219":[10,0,0,1,0,0,7],
-"logger-inl_8h.html#abaf0200be757924fd5a89834e3b758f0":[10,0,0,1,0,0,13],
-"logger-inl_8h.html#ad5975f8a32d2daea904160b7ac6fd9cc":[10,0,0,1,0,0,9],
-"logger-inl_8h.html#aee467b07dcf64f1282096914a1214053":[10,0,0,1,0,0,5],
-"logger-inl_8h_source.html":[12,0,0,0,3,0,14]
+"logger-inl_8h.html#ab8b9add577d4aba4fc244fa5a5bcb219":[10,0,0,1,0,0,7]
 };

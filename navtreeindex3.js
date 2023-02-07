@@ -1,5 +1,9 @@
 var NAVTREEINDEX3 =
 {
+"logger-inl_8h.html#abaf0200be757924fd5a89834e3b758f0":[10,0,0,1,0,0,13],
+"logger-inl_8h.html#ad5975f8a32d2daea904160b7ac6fd9cc":[10,0,0,1,0,0,9],
+"logger-inl_8h.html#aee467b07dcf64f1282096914a1214053":[10,0,0,1,0,0,5],
+"logger-inl_8h_source.html":[12,0,0,0,3,0,14],
 "logger_8h_source.html":[12,0,0,0,3,0,15],
 "md_doc_basics.html":[0],
 "md_doc_basics.html#autotoc_md0":[0,0],
@@ -245,9 +249,5 @@ var NAVTREEINDEX3 =
 "padded__string__view_8h_source.html":[12,0,0,0,29],
 "pages.html":[],
 "parsedjson_8h_source.html":[12,0,0,0,1,11],
-"parsedjson__iterator-inl_8h_source.html":[12,0,0,0,1,12],
-"parsedjson__iterator_8h_source.html":[12,0,0,0,1,13],
-"portability_8h_source.html":[12,0,0,0,30],
-"ppc64_2begin_8h_source.html":[12,0,0,0,8,0],
-"ppc64_2bitmanipulation_8h_source.html":[12,0,0,0,8,1]
+"parsedjson__iterator-inl_8h_source.html":[12,0,0,0,1,12]
 };
