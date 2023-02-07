@@ -100,7 +100,7 @@ with open(versionfile, 'w') as file:
     file.write("#define SIMDJSON_SIMDJSON_VERSION_H\n")
     file.write("\n")
     file.write("/** The version of simdjson being used (major.minor.revision) */\n")
-    file.write("#define SIMDJSON_VERSION "+toversionstring(*newversion)+"\n")
+    file.write("#define SIMDJSON_VERSION \""+toversionstring(*newversion)+"\"\n")
     file.write("\n")
     file.write("namespace simdjson {\n")
     file.write("enum {\n")
