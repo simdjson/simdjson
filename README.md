@@ -148,6 +148,7 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 - [lua-simdjson](https://github.com/FourierTransformer/lua-simdjson): lua bindings.
 - [hermes-json](https://hackage.haskell.org/package/hermes-json): haskell bindings.
 - [simdjzon](https://github.com/travisstaloch/simdjzon): zig port.
+- [JSON-Simd](https://github.com/rawleyfowler/JSON-simd): Raku bindings.
 
 About simdjson
 --------------
