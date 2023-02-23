@@ -30,7 +30,7 @@
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">simdjson
-   &#160;<span id="projectnumber">3.1.1</span>
+   &#160;<span id="projectnumber">3.1.2</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -179,7 +179,7 @@ Number parsing</h1>
 </ul>
 <h1><a class="anchor" id="autotoc_md89"></a>
 Visual Studio</h1>
-<p>On Intel and AMD Windows platforms, Microsoft Visual Studio enables programmers to build either 32-bit (x86) or 64-bit (x64) binaries. We urge you to always use 64-bit mode. Visual Studio 2019 should default on 64-bit builds when you have a 64-bit version of Windows, which we recommend.</p>
+<p>On Intel and AMD Windows platforms, Microsoft Visual Studio enables programmers to build either 32-bit (x86) or 64-bit (x64 or ARM64) binaries. We urge you to always use 64-bit mode. Visual Studio 2019 should default on 64-bit builds when you have a 64-bit version of Windows, which we recommend.</p>
 <p>When compiling with Visual Studio, we recommend the flags <code>/Ob2 /O2</code> or better. We do not recommend that you compile simdjson with architecture-specific flags such as <code>arch:AVX2</code>. The simdjson library automatically selects the best execution kernel at runtime.</p>
 <p>Recent versions of Microsoft Visual Studio on Windows provides support for the LLVM Clang compiler. You only need to install the "Clang compiler" optional component (ClangCL). You may also get a copy of the 64-bit LLVM CLang compiler for <a href="https://releases.llvm.org/download.html">Windows directly from LLVM</a>. The simdjson library fully supports the LLVM Clang compiler under Windows. In fact, you may get better performance out of simdjson with the LLVM Clang compiler than with the regular Visual Studio compiler. Meanwhile the <a href="https://clang.llvm.org/docs/MSVCCompatibility.html">LLVM CLang compiler is binary compatible with Visual Studio</a> which means that you can combine their binaries (executables and libraries).</p>
 <p>Under Windows, we also support the GNU GCC compiler via MSYS2. The performance of 64-bit MSYS2 under Windows excellent (on par with Linux).</p>
@@ -192,7 +192,7 @@ Power Usage and Downclocking</h1>
 <li><a href="https://lemire.me/blog/2018/09/07/avx-512-when-and-how-to-use-these-new-instructions/">Whenever 512-bit AVX-512 instructions are used</a>.</li>
 <li>Whenever heavy 256-bit or wider instructions are used. Heavy instructions are those involving floating point operations or integer multiplications (since these execute on the floating point unit).</li>
 </ul>
-<p>The simdjson library does not make use of heavy 256-bit instructions. We do use vectorized multiplications, but only using 128-bit registers. Thus there should be no downclocking due to simdjson on recent processors, except when AVX-512 is allowed and detected. However, we only allow AVX-512 on recent processors (Ice Lake/Tiger Lake or better) where <a href="https://travisdowns.github.io/blog/2020/08/19/icl-avx512-freq.html">little to no frequency throttling is expected</a>. If you can still concerned, you can easily disable AVX-512 with the CMake option <code>SIMDJSON_AVX512_ALLOWED</code> set to <code>OFF</code> (e.g., <code>cmake -D SIMDJSON_AVX512_ALLOWED=OFF -B build &amp;&amp; cmake --build build</code>) or by setting the macro <code>SIMDJSON_AVX512_ALLOWED</code> to <code>0</code> in C++ prior to importing the headers.</p>
+<p>The simdjson library does not make use of heavy 256-bit instructions. We do use vectorized multiplications, but only using 128-bit registers. Thus there should be no downclocking due to simdjson on recent processors, except when AVX-512 is allowed and detected. However, we only allow AVX-512 on recent processors (Ice Lake/Tiger Lake or better, AMD Zen 4 or better) where <a href="https://travisdowns.github.io/blog/2020/08/19/icl-avx512-freq.html">little to no frequency throttling is expected</a>. If you can still concerned, you can easily disable AVX-512 with the CMake option <code>SIMDJSON_AVX512_ALLOWED</code> set to <code>OFF</code> (e.g., <code>cmake -D SIMDJSON_AVX512_ALLOWED=OFF -B build &amp;&amp; cmake --build build</code>) or by setting the macro <code>SIMDJSON_AVX512_ALLOWED</code> to <code>0</code> in C++ prior to importing the headers.</p>
 <p>You may still be worried about which SIMD instruction set is used by simdjson. Thankfully, <a class="el" href="md_doc_implementation_selection.html">you can always determine and change which architecture-specific implementation is used</a> by simdjson. Thus even if your CPU supports AVX2, you do not need to use AVX2. You are in control. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
