@@ -138,7 +138,7 @@ few hundred megabytes per second if your JSON documents are densely packed with 
 Visual Studio
 --------------
 
-On Intel and AMD Windows platforms, Microsoft Visual Studio enables programmers to build either 32-bit (x86) or 64-bit (x64) binaries. We urge you to always use 64-bit mode. Visual Studio 2019 should default on 64-bit builds when you have a 64-bit version of Windows, which we recommend.
+On Intel and AMD Windows platforms, Microsoft Visual Studio enables programmers to build either 32-bit (x86) or 64-bit (x64 or ARM64) binaries. We urge you to always use 64-bit mode. Visual Studio 2019 should default on 64-bit builds when you have a 64-bit version of Windows, which we recommend.
 
 When compiling with Visual Studio, we recommend the flags `/Ob2 /O2` or better. We do not recommend that you compile simdjson with architecture-specific flags such as  `arch:AVX2`. The simdjson library automatically selects the best execution kernel at runtime.
 
@@ -161,7 +161,7 @@ You should not expect the simdjson library to cause *downclocking* of your recen
 - Whenever heavy 256-bit or wider instructions are used. Heavy instructions are those involving floating point operations or integer multiplications (since these execute on the floating point unit).
 
 The simdjson library does not make use of heavy 256-bit instructions. We do use vectorized multiplications, but only using 128-bit registers. Thus there should be no downclocking due to simdjson on recent processors, except when AVX-512 is allowed and
-detected. However, we only allow AVX-512 on recent processors (Ice Lake/Tiger Lake or better) where [little to no frequency throttling is expected](https://travisdowns.github.io/blog/2020/08/19/icl-avx512-freq.html). If you can still concerned, you can easily disable AVX-512 with the CMake option `SIMDJSON_AVX512_ALLOWED` set to `OFF` (e.g., `cmake -D SIMDJSON_AVX512_ALLOWED=OFF -B build && cmake --build build`) or by setting
+detected. However, we only allow AVX-512 on recent processors (Ice Lake/Tiger Lake or better, AMD Zen 4 or better) where [little to no frequency throttling is expected](https://travisdowns.github.io/blog/2020/08/19/icl-avx512-freq.html). If you can still concerned, you can easily disable AVX-512 with the CMake option `SIMDJSON_AVX512_ALLOWED` set to `OFF` (e.g., `cmake -D SIMDJSON_AVX512_ALLOWED=OFF -B build && cmake --build build`) or by setting
 the macro `SIMDJSON_AVX512_ALLOWED` to `0` in C++ prior to importing the headers.
 
 You may still be worried about which SIMD instruction set is used by simdjson.  Thankfully,  [you can always determine and change which architecture-specific implementation is used](implementation-selection.md) by simdjson. Thus even if your CPU supports AVX2, you do not need to use AVX2. You are in control.
