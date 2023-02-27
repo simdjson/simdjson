@@ -329,4 +329,8 @@ namespace std {
 #define SIMDJSON_DEVELOPMENT_ASSERT(expr) do { } while (0)
 #endif
 
+#ifndef SIMDJSON_UTF8VALIDATION
+#define SIMDJSON_UTF8VALIDATION 1
+#endif
+
 #endif // SIMDJSON_COMMON_DEFS_H
