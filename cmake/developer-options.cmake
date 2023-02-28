@@ -187,6 +187,18 @@ else()
   message(STATUS "AVX-512 instructions are not allowed.")
 endif()
 
+option(
+    SIMDJSON_SKIPUTF8VALIDATION
+    "SKIP UTF8 VALIDATION."
+    OFF
+)
+if(SIMDJSON_SKIPUTF8VALIDATION)
+  add_compile_definitions(SIMDJSON_UTF8VALIDATION=0)
+  message(STATUS "SKIP UTF8 VALIDATION")
+else()
+  add_compile_definitions(SIMDJSON_UTF8VALIDATION=1)
+endif()
+
 include(CheckSymbolExists)
 check_symbol_exists(fork unistd.h HAVE_POSIX_FORK)
 check_symbol_exists(wait sys/wait.h HAVE_POSIX_WAIT)

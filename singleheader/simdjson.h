@@ -1,4 +1,4 @@
-/* auto-generated on 2023-02-22 20:34:51 -0500. Do not edit! */
+/* auto-generated on 2023-02-27 23:41:52 -0500. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -2261,6 +2261,10 @@ namespace std {
 #define SIMDJSON_DEVELOPMENT_ASSERT(expr) do { assert ((expr)); } while (0)
 #else
 #define SIMDJSON_DEVELOPMENT_ASSERT(expr) do { } while (0)
+#endif
+
+#ifndef SIMDJSON_UTF8VALIDATION
+#define SIMDJSON_UTF8VALIDATION 1
 #endif
 
 #endif // SIMDJSON_COMMON_DEFS_H
