@@ -25,7 +25,8 @@ var classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_
     [ "operator=", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a615e14840aadad3ddb703d40140e6a46", null ],
     [ "operator=", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a1df3e757ec1e2206da217b3165fcbded", null ],
     [ "set_max_capacity", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a1fea49ba6513317ea94d87926b6f085d", null ],
-    [ "unescape", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#ac69b3aef12e3490c9fbd0a580004e015", null ],
+    [ "unescape", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a27714b0095b036a169cabebdc1031937", null ],
+    [ "unescape_wobbly", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a926e145e3ffb2b1024646dd56bc938e4", null ],
     [ "document_stream", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a403473bb5329fca6defc6299fb45b780", null ],
     [ "json_iterator", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a7a0d2e5fad4f195a866b6baa15846d39", null ]
 ];

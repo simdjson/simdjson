@@ -236,46 +236,52 @@ $(document).ready(function(){initNavTree('raw__json__string-inl_8h_source.html',
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;}</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160; </div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160; </div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;simdjson_inline simdjson_warn_unused simdjson_result&lt;std::string_view&gt; raw_json_string::unescape(json_iterator &amp;iter) <span class="keyword">const</span> noexcept {</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;  <span class="keywordflow">return</span> iter.unescape(*<span class="keyword">this</span>);</div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;simdjson_inline simdjson_warn_unused simdjson_result&lt;std::string_view&gt; raw_json_string::unescape(json_iterator &amp;iter, <span class="keywordtype">bool</span> allow_replacement) <span class="keyword">const</span> noexcept {</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;  <span class="keywordflow">return</span> iter.unescape(*<span class="keyword">this</span>, allow_replacement);</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;}</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160; </div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160; </div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;simdjson_unused simdjson_inline std::ostream &amp;<a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ab10943c6107de5337f376a6939f817af">operator&lt;&lt;</a>(std::ostream &amp;out, <span class="keyword">const</span> raw_json_string &amp;str) noexcept {</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;  <span class="keywordtype">bool</span> in_escape = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">char</span> *s = str.raw();</div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;  <span class="keywordflow">while</span> (<span class="keyword">true</span>) {</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    <span class="keywordflow">switch</span> (*s) {</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;      <span class="keywordflow">case</span> <span class="charliteral">&#39;\\&#39;</span>: in_escape = !in_escape; <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;      <span class="keywordflow">case</span> <span class="charliteral">&#39;&quot;&#39;</span>: <span class="keywordflow">if</span> (in_escape) { in_escape = <span class="keyword">false</span>; } <span class="keywordflow">else</span> { <span class="keywordflow">return</span> out; } <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;      <span class="keywordflow">default</span>: <span class="keywordflow">if</span> (in_escape) { in_escape = <span class="keyword">false</span>; }</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    }</div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    out &lt;&lt; *s;</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;    s++;</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;  }</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;}</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160; </div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;} <span class="comment">// namespace ondemand</span></div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;} <span class="comment">// namespace SIMDJSON_IMPLEMENTATION</span></div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160; </div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacesimdjson.html">simdjson</a> {</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160; </div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;simdjson_inline simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;::simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string &amp;&amp;value) noexcept</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    : implementation_simdjson_result_base&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;(std::forward&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;(value)) {}</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;simdjson_inline simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;::simdjson_result(<a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error) noexcept</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    : implementation_simdjson_result_base&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;(error) {}</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160; </div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;simdjson_inline simdjson_result&lt;const char *&gt; simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;::raw() const noexcept {</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;  <span class="keywordflow">if</span> (<a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>()) { <span class="keywordflow">return</span> <a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>(); }</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;  <span class="keywordflow">return</span> first.raw();</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;}</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;simdjson_inline simdjson_warn_unused simdjson_result&lt;std::string_view&gt; simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;::unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &amp;iter) <span class="keyword">const</span> noexcept {</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;  <span class="keywordflow">if</span> (error()) { <span class="keywordflow">return</span> error(); }</div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;  <span class="keywordflow">return</span> first.unescape(iter);</div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;}</div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160; </div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;simdjson_inline simdjson_warn_unused simdjson_result&lt;std::string_view&gt; raw_json_string::unescape_wobbly(json_iterator &amp;iter) <span class="keyword">const</span> noexcept {</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;  <span class="keywordflow">return</span> iter.unescape_wobbly(*<span class="keyword">this</span>);</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;}</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160; </div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;simdjson_unused simdjson_inline std::ostream &amp;<a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ab10943c6107de5337f376a6939f817af">operator&lt;&lt;</a>(std::ostream &amp;out, <span class="keyword">const</span> raw_json_string &amp;str) noexcept {</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;  <span class="keywordtype">bool</span> in_escape = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">char</span> *s = str.raw();</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;  <span class="keywordflow">while</span> (<span class="keyword">true</span>) {</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <span class="keywordflow">switch</span> (*s) {</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;      <span class="keywordflow">case</span> <span class="charliteral">&#39;\\&#39;</span>: in_escape = !in_escape; <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;      <span class="keywordflow">case</span> <span class="charliteral">&#39;&quot;&#39;</span>: <span class="keywordflow">if</span> (in_escape) { in_escape = <span class="keyword">false</span>; } <span class="keywordflow">else</span> { <span class="keywordflow">return</span> out; } <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;      <span class="keywordflow">default</span>: <span class="keywordflow">if</span> (in_escape) { in_escape = <span class="keyword">false</span>; }</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    }</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;    out &lt;&lt; *s;</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;    s++;</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;  }</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;}</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160; </div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;} <span class="comment">// namespace ondemand</span></div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;} <span class="comment">// namespace SIMDJSON_IMPLEMENTATION</span></div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160; </div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacesimdjson.html">simdjson</a> {</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160; </div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;simdjson_inline simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;::simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string &amp;&amp;value) noexcept</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    : implementation_simdjson_result_base&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;(std::forward&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;(value)) {}</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;simdjson_inline simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;::simdjson_result(<a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error) noexcept</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;    : implementation_simdjson_result_base&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;(error) {}</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160; </div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;simdjson_inline simdjson_result&lt;const char *&gt; simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;::raw() const noexcept {</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;  <span class="keywordflow">if</span> (<a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>()) { <span class="keywordflow">return</span> <a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>(); }</div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;  <span class="keywordflow">return</span> first.raw();</div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;}</div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;simdjson_inline simdjson_warn_unused simdjson_result&lt;std::string_view&gt; simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;::unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &amp;iter, <span class="keywordtype">bool</span> allow_replacement) <span class="keyword">const</span> noexcept {</div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;  <span class="keywordflow">if</span> (error()) { <span class="keywordflow">return</span> error(); }</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;  <span class="keywordflow">return</span> first.unescape(iter, allow_replacement);</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;}</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;simdjson_inline simdjson_warn_unused simdjson_result&lt;std::string_view&gt; simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string&gt;::unescape_wobbly(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &amp;iter) <span class="keyword">const</span> noexcept {</div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;  <span class="keywordflow">if</span> (error()) { <span class="keywordflow">return</span> error(); }</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;  <span class="keywordflow">return</span> first.unescape_wobbly(iter);</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;}</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;} <span class="comment">// namespace simdjson</span></div>
 <div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string_html"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string</a></div><div class="ttdoc">A string escaped per JSON rules, terminated with quote (&quot;).</div><div class="ttdef"><b>Definition:</b> <a href="raw__json__string_8h_source.html#l00034">raw_json_string.h:34</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string_html_a0ddac0ab1c69022610d8051b989b5c95"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html#a0ddac0ab1c69022610d8051b989b5c95">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string::is_equal</a></div><div class="ttdeci">simdjson_inline bool is_equal(std::string_view target) const noexcept</div><div class="ttdoc">This compares the current instance to the std::string_view target: returns true if they are byte-by-b...</div><div class="ttdef"><b>Definition:</b> <a href="raw__json__string-inl_8h_source.html#l00068">raw_json_string-inl.h:68</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string_html_a671923a53cc070f65029698afeb9be7f"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html#a671923a53cc070f65029698afeb9be7f">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string::is_free_from_unescaped_quote</a></div><div class="ttdeci">static simdjson_inline bool is_free_from_unescaped_quote(std::string_view target) noexcept</div><div class="ttdoc">Returns true if target is free from unescaped quote.</div><div class="ttdef"><b>Definition:</b> <a href="raw__json__string-inl_8h_source.html#l00011">raw_json_string-inl.h:11</a></div></div>

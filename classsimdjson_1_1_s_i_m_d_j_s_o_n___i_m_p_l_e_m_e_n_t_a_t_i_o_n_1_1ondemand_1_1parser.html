@@ -178,10 +178,14 @@ simdjson_inline void&#160;</td><td class="memItemRight" valign="bottom"><b>set_m
 <tr class="memitem:ab6201f2eab41026e722a237d280b8fe1"><td class="memItemLeft" align="right" valign="top">simdjson_warn_unused <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#ab6201f2eab41026e722a237d280b8fe1">allocate</a> (size_t <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#aec2c883af898053ab8e5eca8e9e870ae">capacity</a>, size_t <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a9dd8dfaa40f0faec56e31f976e4c2c94">max_depth</a>=<a class="el" href="namespacesimdjson.html#a6df2598eb1d4e1ea669c41831cc7325d">DEFAULT_MAX_DEPTH</a>) noexcept</td></tr>
 <tr class="memdesc:ab6201f2eab41026e722a237d280b8fe1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ensure this parser has enough memory to process JSON documents up to <code>capacity</code> bytes in length and <code>max_depth</code> depth.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#ab6201f2eab41026e722a237d280b8fe1">More...</a><br /></td></tr>
 <tr class="separator:ab6201f2eab41026e722a237d280b8fe1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac69b3aef12e3490c9fbd0a580004e015"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::string_view &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#ac69b3aef12e3490c9fbd0a580004e015">unescape</a> (<a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html">raw_json_string</a> in, uint8_t *&amp;dst) const noexcept</td></tr>
-<tr class="memdesc:ac69b3aef12e3490c9fbd0a580004e015"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unescape this JSON string, replacing \ with \, <br  />
- with newline, etc.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#ac69b3aef12e3490c9fbd0a580004e015">More...</a><br /></td></tr>
-<tr class="separator:ac69b3aef12e3490c9fbd0a580004e015"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27714b0095b036a169cabebdc1031937"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::string_view &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a27714b0095b036a169cabebdc1031937">unescape</a> (<a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html">raw_json_string</a> in, uint8_t *&amp;dst, bool allow_replacement=false) const noexcept</td></tr>
+<tr class="memdesc:a27714b0095b036a169cabebdc1031937"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unescape this JSON string, replacing \ with \, <br  />
+ with newline, etc.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a27714b0095b036a169cabebdc1031937">More...</a><br /></td></tr>
+<tr class="separator:a27714b0095b036a169cabebdc1031937"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a926e145e3ffb2b1024646dd56bc938e4"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::string_view &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a926e145e3ffb2b1024646dd56bc938e4">unescape_wobbly</a> (<a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html">raw_json_string</a> in, uint8_t *&amp;dst) const noexcept</td></tr>
+<tr class="memdesc:a926e145e3ffb2b1024646dd56bc938e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unescape this JSON string, replacing \ with \, <br  />
+ with newline, etc.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a926e145e3ffb2b1024646dd56bc938e4">More...</a><br /></td></tr>
+<tr class="separator:a926e145e3ffb2b1024646dd56bc938e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A JSON fragment iterator. </p>
@@ -440,8 +444,8 @@ Parser Capacity</h3>
 
 </div>
 </div>
-<a id="ac69b3aef12e3490c9fbd0a580004e015"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac69b3aef12e3490c9fbd0a580004e015">&#9670;&nbsp;</a></span>unescape()</h2>
+<a id="a27714b0095b036a169cabebdc1031937"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a27714b0095b036a169cabebdc1031937">&#9670;&nbsp;</a></span>unescape()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -451,6 +455,67 @@ Parser Capacity</h3>
       <table class="memname">
         <tr>
           <td class="memname">simdjson_inline simdjson_warn_unused <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::string_view &gt; simdjson::SIMDJSON_IMPLEMENTATION::ondemand::parser::unescape </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html">raw_json_string</a>&#160;</td>
+          <td class="paramname"><em>in</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint8_t *&amp;&#160;</td>
+          <td class="paramname"><em>dst</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>allow_replacement</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Unescape this JSON string, replacing \ with \, <br  />
+ with newline, etc. </p>
+<p>to a user-provided buffer. The result must be valid UTF-8. The provided pointer is advanced to the end of the string by reference, and a string_view instance is returned. You can ensure that your buffer is large enough by allocating a block of memory at least as large as the input JSON plus SIMDJSON_PADDING and then unescape all strings to this one buffer.</p>
+<p>This unescape function is a low-level function. If you want a more user-friendly approach, you should avoid <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html" title="A string escaped per JSON rules, terminated with quote (&quot;).">raw_json_string</a> instances (e.g., by calling unescaped_key() instead of key() or get_string() instead of get_raw_json_string()).</p>
+<h2><a class="anchor" id="autotoc_md127"></a>
+IMPORTANT: string_view lifetime</h2>
+<p>The string_view is only valid as long as the bytes in dst.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html" title="A string escaped per JSON rules, terminated with quote (&quot;).">raw_json_string</a></td><td>input </td></tr>
+    <tr><td class="paramname">dst</td><td>A pointer to a buffer at least large enough to write this string as well as an additional SIMDJSON_PADDING bytes. </td></tr>
+    <tr><td class="paramname">allow_replacement</td><td>Whether we allow a replacement if the input string contains unmatched surrogate pairs. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A string_view pointing at the unescaped string in dst @error STRING_ERROR if escapes are incorrect. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2parser-inl_8h_source.html#l00119">119</a> of file <a class="el" href="generic_2ondemand_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a926e145e3ffb2b1024646dd56bc938e4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a926e145e3ffb2b1024646dd56bc938e4">&#9670;&nbsp;</a></span>unescape_wobbly()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline simdjson_warn_unused <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::string_view &gt; simdjson::SIMDJSON_IMPLEMENTATION::ondemand::parser::unescape_wobbly </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html">raw_json_string</a>&#160;</td>
           <td class="paramname"><em>in</em>, </td>
@@ -476,9 +541,9 @@ Parser Capacity</h3>
 
 <p>Unescape this JSON string, replacing \ with \, <br  />
  with newline, etc. </p>
-<p>to a user-provided buffer. The provided pointer is advanced to the end of the string by reference, and a string_view instance is returned. You can ensure that your buffer is large enough by allocating a block of memory at least as large as the input JSON plus SIMDJSON_PADDING and then unescape all strings to this one buffer.</p>
+<p>to a user-provided buffer. The result may not be valid UTF-8. See <a href="https://simonsapin.github.io/wtf-8/">https://simonsapin.github.io/wtf-8/</a> The provided pointer is advanced to the end of the string by reference, and a string_view instance is returned. You can ensure that your buffer is large enough by allocating a block of memory at least as large as the input JSON plus SIMDJSON_PADDING and then unescape all strings to this one buffer.</p>
 <p>This unescape function is a low-level function. If you want a more user-friendly approach, you should avoid <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html" title="A string escaped per JSON rules, terminated with quote (&quot;).">raw_json_string</a> instances (e.g., by calling unescaped_key() instead of key() or get_string() instead of get_raw_json_string()).</p>
-<h2><a class="anchor" id="autotoc_md127"></a>
+<h2><a class="anchor" id="autotoc_md128"></a>
 IMPORTANT: string_view lifetime</h2>
 <p>The string_view is only valid as long as the bytes in dst.</p>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -490,7 +555,7 @@ IMPORTANT: string_view lifetime</h2>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A string_view pointing at the unescaped string in dst @error STRING_ERROR if escapes are incorrect. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2parser-inl_8h_source.html#l00119">119</a> of file <a class="el" href="generic_2ondemand_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2parser-inl_8h_source.html#l00127">127</a> of file <a class="el" href="generic_2ondemand_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
 
 </div>
 </div>
