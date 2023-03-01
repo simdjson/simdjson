@@ -32,6 +32,7 @@ An overview of what you need to know to use simdjson, with examples.
   - [Thread Safety](#thread-safety)
   - [Standard Compliance](#standard-compliance)
   - [Backwards Compatibility](#backwards-compatibility)
+  - [Examples](#examples)
 
 
 Requirements
@@ -1574,3 +1575,190 @@ Backwards Compatibility
 The only header file supported by simdjson is `simdjson.h`. Older versions of simdjson published a
 number of other include files such as `document.h` or `ParsedJson.h` alongside `simdjson.h`; these headers
 may be moved or removed in future versions.
+
+Examples
+--------
+
+Some users like to have example. The following illustrates how to process specific JSON inputs.
+For simplicity, we do not include full error support: this code would throw exceptions on error.
+
+
+* Example 1: ZuluBBox
+
+```C++
+struct ZuluBBox {
+  double xmin;
+  double ymin;
+  double width;
+  double height;
+
+  void print() {
+    std::cout << xmin << ", " << ymin << ", " << width << ", " << height
+              << std::endl;
+  }
+};
+
+bool example() {
+
+  auto json = R"+( {
+  "ZuluROI": {
+    "ZuluBBox": {
+      "xmin": 0,
+      "ymin": 0,
+      "width": 1,
+      "height": 1
+    },
+    "SubObjects": [
+      {
+        "ZuluDetection": {
+          "label": "car",
+          "class_id": 3,
+          "confidence": 0.7587034106254578,
+          "ZuluBBox": {
+            "xmin": 0.3843536376953125,
+            "ymin": 0.4532909393310547,
+            "width": 0.09115534275770187,
+            "height": 0.04127710685133934
+          },
+          "SubObjects": []
+        }
+      },
+      {
+        "ZuluDetection": {
+          "label": "car",
+          "class_id": 3,
+          "confidence": 0.6718865633010864,
+          "ZuluBBox": {
+            "xmin": 0.7500002980232239,
+            "ymin": 0.5212296843528748,
+            "width": 0.07592231780290604,
+            "height": 0.038947589695453644
+          },
+          "SubObjects": []
+        }
+      },
+      {
+        "ZuluDetection": {
+          "label": "car",
+          "class_id": 3,
+          "confidence": 0.5806200504302979,
+          "ZuluBBox": {
+            "xmin": 0.9025363922119141,
+            "ymin": 0.5925348401069641,
+            "width": 0.05478987470269203,
+            "height": 0.046337299048900604
+          },
+          "SubObjects": []
+        }
+      }
+    ]
+  },
+  "timestamp (ms)": 1677085594421,
+  "buffer_offset": 35673
+} )+"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  ondemand::object root_object = doc.get_object();
+  ondemand::object roi_object = root_object["ZuluROI"];
+
+  ondemand::object box_roi_object = roi_object["ZuluBBox"];
+  ZuluBBox box = {
+      double(box_roi_object["xmin"]), double(box_roi_object["ymin"]),
+      double(box_roi_object["width"]), double(box_roi_object["height"])};
+  box.print();
+
+  for (ondemand::object value : roi_object["SubObjects"]) {
+    ondemand::object detect = value["ZuluDetection"];
+    std::cout << detect["label"].get_string() << std::endl;
+    std::cout << detect["class_id"].get_uint64() << std::endl;
+    std::cout << detect["confidence"].get_double() << std::endl;
+
+    ondemand::object vbox_roi_object = detect["ZuluBBox"];
+    ZuluBBox vbox = {
+        double(vbox_roi_object["xmin"]), double(vbox_roi_object["ymin"]),
+        double(vbox_roi_object["width"]), double(vbox_roi_object["height"])};
+    vbox.print();
+  }
+
+  std::cout << root_object["timestamp (ms)"].get_uint64() << std::endl;
+  std::cout << root_object["buffer_offset"].get_uint64() << std::endl;
+  return true;
+}
+```
+
+
+* Example 2: Demos
+
+```C++
+bool example() {
+  auto json = R"+( {
+    "5f08a730b280e54fd1e75a7046b93fdc": {
+        "file": "/DEMOS/0-9/10_Orbyte.sid",
+        "len": [
+            "1:17"
+        ],
+        "loud": [
+            "-22.8"
+        ],
+        "name": "10 Orbyte",
+        "author": "Michael Becker (Premium)",
+        "release": "2014 Tristar & Red Sector Inc.",
+        "bits": 20
+    },
+    "2727236ead44a62f0c6e01f6dd4dc484": {
+        "file": "/DEMOS/0-9/12345.sid",
+        "len": [
+            "0:56"
+        ],
+        "loud": [
+            "-33.3"
+        ],
+        "name": "12345",
+        "author": "Beal",
+        "release": "1988 Beal",
+        "bits": 20
+    },
+    "7ea765fce6c0f92570b18adc7bf52f54": {
+        "file": "/DEMOS/0-9/128_Byte_Blues_BASIC.sid",
+        "len": [
+            "0:18"
+        ],
+        "loud": [
+            "-27.1"
+        ],
+        "name": "128 Byte Blues",
+        "author": "Leonard J. Paul (Freaky DNA)",
+        "release": "2005 Freaky DNA",
+        "bits": 62
+    }
+} )+"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  ondemand::object root_object = doc.get_object();
+  for(auto key_value : root_object) {
+    // could get std::string_view with 'unescaped_key()':
+    std::cout << "key: " << key_value.key() << std::endl;
+    ondemand::object obj = key_value.value();
+
+    std::cout << "file: " << std::string_view(obj["file"]) << std::endl;
+
+    std::cout << "len: ";
+    for(std::string_view values : obj["len"]) {
+      std::cout << values << std::endl;
+    }
+    std::cout << std::endl;
+
+    std::cout << "loud: ";
+    for(std::string_view values : obj["loud"]) {
+      std::cout << values << std::endl;
+    }
+    std::cout << std::endl;
+
+    std::cout << "name: " << std::string_view(obj["name"]) << std::endl;
+    std::cout << "author: " << std::string_view(obj["author"]) << std::endl;
+    std::cout << "release: " << std::string_view(obj["release"]) << std::endl;
+    std::cout << "bits: " << uint64_t(obj["bits"]) << std::endl;
+  }
+  return true;
+}
+```
