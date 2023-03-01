@@ -129,8 +129,23 @@ public:
    *          time it parses a document or when it is destroyed.
    * @returns INCORRECT_TYPE if the JSON value is not a string.
    */
-  simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
 
+
+  /**
+   * Cast this JSON value to a "wobbly" string.
+   *
+   * The string is may not be a valid UTF-8 string.
+   * See https://simonsapin.github.io/wtf-8/
+   *
+   * Important: a value should be consumed once. Calling get_wobbly_string() twice on the same value
+   * is an error.
+   *
+   * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
+   *          time it parses a document or when it is destroyed.
+   * @returns INCORRECT_TYPE if the JSON value is not a string.
+   */
+  simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   /**
    * Cast this JSON value to a raw_json_string.
    *
@@ -585,7 +600,8 @@ public:
   simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
-  simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<bool> is_null() noexcept;

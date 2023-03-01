@@ -208,6 +208,8 @@ For best performance, a `parser` instance should be reused over several files: o
 needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory
 allocations during parsing when using simdjson. [See our performance notes for details](performance.md).
 
+If you need to have several documents active at once, you should have several parser instances.
+
 C++11 Support and string_view
 -------------
 
@@ -300,7 +302,13 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   `get_uint64()`, `get_int64()`, `get_bool()`, `get_object()` and `get_array()`. After a cast or an explicit method,
   the number, string or boolean will be parsed, or the initial `[` or `{` will be verified. An exception is thrown if
   the cast is not possible. The `get_string()` returns a valid UTF-8 string, after
-  unescaping characters as needed: unmatched surrogate pairs are treated as an error. When calling `get_uint64()` and `get_int64()`, if the number does not fit in a corresponding 64-bit integer type, it is also considered an error.
+  unescaping characters as needed: unmatched surrogate pairs are treated as an error unless you
+  pass `true` (`get_string(true)`) as a parameter to get replacement characters where errors
+  occur. If you somehow need to access non-UTF-8 strings in a lossless manner
+  (e.g., if you strings contain unpaired surrogates), you may use the `get_wobbly_string()` function to get a string in the [WTF-8 format](https://simonsapin.github.io/wtf-8).
+  Or you may pass `true` as a parameter to the
+  When calling `get_uint64()` and `get_int64()`, if the number does not fit in a corresponding
+  64-bit integer type, it is also considered an error.
 
   > IMPORTANT NOTE: values can only be parsed once. Since documents are *iterators*, once you have
   > parsed a value (such as by casting to double), you cannot get at it again. It is an error to call

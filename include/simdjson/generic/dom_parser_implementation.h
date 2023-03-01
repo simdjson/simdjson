@@ -35,7 +35,8 @@ public:
   simdjson_warn_unused error_code stage1(const uint8_t *buf, size_t len, stage1_mode partial) noexcept final;
   simdjson_warn_unused error_code stage2(dom::document &doc) noexcept final;
   simdjson_warn_unused error_code stage2_next(dom::document &doc) noexcept final;
-  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) const noexcept final;
   inline simdjson_warn_unused error_code set_capacity(size_t capacity) noexcept final;
   inline simdjson_warn_unused error_code set_max_depth(size_t max_depth) noexcept final;
 private:
