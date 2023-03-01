@@ -139,6 +139,20 @@ private:
 
   /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
+   * The result will be a valid UTF-8.
+   *
+   * ## IMPORTANT: string_view lifetime
+   *
+   * The string_view is only valid until the next parse() call on the parser.
+   *
+   * @param iter A json_iterator, which contains a buffer where the string will be written.
+   * @param allow_replacement Whether we allow replacement of invalid surrogate pairs.
+   */
+  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(json_iterator &iter, bool allow_replacement) const noexcept;
+
+  /**
+   * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
+   * The result may not be a valid UTF-8. https://simonsapin.github.io/wtf-8/
    *
    * ## IMPORTANT: string_view lifetime
    *
@@ -146,8 +160,7 @@ private:
    *
    * @param iter A json_iterator, which contains a buffer where the string will be written.
    */
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(json_iterator &iter) const noexcept;
-
+  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_wobbly(json_iterator &iter) const noexcept;
   const uint8_t * buf{};
   friend class object;
   friend class field;
@@ -182,7 +195,8 @@ public:
   simdjson_inline ~simdjson_result() noexcept = default; ///< @private
 
   simdjson_inline simdjson_result<const char *> raw() const noexcept;
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept;
+  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter, bool allow_replacement) const noexcept;
+  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_wobbly(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept;
 };
 
 } // namespace simdjson

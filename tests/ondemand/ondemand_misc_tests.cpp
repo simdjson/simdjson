@@ -5,6 +5,56 @@ using namespace simdjson;
 
 namespace misc_tests {
   using namespace std;
+  bool replacement_char() {
+    auto fun_phrase = R"( ["I \u2665 Unicode. Even broken \ud800 Unicode." ])"_padded;
+    std::string_view expected_fun = "I \xe2\x99\xa5 Unicode. Even broken \xef\xbf\xbd Unicode.";
+
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(fun_phrase).get(doc));
+    ondemand::array arr;
+    ASSERT_SUCCESS( doc.get_array().get(arr));
+    std::string_view view;
+    ASSERT_SUCCESS( arr.at(0).get_string(true).get(view));
+    ASSERT_EQUAL(view, expected_fun);
+    TEST_SUCCEED();
+  }
+
+  bool wobbly_tests() {
+    auto lone_surrogate = R"( "\ud800" )"_padded;
+    std::string_view expected_lone = "\xed\xa0\x80";
+
+
+    auto fun_phrase = R"( ["I \u2665 Unicode. Even broken \ud800 Unicode." ])"_padded;
+    std::string_view expected_fun = "I \xe2\x99\xa5 Unicode. Even broken \xed\xa0\x80 Unicode.";
+
+    auto insane_url = R"({"input": "http://example.com/\uDC00\uD834\uDF06\uDC00"} )"_padded;
+    std::string_view expected_insane = "http://example.com/\xED\xB0\x80\xF0\x9D\x8C\x86\xED\xB0\x80";
+
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(lone_surrogate).get(doc));
+    std::string_view view;
+    ASSERT_SUCCESS( doc.get_wobbly_string().get(view));
+    ASSERT_EQUAL(view, expected_lone);
+
+    ASSERT_SUCCESS(parser.iterate(fun_phrase).get(doc));
+    ondemand::array arr;
+    ASSERT_SUCCESS( doc.get_array().get(arr));
+    ASSERT_SUCCESS( arr.at(0).get_wobbly_string().get(view));
+    ASSERT_EQUAL(view, expected_fun);
+
+    ASSERT_SUCCESS(parser.iterate(insane_url).get(doc));
+    ondemand::object obj;
+    ASSERT_SUCCESS( doc.get_object().get(obj));
+    ASSERT_SUCCESS( obj["input"].get_wobbly_string().get(view));
+
+    ASSERT_EQUAL(view, expected_insane);
+    TEST_SUCCEED();
+  }
+
   bool test_get_value() {
     TEST_START();
     ondemand::parser parser;
@@ -520,6 +570,8 @@ namespace misc_tests {
 
   bool run() {
     return
+           replacement_char() &&
+           wobbly_tests() &&
            issue_uffff() &&
            issue_backslash() &&
            issue1870() &&

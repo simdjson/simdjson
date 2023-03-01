@@ -30,8 +30,11 @@ simdjson_inline simdjson_result<object> value::start_or_resume_object() noexcept
 simdjson_inline simdjson_result<raw_json_string> value::get_raw_json_string() noexcept {
   return iter.get_raw_json_string();
 }
-simdjson_inline simdjson_result<std::string_view> value::get_string() noexcept {
-  return iter.get_string();
+simdjson_inline simdjson_result<std::string_view> value::get_string(bool allow_replacement) noexcept {
+  return iter.get_string(allow_replacement);
+}
+simdjson_inline simdjson_result<std::string_view> value::get_wobbly_string() noexcept {
+  return iter.get_wobbly_string();
 }
 simdjson_inline simdjson_result<double> value::get_double() noexcept {
   return iter.get_double();
@@ -60,7 +63,7 @@ simdjson_inline simdjson_result<bool> value::is_null() noexcept {
 template<> simdjson_inline simdjson_result<array> value::get() noexcept { return get_array(); }
 template<> simdjson_inline simdjson_result<object> value::get() noexcept { return get_object(); }
 template<> simdjson_inline simdjson_result<raw_json_string> value::get() noexcept { return get_raw_json_string(); }
-template<> simdjson_inline simdjson_result<std::string_view> value::get() noexcept { return get_string(); }
+template<> simdjson_inline simdjson_result<std::string_view> value::get() noexcept { return get_string(false); }
 template<> simdjson_inline simdjson_result<number> value::get() noexcept { return get_number(); }
 template<> simdjson_inline simdjson_result<double> value::get() noexcept { return get_double(); }
 template<> simdjson_inline simdjson_result<uint64_t> value::get() noexcept { return get_uint64(); }
@@ -88,7 +91,7 @@ simdjson_inline value::operator double() noexcept(false) {
   return get_double();
 }
 simdjson_inline value::operator std::string_view() noexcept(false) {
-  return get_string();
+  return get_string(false);
 }
 simdjson_inline value::operator raw_json_string() noexcept(false) {
   return get_raw_json_string();
@@ -298,9 +301,13 @@ simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION:
   if (error()) { return error(); }
   return first.get_double_in_string();
 }
-simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_string() noexcept {
+simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_string(bool allow_replacement) noexcept {
   if (error()) { return error(); }
-  return first.get_string();
+  return first.get_string(allow_replacement);
+}
+simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_wobbly_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_wobbly_string();
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_raw_json_string() noexcept {
   if (error()) { return error(); }
