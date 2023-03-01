@@ -18,6 +18,7 @@ algorithms to take better advantage of a given CPU!
 
 The current implementations are:
 * icelake: AVX-512F, AVX-512VBMI, etc.
+* skylake: AVX-512F, etc.
 * haswell: AVX2 (2013 Intel Haswell or later)
 * westmere: SSE4.2 (2010 Westmere or later).
 * arm64: 64-bit ARMv8-A NEON
@@ -29,7 +30,7 @@ compiles *all* the implementations into the executable. On Intel, it will includ
 (haswell, westmere and fallback), on ARM it will include 2 (arm64 and fallback), and on PPC it will include 2 (ppc64 and fallback).
 
 If you know more about where you're going to run and want to save the space, you can disable any of
-these implementations at compile time with `-DSIMDJSON_IMPLEMENTATION_X=0` (where X is ICELAKE, HASWELL,
+these implementations at compile time with `-DSIMDJSON_IMPLEMENTATION_X=0` (where X is ICELAKE, SKYLAKE, HASWELL,
 WESTMERE, ARM64, PPC64 and FALLBACK).
 
 The simdjson library automatically sets header flags for each implementation as it compiles; there

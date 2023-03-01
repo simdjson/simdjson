@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_ICELAKE_SIMD_H
-#define SIMDJSON_ICELAKE_SIMD_H
+#ifndef SIMDJSON_SKYLAKE_SIMD_H
+#define SIMDJSON_SKYLAKE_SIMD_H
 
 #include "simdjson/internal/simdprune_tables.h"
 
@@ -148,7 +148,34 @@ inline __m512i _mm512_set_epi8(uint8_t a0, uint8_t a1, uint8_t a2, uint8_t a3, u
     // sensible, but the AVX ISA makes this kind of approach difficult.
     template<typename L>
     simdjson_inline void compress(uint64_t mask, L * output) const {
-      _mm512_mask_compressstoreu_epi8 (output,~mask,*this);
+      uint16_t mask1 = uint16_t(mask);
+      uint16_t mask2 = uint16_t(mask >> 16);
+      uint16_t mask3 = uint16_t(mask >> 32);
+      uint16_t mask4 = uint16_t(mask >> 48);
+
+      __m128i v128src = _mm512_extracti32x4_epi32(*this,0);
+      __m512i v512src = _mm512_cvtepu8_epi32(v128src);
+      __m512i v512tmp = _mm512_maskz_compress_epi32((__mmask16)(~mask1), v512src);
+      __m128i v128dst = _mm512_cvtepi32_epi8(v512tmp);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(output), v128dst);
+
+      v128src = _mm512_extracti32x4_epi32(*this,1);
+      v512src = _mm512_cvtepu8_epi32(v128src);
+      v512tmp = _mm512_maskz_compress_epi32((__mmask16)(~mask2), v512src);
+      v128dst = _mm512_cvtepi32_epi8(v512tmp);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>((char*)output + 16 - count_ones(mask & 0xFFFF)), v128dst);
+
+      v128src = _mm512_extracti32x4_epi32(*this,2);
+      v512src = _mm512_cvtepu8_epi32(v128src);
+      v512tmp = _mm512_maskz_compress_epi32((__mmask16)(~mask3), v512src);
+      v128dst = _mm512_cvtepi32_epi8(v512tmp);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(output + 32 - count_ones(mask & 0xFFFFFFFF)), v128dst);
+
+      v128src = _mm512_extracti32x4_epi32(*this,3);
+      v512src = _mm512_cvtepu8_epi32(v128src);
+      v512tmp = _mm512_maskz_compress_epi32((__mmask16)(~mask4), v512src);
+      v128dst = _mm512_cvtepi32_epi8(v512tmp);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(output + 48 - count_ones(mask & 0xFFFFFFFFFFFF)), v128dst);
     }
 
     template<typename L>
@@ -310,7 +337,7 @@ inline __m512i _mm512_set_epi8(uint8_t a0, uint8_t a1, uint8_t a2, uint8_t a3, u
   template<typename T>
   struct simd8x64 {
     static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
-    static_assert(NUM_CHUNKS == 1, "Icelake kernel should use one register per 64-byte block.");
+    static_assert(NUM_CHUNKS == 1, "Skylake kernel should use one register per 64-byte block.");
     const simd8<T> chunks[NUM_CHUNKS];
 
     simd8x64(const simd8x64<T>& o) = delete; // no copy allowed
@@ -362,4 +389,4 @@ inline __m512i _mm512_set_epi8(uint8_t a0, uint8_t a1, uint8_t a2, uint8_t a3, u
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#endif // SIMDJSON_ICELAKE_SIMD_H
+#endif // SIMDJSON_SKYLAKE_SIMD_H

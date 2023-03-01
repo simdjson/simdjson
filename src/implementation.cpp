@@ -20,6 +20,12 @@ static const icelake::implementation* get_icelake_singleton() {
   return &icelake_singleton;
 }
 #endif
+#if SIMDJSON_IMPLEMENTATION_SKYLAKE
+static const skylake::implementation* get_skylake_singleton() {
+  static const skylake::implementation skylake_singleton{};
+  return &skylake_singleton;
+}
+#endif
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 static const haswell::implementation* get_haswell_singleton() {
   static const haswell::implementation haswell_singleton{};
@@ -81,6 +87,9 @@ static const std::initializer_list<const implementation *>& get_available_implem
   static const std::initializer_list<const implementation *> available_implementation_pointers {
 #if SIMDJSON_IMPLEMENTATION_ICELAKE
     get_icelake_singleton(),
+#endif
+#if SIMDJSON_IMPLEMENTATION_SKYLAKE
+    get_skylake_singleton(),
 #endif
 #if SIMDJSON_IMPLEMENTATION_HASWELL
     get_haswell_singleton(),
