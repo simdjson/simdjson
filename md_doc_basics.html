@@ -128,6 +128,7 @@ $(document).ready(function(){initNavTree('md_doc_basics.html',''); initResizable
 <li><a href="#thread-safety">Thread Safety</a></li>
 <li><a href="#standard-compliance">Standard Compliance</a></li>
 <li><a href="#backwards-compatibility">Backwards Compatibility</a></li>
+<li><a href="#examples">Examples</a></li>
 </ul>
 </li>
 </ul>
@@ -1130,8 +1131,188 @@ Standard Compliance</h1>
 </ul>
 <h1><a class="anchor" id="autotoc_md27"></a>
 Backwards Compatibility</h1>
-<p>The only header file supported by simdjson is <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code>. Older versions of simdjson published a number of other include files such as <code>document.h</code> or <code><a class="el" href="parsedjson_8h_source.html">ParsedJson.h</a></code> alongside <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code>; these headers may be moved or removed in future versions. </p>
-</div></div><!-- contents -->
+<p>The only header file supported by simdjson is <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code>. Older versions of simdjson published a number of other include files such as <code>document.h</code> or <code><a class="el" href="parsedjson_8h_source.html">ParsedJson.h</a></code> alongside <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code>; these headers may be moved or removed in future versions.</p>
+<h1><a class="anchor" id="autotoc_md28"></a>
+Examples</h1>
+<p>Some users like to have example. The following code samples illustrate how to process specific JSON inputs. For simplicity, we do not include full error support: this code would throw exceptions on error.</p>
+<ul>
+<li>Example 1: ZuluBBox</li>
+</ul>
+<div class="fragment"><div class="line"> {C++}</div>
+<div class="line">struct ZuluBBox {</div>
+<div class="line">  double xmin;</div>
+<div class="line">  double ymin;</div>
+<div class="line">  double width;</div>
+<div class="line">  double height;</div>
+<div class="line"> </div>
+<div class="line">  void print() {</div>
+<div class="line">    std::cout &lt;&lt; xmin &lt;&lt; &quot;, &quot; &lt;&lt; ymin &lt;&lt; &quot;, &quot; &lt;&lt; width &lt;&lt; &quot;, &quot; &lt;&lt; height</div>
+<div class="line">              &lt;&lt; std::endl;</div>
+<div class="line">  }</div>
+<div class="line">};</div>
+<div class="line"> </div>
+<div class="line">bool example() {</div>
+<div class="line"> </div>
+<div class="line">  auto json = R&quot;+( {</div>
+<div class="line">  &quot;ZuluROI&quot;: {</div>
+<div class="line">    &quot;ZuluBBox&quot;: {</div>
+<div class="line">      &quot;xmin&quot;: 0,</div>
+<div class="line">      &quot;ymin&quot;: 0,</div>
+<div class="line">      &quot;width&quot;: 1,</div>
+<div class="line">      &quot;height&quot;: 1</div>
+<div class="line">    },</div>
+<div class="line">    &quot;SubObjects&quot;: [</div>
+<div class="line">      {</div>
+<div class="line">        &quot;ZuluDetection&quot;: {</div>
+<div class="line">          &quot;label&quot;: &quot;car&quot;,</div>
+<div class="line">          &quot;class_id&quot;: 3,</div>
+<div class="line">          &quot;confidence&quot;: 0.7587034106254578,</div>
+<div class="line">          &quot;ZuluBBox&quot;: {</div>
+<div class="line">            &quot;xmin&quot;: 0.3843536376953125,</div>
+<div class="line">            &quot;ymin&quot;: 0.4532909393310547,</div>
+<div class="line">            &quot;width&quot;: 0.09115534275770187,</div>
+<div class="line">            &quot;height&quot;: 0.04127710685133934</div>
+<div class="line">          },</div>
+<div class="line">          &quot;SubObjects&quot;: []</div>
+<div class="line">        }</div>
+<div class="line">      },</div>
+<div class="line">      {</div>
+<div class="line">        &quot;ZuluDetection&quot;: {</div>
+<div class="line">          &quot;label&quot;: &quot;car&quot;,</div>
+<div class="line">          &quot;class_id&quot;: 3,</div>
+<div class="line">          &quot;confidence&quot;: 0.6718865633010864,</div>
+<div class="line">          &quot;ZuluBBox&quot;: {</div>
+<div class="line">            &quot;xmin&quot;: 0.7500002980232239,</div>
+<div class="line">            &quot;ymin&quot;: 0.5212296843528748,</div>
+<div class="line">            &quot;width&quot;: 0.07592231780290604,</div>
+<div class="line">            &quot;height&quot;: 0.038947589695453644</div>
+<div class="line">          },</div>
+<div class="line">          &quot;SubObjects&quot;: []</div>
+<div class="line">        }</div>
+<div class="line">      },</div>
+<div class="line">      {</div>
+<div class="line">        &quot;ZuluDetection&quot;: {</div>
+<div class="line">          &quot;label&quot;: &quot;car&quot;,</div>
+<div class="line">          &quot;class_id&quot;: 3,</div>
+<div class="line">          &quot;confidence&quot;: 0.5806200504302979,</div>
+<div class="line">          &quot;ZuluBBox&quot;: {</div>
+<div class="line">            &quot;xmin&quot;: 0.9025363922119141,</div>
+<div class="line">            &quot;ymin&quot;: 0.5925348401069641,</div>
+<div class="line">            &quot;width&quot;: 0.05478987470269203,</div>
+<div class="line">            &quot;height&quot;: 0.046337299048900604</div>
+<div class="line">          },</div>
+<div class="line">          &quot;SubObjects&quot;: []</div>
+<div class="line">        }</div>
+<div class="line">      }</div>
+<div class="line">    ]</div>
+<div class="line">  },</div>
+<div class="line">  &quot;timestamp (ms)&quot;: 1677085594421,</div>
+<div class="line">  &quot;buffer_offset&quot;: 35673</div>
+<div class="line">} )+&quot;_padded;</div>
+<div class="line">  ondemand::parser parser;</div>
+<div class="line">  ondemand::document doc = parser.iterate(json);</div>
+<div class="line">  ondemand::object root_object = doc.get_object();</div>
+<div class="line">  ondemand::object roi_object = root_object[&quot;ZuluROI&quot;];</div>
+<div class="line"> </div>
+<div class="line">  ondemand::object box_roi_object = roi_object[&quot;ZuluBBox&quot;];</div>
+<div class="line">  ZuluBBox box = {</div>
+<div class="line">      double(box_roi_object[&quot;xmin&quot;]), double(box_roi_object[&quot;ymin&quot;]),</div>
+<div class="line">      double(box_roi_object[&quot;width&quot;]), double(box_roi_object[&quot;height&quot;])};</div>
+<div class="line">  box.print();</div>
+<div class="line"> </div>
+<div class="line">  for (ondemand::object value : roi_object[&quot;SubObjects&quot;]) {</div>
+<div class="line">    ondemand::object detect = value[&quot;ZuluDetection&quot;];</div>
+<div class="line">    std::cout &lt;&lt; detect[&quot;label&quot;].get_string() &lt;&lt; std::endl;</div>
+<div class="line">    std::cout &lt;&lt; detect[&quot;class_id&quot;].get_uint64() &lt;&lt; std::endl;</div>
+<div class="line">    std::cout &lt;&lt; detect[&quot;confidence&quot;].get_double() &lt;&lt; std::endl;</div>
+<div class="line"> </div>
+<div class="line">    ondemand::object vbox_roi_object = detect[&quot;ZuluBBox&quot;];</div>
+<div class="line">    ZuluBBox vbox = {</div>
+<div class="line">        double(vbox_roi_object[&quot;xmin&quot;]), double(vbox_roi_object[&quot;ymin&quot;]),</div>
+<div class="line">        double(vbox_roi_object[&quot;width&quot;]), double(vbox_roi_object[&quot;height&quot;])};</div>
+<div class="line">    vbox.print();</div>
+<div class="line">  }</div>
+<div class="line"> </div>
+<div class="line">  std::cout &lt;&lt; root_object[&quot;timestamp (ms)&quot;].get_uint64() &lt;&lt; std::endl;</div>
+<div class="line">  std::cout &lt;&lt; root_object[&quot;buffer_offset&quot;].get_uint64() &lt;&lt; std::endl;</div>
+<div class="line">  return true;</div>
+<div class="line">}</div>
+</div><!-- fragment --><ul>
+<li>Example 2: Demos</li>
+</ul>
+<div class="fragment"><div class="line"> {C++}</div>
+<div class="line">bool example() {</div>
+<div class="line">  auto json = R&quot;+( {</div>
+<div class="line">    &quot;5f08a730b280e54fd1e75a7046b93fdc&quot;: {</div>
+<div class="line">        &quot;file&quot;: &quot;/DEMOS/0-9/10_Orbyte.sid&quot;,</div>
+<div class="line">        &quot;len&quot;: [</div>
+<div class="line">            &quot;1:17&quot;</div>
+<div class="line">        ],</div>
+<div class="line">        &quot;loud&quot;: [</div>
+<div class="line">            &quot;-22.8&quot;</div>
+<div class="line">        ],</div>
+<div class="line">        &quot;name&quot;: &quot;10 Orbyte&quot;,</div>
+<div class="line">        &quot;author&quot;: &quot;Michael Becker (Premium)&quot;,</div>
+<div class="line">        &quot;release&quot;: &quot;2014 Tristar &amp; Red Sector Inc.&quot;,</div>
+<div class="line">        &quot;bits&quot;: 20</div>
+<div class="line">    },</div>
+<div class="line">    &quot;2727236ead44a62f0c6e01f6dd4dc484&quot;: {</div>
+<div class="line">        &quot;file&quot;: &quot;/DEMOS/0-9/12345.sid&quot;,</div>
+<div class="line">        &quot;len&quot;: [</div>
+<div class="line">            &quot;0:56&quot;</div>
+<div class="line">        ],</div>
+<div class="line">        &quot;loud&quot;: [</div>
+<div class="line">            &quot;-33.3&quot;</div>
+<div class="line">        ],</div>
+<div class="line">        &quot;name&quot;: &quot;12345&quot;,</div>
+<div class="line">        &quot;author&quot;: &quot;Beal&quot;,</div>
+<div class="line">        &quot;release&quot;: &quot;1988 Beal&quot;,</div>
+<div class="line">        &quot;bits&quot;: 20</div>
+<div class="line">    },</div>
+<div class="line">    &quot;7ea765fce6c0f92570b18adc7bf52f54&quot;: {</div>
+<div class="line">        &quot;file&quot;: &quot;/DEMOS/0-9/128_Byte_Blues_BASIC.sid&quot;,</div>
+<div class="line">        &quot;len&quot;: [</div>
+<div class="line">            &quot;0:18&quot;</div>
+<div class="line">        ],</div>
+<div class="line">        &quot;loud&quot;: [</div>
+<div class="line">            &quot;-27.1&quot;</div>
+<div class="line">        ],</div>
+<div class="line">        &quot;name&quot;: &quot;128 Byte Blues&quot;,</div>
+<div class="line">        &quot;author&quot;: &quot;Leonard J. Paul (Freaky DNA)&quot;,</div>
+<div class="line">        &quot;release&quot;: &quot;2005 Freaky DNA&quot;,</div>
+<div class="line">        &quot;bits&quot;: 62</div>
+<div class="line">    }</div>
+<div class="line">} )+&quot;_padded;</div>
+<div class="line">  ondemand::parser parser;</div>
+<div class="line">  ondemand::document doc = parser.iterate(json);</div>
+<div class="line">  ondemand::object root_object = doc.get_object();</div>
+<div class="line">  for(auto key_value : root_object) {</div>
+<div class="line">    // could get std::string_view with &#39;unescaped_key()&#39;:</div>
+<div class="line">    std::cout &lt;&lt; &quot;key: &quot; &lt;&lt; key_value.key() &lt;&lt; std::endl;</div>
+<div class="line">    ondemand::object obj = key_value.value();</div>
+<div class="line"> </div>
+<div class="line">    std::cout &lt;&lt; &quot;file: &quot; &lt;&lt; std::string_view(obj[&quot;file&quot;]) &lt;&lt; std::endl;</div>
+<div class="line"> </div>
+<div class="line">    std::cout &lt;&lt; &quot;len: &quot;;</div>
+<div class="line">    for(std::string_view values : obj[&quot;len&quot;]) {</div>
+<div class="line">      std::cout &lt;&lt; values &lt;&lt; std::endl;</div>
+<div class="line">    }</div>
+<div class="line">    std::cout &lt;&lt; std::endl;</div>
+<div class="line"> </div>
+<div class="line">    std::cout &lt;&lt; &quot;loud: &quot;;</div>
+<div class="line">    for(std::string_view values : obj[&quot;loud&quot;]) {</div>
+<div class="line">      std::cout &lt;&lt; values &lt;&lt; std::endl;</div>
+<div class="line">    }</div>
+<div class="line">    std::cout &lt;&lt; std::endl;</div>
+<div class="line"> </div>
+<div class="line">    std::cout &lt;&lt; &quot;name: &quot; &lt;&lt; std::string_view(obj[&quot;name&quot;]) &lt;&lt; std::endl;</div>
+<div class="line">    std::cout &lt;&lt; &quot;author: &quot; &lt;&lt; std::string_view(obj[&quot;author&quot;]) &lt;&lt; std::endl;</div>
+<div class="line">    std::cout &lt;&lt; &quot;release: &quot; &lt;&lt; std::string_view(obj[&quot;release&quot;]) &lt;&lt; std::endl;</div>
+<div class="line">    std::cout &lt;&lt; &quot;bits: &quot; &lt;&lt; uint64_t(obj[&quot;bits&quot;]) &lt;&lt; std::endl;</div>
+<div class="line">  }</div>
+<div class="line">  return true;</div>
+<div class="line">}</div>
+</div><!-- fragment --> </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
 <!-- start footer part -->
