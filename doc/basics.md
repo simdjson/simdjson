@@ -1579,7 +1579,7 @@ may be moved or removed in future versions.
 Examples
 --------
 
-Some users like to have example. The following illustrates how to process specific JSON inputs.
+Some users like to have example. The following code samples illustrate how to process specific JSON inputs.
 For simplicity, we do not include full error support: this code would throw exceptions on error.
 
 
