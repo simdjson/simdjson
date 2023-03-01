@@ -1,4 +1,4 @@
-/* auto-generated on 2023-02-28 21:58:51 -0500. Do not edit! */
+/* auto-generated on 2023-03-01 14:36:20 +0800. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -2977,9 +2977,26 @@ public:
    *
    * @param str pointer to the beginning of a valid UTF-8 JSON string, must end with an unescaped quote.
    * @param dst pointer to a destination buffer, it must point a region in memory of sufficient size.
+   * @param allow_replacement whether we allow a replacement character when the UTF-8 contains unmatched surrogate pairs.
    * @return end of the of the written region (exclusive) or nullptr in case of error.
    */
-  simdjson_warn_unused virtual uint8_t *parse_string(const uint8_t *src, uint8_t *dst) const noexcept = 0;
+  simdjson_warn_unused virtual uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept = 0;
+
+  /**
+   * Unescape a NON-valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
+   * must be an unescaped quote terminating the string. It returns the final output
+   * position as pointer. In case of error (e.g., the string has bad escaped codes),
+   * then null_nullptrptr is returned. It is assumed that the output buffer is large
+   * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
+   * SIMDJSON_PADDING bytes.
+   *
+   * Overridden by each implementation.
+   *
+   * @param str pointer to the beginning of a possibly invalid UTF-8 JSON string, must end with an unescaped quote.
+   * @param dst pointer to a destination buffer, it must point a region in memory of sufficient size.
+   * @return end of the of the written region (exclusive) or nullptr in case of error.
+   */
+  simdjson_warn_unused virtual uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) const noexcept = 0;
 
   /**
    * Change the capacity of this parser.
@@ -9773,7 +9790,8 @@ public:
   simdjson_warn_unused error_code stage1(const uint8_t *buf, size_t len, stage1_mode partial) noexcept final;
   simdjson_warn_unused error_code stage2(dom::document &doc) noexcept final;
   simdjson_warn_unused error_code stage2_next(dom::document &doc) noexcept final;
-  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) const noexcept final;
   inline simdjson_warn_unused error_code set_capacity(size_t capacity) noexcept final;
   inline simdjson_warn_unused error_code set_max_depth(size_t max_depth) noexcept final;
 private:
@@ -12120,7 +12138,8 @@ public:
   simdjson_warn_unused error_code stage1(const uint8_t *buf, size_t len, stage1_mode partial) noexcept final;
   simdjson_warn_unused error_code stage2(dom::document &doc) noexcept final;
   simdjson_warn_unused error_code stage2_next(dom::document &doc) noexcept final;
-  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) const noexcept final;
   inline simdjson_warn_unused error_code set_capacity(size_t capacity) noexcept final;
   inline simdjson_warn_unused error_code set_max_depth(size_t max_depth) noexcept final;
 private:
@@ -13894,7 +13913,8 @@ public:
   simdjson_warn_unused error_code stage1(const uint8_t *buf, size_t len, stage1_mode partial) noexcept final;
   simdjson_warn_unused error_code stage2(dom::document &doc) noexcept final;
   simdjson_warn_unused error_code stage2_next(dom::document &doc) noexcept final;
-  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) const noexcept final;
   inline simdjson_warn_unused error_code set_capacity(size_t capacity) noexcept final;
   inline simdjson_warn_unused error_code set_max_depth(size_t max_depth) noexcept final;
 private:
@@ -16085,7 +16105,8 @@ public:
   simdjson_warn_unused error_code stage1(const uint8_t *buf, size_t len, stage1_mode partial) noexcept final;
   simdjson_warn_unused error_code stage2(dom::document &doc) noexcept final;
   simdjson_warn_unused error_code stage2_next(dom::document &doc) noexcept final;
-  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) const noexcept final;
   inline simdjson_warn_unused error_code set_capacity(size_t capacity) noexcept final;
   inline simdjson_warn_unused error_code set_max_depth(size_t max_depth) noexcept final;
 private:
@@ -18297,7 +18318,8 @@ public:
   simdjson_warn_unused error_code stage1(const uint8_t *buf, size_t len, stage1_mode partial) noexcept final;
   simdjson_warn_unused error_code stage2(dom::document &doc) noexcept final;
   simdjson_warn_unused error_code stage2_next(dom::document &doc) noexcept final;
-  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) const noexcept final;
   inline simdjson_warn_unused error_code set_capacity(size_t capacity) noexcept final;
   inline simdjson_warn_unused error_code set_max_depth(size_t max_depth) noexcept final;
 private:
@@ -20420,7 +20442,8 @@ public:
   simdjson_warn_unused error_code stage1(const uint8_t *buf, size_t len, stage1_mode partial) noexcept final;
   simdjson_warn_unused error_code stage2(dom::document &doc) noexcept final;
   simdjson_warn_unused error_code stage2_next(dom::document &doc) noexcept final;
-  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) const noexcept final;
   inline simdjson_warn_unused error_code set_capacity(size_t capacity) noexcept final;
   inline simdjson_warn_unused error_code set_max_depth(size_t max_depth) noexcept final;
 private:
@@ -22758,7 +22781,8 @@ public:
   simdjson_warn_unused error_code stage1(const uint8_t *buf, size_t len, stage1_mode partial) noexcept final;
   simdjson_warn_unused error_code stage2(dom::document &doc) noexcept final;
   simdjson_warn_unused error_code stage2_next(dom::document &doc) noexcept final;
-  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept final;
+  simdjson_warn_unused uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) const noexcept final;
   inline simdjson_warn_unused error_code set_capacity(size_t capacity) noexcept final;
   inline simdjson_warn_unused error_code set_max_depth(size_t max_depth) noexcept final;
 private:
@@ -25296,6 +25320,20 @@ private:
 
   /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
+   * The result will be a valid UTF-8.
+   *
+   * ## IMPORTANT: string_view lifetime
+   *
+   * The string_view is only valid until the next parse() call on the parser.
+   *
+   * @param iter A json_iterator, which contains a buffer where the string will be written.
+   * @param allow_replacement Whether we allow replacement of invalid surrogate pairs.
+   */
+  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(json_iterator &iter, bool allow_replacement) const noexcept;
+
+  /**
+   * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
+   * The result may not be a valid UTF-8. https://simonsapin.github.io/wtf-8/
    *
    * ## IMPORTANT: string_view lifetime
    *
@@ -25303,8 +25341,7 @@ private:
    *
    * @param iter A json_iterator, which contains a buffer where the string will be written.
    */
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(json_iterator &iter) const noexcept;
-
+  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_wobbly(json_iterator &iter) const noexcept;
   const uint8_t * buf{};
   friend class object;
   friend class field;
@@ -25339,7 +25376,8 @@ public:
   simdjson_inline ~simdjson_result() noexcept = default; ///< @private
 
   simdjson_inline simdjson_result<const char *> raw() const noexcept;
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept;
+  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::json_iterator &iter, bool allow_replacement) const noexcept;
+  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_wobbly(SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept;
 };
 
 } // namespace simdjson
@@ -25733,7 +25771,8 @@ public:
    * Each raw_json_string should be unescaped once, or else the string buffer might
    * overflow.
    */
-  simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in) noexcept;
+  simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, bool allow_replacement) noexcept;
+  simdjson_inline simdjson_result<std::string_view> unescape_wobbly(raw_json_string in) noexcept;
   simdjson_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
 
 #if SIMDJSON_DEVELOPMENT_CHECKS
@@ -26082,7 +26121,8 @@ public:
    * @{
    */
 
-  simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_uint64_in_string() noexcept;
@@ -26097,7 +26137,8 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<number_type> get_number_type() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
 
-  simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_string(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_string(bool check_trailing, bool allow_replacement) noexcept;
+    simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_wobbly_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_root_raw_json_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64_in_string(bool check_trailing) noexcept;
@@ -26723,11 +26764,24 @@ public:
    *
    * Important: Calling get_string() twice on the same document is an error.
    *
+   * @param Whether to allow a replacement character for unmatched surrogate pairs.
    * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
    *          time it parses a document or when it is destroyed.
    * @returns INCORRECT_TYPE if the JSON value is not a string.
    */
-  simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
+  /**
+   * Cast this JSON value to a string.
+   *
+   * The string is not guaranteed to be valid UTF-8. See https://simonsapin.github.io/wtf-8/
+   *
+   * Important: Calling get_wobbly_string() twice on the same document is an error.
+   *
+   * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
+   *          time it parses a document or when it is destroyed.
+   * @returns INCORRECT_TYPE if the JSON value is not a string.
+   */
+  simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   /**
    * Cast this JSON value to a raw_json_string.
    *
@@ -27226,7 +27280,8 @@ public:
   simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
-  simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<value> get_value() noexcept;
@@ -27294,7 +27349,8 @@ public:
   simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
-  simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> get_value() noexcept;
@@ -27364,7 +27420,8 @@ public:
   simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
-  simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> get_value() noexcept;
@@ -27540,8 +27597,23 @@ public:
    *          time it parses a document or when it is destroyed.
    * @returns INCORRECT_TYPE if the JSON value is not a string.
    */
-  simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
 
+
+  /**
+   * Cast this JSON value to a "wobbly" string.
+   *
+   * The string is may not be a valid UTF-8 string.
+   * See https://simonsapin.github.io/wtf-8/
+   *
+   * Important: a value should be consumed once. Calling get_wobbly_string() twice on the same value
+   * is an error.
+   *
+   * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
+   *          time it parses a document or when it is destroyed.
+   * @returns INCORRECT_TYPE if the JSON value is not a string.
+   */
+  simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   /**
    * Cast this JSON value to a raw_json_string.
    *
@@ -27996,7 +28068,8 @@ public:
   simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
-  simdjson_inline simdjson_result<std::string_view> get_string() noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<bool> is_null() noexcept;
@@ -28128,7 +28201,7 @@ public:
    * This consumes the key: once you have called unescaped_key(), you cannot
    * call it again nor can you call key().
    */
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescaped_key() noexcept;
+  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescaped_key(bool allow_replacement) noexcept;
   /**
    * Get the key as a raw_json_string. Can be used for direct comparison with
    * an unescaped C string: e.g., key() == "test".
@@ -28164,7 +28237,7 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<std::string_view> unescaped_key() noexcept;
+  simdjson_inline simdjson_result<std::string_view> unescaped_key(bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string> key() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> value() noexcept;
 };
@@ -28666,6 +28739,31 @@ public:
 
   /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a user-provided buffer.
+   * The result must be valid UTF-8.
+   * The provided pointer is advanced to the end of the string by reference, and a string_view instance
+   * is returned. You can ensure that your buffer is large enough by allocating a block of memory at least
+   * as large as the input JSON plus SIMDJSON_PADDING and then unescape all strings to this one buffer.
+   *
+   * This unescape function is a low-level function. If you want a more user-friendly approach, you should
+   * avoid raw_json_string instances (e.g., by calling unescaped_key() instead of key() or get_string()
+   * instead of get_raw_json_string()).
+   *
+   * ## IMPORTANT: string_view lifetime
+   *
+   * The string_view is only valid as long as the bytes in dst.
+   *
+   * @param raw_json_string input
+   * @param dst A pointer to a buffer at least large enough to write this string as well as
+   *            an additional SIMDJSON_PADDING bytes.
+   * @param allow_replacement Whether we allow a replacement if the input string contains unmatched surrogate pairs.
+   * @return A string_view pointing at the unescaped string in dst
+   * @error STRING_ERROR if escapes are incorrect.
+   */
+  simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, uint8_t *&dst, bool allow_replacement = false) const noexcept;
+
+  /**
+   * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a user-provided buffer.
+   * The result may not be valid UTF-8. See https://simonsapin.github.io/wtf-8/
    * The provided pointer is advanced to the end of the string by reference, and a string_view instance
    * is returned. You can ensure that your buffer is large enough by allocating a block of memory at least
    * as large as the input JSON plus SIMDJSON_PADDING and then unescape all strings to this one buffer.
@@ -28684,7 +28782,8 @@ public:
    * @return A string_view pointing at the unescaped string in dst
    * @error STRING_ERROR if escapes are incorrect.
    */
-  simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, uint8_t *&dst) const noexcept;
+  simdjson_inline simdjson_result<std::string_view> unescape_wobbly(raw_json_string in, uint8_t *&dst) const noexcept;
+
 private:
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<internal::dom_parser_implementation> implementation{};
@@ -29667,10 +29766,13 @@ simdjson_unused simdjson_inline bool operator!=(std::string_view c, const raw_js
 }
 
 
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(json_iterator &iter) const noexcept {
-  return iter.unescape(*this);
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(json_iterator &iter, bool allow_replacement) const noexcept {
+  return iter.unescape(*this, allow_replacement);
 }
 
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_wobbly(json_iterator &iter) const noexcept {
+  return iter.unescape_wobbly(*this);
+}
 
 simdjson_unused simdjson_inline std::ostream &operator<<(std::ostream &out, const raw_json_string &str) noexcept {
   bool in_escape = false;
@@ -29701,11 +29803,14 @@ simdjson_inline simdjson_result<const char *> simdjson_result<SIMDJSON_BUILTIN_I
   if (error()) { return error(); }
   return first.raw();
 }
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string>::unescape(SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept {
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string>::unescape(SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::json_iterator &iter, bool allow_replacement) const noexcept {
   if (error()) { return error(); }
-  return first.unescape(iter);
+  return first.unescape(iter, allow_replacement);
 }
-
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string>::unescape_wobbly(SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept {
+  if (error()) { return error(); }
+  return first.unescape_wobbly(iter);
+}
 } // namespace simdjson
 /* end file include/simdjson/generic/ondemand/raw_json_string-inl.h */
 /* begin file include/simdjson/generic/ondemand/token_iterator-inl.h */
@@ -30107,8 +30212,12 @@ simdjson_inline token_position json_iterator::position() const noexcept {
   return token.position();
 }
 
-simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_json_string in) noexcept {
-  return parser->unescape(in, _string_buf_loc);
+simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_json_string in, bool allow_replacement) noexcept {
+  return parser->unescape(in, _string_buf_loc, allow_replacement);
+}
+
+simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_wobbly(raw_json_string in) noexcept {
+  return parser->unescape_wobbly(in, _string_buf_loc);
 }
 
 simdjson_inline void json_iterator::reenter_child(token_position position, depth_t child_depth) noexcept {
@@ -30652,8 +30761,11 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse
   return is_null_string;
 }
 
-simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string() noexcept {
-  return get_raw_json_string().unescape(json_iter());
+simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string(bool allow_replacement) noexcept {
+  return get_raw_json_string().unescape(json_iter(), allow_replacement);
+}
+simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
+  return get_raw_json_string().unescape_wobbly(json_iter());
 }
 simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iterator::get_raw_json_string() noexcept {
   auto json = peek_scalar("string");
@@ -30769,8 +30881,11 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   advance_root_scalar("number");
   return num;
 }
-simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string(bool check_trailing) noexcept {
-  return get_root_raw_json_string(check_trailing).unescape(json_iter());
+simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string(bool check_trailing, bool allow_replacement) noexcept {
+  return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
+}
+simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
+  return get_root_raw_json_string(check_trailing).unescape_wobbly(json_iter());
 }
 simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iterator::get_root_raw_json_string(bool check_trailing) noexcept {
   auto json = peek_scalar("string");
@@ -31685,8 +31800,11 @@ simdjson_inline simdjson_result<double> document::get_double() noexcept {
 simdjson_inline simdjson_result<double> document::get_double_in_string() noexcept {
   return get_root_value_iterator().get_root_double_in_string(true);
 }
-simdjson_inline simdjson_result<std::string_view> document::get_string() noexcept {
-  return get_root_value_iterator().get_root_string(true);
+simdjson_inline simdjson_result<std::string_view> document::get_string(bool allow_replacement) noexcept {
+  return get_root_value_iterator().get_root_string(true, allow_replacement);
+}
+simdjson_inline simdjson_result<std::string_view> document::get_wobbly_string() noexcept {
+  return get_root_value_iterator().get_root_wobbly_string(true);
 }
 simdjson_inline simdjson_result<raw_json_string> document::get_raw_json_string() noexcept {
   return get_root_value_iterator().get_root_raw_json_string(true);
@@ -31701,7 +31819,7 @@ simdjson_inline simdjson_result<bool> document::is_null() noexcept {
 template<> simdjson_inline simdjson_result<array> document::get() & noexcept { return get_array(); }
 template<> simdjson_inline simdjson_result<object> document::get() & noexcept { return get_object(); }
 template<> simdjson_inline simdjson_result<raw_json_string> document::get() & noexcept { return get_raw_json_string(); }
-template<> simdjson_inline simdjson_result<std::string_view> document::get() & noexcept { return get_string(); }
+template<> simdjson_inline simdjson_result<std::string_view> document::get() & noexcept { return get_string(false); }
 template<> simdjson_inline simdjson_result<double> document::get() & noexcept { return get_double(); }
 template<> simdjson_inline simdjson_result<uint64_t> document::get() & noexcept { return get_uint64(); }
 template<> simdjson_inline simdjson_result<int64_t> document::get() & noexcept { return get_int64(); }
@@ -31709,7 +31827,7 @@ template<> simdjson_inline simdjson_result<bool> document::get() & noexcept { re
 template<> simdjson_inline simdjson_result<value> document::get() & noexcept { return get_value(); }
 
 template<> simdjson_inline simdjson_result<raw_json_string> document::get() && noexcept { return get_raw_json_string(); }
-template<> simdjson_inline simdjson_result<std::string_view> document::get() && noexcept { return get_string(); }
+template<> simdjson_inline simdjson_result<std::string_view> document::get() && noexcept { return get_string(false); }
 template<> simdjson_inline simdjson_result<double> document::get() && noexcept { return std::forward<document>(*this).get_double(); }
 template<> simdjson_inline simdjson_result<uint64_t> document::get() && noexcept { return std::forward<document>(*this).get_uint64(); }
 template<> simdjson_inline simdjson_result<int64_t> document::get() && noexcept { return std::forward<document>(*this).get_int64(); }
@@ -31729,7 +31847,7 @@ simdjson_inline document::operator object() & noexcept(false) { return get_objec
 simdjson_inline document::operator uint64_t() noexcept(false) { return get_uint64(); }
 simdjson_inline document::operator int64_t() noexcept(false) { return get_int64(); }
 simdjson_inline document::operator double() noexcept(false) { return get_double(); }
-simdjson_inline document::operator std::string_view() noexcept(false) { return get_string(); }
+simdjson_inline document::operator std::string_view() noexcept(false) { return get_string(false); }
 simdjson_inline document::operator raw_json_string() noexcept(false) { return get_raw_json_string(); }
 simdjson_inline document::operator bool() noexcept(false) { return get_bool(); }
 simdjson_inline document::operator value() noexcept(false) { return get_value(); }
@@ -31950,9 +32068,13 @@ simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_BUILTIN_IMPLEME
   if (error()) { return error(); }
   return first.get_double_in_string();
 }
-simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::get_string() noexcept {
+simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::get_string(bool allow_replacement) noexcept {
   if (error()) { return error(); }
-  return first.get_string();
+  return first.get_string(allow_replacement);
+}
+simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::get_wobbly_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_wobbly_string();
 }
 simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::get_raw_json_string() noexcept {
   if (error()) { return error(); }
@@ -32129,7 +32251,8 @@ simdjson_inline simdjson_result<int64_t> document_reference::get_int64() noexcep
 simdjson_inline simdjson_result<int64_t> document_reference::get_int64_in_string() noexcept { return doc->get_root_value_iterator().get_root_int64_in_string(false); }
 simdjson_inline simdjson_result<double> document_reference::get_double() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
 simdjson_inline simdjson_result<double> document_reference::get_double_in_string() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
-simdjson_inline simdjson_result<std::string_view> document_reference::get_string() noexcept { return doc->get_root_value_iterator().get_root_string(false); }
+simdjson_inline simdjson_result<std::string_view> document_reference::get_string(bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(false, allow_replacement); }
+simdjson_inline simdjson_result<std::string_view> document_reference::get_wobbly_string() noexcept { return doc->get_root_value_iterator().get_root_wobbly_string(false); }
 simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_json_string() noexcept { return doc->get_root_value_iterator().get_root_raw_json_string(false); }
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
 simdjson_inline simdjson_result<value> document_reference::get_value() noexcept { return doc->get_value(); }
@@ -32261,9 +32384,13 @@ simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_BUILTIN_IMPLEME
   if (error()) { return error(); }
   return first.get_double_in_string();
 }
-simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::get_string() noexcept {
+simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::get_string(bool allow_replacement) noexcept {
   if (error()) { return error(); }
-  return first.get_string();
+  return first.get_string(allow_replacement);
+}
+simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::get_wobbly_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_wobbly_string();
 }
 simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document_reference>::get_raw_json_string() noexcept {
   if (error()) { return error(); }
@@ -32395,8 +32522,11 @@ simdjson_inline simdjson_result<object> value::start_or_resume_object() noexcept
 simdjson_inline simdjson_result<raw_json_string> value::get_raw_json_string() noexcept {
   return iter.get_raw_json_string();
 }
-simdjson_inline simdjson_result<std::string_view> value::get_string() noexcept {
-  return iter.get_string();
+simdjson_inline simdjson_result<std::string_view> value::get_string(bool allow_replacement) noexcept {
+  return iter.get_string(allow_replacement);
+}
+simdjson_inline simdjson_result<std::string_view> value::get_wobbly_string() noexcept {
+  return iter.get_wobbly_string();
 }
 simdjson_inline simdjson_result<double> value::get_double() noexcept {
   return iter.get_double();
@@ -32425,7 +32555,7 @@ simdjson_inline simdjson_result<bool> value::is_null() noexcept {
 template<> simdjson_inline simdjson_result<array> value::get() noexcept { return get_array(); }
 template<> simdjson_inline simdjson_result<object> value::get() noexcept { return get_object(); }
 template<> simdjson_inline simdjson_result<raw_json_string> value::get() noexcept { return get_raw_json_string(); }
-template<> simdjson_inline simdjson_result<std::string_view> value::get() noexcept { return get_string(); }
+template<> simdjson_inline simdjson_result<std::string_view> value::get() noexcept { return get_string(false); }
 template<> simdjson_inline simdjson_result<number> value::get() noexcept { return get_number(); }
 template<> simdjson_inline simdjson_result<double> value::get() noexcept { return get_double(); }
 template<> simdjson_inline simdjson_result<uint64_t> value::get() noexcept { return get_uint64(); }
@@ -32453,7 +32583,7 @@ simdjson_inline value::operator double() noexcept(false) {
   return get_double();
 }
 simdjson_inline value::operator std::string_view() noexcept(false) {
-  return get_string();
+  return get_string(false);
 }
 simdjson_inline value::operator raw_json_string() noexcept(false) {
   return get_raw_json_string();
@@ -32663,9 +32793,13 @@ simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_BUILTIN_IMPLEME
   if (error()) { return error(); }
   return first.get_double_in_string();
 }
-simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::get_string() noexcept {
+simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::get_string(bool allow_replacement) noexcept {
   if (error()) { return error(); }
-  return first.get_string();
+  return first.get_string(allow_replacement);
+}
+simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::get_wobbly_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_wobbly_string();
 }
 simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_json_string> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value>::get_raw_json_string() noexcept {
   if (error()) { return error(); }
@@ -32804,9 +32938,9 @@ simdjson_inline simdjson_result<field> field::start(const value_iterator &parent
     return field(key, parent_iter.child());
 }
 
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> field::unescaped_key() noexcept {
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> field::unescaped_key(bool allow_replacement) noexcept {
   SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() but Visual Studio won't let us.
-  simdjson_result<std::string_view> answer = first.unescape(second.iter.json_iter());
+  simdjson_result<std::string_view> answer = first.unescape(second.iter.json_iter(), allow_replacement);
   first.consume();
   return answer;
 }
@@ -32849,9 +32983,9 @@ simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::raw_j
   if (error()) { return error(); }
   return first.key();
 }
-simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::field>::unescaped_key() noexcept {
+simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::field>::unescaped_key(bool allow_replacement) noexcept {
   if (error()) { return error(); }
-  return first.unescaped_key();
+  return first.unescaped_key(allow_replacement);
 }
 simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::field>::value() noexcept {
   if (error()) { return error(); }
@@ -33210,8 +33344,16 @@ simdjson_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
   }
 }
 
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::unescape(raw_json_string in, uint8_t *&dst) const noexcept {
-  uint8_t *end = implementation->parse_string(in.buf, dst);
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::unescape(raw_json_string in, uint8_t *&dst, bool allow_replacement) const noexcept {
+  uint8_t *end = implementation->parse_string(in.buf, dst, allow_replacement);
+  if (!end) { return STRING_ERROR; }
+  std::string_view result(reinterpret_cast<const char *>(dst), end-dst);
+  dst = end;
+  return result;
+}
+
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::unescape_wobbly(raw_json_string in, uint8_t *&dst) const noexcept {
+  uint8_t *end = implementation->parse_wobbly_string(in.buf, dst);
   if (!end) { return STRING_ERROR; }
   std::string_view result(reinterpret_cast<const char *>(dst), end-dst);
   dst = end;
