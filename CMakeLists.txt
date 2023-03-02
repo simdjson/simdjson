@@ -188,7 +188,7 @@ endif()
 
 # ---- Developer mode extras ----
 
-if(is_top_project AND NOT SIMDJSON_DEVELOPER_MODE)
+if(NOT is_top_project OR NOT SIMDJSON_DEVELOPER_MODE)
   message(STATUS "Building only the library. Advanced users and contributors may want to turn SIMDJSON_DEVELOPER_MODE to ON, e.g., via -D SIMDJSON_DEVELOPER_MODE=ON.")
 elseif(SIMDJSON_DEVELOPER_MODE AND NOT is_top_project)
   message(AUTHOR_WARNING "Developer mode in simdjson is intended for the developers of simdjson")
