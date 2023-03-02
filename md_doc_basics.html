@@ -104,7 +104,7 @@ $(document).ready(function(){initNavTree('md_doc_basics.html',''); initResizable
 <li><a href="#parser-document-and-json-scope">Parser, Document and JSON Scope</a></li>
 </ul>
 </li>
-<li><a href="#c11-support-and-string_view">C++11 Support and string_view</a></li>
+<li><a href="#std::string_view">std::string_view</a></li>
 <li><a href="#using-the-parsed-json">Using the Parsed JSON</a><ul>
 <li><a href="#using-the-parsed-json-additional-examples">Using the Parsed JSON: Additional examples</a></li>
 </ul>
@@ -222,7 +222,7 @@ Parser, Document and JSON Scope</h2>
 <p>For best performance, a <code>parser</code> instance should be reused over several files: otherwise you will needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory allocations during parsing when using simdjson. <a class="el" href="md_doc_performance.html">See our performance notes for details</a>.</p>
 <p>If you need to have several documents active at once, you should have several parser instances.</p>
 <h1><a class="anchor" id="autotoc_md8"></a>
-C++11 Support and string_view</h1>
+std::string_view</h1>
 <p>The simdjson library builds on compilers supporting the <a href="https://en.wikipedia.org/wiki/C%2B%2B11">C++11 standard</a>. It is also a strict requirement: we have no plan to support older C++ compilers.</p>
 <p>We represent parsed Unicode (UTF-8) strings in simdjson using the <code>std::string_view</code> class. It avoids the need to copy the data, as would be necessary with the <code>std::string</code> class. It also avoids the pitfalls of null-terminated C strings. It makes it easier for our users to copy the data into their own favorite class instances (e.g., alternatives to <code>std::string</code>).</p>
 <p>A <code>std::string_view</code> instance is effectively just a pointer to a region in memory representing a string. In simdjson, we return <code>std::string_view</code> instances that either point within the input string you parsed, or to a temporary string buffer inside our parser class instances. When using <code>std::string_view</code> instances, it is your responsibility to ensure that <code>std::string_view</code> instance does not outlive the pointed-to memory (e.g., either the input buffer or the parser instance). Furthermore, some operations reset the string buffer inside our parser instances: e.g., when we parse a new document. Thus a <code>std::string_view</code> instance is often best viewed as a temporary string value that is tied to the document you are parsing. At the cost of some memory allocation, you may convert your <code>std::string_view</code> instances for long-term storage into <code>std::string</code> instances: <code>std::string mycopy(view)</code> (C++17) or <code>std::string mycopy(view.begin(), view.end())</code> (prior to C++17).</p>
@@ -239,6 +239,7 @@ Using the Parsed JSON</h1>
 <li>Because On Demand is really just an iterator, you must fully consume the current object or array before accessing a sibling object or array.</li>
 <li>Values can only be consumed once, you should get the values and store them if you plan to need them multiple times. You are expected to access the keys of an object just once. You are expected to go through the values of an array just once.</li>
 </ol>
+<p>The simdjson library makes generous use of <code>std::string_view</code> instances. If you are unfamiliar with <code>std::string_view</code> in C++, make sure to <a href="#std::string_view">read the section on std::string_view</a>.</p>
 <p>The following specific instructions indicate how to use the JSON when exceptions are enabled, but simdjson has full, idiomatic support for users who avoid exceptions. See <a href="basics.md#error-handling">the simdjson error handling documentation</a> for more.</p>
 <ul>
 <li><b>Validate What You Use:</b> When calling <code>iterate</code>, the document is quickly indexed. If it is not a valid Unicode (UTF-8) string or if there is an unclosed string, an error may be reported right away. However, it is not fully validated. On Demand only fully validates the values you use and the structure leading to it.</li>
@@ -768,6 +769,8 @@ Error Handling Examples without Exceptions</h2>
 <div class="line"> error = doc.get_object().get(object);</div>
 <div class="line"> if(error) { return false; }</div>
 <div class="line"> for(auto field : object) {</div>
+<div class="line">   // We could replace &#39;field.key() with field.unescaped_key(),</div>
+<div class="line">   // and ondemand::raw_json_string by std::string_view.</div>
 <div class="line">   ondemand::raw_json_string keyv;</div>
 <div class="line">   error = field.key().get(keyv);</div>
 <div class="line">   if(error) { return false; }</div>

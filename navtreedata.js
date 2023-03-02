@@ -35,7 +35,7 @@ var NAVTREE =
       [ "Documents are Iterators", "md_doc_basics.html#autotoc_md6", [
         [ "Parser, Document and JSON Scope", "md_doc_basics.html#autotoc_md7", null ]
       ] ],
-      [ "C++11 Support and string_view", "md_doc_basics.html#autotoc_md8", null ],
+      [ "std::string_view", "md_doc_basics.html#autotoc_md8", null ],
       [ "Using the Parsed JSON", "md_doc_basics.html#autotoc_md9", [
         [ "Using the Parsed JSON: Additional examples", "md_doc_basics.html#autotoc_md10", null ]
       ] ],
