@@ -239,7 +239,7 @@ Using the Parsed JSON</h1>
 <li>Because On Demand is really just an iterator, you must fully consume the current object or array before accessing a sibling object or array.</li>
 <li>Values can only be consumed once, you should get the values and store them if you plan to need them multiple times. You are expected to access the keys of an object just once. You are expected to go through the values of an array just once.</li>
 </ol>
-<p>The simdjson library makes generous use of <code>std::string_view</code> instances. If you are unfamiliar with <code>std::string_view</code> in C++, make sure to <a href="#string_view">read the section on std::string_view</a>.</p>
+<p>The simdjson library makes generous use of <code>std::string_view</code> instances. If you are unfamiliar with <code>std::string_view</code> in C++, make sure to <a href="#string_view">read the section on std::string_view</a>. They behave much like an immutable <code>std::string</code> but they require no memory allocation. You can create a <code>std::string</code> instance from an <code>std::string_view</code> when you need it.</p>
 <p>The following specific instructions indicate how to use the JSON when exceptions are enabled, but simdjson has full, idiomatic support for users who avoid exceptions. See <a href="basics.md#error-handling">the simdjson error handling documentation</a> for more.</p>
 <ul>
 <li><b>Validate What You Use:</b> When calling <code>iterate</code>, the document is quickly indexed. If it is not a valid Unicode (UTF-8) string or if there is an unclosed string, an error may be reported right away. However, it is not fully validated. On Demand only fully validates the values you use and the structure leading to it.</li>
@@ -438,6 +438,36 @@ Using the Parsed JSON: Additional examples</h2>
 <div class="line"> </div>
 <div class="line">// Iterating through an array of objects</div>
 <div class="line">for (ondemand::object car : parser.iterate(cars_json)) {</div>
+<div class="line">  // Accessing a field by name</div>
+<div class="line">  cout &lt;&lt; &quot;Make/Model: &quot; &lt;&lt; std::string_view(car[&quot;make&quot;]) &lt;&lt; &quot;/&quot; &lt;&lt; std::string_view(car[&quot;model&quot;]) &lt;&lt; endl;</div>
+<div class="line"> </div>
+<div class="line">  // Casting a JSON element to an integer</div>
+<div class="line">  uint64_t year = car[&quot;year&quot;];</div>
+<div class="line">  cout &lt;&lt; &quot;- This car is &quot; &lt;&lt; 2020 - year &lt;&lt; &quot;years old.&quot; &lt;&lt; endl;</div>
+<div class="line"> </div>
+<div class="line">  // Iterating through an array of floats</div>
+<div class="line">  double total_tire_pressure = 0;</div>
+<div class="line">  for (double tire_pressure : car[&quot;tire_pressure&quot;]) {</div>
+<div class="line">    total_tire_pressure += tire_pressure;</div>
+<div class="line">  }</div>
+<div class="line">  cout &lt;&lt; &quot;- Average tire pressure: &quot; &lt;&lt; (total_tire_pressure / 4) &lt;&lt; endl;</div>
+<div class="line">}</div>
+</div><!-- fragment --><p>The previous example had an array of objects, but we can use essentially the same approach with an object of objects.</p>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">ondemand::parser parser;</div>
+<div class="line">auto cars_json = R&quot;( {</div>
+<div class="line">  &quot;identifier1&quot;:{ &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018, &quot;tire_pressure&quot;: [ 40.1, 39.9, 37.7, 40.4 ] },</div>
+<div class="line">  &quot;identifier2&quot;:{ &quot;make&quot;: &quot;Kia&quot;,    &quot;model&quot;: &quot;Soul&quot;,   &quot;year&quot;: 2012, &quot;tire_pressure&quot;: [ 30.1, 31.0, 28.6, 28.7 ] },</div>
+<div class="line">  &quot;identifier3&quot;:{ &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Tercel&quot;, &quot;year&quot;: 1999, &quot;tire_pressure&quot;: [ 29.8, 30.0, 30.2, 30.5 ] }</div>
+<div class="line">} )&quot;_padded;</div>
+<div class="line">// Iterating through an array of objects</div>
+<div class="line">ondemand::document doc = parser.iterate(cars_json);</div>
+<div class="line">for (ondemand::field key_car : doc.get_object()) {</div>
+<div class="line">  // If I need a string_view and/or, I can use key_car.unescaped_key() instead, but</div>
+<div class="line">  // key_car.key() will be more performant otherwise.</div>
+<div class="line">  cout &lt;&lt; &quot;identifier : &quot; &lt;&lt; key_car.key() &lt;&lt; std::endl;</div>
+<div class="line">  // I can now access the subobject:</div>
+<div class="line">  ondemand::object car = key_car.value();</div>
 <div class="line">  // Accessing a field by name</div>
 <div class="line">  cout &lt;&lt; &quot;Make/Model: &quot; &lt;&lt; std::string_view(car[&quot;make&quot;]) &lt;&lt; &quot;/&quot; &lt;&lt; std::string_view(car[&quot;model&quot;]) &lt;&lt; endl;</div>
 <div class="line"> </div>
