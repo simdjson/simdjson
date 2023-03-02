@@ -416,6 +416,40 @@ bool using_the_parsed_json_3() {
   TEST_SUCCEED();
 }
 
+bool using_the_parsed_json_3b() {
+  TEST_START();
+  ondemand::parser parser;
+  auto cars_json = R"( {
+    "identifier1":{ "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+    "identifier2":{ "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+    "identifier3":{ "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  } )"_padded;
+
+  // Iterating through an array of objects
+  ondemand::document doc = parser.iterate(cars_json);
+  for (ondemand::field key_car : doc.get_object()) {
+    // If I need a string_view and/or, I can use key_car.unescaped_key() instead, but
+    // key_car.key() will be more performant otherwise.
+    cout << "identifier : " << key_car.key() << std::endl;
+    // I can now access the subobject:
+    ondemand::object car = key_car.value();
+    // Accessing a field by name
+    cout << "Make/Model: " << std::string_view(car["make"]) << "/" << std::string_view(car["model"]) << endl;
+
+    // Casting a JSON element to an integer
+    uint64_t year = car["year"];
+    cout << "- This car is " << 2020 - year << "years old." << endl;
+
+    // Iterating through an array of floats
+    double total_tire_pressure = 0;
+    for (double tire_pressure : car["tire_pressure"]) {
+      total_tire_pressure += tire_pressure;
+    }
+    cout << "- Average tire pressure: " << (total_tire_pressure / 4) << endl;
+  }
+
+  TEST_SUCCEED();
+}
 
 bool using_the_parsed_json_rewind() {
   TEST_START();
@@ -1187,6 +1221,7 @@ bool run() {
     && big_integer()
     && big_integer_in_string()
     && using_the_parsed_json_3()
+    && using_the_parsed_json_3b()
     && using_the_parsed_json_4()
     && using_the_parsed_json_5()
 #endif
