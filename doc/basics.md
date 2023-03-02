@@ -12,7 +12,7 @@ An overview of what you need to know to use simdjson, with examples.
   - [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents)
   - [Documents are Iterators](#documents-are-iterators)
     - [Parser, Document and JSON Scope](#parser-document-and-json-scope)
-  - [std::string_view](#std::string_view)
+  - [string_view](#string_view)
   - [Using the Parsed JSON](#using-the-parsed-json)
     - [Using the Parsed JSON: Additional examples](#using-the-parsed-json-additional-examples)
   - [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
@@ -211,7 +211,7 @@ allocations during parsing when using simdjson. [See our performance notes for d
 
 If you need to have several documents active at once, you should have several parser instances.
 
-std::string_view
+string_view
 -------------
 
 The simdjson library builds on compilers supporting the [C++11 standard](https://en.wikipedia.org/wiki/C%2B%2B11).
@@ -291,7 +291,7 @@ We invite you to keep the following rules in mind:
 3. Values can only be consumed once, you should get the values and store them if you plan to need them multiple times. You are expected to access the keys of an object just once. You are expected to go through the values of an array just once.
 
 The simdjson library makes generous use of `std::string_view` instances. If you are unfamiliar
-with `std::string_view` in C++, make sure to [read the section on std::string_view](#std::string_view).
+with `std::string_view` in C++, make sure to [read the section on std::string_view](#string_view).
 
 The following specific instructions indicate how to use the JSON when exceptions are enabled, but simdjson has full, idiomatic
 support for users who avoid exceptions. See [the simdjson error handling documentation](basics.md#error-handling) for more.
