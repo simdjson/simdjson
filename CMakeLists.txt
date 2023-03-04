@@ -149,7 +149,7 @@ install(
     EXPORT simdjsonTargets
     NAMESPACE simdjson::
     DESTINATION "${SIMDJSON_INSTALL_CMAKEDIR}"
-    COMPONENT example_Development
+    COMPONENT simdjson_Development
 )
 
 # pkg-config
