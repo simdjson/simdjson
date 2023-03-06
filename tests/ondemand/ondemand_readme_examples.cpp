@@ -1040,6 +1040,7 @@ struct ZuluBBox {
               << std::endl;
   }
 };
+#if SIMDJSON_EXCEPTIONS
 
 bool example1956() {
 
@@ -1200,7 +1201,7 @@ bool example1958() {
   }
   return true;
 }
-
+#endif
 bool run() {
   return true
 #if SIMDJSON_EXCEPTIONS

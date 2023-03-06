@@ -15,7 +15,7 @@ if(SIMDJSON_GOOGLE_BENCHMARKS)
   set_off(BENCHMARK_ENABLE_INSTALL)
   set_off(BENCHMARK_ENABLE_WERROR)
 
-  import_dependency(google_benchmarks google/benchmark d572f47)
+  import_dependency(google_benchmarks google/benchmark v1.7.1)
   add_dependency(google_benchmarks)
 endif()
 
