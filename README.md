@@ -122,7 +122,7 @@ Real-world usage
 - [WatermelonDB](https://github.com/Nozbe/WatermelonDB)
 - [Apache Doris](https://github.com/apache/doris)
 - [Dgraph](https://github.com/dgraph-io/dgraph)
-
+- [UJRPC](https://github.com/unum-cloud/ujrpc)
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
