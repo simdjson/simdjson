@@ -140,7 +140,7 @@ bool tester(int seed, size_t volume) {
   std::vector<char> buffer(1024); // large buffer (can't overflow)
   simdjson::dom::parser parser;
   RandomEngine rand(seed);
-  double result;
+  double result{};
   for (size_t i = 0; i < volume; i++) {
     if((i%100000) == 0) { std::cout << "."; std::cout.flush(); }
     size_t length = build_random_string(rand, buffer.data());
