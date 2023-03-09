@@ -1,4 +1,4 @@
-/* auto-generated on 2023-03-02 09:39:35 -0500. Do not edit! */
+/* auto-generated on 2023-03-09 10:42:23 -0500. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -43,7 +43,7 @@
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "3.1.3"
+#define SIMDJSON_VERSION "3.1.4"
 
 namespace simdjson {
 enum {
@@ -58,7 +58,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 3
+  SIMDJSON_VERSION_REVISION = 4
 };
 } // namespace simdjson
 
@@ -4501,7 +4501,9 @@ public:
    * ### REQUIRED: Buffer Padding
    *
    * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated.
+   * those bytes are initialized to, as long as they are allocated. These bytes will be read: if you
+   * using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the
+   * SIMDJSON_PADDING bytes to avoid runtime warnings.
    *
    * If realloc_if_needed is true (the default), it is assumed that the buffer does *not* have enough padding,
    * and it is copied into an enlarged temporary buffer before parsing. Thus the following is safe:
@@ -4764,7 +4766,9 @@ public:
    * ### REQUIRED: Buffer Padding
    *
    * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated.
+   * those bytes are initialized to, as long as they are allocated. These bytes will be read: if you
+   * using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the
+   * SIMDJSON_PADDING bytes to avoid runtime warnings.
    *
    * ### Threads
    *
@@ -26318,7 +26322,9 @@ public:
    * ### REQUIRED: Buffer Padding
    *
    * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated.
+   * those bytes are initialized to, as long as they are allocated. These bytes will be read: if you
+   * using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the
+   * SIMDJSON_PADDING bytes to avoid runtime warnings.
    *
    * @param json The JSON to parse.
    * @param len The length of the JSON.
@@ -26374,7 +26380,9 @@ public:
    * ### REQUIRED: Buffer Padding
    *
    * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated.
+   * those bytes are initialized to, as long as they are allocated. These bytes will be read: if you
+   * using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the
+   * SIMDJSON_PADDING bytes to avoid runtime warnings.
    *
    * @param json The JSON to parse.
    *
@@ -26428,7 +26436,9 @@ public:
    * ### REQUIRED: Buffer Padding
    *
    * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated.
+   * those bytes are initialized to, as long as they are allocated. These bytes will be read: if you
+   * using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the
+   * SIMDJSON_PADDING bytes to avoid runtime warnings.
    *
    * ### Threads
    *
