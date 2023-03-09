@@ -6,6 +6,7 @@ using namespace simdjson;
 namespace object_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
+
   bool issue1745() {
     TEST_START();
     auto json = R"({
@@ -225,6 +226,25 @@ namespace object_tests {
   }
 
 #if SIMDJSON_EXCEPTIONS
+
+  bool issue1965() {
+    TEST_START();
+    std::string str = "{\"query\":\"ah\"}";
+    std::unique_ptr<char[]> buffer(new char[str.size() + simdjson::SIMDJSON_PADDING]);
+    memcpy(buffer.get(), str.data(), str.size());
+    simdjson::padded_string_view view(buffer.get(), str.size(), str.size() + simdjson::SIMDJSON_PADDING);
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc = parser.iterate(view);
+    simdjson::ondemand::object root = doc.get_object();
+    simdjson::ondemand::value query = root.find_field("query");
+    simdjson::ondemand::raw_json_string raw = query.get_raw_json_string();
+    std::unique_ptr<uint8_t[]> dst_buffer(new uint8_t[3 + simdjson::SIMDJSON_PADDING]);
+    uint8_t * dst = dst_buffer.get();
+    std::string_view fieldstring = parser.unescape(raw, dst);
+    std::cout << fieldstring << std::endl;
+    TEST_SUCCEED();
+  }
+
   bool issue1745_with_exceptions() {
     TEST_START();
     auto json = R"({
@@ -1221,6 +1241,9 @@ namespace object_tests {
 
   bool run() {
     return
+#if SIMDJSON_EXCEPTIONS
+           issue1965() &&
+#endif
            issue1876a() &&
            issue1876() &&
            test_strager() &&
