@@ -188,12 +188,13 @@ Versions</h1>
 <h1><a class="anchor" id="autotoc_md5"></a>
 The Basics: Loading and Parsing JSON Documents</h1>
 <p>The simdjson library allows you to navigate and validate JSON documents (<a href="https://www.tbray.org/ongoing/When/201x/2017/12/14/rfc8259.html">RFC 8259</a>). As required by the standard, your JSON document should be in a Unicode (UTF-8) string. The whole string, from the beginning to the end, needs to be valid: we do not attempt to tolerate bad inputs before or after a document.</p>
+<p>For efficiency reasons, simdjson requires a string with a few bytes (<code><a class="el" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf" title="The amount of padding needed in a buffer to parse JSON.">simdjson::SIMDJSON_PADDING</a></code>) at the end, these bytes may be read but their content does not affect the parsing. In practice, it means that the JSON inputs should be stored in a memory region with <code><a class="el" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf" title="The amount of padding needed in a buffer to parse JSON.">simdjson::SIMDJSON_PADDING</a></code> extra bytes at the end. You do not have to set these bytes to specific values though you may want to if you want to avoid runtime warnings with some sanitizers.</p>
 <p>The simdjson library offers a tree-like <a href="https://en.wikipedia.org/wiki/API">API</a>, which you can access by creating a <code>ondemand::parser</code> and calling the <code>iterate()</code> method. The iterate method quickly indexes the input string and may detect some errors. The following example illustrates how to get started with an input JSON file (<code>"twitter.json"</code>):</p>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">ondemand::parser parser;</div>
 <div class="line">auto json = padded_string::load(&quot;twitter.json&quot;); // load JSON file &#39;twitter.json&#39;.</div>
 <div class="line">ondemand::document doc = parser.iterate(json); // position a pointer at the beginning of the JSON data</div>
-</div><!-- fragment --><p>You can also create a padded string&mdash;for efficiency reasons, simdjson requires a string with a few bytes (<code><a class="el" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf" title="The amount of padding needed in a buffer to parse JSON.">simdjson::SIMDJSON_PADDING</a></code>) at the end&mdash;and calling <code>iterate()</code>:</p>
+</div><!-- fragment --><p>You can also create a padded string&mdash;and call <code>iterate()</code>:</p>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">ondemand::parser parser;</div>
 <div class="line">auto json = &quot;[1,2,3]&quot;_padded; // The _padded suffix creates a simdjson::padded_string instance</div>
