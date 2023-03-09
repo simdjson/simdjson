@@ -312,7 +312,7 @@ IMPORTANT: Document Lifetime</h3>
 <p>Only one iteration at a time can happen per parser, and the parser <em>must</em> be kept alive during iteration to ensure intermediate buffers can be accessed. Any document must be destroyed before you call parse() again or destroy the parser.</p>
 <h3><a class="anchor" id="autotoc_md120"></a>
 REQUIRED: Buffer Padding</h3>
-<p>The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what those bytes are initialized to, as long as they are allocated.</p>
+<p>The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what those bytes are initialized to, as long as they are allocated. These bytes will be read: if you using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the SIMDJSON_PADDING bytes to avoid runtime warnings.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">json</td><td>The JSON to parse. </td></tr>
@@ -388,7 +388,7 @@ Format</h3>
 <p>The documents must not exceed batch_size bytes (by default 1MB) or they will fail to parse. Setting batch_size to excessively large or excessively small values may impact negatively the performance.</p>
 <h3><a class="anchor" id="autotoc_md125"></a>
 REQUIRED: Buffer Padding</h3>
-<p>The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what those bytes are initialized to, as long as they are allocated.</p>
+<p>The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what those bytes are initialized to, as long as they are allocated. These bytes will be read: if you using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the SIMDJSON_PADDING bytes to avoid runtime warnings.</p>
 <h3><a class="anchor" id="autotoc_md126"></a>
 Threads</h3>
 <p>When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the hood to do some lookahead.</p>

@@ -641,7 +641,7 @@ IMPORTANT: Document Lifetime</h3>
 <p>Moving the parser instance is safe, but it invalidates the element instances. You may store the parser instance without moving it by wrapping it inside an <code>unique_ptr</code> instance like so: <code>std::unique_ptr&lt;<a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a>&gt; parser(new <a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a>{});</code>.</p>
 <h3><a class="anchor" id="autotoc_md105"></a>
 REQUIRED: Buffer Padding</h3>
-<p>The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what those bytes are initialized to, as long as they are allocated.</p>
+<p>The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what those bytes are initialized to, as long as they are allocated. These bytes will be read: if you using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the SIMDJSON_PADDING bytes to avoid runtime warnings.</p>
 <p>If realloc_if_needed is true (the default), it is assumed that the buffer does <em>not</em> have enough padding, and it is copied into an enlarged temporary buffer before parsing. Thus the following is safe:</p>
 <p>const char *json = R"({"key":"value"})"; const size_t json_len = std::strlen(json); <a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">simdjson::dom::parser</a> parser; <a class="el" href="classsimdjson_1_1dom_1_1element.html" title="A JSON element.">simdjson::dom::element</a> element = parser.parse(json, json_len);</p>
 <p>If you set realloc_if_needed to false (e.g., parser.parse(json, json_len, false)), you must provide a buffer with at least SIMDJSON_PADDING extra bytes at the end. The benefit of setting realloc_if_needed to false is that you avoid a temporary memory allocation and a copy.</p>
@@ -806,7 +806,7 @@ Error Handling</h3>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; <a class="el" href="classsimdjson_1_1dom_1_1document__stream.html" title="A forward-only stream of documents.">dom::document_stream</a> docs; auto error = parser.load_many(path).get(docs); if (error) { cerr &lt;&lt; error &lt;&lt; endl; exit(1); } for (auto doc : docs) { std::string_view title; if ((error = doc["title"].get(title)) { cerr &lt;&lt; error &lt;&lt; endl; exit(1); } cout &lt;&lt; title &lt;&lt; endl; }</p>
 <h3><a class="anchor" id="autotoc_md114"></a>
 REQUIRED: Buffer Padding</h3>
-<p>The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what those bytes are initialized to, as long as they are allocated.</p>
+<p>The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what those bytes are initialized to, as long as they are allocated. These bytes will be read: if you using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the SIMDJSON_PADDING bytes to avoid runtime warnings.</p>
 <h3><a class="anchor" id="autotoc_md115"></a>
 Threads</h3>
 <p>When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the hood to do some lookahead.</p>
