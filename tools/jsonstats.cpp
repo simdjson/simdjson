@@ -123,7 +123,7 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
     if (element.is<int64_t>()) {
       s.integer_count++; // because an int can be sometimes represented as a double, we
       // to check whether it is an integer first!!!
-      int64_t v;
+      int64_t v{};
       error = element.get(v);
       SIMDJSON_ASSUME(!error);
       if((v >= std::numeric_limits<int32_t>::min()) and (v <= std::numeric_limits<int32_t>::max()) ) {
@@ -138,7 +138,7 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
     } else if (element.is<double>()) {
       s.float_count++;
     } else if (element.is<bool>()) {
-      bool v;
+      bool v{};
       error = element.get(v);
       SIMDJSON_ASSUME(!error);
       if (v) {
