@@ -143,7 +143,7 @@ As required by the standard, your JSON document should be in a Unicode (UTF-8) s
 string, from the beginning to the end, needs to be valid: we do not attempt to tolerate bad
 inputs before or after a document.
 
-For efficiency reasons, simdjson requires a string with a few bytes (`simdjson::SIMDJSON_PADDING`) 
+For efficiency reasons, simdjson requires a string with a few bytes (`simdjson::SIMDJSON_PADDING`)
 at the end, these bytes may be read but their content does not affect the parsing. In practice,
 it means that the JSON inputs should be stored in a memory region with `simdjson::SIMDJSON_PADDING`
 extra bytes at the end. You do not have to set these bytes to specific values though you may

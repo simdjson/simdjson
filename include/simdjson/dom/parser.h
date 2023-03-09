@@ -145,7 +145,9 @@ public:
    * ### REQUIRED: Buffer Padding
    *
    * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated.
+   * those bytes are initialized to, as long as they are allocated. These bytes will be read: if you
+   * using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the
+   * SIMDJSON_PADDING bytes to avoid runtime warnings.
    *
    * If realloc_if_needed is true (the default), it is assumed that the buffer does *not* have enough padding,
    * and it is copied into an enlarged temporary buffer before parsing. Thus the following is safe:
@@ -408,7 +410,9 @@ public:
    * ### REQUIRED: Buffer Padding
    *
    * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated.
+   * those bytes are initialized to, as long as they are allocated. These bytes will be read: if you
+   * using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the
+   * SIMDJSON_PADDING bytes to avoid runtime warnings.
    *
    * ### Threads
    *

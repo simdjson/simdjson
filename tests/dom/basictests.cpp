@@ -551,7 +551,7 @@ namespace parse_api_tests {
     ASSERT_SUCCESS( parser.parse_many(empty_batches_ndjson, BATCH_SIZE*16).get(stream) );
     for (auto doc : stream) {
       count++;
-      uint64_t val;
+      uint64_t val{};
       ASSERT_SUCCESS( doc.get(val) );
       ASSERT_EQUAL( val, count );
     }
@@ -1039,7 +1039,7 @@ namespace dom_api_tests {
     for (auto tweet : tweets) {
       object user;
       ASSERT_SUCCESS( tweet["user"].get(user) );
-      bool default_profile;
+      bool default_profile{};
       ASSERT_SUCCESS( user["default_profile"].get(default_profile) );
       if (default_profile) {
         std::string_view screen_name;
