@@ -155,7 +155,9 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 #define SIMDJSON_NO_SANITIZE_MEMORY __attribute__((no_sanitize("memory")))
 #  endif // if __has_feature(memory_sanitizer)
 #endif // defined(__has_feature)
-#else
+#endif
+// make sure it is defined as 'nothing' if it is unapplicable.
+#ifndef SIMDJSON_NO_SANITIZE_MEMORY
 #define SIMDJSON_NO_SANITIZE_MEMORY
 #endif
 
