@@ -144,6 +144,11 @@ else()
   )
 endif()
 
+option(SIMDJSON_GLIBCXX_ASSERTIONS "Set _GLIBCXX_ASSERTIONS" OFF)
+if (SIMDJSON_GLIBCXX_ASSERTIONS)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_ASSERTIONS")
+endif()
+
 #
 # Other optional flags
 #
