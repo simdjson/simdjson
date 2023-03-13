@@ -778,9 +778,9 @@ bool ndjson_basics_example() {
   size_t count{0};
   int64_t expected[3] = {1,2,3};
   for (auto doc : docs) {
-    int64_t actual;
+    int64_t actual{};
     ASSERT_SUCCESS( doc["foo"].get(actual) );
-    ASSERT_EQUAL( actual,expected[count++] );
+    ASSERT_EQUAL( actual, expected[count++] );
   }
   TEST_SUCCEED();
 }
