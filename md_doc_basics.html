@@ -760,7 +760,7 @@ Error Handling Examples without Exceptions</h2>
 <div class="line">    cout &lt;&lt; &quot;Make/Model: &quot; &lt;&lt; make &lt;&lt; &quot;/&quot; &lt;&lt; model &lt;&lt; endl;</div>
 <div class="line"> </div>
 <div class="line">    // Casting a JSON element to an integer</div>
-<div class="line">    uint64_t year;</div>
+<div class="line">    uint64_t year{};</div>
 <div class="line">    error = car[&quot;year&quot;].get(year);</div>
 <div class="line">    if(error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; return false; }</div>
 <div class="line">    cout &lt;&lt; &quot;- This car is &quot; &lt;&lt; 2020 - year &lt;&lt; &quot; years old.&quot; &lt;&lt; endl;</div>
