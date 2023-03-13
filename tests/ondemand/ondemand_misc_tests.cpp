@@ -67,7 +67,7 @@ namespace misc_tests {
     ASSERT_SUCCESS(val.get_object().get(obj));
     ondemand::array arr;
     ASSERT_SUCCESS(obj["a"].get_array().get(arr));
-    size_t count;
+     size_t count{};
     ASSERT_SUCCESS(arr.count_elements().get(count));
     ASSERT_EQUAL(3,count);
     TEST_SUCCEED();

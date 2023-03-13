@@ -134,7 +134,7 @@ namespace array_tests {
     ondemand::parser parser;
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(json).get(doc));
-    size_t count;
+    size_t count{};
     ASSERT_SUCCESS(doc.count_elements().get(count));
     ondemand::array arr;
     ASSERT_SUCCESS(doc.get_array().get(arr));
@@ -182,7 +182,7 @@ namespace array_tests {
     ASSERT_SUCCESS(doc.get_object().get(obj));
     ondemand::value v;
     ASSERT_SUCCESS(doc.find_field("test").get(v));
-    size_t count;
+    size_t count{};
     ASSERT_SUCCESS(v.count_elements().get(count));
     ASSERT_EQUAL(count, 3);
     ASSERT_SUCCESS(doc.find_field("joe").get(v));
@@ -200,7 +200,7 @@ namespace array_tests {
       ondemand::array array;
       ASSERT_RESULT( doc_result.type(), json_type::array );
       ASSERT_SUCCESS( doc_result.get_array().get(array) );
-      size_t count;
+      size_t count{};
       ASSERT_SUCCESS( array.count_elements().get(count) );
       ASSERT_EQUAL(count, expected_value.size());
       return true;
@@ -209,7 +209,7 @@ namespace array_tests {
       ondemand::array array;
       ASSERT_RESULT( doc_result.type(), json_type::array );
       ASSERT_SUCCESS( doc_result.get(array) );
-      size_t count;
+      size_t count{};
       ASSERT_SUCCESS( array.count_elements().get(count) );
       ASSERT_EQUAL(count, expected_value.size());
       size_t i = 0;
@@ -235,7 +235,7 @@ namespace array_tests {
       ondemand::array array;
       ASSERT_RESULT( doc_result.type(), json_type::array );
       ASSERT_SUCCESS( doc_result.get_array().get(array) );
-      size_t count;
+      size_t count{};
       ASSERT_SUCCESS( array.count_elements().get(count) );
       ASSERT_EQUAL(count, 0);
       return true;
@@ -244,7 +244,7 @@ namespace array_tests {
       ondemand::array array;
       ASSERT_RESULT( doc_result.type(), json_type::array );
       ASSERT_SUCCESS( doc_result.get(array) );
-      size_t count;
+      size_t count{};
       ASSERT_SUCCESS( array.count_elements().get(count) );
       ASSERT_EQUAL(count, 0);
       size_t i = 0;
@@ -269,7 +269,7 @@ namespace array_tests {
       ondemand::array array;
       ASSERT_RESULT( doc_result.type(), json_type::array );
       ASSERT_SUCCESS( doc_result.get(array) );
-      size_t count;
+      size_t count{};
       auto e = array.count_elements().get(count);
       if( e != TAPE_ERROR) {
         std::cout << e << "\n";
@@ -285,7 +285,7 @@ namespace array_tests {
     TEST_START();
     auto empty = R"( [] )"_padded;
     SUBTEST("ondemand::empty_doc_array", test_ondemand_doc(empty, [&](auto doc_result) {
-        size_t count;
+        size_t count{};
         ASSERT_RESULT( doc_result.type(), json_type::array );
         ASSERT_SUCCESS( doc_result.count_elements().get(count) );
         ASSERT_EQUAL( count, 0 );
@@ -293,7 +293,7 @@ namespace array_tests {
     }));
     auto basic = R"( [-1.234, 100000000000000, null, [1,2,3], {"t":true, "f":false}] )"_padded;
     SUBTEST("ondemand::basic_doc_array", test_ondemand_doc(basic, [&](auto doc_result) {
-        size_t count;
+        size_t count{};
         ASSERT_RESULT( doc_result.type(), json_type::array );
         ASSERT_SUCCESS( doc_result.count_elements().get(count) );
         ASSERT_EQUAL( count, 5 );
@@ -435,7 +435,7 @@ namespace array_tests {
     TEST_SUCCEED();
   }
   bool count_empty(simdjson::ondemand::array arr) {
-    size_t count;
+    size_t count{};
     ASSERT_SUCCESS(arr.count_elements().get(count));
     ASSERT_EQUAL(count, 0);
     bool is_empty;
@@ -466,7 +466,7 @@ namespace array_tests {
     for (auto d : data) {
       simdjson::ondemand::array arr;
       ASSERT_SUCCESS(d.get_array().get(arr));
-      size_t count;
+      size_t count{};
       ASSERT_SUCCESS(arr.count_elements().get(count));
       ASSERT_EQUAL(count, 4);
     }

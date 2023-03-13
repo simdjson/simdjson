@@ -18,7 +18,7 @@ namespace scalar_tests {
   bool test_scalar_value(const padded_string &json, const T &expected, bool test_twice=true) {
     std::cout << "- JSON: " << json << endl;
     SUBTEST( "simdjson_result<document>", test_ondemand_doc(json, [&](auto doc_result) {
-      T actual;
+      T actual{};
       ASSERT_RESULT( doc_result.type(), expected_json_type<T>() );
       ASSERT_SUCCESS( doc_result.get(actual) );
       ASSERT_EQUAL( actual, expected );
@@ -33,7 +33,7 @@ namespace scalar_tests {
     SUBTEST( "document", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::document doc;
       ASSERT_SUCCESS( std::move(doc_result).get(doc) );
-      T actual;
+      T actual{};
       ASSERT_RESULT( doc.type(), expected_json_type<T>() );
       ASSERT_SUCCESS( doc.get(actual) );
       ASSERT_EQUAL( actual, expected );
@@ -50,7 +50,7 @@ namespace scalar_tests {
       padded_string whitespace_json = std::string(json) + " ";
       std::cout << "- JSON: " << whitespace_json << endl;
       SUBTEST( "simdjson_result<document>", test_ondemand_doc(whitespace_json, [&](auto doc_result) {
-        T actual;
+        T actual{};
         ASSERT_RESULT( doc_result.type(), expected_json_type<T>() );
         ASSERT_SUCCESS( doc_result.get(actual) );
         ASSERT_EQUAL( actual, expected );
@@ -65,7 +65,7 @@ namespace scalar_tests {
       SUBTEST( "document", test_ondemand_doc(whitespace_json, [&](auto doc_result) {
         ondemand::document doc;
         ASSERT_SUCCESS( std::move(doc_result).get(doc) );
-        T actual;
+        T actual{};
         ASSERT_RESULT( doc.type(), expected_json_type<T>() );
         ASSERT_SUCCESS( doc.get(actual) );
         ASSERT_EQUAL( actual, expected );
@@ -85,7 +85,7 @@ namespace scalar_tests {
       SUBTEST( "simdjson_result<value>", test_ondemand_doc(array_json, [&](auto doc_result) {
         int count = 0;
         for (simdjson_result<ondemand::value> val_result : doc_result) {
-          T actual;
+          T actual{};
           ASSERT_RESULT( val_result.type(), expected_json_type<T>() );
           ASSERT_SUCCESS( val_result.get(actual) );
           ASSERT_EQUAL(actual, expected);
@@ -105,7 +105,7 @@ namespace scalar_tests {
         for (simdjson_result<ondemand::value> val_result : doc_result) {
           ondemand::value val;
           ASSERT_SUCCESS( val_result.get(val) );
-          T actual;
+          T actual{};
           ASSERT_RESULT( val.type(), expected_json_type<T>() );
           ASSERT_SUCCESS( val.get(actual) );
           ASSERT_EQUAL(actual, expected);
@@ -129,7 +129,7 @@ namespace scalar_tests {
       SUBTEST( "simdjson_result<value>", test_ondemand_doc(whitespace_array_json, [&](auto doc_result) {
         int count = 0;
         for (simdjson_result<ondemand::value> val_result : doc_result) {
-          T actual;
+          T actual{};
           ASSERT_RESULT( val_result.type(), expected_json_type<T>() );
           ASSERT_SUCCESS( val_result.get(actual) );
           ASSERT_EQUAL(actual, expected);
@@ -150,7 +150,7 @@ namespace scalar_tests {
         for (simdjson_result<ondemand::value> val_result : doc_result) {
           ondemand::value val;
           ASSERT_SUCCESS( val_result.get(val) );
-          T actual;
+          T actual{};
           ASSERT_RESULT( val.type(), expected_json_type<T>() );
           ASSERT_SUCCESS( val.get(actual) );
           ASSERT_EQUAL(actual, expected);
