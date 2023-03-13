@@ -909,7 +909,7 @@ namespace object_tests {
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(json).get(doc));
     ondemand::object obj;
-    size_t count;
+    size_t count{};
     ASSERT_SUCCESS(doc.get_object().get(obj));
     ASSERT_SUCCESS(obj.count_fields().get(count));
     ASSERT_EQUAL(count, 0);
@@ -924,7 +924,7 @@ namespace object_tests {
     ASSERT_SUCCESS(parser.iterate(json).get(doc));
     ondemand::object obj;
     ASSERT_SUCCESS(doc.get_object().get(obj));
-    size_t count;
+    size_t count{};
     ASSERT_SUCCESS(obj.count_fields().get(count));
     ASSERT_EQUAL(count, 0);
     for (auto field : obj) {
@@ -943,7 +943,7 @@ namespace object_tests {
     ondemand::parser parser;
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(json).get(doc));
-    size_t count;
+    size_t count{};
     ASSERT_SUCCESS(doc.count_fields().get(count));
     ondemand::object obj;
     ASSERT_SUCCESS(doc.get_object().get(obj));
@@ -989,7 +989,7 @@ namespace object_tests {
     for (auto d : data) {
       simdjson::ondemand::object obj;
       ASSERT_SUCCESS(d.get_object().get(obj));
-      size_t count;
+      size_t count{};
       ASSERT_SUCCESS(obj.count_fields().get(count));
       ASSERT_EQUAL(count, 7);
     }
@@ -1025,7 +1025,7 @@ namespace object_tests {
     simdjson::ondemand::array data;
     ASSERT_SUCCESS(doc["result"]["data"].get_array().get(data));
     for (auto d : data) {
-      size_t count;
+      size_t count{};
       ASSERT_SUCCESS(d.count_fields().get(count));
       ASSERT_EQUAL(count, 7);
     }
@@ -1039,7 +1039,7 @@ namespace object_tests {
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(json).get(doc));
     ondemand::object obj;
-    size_t count;
+    size_t count{};
     ASSERT_SUCCESS(doc.get_object().get(obj));
     ASSERT_SUCCESS(obj.count_fields().get(count));
     ASSERT_EQUAL(count, 5);
@@ -1101,7 +1101,7 @@ namespace object_tests {
     TEST_START();
     auto empty = R"( {} )"_padded;
     SUBTEST("ondemand::empty_doc_object", test_ondemand_doc(empty, [&](auto doc_result) {
-        size_t count;
+        size_t count{};
         ASSERT_RESULT( doc_result.type(), json_type::object );
         ASSERT_SUCCESS( doc_result.count_fields().get(count) );
         ASSERT_EQUAL( count, 0 );
@@ -1109,7 +1109,7 @@ namespace object_tests {
     }));
     auto basic = R"( {"a":-1.234, "b":false, "c":null, "d":[1000.1,-2000.2,3000.3], "e":{"a":true, "b":false}} )"_padded;
     SUBTEST("ondemand::basic_doc_object", test_ondemand_doc(basic, [&](auto doc_result) {
-        size_t count;
+        size_t count{};
         ASSERT_RESULT( doc_result.type(), json_type::object );
         ASSERT_SUCCESS( doc_result.count_fields().get(count) );
         ASSERT_EQUAL( count, 5 );

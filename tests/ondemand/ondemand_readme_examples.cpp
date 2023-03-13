@@ -320,7 +320,7 @@ bool json_object_count() {
   ondemand::parser parser;
   ondemand::document doc;
   ASSERT_SUCCESS(parser.iterate(json).get(doc));
-  size_t count;
+  size_t count{};
   ASSERT_SUCCESS(doc.count_fields().get(count));
   ASSERT_EQUAL(count,1);
   ondemand::object object;

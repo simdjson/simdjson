@@ -79,7 +79,7 @@ namespace twitter_tests {
         auto media = tweet["entities"]["media"];
         if (!media.error()) {
           for (auto image : media) {
-            uint64_t id_val;
+            uint64_t id_val{};
             std::string_view id_string;
             ASSERT_SUCCESS( image["id"].get(id_val) );
             ASSERT_SUCCESS( image["id_str"].get(id_string) );
@@ -91,7 +91,8 @@ namespace twitter_tests {
               ASSERT_SUCCESS( size.unescaped_key().get(size_key) );
               std::cout << "Type of image size = " << size_key << std::endl;
 
-              uint64_t width, height;
+              uint64_t width{};
+              uint64_t height{};
               ASSERT_SUCCESS( size.value()["w"].get(width) );
               ASSERT_SUCCESS( size.value()["h"].get(height) );
               image_sizes.insert(make_pair(width, height));
