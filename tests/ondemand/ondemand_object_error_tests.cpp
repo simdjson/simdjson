@@ -10,7 +10,7 @@ namespace object_error_tests {
   bool assert_iterate_object(T &&object, const char **expected_key, V *expected, size_t N, simdjson::error_code *expected_error, size_t N2) {
     size_t count = 0;
     for (auto field : object) {
-      V actual;
+      V actual{};
       auto actual_error = field.value().get(actual);
       if (count >= N) {
         ASSERT((count - N) < N2, "Extra error reported");
