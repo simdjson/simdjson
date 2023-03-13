@@ -215,7 +215,7 @@ namespace array_tests {
       size_t i = 0;
       std::vector<uint64_t> receiver(count);
       for (auto value : array) {
-        uint64_t actual;
+        uint64_t actual{};
         ASSERT_SUCCESS( value.get(actual) );
         ASSERT_EQUAL(actual, expected_value[i]);
         receiver[i] = actual;
@@ -250,7 +250,7 @@ namespace array_tests {
       size_t i = 0;
       std::vector<uint64_t> receiver(count);
       for (auto value : array) {
-        uint64_t actual;
+        uint64_t actual{};
         ASSERT_SUCCESS( value.get(actual) );
         i++;
       }
@@ -331,7 +331,7 @@ namespace array_tests {
 
       size_t i = 0;
       for (auto value : array) {
-        int64_t actual;
+        int64_t actual{};
         ASSERT_SUCCESS( value.get(actual) );
         ASSERT_EQUAL(actual, expected_value[i]);
         i++;
@@ -355,7 +355,7 @@ namespace array_tests {
       ASSERT_SUCCESS( doc_result.get(array) );
       i = 0;
       for (auto value : array) {
-        int64_t actual;
+        int64_t actual{};
         ASSERT_SUCCESS( value.get(actual) );
         container[i] = actual;
         i++;
@@ -379,7 +379,7 @@ namespace array_tests {
       array.reset();
       i = 0;
       for (auto value : array) {
-        int64_t actual;
+        int64_t actual{};
         ASSERT_SUCCESS( value.get(actual) );
         container[i] = actual;
         i++;
@@ -528,7 +528,7 @@ namespace array_tests {
 
         size_t i=0;
         for (auto value : array) {
-          int64_t actual;
+          int64_t actual{};
           ASSERT_SUCCESS( value.get(actual) );
           ASSERT_EQUAL(actual, expected_value[i]);
           i++;
