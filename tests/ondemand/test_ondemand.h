@@ -10,7 +10,7 @@
 template<typename T, typename F>
 bool test_ondemand(simdjson::ondemand::parser &parser, const simdjson::padded_string &json, const F& f) {
   auto doc = parser.iterate(json);
-  T val;
+  T val{};
   ASSERT_SUCCESS( doc.get(val) );
   return f(val);
 }

@@ -95,18 +95,18 @@ if(
   )
 endif()
 
-
 # GCC and Clang have horrendous Debug builds when using SIMD.
 # A common fix is to use '-Og' instead.
 # bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412
 if(
     (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR
-        CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    AND CMAKE_BUILD_TYPE STREQUAL "Debug"
+        CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR
+        CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 )
+  message(STATUS "Adding -Og to compile flag")
   simdjson_add_props(
       target_compile_options PRIVATE
-      -Og
+      $<$<CONFIG:DEBUG>:-Og>
   )
 endif()
 
