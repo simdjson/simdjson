@@ -634,7 +634,7 @@ namespace document_stream_tests {
     ASSERT_SUCCESS( odparser.parse_many(json.data(), json.length(), 50).get(odstream) );
     for (auto doc: odstream) {
       if(counter < 6) {
-        int64_t val;
+        int64_t val{};
         ASSERT_SUCCESS(doc.at_pointer("/4").get(val));
         ASSERT_EQUAL(val, 5);
       } else {

@@ -148,6 +148,19 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 #define SIMDJSON_NO_SANITIZE_UNDEFINED
 #endif
 
+
+#if defined(__clang__) || defined(__GNUC__)
+#if defined(__has_feature)
+#  if __has_feature(memory_sanitizer)
+#define SIMDJSON_NO_SANITIZE_MEMORY __attribute__((no_sanitize("memory")))
+#  endif // if __has_feature(memory_sanitizer)
+#endif // defined(__has_feature)
+#endif
+// make sure it is defined as 'nothing' if it is unapplicable.
+#ifndef SIMDJSON_NO_SANITIZE_MEMORY
+#define SIMDJSON_NO_SANITIZE_MEMORY
+#endif
+
 #if SIMDJSON_VISUAL_STUDIO
 // This is one case where we do not distinguish between
 // regular visual studio and clang under visual studio.
