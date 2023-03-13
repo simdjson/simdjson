@@ -1,0 +1,24 @@
+name: Ubuntu 22.04 CI GCC 12 with GLIBCXX_ASSERTIONS
+on: [push, pull_request]
+
+jobs:
+  ubuntu-build:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: dependencies/.cache
+          key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
+      - name: Install gcc12
+        run: sudo apt-get install -y g++-12
+      - name: Use cmake
+        run: |
+          mkdir build &&
+          cd build &&
+          CXX=g++-12 cmake -DCMAKE_BUILD_TYPE=Debug  -DSIMDJSON_GLIBCXX_ASSERTIONS=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON ..  &&
+          cmake --build .   &&
+          ctest . -E avoid_
