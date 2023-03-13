@@ -564,7 +564,7 @@ static void error_code_twitter_default_profile(State& state) noexcept {
     for (dom::element tweet : tweets) {
       dom::object user;
       if ((error = tweet["user"].get(user))) { return; }
-      bool default_profile;
+      bool default_profile{};
       if ((error = user["default_profile"].get(default_profile))) { return; }
       if (default_profile) {
         std::string_view screen_name;

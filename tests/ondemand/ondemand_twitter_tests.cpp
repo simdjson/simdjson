@@ -56,7 +56,7 @@ namespace twitter_tests {
         std::string_view screen_name;
         ASSERT_SUCCESS( user["screen_name"].get(screen_name) );
 
-        bool default_profile;
+        bool default_profile{};
         ASSERT_SUCCESS( user["default_profile"].get(default_profile) );
         if (default_profile) {
           default_users.insert(screen_name);
