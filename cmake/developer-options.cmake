@@ -54,12 +54,12 @@ option(SIMDJSON_SANITIZE_MEMORY "Sanitize memory" OFF)
 
 
 if(SIMDJSON_SANITIZE_MEMORY)
-  message(STATUS "Setting both the memoryread sanitizer.")
+  message(STATUS "Setting the memory sanitizer.")
   add_compile_options(
       -fsanitize=memory -fno-sanitize-recover=all
   )
   link_libraries(
-      -fsanitize=thread -fno-sanitize-recover=all
+      -fsanitize=memory -fno-sanitize-recover=all
   )
   # Ubuntu bug for GCC 5.0+ (safe for all versions)
   if(CMAKE_COMPILER_IS_GNUCC)
