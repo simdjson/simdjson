@@ -74,7 +74,7 @@ namespace number_tests {
     for (int m = 10; m < 20; m++) {
       for (int i = -1024; i < 1024; i++) {
         auto str = std::to_string(i);
-        int64_t actual;
+        int64_t actual{};
         ASSERT_SUCCESS(parser.parse(str).get(actual));
         if (actual != i) {
           std::cerr << "JSON '" << str << "' parsed to " << actual << " instead of " << i << std::endl;
