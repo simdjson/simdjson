@@ -576,7 +576,7 @@ bool using_the_parsed_json_no_exceptions() {
     cout << "Make/Model: " << make << "/" << model << endl;
 
     // Casting a JSON element to an integer
-    uint64_t year;
+    uint64_t year{};
     error = car["year"].get(year);
     if(error) { std::cerr << error << std::endl; return false; }
     cout << "- This car is " << 2020 - year << " years old." << endl;
