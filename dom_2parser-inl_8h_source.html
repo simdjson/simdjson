@@ -319,7 +319,7 @@ $(document).ready(function(){initNavTree('dom_2parser-inl_8h_source.html',''); i
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;}</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160; </div>
 <div class="line"><a name="l00228"></a><span class="lineno"><a class="line" href="classsimdjson_1_1dom_1_1parser.html#a6977b4586bc601070cf100e2973a4cbc">  228</a></span>&#160;simdjson_inline <span class="keywordtype">void</span> <a class="code" href="classsimdjson_1_1dom_1_1parser.html#a6977b4586bc601070cf100e2973a4cbc">parser::set_max_capacity</a>(<span class="keywordtype">size_t</span> max_capacity) noexcept {</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;  <span class="keywordflow">if</span>(max_capacity &lt; MINIMAL_DOCUMENT_CAPACITY) {</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;  <span class="keywordflow">if</span>(max_capacity &gt; MINIMAL_DOCUMENT_CAPACITY) {</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    _max_capacity = max_capacity;</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;  } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    _max_capacity = MINIMAL_DOCUMENT_CAPACITY;</div>
