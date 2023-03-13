@@ -46,7 +46,7 @@ namespace parser_load {
     ASSERT_SUCCESS(parser.parse_many(DOC).get(docs));
     for (auto doc : docs) {
       count++;
-      uint64_t val;
+      uint64_t val{};
       auto error = doc.get(val);
       if (count == 3) {
         ASSERT_ERROR(error, TAPE_ERROR);
@@ -83,7 +83,7 @@ namespace parser_load {
     ASSERT_SUCCESS(parser.parse_many(DOC).get(docs));
     for (auto doc : docs) {
       count++;
-      uint64_t val;
+      uint64_t val{};
       auto error = doc.get(val);
       if (count == 3) {
         ASSERT_ERROR(error, TAPE_ERROR);
