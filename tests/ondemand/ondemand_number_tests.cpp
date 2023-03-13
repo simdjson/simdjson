@@ -238,7 +238,7 @@ namespace number_tests {
       ondemand::number num;
       ASSERT_SUCCESS(val.get_number().get(num));
       ASSERT_EQUAL(is_negative[counter], val.is_negative());
-      bool intvalue;
+      bool intvalue{};
       ASSERT_SUCCESS(val.is_integer().get(intvalue));
       ASSERT_EQUAL(is_integer[counter], intvalue);
       ondemand::number_type t = num.get_number_type();
@@ -341,7 +341,7 @@ namespace number_tests {
     ondemand::number number;
     ondemand::number_type nt;
 
-    bool intvalue;
+    bool intvalue{};
 
     docdata = R"(1.0)"_padded;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
