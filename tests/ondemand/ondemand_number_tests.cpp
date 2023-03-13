@@ -232,7 +232,7 @@ namespace number_tests {
     for(simdjson_result<ondemand::value> valr : arr) {
       ondemand::value val;
       ASSERT_SUCCESS(valr.get(val));
-      ondemand::number_type nt;
+      ondemand::number_type nt{};
       ASSERT_SUCCESS(val.get_number_type().get(nt));
       ASSERT_EQUAL(expectedtypes[counter], nt);
       ondemand::number num;
@@ -339,7 +339,7 @@ namespace number_tests {
     ondemand::document doc;
     padded_string docdata;
     ondemand::number number;
-    ondemand::number_type nt;
+    ondemand::number_type nt{};
 
     bool intvalue{};
 
