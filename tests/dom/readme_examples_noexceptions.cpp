@@ -41,7 +41,7 @@ void basics_error_2() {
       cout << "Make/Model: " << make << "/" << model << endl;
 
       // Casting a JSON element to an integer
-      uint64_t year;
+      uint64_t year{};
       if ((error = car["year"].get(year))) { cerr << error << endl; exit(1); }
       cout << "- This car is " << 2020 - year << "years old." << endl;
 
@@ -132,7 +132,7 @@ void basics_error_2_cpp17() {
     cout << "Make/Model: " << make << "/" << model << endl;
 
     // Casting a JSON element to an integer
-    uint64_t year;
+    uint64_t year{};
     if ((error = car["year"].get(year))) { cerr << error << endl; exit(1); }
     cout << "- This car is " << 2020 - year << "years old." << endl;
 
