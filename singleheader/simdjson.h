@@ -1,4 +1,4 @@
-/* auto-generated on 2023-03-09 11:14:42 -0500. Do not edit! */
+/* auto-generated on 2023-03-13 21:26:32 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -43,7 +43,7 @@
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "3.1.5"
+#define SIMDJSON_VERSION "3.1.6"
 
 namespace simdjson {
 enum {
@@ -58,7 +58,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 5
+  SIMDJSON_VERSION_REVISION = 6
 };
 } // namespace simdjson
 
@@ -263,6 +263,19 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 #define SIMDJSON_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
 #else
 #define SIMDJSON_NO_SANITIZE_UNDEFINED
+#endif
+
+
+#if defined(__clang__) || defined(__GNUC__)
+#if defined(__has_feature)
+#  if __has_feature(memory_sanitizer)
+#define SIMDJSON_NO_SANITIZE_MEMORY __attribute__((no_sanitize("memory")))
+#  endif // if __has_feature(memory_sanitizer)
+#endif // defined(__has_feature)
+#endif
+// make sure it is defined as 'nothing' if it is unapplicable.
+#ifndef SIMDJSON_NO_SANITIZE_MEMORY
+#define SIMDJSON_NO_SANITIZE_MEMORY
 #endif
 
 #if SIMDJSON_VISUAL_STUDIO
@@ -8896,7 +8909,7 @@ inline error_code parser::ensure_capacity(document& target_document, size_t desi
 }
 
 simdjson_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
-  if(max_capacity < MINIMAL_DOCUMENT_CAPACITY) {
+  if(max_capacity > MINIMAL_DOCUMENT_CAPACITY) {
     _max_capacity = max_capacity;
   } else {
     _max_capacity = MINIMAL_DOCUMENT_CAPACITY;
@@ -9845,6 +9858,10 @@ namespace {
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
 SIMDJSON_NO_SANITIZE_UNDEFINED
+// This function can be used safely even if not all bytes have been
+// initialized.
+// See issue https://github.com/simdjson/simdjson/issues/1965
+SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_inline int trailing_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
@@ -13956,6 +13973,10 @@ namespace {
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
 SIMDJSON_NO_SANITIZE_UNDEFINED
+// This function can be used safely even if not all bytes have been
+// initialized.
+// See issue https://github.com/simdjson/simdjson/issues/1965
+SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_inline int trailing_zeroes(uint64_t input_num) {
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
   return (int)_tzcnt_u64(input_num);
@@ -16146,6 +16167,10 @@ namespace {
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
 SIMDJSON_NO_SANITIZE_UNDEFINED
+// This function can be used safely even if not all bytes have been
+// initialized.
+// See issue https://github.com/simdjson/simdjson/issues/1965
+SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_inline int trailing_zeroes(uint64_t input_num) {
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
   return (int)_tzcnt_u64(input_num);
@@ -18292,6 +18317,10 @@ namespace {
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
 SIMDJSON_NO_SANITIZE_UNDEFINED
+// This function can be used safely even if not all bytes have been
+// initialized.
+// See issue https://github.com/simdjson/simdjson/issues/1965
+SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_inline int trailing_zeroes(uint64_t input_num) {
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
@@ -20609,6 +20638,10 @@ namespace {
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
 SIMDJSON_NO_SANITIZE_UNDEFINED
+// This function can be used safely even if not all bytes have been
+// initialized.
+// See issue https://github.com/simdjson/simdjson/issues/1965
+SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_inline int trailing_zeroes(uint64_t input_num) {
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
