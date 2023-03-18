@@ -16,6 +16,7 @@ An overview of what you need to know to use simdjson, with examples.
 * [Server Loops: Long-Running Processes and Memory Capacity](#server-loops-long-running-processes-and-memory-capacity)
 * [Best Use of the DOM API](#best-use-of-the-dom-api)
 * [Padding and Temporary Copies](#padding-and-temporary-copies)
+* [Performance Tips](#performance-tips)
 
 DOM vs On Demand
 ----------------------------------------------
@@ -644,3 +645,9 @@ simdjson::dom::element element = parser.parse(padded_json_copy.get(), json_len, 
 ````
 
 Setting the `realloc_if_needed` parameter `false` in this manner may lead to better performance since copies are avoided, but it requires that the user takes more responsibilities: the simdjson library cannot verify that the input buffer was padded with SIMDJSON_PADDING extra bytes.
+
+Performance Tips
+---------------------
+
+- For release builds, we recommend setting `NDEBUG` pre-processor directive when compiling the `simdjson` library. Importantly, using the optimization flags `-O2` or `-O3` under GCC and LLVM clang does not set the `NDEBUG` directrive, you must set it manually (e.g., `-DNDEBUG`).
+- For long streams of JSON documents, consider [`iterate_many`](iterate_many.md) and [`parse_many`](parse_many.md) for better performance.

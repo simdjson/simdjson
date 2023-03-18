@@ -33,6 +33,7 @@ An overview of what you need to know to use simdjson, with examples.
   - [Standard Compliance](#standard-compliance)
   - [Backwards Compatibility](#backwards-compatibility)
   - [Examples](#examples)
+  - [Performance Tips](#performance-tips)
 
 
 Requirements
@@ -451,7 +452,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   ```
   This examples also show how we can string several operations and only check for the error once, a strategy we call  *error chaining*.
   Though error chaining makes the code very compact, it also makes error reporting less precise: in this instance, you may get the
-  same error whether the field "str", "123" or "abc" is missing. If you need to break down error handling per operation, avoid error chaining.
+  same error whether the field "str", "123" or "abc" is missing. If you need to break down error handling per operation, avoid error chaining. Furthermore, you should be mindful that chaining that harm performance by encouraging redundancies: writing both `doc["str"]["123"]["abc"].get(value)` and `doc["str"]["123"]["zyw"].get(value)` in the same program may force multiple accesses to the same keys (`"str"` and `"123"`).
 * **Counting elements in arrays:** Sometimes it is useful to scan an array to determine its length prior to parsing it.
   For this purpose, `array` instances have a `count_elements` method. Users should be
   aware that the `count_elements` method can be costly since it requires scanning the
@@ -1817,3 +1818,28 @@ bool example() {
   return true;
 }
 ```
+
+
+Performance Tips
+--------
+
+
+- The On Demand front-end works best when doing a single pass over the input: avoid calling `count_elements`, `rewind` and similar methods.
+- If you are familiar with assembly language, you may use the online tool godbolt to explore the compiled code. The following example may work: [https://godbolt.org/z/xE4GWs573](https://godbolt.org/z/xE4GWs573).
+- Given a field `field` in an object, calling `field.key()` is often faster than `field.unescaped_key()` so if you do not need an unescaped `std::string_view` instance, prefer `field.key()`.
+- For release builds, we recommend setting `NDEBUG` pre-processor directive when compiling the `simdjson` library. Importantly, using the optimization flags `-O2` or `-O3` under GCC and LLVM clang does not set the `NDEBUG` directive, you must set it manually (e.g., `-DNDEBUG`).
+- For long streams of JSON documents, consider [`iterate_many`](iterate_many.md) and [`parse_many`](parse_many.md) for better performance.
+- If possible, refer to each object and array in your code once. For example, the following code repeatedly refers to the `"data"` key to create an object...
+	```C++
+  std::string_view make = o["data"]["make"];
+	std::string_view model = o["data"]["model"];
+	std::string_view year = o["data"]["year"];
+  ```
+  We expect that it is more efficient to access the `"data"` key once:
+  ```C++
+	simdjson::ondemand::object data = o["data"];
+	std::string_view model = data["model"];
+	std::string_view year = data["year"];
+	std::string_view rating = data["rating"];
+  ```
+- To better understand the operation of your On Demand parser, and whether it is performing as well as you think it should be, there is a  logger feature built in to simdjson! To use it, define the pre-processor directive `SIMDJSON_VERBOSE_LOGGING` prior to including the `simdjson.h` header, which enables logging in simdjson. Run your code. It may generate a lot of logging output; adding printouts from your application that show each section may be helpful. The log’s output will show step-by-step information on state, buffer pointer position, depth, and key retrieval status.

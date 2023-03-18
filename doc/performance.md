@@ -3,7 +3,10 @@ Performance Notes
 
 simdjson strives to be at its fastest *without tuning*, and generally achieves this. However, there
 are still some scenarios where tuning can enhance performance.
-
+Once your code is tested, we
+further encourage you to define `NDEBUG` in your Release builds to disable additional runtime
+testing and get the best performance.
+* [NDEBUG directive](#ndebug-directive)
 * [Reusing the parser for maximum efficiency](#reusing-the-parser-for-maximum-efficiency)
 * [Reusing string buffers](#reusing-string-buffers)
 * [Server Loops: Long-Running Processes and Memory Capacity](#server-loops-long-running-processes-and-memory-capacity)
@@ -11,6 +14,18 @@ are still some scenarios where tuning can enhance performance.
 * [Number parsing](#number-parsing)
 * [Visual Studio](#visual-studio)
 * [Power Usage and Downclocking](#power-usage-and-downclocking)
+
+
+NDEBUG directive
+-------------
+
+In C/C++, the `NDEBUG` pre-processor directive is not set by default. When it is not set, the simdjson library does
+many additional checks that may impact negatively the performance. We recommend that, once your code
+is well tested, you define `NDEBUG` directive in your Release builds. The `NDEBUG` directive should be defined
+prior to including the `simdjson.h` header.
+
+The `NDEBUG` directive is generally independent from optimization flags. For example, setting `-O3` under
+GCC does not set the `NDEBUG` directive.
 
 Reusing the parser for maximum efficiency
 -----------------------------------------
