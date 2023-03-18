@@ -129,6 +129,7 @@ $(document).ready(function(){initNavTree('md_doc_basics.html',''); initResizable
 <li><a href="#standard-compliance">Standard Compliance</a></li>
 <li><a href="#backwards-compatibility">Backwards Compatibility</a></li>
 <li><a href="#examples">Examples</a></li>
+<li><a href="#performance-tips">Performance Tips</a></li>
 </ul>
 </li>
 </ul>
@@ -303,7 +304,7 @@ Using the Parsed JSON</h1>
 <div class="line"> auto error = doc[&quot;str&quot;][&quot;123&quot;][&quot;abc&quot;].get(value);</div>
 <div class="line"> if (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; return EXIT_FAILURE; }</div>
 <div class="line"> cout &lt;&lt; value &lt;&lt; endl; // Prints 3.14</div>
-</div><!-- fragment --><p> This examples also show how we can string several operations and only check for the error once, a strategy we call <em>error chaining</em>. Though error chaining makes the code very compact, it also makes error reporting less precise: in this instance, you may get the same error whether the field "str", "123" or "abc" is missing. If you need to break down error handling per operation, avoid error chaining.</p>
+</div><!-- fragment --><p> This examples also show how we can string several operations and only check for the error once, a strategy we call <em>error chaining</em>. Though error chaining makes the code very compact, it also makes error reporting less precise: in this instance, you may get the same error whether the field "str", "123" or "abc" is missing. If you need to break down error handling per operation, avoid error chaining. Furthermore, you should be mindful that chaining that harm performance by encouraging redundancies: writing both <code>doc["str"]["123"]["abc"].get(value)</code> and <code>doc["str"]["123"]["zyw"].get(value)</code> in the same program may force multiple accesses to the same keys (<code>"str"</code> and <code>"123"</code>).</p>
 </blockquote>
 </li>
 <li><b>Counting elements in arrays:</b> Sometimes it is useful to scan an array to determine its length prior to parsing it. For this purpose, <code>array</code> instances have a <code>count_elements</code> method. Users should be aware that the <code>count_elements</code> method can be costly since it requires scanning the whole array. You should only call <code>count_elements</code> as a last resort as it may require scanning the document twice or more. You may use it as follows if your document is itself an array:</li>
@@ -1346,7 +1347,24 @@ Examples</h1>
 <div class="line">  }</div>
 <div class="line">  return true;</div>
 <div class="line">}</div>
-</div><!-- fragment --> </div></div><!-- contents -->
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md29"></a>
+Performance Tips</h1>
+<ul>
+<li>The On Demand front-end works best when doing a single pass over the input: avoid calling <code>count_elements</code>, <code>rewind</code> and similar methods.</li>
+<li>If you are familiar with assembly language, you may use the online tool godbolt to explore the compiled code. The following example may work: <a href="https://godbolt.org/z/xE4GWs573">https://godbolt.org/z/xE4GWs573</a>.</li>
+<li>Given a field <code>field</code> in an object, calling <code>field.key()</code> is often faster than <code>field.unescaped_key()</code> so if you do not need an unescaped <code>std::string_view</code> instance, prefer <code>field.key()</code>.</li>
+<li>For release builds, we recommend setting <code>NDEBUG</code> pre-processor directive when compiling the <code>simdjson</code> library. Importantly, using the optimization flags <code>-O2</code> or <code>-O3</code> under GCC and LLVM clang does not set the <code>NDEBUG</code> directive, you must set it manually (e.g., <code>-DNDEBUG</code>).</li>
+<li>For long streams of JSON documents, consider <a class="el" href="md_doc_iterate_many.html">`iterate_many`</a> and <a class="el" href="md_doc_parse_many.html">`parse_many`</a> for better performance.</li>
+<li>If possible, refer to each object and array in your code once. For example, the following code repeatedly refers to the <code>"data"</code> key to create an object... ```C++ std::string_view make = o["data"]["make"]; std::string_view model = o["data"]["model"]; std::string_view year = o["data"]["year"]; <div class="fragment"><div class="line">We expect that it is more efficient to access the `&quot;data&quot;` key once:</div>
+<div class="line">```C++</div>
+<div class="line">  simdjson::ondemand::object data = o[&quot;data&quot;];</div>
+<div class="line">  std::string_view model = data[&quot;model&quot;];</div>
+<div class="line">  std::string_view year = data[&quot;year&quot;];</div>
+<div class="line">  std::string_view rating = data[&quot;rating&quot;];</div>
+</div><!-- fragment --></li>
+<li>To better understand the operation of your On Demand parser, and whether it is performing as well as you think it should be, there is a logger feature built in to simdjson! To use it, define the pre-processor directive <code>SIMDJSON_VERBOSE_LOGGING</code> prior to including the <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code> header, which enables logging in simdjson. Run your code. It may generate a lot of logging output; adding printouts from your application that show each section may be helpful. The log’s output will show step-by-step information on state, buffer pointer position, depth, and key retrieval status. </li>
+</ul>
+</div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
 <!-- start footer part -->
