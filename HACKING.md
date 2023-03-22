@@ -14,6 +14,7 @@ If you plan to contribute to simdjson, please read our [CONTRIBUTING](https://gi
   - [Regenerating Single-Header Files](#regenerating-single-header-files)
   - [Usage (CMake on 64-bit platforms like Linux, FreeBSD or macOS)](#usage-cmake-on-64-bit-platforms-like-linux-freebsd-or-macos)
   - [Usage (CMake on 64-bit Windows using Visual Studio 2019)](#usage-cmake-on-64-bit-windows-using-visual-studio-2019)
+  - [Various References](#various-references)
 
 
 Design notes
@@ -295,7 +296,7 @@ Furthermore, if you have installed LLVM clang on Windows, for example as a compo
 - `cmake --build . -config Release`
 
 
-### Various References
+## Various References
 
 - [How to implement atoi using SIMD?](https://stackoverflow.com/questions/35127060/how-to-implement-atoi-using-simd)
 - [Parsing JSON is a Minefield 💣](http://seriot.ch/parsing_json.php)
