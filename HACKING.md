@@ -267,7 +267,9 @@ Note that the name of directory (`build`) is arbitrary, you can name it as you w
 
 
 
-## Usage (CMake on 64-bit Windows using Visual Studio 2019)
+## Usage (CMake on 64-bit Windows using Visual Studio 2019 or better)
+
+Recent versions of Visual Studio support CMake natively, [please refer to the Visual Studio documentation](https://learn.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio?view=msvc-170).
 
 We assume you have a common 64-bit Windows PC with at least Visual Studio 2019.
 
