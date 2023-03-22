@@ -1,9 +1,17 @@
+
 Hacking simdjson
 ================
 
 Here is wisdom about how to build, test and run simdjson from within the repository. This is mostly useful for people who plan to contribute simdjson, or maybe study the design.
 
 If you plan to contribute to simdjson, please read our [CONTRIBUTING](https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md) guide.
+
+
+  - [Design notes](#design-notes)
+  - [Developer mode](#developer-mode)
+  - [Directory Structure and Source](#directory-structure-and-source)
+  - [Runtime Dispatching](#runtime-dispatching)
+  - [Regenerating Single-Header Files](#regenerating-single-header-files)
 
 
 Design notes
