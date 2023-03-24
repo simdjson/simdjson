@@ -315,7 +315,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   the number, string or boolean will be parsed, or the initial `{` or `[` will be verified for ondemand::object and ondemand::array. An exception is thrown if
   the cast is not possible. Importantly, when getting an ondemand::object or ondemand::array instance, its content is
   not validated: you are only guaranteed that the corresponding initial character (`{` or `[`) is present. Thus,
-  for example, you could have an ondemand::object instance pointing at the invalid JSON `{ "this is not a valid object"]`: the validation occurs as you parse the content.
+  for example, you could have an ondemand::object instance pointing at the invalid JSON `{ "this is not a valid object" }`: the validation occurs as you access the content.
   The `get_string()` returns a valid UTF-8 string, after
   unescaping characters as needed: unmatched surrogate pairs are treated as an error unless you
   pass `true` (`get_string(true)`) as a parameter to get replacement characters where errors
@@ -323,8 +323,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   (e.g., if you strings contain unpaired surrogates), you may use the `get_wobbly_string()` function to get a string in the [WTF-8 format](https://simonsapin.github.io/wtf-8).
   When calling `get_uint64()` and `get_int64()`, if the number does not fit in a corresponding
   64-bit integer type, it is also considered an error. When parsing numbers or other scalar values, the library checks
-  that the value is followed by an expected character, thus you may get a number parsing error when accessing the digits
-  as an integer in the following strings: `{"number":12332a`, `{"number":12332\0`, `{"number":12332` (the digits appear at the end).
+  that the value is followed by an expected character, thus you *may* get a number parsing error when accessing the digits
+  as an integer in the following strings: `{"number":12332a`, `{"number":12332\0`, `{"number":12332` (the digits appear at the end). We always abide by the [RFC 8259](https://www.tbray.org/ongoing/When/201x/2017/12/14/rfc8259.html) JSON specification so that, for example, numbers prefixed by the `+` sign are in error.
 
   > IMPORTANT NOTE: values can only be parsed once. Since documents are *iterators*, once you have
   > parsed a value (such as by casting to double), you cannot get at it again. It is an error to call

@@ -35,7 +35,7 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
   if (padded_buffer == nullptr) {
     return nullptr;
   }
-  // We write spaces in the padded region to avoid having uninitialized
+  // We write nulls in the padded region to avoid having uninitialized
   // content which may trigger warning for some sanitizers
   std::memset(padded_buffer + length, 0, totalpaddedlength - length);
   return padded_buffer;
