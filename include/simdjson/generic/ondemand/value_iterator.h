@@ -109,7 +109,14 @@ public:
    * @error TAPE_ERROR if there is no matching } at end of document
    */
   simdjson_warn_unused simdjson_inline simdjson_result<bool> start_root_object() noexcept;
-
+  /**
+   * Checks whether an object could be started from the root. May be called by start_root_object.
+   *
+   * @returns SUCCESS if it is possible to safely start an object from the root (document level).
+   * @error INCORRECT_TYPE if there is no opening {
+   * @error TAPE_ERROR if there is no matching } at end of document
+   */
+  simdjson_warn_unused simdjson_inline error_code check_root_object() noexcept;
   /**
    * Start an object iteration after the user has already checked and moved past the {.
    *
@@ -234,7 +241,14 @@ public:
    * @error TAPE_ERROR if there is no matching ] at end of document
    */
   simdjson_warn_unused simdjson_inline simdjson_result<bool> start_root_array() noexcept;
-
+  /**
+   * Checks whether an array could be started from the root. May be called by start_root_array.
+   *
+   * @returns SUCCESS if it is possible to safely start an array from the root (document level).
+   * @error INCORRECT_TYPE If there is no [.
+   * @error TAPE_ERROR if there is no matching ] at end of document
+   */
+  simdjson_warn_unused simdjson_inline error_code check_root_array() noexcept;
   /**
    * Start an array iteration, after the user has already checked and moved past the [.
    *

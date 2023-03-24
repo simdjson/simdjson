@@ -1118,6 +1118,29 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
+
+  bool issue1974a() {
+    TEST_START();
+    padded_string bad_json = R"({"key":111)"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(bad_json).get(doc));
+    ondemand::object object;
+    ASSERT_ERROR(doc.get_object().get(object), INCOMPLETE_ARRAY_OR_OBJECT);
+    TEST_SUCCEED();
+  }
+
+  bool issue1974b() {
+    TEST_START();
+    padded_string bad_json = R"({"key":111)"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(bad_json).get(doc));
+    ondemand::value val;
+    ASSERT_ERROR(doc.get_value().get(val), INCOMPLETE_ARRAY_OR_OBJECT);
+    TEST_SUCCEED();
+  }
+
   bool iterate_bad_doc_object_count() {
     TEST_START();
     padded_string bad_jsons[4] = {R"( {"a":5 "b":3} )"_padded, R"( {"a":5, 3} )"_padded, R"( {"a":5, "b": } )"_padded, R"( {"a":5, "b":3 )"_padded};
@@ -1127,7 +1150,7 @@ namespace object_tests {
 
     for (auto name : names) {
       SUBTEST("ondemand::" + name, test_ondemand_doc(bad_jsons[count], [&](auto doc_result) {
-        ASSERT_RESULT( doc_result.type(), json_type::object );
+        ASSERT_RESULT(doc_result.type(), json_type::object );
         ASSERT_ERROR(doc_result.count_fields(), errors[count]);
         return true;
       }));
@@ -1244,6 +1267,8 @@ namespace object_tests {
 #if SIMDJSON_EXCEPTIONS
            issue1965() &&
 #endif
+           issue1974a() &&
+           issue1974b() &&
            issue1876a() &&
            issue1876() &&
            test_strager() &&

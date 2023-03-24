@@ -35,9 +35,8 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
   if (padded_buffer == nullptr) {
     return nullptr;
   }
-  // We write zeroes in the padded region to avoid having uninitized
-  // garbage. If nothing else, garbage getting read might trigger a
-  // warning in a memory checking.
+  // We write nulls in the padded region to avoid having uninitialized
+  // content which may trigger warning for some sanitizers
   std::memset(padded_buffer + length, 0, totalpaddedlength - length);
   return padded_buffer;
 } // allocate_padded_buffer()
@@ -67,7 +66,7 @@ inline padded_string::padded_string(std::string_view sv_) noexcept
     : viable_size(sv_.size()), data_ptr(internal::allocate_padded_buffer(sv_.size())) {
   if(simdjson_unlikely(!data_ptr)) {
     //allocation failed or zero size
-    viable_size=0;
+    viable_size = 0;
     return;
   }
   if (sv_.size()) {

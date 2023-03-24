@@ -312,15 +312,19 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   `double(element)`. This works for `std::string_view`, double, uint64_t, int64_t, bool,
   ondemand::object and ondemand::array. We also have explicit methods such as `get_string()`, `get_double()`,
   `get_uint64()`, `get_int64()`, `get_bool()`, `get_object()` and `get_array()`. After a cast or an explicit method,
-  the number, string or boolean will be parsed, or the initial `[` or `{` will be verified. An exception is thrown if
-  the cast is not possible. The `get_string()` returns a valid UTF-8 string, after
+  the number, string or boolean will be parsed, or the initial `{` or `[` will be verified for ondemand::object and ondemand::array. An exception is thrown if
+  the cast is not possible. Importantly, when getting an ondemand::object or ondemand::array instance, its content is
+  not validated: you are only guaranteed that the corresponding initial character (`{` or `[`) is present. Thus,
+  for example, you could have an ondemand::object instance pointing at the invalid JSON `{ "this is not a valid object" }`: the validation occurs as you access the content.
+  The `get_string()` returns a valid UTF-8 string, after
   unescaping characters as needed: unmatched surrogate pairs are treated as an error unless you
   pass `true` (`get_string(true)`) as a parameter to get replacement characters where errors
   occur. If you somehow need to access non-UTF-8 strings in a lossless manner
   (e.g., if you strings contain unpaired surrogates), you may use the `get_wobbly_string()` function to get a string in the [WTF-8 format](https://simonsapin.github.io/wtf-8).
-  Or you may pass `true` as a parameter to the
   When calling `get_uint64()` and `get_int64()`, if the number does not fit in a corresponding
-  64-bit integer type, it is also considered an error.
+  64-bit integer type, it is also considered an error. When parsing numbers or other scalar values, the library checks
+  that the value is followed by an expected character, thus you *may* get a number parsing error when accessing the digits
+  as an integer in the following strings: `{"number":12332a`, `{"number":12332\0`, `{"number":12332` (the digits appear at the end). We always abide by the [RFC 8259](https://www.tbray.org/ongoing/When/201x/2017/12/14/rfc8259.html) JSON specification so that, for example, numbers prefixed by the `+` sign are in error.
 
   > IMPORTANT NOTE: values can only be parsed once. Since documents are *iterators*, once you have
   > parsed a value (such as by casting to double), you cannot get at it again. It is an error to call
@@ -1125,7 +1129,7 @@ int main(void) {
 ### Current location in document
 
 Sometimes, it might be helpful to know the current location in the document during iteration. This is especially useful when encountering errors. The `current_location()` method on a
-`document` instances makes it easy to identify common JSON errors. Users can call the `current_location()` method on a validdocument instance to retrieve a `const char *` pointer to the current location in the document. This method also works even after an error has invalidated the document and the parser (e.g. `TAPE_ERROR`, `INCOMPLETE_ARRAY_OR_OBJECT`).
+`document` instances makes it easy to identify common JSON errors. Users can call the `current_location()` method on a valid document instance to retrieve a `const char *` pointer to the current location in the document. This method also works even after an error has invalidated the document and the parser (e.g. `TAPE_ERROR`, `INCOMPLETE_ARRAY_OR_OBJECT`).
 When the input was a `padding_string` or another null-terminated source, then you may
 use the `const char *` pointer as a C string. As an example, consider the following
 example where we used the exception-free simdjson interface:
@@ -1138,9 +1142,27 @@ int64_t i;
 auto error = doc["integer"].get_int64().get(i);    // Expect to get integer from "integer" key, but get TAPE_ERROR
 if (error) {
   std::cout << error << std::endl;    // Prints TAPE_ERROR error message
+  // Recover a pointer to the location of the first error:
+  const char * ptr;
+  doc.current_location().get(ptr);
+  // ptr points at 'false, "integer": -343} " which is the location of the error
+  //
+  // Because we pad simdjson::padded_string instances with null characters, you may also do the following:
   std::cout<< doc.current_location() << std::endl;  // Prints "false, "integer": -343} " (location of TAPE_ERROR)
 }
 ```
+
+
+  auto broken_json = R"( {"double": 13.06, false, "integer": -343} )"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(broken_json).get(doc));
+  const char * ptr;
+  int64_t i;
+  ASSERT_ERROR(doc["integer"].get_int64().get(i), TAPE_ERROR);
+  ASSERT_SUCCESS(doc.current_location().get(ptr));
+  std::string expected = "false, \"integer\": -343} ";
+  ASSERT_EQUAL(std::string(ptr,expected.size()), expected);
 
 You may also use `current_location()` with exceptions as follows:
 

@@ -19,9 +19,9 @@ namespace error_location_tests {
             const char* c;
             // Must call current_location first because get_int64() will consume values
             ASSERT_SUCCESS(doc.current_location().get(c));
-            ASSERT_EQUAL(*c,expected[count]);
+            ASSERT_EQUAL(*c, expected[count]);
             ASSERT_SUCCESS(value.get_int64().get(i));
-            ASSERT_EQUAL(i,expected_values[count]);
+            ASSERT_EQUAL(i, expected_values[count]);
             count++;
         }
         ASSERT_EQUAL(count,3);
@@ -64,12 +64,14 @@ namespace error_location_tests {
         ASSERT_SUCCESS(doc.at_pointer("/a/2/1").get(i));
         ASSERT_EQUAL(i, 4);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, ",5]], \"b\": {\"c\": [1.2, 2.3]}} ");
+        std::string expected = ",5]], \"b\": {\"c\": [1.2, 2.3]}} ";
+        ASSERT_EQUAL(std::string(ptr, expected.size()), expected);
         double d;
         ASSERT_SUCCESS(doc.at_pointer("/b/c/1").get(d));
         ASSERT_EQUAL(d, 2.3);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, "]}} ");
+        expected = "]}} ";
+        ASSERT_EQUAL(std::string(ptr, expected.size()), expected);
         TEST_SUCCEED();
     }
 
@@ -83,11 +85,13 @@ namespace error_location_tests {
         double d;
         ASSERT_ERROR(doc.at_pointer("/b/c/0").get(d), NUMBER_ERROR);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, "1.2., 2.3]}} ");
+        std::string expected = "1.2., 2.3]}} ";
+        ASSERT_EQUAL(std::string(ptr, expected.size()), expected);
         uint64_t i;
         ASSERT_ERROR(doc.at_pointer("/a/2/1").get(i), TAPE_ERROR);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, "4,5]], \"b\": {\"c\": [1.2., 2.3]}} ");
+        expected = "4,5]], \"b\": {\"c\": [1.2., 2.3]}} ";
+        ASSERT_EQUAL(std::string(ptr, expected.size()), expected);
         TEST_SUCCEED();
     }
 
@@ -100,7 +104,7 @@ namespace error_location_tests {
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
         ASSERT_ERROR(doc["a"], INCORRECT_TYPE);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, "\xc3\x94\xc3\xb8\xe2\x84\xa6{\"a\":1, 3} ");
+        ASSERT_EQUAL(std::string(ptr, 18), "\xc3\x94\xc3\xb8\xe2\x84\xa6{\"a\":1, 3} ");
         TEST_SUCCEED();
     }
 
@@ -115,7 +119,7 @@ namespace error_location_tests {
         ASSERT_SUCCESS(doc.get_array().get(arr));
         ASSERT_ERROR(arr.count_elements(), TAPE_ERROR);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr - 2, "] ");
+        ASSERT_EQUAL(std::string(ptr - 2,2), "] ");
         TEST_SUCCEED();
     }
 
@@ -136,7 +140,7 @@ namespace error_location_tests {
         }
         ASSERT_EQUAL(count, 1);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, "1.23, 2] ");
+        ASSERT_EQUAL(std::string(ptr, strlen("1.23, 2] ")), "1.23, 2] ");
         TEST_SUCCEED();
     }
 
@@ -149,7 +153,7 @@ namespace error_location_tests {
         ASSERT_SUCCESS(parser.iterate(json).get(doc));
         ASSERT_ERROR(doc["b"], TAPE_ERROR);
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, "3.5, \"b\":5} ");
+        ASSERT_EQUAL(std::string(ptr, strlen("3.5, \"b\":5} ")), "3.5, \"b\":5} ");
         TEST_SUCCEED();
     }
 
@@ -164,7 +168,7 @@ namespace error_location_tests {
             ASSERT_ERROR(val, INCOMPLETE_ARRAY_OR_OBJECT);
         }
         ASSERT_SUCCESS(doc.current_location().get(ptr));
-        ASSERT_EQUAL(ptr, "[1,2,3 ");
+        ASSERT_EQUAL(std::string(ptr, strlen("[1,2,3 ")), "[1,2,3 ");
         TEST_SUCCEED();
     }
 
