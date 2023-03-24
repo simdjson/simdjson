@@ -973,7 +973,8 @@ bool current_location_tape_error() {
   int64_t i;
   ASSERT_ERROR(doc["integer"].get_int64().get(i), TAPE_ERROR);
   ASSERT_SUCCESS(doc.current_location().get(ptr));
-  ASSERT_EQUAL(ptr, "false, \"integer\": -343} ");
+  std::string expected = "false, \"integer\": -343} ";
+  ASSERT_EQUAL(std::string(ptr,expected.size()), expected);
   TEST_SUCCEED();
 }
 
@@ -987,7 +988,8 @@ bool current_location_user_error() {
   int64_t i;
   ASSERT_ERROR(doc["integer"].get_int64().get(i), INCORRECT_TYPE);
   ASSERT_SUCCESS(doc.current_location().get(ptr));
-  ASSERT_EQUAL(ptr, "[1,2,3] ");
+  std::string expected = "[1,2,3] ";
+  ASSERT_EQUAL(std::string(ptr, expected.size()), expected);
   TEST_SUCCEED();
 }
 
@@ -1021,7 +1023,8 @@ bool current_location_no_error() {
     auto error = val.get_object().get(obj);
     if (!error) {
       ASSERT_SUCCESS(doc.current_location().get(ptr));
-      ASSERT_EQUAL(ptr, "\"key\": \"value\"}, true] ");
+      std::string expected = "\"key\": \"value\"}, true] ";
+      ASSERT_EQUAL(std::string(ptr, expected.size()), expected);
     }
   }
   TEST_SUCCEED();

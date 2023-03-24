@@ -49,14 +49,22 @@ simdjson_inline simdjson_result<value> document::get_value() noexcept {
   // gets called.
   iter.assert_at_document_depth();
   switch (*iter.peek()) {
-    case '[':
-    case '{':
+    case '[': {
+      auto value_iterator = get_root_value_iterator();
+      auto error = value_iterator.check_root_array();
+      if(error) { return error; }
       return value(get_root_value_iterator());
+    }
+    case '{': {
+      auto value_iterator = get_root_value_iterator();
+      auto error = value_iterator.check_root_object();
+      if(error) { return error; }
+      return value(get_root_value_iterator());
+    }
     default:
       // Unfortunately, scalar documents are a special case in simdjson and they cannot
       // be safely converted to value instances.
       return SCALAR_DOCUMENT_AS_VALUE;
-      // return value(get_root_value_iterator());
   }
 }
 simdjson_inline simdjson_result<array> document::get_array() & noexcept {
