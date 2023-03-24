@@ -105,6 +105,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga334481c295286d926bb3bb912232e225"><td class="memItemLeft" align="right" valign="top">simdjson_warn_unused simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__array.html#ga334481c295286d926bb3bb912232e225">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value_iterator::start_root_array</a> () noexcept</td></tr>
 <tr class="memdesc:ga334481c295286d926bb3bb912232e225"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check for an opening [ and start an array iteration while at the root.  <a href="group__array.html#ga334481c295286d926bb3bb912232e225">More...</a><br /></td></tr>
 <tr class="separator:ga334481c295286d926bb3bb912232e225"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga1e023cb72adae168dc7157776976ad75"><td class="memItemLeft" align="right" valign="top">simdjson_warn_unused simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__array.html#ga1e023cb72adae168dc7157776976ad75">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value_iterator::check_root_array</a> () noexcept</td></tr>
+<tr class="memdesc:ga1e023cb72adae168dc7157776976ad75"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks whether an array could be started from the root.  <a href="group__array.html#ga1e023cb72adae168dc7157776976ad75">More...</a><br /></td></tr>
+<tr class="separator:ga1e023cb72adae168dc7157776976ad75"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga136e508ce46622b86cc901490c807578"><td class="memItemLeft" align="right" valign="top">simdjson_warn_unused simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__array.html#ga136e508ce46622b86cc901490c807578">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value_iterator::started_array</a> () noexcept</td></tr>
 <tr class="memdesc:ga136e508ce46622b86cc901490c807578"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start an array iteration, after the user has already checked and moved past the [.  <a href="group__array.html#ga136e508ce46622b86cc901490c807578">More...</a><br /></td></tr>
 <tr class="separator:ga136e508ce46622b86cc901490c807578"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -123,6 +126,37 @@ simdjson_warn_unused simdjson_inline value_iterator&#160;</td><td class="memItem
 <p>Methods to iterate over array elements. </p>
 <p>These methods generally <em>assume</em> the value is actually an object; the caller is responsible for keeping track of that fact. </p>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="ga1e023cb72adae168dc7157776976ad75"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga1e023cb72adae168dc7157776976ad75">&#9670;&nbsp;</a></span>check_root_array()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_warn_unused simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value_iterator::check_root_array </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Checks whether an array could be started from the root. </p>
+<p>May be called by start_root_array.</p>
+<dl class="section return"><dt>Returns</dt><dd>SUCCESS if it is possible to safely start an array from the root (document level). @error INCORRECT_TYPE If there is no [. @error TAPE_ERROR if there is no matching ] at end of document </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00428">428</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+
+</div>
+</div>
 <a id="ga31b0a8ce8734db9413cce31c4d9c8c8d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga31b0a8ce8734db9413cce31c4d9c8c8d">&#9670;&nbsp;</a></span>has_next_element()</h2>
 
@@ -150,7 +184,7 @@ simdjson_warn_unused simdjson_inline value_iterator&#160;</td><td class="memItem
 <p>Looks for , and ]. If ] is found, the array is finished and the iterator advances past it. Otherwise, it advances to the next value.</p>
 <dl class="section return"><dt>Returns</dt><dd>Whether there is another element in the array. @error TAPE_ERROR If there is a comma missing between elements. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00447">447</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00459">459</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -180,7 +214,7 @@ simdjson_warn_unused simdjson_inline value_iterator&#160;</td><td class="memItem
 <p>Check for an opening [ and start an array iteration. </p>
 <dl class="section return"><dt>Returns</dt><dd>Whether the array had any elements (returns false for empty). @error INCORRECT_TYPE If there is no [. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00390">390</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00396">396</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -210,7 +244,7 @@ simdjson_warn_unused simdjson_inline value_iterator&#160;</td><td class="memItem
 <p>Check for an opening [ and start an array iteration while at the root. </p>
 <dl class="section return"><dt>Returns</dt><dd>Whether the array had any elements (returns false for empty). @error INCORRECT_TYPE If there is no [. @error TAPE_ERROR if there is no matching ] at end of document </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00395">395</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00401">401</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -241,7 +275,7 @@ simdjson_warn_unused simdjson_inline value_iterator&#160;</td><td class="memItem
 <p>Does not move the iterator unless the array is empty ([]).</p>
 <dl class="section return"><dt>Returns</dt><dd>Whether the array had any elements (returns false for empty). @error INCOMPLETE_ARRAY_OR_OBJECT If there are no more tokens (implying the <em>parent</em> array or object is incomplete). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00407">407</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00413">413</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -272,7 +306,7 @@ simdjson_warn_unused simdjson_inline value_iterator&#160;</td><td class="memItem
 <p>Does not move the iterator unless the array is empty ([]).</p>
 <dl class="section return"><dt>Returns</dt><dd>Whether the array had any elements (returns false for empty). @error INCOMPLETE_ARRAY_OR_OBJECT If there are no more tokens (implying the <em>parent</em> array or object is incomplete). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00422">422</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00453">453</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
