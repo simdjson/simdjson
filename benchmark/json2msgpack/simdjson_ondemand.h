@@ -100,10 +100,6 @@ simdjson2msgpack::to_msgpack(const simdjson::padded_string &json,
     recursive_processor_ref(val);
 #endif
   }
-  if (doc.current_location().error() == simdjson::SUCCESS) {
-    // Example of error detection - this won't be reached on twitter.json in the benchmark.
-    throw "There are unexpectedly tokens after the end of the json in the json2msgpack sample data";
-  }
   return std::string_view(reinterpret_cast<char *>(buf), size_t(buff - buf));
 }
 
