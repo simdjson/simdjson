@@ -1241,8 +1241,9 @@ content.
   ondemand::array array = doc.get_array();
   for (uint64_t values : array) {
     std::cout << values << std::endl;
-    }
+  }
   if(!doc.at_end()) {
+    // In this instance, we will be left pointing at 'foo' since we have consumed the array [1,2].
     std::cerr << "trailing content at byte index " << doc.current_location() - json.data() << std::endl;
   }
 ```
