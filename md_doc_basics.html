@@ -911,8 +911,9 @@ Checking for trailing content</h2>
 <div class="line"> ondemand::array array = doc.get_array();</div>
 <div class="line"> for (uint64_t values : array) {</div>
 <div class="line">   std::cout &lt;&lt; values &lt;&lt; std::endl;</div>
-<div class="line">   }</div>
+<div class="line"> }</div>
 <div class="line"> if(!doc.at_end()) {</div>
+<div class="line">   // In this instance, we will be left pointing at &#39;foo&#39; since we have consumed the array [1,2].</div>
 <div class="line">   std::cerr &lt;&lt; &quot;trailing content at byte index &quot; &lt;&lt; doc.current_location() - json.data() &lt;&lt; std::endl;</div>
 <div class="line"> }</div>
 </div><!-- fragment --><p>The <code>at_end()</code> method is equivalent to <code>doc.current_location().error() == <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa4ffc800804829a88c5b52ac3c4c6681" title="No error.">simdjson::SUCCESS</a></code> but more convenient.</p>
