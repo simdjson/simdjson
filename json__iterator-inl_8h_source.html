@@ -301,7 +301,7 @@ $(document).ready(function(){initNavTree('json__iterator-inl_8h_source.html','')
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;          + std::string(<span class="stringliteral">&quot; ]&quot;</span>);</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;}</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160; </div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;<span class="keyword">inline</span> simdjson_result&lt;const char *&gt; json_iterator::current_location() noexcept {</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;<span class="keyword">inline</span> simdjson_result&lt;const char *&gt; json_iterator::current_location() const noexcept {</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;  <span class="keywordflow">if</span> (!is_alive()) {    <span class="comment">// Unrecoverable error</span></div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    <span class="keywordflow">if</span> (!at_root()) {</div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;      <span class="keywordflow">return</span> <span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span> *<span class="keyword">&gt;</span>(token.peek(-1));</div>

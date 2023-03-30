@@ -237,7 +237,7 @@ simdjson_warn_unused simdjson_inline <a class="el" href="namespacesimdjson.html#
 </div><!-- fragment --><p>Key is <em>raw JSON,</em> meaning it will be matched against the verbatim JSON without attempting to unescape it. This works well for typical ASCII and UTF-8 keys (almost all of them), but may fail to match some keys with escapes (\u, <br  />
 , etc.). </p>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00094">94</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00099">99</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -275,7 +275,7 @@ simdjson_warn_unused simdjson_inline <a class="el" href="namespacesimdjson.html#
 , etc.). </p>
 <p>When find_field_unordered_raw is called, we can either be pointing at the first key, pointing outside (at the closing brace) or if a key was matched we can be either pointing right afterthe ':' right before the value (that we need skip), or we may have consumed the value and we might be at a comma or at the final brace (ready for a call to has_next_field()).</p>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00191">191</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00196">196</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -306,7 +306,7 @@ simdjson_warn_unused simdjson_inline <a class="el" href="namespacesimdjson.html#
 <p>Looks for , and }. If } is found, the object is finished and the iterator advances past it. Otherwise, it advances to the next value.</p>
 <dl class="section return"><dt>Returns</dt><dd>whether there is another field in the object. @error TAPE_ERROR If there is a comma missing between fields. @error TAPE_ERROR If there is a comma, but not enough tokens remaining to have a key, :, and value. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00077">77</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00082">82</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -428,7 +428,7 @@ simdjson_warn_unused simdjson_inline <a class="el" href="namespacesimdjson.html#
 <p>Does not move the iterator unless the object is empty ({}).</p>
 <dl class="section return"><dt>Returns</dt><dd>Whether the object had any fields (returns false for empty). @error INCOMPLETE_ARRAY_OR_OBJECT If there are no more tokens (implying the <em>parent</em> array or object is incomplete). </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00062">62</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00067">67</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
