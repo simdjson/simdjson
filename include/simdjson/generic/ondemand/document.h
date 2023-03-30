@@ -511,7 +511,14 @@ public:
   /**
    * Returns the current location in the document if in bounds.
    */
-  inline simdjson_result<const char *> current_location() noexcept;
+  inline simdjson_result<const char *> current_location() const noexcept;
+
+  /**
+   * Returns true if this document has been fully parsed.
+   * If you have consumed the whole document and at_end() returns
+   * false, then there may be trailing content.
+   */
+  inline bool at_end() const noexcept;
 
   /**
    * Returns the current depth in the document if in bounds.
@@ -720,6 +727,7 @@ public:
   simdjson_inline simdjson_result<bool> is_scalar() noexcept;
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
   simdjson_inline int32_t current_depth() const noexcept;
+  simdjson_inline bool at_end() const noexcept;
   simdjson_inline bool is_negative() noexcept;
   simdjson_inline simdjson_result<bool> is_integer() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;

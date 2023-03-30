@@ -261,7 +261,7 @@ public:
   /**
    * Returns the current location in the document if in bounds.
    */
-  inline simdjson_result<const char *> current_location() noexcept;
+  inline simdjson_result<const char *> current_location() const noexcept;
 
   /**
    * Updates this json iterator so that it is back at the beginning of the document,

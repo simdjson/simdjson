@@ -20,13 +20,18 @@ inline std::string document::to_debug_string() noexcept {
   return iter.to_string();
 }
 
-inline simdjson_result<const char *> document::current_location() noexcept {
+inline simdjson_result<const char *> document::current_location() const noexcept {
   return iter.current_location();
 }
 
 inline int32_t document::current_depth() const noexcept {
   return iter.depth();
 }
+
+inline bool document::at_end() const noexcept {
+  return iter.at_end();
+}
+
 
 inline bool document::is_alive() noexcept {
   return iter.is_alive();
@@ -50,12 +55,14 @@ simdjson_inline simdjson_result<value> document::get_value() noexcept {
   iter.assert_at_document_depth();
   switch (*iter.peek()) {
     case '[': {
+      // The following lines check that the document ends with ].
       auto value_iterator = get_root_value_iterator();
       auto error = value_iterator.check_root_array();
       if(error) { return error; }
       return value(get_root_value_iterator());
     }
     case '{': {
+      // The following lines would check that the document ends with }.
       auto value_iterator = get_root_value_iterator();
       auto error = value_iterator.check_root_object();
       if(error) { return error; }
@@ -504,6 +511,12 @@ simdjson_inline simdjson_result<const char *> simdjson_result<SIMDJSON_IMPLEMENT
   if (error()) { return error(); }
   return first.current_location();
 }
+
+simdjson_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::at_end() const noexcept {
+  if (error()) { return error(); }
+  return first.at_end();
+}
+
 
 simdjson_inline int32_t simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::current_depth() const noexcept {
   if (error()) { return error(); }

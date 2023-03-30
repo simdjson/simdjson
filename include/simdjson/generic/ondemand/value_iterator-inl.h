@@ -40,6 +40,11 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::check_root_objec
   // Note that adding a check for 'streaming' is not expensive since we only have at most
   // one root element.
   if ( ! _json_iter->streaming() ) {
+    // The following lines do not fully protect against garbage content within the
+    // object: e.g., `{"a":2} foo }`. Users concerned with garbage content should
+    // call `at_end()` on the document instance at the end of the processing to
+    // ensure that the processing has finished at the end.
+    //
     if (*_json_iter->peek_last() != '}') {
       _json_iter->abandon();
       return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing } at end");
@@ -431,6 +436,11 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::check_root_array
   // Note that adding a check for 'streaming' is not expensive since we only have at most
   // one root element.
   if ( ! _json_iter->streaming() ) {
+    // The following lines do not fully protect against garbage content within the
+    // array: e.g., `[1, 2] foo]`. Users concerned with garbage content should
+    // also call `at_end()` on the document instance at the end of the processing to
+    // ensure that the processing has finished at the end.
+    //
     if (*_json_iter->peek_last() != ']') {
       _json_iter->abandon();
       return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing ] at end");

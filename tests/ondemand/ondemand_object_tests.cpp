@@ -7,6 +7,21 @@ namespace object_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
 
+  bool issue1977() {
+    TEST_START();
+    auto json = R"({"1": 2} foo })"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::object object;
+    ASSERT_SUCCESS(doc.get_object().get(object));
+    for (auto values : object) {
+      ASSERT_SUCCESS(values);
+    }
+    ASSERT_FALSE(doc.at_end());
+    TEST_SUCCEED();
+  }
+
   bool issue1745() {
     TEST_START();
     auto json = R"({
@@ -1263,7 +1278,7 @@ namespace object_tests {
   }
 
   bool run() {
-    return
+    return issue1977() &&
 #if SIMDJSON_EXCEPTIONS
            issue1965() &&
 #endif

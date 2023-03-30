@@ -9,6 +9,19 @@ using error_code=simdjson::error_code;
 
 #if SIMDJSON_EXCEPTIONS
 
+  bool at_end() {
+    auto json = R"([1, 2] foo ])"_padded;
+    ondemand::parser parser;
+    ondemand::document doc = parser.iterate(json);
+    ondemand::array array = doc.get_array();
+    for (uint64_t values : array) {
+      std::cout << values << std::endl;
+    }
+    if(!doc.at_end()) {
+      std::cerr << "trailing content at byte index " << doc.current_location() - json.data() << std::endl;
+    }
+    TEST_SUCCEED();
+  }
   bool number_tests() {
     ondemand::parser parser;
     padded_string docdata = R"([1.0, 3, 1, 3.1415,-13231232,9999999999999999999])"_padded;
@@ -978,6 +991,7 @@ bool current_location_tape_error() {
   TEST_SUCCEED();
 }
 
+
 bool current_location_user_error() {
   TEST_START();
   auto json = R"( [1,2,3] )"_padded;
@@ -1208,6 +1222,7 @@ bool example1958() {
 bool run() {
   return true
 #if SIMDJSON_EXCEPTIONS
+    && at_end()
     && example1956() && example1958()
 //    && basics_1() // Fails because twitter.json isn't in current directory. Compile test only.
     &&  basics_treewalk()
