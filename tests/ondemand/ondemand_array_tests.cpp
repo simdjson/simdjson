@@ -6,6 +6,20 @@ using namespace simdjson;
 namespace array_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
+  bool issue1977() {
+    TEST_START();
+    auto json = R"([1, 2] foo ])"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::array array;
+    ASSERT_SUCCESS(doc.get_array().get(array));
+    for (auto values : array) {
+      ASSERT_SUCCESS(values);
+    }
+    ASSERT_FALSE(doc.at_end());
+    TEST_SUCCEED();
+  }
   bool issue1588() {
     TEST_START();
     const auto json = R"({
@@ -830,6 +844,7 @@ namespace array_tests {
 
   bool run() {
     return
+           issue1977() &&
            issue1876() &&
            issue1742() &&
            empty_rewind_convoluted() &&
