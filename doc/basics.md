@@ -1868,7 +1868,7 @@ Performance Tips
 - For long streams of JSON documents, consider [`iterate_many`](iterate_many.md) and [`parse_many`](parse_many.md) for better performance.
 - If possible, refer to each object and array in your code once. For example, the following code repeatedly refers to the `"data"` key to create an object...
 	```C++
-  std::string_view make = o["data"]["make"];
+	std::string_view make = o["data"]["make"];
 	std::string_view model = o["data"]["model"];
 	std::string_view year = o["data"]["year"];
   ```
