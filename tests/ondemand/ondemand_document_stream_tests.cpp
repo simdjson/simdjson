@@ -193,6 +193,18 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool issue1977() {
+        TEST_START();
+        std::string json = R"(1111 })";
+        ondemand::parser odparser;
+        ondemand::document_stream odstream;
+        ASSERT_SUCCESS(odparser.iterate_many(json).get(odstream))
+        //size_t currindex = 0;
+        uint idx = 0;
+        for(auto doc : odstream) { (void) doc; idx++; }
+        ASSERT_TRUE(idx == 0);
+        TEST_SUCCEED();
+    }
 
     bool issue1683() {
         TEST_START();
@@ -789,6 +801,7 @@ namespace document_stream_tests {
 
     bool run() {
         return
+            issue1977() &&
             string_with_trailing() &&
             uint64_with_trailing() &&
             int64_with_trailing() &&
