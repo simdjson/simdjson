@@ -195,14 +195,16 @@ namespace document_stream_tests {
 
     bool issue1977() {
         TEST_START();
-        std::string json = R"(1111 })";
+        std::string json = R"( 1111 })";
         ondemand::parser odparser;
         ondemand::document_stream odstream;
-        ASSERT_SUCCESS(odparser.iterate_many(json).get(odstream))
-        //size_t currindex = 0;
-        uint idx = 0;
-        for(auto doc : odstream) { (void) doc; idx++; }
-        ASSERT_TRUE(idx == 0);
+        ASSERT_SUCCESS(odparser.iterate_many(json).get(odstream));
+
+        auto i = odstream.begin();
+        for (; i != odstream.end(); ++i) {
+            ASSERT_TRUE(false);
+        }
+        ASSERT_TRUE(i.current_index() == 0);
         TEST_SUCCEED();
     }
 
