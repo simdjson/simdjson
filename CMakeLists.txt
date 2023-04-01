@@ -251,7 +251,9 @@ add_subdirectory(singleheader)
 #
 add_subdirectory(tests)
 add_subdirectory(examples)
-add_subdirectory(benchmark)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8) # we only include the benchmarks on 64-bit systems.
+  add_subdirectory(benchmark)
+endif()
 add_subdirectory(fuzz)
 
 #
