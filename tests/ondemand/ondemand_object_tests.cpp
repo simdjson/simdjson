@@ -7,6 +7,22 @@ namespace object_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
 
+  bool issue1979() {
+    TEST_START();
+    auto json = R"({
+  "@avito-core/toggles:6.1.18": {
+    "add_model_review_from": true
+  }
+ })"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::object object;
+    ASSERT_SUCCESS(doc.get_object().get(object));
+    ASSERT_SUCCESS(object["@avito-core/toggles:6.1.18"].get_object().error());
+    TEST_SUCCEED();
+  }
+
   bool issue1977() {
     TEST_START();
     auto json = R"({"1": 2} foo })"_padded;
@@ -1278,7 +1294,8 @@ namespace object_tests {
   }
 
   bool run() {
-    return issue1977() &&
+    return issue1979() &&
+           issue1977() &&
 #if SIMDJSON_EXCEPTIONS
            issue1965() &&
 #endif

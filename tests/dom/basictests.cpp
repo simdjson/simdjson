@@ -956,6 +956,22 @@ namespace dom_api_tests {
     return true;
   }
 
+  bool issue1979() {
+    TEST_START();
+    auto json = R"({
+  "@avito-core/toggles:6.1.18": {
+    "add_model_review_from": true
+  }
+ })"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::element doc;
+    ASSERT_SUCCESS(parser.parse(json).get(doc));
+    simdjson::dom::object main_object;
+    ASSERT_SUCCESS(doc.get_object().get(main_object));
+    ASSERT_SUCCESS(main_object["@avito-core/toggles:6.1.18"].get_object().error())
+    TEST_SUCCEED();
+  }
+
   bool document_object_index() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "a": 1, "b": 2, "c/d": 3})");
@@ -978,14 +994,6 @@ namespace dom_api_tests {
 
     simdjson::error_code error;
     simdjson_unused element val;
-// This is disabled, see https://github.com/simdjson/simdjson/issues/1243
-//#ifndef _LIBCPP_VERSION // should work everywhere but with libc++, must include the <ciso646> header.
-//    std::tie(val,error) = object["d"];
-//    ASSERT_ERROR( error, NO_SUCH_FIELD );
-//    std::tie(std::ignore,error) = object["d"];
-//    ASSERT_ERROR( error, NO_SUCH_FIELD );
-//#endif
-    // tie(val, error) = object["d"]; fails with "no viable overloaded '='" on Apple clang version 11.0.0	    tie(val, error) = doc["d"];
     object["d"].tie(val, error);
     ASSERT_ERROR( error, NO_SUCH_FIELD );
     ASSERT_ERROR( object["d"].get(val), NO_SUCH_FIELD );
@@ -1254,6 +1262,7 @@ namespace dom_api_tests {
     #if SIMDJSON_ENABLE_DEPRECATED_API
         ParsedJson_Iterator_test() &&
     #endif
+           issue1979() &&
            object_iterator() &&
            array_iterator() &&
            object_iterator_empty() &&
