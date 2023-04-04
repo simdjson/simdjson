@@ -96,6 +96,7 @@
         "future": "cpp",
         "queue": "cpp",
         "shared_mutex": "cpp",
-        "ranges": "cpp"
+        "ranges": "cpp",
+        "span": "cpp"
     }
 }
