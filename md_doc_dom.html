@@ -123,6 +123,14 @@ The Basics: Loading and Parsing JSON Documents using the DOM front-end</h1>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">dom::parser parser;</div>
 <div class="line">dom::element doc = parser.parse(&quot;[1,2,3]&quot;_padded); // parse a string, the _padded suffix creates a simdjson::padded_string instance</div>
+</div><!-- fragment --><p>You can copy your data directly on a <code><a class="el" href="structsimdjson_1_1padded__string.html" title="String with extra allocation for ease of use with parser::parse()">simdjson::padded_string</a></code> as follows:</p>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">const char * data = &quot;my data&quot;; // 7 bytes</div>
+<div class="line">simdjson::padded_string my_padded_data(data, 7); // copies to a padded buffer</div>
+</div><!-- fragment --><p>Or as follows...</p>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">std::string data = &quot;my data&quot;;</div>
+<div class="line">simdjson::padded_string my_padded_data(data); // copies to a padded buffer</div>
 </div><!-- fragment --><p>The parsed document resulting from the <code>parser.load</code> and <code>parser.parse</code> calls depends on the <code>parser</code> instance. Thus the <code>parser</code> instance must remain in scope. Furthermore, you must have at most one parsed document in play per <code>parser</code> instance. You cannot copy a <code>parser</code> instance, you may only move it.</p>
 <p>If you need to keep a document around long term, you can keep or move the parser instance. Note that moving a parser instance, or keeping one in a movable data structure like vector or map, can cause any outstanding <code>element</code>, <code>object</code> or <code>array</code> instances to be invalidated. The <code>element</code>, <code>object</code> or <code>array</code> instances are mere thin wrappers akin to an <code>std::vector&lt;int&gt;::iterator</code>: they are invalid when default constructed, they must be tied to a valid document instance. If you need to store a parser in a movable data structure, you should use a <code>std::unique_ptr</code> to avoid this invalidation(e.g., <code>std::unique_ptr&lt;dom::parser&gt; parser(new dom::parser{})</code>).</p>
 <p>During the<code>load</code> or <code>parse</code> calls, neither the input file nor the input string are ever modified. After calling <code>load</code> or <code>parse</code>, the source (either a file or a string) can be safely discarded. All of the JSON data is stored in the <code>parser</code> instance. The parsed document is also immutable in simdjson: you do not modify it by accessing it.</p>

@@ -208,7 +208,15 @@ The Basics: Loading and Parsing JSON Documents</h1>
 <div class="line">strcpy(json, &quot;[1]&quot;);</div>
 <div class="line">ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));</div>
 </div><!-- fragment --><p>The simdjson library will also accept <code>std::string</code> instances, as long as the <code>capacity()</code> of the string exceeds the <code>size()</code> by at least <code>SIMDJSON_PADDING</code>. You can increase the <code>capacity()</code> with the <code>reserve()</code> function of your strings.</p>
-<p>We recommend against creating many <code>std::string</code> or many <code>std::padding_string</code> instances in your application to store your JSON data. Consider reusing the same buffers and limiting memory allocations.</p>
+<p>You can copy your data directly on a <code><a class="el" href="structsimdjson_1_1padded__string.html" title="String with extra allocation for ease of use with parser::parse()">simdjson::padded_string</a></code> as follows:</p>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">const char * data = &quot;my data&quot;; // 7 bytes</div>
+<div class="line">simdjson::padded_string my_padded_data(data, 7); // copies to a padded buffer</div>
+</div><!-- fragment --><p>Or as follows...</p>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">std::string data = &quot;my data&quot;;</div>
+<div class="line">simdjson::padded_string my_padded_data(data); // copies to a padded buffer</div>
+</div><!-- fragment --><p>We recommend against creating many <code>std::string</code> or many <code>std::padding_string</code> instances in your application to store your JSON data. Consider reusing the same buffers and limiting memory allocations.</p>
 <p>By default, the simdjson library throws exceptions (<code>simdjson_error</code>) on errors. We omit <code>try</code>-<code>catch</code> clauses from our illustrating examples: if you omit <code>try</code>-<code>catch</code> in your code, an uncaught exception will halt your program. It is also possible to use simdjson without generating exceptions, and you may even build the library without exception support at all. See <a href="#error-handling">Error Handling</a> for details.</p>
 <h1><a class="anchor" id="autotoc_md6"></a>
 Documents are Iterators</h1>
