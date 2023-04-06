@@ -182,6 +182,21 @@ ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
 The simdjson library will also accept `std::string` instances, as long as the `capacity()` of
 the string exceeds the `size()` by at least `SIMDJSON_PADDING`. You can increase the `capacity()` with the `reserve()` function of your strings.
 
+You can copy your data directly on a `simdjson::padded_string` as follows:
+
+```c++
+const char * data = "my data"; // 7 bytes
+simdjson::padded_string my_padded_data(data, 7); // copies to a padded buffer
+```
+
+Or as follows...
+
+```c++
+std::string data = "my data";
+simdjson::padded_string my_padded_data(data); // copies to a padded buffer
+```
+
+
 We recommend against creating many `std::string` or many `std::padding_string` instances in your application to store your JSON data.
 Consider reusing the same buffers and limiting memory allocations.
 

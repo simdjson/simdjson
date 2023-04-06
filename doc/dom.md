@@ -45,6 +45,20 @@ dom::parser parser;
 dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string, the _padded suffix creates a simdjson::padded_string instance
 ```
 
+You can copy your data directly on a `simdjson::padded_string` as follows:
+
+```c++
+const char * data = "my data"; // 7 bytes
+simdjson::padded_string my_padded_data(data, 7); // copies to a padded buffer
+```
+
+Or as follows...
+
+```c++
+std::string data = "my data";
+simdjson::padded_string my_padded_data(data); // copies to a padded buffer
+```
+
 The parsed document resulting from the `parser.load` and `parser.parse` calls depends on the `parser` instance. Thus the `parser` instance must remain in scope. Furthermore, you must have at most one parsed document in play per `parser` instance.
 You cannot copy a `parser` instance, you may only move it.
 

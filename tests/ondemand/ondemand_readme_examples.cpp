@@ -5,6 +5,19 @@ using namespace std;
 using namespace simdjson;
 using error_code=simdjson::error_code;
 
+bool string1() {
+  const char * data = "my data"; // 7 bytes
+  simdjson::padded_string my_padded_data(data, 7); // copies to a padded buffer
+  std::cout << my_padded_data << std::endl;
+  return true;
+}
+
+bool string2() {
+  std::string data = "my data";
+  simdjson::padded_string my_padded_data(data); // copies to a padded buffer
+  std::cout << my_padded_data << std::endl;
+  return true;
+}
 
 
 #if SIMDJSON_EXCEPTIONS
