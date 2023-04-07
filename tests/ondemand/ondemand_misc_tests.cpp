@@ -5,6 +5,29 @@ using namespace simdjson;
 
 namespace misc_tests {
   using namespace std;
+  bool issue1981_success() {
+    auto error_phrase = R"(false)"_padded;
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(error_phrase).get(doc));
+    bool b;
+    ASSERT_SUCCESS( doc.get_bool().get(b));
+    ASSERT_FALSE(b);
+    TEST_SUCCEED();
+  }
+
+  bool issue1981_failure() {
+    auto error_phrase = R"(falseA)"_padded;
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(error_phrase).get(doc));
+    bool b;
+    ASSERT_ERROR( doc.get_bool().get(b), INCORRECT_TYPE);
+    TEST_SUCCEED();
+  }
+
   bool replacement_char() {
     auto fun_phrase = R"( ["I \u2665 Unicode. Even broken \ud800 Unicode." ])"_padded;
     std::string_view expected_fun = "I \xe2\x99\xa5 Unicode. Even broken \xef\xbf\xbd Unicode.";
@@ -570,6 +593,8 @@ namespace misc_tests {
 
   bool run() {
     return
+           issue1981_success() &&
+           issue1981_failure() &&
            replacement_char() &&
            wobbly_tests() &&
            issue_uffff() &&
