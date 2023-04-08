@@ -114,6 +114,7 @@ simdjson_inline bool assert_iterate_error(T &arr, simdjson::error_code expected,
 #define ASSERT_EQUAL(ACTUAL, EXPECTED)  do { if (!::assert_equal  ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
 #define ASSERT_RESULT(ACTUAL, EXPECTED) do { if (!::assert_result ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
 #define ASSERT_SUCCESS(ACTUAL)          do { if (!::assert_success((ACTUAL),             #ACTUAL)) { return false; } } while (0);
+#define ASSERT_FAILURE(ACTUAL)          do { if (::assert_success((ACTUAL),             #ACTUAL)) { return false; } } while (0);
 #define ASSERT_ERROR(ACTUAL, EXPECTED)  do { if (!::assert_error  ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
 #define ASSERT_TRUE(ACTUAL)             do { if (!::assert_true   ((ACTUAL),             #ACTUAL)) { return false; } } while (0);
 #define ASSERT_FALSE(ACTUAL)             do { if (!::assert_false   ((ACTUAL),             #ACTUAL)) { return false; } } while (0);
