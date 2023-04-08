@@ -1,4 +1,4 @@
-/* auto-generated on 2023-03-13 21:26:32 -0400. Do not edit! */
+/* auto-generated on 2023-04-08 16:11:40 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -43,7 +43,7 @@
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "3.1.6"
+#define SIMDJSON_VERSION "3.1.7"
 
 namespace simdjson {
 enum {
@@ -58,7 +58,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 6
+  SIMDJSON_VERSION_REVISION = 7
 };
 } // namespace simdjson
 
@@ -3821,9 +3821,8 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
   if (padded_buffer == nullptr) {
     return nullptr;
   }
-  // We write zeroes in the padded region to avoid having uninitized
-  // garbage. If nothing else, garbage getting read might trigger a
-  // warning in a memory checking.
+  // We write nulls in the padded region to avoid having uninitialized
+  // content which may trigger warning for some sanitizers
   std::memset(padded_buffer + length, 0, totalpaddedlength - length);
   return padded_buffer;
 } // allocate_padded_buffer()
@@ -3853,7 +3852,7 @@ inline padded_string::padded_string(std::string_view sv_) noexcept
     : viable_size(sv_.size()), data_ptr(internal::allocate_padded_buffer(sv_.size())) {
   if(simdjson_unlikely(!data_ptr)) {
     //allocation failed or zero size
-    viable_size=0;
+    viable_size = 0;
     return;
   }
   if (sv_.size()) {
@@ -23564,7 +23563,12 @@ public:
    */
   simdjson_inline error_code optional_error(error_code error, const char *message) noexcept;
 
-  template<int N> simdjson_warn_unused simdjson_inline bool copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t (&tmpbuf)[N]) noexcept;
+  /**
+   * Take an input in json containing max_len characters and attempt to copy it over to tmpbuf, a buffer with
+   * N bytes of capacity. It will return false if N is too small (smaller than max_len) of if it is zero.
+   * The buffer (tmpbuf) is padded with space characters.
+   */
+  simdjson_warn_unused simdjson_inline bool copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t *tmpbuf, size_t N) noexcept;
 
   simdjson_inline token_position position() const noexcept;
   /**
@@ -23587,7 +23591,7 @@ public:
   /**
    * Returns the current location in the document if in bounds.
    */
-  inline simdjson_result<const char *> current_location() noexcept;
+  inline simdjson_result<const char *> current_location() const noexcept;
 
   /**
    * Updates this json iterator so that it is back at the beginning of the document,
@@ -23751,7 +23755,14 @@ public:
    * @error TAPE_ERROR if there is no matching } at end of document
    */
   simdjson_warn_unused simdjson_inline simdjson_result<bool> start_root_object() noexcept;
-
+  /**
+   * Checks whether an object could be started from the root. May be called by start_root_object.
+   *
+   * @returns SUCCESS if it is possible to safely start an object from the root (document level).
+   * @error INCORRECT_TYPE if there is no opening {
+   * @error TAPE_ERROR if there is no matching } at end of document
+   */
+  simdjson_warn_unused simdjson_inline error_code check_root_object() noexcept;
   /**
    * Start an object iteration after the user has already checked and moved past the {.
    *
@@ -23876,7 +23887,14 @@ public:
    * @error TAPE_ERROR if there is no matching ] at end of document
    */
   simdjson_warn_unused simdjson_inline simdjson_result<bool> start_root_array() noexcept;
-
+  /**
+   * Checks whether an array could be started from the root. May be called by start_root_array.
+   *
+   * @returns SUCCESS if it is possible to safely start an array from the root (document level).
+   * @error INCORRECT_TYPE If there is no [.
+   * @error TAPE_ERROR if there is no matching ] at end of document
+   */
+  simdjson_warn_unused simdjson_inline error_code check_root_array() noexcept;
   /**
    * Start an array iteration, after the user has already checked and moved past the [.
    *
@@ -24980,7 +24998,14 @@ public:
   /**
    * Returns the current location in the document if in bounds.
    */
-  inline simdjson_result<const char *> current_location() noexcept;
+  inline simdjson_result<const char *> current_location() const noexcept;
+
+  /**
+   * Returns true if this document has been fully parsed.
+   * If you have consumed the whole document and at_end() returns
+   * false, then there may be trailing content.
+   */
+  inline bool at_end() const noexcept;
 
   /**
    * Returns the current depth in the document if in bounds.
@@ -25189,6 +25214,7 @@ public:
   simdjson_inline simdjson_result<bool> is_scalar() noexcept;
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
   simdjson_inline int32_t current_depth() const noexcept;
+  simdjson_inline bool at_end() const noexcept;
   simdjson_inline bool is_negative() noexcept;
   simdjson_inline simdjson_result<bool> is_integer() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
@@ -27911,7 +27937,7 @@ inline std::string json_iterator::to_string() const noexcept {
           + std::string(" ]");
 }
 
-inline simdjson_result<const char *> json_iterator::current_location() noexcept {
+inline simdjson_result<const char *> json_iterator::current_location() const noexcept {
   if (!is_alive()) {    // Unrecoverable error
     if (!at_root()) {
       return reinterpret_cast<const char *>(token.peek(-1));
@@ -28061,19 +28087,16 @@ simdjson_inline error_code json_iterator::optional_error(error_code _error, cons
   return _error;
 }
 
-template<int N>
-simdjson_warn_unused simdjson_inline bool json_iterator::copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t (&tmpbuf)[N]) noexcept {
+
+simdjson_warn_unused simdjson_inline bool json_iterator::copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t *tmpbuf, size_t N) noexcept {
+  // This function is not expected to be called in performance-sensitive settings.
   // Let us guard against silly cases:
   if((N < max_len) || (N == 0)) { return false; }
-  // Truncate whitespace to fit the buffer.
-  if (max_len > N-1) {
-    // if (jsoncharutils::is_not_structural_or_whitespace(json[N-1])) { return false; }
-    max_len = N-1;
-  }
-
   // Copy to the buffer.
   std::memcpy(tmpbuf, json, max_len);
-  tmpbuf[max_len] = ' ';
+  if(N > max_len) { // We pad whatever remains with ' '.
+    std::memset(tmpbuf + max_len, ' ', N - max_len);
+  }
   return true;
 }
 
@@ -28127,12 +28150,17 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::start
   return true;
 }
 
-simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::started_root_object() noexcept {
+simdjson_warn_unused simdjson_inline error_code value_iterator::check_root_object() noexcept {
   // When in streaming mode, we cannot expect peek_last() to be the last structural element of the
   // current document. It only works in the normal mode where we have indexed a single document.
   // Note that adding a check for 'streaming' is not expensive since we only have at most
   // one root element.
   if ( ! _json_iter->streaming() ) {
+    // The following lines do not fully protect against garbage content within the
+    // object: e.g., `{"a":2} foo }`. Users concerned with garbage content should
+    // call `at_end()` on the document instance at the end of the processing to
+    // ensure that the processing has finished at the end.
+    //
     if (*_json_iter->peek_last() != '}') {
       _json_iter->abandon();
       return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing } at end");
@@ -28149,6 +28177,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::start
       return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "the document is unbalanced");
     }
   }
+  return SUCCESS;
+}
+
+simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::started_root_object() noexcept {
+  auto error = check_root_object();
+  if(error) { return error; }
   return started_object();
 }
 
@@ -28512,12 +28546,17 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::start
   return true;
 }
 
-simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::started_root_array() noexcept {
+simdjson_warn_unused simdjson_inline error_code value_iterator::check_root_array() noexcept {
   // When in streaming mode, we cannot expect peek_last() to be the last structural element of the
   // current document. It only works in the normal mode where we have indexed a single document.
   // Note that adding a check for 'streaming' is not expensive since we only have at most
   // one root element.
   if ( ! _json_iter->streaming() ) {
+    // The following lines do not fully protect against garbage content within the
+    // array: e.g., `[1, 2] foo]`. Users concerned with garbage content should
+    // also call `at_end()` on the document instance at the end of the processing to
+    // ensure that the processing has finished at the end.
+    //
     if (*_json_iter->peek_last() != ']') {
       _json_iter->abandon();
       return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing ] at end");
@@ -28534,6 +28573,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::start
       return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "the document is unbalanced");
     }
   }
+  return SUCCESS;
+}
+
+simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::started_root_array() noexcept {
+  auto error = check_root_array();
+  if (error) { return error; }
   return started_array();
 }
 
@@ -28644,7 +28689,7 @@ simdjson_inline simdjson_result<bool> value_iterator::is_root_integer(bool check
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("is_root_integer");
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     return false; // if there are more than 20 characters, it cannot be represented as an integer.
   }
   auto answer = numberparsing::is_integer(tmpbuf);
@@ -28662,7 +28707,7 @@ simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::numbe
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
   uint8_t tmpbuf[1074+8+1];
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
   }
@@ -28677,7 +28722,7 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
   uint8_t tmpbuf[1074+8+1];
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
   }
@@ -28705,7 +28750,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
   }
@@ -28720,7 +28765,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
   uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
   }
@@ -28735,7 +28780,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
   uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
   }
@@ -28751,7 +28796,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
   uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
   }
@@ -28770,7 +28815,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
   uint8_t tmpbuf[1074+8+1];
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
   }
@@ -28789,7 +28834,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
   uint8_t tmpbuf[1074+8+1];
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) {
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
   }
@@ -28804,7 +28849,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_r
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("bool");
   uint8_t tmpbuf[5+1];
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf)) { return incorrect_type_error("Not a boolean"); }
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 5+1)) { return incorrect_type_error("Not a boolean"); }
   auto result = parse_bool(tmpbuf);
   if(result.error() == SUCCESS) {
     if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
@@ -29533,13 +29578,18 @@ inline std::string document::to_debug_string() noexcept {
   return iter.to_string();
 }
 
-inline simdjson_result<const char *> document::current_location() noexcept {
+inline simdjson_result<const char *> document::current_location() const noexcept {
   return iter.current_location();
 }
 
 inline int32_t document::current_depth() const noexcept {
   return iter.depth();
 }
+
+inline bool document::at_end() const noexcept {
+  return iter.at_end();
+}
+
 
 inline bool document::is_alive() noexcept {
   return iter.is_alive();
@@ -29562,14 +29612,24 @@ simdjson_inline simdjson_result<value> document::get_value() noexcept {
   // gets called.
   iter.assert_at_document_depth();
   switch (*iter.peek()) {
-    case '[':
-    case '{':
+    case '[': {
+      // The following lines check that the document ends with ].
+      auto value_iterator = get_root_value_iterator();
+      auto error = value_iterator.check_root_array();
+      if(error) { return error; }
       return value(get_root_value_iterator());
+    }
+    case '{': {
+      // The following lines would check that the document ends with }.
+      auto value_iterator = get_root_value_iterator();
+      auto error = value_iterator.check_root_object();
+      if(error) { return error; }
+      return value(get_root_value_iterator());
+    }
     default:
       // Unfortunately, scalar documents are a special case in simdjson and they cannot
       // be safely converted to value instances.
       return SCALAR_DOCUMENT_AS_VALUE;
-      // return value(get_root_value_iterator());
   }
 }
 simdjson_inline simdjson_result<array> document::get_array() & noexcept {
@@ -30009,6 +30069,12 @@ simdjson_inline simdjson_result<const char *> simdjson_result<SIMDJSON_BUILTIN_I
   if (error()) { return error(); }
   return first.current_location();
 }
+
+simdjson_inline bool simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::at_end() const noexcept {
+  if (error()) { return error(); }
+  return first.at_end();
+}
+
 
 simdjson_inline int32_t simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::document>::current_depth() const noexcept {
   if (error()) { return error(); }

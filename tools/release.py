@@ -177,7 +177,7 @@ readmefile = maindir + os.sep + "README.md"
 readmedata = open(readmefile).read()
 m = pattern.search(readmedata)
 if m == None:
-    print(colored(255, 0, 0, 'I cannot find a link to the API documentation in your README?????'))
+    print('I cannot find a link to the API documentation in your README')
 else:
     detectedreadme = m.group(1)
     print("found a link to your API documentation in the README file: "+detectedreadme+" ("+toversionstring(*newversion)+")")
