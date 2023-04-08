@@ -238,7 +238,12 @@ public:
    */
   simdjson_inline error_code optional_error(error_code error, const char *message) noexcept;
 
-  template<int N> simdjson_warn_unused simdjson_inline bool copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t (&tmpbuf)[N]) noexcept;
+  /**
+   * Take an input in json containing max_len characters and attempt to copy it over to tmpbuf, a buffer with
+   * N bytes of capacity. It will return false if N is too small (smaller than max_len) of if it is zero.
+   * The buffer (tmpbuf) is padded with space characters.
+   */
+  simdjson_warn_unused simdjson_inline bool copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t *tmpbuf, size_t N) noexcept;
 
   simdjson_inline token_position position() const noexcept;
   /**

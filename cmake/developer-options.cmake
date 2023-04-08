@@ -90,6 +90,8 @@ if(NOT is_multi_config AND NOT CMAKE_BUILD_TYPE)
   if(SIMDJSON_SANITIZE OR SIMDJSON_SANITIZE_UNDEFINED)
     message(STATUS "No build type selected and you have enabled the sanitizer, \
 default to Debug. Consider setting CMAKE_BUILD_TYPE.")
+    message(STATUS "Setting debug optimization flag to -O1 to help sanitizer.")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O1" CACHE STRING "" FORCE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
   else()
     message(STATUS "No build type selected, default to Release")

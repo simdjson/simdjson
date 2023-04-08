@@ -358,19 +358,16 @@ simdjson_inline error_code json_iterator::optional_error(error_code _error, cons
   return _error;
 }
 
-template<int N>
-simdjson_warn_unused simdjson_inline bool json_iterator::copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t (&tmpbuf)[N]) noexcept {
+
+simdjson_warn_unused simdjson_inline bool json_iterator::copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t *tmpbuf, size_t N) noexcept {
+  // This function is not expected to be called in performance-sensitive settings.
   // Let us guard against silly cases:
   if((N < max_len) || (N == 0)) { return false; }
-  // Truncate whitespace to fit the buffer.
-  if (max_len > N-1) {
-    // if (jsoncharutils::is_not_structural_or_whitespace(json[N-1])) { return false; }
-    max_len = N-1;
-  }
-
   // Copy to the buffer.
   std::memcpy(tmpbuf, json, max_len);
-  tmpbuf[max_len] = ' ';
+  if(N > max_len) { // We pad whatever remains with ' '.
+    std::memset(tmpbuf + max_len, ' ', N - max_len);
+  }
   return true;
 }
 
