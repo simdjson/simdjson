@@ -658,7 +658,7 @@ $(document).ready(function(){initNavTree('value__iterator-inl_8h_source.html',''
 <div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160;  <span class="keyword">auto</span> max_len = peek_start_length();</div>
 <div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;  <span class="keyword">auto</span> json = peek_root_scalar(<span class="stringliteral">&quot;is_root_integer&quot;</span>);</div>
 <div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;  uint8_t tmpbuf[20+1]; <span class="comment">// &lt;20 digits&gt; is the longest possible unsigned integer</span></div>
-<div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf)) {</div>
+<div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf, 20+1)) {</div>
 <div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">false</span>; <span class="comment">// if there are more than 20 characters, it cannot be represented as an integer.</span></div>
 <div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;  }</div>
 <div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;  <span class="keyword">auto</span> answer = numberparsing::is_integer(tmpbuf);</div>
@@ -676,7 +676,7 @@ $(document).ready(function(){initNavTree('value__iterator-inl_8h_source.html',''
 <div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;  <span class="comment">// 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest</span></div>
 <div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;  <span class="comment">// number: -0.&lt;fraction&gt;e-308.</span></div>
 <div class="line"><a name="l00593"></a><span class="lineno">  593</span>&#160;  uint8_t tmpbuf[1074+8+1];</div>
-<div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf)) {</div>
+<div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {</div>
 <div class="line"><a name="l00595"></a><span class="lineno">  595</span>&#160;    logger::log_error(*_json_iter, start_position(), depth(), <span class="stringliteral">&quot;Root number more than 1082 characters&quot;</span>);</div>
 <div class="line"><a name="l00596"></a><span class="lineno">  596</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9adfcabbbd1ddb0843a0f320e062866ae8">NUMBER_ERROR</a>;</div>
 <div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160;  }</div>
@@ -691,7 +691,7 @@ $(document).ready(function(){initNavTree('value__iterator-inl_8h_source.html',''
 <div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;  <span class="comment">// 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest</span></div>
 <div class="line"><a name="l00607"></a><span class="lineno">  607</span>&#160;  <span class="comment">// number: -0.&lt;fraction&gt;e-308.</span></div>
 <div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160;  uint8_t tmpbuf[1074+8+1];</div>
-<div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf)) {</div>
+<div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {</div>
 <div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;    logger::log_error(*_json_iter, start_position(), depth(), <span class="stringliteral">&quot;Root number more than 1082 characters&quot;</span>);</div>
 <div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9adfcabbbd1ddb0843a0f320e062866ae8">NUMBER_ERROR</a>;</div>
 <div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;  }</div>
@@ -719,7 +719,7 @@ $(document).ready(function(){initNavTree('value__iterator-inl_8h_source.html',''
 <div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;  <span class="keyword">auto</span> max_len = peek_start_length();</div>
 <div class="line"><a name="l00635"></a><span class="lineno">  635</span>&#160;  <span class="keyword">auto</span> json = peek_root_scalar(<span class="stringliteral">&quot;uint64&quot;</span>);</div>
 <div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;  uint8_t tmpbuf[20+1]; <span class="comment">// &lt;20 digits&gt; is the longest possible unsigned integer</span></div>
-<div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf)) {</div>
+<div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf, 20+1)) {</div>
 <div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;    logger::log_error(*_json_iter, start_position(), depth(), <span class="stringliteral">&quot;Root number more than 20 characters&quot;</span>);</div>
 <div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9adfcabbbd1ddb0843a0f320e062866ae8">NUMBER_ERROR</a>;</div>
 <div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;  }</div>
@@ -734,7 +734,7 @@ $(document).ready(function(){initNavTree('value__iterator-inl_8h_source.html',''
 <div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;  <span class="keyword">auto</span> max_len = peek_start_length();</div>
 <div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;  <span class="keyword">auto</span> json = peek_root_scalar(<span class="stringliteral">&quot;uint64&quot;</span>);</div>
 <div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;  uint8_t tmpbuf[20+1]; <span class="comment">// &lt;20 digits&gt; is the longest possible unsigned integer</span></div>
-<div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf)) {</div>
+<div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf, 20+1)) {</div>
 <div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;    logger::log_error(*_json_iter, start_position(), depth(), <span class="stringliteral">&quot;Root number more than 20 characters&quot;</span>);</div>
 <div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9adfcabbbd1ddb0843a0f320e062866ae8">NUMBER_ERROR</a>;</div>
 <div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;  }</div>
@@ -749,7 +749,7 @@ $(document).ready(function(){initNavTree('value__iterator-inl_8h_source.html',''
 <div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;  <span class="keyword">auto</span> max_len = peek_start_length();</div>
 <div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;  <span class="keyword">auto</span> json = peek_root_scalar(<span class="stringliteral">&quot;int64&quot;</span>);</div>
 <div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;  uint8_t tmpbuf[20+1]; <span class="comment">// -&lt;19 digits&gt; is the longest possible integer</span></div>
-<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf)) {</div>
+<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf, 20+1)) {</div>
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;    logger::log_error(*_json_iter, start_position(), depth(), <span class="stringliteral">&quot;Root number more than 20 characters&quot;</span>);</div>
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9adfcabbbd1ddb0843a0f320e062866ae8">NUMBER_ERROR</a>;</div>
 <div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;  }</div>
@@ -765,7 +765,7 @@ $(document).ready(function(){initNavTree('value__iterator-inl_8h_source.html',''
 <div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;  <span class="keyword">auto</span> max_len = peek_start_length();</div>
 <div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;  <span class="keyword">auto</span> json = peek_root_scalar(<span class="stringliteral">&quot;int64&quot;</span>);</div>
 <div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;  uint8_t tmpbuf[20+1]; <span class="comment">// -&lt;19 digits&gt; is the longest possible integer</span></div>
-<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf)) {</div>
+<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf, 20+1)) {</div>
 <div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;    logger::log_error(*_json_iter, start_position(), depth(), <span class="stringliteral">&quot;Root number more than 20 characters&quot;</span>);</div>
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9adfcabbbd1ddb0843a0f320e062866ae8">NUMBER_ERROR</a>;</div>
 <div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;  }</div>
@@ -784,7 +784,7 @@ $(document).ready(function(){initNavTree('value__iterator-inl_8h_source.html',''
 <div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;  <span class="comment">// 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest</span></div>
 <div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;  <span class="comment">// number: -0.&lt;fraction&gt;e-308.</span></div>
 <div class="line"><a name="l00701"></a><span class="lineno">  701</span>&#160;  uint8_t tmpbuf[1074+8+1];</div>
-<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf)) {</div>
+<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {</div>
 <div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;    logger::log_error(*_json_iter, start_position(), depth(), <span class="stringliteral">&quot;Root number more than 1082 characters&quot;</span>);</div>
 <div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9adfcabbbd1ddb0843a0f320e062866ae8">NUMBER_ERROR</a>;</div>
 <div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;  }</div>
@@ -803,7 +803,7 @@ $(document).ready(function(){initNavTree('value__iterator-inl_8h_source.html',''
 <div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;  <span class="comment">// 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest</span></div>
 <div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;  <span class="comment">// number: -0.&lt;fraction&gt;e-308.</span></div>
 <div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;  uint8_t tmpbuf[1074+8+1];</div>
-<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf)) {</div>
+<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {</div>
 <div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;    logger::log_error(*_json_iter, start_position(), depth(), <span class="stringliteral">&quot;Root number more than 1082 characters&quot;</span>);</div>
 <div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9adfcabbbd1ddb0843a0f320e062866ae8">NUMBER_ERROR</a>;</div>
 <div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;  }</div>
@@ -818,7 +818,7 @@ $(document).ready(function(){initNavTree('value__iterator-inl_8h_source.html',''
 <div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;  <span class="keyword">auto</span> max_len = peek_start_length();</div>
 <div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;  <span class="keyword">auto</span> json = peek_root_scalar(<span class="stringliteral">&quot;bool&quot;</span>);</div>
 <div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;  uint8_t tmpbuf[5+1];</div>
-<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf)) { <span class="keywordflow">return</span> incorrect_type_error(<span class="stringliteral">&quot;Not a boolean&quot;</span>); }</div>
+<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;  <span class="keywordflow">if</span> (!_json_iter-&gt;copy_to_buffer(json, max_len, tmpbuf, 5+1)) { <span class="keywordflow">return</span> incorrect_type_error(<span class="stringliteral">&quot;Not a boolean&quot;</span>); }</div>
 <div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;  <span class="keyword">auto</span> result = parse_bool(tmpbuf);</div>
 <div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;  <span class="keywordflow">if</span>(result.error() == <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa4ffc800804829a88c5b52ac3c4c6681">SUCCESS</a>) {</div>
 <div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;    <span class="keywordflow">if</span> (check_trailing &amp;&amp; !_json_iter-&gt;is_single_token()) { <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9ab70f5a6f0ac798d482e95a0fcc528676">TRAILING_CONTENT</a>; }</div>
