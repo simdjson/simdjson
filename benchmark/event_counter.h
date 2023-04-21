@@ -134,7 +134,7 @@ struct event_collector {
 
 #if defined(__linux__)
   LinuxEvents<PERF_TYPE_HARDWARE> linux_events;
-  event_collector(bool quiet = false) : linux_events(vector<int>{
+  event_collector(simdjson_unused bool quiet = false) : linux_events(vector<int>{
   #if SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
     PERF_COUNT_HW_CPU_CYCLES,
     PERF_COUNT_HW_INSTRUCTIONS,
@@ -145,7 +145,7 @@ struct event_collector {
     PERF_COUNT_HW_CACHE_REFERENCES,
     PERF_COUNT_HW_CACHE_MISSES
   #endif
-  }, quiet) {}
+  }) {}
   bool has_events() {
     return linux_events.is_working();
   }
