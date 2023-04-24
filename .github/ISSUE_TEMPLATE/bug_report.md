@@ -53,6 +53,6 @@ We support up-to-date 64-bit ARM and x64 FreeBSD, macOS, Windows and Linux syste
 
 **Indicate whether you are willing or able to provide a bug fix as a pull request**
 
-If you plan to contribute to simdjson, please read our guide: 
+If you plan to contribute to simdjson, please read our guide:
 * CONTRIBUTING guide: https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md and our
 * HACKING guide: https://github.com/simdjson/simdjson/blob/master/HACKING.md
