@@ -124,6 +124,8 @@ Real-world usage
 - [Dgraph](https://github.com/dgraph-io/dgraph)
 - [UJRPC](https://github.com/unum-cloud/ujrpc)
 - [fastgltf](https://github.com/spnda/fastgltf)
+- [Clang Build Analyzer](https://github.com/aras-p/ClangBuildAnalyzer)
+- [vast](https://github.com/tenzir/vast)
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
