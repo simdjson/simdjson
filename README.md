@@ -148,6 +148,7 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 - [simdjson-go](https://github.com/minio/simdjson-go): Go port using Golang assembly.
 - [rcppsimdjson](https://github.com/eddelbuettel/rcppsimdjson): R bindings.
 - [simdjson_erlang](https://github.com/ChomperT/simdjson_erlang): erlang bindings.
+- [simdjsone](https://github.com/saleyn/simdjsone): erlang bindings.
 - [lua-simdjson](https://github.com/FourierTransformer/lua-simdjson): lua bindings.
 - [hermes-json](https://hackage.haskell.org/package/hermes-json): haskell bindings.
 - [simdjzon](https://github.com/travisstaloch/simdjzon): zig port.
