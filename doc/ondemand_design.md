@@ -752,7 +752,7 @@ On relevant systems, the On Demand API provides some support for runtime dispatc
 
 Some users wish to run at the best possible speed. Under recent Intel and AMD processors, these users should take additional steps to verify that their code is well optimized.
 
-Given that the On Demand API offer limited runtime dispatching, it matters that your code is compiled against a specific CPU target. You should verify that the code is compiled against the target you expect. Thankfully, the simdjson library will tell you exactly what it detects as an implementation: `haswell` (AVX2 x64 processors), `westmere` (SSE4 x64 processors), `arm64` (64-bit ARM), `ppc64` (64-bit POWER), `fallback` (others). Under x64 processors, many programmers will want to target `haswell` whereas under ARM, most programmers will want to target `arm64` (and it should do so automatically). The `fallback` is probably only good for testing purposes, not for deployment.
+Given that the On Demand API offer limited runtime dispatching, it matters that your code is compiled against a specific CPU target. You should verify that the code is compiled against the target you expect. Thankfully, the simdjson library will tell you exactly what it detects as an implementation: `icelake` (AVX512 x64 processors), `haswell` (AVX2 x64 processors), `westmere` (SSE4 x64 processors), `arm64` (64-bit ARM), `ppc64` (64-bit POWER), `fallback` (others). Under x64 processors, many programmers will want to target `haswell` whereas under ARM, most programmers will want to target `arm64` (and it should do so automatically). The `fallback` is probably only good for testing purposes, not for deployment.
 
 ```C++
   std::cout << simdjson::builtin_implementation()->name() << std::endl;
