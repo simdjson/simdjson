@@ -1031,7 +1031,7 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     // Prints the number of results in twitter.json
     dom::parser parser;
-    uint64_t result_count;
+    uint64_t result_count{};
     ASSERT_SUCCESS( parser.load(TWITTER_JSON)["search_metadata"]["count"].get(result_count) );
     ASSERT_EQUAL( result_count, 100 );
     return true;
