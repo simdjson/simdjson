@@ -205,6 +205,7 @@ static inline uint32_t detect_supported_architectures() {
 
   // EBX for EAX=0x1
   eax = 0x1;
+  ecx = 0x0;
   cpuid(&eax, &ebx, &ecx, &edx);
 
   if (ecx & cpuid_sse42_bit) {
