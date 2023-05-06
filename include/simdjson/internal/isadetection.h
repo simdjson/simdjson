@@ -56,7 +56,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #if defined(__APPLE__) && defined(__x86_64__)
  #include <sys/sysctl.h>
- #include <utsname.h>
+ #include <sys/utsname.h>
  #include <cstdio>
  #include <cerrno>
  #endif
