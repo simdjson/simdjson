@@ -145,7 +145,7 @@ struct event_collector {
     PERF_COUNT_HW_CACHE_REFERENCES,
     PERF_COUNT_HW_CACHE_MISSES
   #endif
-  }, quiet) {}
+  }) {}
   bool has_events() {
     return linux_events.is_working();
   }
