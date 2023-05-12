@@ -54,13 +54,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <cpuid.h>
 #endif
 
-#if defined(__APPLE__) && defined(__x86_64__)
- #include <sys/sysctl.h>
- #include <sys/utsname.h>
- #include <cstdio>
- #include <cerrno>
- #endif
-
 namespace simdjson {
 namespace internal {
 
@@ -145,59 +138,15 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
 }
 
 
- static inline uint64_t xgetbv() {
- #if defined(_MSC_VER)
-   return _xgetbv(0);
- #else
-   uint32_t xcr0_lo, xcr0_hi;
-   asm volatile("xgetbv\n\t" : "=a" (xcr0_lo), "=d" (xcr0_hi) : "c" (0));
-   return xcr0_lo | ((uint64_t)xcr0_hi << 32);
- #endif
- }
-
- #ifdef __APPLE__
- /*
-  * Due to the massive register file, macOS doesn't save the AVX512 registers until you use them.
-  * This also means that it is not advertised in XCR0. The recommended method is to use sysctl to
-  * check, and then just use an AVX512 instruction. The kernel will trap the undefined instruction
-  * and enable AVX512.
-  *
-  * However, there is another problem on versions before macOS 12.2 (Darwin 21.3.0) where the k0-k7
-  * mask registers will not be saved on a signal if the upper halves of all ZMMs are 0.
-  *
-  * See: https://github.com/golang/go/issues/49233.
-  */
- static bool mac_supports_avx512()
- {
-   // Don't unexpectedly clobber errno
-   int old_errno = errno;
-
-   uint64_t has_avx512 = 0;
-   size_t size = sizeof(uint64_t);
-   // Check if the kernel and CPU support AVX512
-   if (sysctlbyname("hw.optional.avx512f", &has_avx512, &size, nullptr, 0) < 0) {
-     has_avx512 = 0;
-   }
-   // if it doesn't or the syscall fails, has_avx512 will remain 0
-   if (has_avx512) {
-     // Now check if the kernel version is affected by the kmask bug
-     int major, minor;
-     // Get kernel version as a string with uname, as a string "major.minor.patch"
-     struct utsname uname_buf = {0};
-     (void) uname(&uname_buf);
-     // Parse the version string, ignoring the patch version.
-     if (sscanf(uname_buf.release, "%d.%d", &major, &minor) != 2) {
-       has_avx512 = 0;
-     } else {
-       // Safe versions are Darwin 21.3.0 (macOS 12.2) and above.
-        has_avx512 = (major > 21) || (major == 21 && minor >= 3);
-     }
-   }
-   // restore errno
-   errno = old_errno;
-   return has_avx512 != 0;
- }
- #endif
+static inline uint64_t xgetbv() {
+#if defined(_MSC_VER)
+  return _xgetbv(0);
+#else
+  uint32_t xcr0_lo, xcr0_hi;
+  asm volatile("xgetbv\n\t" : "=a" (xcr0_lo), "=d" (xcr0_hi) : "c" (0));
+  return xcr0_lo | ((uint64_t)xcr0_hi << 32);
+#endif
+}
 
 static inline uint32_t detect_supported_architectures() {
   uint32_t eax, ebx, ecx, edx;
@@ -245,13 +194,7 @@ static inline uint32_t detect_supported_architectures() {
     host_isa |= instruction_set::BMI2;
   }
 
-  if (!(
-     (xcr0 & cpuid_avx512_saved) == cpuid_avx512_saved
- #ifdef __APPLE__
-       // avx512 is not immediately advertised on macOS
-       || mac_supports_avx512()
- #endif
-   )) {
+  if (!((xcr0 & cpuid_avx512_saved) == cpuid_avx512_saved)) {
      return host_isa;
   }
 
