@@ -144,7 +144,7 @@ static inline uint64_t xgetbv() {
 #else
   uint32_t xcr0_lo, xcr0_hi;
   asm volatile("xgetbv\n\t" : "=a" (xcr0_lo), "=d" (xcr0_hi) : "c" (0));
-  return xcr0_lo | ((uint64_t)xcr0_hi << 32);
+  return xcr0_lo | (uint64_t(xcr0_hi) << 32);
 #endif
 }
 
