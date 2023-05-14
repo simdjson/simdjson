@@ -1,4 +1,4 @@
-/* auto-generated on 2023-04-08 16:11:40 -0400. Do not edit! */
+/* auto-generated on 2023-05-14 17:17:10 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -43,7 +43,7 @@
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "3.1.7"
+#define SIMDJSON_VERSION "3.1.8"
 
 namespace simdjson {
 enum {
@@ -58,7 +58,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 7
+  SIMDJSON_VERSION_REVISION = 8
 };
 } // namespace simdjson
 
@@ -161,7 +161,9 @@ enum {
 #elif defined(__aarch64__) || defined(_M_ARM64)
 #define SIMDJSON_IS_ARM64 1
 #elif defined(__PPC64__) || defined(_M_PPC64)
-#define SIMDJSON_IS_PPC64 1
+#if defined(__ALTIVEC__)
+#define SIMDJSON_IS_PPC64_VMX 1
+#endif // defined(__ALTIVEC__)
 #else
 #define SIMDJSON_IS_32BITS 1
 
@@ -589,7 +591,7 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 #define NONSTD_SV_LITE_H_INCLUDED
 
 #define string_view_lite_MAJOR  1
-#define string_view_lite_MINOR  6
+#define string_view_lite_MINOR  7
 #define string_view_lite_PATCH  0
 
 #define string_view_lite_VERSION  nssv_STRINGIFY(string_view_lite_MAJOR) "." nssv_STRINGIFY(string_view_lite_MINOR) "." nssv_STRINGIFY(string_view_lite_PATCH)
@@ -649,7 +651,7 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 // Control presence of exception handling (try and auto discover):
 
 #ifndef nssv_CONFIG_NO_EXCEPTIONS
-# if _MSC_VER
+# if defined(_MSC_VER)
 #  include <cstddef>    // for _HAS_EXCEPTIONS
 # endif
 # if defined(__cpp_exceptions) || defined(__EXCEPTIONS) || (_HAS_EXCEPTIONS)
@@ -659,7 +661,7 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 # endif
 #endif
 
-// C++ language version detection (C++20 is speculative):
+// C++ language version detection (C++23 is speculative):
 // Note: VC14.0/1900 (VS2015) lacks too much from C++14.
 
 #ifndef   nssv_CPLUSPLUS
@@ -675,7 +677,8 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 #define nssv_CPP11_OR_GREATER_ ( nssv_CPLUSPLUS >= 201103L )
 #define nssv_CPP14_OR_GREATER  ( nssv_CPLUSPLUS >= 201402L )
 #define nssv_CPP17_OR_GREATER  ( nssv_CPLUSPLUS >= 201703L )
-#define nssv_CPP20_OR_GREATER  ( nssv_CPLUSPLUS >= 202000L )
+#define nssv_CPP20_OR_GREATER  ( nssv_CPLUSPLUS >= 202002L )
+#define nssv_CPP23_OR_GREATER  ( nssv_CPLUSPLUS >= 202300L )
 
 // use C++17 std::string_view if available and requested:
 
@@ -865,6 +868,8 @@ using std::operator<<;
 #define nssv_HAVE_CONSTEXPR_11          nssv_CPP11_140
 #define nssv_HAVE_EXPLICIT_CONVERSION   nssv_CPP11_140
 #define nssv_HAVE_INLINE_NAMESPACE      nssv_CPP11_140
+#define nssv_HAVE_IS_DEFAULT            nssv_CPP11_140
+#define nssv_HAVE_IS_DELETE             nssv_CPP11_140
 #define nssv_HAVE_NOEXCEPT              nssv_CPP11_140
 #define nssv_HAVE_NULLPTR               nssv_CPP11_100
 #define nssv_HAVE_REF_QUALIFIER         nssv_CPP11_140
@@ -1046,6 +1051,17 @@ nssv_DISABLE_MSVC_WARNINGS( 4455 26481 26472 )
 
 namespace nonstd { namespace sv_lite {
 
+//
+// basic_string_view declaration:
+//
+
+template
+<
+    class CharT,
+    class Traits = std::char_traits<CharT>
+>
+class basic_string_view;
+
 namespace detail {
 
 // support constexpr comparison in C++14;
@@ -1113,14 +1129,33 @@ inline nssv_constexpr14 std::size_t length( CharT * s )
 
 #endif // OPTIMIZE
 
-} // namespace detail
+#if nssv_CPP11_OR_GREATER && ! nssv_CPP17_OR_GREATER
+#if defined(__OPTIMIZE__)
 
-template
-<
-    class CharT,
-    class Traits = std::char_traits<CharT>
->
-class basic_string_view;
+// gcc, clang provide __OPTIMIZE__
+// Expect tail call optimization to make search() non-recursive:
+
+template< class CharT, class Traits = std::char_traits<CharT> >
+constexpr const CharT* search( basic_string_view<CharT, Traits> haystack, basic_string_view<CharT, Traits> needle )
+{
+    return haystack.starts_with( needle ) ? haystack.begin() :
+        haystack.empty() ? haystack.end() : search( haystack.substr(1), needle );
+}
+
+#else // OPTIMIZE
+
+// non-recursive:
+
+template< class CharT, class Traits = std::char_traits<CharT> >
+constexpr const CharT* search( basic_string_view<CharT, Traits> haystack, basic_string_view<CharT, Traits> needle )
+{
+    return std::search( haystack.begin(), haystack.end(), needle.begin(), needle.end() );
+}
+
+#endif // OPTIMIZE
+#endif // nssv_CPP11_OR_GREATER && ! nssv_CPP17_OR_GREATER
+
+} // namespace detail
 
 //
 // basic_string_view:
@@ -1147,7 +1182,7 @@ public:
     typedef const_pointer iterator;
     typedef const_pointer const_iterator;
     typedef std::reverse_iterator< const_iterator > reverse_iterator;
-    typedef	std::reverse_iterator< const_iterator > const_reverse_iterator;
+    typedef std::reverse_iterator< const_iterator > const_reverse_iterator;
 
     typedef std::size_t     size_type;
     typedef std::ptrdiff_t  difference_type;
@@ -1183,6 +1218,14 @@ public:
         , size_( Traits::length(s) )
 #endif
     {}
+
+#if  nssv_HAVE_NULLPTR
+# if nssv_HAVE_IS_DELETE
+    nssv_constexpr basic_string_view( std::nullptr_t ) nssv_noexcept = delete;
+# else
+    private: nssv_constexpr basic_string_view( std::nullptr_t ) nssv_noexcept; public:
+# endif
+#endif
 
     // Assignment:
 
@@ -1381,25 +1424,30 @@ public:
 
     // find(), 4x:
 
-    nssv_constexpr14 size_type find( basic_string_view v, size_type pos = 0 ) const nssv_noexcept  // (1)
+    nssv_constexpr size_type find( basic_string_view v, size_type pos = 0 ) const nssv_noexcept  // (1)
     {
         return assert( v.size() == 0 || v.data() != nssv_nullptr )
             , pos >= size()
-            ? npos
-            : to_pos( std::search( cbegin() + pos, cend(), v.cbegin(), v.cend(), Traits::eq ) );
+            ? npos : to_pos(
+#if nssv_CPP11_OR_GREATER && ! nssv_CPP17_OR_GREATER
+                detail::search( substr(pos), v )
+#else
+                std::search( cbegin() + pos, cend(), v.cbegin(), v.cend(), Traits::eq )
+#endif
+            );
     }
 
-    nssv_constexpr14 size_type find( CharT c, size_type pos = 0 ) const nssv_noexcept  // (2)
+    nssv_constexpr size_type find( CharT c, size_type pos = 0 ) const nssv_noexcept  // (2)
     {
         return find( basic_string_view( &c, 1 ), pos );
     }
 
-    nssv_constexpr14 size_type find( CharT const * s, size_type pos, size_type n ) const  // (3)
+    nssv_constexpr size_type find( CharT const * s, size_type pos, size_type n ) const  // (3)
     {
         return find( basic_string_view( s, n ), pos );
     }
 
-    nssv_constexpr14 size_type find( CharT const * s, size_type pos = 0 ) const  // (4)
+    nssv_constexpr size_type find( CharT const * s, size_type pos = 0 ) const  // (4)
     {
         return find( basic_string_view( s ), pos );
     }
@@ -1958,7 +2006,7 @@ Stream & write_to_stream( Stream & os, View const & sv )
 {
     typename Stream::sentry sentry( os );
 
-    if ( !os )
+    if ( !sentry )
         return os;
 
     const std::streamsize length = static_cast<std::streamsize>( sv.length() );
@@ -3187,7 +3235,6 @@ POSSIBILITY OF SUCH DAMAGE.
 namespace simdjson {
 namespace internal {
 
-
 enum instruction_set {
   DEFAULT = 0x0,
   NEON = 0x1,
@@ -3237,7 +3284,10 @@ constexpr uint32_t cpuid_avx512cd_bit = 1 << 28;    ///< @private bit 28 of EBX 
 constexpr uint32_t cpuid_avx512bw_bit = 1 << 30;    ///< @private bit 30 of EBX for EAX=0x7
 constexpr uint32_t cpuid_avx512vl_bit = 1U << 31;    ///< @private bit 31 of EBX for EAX=0x7
 constexpr uint32_t cpuid_avx512vbmi2_bit = 1 << 6;  ///< @private bit 6 of ECX for EAX=0x7
+constexpr uint64_t cpuid_avx256_saved = uint64_t(1) << 2; ///< @private bit 2 = AVX
+constexpr uint64_t cpuid_avx512_saved = uint64_t(7) << 5; ///< @private bits 5,6,7 = opmask, ZMM_hi256, hi16_ZMM
 constexpr uint32_t cpuid_sse42_bit = 1 << 20;       ///< @private bit 20 of ECX for EAX=0x1
+constexpr uint32_t cpuid_osxsave = (uint32_t(1) << 26) | (uint32_t(1) << 27); ///< @private bits 26+27 of ECX for EAX=0x1
 constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1;    ///< @private bit  1 of ECX for EAX=0x1
 }
 
@@ -3247,7 +3297,7 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
                          uint32_t *edx) {
 #if defined(_MSC_VER)
   int cpu_info[4];
-  __cpuid(cpu_info, *eax);
+  __cpuidex(cpu_info, *eax, *ecx);
   *eax = cpu_info[0];
   *ebx = cpu_info[1];
   *ecx = cpu_info[2];
@@ -3265,9 +3315,47 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
 #endif
 }
 
+
+static inline uint64_t xgetbv() {
+#if defined(_MSC_VER)
+  return _xgetbv(0);
+#else
+  uint32_t xcr0_lo, xcr0_hi;
+  asm volatile("xgetbv\n\t" : "=a" (xcr0_lo), "=d" (xcr0_hi) : "c" (0));
+  return xcr0_lo | (uint64_t(xcr0_hi) << 32);
+#endif
+}
+
 static inline uint32_t detect_supported_architectures() {
   uint32_t eax, ebx, ecx, edx;
   uint32_t host_isa = 0x0;
+
+  // EBX for EAX=0x1
+  eax = 0x1;
+  ecx = 0x0;
+  cpuid(&eax, &ebx, &ecx, &edx);
+
+  if (ecx & cpuid_sse42_bit) {
+    host_isa |= instruction_set::SSE42;
+  } else {
+    return host_isa; // everything after is redundant
+  }
+
+  if (ecx & cpuid_pclmulqdq_bit) {
+    host_isa |= instruction_set::PCLMULQDQ;
+  }
+
+
+  if ((ecx & cpuid_osxsave) != cpuid_osxsave) {
+    return host_isa;
+  }
+
+  // xgetbv for checking if the OS saves registers
+  uint64_t xcr0 = xgetbv();
+
+  if ((xcr0 & cpuid_avx256_saved) == 0) {
+    return host_isa;
+  }
 
   // ECX for EAX=0x7
   eax = 0x7;
@@ -3282,6 +3370,10 @@ static inline uint32_t detect_supported_architectures() {
 
   if (ebx & cpuid_bmi2_bit) {
     host_isa |= instruction_set::BMI2;
+  }
+
+  if (!((xcr0 & cpuid_avx512_saved) == cpuid_avx512_saved)) {
+     return host_isa;
   }
 
   if (ebx & cpuid_avx512f_bit) {
@@ -3318,18 +3410,6 @@ static inline uint32_t detect_supported_architectures() {
 
   if (ecx & cpuid_avx512vbmi2_bit) {
     host_isa |= instruction_set::AVX512VBMI2;
-  }
-
-  // EBX for EAX=0x1
-  eax = 0x1;
-  cpuid(&eax, &ebx, &ecx, &edx);
-
-  if (ecx & cpuid_sse42_bit) {
-    host_isa |= instruction_set::SSE42;
-  }
-
-  if (ecx & cpuid_pclmulqdq_bit) {
-    host_isa |= instruction_set::PCLMULQDQ;
   }
 
   return host_isa;
@@ -9677,9 +9757,9 @@ extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
 #define SIMDJSON_CAN_ALWAYS_RUN_WESTMERE (SIMDJSON_IMPLEMENTATION_WESTMERE && SIMDJSON_IS_X86_64 && __SSE4_2__ && __PCLMUL__)
 
 #ifndef SIMDJSON_IMPLEMENTATION_PPC64
-#define SIMDJSON_IMPLEMENTATION_PPC64 (SIMDJSON_IS_PPC64)
+#define SIMDJSON_IMPLEMENTATION_PPC64 (SIMDJSON_IS_PPC64 && SIMDJSON_IS_PPC64_VMX)
 #endif
-#define SIMDJSON_CAN_ALWAYS_RUN_PPC64 SIMDJSON_IMPLEMENTATION_PPC64 && SIMDJSON_IS_PPC64
+#define SIMDJSON_CAN_ALWAYS_RUN_PPC64 SIMDJSON_IMPLEMENTATION_PPC64 && SIMDJSON_IS_PPC64 && SIMDJSON_IS_PPC64_VMX
 
 // Default Fallback to on unless a builtin implementation has already been selected.
 #ifndef SIMDJSON_IMPLEMENTATION_FALLBACK
