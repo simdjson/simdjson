@@ -44,7 +44,9 @@
 #elif defined(__aarch64__) || defined(_M_ARM64)
 #define SIMDJSON_IS_ARM64 1
 #elif defined(__PPC64__) || defined(_M_PPC64)
-#define SIMDJSON_IS_PPC64 1
+#if defined(__ALTIVEC__)
+#define SIMDJSON_IS_PPC64_VMX 1
+#endif // defined(__ALTIVEC__)
 #else
 #define SIMDJSON_IS_32BITS 1
 
