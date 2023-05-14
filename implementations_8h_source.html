@@ -171,9 +171,9 @@ $(document).ready(function(){initNavTree('implementations_8h_source.html',''); i
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="preprocessor">#define SIMDJSON_CAN_ALWAYS_RUN_WESTMERE (SIMDJSON_IMPLEMENTATION_WESTMERE &amp;&amp; SIMDJSON_IS_X86_64 &amp;&amp; __SSE4_2__ &amp;&amp; __PCLMUL__)</span></div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_IMPLEMENTATION_PPC64</span></div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="preprocessor">#define SIMDJSON_IMPLEMENTATION_PPC64 (SIMDJSON_IS_PPC64)</span></div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="preprocessor">#define SIMDJSON_IMPLEMENTATION_PPC64 (SIMDJSON_IS_PPC64 &amp;&amp; SIMDJSON_IS_PPC64_VMX)</span></div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="preprocessor">#define SIMDJSON_CAN_ALWAYS_RUN_PPC64 SIMDJSON_IMPLEMENTATION_PPC64 &amp;&amp; SIMDJSON_IS_PPC64</span></div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="preprocessor">#define SIMDJSON_CAN_ALWAYS_RUN_PPC64 SIMDJSON_IMPLEMENTATION_PPC64 &amp;&amp; SIMDJSON_IS_PPC64 &amp;&amp; SIMDJSON_IS_PPC64_VMX</span></div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="comment">// Default Fallback to on unless a builtin implementation has already been selected.</span></div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_IMPLEMENTATION_FALLBACK</span></div>
