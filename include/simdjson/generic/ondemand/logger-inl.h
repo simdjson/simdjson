@@ -11,7 +11,7 @@ static int log_depth = 0; // Not threadsafe. Log only.
 
 enum class log_level : int32_t {
   INFO = 0,
-  ERROR = 1
+  ERROR = 1,
 };
 
 // Helper to turn unprintable or newline characters into spaces
