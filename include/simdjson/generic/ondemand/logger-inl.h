@@ -10,8 +10,8 @@ static constexpr const int LOG_SMALL_BUFFER_LEN = 10;
 static int log_depth = 0; // Not threadsafe. Log only.
 
 enum class log_level {
-  INFO,
-  ERROR
+  INFO = 0,
+  ERROR = 1
 };
 
 // Helper to turn unprintable or newline characters into spaces
@@ -26,9 +26,7 @@ static inline char printable_char(char c) {
 static inline log_level get_log_level_from_env()
 {
   char *lvl = getenv("SIMDJSON_LOG_LEVEL");
-  if (!lvl) { return log_level::INFO; }
-  if (simdjson_strcasecmp(lvl, "ERROR") == 0) { return log_level::ERROR; }
-  if (simdjson_strcasecmp(lvl, "INFO") == 0) { return log_level::INFO; }
+  if (lvl && simdjson_strcasecmp(lvl, "ERROR") == 0) { return log_level::ERROR; }
   return log_level::INFO;
 }
 
