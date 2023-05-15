@@ -18,8 +18,8 @@ enum class log_level;
 // We do not want these functions to be 'really inlined' since real inlining is
 // for performance purposes and if you are using the loggers, you do not care about
 // performance (or should not).
-template<typename ... Args>
-static inline std::string string_format( const std::string& format, Args ... args ) noexcept;
+template<typename... Args>
+static inline std::string string_format(const std::string& format, const Args&... args) noexcept;
 static inline void log_headers() noexcept;
 static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, log_level level) noexcept;
 static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, log_level level) noexcept;

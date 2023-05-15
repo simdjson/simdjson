@@ -44,7 +44,7 @@ static inline bool should_log(log_level level)
 }
 
 template<typename... Args>
-inline std::string string_format(const std::string& format, Args... args) noexcept
+inline std::string string_format(const std::string& format, const Args&... args) noexcept
 {
   int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1;
   auto size = static_cast<size_t>(size_s);
