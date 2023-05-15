@@ -9,6 +9,11 @@ static constexpr const int LOG_BUFFER_LEN = 30;
 static constexpr const int LOG_SMALL_BUFFER_LEN = 10;
 static int log_depth = 0; // Not threadsafe. Log only.
 
+enum class log_level {
+  INFO,
+  ERROR
+};
+
 // Helper to turn unprintable or newline characters into spaces
 static inline char printable_char(char c) {
   if (c >= 0x20) {
@@ -18,36 +23,56 @@ static inline char printable_char(char c) {
   }
 }
 
+static inline log_level get_log_level_from_env()
+{
+  char *lvl = getenv("SIMDJSON_LOG_LEVEL");
+  if (!lvl) { return log_level::INFO; }
+  if (simdjson_strcasecmp(lvl, "ERROR") == 0) { return log_level::ERROR; }
+  if (simdjson_strcasecmp(lvl, "INFO") == 0) { return log_level::INFO; }
+  return log_level::INFO;
+}
+
+static inline log_level log_threshold()
+{
+  static log_level threshold = get_log_level_from_env();
+  return threshold;
+}
+
+static inline bool should_log(log_level level)
+{
+  return level >= log_threshold();
+}
+
 inline void log_event(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::INFO);
 }
 
 inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "", type, detail);
+  log_line(iter, index, depth, "", type, detail, log_level::INFO);
 }
 inline void log_value(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::INFO);
 }
 
 inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "+", type, detail);
+  log_line(iter, index, depth, "+", type, detail, log_level::INFO);
   if (LOG_ENABLED) { log_depth++; }
 }
 inline void log_start_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
-  log_line(iter, "+", type, "", delta, depth_delta);
+  log_line(iter, "+", type, "", delta, depth_delta, log_level::INFO);
   if (LOG_ENABLED) { log_depth++; }
 }
 
 inline void log_end_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
   if (LOG_ENABLED) { log_depth--; }
-  log_line(iter, "-", type, "", delta, depth_delta);
+  log_line(iter, "-", type, "", delta, depth_delta, log_level::INFO);
 }
 
 inline void log_error(const json_iterator &iter, const char *error, const char *detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "ERROR: ", error, detail, delta, depth_delta);
+  log_line(iter, "ERROR: ", error, detail, delta, depth_delta, log_level::ERROR);
 }
 inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail) noexcept {
-  log_line(iter, index, depth, "ERROR: ", error, detail);
+  log_line(iter, index, depth, "ERROR: ", error, detail, log_level::ERROR);
 }
 
 inline void log_event(const value_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
@@ -71,7 +96,7 @@ inline void log_error(const value_iterator &iter, const char *error, const char 
 }
 
 inline void log_headers() noexcept {
-  if (LOG_ENABLED) {
+  if (LOG_ENABLED && simdjson_unlikely(should_log(log_level::INFO))) {
     // Technically a static variable is not thread-safe, but if you are using threads
     // and logging... well...
     static bool displayed_hint{false};
@@ -121,11 +146,11 @@ inline void log_headers() noexcept {
   }
 }
 
-inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail);
+inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, log_level level) noexcept {
+  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail, level);
 }
-inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept {
-  if (LOG_ENABLED) {
+inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, log_level level) noexcept {
+  if (LOG_ENABLED && simdjson_unlikely(should_log(level))) {
     const int indent = depth*2;
     const auto buf = iter.token.buf;
     printf("| %*s%s%-*s ",
