@@ -9,7 +9,7 @@ static constexpr const int LOG_BUFFER_LEN = 30;
 static constexpr const int LOG_SMALL_BUFFER_LEN = 10;
 static int log_depth = 0; // Not threadsafe. Log only.
 
-enum class log_level {
+enum class log_level : int32_t {
   INFO = 0,
   ERROR = 1
 };
