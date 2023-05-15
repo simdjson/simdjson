@@ -32,7 +32,7 @@ bool no_such_field()
   ondemand::parser parser;
   try {
     ondemand::document doc = parser.iterate(json);
-    std::cout << doc["b"] << std::endl;
+    std::cout << doc["missing_key"] << std::endl;
     TEST_FAIL("Should have thrown an exception!")
   } catch (simdjson_error& e) {
     ASSERT_ERROR(e.error(), NO_SUCH_FIELD);

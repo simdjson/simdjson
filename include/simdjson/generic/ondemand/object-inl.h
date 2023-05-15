@@ -5,13 +5,21 @@ namespace ondemand {
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    auto msg = logger::string_format("Cannot find key: %s", key.data());
+    logger::log_error(iter, msg.c_str());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    auto msg = logger::string_format("Cannot find key: %s", key.data());
+    logger::log_error(iter, msg.c_str());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::operator[](const std::string_view key) & noexcept {
@@ -23,13 +31,21 @@ simdjson_inline simdjson_result<value> object::operator[](const std::string_view
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    auto msg = logger::string_format("Cannot find key: %s", key.data());
+    logger::log_error(iter, msg.c_str());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    auto msg = logger::string_format("Cannot find key: %s", key.data());
+    logger::log_error(iter, msg.c_str());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 

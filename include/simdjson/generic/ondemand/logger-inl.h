@@ -43,6 +43,16 @@ static inline bool should_log(log_level level)
   return level >= log_threshold();
 }
 
+template<typename... Args>
+inline std::string string_format(const std::string& format, Args... args) noexcept
+{
+  int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1;
+  auto size = static_cast<size_t>(size_s);
+  std::unique_ptr<char[]> buf(new char[size]);
+  std::snprintf(buf.get(), size, format.c_str(), args...);
+  return std::string(buf.get(), buf.get() + size - 1);
+}
+
 inline void log_event(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
   log_line(iter, "", type, detail, delta, depth_delta, log_level::INFO);
 }
