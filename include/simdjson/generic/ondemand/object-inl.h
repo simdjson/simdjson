@@ -6,7 +6,8 @@ simdjson_inline simdjson_result<value> object::find_field_unordered(const std::s
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
   if (!has_value) {
-    auto msg = logger::string_format("Cannot find key: %s", key.data());
+    auto key_str = std::string(key.data(), key.size());
+    auto msg = logger::string_format("Cannot find key: %s", key_str.c_str());
     logger::log_error(iter, msg.c_str());
     return NO_SUCH_FIELD;
   }
@@ -16,7 +17,8 @@ simdjson_inline simdjson_result<value> object::find_field_unordered(const std::s
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
   if (!has_value) {
-    auto msg = logger::string_format("Cannot find key: %s", key.data());
+    auto key_str = std::string(key.data(), key.size());
+    auto msg = logger::string_format("Cannot find key: %s", key_str.c_str());
     logger::log_error(iter, msg.c_str());
     return NO_SUCH_FIELD;
   }
@@ -32,7 +34,8 @@ simdjson_inline simdjson_result<value> object::find_field(const std::string_view
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
   if (!has_value) {
-    auto msg = logger::string_format("Cannot find key: %s", key.data());
+    auto key_str = std::string(key.data(), key.size());
+    auto msg = logger::string_format("Cannot find key: %s", key_str.c_str());
     logger::log_error(iter, msg.c_str());
     return NO_SUCH_FIELD;
   }
@@ -42,7 +45,8 @@ simdjson_inline simdjson_result<value> object::find_field(const std::string_view
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
   if (!has_value) {
-    auto msg = logger::string_format("Cannot find key: %s", key.data());
+    auto key_str = std::string(key.data(), key.size());
+    auto msg = logger::string_format("Cannot find key: %s", key_str.c_str());
     logger::log_error(iter, msg.c_str());
     return NO_SUCH_FIELD;
   }

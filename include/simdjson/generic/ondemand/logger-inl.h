@@ -1,3 +1,4 @@
+#include <memory>
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -42,10 +43,11 @@ static inline bool should_log(log_level level)
 }
 
 template<typename... Args>
-inline std::string string_format(const std::string& format, const Args&... args) noexcept
+inline std::string string_format(const std::string& format, const Args&... args)
 {
   int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1;
   auto size = static_cast<size_t>(size_s);
+  if (size <= 0) return std::string();
   std::unique_ptr<char[]> buf(new char[size]);
   std::snprintf(buf.get(), size, format.c_str(), args...);
   return std::string(buf.get(), buf.get() + size - 1);
