@@ -22,8 +22,8 @@ static inline char printable_char(char c) {
 static inline log_level get_log_level_from_env()
 {
   char *lvl = getenv("SIMDJSON_LOG_LEVEL");
-  if (lvl && simdjson_strcasecmp(lvl, "ERROR") == 0) { return log_level::ERROR; }
-  return log_level::INFO;
+  if (lvl && simdjson_strcasecmp(lvl, "ERROR") == 0) { return log_level::LOG_ERROR; }
+  return log_level::LOG_INFO;
 }
 
 static inline log_level log_threshold()
@@ -49,35 +49,35 @@ inline std::string string_format(const std::string& format, const Args&... args)
 }
 
 inline void log_event(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta, log_level::INFO);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::LOG_INFO);
 }
 
 inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "", type, detail, log_level::INFO);
+  log_line(iter, index, depth, "", type, detail, log_level::LOG_INFO);
 }
 inline void log_value(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta, log_level::INFO);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::LOG_INFO);
 }
 
 inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "+", type, detail, log_level::INFO);
+  log_line(iter, index, depth, "+", type, detail, log_level::LOG_INFO);
   if (LOG_ENABLED) { log_depth++; }
 }
 inline void log_start_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
-  log_line(iter, "+", type, "", delta, depth_delta, log_level::INFO);
+  log_line(iter, "+", type, "", delta, depth_delta, log_level::LOG_INFO);
   if (LOG_ENABLED) { log_depth++; }
 }
 
 inline void log_end_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
   if (LOG_ENABLED) { log_depth--; }
-  log_line(iter, "-", type, "", delta, depth_delta, log_level::INFO);
+  log_line(iter, "-", type, "", delta, depth_delta, log_level::LOG_INFO);
 }
 
 inline void log_error(const json_iterator &iter, const char *error, const char *detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "ERROR: ", error, detail, delta, depth_delta, log_level::ERROR);
+  log_line(iter, "ERROR: ", error, detail, delta, depth_delta, log_level::LOG_ERROR);
 }
 inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail) noexcept {
-  log_line(iter, index, depth, "ERROR: ", error, detail, log_level::ERROR);
+  log_line(iter, index, depth, "ERROR: ", error, detail, log_level::LOG_ERROR);
 }
 
 inline void log_event(const value_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
@@ -101,7 +101,7 @@ inline void log_error(const value_iterator &iter, const char *error, const char 
 }
 
 inline void log_headers() noexcept {
-  if (LOG_ENABLED && simdjson_unlikely(should_log(log_level::INFO))) {
+  if (LOG_ENABLED && simdjson_unlikely(should_log(log_level::LOG_INFO))) {
     // Technically a static variable is not thread-safe, but if you are using threads
     // and logging... well...
     static bool displayed_hint{false};

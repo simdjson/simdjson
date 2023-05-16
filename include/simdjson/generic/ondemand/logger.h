@@ -8,8 +8,8 @@ class value_iterator;
 namespace logger {
 
 enum class log_level : int32_t {
-  INFO = 0,
-  ERROR = 1,
+  LOG_INFO = 0,
+  LOG_ERROR = 1
 };
 
 #if SIMDJSON_VERBOSE_LOGGING

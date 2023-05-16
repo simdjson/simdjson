@@ -7,6 +7,7 @@
 using namespace simdjson;
 
 namespace log_error_tests {
+#if SIMDJSON_EXCEPTIONS
 
 using namespace std;
 
@@ -39,6 +40,7 @@ bool no_such_field()
   }
   TEST_SUCCEED();
 }
+#endif // SIMDJSON_EXCEPTIONS
 
 bool run()
 {
