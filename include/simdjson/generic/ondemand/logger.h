@@ -7,7 +7,10 @@ class value_iterator;
 
 namespace logger {
 
-enum class log_level : int32_t;
+enum class log_level : int32_t {
+  INFO = 0,
+  ERROR = 1,
+};
 
 #if SIMDJSON_VERBOSE_LOGGING
   static constexpr const bool LOG_ENABLED = true;
