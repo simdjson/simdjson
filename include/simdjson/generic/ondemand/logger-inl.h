@@ -21,7 +21,10 @@ static inline char printable_char(char c) {
 
 static inline log_level get_log_level_from_env()
 {
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
   char *lvl = getenv("SIMDJSON_LOG_LEVEL");
+  SIMDJSON_POP_DISABLE_WARNINGS
   if (lvl && simdjson_strcasecmp(lvl, "ERROR") == 0) { return log_level::LOG_ERROR; }
   return log_level::LOG_INFO;
 }

@@ -3,6 +3,8 @@
 #include "test_ondemand.h"
 
 #include <iostream>
+#include <string>
+#include <stdlib.h>
 
 using namespace simdjson;
 
@@ -44,14 +46,17 @@ bool no_such_field()
 
 bool run()
 {
-  setenv("SIMDJSON_LOG_LEVEL", "ERROR", 1);
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
+  std::string str = "SIMDJSON_LOG_LEVEL=ERROR";
+  putenv(str.data());
   bool rc =
 #if SIMDJSON_EXCEPTIONS
             tape_error() &&
             no_such_field() &&
 #endif // #if SIMDJSON_EXCEPTIONS
             true;
-  unsetenv("SIMDJSON_LOG_LEVEL");
+  SIMDJSON_POP_DISABLE_WARNINGS
   return rc;
 }
 
