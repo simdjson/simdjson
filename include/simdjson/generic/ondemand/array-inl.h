@@ -205,4 +205,8 @@ simdjson_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdj
   if (error()) { return error(); }
   return first.at_pointer(json_pointer);
 }
+simdjson_inline  simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::raw_json() noexcept {
+  if (error()) { return error(); }
+  return first.raw_json();
+}
 } // namespace simdjson

@@ -223,6 +223,7 @@ public:
   inline simdjson_result<bool> reset() noexcept;
   inline simdjson_result<bool> is_empty() noexcept;
   inline simdjson_result<size_t> count_fields() & noexcept;
+  inline simdjson_result<std::string_view> raw_json() noexcept;
 
 };
 
