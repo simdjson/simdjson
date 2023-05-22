@@ -9,7 +9,6 @@
 #include <set>
 #include <sstream>
 #include <utility>
-#include <ciso646>
 #include <unistd.h>
 
 #include "simdjson.h"
