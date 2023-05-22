@@ -364,8 +364,9 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > to support escaped keys, the method `unescaped_key()` provides the desired unescaped keys by
   > parsing and writing out the unescaped keys to a string buffer and returning a `std::string_view`
   > instance. You should expect a performance penalty when using `unescaped_key()`.
+  >
   > ```c++
-  > auto json = R"({"k\u0065y": 1})"_padded;
+  > auto json = R"({"k\u0065y": 1})"_padded;
   > ondemand::parser parser;
   > auto doc = parser.iterate(json);
   > ondemand::object object = doc.get_object();
