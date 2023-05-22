@@ -1142,6 +1142,28 @@ int main(void) {
 }
 ```
 
+
+You can do handle errors gracefully as well...
+
+```C++
+#include <iostream>
+#include "simdjson.h"
+int main(void) {
+  simdjson::ondemand::parser parser;
+  simdjson::padded_string json_string;
+  simdjson::ondemand::document doc;
+  try {
+    json_string = padded_string::load("twitter.json");
+    doc = parser.iterate(json_string);
+    uint64_t identifier = doc["statuses"].at(0)["id"];
+    std::cout << identifier << std::endl;
+  } catch (simdjson::simdjson_error &error) {
+    std::cerr << "JSON error: " << error.what() << " near "
+              << doc.current_location() << " in " << json_string << std::endl;
+  }
+}
+```
+
 ### Current location in document
 
 Sometimes, it might be helpful to know the current location in the document during iteration. This is especially useful when encountering errors. The `current_location()` method on a

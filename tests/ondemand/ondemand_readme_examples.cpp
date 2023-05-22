@@ -974,6 +974,22 @@ int load_example_except() {
   std::cout << identifier << std::endl;
   return EXIT_SUCCESS;
 }
+int load_example_except_morecomplete(void) {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  simdjson::padded_string json_string;
+  simdjson::ondemand::document doc;
+  try {
+    json_string = padded_string::load("twitter.json");
+    doc = parser.iterate(json_string);
+    uint64_t identifier = doc["statuses"].at(0)["id"];
+    std::cout << identifier << std::endl;
+  } catch (simdjson::simdjson_error &error) {
+    std::cerr << "JSON error: " << error.what() << " near "
+              << doc.current_location() << " in " << json_string << std::endl;
+  }
+  return EXIT_SUCCESS;
+}
 #endif
 bool test_load_example() {
   TEST_START();
