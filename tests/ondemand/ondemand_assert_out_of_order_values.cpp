@@ -10,7 +10,7 @@ using namespace simdjson;
 // This ensures the compiler can't rearrange them into the proper order (which causes it to work!)
 simdjson_never_inline bool check_point(simdjson_result<ondemand::value> xval, simdjson_result<ondemand::value> yval) {
   // Verify the expected release behavior
-  uint64_t x, y;
+  uint64_t x{}, y{};
   if (!xval.get(x)) { return false; }
   if (!yval.get(y)) { return false; }
   std::cout << x << "," << y << std::endl;
