@@ -133,7 +133,7 @@ namespace misc_tests {
     ASSERT_SUCCESS(parser.iterate(json).get(doc));
     std::string_view view;
     ASSERT_SUCCESS( doc.get_string().get(view));
-    if(view != u8"wow:\uFFFF") { return false; }
+    ASSERT_EQUAL(view, "wow:\xef\xbf\xbf");
     TEST_SUCCEED();
   }
 
