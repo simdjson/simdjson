@@ -253,7 +253,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00102">102</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00122">122</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -284,7 +284,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 <p>whenever you are pointing at a key, calling skip_child() is unsafe because you will hit a string and you will assume that it is string value, and this mistake will lead you to make bad depth computation.</p>
 <p>We want to 'consume' the key. We could really just do _json_iter-&gt;return_current_and_advance(); at this point, but, for clarity, we will use the high-level API to eat the key. We assume that the compiler optimizes away most of the work.</p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00044">44</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00064">64</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -316,7 +316,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 <p>To check that an object is empty, it is more performant to use the <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#ad210f9115679a625ada433add55eff51" title="This method scans the beginning of the object and checks whether the object is empty.">is_empty()</a> method.</p>
 <p>Performance hint: You should only call <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#aef6872e07743217fe2e2abe790a21d4c" title="This method scans the object and counts the number of key-value pairs.">count_fields()</a> as a last resort as it may require scanning the document twice or more. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00142">142</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00162">162</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -364,7 +364,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The value of the field, or NO_SUCH_FIELD if the field is not in the object. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00023">23</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00033">33</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -437,7 +437,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 <p>This method scans the beginning of the object and checks whether the object is empty. </p>
 <p>The runtime complexity is constant time. After calling this function, if successful, the object is 'rewinded' at its beginning as if it had never been accessed. If the JSON is malformed (e.g., there is a missing comma), then an error is returned and it is no longer safe to continue. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00154">154</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00174">174</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -467,7 +467,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 <p>Consumes the object and returns a string_view instance corresponding to the object as represented in JSON. </p>
 <p>It points inside the original byte array containing the JSON document. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00070">70</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00090">90</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -498,7 +498,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 <p>You should still consume values only once even if you can iterate through the object more than once. If you unescape a string within the object more than once, you have unsafe code. Note that rewinding an object means that you may need to reparse it anew: it is not a free operation.</p>
 <dl class="section return"><dt>Returns</dt><dd>true if the object contains some elements (not empty) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00161">161</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00181">181</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
