@@ -186,6 +186,8 @@ public:
   inline simdjson_result<bool> reset() & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at(size_t index) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
+
 };
 
 } // namespace simdjson
