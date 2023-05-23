@@ -520,7 +520,7 @@ struct benchmarker {
         double freqall = (all_stages_without_allocation.best.cycles() / all_stages_without_allocation.best.elapsed_sec()) / 1000000000.0;
         double freqmin = min(freq1, freq2);
         double freqmax = max(freq1, freq2);
-        if((freqall < 0.95 * freqmin) or (freqall > 1.05 * freqmax)) {
+        if((freqall < 0.95 * freqmin) || (freqall > 1.05 * freqmax)) {
           printf("\nWarning: The processor frequency fluctuates in an expected way!!!\n"
           "Range for stage 1 and stage 2 : [%.3f GHz, %.3f GHz], overall: %.3f GHz.\n",
           freqmin, freqmax, freqall);
