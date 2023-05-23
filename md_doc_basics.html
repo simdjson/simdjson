@@ -218,6 +218,11 @@ The Basics: Loading and Parsing JSON Documents</h1>
 <div class="line">simdjson::padded_string my_padded_data(data); // copies to a padded buffer</div>
 </div><!-- fragment --><p>We recommend against creating many <code>std::string</code> or many <code>std::padding_string</code> instances in your application to store your JSON data. Consider reusing the same buffers and limiting memory allocations.</p>
 <p>By default, the simdjson library throws exceptions (<code>simdjson_error</code>) on errors. We omit <code>try</code>-<code>catch</code> clauses from our illustrating examples: if you omit <code>try</code>-<code>catch</code> in your code, an uncaught exception will halt your program. It is also possible to use simdjson without generating exceptions, and you may even build the library without exception support at all. See <a href="#error-handling">Error Handling</a> for details.</p>
+<p>Some users may want to browse code along with the compiled assembly. You want to check out the following lists of examples:</p>
+<ul>
+<li><a href="https://godbolt.org/z/98Kx9Kqjn">simdjson examples with errors handled through exceptions</a></li>
+<li><a href="https://godbolt.org/z/PKG7GdbPo">simdjson examples with errors without exceptions</a></li>
+</ul>
 <h1><a class="anchor" id="autotoc_md6"></a>
 Documents are Iterators</h1>
 <p>The simdjson library relies on an approach to parsing JSON that we call "On Demand". A <code>document</code> is <em>not</em> a fully-parsed JSON value; rather, it is an <b>iterator</b> over the JSON text. This means that while you iterate an array, or search for a field in an object, it is actually walking through the original JSON text, merrily reading commas and colons and brackets to make sure you get where you are going. This is the key to On Demand's performance: since it's just an iterator, it lets you parse values as you use them. And particularly, it lets you <em>skip</em> values you do not want to use.</p>
