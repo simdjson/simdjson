@@ -91,7 +91,8 @@ int main(void) {
 4. `./quickstart`
    ```
    100 results.
-   ```
+```
+
 
 Documentation
 -------------
@@ -102,7 +103,13 @@ Usage documentation is available:
 * [Performance](doc/performance.md) shows some more advanced scenarios and how to tune for them.
 * [Implementation Selection](doc/implementation-selection.md) describes runtime CPU detection and
   how you can work with it.
-* [API](https://simdjson.org/api/1.0.0/annotated.html) contains the automatically generated API documentation.
+* [API](https://simdjson.github.io/simdjson/) contains the automatically generated API documentation.
+
+
+Some users may want to browse code along with the compiled assembly. You want to check out the following lists of examples:
+
+* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/azd7bxPve)
+* [simdjson examples with errors without exceptions](https://godbolt.org/z/rvTrr1GYh)
 
 Performance results
 -------------------
