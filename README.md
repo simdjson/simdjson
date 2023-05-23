@@ -85,13 +85,13 @@ int main(void) {
     ondemand::document tweets = parser.iterate(json);
     std::cout << uint64_t(tweets["search_metadata"]["count"]) << " results." << std::endl;
 }
-
-   ```
+```
 3. `c++ -o quickstart quickstart.cpp simdjson.cpp`
 4. `./quickstart`
-   ```
-   100 results.
 
+  ```
+   100 results.
+  ```
 
 Documentation
 -------------
@@ -107,7 +107,7 @@ Usage documentation is available:
 
 Some users may want to browse code along with the compiled assembly. You want to check out the following lists of examples:
 
-* [simdjson examples with errors handled through exceptions](hhttps://godbolt.org/z/98Kx9Kqjn)
+* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/98Kx9Kqjn)
 * [simdjson examples with errors without exceptions](https://godbolt.org/z/PKG7GdbPo)
 
 Performance results
