@@ -50,11 +50,11 @@ var NAVTREE =
         [ "Checking for trailing content", "md_doc_basics.html#autotoc_md19", null ]
       ] ],
       [ "Rewinding", "md_doc_basics.html#autotoc_md20", null ],
-      [ "Direct Access to the Raw String", "md_doc_basics.html#autotoc_md21", null ],
-      [ "Newline-Delimited JSON (ndjson) and JSON lines", "md_doc_basics.html#autotoc_md22", null ],
-      [ "Parsing Numbers Inside Strings", "md_doc_basics.html#autotoc_md23", null ],
-      [ "Dynamic Number Types", "md_doc_basics.html#autotoc_md24", null ],
-      [ "Raw Strings", "md_doc_basics.html#autotoc_md25", null ],
+      [ "Newline-Delimited JSON (ndjson) and JSON lines", "md_doc_basics.html#autotoc_md21", null ],
+      [ "Parsing Numbers Inside Strings", "md_doc_basics.html#autotoc_md22", null ],
+      [ "Dynamic Number Types", "md_doc_basics.html#autotoc_md23", null ],
+      [ "Raw Strings", "md_doc_basics.html#autotoc_md24", null ],
+      [ "General Direct Access to the Raw JSON String", "md_doc_basics.html#autotoc_md25", null ],
       [ "Thread Safety", "md_doc_basics.html#autotoc_md26", null ],
       [ "Standard Compliance", "md_doc_basics.html#autotoc_md27", null ],
       [ "Backwards Compatibility", "md_doc_basics.html#autotoc_md28", null ],
@@ -187,12 +187,12 @@ var NAVTREE =
 
 var NAVTREEINDEX =
 [
-"",
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#ae0bc6b9803e0c989e9defaf3edcaaae4",
-"classsimdjson_1_1dom_1_1object_1_1iterator.html#a5c80355d967cce16eab942a8d8351c7b",
-"logger-inl_8h.html#a6ca1434e6fe03e97dbc88360cc6ea5db",
-"namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330ab45cffe084dd3d20d928bee85e7b0f21",
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object_01_4.html#a859a70452db187eaaca4ff018f959175"
+"annotated.html",
+"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#aef6872e07743217fe2e2abe790a21d4c",
+"classsimdjson_1_1dom_1_1object_1_1iterator.html#a83b3c467632c017400f95ff05d2367b3",
+"logger-inl_8h.html#aa865485894cf54a1b59bca4c940920fd",
+"namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#af941be7ff0cfaeb30d15d2fb52e76dd1",
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object_01_4.html#a99b1f71b33c2977afe8de124f2f662b6"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
