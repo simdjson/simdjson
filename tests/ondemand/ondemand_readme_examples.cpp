@@ -721,7 +721,7 @@ bool json_pointer_multiple() {
 	ASSERT_SUCCESS(cars.count_elements().get(size));
 	double expected[] = {39.9, 31, 30};
 	for (size_t i = 0; i < size; i++) {
-		std::string json_pointer = "/" + std::to_string(i) + "/tire_pressure/1";
+		std::string json_pointer = std::string("/") + std::to_string(i) + std::string("/tire_pressure/1");
 		double x;
 		ASSERT_SUCCESS(cars.at_pointer(json_pointer).get(x));
 		ASSERT_EQUAL(x,expected[i]);
