@@ -638,7 +638,7 @@ static void error_code_twitter_image_sizes(State& state) noexcept {
     if ((error = doc["statuses"].get(statuses))) { return; }
     for (dom::element tweet : statuses) {
       dom::array images;
-      if (not (error = tweet["entities"]["media"].get(images))) {
+      if (! (error = tweet["entities"]["media"].get(images))) {
         for (dom::element image : images) {
           dom::object sizes;
           if ((error = image["sizes"].get(sizes))) { return; }
