@@ -521,7 +521,7 @@ static void twitter_image_sizes(State& state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
     for (dom::object tweet : doc["statuses"]) {
       dom::array media;
-      if (not (error = tweet["entities"]["media"].get(media))) {
+      if (! (error = tweet["entities"]["media"].get(media))) {
         for (dom::object image : media) {
           for (auto size : image["sizes"].get_object()) {
              image_sizes.emplace(size.value["w"], size.value["h"]);
