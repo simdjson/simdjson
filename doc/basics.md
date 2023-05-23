@@ -205,8 +205,8 @@ By default, the simdjson library throws exceptions (`simdjson_error`) on errors.
 
 Some users may want to browse code along with the compiled assembly. You want to check out the following lists of examples:
 
-* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/azd7bxPve)
-* [simdjson examples with errors without exceptions](https://godbolt.org/z/rvTrr1GYh)
+* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/98Kx9Kqjn)
+* [simdjson examples with errors without exceptions](https://godbolt.org/z/PKG7GdbPo)
 
 
 Documents are Iterators
