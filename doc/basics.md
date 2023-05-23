@@ -25,11 +25,11 @@ An overview of what you need to know to use simdjson, with examples.
     - [Current location in document](#current-location-in-document)
     - [Checking for trailing content](#checking-for-trailing-content)
   - [Rewinding](#rewinding)
-  - [Direct Access to the Raw String](#direct-access-to-the-raw-string)
   - [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
   - [Parsing Numbers Inside Strings](#parsing-numbers-inside-strings)
   - [Dynamic Number Types](#dynamic-number-types)
   - [Raw Strings](#raw-strings)
+  - [General Direct Access to the Raw JSON String](#general-direct-access-to-the-raw-json-string)
   - [Thread Safety](#thread-safety)
   - [Standard Compliance](#standard-compliance)
   - [Backwards Compatibility](#backwards-compatibility)
@@ -202,6 +202,13 @@ Consider reusing the same buffers and limiting memory allocations.
 
 By default, the simdjson library throws exceptions (`simdjson_error`) on errors. We omit `try`-`catch` clauses from our illustrating examples: if you omit `try`-`catch` in your code, an uncaught exception will halt your program. It is also possible to use simdjson without generating exceptions, and you may even build the library without exception support at all. See [Error Handling](#error-handling) for details.
 
+
+Some users may want to browse code along with the compiled assembly. You want to check out the following lists of examples:
+
+* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/98Kx9Kqjn)
+* [simdjson examples with errors without exceptions](https://godbolt.org/z/PKG7GdbPo)
+
+
 Documents are Iterators
 -----------------------
 
@@ -348,7 +355,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
   scan through the object looking for the field with the matching string, doing a character-by-character
   comparison. For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do
-  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. Keep in mind that On Demand does not buffer or save the result of the parsing: if you repeatedly access `object["foo"]`, then it must repeatedly seek the key and parse the content. It is your responsability as a user to temporarily keep a reference to the value (`auto v = object["foo"]`), or to consume the content and store it in your own data structures. If you consume an
+  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. Keep in mind that On Demand does not buffer or save the result of the parsing: if you repeatedly access `object["foo"]`, then it must repeatedly seek the key and parse the content. The library does not provide a distinct function to check if a key is present, instead we recommend you attempt to access the key: e.g., by doing `ondemand::value val{}; if(!object["foo"].get(val)) {...}`, you have that `val` contains the requested value inside the if clause.  It is your responsability as a user to temporarily keep a reference to the value (`auto v = object["foo"]`), or to consume the content and store it in your own data structures. If you consume an
   object twice: `std::string_view(object["foo"]` followed by `std::string_view(object["foo"]` then your code
   is in error. Furthermore, you can only consume one field at a time, on the same object. The
   value instance you get from  `content["bids"]` becomes invalid when you call `content["asks"]`.
@@ -364,8 +371,9 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > to support escaped keys, the method `unescaped_key()` provides the desired unescaped keys by
   > parsing and writing out the unescaped keys to a string buffer and returning a `std::string_view`
   > instance. You should expect a performance penalty when using `unescaped_key()`.
+  >
   > ```c++
-  > auto json = R"({"k\u0065y": 1})"_padded;
+  > auto json = R"({"k\u0065y": 1})"_padded;
   > ondemand::parser parser;
   > auto doc = parser.iterate(json);
   > ondemand::object object = doc.get_object();
@@ -1142,6 +1150,28 @@ int main(void) {
 }
 ```
 
+
+You can do handle errors gracefully as well...
+
+```C++
+#include <iostream>
+#include "simdjson.h"
+int main(void) {
+  simdjson::ondemand::parser parser;
+  simdjson::padded_string json_string;
+  simdjson::ondemand::document doc;
+  try {
+    json_string = padded_string::load("twitter.json");
+    doc = parser.iterate(json_string);
+    uint64_t identifier = doc["statuses"].at(0)["id"];
+    std::cout << identifier << std::endl;
+  } catch (simdjson::simdjson_error &error) {
+    std::cerr << "JSON error: " << error.what() << " near "
+              << doc.current_location() << " in " << json_string << std::endl;
+  }
+}
+```
+
 ### Current location in document
 
 Sometimes, it might be helpful to know the current location in the document during iteration. This is especially useful when encountering errors. The `current_location()` method on a
@@ -1303,41 +1333,6 @@ to the document `rewind()` method, except that it does not rewind the
 internal string buffer. Thus you should consume values only once
 even if you can iterate through the array or object more than once.
 If you unescape a string within an array more than once, you have unsafe code.
-
-Direct Access to the Raw String
---------------------------------
-
-The simdjson library makes explicit assumptions about types. For examples, numbers
-must be integers (up to 64-bit integers) or binary64 floating-point numbers. Some users
-have different needs. For example, some users might want to support big integers.
-The library makes this possible by providing a `raw_json_token` method which returns
-a `std::string_view` instance containing the value as a string which you may then
-parse as you see fit.
-
-```C++
-simdjson::ondemand::parser parser;
-simdjson::padded_string docdata =  R"({"value":12321323213213213213213213213211223})"_padded;
-simdjson::ondemand::document doc = parser.iterate(docdata);
-simdjson::ondemand::object obj = doc.get_object();
-std::string_view token = obj["value"].raw_json_token();
-// token has value 12321323213213213213213213213211223, it points inside the input string
-```
-
-The `raw_json_token` method even works when the JSON value is a string. In such cases, it
-will return the complete string with the quotes and with eventual escaped sequences as in the
-source document.
-
-```C++
-simdjson::ondemand::parser parser;
-simdjson::padded_string docdata =  R"({"value":"12321323213213213213213213213211223"})"_padded;
-simdjson::ondemand::document doc = parser.iterate(docdata);
-simdjson::ondemand::object obj = doc.get_object();
-string_view token = obj["value"].raw_json_token();
-// token has value "12321323213213213213213213213211223", it points inside the input string
-```
-
-The `raw_json_token()` should be fast and free of allocation.
-
 
 
 Newline-Delimited JSON (ndjson) and JSON lines
@@ -1641,6 +1636,78 @@ JSON string to a user-provided buffer:
       // writes 'Jack The Ripper 3', escaping the \u0033
       mystrings.push_back(valuesv);
     }
+```
+
+
+General Direct Access to the Raw JSON String
+--------------------------------
+If your value is a string, the `raw_json_string` gives you direct access to the unprocess
+string. The simdjson library allows you to have access to the raw underlying JSON
+more generally.
+
+The simdjson library makes explicit assumptions about types. For examples, numbers
+must be integers (up to 64-bit integers) or binary64 floating-point numbers. Some users
+have different needs. For example, some users might want to support big integers.
+The library makes this possible by providing a `raw_json_token` method which returns
+a `std::string_view` instance containing the value as a string which you may then
+parse as you see fit.
+
+```C++
+simdjson::ondemand::parser parser;
+simdjson::padded_string docdata =  R"({"value":12321323213213213213213213213211223})"_padded;
+simdjson::ondemand::document doc = parser.iterate(docdata);
+simdjson::ondemand::object obj = doc.get_object();
+std::string_view token = obj["value"].raw_json_token();
+// token has value 12321323213213213213213213213211223, it points inside the input string
+```
+
+The `raw_json_token` method even works when the JSON value is a string. In such cases, it
+will return the complete string with the quotes and with eventual escaped sequences as in the
+source document.
+
+```C++
+simdjson::ondemand::parser parser;
+simdjson::padded_string docdata =  R"({"value":"12321323213213213213213213213211223"})"_padded;
+simdjson::ondemand::document doc = parser.iterate(docdata);
+simdjson::ondemand::object obj = doc.get_object();
+string_view token = obj["value"].raw_json_token();
+// token has value "12321323213213213213213213213211223", it points inside the input string
+```
+
+The `raw_json_token()` should be fast and free of allocation.
+
+If you value is an array or an object, `raw_json_token()` returns effectively a single
+character (`[`) or (`}`) which is not very useful. For arrays and objects, we have another
+method called `raw_json()` which consumes (traverse) the array or the object.
+
+```C++
+simdjson::ondemand::parser parser;
+simdjson::padded_string docdata =  R"({"value":123})"_padded;
+simdjson::ondemand::document doc = parser.iterate(docdata);
+simdjson::ondemand::object obj = doc.get_object();
+string_view token = obj.raw_json(); // gives you `{"value":123}`
+```
+
+
+```C++
+simdjson::ondemand::parser parser;
+simdjson::padded_string docdata =  R"([1,2,3])"_padded;
+simdjson::ondemand::document doc = parser.iterate(docdata);
+simdjson::ondemand::array arr = doc.get_array();
+string_view token = arr.raw_json(); // gives you `[1,2,3]`
+```
+
+Because `raw_json()` consumes to object or the array, if you want to both have
+access to the raw string, and also use the array or object, you should call `reset()`.
+
+```C++
+simdjson::ondemand::parser parser;
+simdjson::padded_string docdata =  R"({"value":123})"_padded;
+simdjson::ondemand::document doc = parser.iterate(docdata);
+simdjson::ondemand::object obj = doc.get_object();
+string_view token = obj.raw_json(); // gives you `{"value":123}`
+obj.reset(); // revise the object
+uint64_t x = obj["value"]; // gives me 123
 ```
 
 Thread Safety

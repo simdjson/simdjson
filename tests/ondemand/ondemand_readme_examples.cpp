@@ -21,108 +21,150 @@ bool string2() {
 
 
 #if SIMDJSON_EXCEPTIONS
+bool gen_raw1() {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  simdjson::padded_string docdata =  R"({"value":123})"_padded;
+  simdjson::ondemand::document doc = parser.iterate(docdata);
+  simdjson::ondemand::object obj = doc.get_object();
+  string_view token = obj.raw_json(); // gives you `{"value":123}`
+  ASSERT_EQUAL(token, R"({"value":123})");
+  TEST_SUCCEED();
+}
 
-  bool at_end() {
-    auto json = R"([1, 2] foo ])"_padded;
-    ondemand::parser parser;
-    ondemand::document doc = parser.iterate(json);
-    ondemand::array array = doc.get_array();
-    for (uint64_t values : array) {
-      std::cout << values << std::endl;
-    }
-    if(!doc.at_end()) {
-      std::cerr << "trailing content at byte index " << doc.current_location() - json.data() << std::endl;
-    }
-    TEST_SUCCEED();
-  }
-  bool number_tests() {
-    ondemand::parser parser;
-    padded_string docdata = R"([1.0, 3, 1, 3.1415,-13231232,9999999999999999999])"_padded;
-    ondemand::document doc = parser.iterate(docdata);
-    ondemand::array arr = doc.get_array();
-    for(ondemand::value val : arr) {
-      std::cout << val << " ";
-      std::cout << "negative: " << val.is_negative() << " ";
-      std::cout << "is_integer: " << val.is_integer() << " ";
-      ondemand::number num = val.get_number();
-      ondemand::number_type t = num.get_number_type();
-      // direct computation without materializing the number:
-      ondemand::number_type dt = val.get_number_type();
-      if(t != dt) { throw std::runtime_error("bug"); }
-      switch(t) {
-        case ondemand::number_type::signed_integer:
-          std::cout  << "integer: " << int64_t(num) << " ";
-          std::cout  << "integer: " << num.get_int64() << std::endl;
-          break;
-        case ondemand::number_type::unsigned_integer:
-          std::cout  << "large 64-bit integer: " << uint64_t(num) << " ";
-          std::cout << "large 64-bit integer: " << num.get_uint64() << std::endl;
-          break;
-        case ondemand::number_type::floating_point_number:
-          std::cout  << "float: " << double(num) << " ";
-          std::cout << "float: " << num.get_double() << std::endl;
-          break;
-      }
-    }
-    return true;
-  }
+bool gen_raw2() {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  simdjson::padded_string docdata =  R"([1,2,3])"_padded;
+  simdjson::ondemand::document doc = parser.iterate(docdata);
+  simdjson::ondemand::array arr = doc.get_array();
+  string_view token = arr.raw_json(); // gives you `[1,2,3]`
+  ASSERT_EQUAL(token, R"([1,2,3])");
+  TEST_SUCCEED();
+}
 
-void recursive_print_json(ondemand::value element) {
-    bool add_comma;
-    switch (element.type()) {
-    case ondemand::json_type::array:
-      cout << "[";
-      add_comma = false;
-      for (auto child : element.get_array()) {
-        if (add_comma) {
-          cout << ",";
-        }
-        // We need the call to value() to get
-        // an ondemand::value type.
-        recursive_print_json(child.value());
-        add_comma = true;
-      }
-      cout << "]";
-      break;
-    case ondemand::json_type::object:
-      cout << "{";
-      add_comma = false;
-      for (auto field : element.get_object()) {
-        if (add_comma) {
-          cout << ",";
-        }
-        // key() returns the key as it appears in the raw
-        // JSON document, if we want the unescaped key,
-        // we should do field.unescaped_key().
-        cout << "\"" << field.key() << "\": ";
-        recursive_print_json(field.value());
-        add_comma = true;
-      }
-      cout << "}\n";
-      break;
-    case ondemand::json_type::number:
-      // assume it fits in a double
-      cout << element.get_double();
-      break;
-    case ondemand::json_type::string:
-      // get_string() would return escaped string, but
-      // we are happy with unescaped string.
-      cout << "\"" << element.get_raw_json_string() << "\"";
-      break;
-    case ondemand::json_type::boolean:
-      cout << element.get_bool();
-      break;
-    case ondemand::json_type::null:
-      // we check that the value is indeed null
-      // otherwise: an error is thrown.
-      if(element.is_null()) {
-        cout << "null";
-      }
-      break;
+bool gen_raw3() {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  simdjson::padded_string docdata =  R"({"value":123})"_padded;
+  simdjson::ondemand::document doc = parser.iterate(docdata);
+  simdjson::ondemand::object obj = doc.get_object();
+  string_view token = obj.raw_json(); // gives you `{"value":123}`
+  ASSERT_EQUAL(token, R"({"value":123})");
+  obj.reset(); // revise the object
+  uint64_t x = obj["value"]; // gives me 123
+  ASSERT_EQUAL(x, 123);
+
+  TEST_SUCCEED();
+}
+
+bool at_end() {
+  TEST_START();
+  auto json = R"([1, 2] foo ])"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  ondemand::array array = doc.get_array();
+  for (uint64_t values : array) {
+    std::cout << values << std::endl;
+  }
+  if(!doc.at_end()) {
+    std::cerr << "trailing content at byte index " << doc.current_location() - json.data() << std::endl;
+  }
+  TEST_SUCCEED();
+}
+
+bool number_tests() {
+  TEST_START();
+  ondemand::parser parser;
+  padded_string docdata = R"([1.0, 3, 1, 3.1415,-13231232,9999999999999999999])"_padded;
+  ondemand::document doc = parser.iterate(docdata);
+  ondemand::array arr = doc.get_array();
+  for(ondemand::value val : arr) {
+    std::cout << val << " ";
+    std::cout << "negative: " << val.is_negative() << " ";
+    std::cout << "is_integer: " << val.is_integer() << " ";
+    ondemand::number num = val.get_number();
+    ondemand::number_type t = num.get_number_type();
+    // direct computation without materializing the number:
+    ondemand::number_type dt = val.get_number_type();
+    if(t != dt) { throw std::runtime_error("bug"); }
+    switch(t) {
+      case ondemand::number_type::signed_integer:
+        std::cout  << "integer: " << int64_t(num) << " ";
+        std::cout  << "integer: " << num.get_int64() << std::endl;
+        break;
+      case ondemand::number_type::unsigned_integer:
+        std::cout  << "large 64-bit integer: " << uint64_t(num) << " ";
+        std::cout << "large 64-bit integer: " << num.get_uint64() << std::endl;
+        break;
+      case ondemand::number_type::floating_point_number:
+        std::cout  << "float: " << double(num) << " ";
+        std::cout << "float: " << num.get_double() << std::endl;
+        break;
     }
+  }
+  TEST_SUCCEED();
+}
+
+bool recursive_print_json(ondemand::value element) {
+  TEST_START();
+  bool add_comma;
+  switch (element.type()) {
+  case ondemand::json_type::array:
+    cout << "[";
+    add_comma = false;
+    for (auto child : element.get_array()) {
+      if (add_comma) {
+        cout << ",";
+      }
+      // We need the call to value() to get
+      // an ondemand::value type.
+      recursive_print_json(child.value());
+      add_comma = true;
+    }
+    cout << "]";
+    break;
+  case ondemand::json_type::object:
+    cout << "{";
+    add_comma = false;
+    for (auto field : element.get_object()) {
+      if (add_comma) {
+        cout << ",";
+      }
+      // key() returns the key as it appears in the raw
+      // JSON document, if we want the unescaped key,
+      // we should do field.unescaped_key().
+      cout << "\"" << field.key() << "\": ";
+      recursive_print_json(field.value());
+      add_comma = true;
+    }
+    cout << "}\n";
+    break;
+  case ondemand::json_type::number:
+    // assume it fits in a double
+    cout << element.get_double();
+    break;
+  case ondemand::json_type::string:
+    // get_string() would return escaped string, but
+    // we are happy with unescaped string.
+    cout << "\"" << element.get_raw_json_string() << "\"";
+    break;
+  case ondemand::json_type::boolean:
+    cout << element.get_bool();
+    break;
+  case ondemand::json_type::null:
+    // we check that the value is indeed null
+    // otherwise: an error is thrown.
+    if(element.is_null()) {
+      cout << "null";
+    }
+    break;
+  }
+  TEST_SUCCEED();
 }
 
 bool basics_treewalk() {
+  TEST_START();
   padded_string json[3] = {R"( [
     { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
     { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
@@ -135,77 +177,82 @@ bool basics_treewalk() {
     recursive_print_json(val);
     std::cout << std::endl;
   }
-  return true;
+  TEST_SUCCEED();
 }
 
-void print_depth_space(ondemand::value element) {
+bool print_depth_space(ondemand::value element) {
+  TEST_START();
   for(auto i = 0; i < element.current_depth(); i++) {
     cout << " ";
   }
+  TEST_SUCCEED();
 }
 
-void recursive_print_json_breakline(ondemand::value element) {
-    bool add_comma;
-    switch (element.type()) {
-    case ondemand::json_type::array:
-      cout << endl;
-      print_depth_space(element);
-      cout << "[";
-      add_comma = false;
-      for (auto child : element.get_array()) {
-        if (add_comma) {
-          print_depth_space(element);
-          cout << ",";
-        }
-        // We need the call to value() to get
-        // an ondemand::value type.
-        recursive_print_json_breakline(child.value());
-        add_comma = true;
+bool recursive_print_json_breakline(ondemand::value element) {
+  TEST_START();
+  bool add_comma;
+  switch (element.type()) {
+  case ondemand::json_type::array:
+    cout << endl;
+    print_depth_space(element);
+    cout << "[";
+    add_comma = false;
+    for (auto child : element.get_array()) {
+      if (add_comma) {
+        print_depth_space(element);
+        cout << ",";
       }
-      cout << "]";
-      break;
-    case ondemand::json_type::object:
-      cout << endl;
-      print_depth_space(element);
-      cout << "{";
-      add_comma = false;
-      for (auto field : element.get_object()) {
-        if (add_comma) {
-          print_depth_space(element);
-          cout << ",";
-        }
-        // key() returns the key as it appears in the raw
-        // JSON document, if we want the unescaped key,
-        // we should do field.unescaped_key().
-        cout << "\"" << field.key() << "\": ";
-        recursive_print_json_breakline(field.value());
-        add_comma = true;
-      }
-      cout << "}\n";
-      break;
-    case ondemand::json_type::number:
-      // assume it fits in a double
-      cout << element.get_double();
-      break;
-    case ondemand::json_type::string:
-      // get_string() would return escaped string, but
-      // we are happy with unescaped string.
-      cout << "\"" << element.get_raw_json_string() << "\"";
-      break;
-    case ondemand::json_type::boolean:
-      cout << element.get_bool();
-      break;
-    case ondemand::json_type::null:
-      // We check that the value is indeed null
-      // otherwise: an error is thrown.
-      if(element.is_null()) {
-        cout << "null";
-      }
-      break;
+      // We need the call to value() to get
+      // an ondemand::value type.
+      recursive_print_json_breakline(child.value());
+      add_comma = true;
     }
+    cout << "]";
+    break;
+  case ondemand::json_type::object:
+    cout << endl;
+    print_depth_space(element);
+    cout << "{";
+    add_comma = false;
+    for (auto field : element.get_object()) {
+      if (add_comma) {
+        print_depth_space(element);
+        cout << ",";
+      }
+      // key() returns the key as it appears in the raw
+      // JSON document, if we want the unescaped key,
+      // we should do field.unescaped_key().
+      cout << "\"" << field.key() << "\": ";
+      recursive_print_json_breakline(field.value());
+      add_comma = true;
+    }
+    cout << "}\n";
+    break;
+  case ondemand::json_type::number:
+    // assume it fits in a double
+    cout << element.get_double();
+    break;
+  case ondemand::json_type::string:
+    // get_string() would return escaped string, but
+    // we are happy with unescaped string.
+    cout << "\"" << element.get_raw_json_string() << "\"";
+    break;
+  case ondemand::json_type::boolean:
+    cout << element.get_bool();
+    break;
+  case ondemand::json_type::null:
+    // We check that the value is indeed null
+    // otherwise: an error is thrown.
+    if(element.is_null()) {
+      cout << "null";
+    }
+    break;
+  }
+  TEST_SUCCEED();
 }
 
 bool basics_treewalk_breakline() {
+  TEST_START();
   padded_string json[3] = {R"( [
     { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
     { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
@@ -218,7 +265,7 @@ bool basics_treewalk_breakline() {
     recursive_print_json_breakline(val);
     std::cout << std::endl;
   }
-  return true;
+  TEST_SUCCEED();
 }
 
 bool basics_1() {
@@ -974,6 +1021,22 @@ int load_example_except() {
   std::cout << identifier << std::endl;
   return EXIT_SUCCESS;
 }
+int load_example_except_morecomplete(void) {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  simdjson::padded_string json_string;
+  simdjson::ondemand::document doc;
+  try {
+    json_string = padded_string::load("twitter.json");
+    doc = parser.iterate(json_string);
+    uint64_t identifier = doc["statuses"].at(0)["id"];
+    std::cout << identifier << std::endl;
+  } catch (simdjson::simdjson_error &error) {
+    std::cerr << "JSON error: " << error.what() << " near "
+              << doc.current_location() << " in " << json_string << std::endl;
+  }
+  return EXIT_SUCCESS;
+}
 #endif
 bool test_load_example() {
   TEST_START();
@@ -1235,6 +1298,7 @@ bool example1958() {
 bool run() {
   return true
 #if SIMDJSON_EXCEPTIONS
+    && gen_raw1() && gen_raw2() && gen_raw3()
     && at_end()
     && example1956() && example1958()
 //    && basics_1() // Fails because twitter.json isn't in current directory. Compile test only.
