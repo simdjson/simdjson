@@ -91,7 +91,6 @@ int main(void) {
 4. `./quickstart`
    ```
    100 results.
-```
 
 
 Documentation
