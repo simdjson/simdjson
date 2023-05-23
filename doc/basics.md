@@ -355,7 +355,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
   scan through the object looking for the field with the matching string, doing a character-by-character
   comparison. For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do
-  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. If you consume an
+  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. The library does not provide a distinct function to check if a key is present, instead we recommend you attempt to access the key: e.g., by doing `simdjson::ondemand::value val{}; if(!object["foo"].get(val)) {...}`, you have that `val` contains the requested value inside the if clause. If you consume an
   object twice: `std::string_view(object["foo"]` followed by `std::string_view(object["foo"]`, your code
   is in error. Furthermore, you can only consume one field at a time, on the same object. The
   value instance you get from  `content["bids"]` becomes invalid when you call `content["asks"]`.
