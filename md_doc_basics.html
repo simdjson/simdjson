@@ -850,6 +850,24 @@ Exceptions</h2>
 <div class="line">  std::cout &lt;&lt; identifier &lt;&lt; std::endl;</div>
 <div class="line">  return EXIT_SUCCESS;</div>
 <div class="line">}</div>
+</div><!-- fragment --><p>You can do handle errors gracefully as well...</p>
+<div class="fragment"><div class="line"> {C++}</div>
+<div class="line">#include &lt;iostream&gt;</div>
+<div class="line">#include &quot;simdjson.h&quot;</div>
+<div class="line">int main(void) {</div>
+<div class="line">  simdjson::ondemand::parser parser;</div>
+<div class="line">  simdjson::padded_string json_string;</div>
+<div class="line">  simdjson::ondemand::document doc;</div>
+<div class="line">  try {</div>
+<div class="line">    json_string = padded_string::load(&quot;twitter.json&quot;);</div>
+<div class="line">    doc = parser.iterate(json_string);</div>
+<div class="line">    uint64_t identifier = doc[&quot;statuses&quot;].at(0)[&quot;id&quot;];</div>
+<div class="line">    std::cout &lt;&lt; identifier &lt;&lt; std::endl;</div>
+<div class="line">  } catch (simdjson::simdjson_error &amp;error) {</div>
+<div class="line">    std::cerr &lt;&lt; &quot;JSON error: &quot; &lt;&lt; error.what() &lt;&lt; &quot; near &quot;</div>
+<div class="line">              &lt;&lt; doc.current_location() &lt;&lt; &quot; in &quot; &lt;&lt; json_string &lt;&lt; std::endl;</div>
+<div class="line">  }</div>
+<div class="line">}</div>
 </div><!-- fragment --><h2><a class="anchor" id="autotoc_md18"></a>
 Current location in document</h2>
 <p>Sometimes, it might be helpful to know the current location in the document during iteration. This is especially useful when encountering errors. The <code>current_location()</code> method on a <code>document</code> instances makes it easy to identify common JSON errors. Users can call the <code>current_location()</code> method on a valid document instance to retrieve a <code>const char *</code> pointer to the current location in the document. This method also works even after an error has invalidated the document and the parser (e.g. <code>TAPE_ERROR</code>, <code>INCOMPLETE_ARRAY_OR_OBJECT</code>). When the input was a <code>padding_string</code> or another null-terminated source, then you may use the <code>const char *</code> pointer as a C string. As an example, consider the following example where we used the exception-free simdjson interface:</p>
