@@ -133,7 +133,7 @@ namespace misc_tests {
     ASSERT_SUCCESS(parser.iterate(json).get(doc));
     std::string_view view;
     ASSERT_SUCCESS( doc.get_string().get(view));
-    ASSERT_EQUAL(view, u8"wow:\uFFFF");
+    ASSERT_EQUAL(view, "wow:\xef\xbf\xbf");
     TEST_SUCCEED();
   }
 
@@ -536,9 +536,9 @@ namespace misc_tests {
     return true;
   }
   simdjson_warn_unused bool test_raw_json_token(string_view json, string_view expected_token, int expected_start_index = 0) {
-    string title = "'";
+    string title("'");
     title.append(json.data(), json.length());
-    title += "'";
+    title += std::string("'");
     padded_string json_padded = json;
     SUBTEST(title, test_ondemand_doc(json_padded, [&](auto doc) {
       string_view token;
@@ -552,11 +552,11 @@ namespace misc_tests {
     // Test values
     auto json_in_hash = string(R"({"a":)");
     json_in_hash.append(json.data(), json.length());
-    json_in_hash += "}";
+    json_in_hash += std::string("}");
     json_padded = json_in_hash;
-    title = "'";
+    title = std::string("'");
     title.append(json_in_hash.data(), json_in_hash.length());
-    title += "'";
+    title += std::string("'");
     SUBTEST(title, test_ondemand_doc(json_padded, [&](auto doc) {
       string_view token;
       ASSERT_SUCCESS( doc["a"].raw_json_token().get(token) );
