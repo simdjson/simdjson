@@ -56,6 +56,7 @@ Real-world usage
 - [UJRPC](https://github.com/unum-cloud/ujrpc)
 - [fastgltf](https://github.com/spnda/fastgltf)
 - [vast](https://github.com/tenzir/vast)
+- [ada-url](https://github.com/ada-url/ada)
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
