@@ -330,7 +330,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 * **Validate What You Use:** When calling `iterate`, the document is quickly indexed. If it is
   not a valid Unicode (UTF-8) string or if there is an unclosed string, an error may be reported right away.
   However, it is not fully validated. On Demand only fully validates the values you use and the
-  structure leading to it.
+  structure leading to it. It means that at every step as you traverse the document, you may encounter an error. You can handle errors either with exceptions or with error codes.
 * **Extracting Values:** You can cast a JSON element to a native type:
   `double(element)`. This works for `std::string_view`, double, uint64_t, int64_t, bool,
   ondemand::object and ondemand::array. We also have explicit methods such as `get_string()`, `get_double()`,
@@ -355,8 +355,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
   scan through the object looking for the field with the matching string, doing a character-by-character
   comparison. For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do
-  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. The library does not provide a distinct function to check if a key is present, instead we recommend you attempt to access the key: e.g., by doing `simdjson::ondemand::value val{}; if(!object["foo"].get(val)) {...}`, you have that `val` contains the requested value inside the if clause. If you consume an
-  object twice: `std::string_view(object["foo"]` followed by `std::string_view(object["foo"]`, your code
+  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. Keep in mind that On Demand does not buffer or save the result of the parsing: if you repeatedly access `object["foo"]`, then it must repeatedly seek the key and parse the content. The library does not provide a distinct function to check if a key is present, instead we recommend you attempt to access the key: e.g., by doing `ondemand::value val{}; if(!object["foo"].get(val)) {...}`, you have that `val` contains the requested value inside the if clause.  It is your responsability as a user to temporarily keep a reference to the value (`auto v = object["foo"]`), or to consume the content and store it in your own data structures. If you consume an
+  object twice: `std::string_view(object["foo"]` followed by `std::string_view(object["foo"]` then your code
   is in error. Furthermore, you can only consume one field at a time, on the same object. The
   value instance you get from  `content["bids"]` becomes invalid when you call `content["asks"]`.
   If you have retrieved `content["bids"].get_array()` and you later call
