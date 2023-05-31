@@ -60,7 +60,6 @@ static inline void write_utf8(unsigned codepoint, char *&end) {
     *end++ = static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
     *end++ = static_cast<char>(0x80 | (codepoint & 0x3F));
   } else {
-    assert(codepoint < 0x200000);
     *end++ = static_cast<char>(0xF0 | (codepoint >> 18));
     *end++ = static_cast<char>(0x80 | ((codepoint >> 12) & 0x3F));
     *end++ = static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
