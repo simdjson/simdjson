@@ -13758,7 +13758,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
 #define SIMDJSON_TARGET_ICELAKE
 #define SIMDJSON_UNTARGET_ICELAKE
 #else
-#define SIMDJSON_TARGET_ICELAKE SIMDJSON_TARGET_REGION("avx512f,avx512dq,avx512cd,avx512bw,avx512vbmi,avx512vbmi2,avx512vl,avx2,bmi,pclmul,lzcnt")
+#define SIMDJSON_TARGET_ICELAKE SIMDJSON_TARGET_REGION("avx512f,avx512dq,avx512cd,avx512bw,avx512vbmi,avx512vbmi2,avx512vl,avx2,bmi,pclmul,lzcnt,popcnt")
 #define SIMDJSON_UNTARGET_ICELAKE SIMDJSON_UNTARGET_REGION
 #endif
 
