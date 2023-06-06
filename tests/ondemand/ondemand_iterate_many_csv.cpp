@@ -53,24 +53,6 @@ bool trailing_comma() {
   TEST_SUCCEED();
 }
 
-bool leading_comma() {
-  TEST_START();
-  auto json = R"(,1)"_padded;
-  ondemand::parser parser;
-  ondemand::document_stream doc_stream;
-  ASSERT_SUCCESS(parser.iterate_many(json, json.size(), true).get(doc_stream));
-
-  try {
-    auto begin = doc_stream.begin();
-    auto end = doc_stream.end();
-    for (auto it = begin; it != end; ++it) {}
-  } catch (simdjson_error& e) {
-    ASSERT_ERROR(e.error(), TAPE_ERROR);
-  }
-
-  TEST_SUCCEED();
-}
-
 bool check_parsed_values() {
   TEST_START();
 
@@ -138,12 +120,36 @@ bool check_parsed_values() {
   TEST_SUCCEED();
 }
 
+#if SIMDJSON_EXCEPTIONS
+
+bool leading_comma() {
+  TEST_START();
+  auto json = R"(,1)"_padded;
+  ondemand::parser parser;
+  ondemand::document_stream doc_stream;
+  ASSERT_SUCCESS(parser.iterate_many(json, json.size(), true).get(doc_stream));
+
+  try {
+    auto begin = doc_stream.begin();
+    auto end = doc_stream.end();
+    for (auto it = begin; it != end; ++it) {}
+  } catch (simdjson_error& e) {
+    ASSERT_ERROR(e.error(), TAPE_ERROR);
+  }
+
+  TEST_SUCCEED();
+}
+
+#endif
+
 bool run() {
   return normal() &&
          small_batch_size() &&
          trailing_comma() &&
-         leading_comma() &&
          check_parsed_values() &&
+#if SIMDJSON_EXCEPTIONS
+         leading_comma() &&
+#endif
          true;
 }
 
