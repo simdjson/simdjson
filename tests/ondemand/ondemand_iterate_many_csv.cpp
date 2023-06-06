@@ -8,6 +8,8 @@ using namespace simdjson;
 namespace iterate_many_csv_tests {
 using namespace std;
 
+#if SIMDJSON_EXCEPTIONS
+
 bool normal() {
   TEST_START();
   auto json = R"( 1, 2, 3, 4, "a", "b", "c", {"hello": "world"} , [1, 2, 3])"_padded;
@@ -90,10 +92,14 @@ bool check_parsed_values() {
       break;
     case 2:
     {
+      std::vector<int64_t> expected{100, 1};
       ondemand::array arr = doc.get_array();
       ASSERT_EQUAL(int(arr.count_elements()), 2);
-      ASSERT_EQUAL(int64_t(arr.at(0)), 100);
-      ASSERT_EQUAL(int64_t(arr.at(1)), 1);
+      int i = 0;
+      for (auto a : arr)
+      {
+        ASSERT_EQUAL(int64_t(a), expected[i++]);
+      }
     }
       break;
     case 3:
@@ -113,12 +119,17 @@ bool check_parsed_values() {
   TEST_SUCCEED();
 }
 
+#endif
+
 bool run() {
-  return normal() &&
+  return
+#if SIMDJSON_EXCEPTIONS
+         normal() &&
          small_batch_size() &&
          trailing_comma() &&
          leading_comma() &&
          check_parsed_values() &&
+#endif
          true;
 }
 
