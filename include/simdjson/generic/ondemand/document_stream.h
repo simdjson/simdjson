@@ -222,7 +222,8 @@ private:
     ondemand::parser &parser,
     const uint8_t *buf,
     size_t len,
-    size_t batch_size
+    size_t batch_size,
+    bool allow_comma_separated
   ) noexcept;
 
   /**
@@ -271,6 +272,7 @@ private:
   const uint8_t *buf;
   size_t len;
   size_t batch_size;
+  bool allow_comma_separated;
   /**
    * We are going to use just one document instance. The document owns
    * the json_iterator. It implies that we only ever pass a reference

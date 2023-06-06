@@ -84,12 +84,14 @@ simdjson_inline document_stream::document_stream(
   ondemand::parser &_parser,
   const uint8_t *_buf,
   size_t _len,
-  size_t _batch_size
+  size_t _batch_size,
+  bool _allow_comma_separated
 ) noexcept
   : parser{&_parser},
     buf{_buf},
     len{_len},
     batch_size{_batch_size <= MINIMAL_BATCH_SIZE ? MINIMAL_BATCH_SIZE : _batch_size},
+    allow_comma_separated{_allow_comma_separated},
     error{SUCCESS}
     #ifdef SIMDJSON_THREADS_ENABLED
     , use_thread(_parser.threaded) // we need to make a copy because _parser.threaded can change
@@ -107,6 +109,7 @@ simdjson_inline document_stream::document_stream() noexcept
     buf{nullptr},
     len{0},
     batch_size{0},
+    allow_comma_separated{false},
     error{UNINITIALIZED}
     #ifdef SIMDJSON_THREADS_ENABLED
     , use_thread(false)
@@ -290,6 +293,8 @@ inline void document_stream::next_document() noexcept {
   if (error) { return; }
   // Always set depth=1 at the start of document
   doc.iter._depth = 1;
+  // consume comma if comma separated is allowed
+  if (allow_comma_separated) { doc.iter.consume_character(','); }
   // Resets the string buffer at the beginning, thus invalidating the strings.
   doc.iter._string_buf_loc = parser->string_buf.get();
   doc.iter._root = doc.iter.position();
