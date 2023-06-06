@@ -106,7 +106,7 @@ bool check_parsed_values() {
       std::vector<int64_t> expected{100, 1};
       ondemand::array arr;
       ASSERT_SUCCESS(doc.get_array().get(arr));
-      uint64_t element_count;
+      size_t element_count;
       ASSERT_SUCCESS(arr.count_elements().get(element_count));
       ASSERT_EQUAL(element_count, 2);
       int i = 0;
