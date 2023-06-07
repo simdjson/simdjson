@@ -66,6 +66,15 @@ namespace number_tests {
     return true;
   }
 
+  bool issue2017() {
+    TEST_START();
+    simdjson::dom::parser parser;
+    simdjson::padded_string docdata = R"({"score":0.8825149536132812})"_padded;
+    double score;
+    ASSERT_SUCCESS(parser.parse(docdata)["score"].get_double().get(score));
+    ASSERT_EQUAL(score, 0.8825149536132812);
+    TEST_SUCCEED();
+  }
 
   bool small_integers() {
     std::cout << __func__ << std::endl;
@@ -377,7 +386,8 @@ namespace number_tests {
   }
 
   bool run() {
-    return truncated_borderline() &&
+    return issue2017() &&
+           truncated_borderline() &&
            specific_tests() &&
            ground_truth() &&
            small_integers() &&

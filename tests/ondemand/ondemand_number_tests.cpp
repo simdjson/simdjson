@@ -333,6 +333,8 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+
+
   bool get_root_number_tests() {
     TEST_START();
     ondemand::parser parser;
@@ -389,8 +391,21 @@ namespace number_tests {
 
     TEST_SUCCEED();
   }
+  bool issue2017() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    padded_string docdata = R"({"score":0.8825149536132812})"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    double score;
+    ASSERT_SUCCESS(doc["score"].get_double().get(score));
+    ASSERT_EQUAL(score, 0.8825149536132812);
+    TEST_SUCCEED();
+  }
+
   bool run() {
-    return issue_1898() &&
+    return issue2017() &&
+           issue_1898() &&
            issue1878() &&
            get_root_number_tests() &&
            get_number_tests()&&
