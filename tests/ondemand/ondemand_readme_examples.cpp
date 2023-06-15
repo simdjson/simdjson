@@ -1037,6 +1037,22 @@ int load_example_except_morecomplete(void) {
   }
   return EXIT_SUCCESS;
 }
+
+bool allow_comma_separated_example() {
+  TEST_START();
+  auto json = R"( 1, 2, 3, 4, "a", "b", "c", {"hello": "world"} , [1, 2, 3])"_padded;
+  ondemand::parser parser;
+  ondemand::document_stream doc_stream;
+  // We pass '32' as the batch size, but it is a bogus parameter because, since
+  // we pass 'true' to the allow_comma parameter, the batch size will be set to at least
+  // the document size.
+  auto error = parser.iterate_many(json, 32, true).get(doc_stream);
+  if(error) { std::cerr << error << std::endl; return false; }
+  for (auto doc : doc_stream) {
+    std::cout << doc.type() << std::endl;
+  }
+  TEST_SUCCEED();
+}
 #endif
 bool test_load_example() {
   TEST_START();
@@ -1064,22 +1080,6 @@ bool current_location_tape_error() {
   ASSERT_SUCCESS(doc.current_location().get(ptr));
   std::string expected = "false, \"integer\": -343} ";
   ASSERT_EQUAL(std::string(ptr,expected.size()), expected);
-  TEST_SUCCEED();
-}
-
-bool allow_comma_separated_example() {
-  TEST_START();
-  auto json = R"( 1, 2, 3, 4, "a", "b", "c", {"hello": "world"} , [1, 2, 3])"_padded;
-  ondemand::parser parser;
-  ondemand::document_stream doc_stream;
-  // We pass '32' as the batch size, but it is a bogus parameter because, since
-  // we pass 'true' to the allow_comma parameter, the batch size will be set to at least
-  // the document size.
-  auto error = parser.iterate_many(json, 32, true).get(doc_stream);
-  if(error) { std::cerr << error << std::endl; return false; }
-  for (auto doc : doc_stream) {
-    std::cout << doc.type() << std::endl;
-  }
   TEST_SUCCEED();
 }
 
