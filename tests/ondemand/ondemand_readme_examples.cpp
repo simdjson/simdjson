@@ -1076,7 +1076,7 @@ bool allow_comma_separated_example() {
   // we pass 'true' to the allow_comma parameter, the batch size will be set to at least
   // the document size.
   auto error = parser.iterate_many(json, 32, true).get(doc_stream);
-  if(error) { std::cerr << error << std::endl; return; }
+  if(error) { std::cerr << error << std::endl; return false; }
   for (auto doc : doc_stream) {
     std::cout << doc.type() << std::endl;
   }
