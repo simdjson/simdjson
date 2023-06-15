@@ -129,6 +129,18 @@ Some official formats **(non-exhaustive list)**:
 API
 ---
 
+Wxample:
+
+```c++
+auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
+ondemand::parser parser;
+ondemand::document_stream docs = parser.iterate_many(json);
+for (auto doc : docs) {
+  std::cout << doc["foo"] << std::endl;
+}
+// Prints 1 2 3
+```
+
 See [basics.md](basics.md#newline-delimited-json-ndjson-and-json-lines) for an overview of the API.
 
 ## Use cases
@@ -238,7 +250,38 @@ This will print:
 
 Importantly, you should only call `truncated_bytes()` after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet.
 
-Comma separated documents
+Comma-separated documents
 -----------
 
-`iterate_many` also takes in an option to allow parsing of comma separated documents. In this mode, the entire buffer is processed in 1 batch and batch size will be increased to be as large as the JSON passed. Therefore, the capacity of the parser has to be sufficient to support the batch size set.
+We also support comma-separated documents, but with some performance limitations. The `iterate_many` function  takes in an option to allow parsing of comma separated documents (which defaults on false). In this mode, the entire buffer is processed in one batch. Therefore, the total size of the document should not exceed the maximal capacity of the parser (4 GB). This mode also effectively disallow multithreading. It is therefore mostly suitable for not "very large" inputs. In this mode, the batch_size parameter
+is effectively ignored, as it is set to at least the document size.
+
+Example:
+
+```C++
+    auto json = R"( 1, 2, 3, 4, "a", "b", "c", {"hello": "world"} , [1, 2, 3])"_padded;
+    ondemand::parser parser;
+    ondemand::document_stream doc_stream;
+    // We pass '32' as the batch size, but it is a bogus parameter because, since
+    // we pass 'true' to the allow_comma parameter, the batch size will be set to at least
+    // the document size.
+    auto error = parser.iterate_many(json, 32, true).get(doc_stream);
+    if(error) { std::cerr << error << std::endl; return; }
+    for (auto doc : doc_stream) {
+        std::cout << doc.type() << std::endl;
+    }
+ ```
+
+ This will print:
+
+```
+number
+number
+number
+number
+string
+string
+string
+object
+array
+```

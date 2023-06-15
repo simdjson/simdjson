@@ -1067,6 +1067,21 @@ bool current_location_tape_error() {
   TEST_SUCCEED();
 }
 
+bool allow_comma_separated_example() {
+  TEST_START();
+  auto json = R"( 1, 2, 3, 4, "a", "b", "c", {"hello": "world"} , [1, 2, 3])"_padded;
+  ondemand::parser parser;
+  ondemand::document_stream doc_stream;
+  // We pass '32' as the batch size, but it is a bogus parameter because, since
+  // we pass 'true' to the allow_comma parameter, the batch size will be set to at least
+  // the document size.
+  auto error = parser.iterate_many(json, 32, true).get(doc_stream);
+  if(error) { std::cerr << error << std::endl; return; }
+  for (auto doc : doc_stream) {
+    std::cout << doc.type() << std::endl;
+  }
+  TEST_SUCCEED();
+}
 
 bool current_location_user_error() {
   TEST_START();
@@ -1301,6 +1316,7 @@ bool run() {
     && gen_raw1() && gen_raw2() && gen_raw3()
     && at_end()
     && example1956() && example1958()
+    && allow_comma_separated_example()
 //    && basics_1() // Fails because twitter.json isn't in current directory. Compile test only.
     &&  basics_treewalk()
     &&  basics_treewalk_breakline()
