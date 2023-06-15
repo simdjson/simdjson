@@ -337,6 +337,14 @@ simdjson_inline void json_iterator::reenter_child(token_position position, depth
   _depth = child_depth;
 }
 
+simdjson_inline error_code json_iterator::consume_character(char c) noexcept {
+  if (*peek() == c) {
+    return_current_and_advance();
+    return SUCCESS;
+  }
+  return TAPE_ERROR;
+}
+
 #if SIMDJSON_DEVELOPMENT_CHECKS
 
 simdjson_inline token_position json_iterator::start_position(depth_t depth) const noexcept {
