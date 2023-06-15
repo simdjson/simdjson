@@ -209,7 +209,10 @@ Incomplete streams</h1>
 </div><!-- fragment --><p>This will print: </p><div class="fragment"><div class="line">[1,2,3]</div>
 <div class="line">{&quot;1&quot;:1,&quot;2&quot;:3,&quot;4&quot;:4}</div>
 <div class="line">39 bytes</div>
-</div><!-- fragment --><p>Importantly, you should only call <code>truncated_bytes()</code> after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet. </p>
+</div><!-- fragment --><p>Importantly, you should only call <code>truncated_bytes()</code> after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet.</p>
+<h1><a class="anchor" id="autotoc_md63"></a>
+Comma separated documents</h1>
+<p><code>iterate_many</code> also takes in an option to allow parsing of comma separated documents. In this mode, the entire buffer is processed in 1 batch and batch size will be increased to be as large as the JSON passed. Therefore, the capacity of the parser has to be sufficient to support the batch size set. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
