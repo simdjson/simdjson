@@ -6,6 +6,59 @@ using namespace simdjson;
 namespace error_tests {
   using namespace std;
 
+  bool badbadjson() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json_string = R"({
+      "main": "therain"_"in_spain"_
+})"_padded;
+    ondemand::document document;
+    auto error = parser.iterate(json_string).get(document);
+    if(error != simdjson::SUCCESS) {
+      return false;
+    }
+    ondemand::object obj;
+    error =  document.get_object().get(obj);
+    if(error != simdjson::SUCCESS) {
+      return false;
+    }
+    std::string_view name_value{};
+    error = obj["name"].get_string().get(name_value);
+    ASSERT_ERROR(error,TAPE_ERROR);
+    // Check for "main" field
+    std::string_view main_value{};
+    error = obj["main"].get_string().get(main_value);
+    ASSERT_ERROR(error,TAPE_ERROR);
+    TEST_SUCCEED();
+  }
+
+
+  bool badbadjson2() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json_string = R"({
+      "main": "therain"_"in_spain"_
+})"_padded;
+    ondemand::document document;
+    auto error = parser.iterate(json_string).get(document);
+    if(error != simdjson::SUCCESS) {
+      return false;
+    }
+    ondemand::object obj;
+    error =  document.get_object().get(obj);
+    if(error != simdjson::SUCCESS) {
+      return false;
+    }
+
+    std::string_view main_value{};
+    error = obj["main"].get_string().get(main_value);
+    ASSERT_ERROR(error, simdjson::SUCCESS);
+    std::string_view name_value{};
+    error = obj["name"].get_string().get(name_value);
+    ASSERT_ERROR(error,TAPE_ERROR);
+    TEST_SUCCEED();
+  }
+
   bool issue1834() {
     TEST_START();
     ondemand::parser parser;
@@ -313,6 +366,8 @@ namespace error_tests {
 
   bool run() {
     return
+           badbadjson() &&
+           badbadjson2() &&
            issue1834() &&
            issue1834_2() &&
 #if SIMDJSON_EXCEPTIONS

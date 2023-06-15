@@ -946,11 +946,13 @@ simdjson_inline void value_iterator::move_at_container_start() noexcept {
 }
 
 simdjson_inline simdjson_result<bool> value_iterator::reset_array() noexcept {
+  if(error()) { return error(); }
   move_at_container_start();
   return started_array();
 }
 
 simdjson_inline simdjson_result<bool> value_iterator::reset_object() noexcept {
+  if(error()) { return error(); }
   move_at_container_start();
   return started_object();
 }
