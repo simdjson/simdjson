@@ -112,7 +112,8 @@ def dofile(fid, prepath, filename):
                     print(f"// redefining SIMDJSON_IMPLEMENTATION to \"{current_implementation}\"\n// {line}", file=fid)
                 elif undefines_simdjson_implementation.search(line):
                     # Don't include #undef SIMDJSON_IMPLEMENTATION since we're handling it ourselves
-                    print(f"// {line}")
+                    # print(f"// {line}")
+                    pass
                 else:
                     # copy the line, with SIMDJSON_IMPLEMENTATION replace to what it is currently defined to
                     print(uses_simdjson_implementation.sub(current_implementation+"\\1",line), file=fid)

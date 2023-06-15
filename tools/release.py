@@ -80,15 +80,6 @@ else :
 
 atleastminor= (currentv[0] != newversion[0]) or (currentv[1] != newversion[1])
 
-if(atleastminor):
-    print(colored(0, 255, 0, "This is more than a revision."))
-    releasefile = maindir + os.sep + "RELEASES.md"
-    releasedata = open(releasefile).read()
-    pattern = re.compile("#\s+\d+\.\d+")
-    m = pattern.search(releasedata)
-    if(m == None):
-        print(colored(255, 0, 0, "You are preparing a new minor release and you have not yet updated RELEASES.md."))
-        sys.exit(-1)
 
 versionfilerel = os.sep + "include" + os.sep + "simdjson" + os.sep + "simdjson_version.h"
 versionfile = maindir + versionfilerel

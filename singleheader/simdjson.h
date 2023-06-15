@@ -1,4 +1,4 @@
-/* auto-generated on 2023-05-14 17:17:10 -0400. Do not edit! */
+/* auto-generated on 2023-06-15 09:11:14 -0400. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -43,7 +43,7 @@
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "3.1.8"
+#define SIMDJSON_VERSION "3.2.0"
 
 namespace simdjson {
 enum {
@@ -54,11 +54,11 @@ enum {
   /**
    * The minor version (major.MINOR.revision) of simdjson being used.
    */
-  SIMDJSON_VERSION_MINOR = 1,
+  SIMDJSON_VERSION_MINOR = 2,
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 8
+  SIMDJSON_VERSION_REVISION = 0
 };
 } // namespace simdjson
 
@@ -148,13 +148,6 @@ enum {
 #define SIMDJSON_REGULAR_VISUAL_STUDIO 1
 #endif // __clang__
 #endif // _MSC_VER
-
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-// https://en.wikipedia.org/wiki/C_alternative_tokens
-// This header should have no effect, except maybe
-// under Visual Studio.
-#include <iso646.h>
-#endif
 
 #if defined(__x86_64__) || defined(_M_AMD64)
 #define SIMDJSON_IS_X86_64 1
@@ -294,8 +287,9 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 #define simdjson_strncasecmp strncasecmp
 #endif
 
-#ifdef NDEBUG
-
+#if defined(NDEBUG) || defined(__OPTIMIZE__) || (defined(_MSC_VER) && !defined(_DEBUG))
+// If NDEBUG is set, or __OPTIMIZE__ is set, or we are under MSVC in release mode,
+// then do away with asserts and use __assume.
 #if SIMDJSON_VISUAL_STUDIO
 #define SIMDJSON_UNREACHABLE() __assume(0)
 #define SIMDJSON_ASSUME(COND) __assume(COND)
@@ -304,8 +298,8 @@ use a 64-bit target such as x64, 64-bit ARM or 64-bit PPC.")
 #define SIMDJSON_ASSUME(COND) do { if (!(COND)) __builtin_unreachable(); } while (0)
 #endif
 
-#else // NDEBUG
-
+#else // defined(NDEBUG) || defined(__OPTIMIZE__) || (defined(_MSC_VER) && !defined(_DEBUG))
+// This should only ever be enabled in debug mode.
 #define SIMDJSON_UNREACHABLE() assert(0);
 #define SIMDJSON_ASSUME(COND) assert(COND)
 
@@ -13838,7 +13832,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
 #define SIMDJSON_TARGET_ICELAKE
 #define SIMDJSON_UNTARGET_ICELAKE
 #else
-#define SIMDJSON_TARGET_ICELAKE SIMDJSON_TARGET_REGION("avx512f,avx512dq,avx512cd,avx512bw,avx512vbmi,avx512vbmi2,avx512vl,avx2,bmi,pclmul,lzcnt")
+#define SIMDJSON_TARGET_ICELAKE SIMDJSON_TARGET_REGION("avx512f,avx512dq,avx512cd,avx512bw,avx512vbmi,avx512vbmi2,avx512vl,avx2,bmi,pclmul,lzcnt,popcnt")
 #define SIMDJSON_UNTARGET_ICELAKE SIMDJSON_UNTARGET_REGION
 #endif
 
@@ -16040,7 +16034,7 @@ SIMDJSON_UNTARGET_ICELAKE
 #define SIMDJSON_TARGET_HASWELL
 #define SIMDJSON_UNTARGET_HASWELL
 #else
-#define SIMDJSON_TARGET_HASWELL SIMDJSON_TARGET_REGION("avx2,bmi,pclmul,lzcnt")
+#define SIMDJSON_TARGET_HASWELL SIMDJSON_TARGET_REGION("avx2,bmi,pclmul,lzcnt,popcnt")
 #define SIMDJSON_UNTARGET_HASWELL SIMDJSON_UNTARGET_REGION
 #endif
 
@@ -20534,7 +20528,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
 #define SIMDJSON_TARGET_WESTMERE
 #define SIMDJSON_UNTARGET_WESTMERE
 #else
-#define SIMDJSON_TARGET_WESTMERE SIMDJSON_TARGET_REGION("sse4.2,pclmul")
+#define SIMDJSON_TARGET_WESTMERE SIMDJSON_TARGET_REGION("sse4.2,pclmul,popcnt")
 #define SIMDJSON_UNTARGET_WESTMERE SIMDJSON_UNTARGET_REGION
 #endif
 
@@ -23027,6 +23021,11 @@ class value_iterator;
 
 namespace logger {
 
+enum class log_level : int32_t {
+  LOG_INFO = 0,
+  LOG_ERROR = 1
+};
+
 #if SIMDJSON_VERBOSE_LOGGING
   static constexpr const bool LOG_ENABLED = true;
 #else
@@ -23036,9 +23035,11 @@ namespace logger {
 // We do not want these functions to be 'really inlined' since real inlining is
 // for performance purposes and if you are using the loggers, you do not care about
 // performance (or should not).
+template<typename... Args>
+static inline std::string string_format(const std::string& format, const Args&... args);
 static inline void log_headers() noexcept;
-static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
-static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
+static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, log_level level) noexcept;
+static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, log_level level) noexcept;
 static inline void log_event(const json_iterator &iter, const char *type, std::string_view detail="", int delta=0, int depth_delta=0) noexcept;
 static inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_value(const json_iterator &iter, const char *type, std::string_view detail="", int delta=-1, int depth_delta=0) noexcept;
@@ -23381,8 +23382,8 @@ protected:
   friend class json_iterator;
   friend class value_iterator;
   friend class object;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level lvl) noexcept;
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level lvl) noexcept;
 };
 
 } // namespace ondemand
@@ -23660,6 +23661,7 @@ public:
   simdjson_inline simdjson_result<std::string_view> unescape_wobbly(raw_json_string in) noexcept;
   simdjson_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
 
+  simdjson_inline error_code consume_character(char c) noexcept;
 #if SIMDJSON_DEVELOPMENT_CHECKS
   simdjson_inline token_position start_position(depth_t depth) const noexcept;
   simdjson_inline void set_start_position(depth_t depth, token_position position) noexcept;
@@ -23702,8 +23704,8 @@ protected:
   friend class raw_json_string;
   friend class parser;
   friend class value_iterator;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level) noexcept;
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level) noexcept;
 }; // json_iterator
 
 } // namespace ondemand
@@ -24561,6 +24563,8 @@ public:
   inline simdjson_result<bool> reset() & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> at(size_t index) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
+
 };
 
 } // namespace simdjson
@@ -26376,6 +26380,7 @@ public:
   inline simdjson_result<bool> reset() noexcept;
   inline simdjson_result<bool> is_empty() noexcept;
   inline simdjson_result<size_t> count_fields() & noexcept;
+  inline simdjson_result<std::string_view> raw_json() noexcept;
 
 };
 
@@ -26601,15 +26606,15 @@ public:
    *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
-  inline simdjson_result<document_stream> iterate_many(const uint8_t *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> iterate_many(const uint8_t *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
-  inline simdjson_result<document_stream> iterate_many(const char *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> iterate_many(const char *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
-  inline simdjson_result<document_stream> iterate_many(const std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
-  inline simdjson_result<document_stream> iterate_many(const std::string &&s, size_t batch_size) = delete;// unsafe
+  inline simdjson_result<document_stream> iterate_many(const std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
+  inline simdjson_result<document_stream> iterate_many(const std::string &&s, size_t batch_size, bool allow_comma_separated = false) = delete;// unsafe
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
-  inline simdjson_result<document_stream> iterate_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
-  inline simdjson_result<document_stream> iterate_many(const padded_string &&s, size_t batch_size) = delete;// unsafe
+  inline simdjson_result<document_stream> iterate_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
+  inline simdjson_result<document_stream> iterate_many(const padded_string &&s, size_t batch_size, bool allow_comma_separated = false) = delete;// unsafe
 
   /** @private We do not want to allow implicit conversion from C string to std::string. */
   simdjson_result<document_stream> iterate_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
@@ -26952,7 +26957,8 @@ private:
     ondemand::parser &parser,
     const uint8_t *buf,
     size_t len,
-    size_t batch_size
+    size_t batch_size,
+    bool allow_comma_separated
   ) noexcept;
 
   /**
@@ -27001,6 +27007,7 @@ private:
   const uint8_t *buf;
   size_t len;
   size_t batch_size;
+  bool allow_comma_separated;
   /**
    * We are going to use just one document instance. The document owns
    * the json_iterator. It implies that we only ever pass a reference
@@ -27361,6 +27368,7 @@ simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::json_
 } // namespace simdjson
 /* end file include/simdjson/generic/ondemand/json_type-inl.h */
 /* begin file include/simdjson/generic/ondemand/logger-inl.h */
+#include <memory>
 namespace simdjson {
 namespace SIMDJSON_BUILTIN_IMPLEMENTATION {
 namespace ondemand {
@@ -27381,36 +27389,68 @@ static inline char printable_char(char c) {
   }
 }
 
+static inline log_level get_log_level_from_env()
+{
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
+  char *lvl = getenv("SIMDJSON_LOG_LEVEL");
+  SIMDJSON_POP_DISABLE_WARNINGS
+  if (lvl && simdjson_strcasecmp(lvl, "ERROR") == 0) { return log_level::LOG_ERROR; }
+  return log_level::LOG_INFO;
+}
+
+static inline log_level log_threshold()
+{
+  static log_level threshold = get_log_level_from_env();
+  return threshold;
+}
+
+static inline bool should_log(log_level level)
+{
+  return level >= log_threshold();
+}
+
+template<typename... Args>
+inline std::string string_format(const std::string& format, const Args&... args)
+{
+  int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1;
+  auto size = static_cast<size_t>(size_s);
+  if (size <= 0) return std::string();
+  std::unique_ptr<char[]> buf(new char[size]);
+  std::snprintf(buf.get(), size, format.c_str(), args...);
+  return std::string(buf.get(), buf.get() + size - 1);
+}
+
 inline void log_event(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::LOG_INFO);
 }
 
 inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "", type, detail);
+  log_line(iter, index, depth, "", type, detail, log_level::LOG_INFO);
 }
 inline void log_value(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::LOG_INFO);
 }
 
 inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "+", type, detail);
+  log_line(iter, index, depth, "+", type, detail, log_level::LOG_INFO);
   if (LOG_ENABLED) { log_depth++; }
 }
 inline void log_start_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
-  log_line(iter, "+", type, "", delta, depth_delta);
+  log_line(iter, "+", type, "", delta, depth_delta, log_level::LOG_INFO);
   if (LOG_ENABLED) { log_depth++; }
 }
 
 inline void log_end_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
   if (LOG_ENABLED) { log_depth--; }
-  log_line(iter, "-", type, "", delta, depth_delta);
+  log_line(iter, "-", type, "", delta, depth_delta, log_level::LOG_INFO);
 }
 
 inline void log_error(const json_iterator &iter, const char *error, const char *detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "ERROR: ", error, detail, delta, depth_delta);
+  log_line(iter, "ERROR: ", error, detail, delta, depth_delta, log_level::LOG_ERROR);
 }
 inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail) noexcept {
-  log_line(iter, index, depth, "ERROR: ", error, detail);
+  log_line(iter, index, depth, "ERROR: ", error, detail, log_level::LOG_ERROR);
 }
 
 inline void log_event(const value_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
@@ -27434,7 +27474,7 @@ inline void log_error(const value_iterator &iter, const char *error, const char 
 }
 
 inline void log_headers() noexcept {
-  if (LOG_ENABLED) {
+  if (LOG_ENABLED && simdjson_unlikely(should_log(log_level::LOG_INFO))) {
     // Technically a static variable is not thread-safe, but if you are using threads
     // and logging... well...
     static bool displayed_hint{false};
@@ -27484,11 +27524,11 @@ inline void log_headers() noexcept {
   }
 }
 
-inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail);
+inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, log_level level) noexcept {
+  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail, level);
 }
-inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept {
-  if (LOG_ENABLED) {
+inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, log_level level) noexcept {
+  if (LOG_ENABLED && simdjson_unlikely(should_log(level))) {
     const int indent = depth*2;
     const auto buf = iter.token.buf;
     printf("| %*s%s%-*s ",
@@ -28144,6 +28184,14 @@ simdjson_inline void json_iterator::reenter_child(token_position position, depth
 #endif
   token.set_position(position);
   _depth = child_depth;
+}
+
+simdjson_inline error_code json_iterator::consume_character(char c) noexcept {
+  if (*peek() == c) {
+    return_current_and_advance();
+    return SUCCESS;
+  }
+  return TAPE_ERROR;
 }
 
 #if SIMDJSON_DEVELOPMENT_CHECKS
@@ -29142,11 +29190,13 @@ simdjson_inline void value_iterator::move_at_container_start() noexcept {
 }
 
 simdjson_inline simdjson_result<bool> value_iterator::reset_array() noexcept {
+  if(error()) { return error(); }
   move_at_container_start();
   return started_array();
 }
 
 simdjson_inline simdjson_result<bool> value_iterator::reset_object() noexcept {
+  if(error()) { return error(); }
   move_at_container_start();
   return started_object();
 }
@@ -29632,6 +29682,10 @@ simdjson_inline  simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::valu
 simdjson_inline  simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::array>::at_pointer(std::string_view json_pointer) noexcept {
   if (error()) { return error(); }
   return first.at_pointer(json_pointer);
+}
+simdjson_inline  simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::array>::raw_json() noexcept {
+  if (error()) { return error(); }
+  return first.raw_json();
 }
 } // namespace simdjson
 /* end file include/simdjson/generic/ondemand/array-inl.h */
@@ -30955,13 +31009,23 @@ namespace ondemand {
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    auto key_str = std::string(key.data(), key.size());
+    auto msg = logger::string_format("Cannot find key: %s", key_str.c_str());
+    logger::log_error(iter, msg.c_str());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    auto key_str = std::string(key.data(), key.size());
+    auto msg = logger::string_format("Cannot find key: %s", key_str.c_str());
+    logger::log_error(iter, msg.c_str());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::operator[](const std::string_view key) & noexcept {
@@ -30973,13 +31037,23 @@ simdjson_inline simdjson_result<value> object::operator[](const std::string_view
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    auto key_str = std::string(key.data(), key.size());
+    auto msg = logger::string_format("Cannot find key: %s", key_str.c_str());
+    logger::log_error(iter, msg.c_str());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    auto key_str = std::string(key.data(), key.size());
+    auto msg = logger::string_format("Cannot find key: %s", key_str.c_str());
+    logger::log_error(iter, msg.c_str());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 
@@ -31176,6 +31250,10 @@ simdjson_inline  simdjson_result<size_t> simdjson_result<SIMDJSON_BUILTIN_IMPLEM
   return first.count_fields();
 }
 
+simdjson_inline  simdjson_result<std::string_view> simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::object>::raw_json() noexcept {
+  if (error()) { return error(); }
+  return first.raw_json();
+}
 } // namespace simdjson
 /* end file include/simdjson/generic/ondemand/object-inl.h */
 /* begin file include/simdjson/generic/ondemand/parser-inl.h */
@@ -31265,18 +31343,19 @@ simdjson_warn_unused simdjson_inline simdjson_result<json_iterator> parser::iter
   return json_iterator(reinterpret_cast<const uint8_t *>(json.data()), this);
 }
 
-inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size, bool allow_comma_separated) noexcept {
   if(batch_size < MINIMAL_BATCH_SIZE) { batch_size = MINIMAL_BATCH_SIZE; }
-  return document_stream(*this, buf, len, batch_size);
+  if(allow_comma_separated && batch_size < len) { batch_size = len; }
+  return document_stream(*this, buf, len, batch_size, allow_comma_separated);
 }
-inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size) noexcept {
-  return iterate_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size);
+inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size, bool allow_comma_separated) noexcept {
+  return iterate_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size, allow_comma_separated);
 }
-inline simdjson_result<document_stream> parser::iterate_many(const std::string &s, size_t batch_size) noexcept {
-  return iterate_many(s.data(), s.length(), batch_size);
+inline simdjson_result<document_stream> parser::iterate_many(const std::string &s, size_t batch_size, bool allow_comma_separated) noexcept {
+  return iterate_many(s.data(), s.length(), batch_size, allow_comma_separated);
 }
-inline simdjson_result<document_stream> parser::iterate_many(const padded_string &s, size_t batch_size) noexcept {
-  return iterate_many(s.data(), s.length(), batch_size);
+inline simdjson_result<document_stream> parser::iterate_many(const padded_string &s, size_t batch_size, bool allow_comma_separated) noexcept {
+  return iterate_many(s.data(), s.length(), batch_size, allow_comma_separated);
 }
 
 simdjson_inline size_t parser::capacity() const noexcept {
@@ -31413,12 +31492,14 @@ simdjson_inline document_stream::document_stream(
   ondemand::parser &_parser,
   const uint8_t *_buf,
   size_t _len,
-  size_t _batch_size
+  size_t _batch_size,
+  bool _allow_comma_separated
 ) noexcept
   : parser{&_parser},
     buf{_buf},
     len{_len},
     batch_size{_batch_size <= MINIMAL_BATCH_SIZE ? MINIMAL_BATCH_SIZE : _batch_size},
+    allow_comma_separated{_allow_comma_separated},
     error{SUCCESS}
     #ifdef SIMDJSON_THREADS_ENABLED
     , use_thread(_parser.threaded) // we need to make a copy because _parser.threaded can change
@@ -31436,6 +31517,7 @@ simdjson_inline document_stream::document_stream() noexcept
     buf{nullptr},
     len{0},
     batch_size{0},
+    allow_comma_separated{false},
     error{UNINITIALIZED}
     #ifdef SIMDJSON_THREADS_ENABLED
     , use_thread(false)
@@ -31619,6 +31701,8 @@ inline void document_stream::next_document() noexcept {
   if (error) { return; }
   // Always set depth=1 at the start of document
   doc.iter._depth = 1;
+  // consume comma if comma separated is allowed
+  if (allow_comma_separated) { doc.iter.consume_character(','); }
   // Resets the string buffer at the beginning, thus invalidating the strings.
   doc.iter._string_buf_loc = parser->string_buf.get();
   doc.iter._root = doc.iter.position();
