@@ -129,7 +129,7 @@ Some official formats **(non-exhaustive list)**:
 API
 ---
 
-Wxample:
+Example:
 
 ```c++
 auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
