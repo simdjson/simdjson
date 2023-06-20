@@ -212,6 +212,11 @@ public:
    *                   spot is cache-related: small enough to fit in cache, yet big enough to
    *                   parse as many documents as possible in one tight loop.
    *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   * @param allow_comma_separated (defaults on false) This allows a mode where the documents are
+   *                   separated by commas instead of whitespace. It comes with a performance
+   *                   penalty because the entire document is indexed at once (and the document must be
+   *                   less than 4 GB), and there is no multithreading. In this mode, the batch_size parameter
+   *                   is effectively ignored, as it is set to at least the document size.
    * @return The stream, or an error. An empty input will yield 0 documents rather than an EMPTY error. Errors:
    *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.

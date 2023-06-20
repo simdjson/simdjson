@@ -335,8 +335,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   `double(element)`. This works for `std::string_view`, double, uint64_t, int64_t, bool,
   ondemand::object and ondemand::array. We also have explicit methods such as `get_string()`, `get_double()`,
   `get_uint64()`, `get_int64()`, `get_bool()`, `get_object()` and `get_array()`. After a cast or an explicit method,
-  the number, string or boolean will be parsed, or the initial `{` or `[` will be verified for ondemand::object and ondemand::array. An exception is thrown if
-  the cast is not possible. Importantly, when getting an ondemand::object or ondemand::array instance, its content is
+  the number, string or boolean will be parsed, or the initial `{` or `[` will be verified for `ondemand::object` and `ondemand::array`. An exception may be thrown if
+  the cast is not possible: there error code is `simdjson::INCORRECT_TYPE` (see [Error Handling](#error-handling)). Importantly, when getting an ondemand::object or ondemand::array instance, its content is
   not validated: you are only guaranteed that the corresponding initial character (`{` or `[`) is present. Thus,
   for example, you could have an ondemand::object instance pointing at the invalid JSON `{ "this is not a valid object" }`: the validation occurs as you access the content.
   The `get_string()` returns a valid UTF-8 string, after
@@ -354,7 +354,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > `get_string()` twice on an object (or to cast an object twice to `std::string_view`).
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
   scan through the object looking for the field with the matching string, doing a character-by-character
-  comparison. For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do
+  comparison. It may generate the error `simdjson::NO_SUCH_FIELD` if there is no such key in the object, it may throw an exception (see [Error Handling](#error-handling)). For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do
   not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. Keep in mind that On Demand does not buffer or save the result of the parsing: if you repeatedly access `object["foo"]`, then it must repeatedly seek the key and parse the content. The library does not provide a distinct function to check if a key is present, instead we recommend you attempt to access the key: e.g., by doing `ondemand::value val{}; if(!object["foo"].get(val)) {...}`, you have that `val` contains the requested value inside the if clause.  It is your responsability as a user to temporarily keep a reference to the value (`auto v = object["foo"]`), or to consume the content and store it in your own data structures. If you consume an
   object twice: `std::string_view(object["foo"]` followed by `std::string_view(object["foo"]` then your code
   is in error. Furthermore, you can only consume one field at a time, on the same object. The
@@ -887,9 +887,16 @@ auto error = parser.iterate(json).get(doc);
 if (error) { cerr << error << endl; exit(1); }
 ```
 
-When there is no error, the error code simdjson::SUCCESS is returned: it evaluates as false as a Boolean.
+When there is no error, the error code `simdjson::SUCCESS`is returned: it evaluates as false as a Boolean.
 We have several error codes to indicate errors, they all evaluate to true as a Boolean: your software should not generally not depend on exact
 error codes. We may change the error codes in future releases and the exact error codes could vary depending on your system.
+
+Some errors are recoverable:
+
+* You may get the error `simdjson::INCORRECT_TYPE` after trying to convert a value to an incorrect type: e.g., you expected a number and try to convert the value to a number, but it is an array.
+* You may query a key from an object, but the key is missing in which case you get the error `simdjson::NO_SUCH_FIELD`: e.g., you call `obj["myname"]` and the object does not have a key `"myname"`.
+
+Other errors (e.g., `simdjson::INCOMPLETE_ARRAY_OR_OBJECT`) may indicate a fatal error and often follow from the fact that the document is not valid JSON. In which case, it is no longer possible to continue accessing the document: calling the method `is_alive()` on the document instance returns false. All following accesses will keep returning the same fatal error (e.g., `simdjson::INCOMPLETE_ARRAY_OR_OBJECT`).
 
 When you use the code without exceptions, it is your responsibility to check for error before using the
 result: if there is an error, the result value will not be valid and using it will caused undefined behavior. Most compilers should be able to help you if you activate the right
@@ -1422,9 +1429,8 @@ This parser can't support a document that big
 
 If your documents are large (e.g., larger than a megabyte), then the `iterate_many` function is maybe ill-suited. It is really meant to support reading efficiently streams of relatively small documents (e.g., a few kilobytes each). If you have larger documents, you should use other functions like `iterate`.
 
+We also provide some support for comma-separated documents and other advanced features.
 See [iterate_many.md](iterate_many.md) for detailed information and design.
-
-
 
 Parsing Numbers Inside Strings
 ------------------------------
