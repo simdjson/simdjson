@@ -406,6 +406,7 @@ Parser Capacity</h3>
     <tr><td class="paramname">buf</td><td>The concatenated JSON to parse. </td></tr>
     <tr><td class="paramname">len</td><td>The length of the concatenated JSON. </td></tr>
     <tr><td class="paramname">batch_size</td><td>The batch size to use. MUST be larger than the largest document. The sweet spot is cache-related: small enough to fit in cache, yet big enough to parse as many documents as possible in one tight loop. Defaults to 10MB, which has been a reasonable sweet spot in our tests. </td></tr>
+    <tr><td class="paramname">allow_comma_separated</td><td>(defaults on false) This allows a mode where the documents are separated by commas instead of whitespace. It comes with a performance penalty because the entire document is indexed at once (and the document must be less than 4 GB), and there is no multithreading. In this mode, the batch_size parameter is effectively ignored, as it is set to at least the document size. </td></tr>
   </table>
   </dd>
 </dl>

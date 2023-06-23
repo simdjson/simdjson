@@ -101,7 +101,7 @@ var NAVTREE =
       [ "Use cases", "md_doc_iterate_many.html#autotoc_md60", null ],
       [ "Tracking your position", "md_doc_iterate_many.html#autotoc_md61", null ],
       [ "Incomplete streams", "md_doc_iterate_many.html#autotoc_md62", null ],
-      [ "Comma separated documents", "md_doc_iterate_many.html#autotoc_md63", null ]
+      [ "Comma-separated documents", "md_doc_iterate_many.html#autotoc_md63", null ]
     ] ],
     [ "A Better Way to Parse Documents?", "md_doc_ondemand_design.html", [
       [ "Algorithm", "md_doc_ondemand_design.html#autotoc_md68", [
