@@ -15,7 +15,7 @@ struct simdjsondom2msgpack {
    * @param json JSON input
    * @param buf temporary buffer (must be large enough, with simdjson::SIMDJSON_PADDING bytes
    * of padding)
-   * @return std::string_view msgpack output, writting to the temporary buffer
+   * @return std::string_view msgpack output, writing to the temporary buffer
    */
   inline std::string_view to_msgpack(const simdjson::padded_string &json,
                                      uint8_t *buf);
