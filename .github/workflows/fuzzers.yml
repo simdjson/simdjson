@@ -124,7 +124,7 @@ jobs:
         done
 
     - name: Save the corpus as a github artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: corpus
         path: corpus.tar
@@ -147,7 +147,7 @@ jobs:
       run: tar cf valgrind.tar valgrind-*.txt
 
     - name: Save valgrind output as a github artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       if: always()
       with:
         name: valgrindresults
@@ -155,7 +155,7 @@ jobs:
         if-no-files-found: ignore
 
     - name: Archive any crashes as an artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       if: always()
       with:
         name: crashes
