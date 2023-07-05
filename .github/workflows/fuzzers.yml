@@ -20,7 +20,7 @@ jobs:
       # fuzzers that change behaviour with SIMDJSON_FORCE_IMPLEMENTATION
       defaultimplfuzzers: atpointer dump dump_raw_tape element minify parser print_json
       # fuzzers that loop over the implementations themselves, or don't need to switch.
-      implfuzzers: implementations minifyimpl ndjson ondemand padded utf8
+      implfuzzers: implementations minifyimpl ndjson ondemand padded utf8 # TODO add singlestage
       implementations: haswell westmere fallback
       UBSAN_OPTIONS: halt_on_error=1
       MAXLEN: -max_len=4000
