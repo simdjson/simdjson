@@ -84,11 +84,11 @@ protected:
    */
   friend class value_iterator;
   template<typename W>
+  friend error_code numberparsing::slow_float_parsing(simdjson_unused const uint8_t * src, W writer);
+  template<typename W>
   friend error_code numberparsing::write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer);
   template<typename W>
   friend error_code numberparsing::parse_number(const uint8_t *const src, W &writer);
-  template<typename W>
-  friend error_code numberparsing::slow_float_parsing(simdjson_unused const uint8_t * src, W writer);
   /** Store a signed 64-bit value to the number. */
   simdjson_inline void append_s64(int64_t value) noexcept;
   /** Store an unsigned 64-bit value to the number. */
@@ -120,7 +120,6 @@ protected:
  * @param type The json_type.
  */
 inline std::ostream& operator<<(std::ostream& out, json_type type) noexcept;
-inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 /**

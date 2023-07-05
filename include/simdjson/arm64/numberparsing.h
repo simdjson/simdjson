@@ -3,10 +3,11 @@
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
-namespace {
+namespace numberparsing {
 
 // we don't have SSE, so let us use a scalar function
 // credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
+/** @private */
 static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
   uint64_t val;
   std::memcpy(&val, chars, sizeof(uint64_t));
@@ -15,7 +16,7 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
   return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
 }
 
-} // unnamed namespace
+} // namespace numberparsing
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 

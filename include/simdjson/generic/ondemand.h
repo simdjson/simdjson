@@ -10,6 +10,9 @@ namespace ondemand {
 /** Represents the depth of a JSON value (number of nested arrays/objects). */
 using depth_t = int32_t;
 
+/** @copydoc simdjson::SIMDJSON_IMPLEMENTATION::numberparsing::number_type */
+using number_type = simdjson::SIMDJSON_IMPLEMENTATION::numberparsing::number_type;
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
