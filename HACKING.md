@@ -6,16 +6,26 @@ Here is wisdom about how to build, test and run simdjson from within the reposit
 
 If you plan to contribute to simdjson, please read our [CONTRIBUTING](https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md) guide.
 
-
+- [Hacking simdjson](#hacking-simdjson)
+  - [Build Quickstart](#build-quickstart)
   - [Design notes](#design-notes)
   - [Developer mode](#developer-mode)
   - [Directory Structure and Source](#directory-structure-and-source)
   - [Runtime Dispatching](#runtime-dispatching)
   - [Regenerating Single-Header Files](#regenerating-single-header-files)
   - [Usage (CMake on 64-bit platforms like Linux, FreeBSD or macOS)](#usage-cmake-on-64-bit-platforms-like-linux-freebsd-or-macos)
-  - [Usage (CMake on 64-bit Windows using Visual Studio 2019)](#usage-cmake-on-64-bit-windows-using-visual-studio-2019)
+  - [Usage (CMake on 64-bit Windows using Visual Studio 2019 or better)](#usage-cmake-on-64-bit-windows-using-visual-studio-2019-or-better)
   - [Various References](#various-references)
 
+Build Quickstart
+------------------------------
+
+```bash
+mkdir build
+cd build
+cmake -D SIMDJSON_DEVELOPER_MODE=ON ..
+cmake --build .
+```
 
 Design notes
 ------------------------------
