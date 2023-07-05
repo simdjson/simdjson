@@ -35,4 +35,14 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   add_quickstart_test(quickstart_ondemand_noexceptions   quickstart_ondemand_noexceptions.cpp NO_EXCEPTIONS LABELS quickstart_ondemand acceptance)
   add_quickstart_test(quickstart_ondemand_noexceptions11 quickstart_ondemand_noexceptions.cpp NO_EXCEPTIONS CXX_STANDARD c++11 LABELS quickstart_ondemand)
 
+  # SingleStage Quick Start
+  if (SIMDJSON_EXCEPTIONS)
+    add_quickstart_test(quickstart_singlestage   quickstart_singlestage.cpp LABELS quickstart_singlestage acceptance)
+    add_quickstart_test(quickstart_singlestage11 quickstart_singlestage.cpp CXX_STANDARD c++11 LABELS quickstart_singlestage acceptance)
+    add_quickstart_test(quickstart_singlestage14 quickstart_singlestage.cpp CXX_STANDARD c++14 LABELS quickstart_singlestage)
+  endif()
+
+  add_quickstart_test(quickstart_singlestage_noexceptions   quickstart_singlestage_noexceptions.cpp NO_EXCEPTIONS LABELS quickstart_singlestage acceptance)
+  add_quickstart_test(quickstart_singlestage_noexceptions11 quickstart_singlestage_noexceptions.cpp NO_EXCEPTIONS CXX_STANDARD c++11 LABELS quickstart_singlestage)
+
 endif()
