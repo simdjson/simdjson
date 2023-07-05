@@ -8,7 +8,7 @@ namespace json2msgpack {
 using namespace simdjson;
 
 /**
- * @brief The simdjsonondemand2msgpack struct is used to quickly convert
+ * @brief The simdjsonsinglestage2msgpack struct is used to quickly convert
  * JSON strings to msgpack views. You must provide a pointer to
  * a large memory region where the msgpack gets written. The
  * buffer should be large enough to store the msgpack output (which
@@ -17,7 +17,7 @@ using namespace simdjson;
  *
  * Recommended usage:
  *
- * simdjsonondemand2msgpack parser{};
+ * simdjsonsinglestage2msgpack parser{};
  * simdjson::padded_string json = "[1,2]"_padded; // some JSON
  * uint8_t * buffer = new uint8_t[3*json.size() + simdjson::SIMDJSON_PADDING]; // large buffer
  *
@@ -26,10 +26,10 @@ using namespace simdjson;
  * The result (msgpack) is a string view to a msgpack serialization of the input JSON,
  * it points inside the buffer you provided.
  *
- * You may reuse the simdjsonondemand2msgpack instance though you should use
+ * You may reuse the simdjsonsinglestage2msgpack instance though you should use
  * one per thread.
  */
-struct simdjsonondemand2msgpack {
+struct simdjsonsinglestage2msgpack {
   /**
    * @brief Converts the provided JSON into msgpack.
    *
@@ -49,46 +49,46 @@ private:
   simdjson_inline void write_uint32_at(const uint32_t w,
                                               uint8_t *p) noexcept;
   simdjson_inline void
-  write_raw_string(simdjson::ondemand::raw_json_string rjs);
-  inline void recursive_processor(simdjson::ondemand::value element);
-  inline void recursive_processor_ref(simdjson::ondemand::value& element);
+  write_raw_string(simdjson::singlestage::raw_json_string rjs);
+  inline void recursive_processor(simdjson::singlestage::value element);
+  inline void recursive_processor_ref(simdjson::singlestage::value& element);
 
-  simdjson::ondemand::parser parser;
+  simdjson::singlestage::parser parser;
   uint8_t *buff{};
 };
 
 std::string_view
-simdjsonondemand2msgpack::to_msgpack(const simdjson::padded_string &json,
+simdjsonsinglestage2msgpack::to_msgpack(const simdjson::padded_string &json,
                              uint8_t *buf) {
   buff = buf;
-  ondemand::document doc = parser.iterate(json);
+  singlestage::document doc = parser.iterate(json);
   if (doc.is_scalar()) {
     // we have a special case where the JSON document is a single document...
     switch (doc.type()) {
-    case simdjson::ondemand::json_type::number:
+    case simdjson::singlestage::json_type::number:
       write_double(doc.get_double());
       break;
-    case simdjson::ondemand::json_type::string:
+    case simdjson::singlestage::json_type::string:
       write_raw_string(doc.get_raw_json_string());
       break;
-    case simdjson::ondemand::json_type::boolean:
+    case simdjson::singlestage::json_type::boolean:
       write_byte(0xc2 + doc.get_bool());
       break;
-    case simdjson::ondemand::json_type::null:
+    case simdjson::singlestage::json_type::null:
       // We check that the value is indeed null
       // otherwise: an error is thrown.
       if(doc.is_null()) {
         write_byte(0xc0);
       }
       break;
-    case simdjson::ondemand::json_type::array:
-    case simdjson::ondemand::json_type::object:
+    case simdjson::singlestage::json_type::array:
+    case simdjson::singlestage::json_type::object:
     default:
       // impossible
       SIMDJSON_UNREACHABLE();
     }
   } else {
-    simdjson::ondemand::value val = doc;
+    simdjson::singlestage::value val = doc;
 #define SIMDJSON_GCC_COMPILER ((__GNUC__) && !(__clang__) && !(__INTEL_COMPILER))
 #if SIMDJSON_GCC_COMPILER
     // the GCC compiler does well with by-value passing.
@@ -106,43 +106,43 @@ simdjsonondemand2msgpack::to_msgpack(const simdjson::padded_string &json,
   return std::string_view(reinterpret_cast<char *>(buf), size_t(buff - buf));
 }
 
-void simdjsonondemand2msgpack::write_double(const double d) noexcept {
+void simdjsonsinglestage2msgpack::write_double(const double d) noexcept {
   *buff++ = 0xcb;
   ::memcpy(buff, &d, sizeof(d));
   buff += sizeof(d);
 }
 
-void simdjsonondemand2msgpack::write_byte(const uint8_t b) noexcept {
+void simdjsonsinglestage2msgpack::write_byte(const uint8_t b) noexcept {
   *buff = b;
   buff++;
 }
 
-void simdjsonondemand2msgpack::write_uint32(const uint32_t w) noexcept {
+void simdjsonsinglestage2msgpack::write_uint32(const uint32_t w) noexcept {
   ::memcpy(buff, &w, sizeof(w));
   buff += sizeof(w);
 }
 
-uint8_t *simdjsonondemand2msgpack::skip_uint32() noexcept {
+uint8_t *simdjsonsinglestage2msgpack::skip_uint32() noexcept {
   uint8_t *ret = buff;
   buff += sizeof(uint32_t);
   return ret;
 }
 
-void simdjsonondemand2msgpack::write_uint32_at(const uint32_t w, uint8_t *p) noexcept {
+void simdjsonsinglestage2msgpack::write_uint32_at(const uint32_t w, uint8_t *p) noexcept {
   ::memcpy(p, &w, sizeof(w));
 }
 
-void simdjsonondemand2msgpack::write_raw_string(
-    simdjson::ondemand::raw_json_string in) {
+void simdjsonsinglestage2msgpack::write_raw_string(
+    simdjson::singlestage::raw_json_string in) {
   write_byte(0xdb);
   uint8_t *location = skip_uint32();
   std::string_view v = parser.unescape(in, buff);
   write_uint32_at(uint32_t(v.size()), location);
 }
 
-void simdjsonondemand2msgpack::recursive_processor(simdjson::ondemand::value element) {
+void simdjsonsinglestage2msgpack::recursive_processor(simdjson::singlestage::value element) {
   switch (element.type()) {
-  case simdjson::ondemand::json_type::array: {
+  case simdjson::singlestage::json_type::array: {
     uint32_t counter = 0;
     write_byte(0xdd);
     uint8_t *location = skip_uint32();
@@ -152,7 +152,7 @@ void simdjsonondemand2msgpack::recursive_processor(simdjson::ondemand::value ele
     }
     write_uint32_at(counter, location);
   } break;
-  case simdjson::ondemand::json_type::object: {
+  case simdjson::singlestage::json_type::object: {
     uint32_t counter = 0;
     write_byte(0xdf);
     uint8_t *location = skip_uint32();
@@ -163,16 +163,16 @@ void simdjsonondemand2msgpack::recursive_processor(simdjson::ondemand::value ele
     }
     write_uint32_at(counter, location);
   } break;
-  case simdjson::ondemand::json_type::number:
+  case simdjson::singlestage::json_type::number:
     write_double(element.get_double());
     break;
-  case simdjson::ondemand::json_type::string:
+  case simdjson::singlestage::json_type::string:
     write_raw_string(element.get_raw_json_string());
     break;
-  case simdjson::ondemand::json_type::boolean:
+  case simdjson::singlestage::json_type::boolean:
     write_byte(0xc2 + element.get_bool());
     break;
-  case simdjson::ondemand::json_type::null:
+  case simdjson::singlestage::json_type::null:
     // We check that the value is indeed null
     // otherwise: an error is thrown.
     if(element.is_null()) {
@@ -185,41 +185,41 @@ void simdjsonondemand2msgpack::recursive_processor(simdjson::ondemand::value ele
 }
 
 
-void simdjsonondemand2msgpack::recursive_processor_ref(simdjson::ondemand::value& element) {
+void simdjsonsinglestage2msgpack::recursive_processor_ref(simdjson::singlestage::value& element) {
   switch (element.type()) {
-  case simdjson::ondemand::json_type::array: {
+  case simdjson::singlestage::json_type::array: {
     uint32_t counter = 0;
     write_byte(0xdd);
     uint8_t *location = skip_uint32();
     for (auto child : element.get_array()) {
       counter++;
-      simdjson::ondemand::value v = child.value();
+      simdjson::singlestage::value v = child.value();
       recursive_processor_ref(v);
     }
     write_uint32_at(counter, location);
   } break;
-  case simdjson::ondemand::json_type::object: {
+  case simdjson::singlestage::json_type::object: {
     uint32_t counter = 0;
     write_byte(0xdf);
     uint8_t *location = skip_uint32();
     for (auto field : element.get_object()) {
       counter++;
       write_raw_string(field.key());
-      simdjson::ondemand::value v = field.value();
+      simdjson::singlestage::value v = field.value();
       recursive_processor_ref(v);
     }
     write_uint32_at(counter, location);
   } break;
-  case simdjson::ondemand::json_type::number:
+  case simdjson::singlestage::json_type::number:
     write_double(element.get_double());
     break;
-  case simdjson::ondemand::json_type::string:
+  case simdjson::singlestage::json_type::string:
     write_raw_string(element.get_raw_json_string());
     break;
-  case simdjson::ondemand::json_type::boolean:
+  case simdjson::singlestage::json_type::boolean:
     write_byte(0xc2 + element.get_bool());
     break;
-  case simdjson::ondemand::json_type::null:
+  case simdjson::singlestage::json_type::null:
     // We check that the value is indeed null
     // otherwise: an error is thrown.
     if(element.is_null()) {
@@ -231,10 +231,10 @@ void simdjsonondemand2msgpack::recursive_processor_ref(simdjson::ondemand::value
   }
 }
 
-struct simdjson_ondemand {
+struct simdjson_singlestage {
   using StringType = std::string_view;
 
-  simdjsonondemand2msgpack parser{};
+  simdjsonsinglestage2msgpack parser{};
 
   bool run(simdjson::padded_string &json, char *buffer,
            std::string_view &result) {
@@ -243,7 +243,7 @@ struct simdjson_ondemand {
   }
 };
 
-BENCHMARK_TEMPLATE(json2msgpack, simdjson_ondemand)->UseManualTime();
+BENCHMARK_TEMPLATE(json2msgpack, simdjson_singlestage)->UseManualTime();
 
 } // namespace json2msgpack
 

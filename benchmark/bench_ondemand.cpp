@@ -26,6 +26,7 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 
 SIMDJSON_POP_DISABLE_WARNINGS
 #include "json2msgpack/simdjson_ondemand.h"
+#include "json2msgpack/simdjson_singlestage.h"
 #include "json2msgpack/simdjson_dom.h"
 #include "json2msgpack/yyjson.h"
 #include "json2msgpack/rapidjson.h"
@@ -35,6 +36,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "json2msgpack/nlohmann_json.h"
 
 #include "partial_tweets/simdjson_ondemand.h"
+#include "partial_tweets/simdjson_singlestage.h"
 #include "partial_tweets/simdjson_dom.h"
 #include "partial_tweets/yyjson.h"
 #if SIMDJSON_COMPETITION_ONDEMAND_SAJSON
@@ -52,6 +54,8 @@ SIMDJSON_POP_DISABLE_WARNINGS
 
 #include "distinct_user_id/simdjson_ondemand.h"
 #include "distinct_user_id/simdjson_ondemand_json_pointer.h"
+#include "distinct_user_id/simdjson_singlestage.h"
+#include "distinct_user_id/simdjson_singlestage_json_pointer.h"
 #include "distinct_user_id/simdjson_dom.h"
 #include "distinct_user_id/simdjson_dom_json_pointer.h"
 #include "distinct_user_id/yyjson.h"
@@ -68,6 +72,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #endif // SIMDJSON_COMPETITION_SAX
 
 #include "find_tweet/simdjson_ondemand.h"
+#include "find_tweet/simdjson_singlestage.h"
 #include "find_tweet/simdjson_dom.h"
 #include "find_tweet/yyjson.h"
 #if SIMDJSON_COMPETITION_ONDEMAND_SAJSON
@@ -83,6 +88,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #endif // SIMDJSON_COMPETITION_SAX
 
 #include "top_tweet/simdjson_ondemand.h"
+#include "top_tweet/simdjson_singlestage.h"
 #include "top_tweet/simdjson_dom.h"
 #include "top_tweet/yyjson.h"
 #if SIMDJSON_COMPETITION_ONDEMAND_SAJSON
@@ -99,6 +105,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 
 
 #include "kostya/simdjson_ondemand.h"
+#include "kostya/simdjson_singlestage.h"
 #include "kostya/simdjson_dom.h"
 #include "kostya/yyjson.h"
 #if SIMDJSON_COMPETITION_ONDEMAND_SAJSON
@@ -117,6 +124,10 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #if SIMDJSON_COMPETITION_ONDEMAND_UNORDERED
 #include "large_random/simdjson_ondemand_unordered.h"
 #endif // SIMDJSON_COMPETITION_ONDEMAND_UNORDERED
+#include "large_random/simdjson_singlestage.h"
+#if SIMDJSON_COMPETITION_SINGLESTAGE_UNORDERED
+#include "large_random/simdjson_singlestage_unordered.h"
+#endif // SIMDJSON_COMPETITION_SINGLESTAGE_UNORDERED
 #include "large_random/simdjson_dom.h"
 #include "large_random/yyjson.h"
 #if SIMDJSON_COMPETITION_ONDEMAND_SAJSON
@@ -133,8 +144,10 @@ SIMDJSON_POP_DISABLE_WARNINGS
 
 #include "amazon_cellphones/simdjson_dom.h"
 #include "amazon_cellphones/simdjson_ondemand.h"
+#include "amazon_cellphones/simdjson_singlestage.h"
 
 #include "large_amazon_cellphones/simdjson_dom.h"
 #include "large_amazon_cellphones/simdjson_ondemand.h"
+#include "large_amazon_cellphones/simdjson_singlestage.h"
 
 BENCHMARK_MAIN();

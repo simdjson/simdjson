@@ -13,6 +13,8 @@ void maybe_display_implementation() {
     std::cout << "simdjson::dom implementation:      " << simdjson::get_active_implementation()->name() << std::endl;
     std::cout << "simdjson::ondemand implementation (stage 1): " << simdjson::get_active_implementation()->name() << std::endl;
     std::cout << "simdjson::ondemand implementation (stage 2): " << simdjson::builtin_implementation()->name() << std::endl;
+    std::cout << "simdjson::singlestage implementation (stage 1): " << simdjson::get_active_implementation()->name() << std::endl;
+    std::cout << "simdjson::singlestage implementation (stage 2): " << simdjson::builtin_implementation()->name() << std::endl;
   }
 }
 
