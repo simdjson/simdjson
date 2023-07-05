@@ -37,6 +37,10 @@ template<>
 simdjson_inline bool equals_expected<simdjson::ondemand::raw_json_string, const char *>(simdjson::ondemand::raw_json_string actual, const char * expected) {
   return actual == expected;
 }
+template<>
+simdjson_inline bool equals_expected<simdjson::singlestage::raw_json_string, const char *>(simdjson::singlestage::raw_json_string actual, const char * expected) {
+  return actual == expected;
+}
 
 simdjson_inline simdjson::error_code to_error_code(simdjson::error_code error) {
   return error;

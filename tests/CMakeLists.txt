@@ -3,6 +3,7 @@ link_libraries(simdjson-internal-flags test-data simdjson-windows-headers)
 include(${PROJECT_SOURCE_DIR}/cmake/add_cpp_test.cmake)
 add_subdirectory(dom)
 add_subdirectory(ondemand)
+add_subdirectory(singlestage)
 
 
 # All remaining tests link with simdjson proper
