@@ -688,7 +688,7 @@ public:
   simdjson_inline simdjson_result<bool> is_scalar() noexcept;
   simdjson_inline simdjson_result<bool> is_negative() noexcept;
   simdjson_inline simdjson_result<bool> is_integer() noexcept;
-  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::numberparsing::number_type> get_number_type() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
 
   /** @copydoc simdjson_inline std::string_view value::raw_json_token() const noexcept */

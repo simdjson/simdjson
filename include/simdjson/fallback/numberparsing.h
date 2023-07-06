@@ -10,8 +10,9 @@ void found_float(double result, const uint8_t *buf);
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
-namespace {
+namespace numberparsing {
 // credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
+/** @private */
 static simdjson_inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   uint64_t val;
   memcpy(&val, chars, sizeof(uint64_t));
@@ -19,11 +20,12 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
   return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
 }
+/** @private */
 static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
   return parse_eight_digits_unrolled(reinterpret_cast<const char *>(chars));
 }
 
-} // unnamed namespace
+} // namespace numberparsing
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 

@@ -730,7 +730,7 @@ public:
   simdjson_inline bool at_end() const noexcept;
   simdjson_inline bool is_negative() noexcept;
   simdjson_inline simdjson_result<bool> is_integer() noexcept;
-  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::numberparsing::number_type> get_number_type() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
   /** @copydoc simdjson_inline std::string_view document::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
@@ -795,7 +795,7 @@ public:
   simdjson_inline simdjson_result<int32_t> current_depth() const noexcept;
   simdjson_inline simdjson_result<bool> is_negative() noexcept;
   simdjson_inline simdjson_result<bool> is_integer() noexcept;
-  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> get_number_type() noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::numberparsing::number_type> get_number_type() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
   /** @copydoc simdjson_inline std::string_view document_reference::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;

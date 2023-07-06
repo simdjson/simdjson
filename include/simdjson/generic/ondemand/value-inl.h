@@ -357,7 +357,7 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::o
   if (error()) { return error(); }
   return first.is_integer();
 }
-simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_number_type() noexcept {
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::numberparsing::number_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_number_type() noexcept {
   if (error()) { return error(); }
   return first.get_number_type();
 }

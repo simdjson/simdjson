@@ -3,8 +3,9 @@
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+/// @private
+namespace numberparsing {
 
-namespace ondemand {
 /**
  * The type of a JSON number
  */
@@ -13,13 +14,6 @@ enum class number_type {
     signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
     unsigned_integer         /// a positive integer larger or equal to 1<<63
 };
-}
-
-namespace {
-/// @private
-namespace numberparsing {
-
-
 
 #ifdef JSON_TEST_NUMBERS
 #define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
@@ -34,6 +28,7 @@ namespace numberparsing {
 #endif
 
 namespace {
+
 // Convert a mantissa, an exponent and a sign bit into an ieee64 double.
 // The real_exponent needs to be in [0, 2046] (technically real_exponent = 2047 would be acceptable).
 // The mantissa should be in [0,1<<53). The bit at index (1ULL << 52) while be zeroed.
@@ -45,7 +40,7 @@ simdjson_inline double to_double(uint64_t mantissa, uint64_t real_exponent, bool
     std::memcpy(&d, &mantissa, sizeof(d));
     return d;
 }
-}
+
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
 // true, negate the result.
 // This function will only work in some cases, when it does not work, success is
@@ -62,10 +57,11 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
 #endif
 #if (FLT_EVAL_METHOD != 1) && (FLT_EVAL_METHOD != 0)
   // We cannot be certain that x/y is rounded to nearest.
-  if (0 <= power && power <= 22 && i <= 9007199254740991) {
+  if (0 <= power && power <= 22 && i <= 9007199254740991)
 #else
-  if (-22 <= power && power <= 22 && i <= 9007199254740991) {
+  if (-22 <= power && power <= 22 && i <= 9007199254740991)
 #endif
+  {
     // convert the integer into a double. This is lossless since
     // 0 <= i <= 2^53 - 1.
     d = double(i);
@@ -317,6 +313,7 @@ static bool parse_float_fallback(const uint8_t *ptr, double *outDouble) {
   // to handle that max may be a macro on windows).
   return !(*outDouble > (std::numeric_limits<double>::max)() || *outDouble < std::numeric_limits<double>::lowest());
 }
+
 static bool parse_float_fallback(const uint8_t *ptr, const uint8_t *end_ptr, double *outDouble) {
   *outDouble = simdjson::internal::from_chars(reinterpret_cast<const char *>(ptr), reinterpret_cast<const char *>(end_ptr));
   // We do not accept infinite values.
@@ -350,16 +347,6 @@ simdjson_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
           0x3333333333333333);
 }
 
-template<typename W>
-error_code slow_float_parsing(simdjson_unused const uint8_t * src, W writer) {
-  double d;
-  if (parse_float_fallback(src, &d)) {
-    writer.append_double(d);
-    return SUCCESS;
-  }
-  return INVALID_NUMBER(src);
-}
-
 template<typename I>
 SIMDJSON_NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
 simdjson_inline bool parse_digit(const uint8_t c, I &i) {
@@ -372,7 +359,7 @@ simdjson_inline bool parse_digit(const uint8_t c, I &i) {
   return true;
 }
 
-simdjson_inline error_code parse_decimal(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -460,6 +447,20 @@ simdjson_inline size_t significant_digits(const uint8_t * start_digits, size_t d
   return digit_count - size_t(start - start_digits);
 }
 
+} // unnamed namespace
+
+/** @private */
+template<typename W>
+error_code slow_float_parsing(simdjson_unused const uint8_t * src, W writer) {
+  double d;
+  if (parse_float_fallback(src, &d)) {
+    writer.append_double(d);
+    return SUCCESS;
+  }
+  return INVALID_NUMBER(src);
+}
+
+/** @private */
 template<typename W>
 simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
@@ -531,7 +532,7 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string
 simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
 simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
-simdjson_unused simdjson_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept { return ondemand::number_type::signed_integer; }
+simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept { return number_type::signed_integer; }
 #else
 
 // parse the number at src
@@ -573,7 +574,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   if ('.' == *p) {
     is_float = true;
     ++p;
-    SIMDJSON_TRY( parse_decimal(src, p, i, exponent) );
+    SIMDJSON_TRY( parse_decimal_after_separator(src, p, i, exponent) );
     digit_count = int(p - start_digits); // used later to guard against overflows
   }
   if (('e' == *p) || ('E' == *p)) {
@@ -1061,7 +1062,7 @@ simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t *
   return false;
 }
 
-simdjson_unused simdjson_inline simdjson_result<ondemand::number_type> get_number_type(const uint8_t * src) noexcept {
+simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept {
   bool negative = (*src == '-');
   src += uint8_t(negative);
   const uint8_t *p = src;
@@ -1070,20 +1071,20 @@ simdjson_unused simdjson_inline simdjson_result<ondemand::number_type> get_numbe
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
     // We have an integer.
     // If the number is negative and valid, it must be a signed integer.
-    if(negative) { return ondemand::number_type::signed_integer; }
+    if(negative) { return number_type::signed_integer; }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
     int digit_count = int(p - src);
     if(digit_count >= 19) {
       const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
       if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
-        return ondemand::number_type::unsigned_integer;
+        return number_type::unsigned_integer;
       }
     }
-    return ondemand::number_type::signed_integer;
+    return number_type::signed_integer;
   }
   // Hopefully, we have 'e' or 'E' or '.'.
-  return ondemand::number_type::floating_point_number;
+  return number_type::floating_point_number;
 }
 
 // Never read at src_end or beyond
@@ -1245,10 +1246,20 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
   }
   return d;
 }
-} //namespace {}
+
+} // unnamed namespace
 #endif // SIMDJSON_SKIPNUMBERPARSING
 
+inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
+    switch (type) {
+        case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
+        case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
+        case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        default: SIMDJSON_UNREACHABLE();
+    }
+    return out;
+}
+
 } // namespace numberparsing
-} // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

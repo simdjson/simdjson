@@ -584,7 +584,7 @@ simdjson_inline simdjson_result<bool> value_iterator::is_root_integer(bool check
   return answer;
 }
 
-simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number_type> value_iterator::get_root_number_type(bool check_trailing) noexcept {
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::numberparsing::number_type> value_iterator::get_root_number_type(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("number");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
