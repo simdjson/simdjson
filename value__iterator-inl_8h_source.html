@@ -669,7 +669,7 @@ $(document).ready(function(){initNavTree('value__iterator-inl_8h_source.html',''
 <div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;  <span class="keywordflow">return</span> answer;</div>
 <div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160;}</div>
 <div class="line"><a name="l00586"></a><span class="lineno">  586</span>&#160; </div>
-<div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;simdjson_inline simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::number_type&gt; value_iterator::get_root_number_type(<span class="keywordtype">bool</span> check_trailing) noexcept {</div>
+<div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;simdjson_inline simdjson_result&lt;SIMDJSON_IMPLEMENTATION::numberparsing::number_type&gt; value_iterator::get_root_number_type(<span class="keywordtype">bool</span> check_trailing) noexcept {</div>
 <div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160;  <span class="keyword">auto</span> max_len = peek_start_length();</div>
 <div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;  <span class="keyword">auto</span> json = peek_root_scalar(<span class="stringliteral">&quot;number&quot;</span>);</div>
 <div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;  <span class="comment">// Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,</span></div>

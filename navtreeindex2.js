@@ -1,9 +1,5 @@
 var NAVTREEINDEX2 =
 {
-"classsimdjson_1_1dom_1_1object_1_1iterator.html#a5c80355d967cce16eab942a8d8351c7b":[11,0,0,0,4,0,2],
-"classsimdjson_1_1dom_1_1object_1_1iterator.html#a688f6c7f451602bb3385a93252c0828a":[11,0,0,0,4,0,10],
-"classsimdjson_1_1dom_1_1object_1_1iterator.html#a6d335de77b8c5b731566e48f6cacd95d":[11,0,0,0,4,0,7],
-"classsimdjson_1_1dom_1_1object_1_1iterator.html#a7b4a7d3017744fec3aa4252967f73204":[11,0,0,0,4,0,16],
 "classsimdjson_1_1dom_1_1object_1_1iterator.html#a83b3c467632c017400f95ff05d2367b3":[11,0,0,0,4,0,12],
 "classsimdjson_1_1dom_1_1object_1_1iterator.html#a951609ca7a164b499ff19adbe2de7983":[11,0,0,0,4,0,4],
 "classsimdjson_1_1dom_1_1object_1_1iterator.html#a9f49fe89534f63d3d2543d5d4bad3180":[11,0,0,0,4,0,1],
@@ -172,6 +168,14 @@ var NAVTREEINDEX2 =
 "functions_w.html":[11,3,0,19],
 "functions_~.html":[11,3,0,20],
 "generic_2dom__parser__implementation_8h_source.html":[12,0,0,0,3,2],
+"generic_2numberparsing_8h.html#a4c645a86ea19178e55e6ceaa96ad29ae":[10,0,0,1,0,4],
+"generic_2numberparsing_8h.html#a8a19d7f5fc0e7495a136073daee8df78":[10,0,0,1,0,3],
+"generic_2numberparsing_8h.html#a8c6dcd4ba9542aa68fca2f740053bdbf":[10,0,0,1,0,1],
+"generic_2numberparsing_8h.html#abfab4a11a66cf3429d4b584165a0d47e":[10,0,0,1,0,2],
+"generic_2numberparsing_8h.html#af20cab742280522e87964b52ad8ead6f":[10,0,0,1,0,0],
+"generic_2numberparsing_8h.html#af20cab742280522e87964b52ad8ead6fa7383104b83254a99f5991d0ac77a6666":[10,0,0,1,0,0,2],
+"generic_2numberparsing_8h.html#af20cab742280522e87964b52ad8ead6faa14b6141855cd58c670ca6559c75c941":[10,0,0,1,0,0,1],
+"generic_2numberparsing_8h.html#af20cab742280522e87964b52ad8ead6fac5695c1a5026a1e5bec81b77096c1e9f":[10,0,0,1,0,0,0],
 "generic_2numberparsing_8h_source.html":[12,0,0,0,3,6],
 "generic_2ondemand_2array-inl_8h_source.html":[12,0,0,0,3,0,0],
 "generic_2ondemand_2array_8h_source.html":[12,0,0,0,3,0,1],
@@ -245,9 +249,5 @@ var NAVTREEINDEX2 =
 "jsonformatutils_8h_source.html":[12,0,0,0,6,3],
 "jsonioutil_8h_source.html":[12,0,0,0,24],
 "jsonparser_8h_source.html":[12,0,0,0,1,8],
-"logger-inl_8h.html#a12f4fdff59099b28730ba4288877437f":[10,0,0,1,0,0,16],
-"logger-inl_8h.html#a1b9952154ae0172530a16854ff005d92":[10,0,0,1,0,0,15],
-"logger-inl_8h.html#a273e5f25cfdef1064a5225a47d85eb4f":[10,0,0,1,0,0,3],
-"logger-inl_8h.html#a4427c475cf7d49b372c768201b4d92cb":[10,0,0,1,0,0,7],
-"logger-inl_8h.html#a66e3122a7ae01bfe5f81ecb1bf1814cc":[10,0,0,1,0,0,5]
+"logger-inl_8h.html#a12f4fdff59099b28730ba4288877437f":[10,0,0,1,1,0,16]
 };

@@ -102,12 +102,11 @@ $(document).ready(function(){initNavTree('ppc64_2numberparsing_8h_source.html','
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacesimdjson.html">simdjson</a> {</div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="keyword">namespace </span>SIMDJSON_IMPLEMENTATION {</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="keyword">namespace </span>{</div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="keyword">namespace </span>numberparsing {</div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment">// we don&#39;t have appropriate instructions, so let us use a scalar function</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment">// credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/</span></div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keyword">static</span> simdjson_inline uint32_t</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;parse_eight_digits_unrolled(<span class="keyword">const</span> uint8_t *chars) {</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment"></span><span class="keyword">static</span> simdjson_inline uint32_t parse_eight_digits_unrolled(<span class="keyword">const</span> uint8_t *chars) {</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;  uint64_t val;</div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;  std::memcpy(&amp;val, chars, <span class="keyword">sizeof</span>(uint64_t));</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#ifdef __BIG_ENDIAN__</span></div>
@@ -122,7 +121,7 @@ $(document).ready(function(){initNavTree('ppc64_2numberparsing_8h_source.html','
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;  <span class="keywordflow">return</span> uint32_t((val &amp; 0x0000FFFF0000FFFF) * 42949672960001 &gt;&gt; 32);</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;}</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;} <span class="comment">// unnamed namespace</span></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;} <span class="comment">// namespace numberparsing</span></div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;} <span class="comment">// namespace SIMDJSON_IMPLEMENTATION</span></div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;} <span class="comment">// namespace simdjson</span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>

@@ -97,27 +97,29 @@ $(document).ready(function(){initNavTree('ondemand_8h_source.html',''); initResi
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00011"></a><span class="lineno"><a class="line" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#af941be7ff0cfaeb30d15d2fb52e76dd1">   11</a></span>&#160;<span class="keyword">using</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#af941be7ff0cfaeb30d15d2fb52e76dd1">depth_t</a> = int32_t;</div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;} <span class="comment">// namespace ondemand</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;} <span class="comment">// namespace SIMDJSON_IMPLEMENTATION</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/json_type.h&quot;</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/token_position.h&quot;</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/logger.h&quot;</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/raw_json_string.h&quot;</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/token_iterator.h&quot;</span></div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/json_iterator.h&quot;</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/value_iterator.h&quot;</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/array_iterator.h&quot;</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/object_iterator.h&quot;</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/array.h&quot;</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/document.h&quot;</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/value.h&quot;</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/field.h&quot;</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/object.h&quot;</span></div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/parser.h&quot;</span></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/document_stream.h&quot;</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/serialization.h&quot;</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno"><a class="line" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ad1157b391ebf205df7e747d753746f93">   14</a></span>&#160;<span class="keyword">using</span> number_type = simdjson::SIMDJSON_IMPLEMENTATION::numberparsing::number_type;</div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;} <span class="comment">// namespace ondemand</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;} <span class="comment">// namespace SIMDJSON_IMPLEMENTATION</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/json_type.h&quot;</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/token_position.h&quot;</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/logger.h&quot;</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/raw_json_string.h&quot;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/token_iterator.h&quot;</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/json_iterator.h&quot;</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/value_iterator.h&quot;</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/array_iterator.h&quot;</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/object_iterator.h&quot;</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/array.h&quot;</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/document.h&quot;</span></div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/value.h&quot;</span></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/field.h&quot;</span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/object.h&quot;</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/parser.h&quot;</span></div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/document_stream.h&quot;</span></div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/serialization.h&quot;</span></div>
 <div class="ttc" id="anamespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_html_af941be7ff0cfaeb30d15d2fb52e76dd1"><div class="ttname"><a href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#af941be7ff0cfaeb30d15d2fb52e76dd1">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::depth_t</a></div><div class="ttdeci">int32_t depth_t</div><div class="ttdoc">Represents the depth of a JSON value (number of nested arrays/objects).</div><div class="ttdef"><b>Definition:</b> <a href="ondemand_8h_source.html#l00011">ondemand.h:11</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">We want to support argument-dependent lookup (ADL).</div><div class="ttdef"><b>Definition:</b> <a href="arm64_2bitmanipulation_8h_source.html#l00004">bitmanipulation.h:4</a></div></div>
 </div><!-- fragment --></div><!-- contents -->

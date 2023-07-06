@@ -96,27 +96,27 @@ $(document).ready(function(){initNavTree('arm64_2numberparsing_8h_source.html','
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160; </div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacesimdjson.html">simdjson</a> {</div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="keyword">namespace </span>SIMDJSON_IMPLEMENTATION {</div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="keyword">namespace </span>{</div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="keyword">namespace </span>numberparsing {</div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment">// we don&#39;t have SSE, so let us use a scalar function</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment">// credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/</span></div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="keyword">static</span> simdjson_inline uint32_t parse_eight_digits_unrolled(<span class="keyword">const</span> uint8_t *chars) {</div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;  uint64_t val;</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;  std::memcpy(&amp;val, chars, <span class="keyword">sizeof</span>(uint64_t));</div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;  val = (val &amp; 0x0F0F0F0F0F0F0F0F) * 2561 &gt;&gt; 8;</div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;  val = (val &amp; 0x00FF00FF00FF00FF) * 6553601 &gt;&gt; 16;</div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;  <span class="keywordflow">return</span> uint32_t((val &amp; 0x0000FFFF0000FFFF) * 42949672960001 &gt;&gt; 32);</div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;}</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;} <span class="comment">// unnamed namespace</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;} <span class="comment">// namespace SIMDJSON_IMPLEMENTATION</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#define SIMDJSON_SWAR_NUMBER_PARSING 1</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/numberparsing.h&quot;</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_ARM64_NUMBERPARSING_H</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment"></span><span class="keyword">static</span> simdjson_inline uint32_t parse_eight_digits_unrolled(<span class="keyword">const</span> uint8_t *chars) {</div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;  uint64_t val;</div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;  std::memcpy(&amp;val, chars, <span class="keyword">sizeof</span>(uint64_t));</div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;  val = (val &amp; 0x0F0F0F0F0F0F0F0F) * 2561 &gt;&gt; 8;</div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;  val = (val &amp; 0x00FF00FF00FF00FF) * 6553601 &gt;&gt; 16;</div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;  <span class="keywordflow">return</span> uint32_t((val &amp; 0x0000FFFF0000FFFF) * 42949672960001 &gt;&gt; 32);</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;}</div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;} <span class="comment">// namespace numberparsing</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;} <span class="comment">// namespace SIMDJSON_IMPLEMENTATION</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#define SIMDJSON_SWAR_NUMBER_PARSING 1</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/numberparsing.h&quot;</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_ARM64_NUMBERPARSING_H</span></div>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">We want to support argument-dependent lookup (ADL).</div><div class="ttdef"><b>Definition:</b> <a href="arm64_2bitmanipulation_8h_source.html#l00004">bitmanipulation.h:4</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

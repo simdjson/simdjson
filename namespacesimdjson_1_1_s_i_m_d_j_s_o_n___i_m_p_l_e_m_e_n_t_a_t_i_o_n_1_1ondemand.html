@@ -144,15 +144,11 @@ Typedefs</h2></td></tr>
 using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#af941be7ff0cfaeb30d15d2fb52e76dd1">depth_t</a> = int32_t</td></tr>
 <tr class="memdesc:af941be7ff0cfaeb30d15d2fb52e76dd1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents the depth of a JSON value (number of nested arrays/objects). <br /></td></tr>
 <tr class="separator:af941be7ff0cfaeb30d15d2fb52e76dd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1157b391ebf205df7e747d753746f93"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ad1157b391ebf205df7e747d753746f93">number_type</a> = simdjson::SIMDJSON_IMPLEMENTATION::numberparsing::number_type</td></tr>
+<tr class="separator:ad1157b391ebf205df7e747d753746f93"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:a5a5f83e81a35457b070256b78e16bf3f"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a5a5f83e81a35457b070256b78e16bf3f">number_type</a> { <b>floating_point_number</b> =1
-, <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a5a5f83e81a35457b070256b78e16bf3faa14b6141855cd58c670ca6559c75c941">signed_integer</a>
-, <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a5a5f83e81a35457b070256b78e16bf3fa7383104b83254a99f5991d0ac77a6666">unsigned_integer</a>
- }</td></tr>
-<tr class="memdesc:a5a5f83e81a35457b070256b78e16bf3f"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a JSON number.  <a href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a5a5f83e81a35457b070256b78e16bf3f">More...</a><br /></td></tr>
-<tr class="separator:a5a5f83e81a35457b070256b78e16bf3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac915f0c06e5ab0363e09593bba651330"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330">json_type</a> { <br />
 &#160;&#160;<a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330af1f713c9e000f5d3f280adbd124df4f5">array</a> =1
 , <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330aa8cfde6331bd59eb2ac96f8911c4b666">object</a>
@@ -171,9 +167,6 @@ Functions</h2></td></tr>
 <tr class="memitem:ab10943c6107de5337f376a6939f817af"><td class="memItemLeft" align="right" valign="top">std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ab10943c6107de5337f376a6939f817af">operator&lt;&lt;</a> (std::ostream &amp;out, <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330">json_type</a> type) noexcept</td></tr>
 <tr class="memdesc:ab10943c6107de5337f376a6939f817af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write the JSON type to the output stream.  <a href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ab10943c6107de5337f376a6939f817af">More...</a><br /></td></tr>
 <tr class="separator:ab10943c6107de5337f376a6939f817af"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3731c3543c213392c1deb282605174ea"><td class="memItemLeft" align="right" valign="top"><a id="a3731c3543c213392c1deb282605174ea"></a>
-std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>operator&lt;&lt;</b> (std::ostream &amp;out, <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a5a5f83e81a35457b070256b78e16bf3f">number_type</a> type) noexcept</td></tr>
-<tr class="separator:a3731c3543c213392c1deb282605174ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a386f80798c223c5fdbfc4dd9066a6b99"><td class="memItemLeft" align="right" valign="top">std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a386f80798c223c5fdbfc4dd9066a6b99">operator&lt;&lt;</a> (std::ostream &amp;out, <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330">json_type</a> &gt; &amp;type) noexcept(false)</td></tr>
 <tr class="memdesc:a386f80798c223c5fdbfc4dd9066a6b99"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send JSON type to an output stream.  <a href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a386f80798c223c5fdbfc4dd9066a6b99">More...</a><br /></td></tr>
 <tr class="separator:a386f80798c223c5fdbfc4dd9066a6b99"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -226,7 +219,26 @@ std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>operato
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A fast, simple, DOM-like interface that parses JSON as you use it. </p>
 <p>Designed for maximum speed and a lower memory profile. </p>
-</div><h2 class="groupheader">Enumeration Type Documentation</h2>
+</div><h2 class="groupheader">Typedef Documentation</h2>
+<a id="ad1157b391ebf205df7e747d753746f93"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad1157b391ebf205df7e747d753746f93">&#9670;&nbsp;</a></span>number_type</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using simdjson::SIMDJSON_IMPLEMENTATION::ondemand::number_type = typedef simdjson::SIMDJSON_IMPLEMENTATION::numberparsing::number_type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p></p>
+
+<p class="definition">Definition at line <a class="el" href="ondemand_8h_source.html#l00014">14</a> of file <a class="el" href="ondemand_8h_source.html">ondemand.h</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Enumeration Type Documentation</h2>
 <a id="ac915f0c06e5ab0363e09593bba651330"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac915f0c06e5ab0363e09593bba651330">&#9670;&nbsp;</a></span>json_type</h2>
 
@@ -264,39 +276,6 @@ std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>operato
 </table>
 
 <p class="definition">Definition at line <a class="el" href="json__type_8h_source.html#l00007">7</a> of file <a class="el" href="json__type_8h_source.html">json_type.h</a>.</p>
-
-</div>
-</div>
-<a id="a5a5f83e81a35457b070256b78e16bf3f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5a5f83e81a35457b070256b78e16bf3f">&#9670;&nbsp;</a></span>number_type</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">enum <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a5a5f83e81a35457b070256b78e16bf3f">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::number_type</a></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>The type of a JSON number. </p>
-<table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a5a5f83e81a35457b070256b78e16bf3faa14b6141855cd58c670ca6559c75c941"></a>signed_integer&#160;</td><td class="fielddoc"><p>a binary64 number </p>
-</td></tr>
-<tr><td class="fieldname"><a id="a5a5f83e81a35457b070256b78e16bf3fa7383104b83254a99f5991d0ac77a6666"></a>unsigned_integer&#160;</td><td class="fielddoc"><p>a signed integer that fits in a 64-bit word using two's complement </p>
-<p>a positive integer larger or equal to 1&lt;&lt;63 </p>
-</td></tr>
-</table>
-
-<p class="definition">Definition at line <a class="el" href="generic_2numberparsing_8h_source.html#l00011">11</a> of file <a class="el" href="generic_2numberparsing_8h_source.html">numberparsing.h</a>.</p>
 
 </div>
 </div>
@@ -613,7 +592,7 @@ std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>operato
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="json__type-inl_8h_source.html#l00028">28</a> of file <a class="el" href="json__type-inl_8h_source.html">json_type-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__type-inl_8h_source.html#l00019">19</a> of file <a class="el" href="json__type-inl_8h_source.html">json_type-inl.h</a>.</p>
 
 </div>
 </div>
