@@ -249,5 +249,5 @@ var NAVTREEINDEX2 =
 "jsonformatutils_8h_source.html":[12,0,0,0,6,3],
 "jsonioutil_8h_source.html":[12,0,0,0,24],
 "jsonparser_8h_source.html":[12,0,0,0,1,8],
-"logger-inl_8h.html#a12f4fdff59099b28730ba4288877437f":[10,0,0,1,1,0,16]
+"logger-inl_8h.html#a12f4fdff59099b28730ba4288877437f":[10,0,0,1,1,0,15]
 };

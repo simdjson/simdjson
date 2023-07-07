@@ -1,10 +1,6 @@
 var namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand =
 [
     [ "logger", null, [
-      [ "log_level", "logger_8h.html#a10405079edbfa28899ad2d9e7a69245f", [
-        [ "LOG_INFO", "logger_8h.html#a10405079edbfa28899ad2d9e7a69245fa41abf3cca8cee8cdae01749df7a991c6", null ],
-        [ "LOG_ERROR", "logger_8h.html#a10405079edbfa28899ad2d9e7a69245fa4490aa3d29644e716440fada68f54032", null ]
-      ] ],
       [ "log_end_value", "logger-inl_8h.html#ab8082fd58a3d7e115016a3fc52ee8936", null ],
       [ "log_end_value", "logger-inl_8h.html#a6ca1434e6fe03e97dbc88360cc6ea5db", null ],
       [ "log_error", "logger-inl_8h.html#a273e5f25cfdef1064a5225a47d85eb4f", null ],
@@ -13,15 +9,14 @@ var namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondem
       [ "log_event", "logger-inl_8h.html#aee467b07dcf64f1282096914a1214053", null ],
       [ "log_event", "logger-inl_8h.html#a4427c475cf7d49b372c768201b4d92cb", null ],
       [ "log_headers", "logger-inl_8h.html#ab8b9add577d4aba4fc244fa5a5bcb219", null ],
-      [ "log_line", "logger-inl_8h.html#aa865485894cf54a1b59bca4c940920fd", null ],
-      [ "log_line", "logger-inl_8h.html#aef2d3c388bf880fca49853b9ba4604eb", null ],
+      [ "log_line", "logger-inl_8h.html#a7577e5a0dcaf23edf36d162959680a7c", null ],
+      [ "log_line", "logger-inl_8h.html#ad5975f8a32d2daea904160b7ac6fd9cc", null ],
       [ "log_start_value", "logger-inl_8h.html#a92b499d3d191a02e913f90de4f641e2e", null ],
       [ "log_start_value", "logger-inl_8h.html#aaa4c1a2ef6eb08bb02a8ea6e49d2a786", null ],
       [ "log_start_value", "logger-inl_8h.html#a720bb462b108c1f9bcaa02cdcdfe6546", null ],
       [ "log_value", "logger-inl_8h.html#abaf0200be757924fd5a89834e3b758f0", null ],
       [ "log_value", "logger-inl_8h.html#a1b9952154ae0172530a16854ff005d92", null ],
-      [ "log_value", "logger-inl_8h.html#a12f4fdff59099b28730ba4288877437f", null ],
-      [ "string_format", "logger-inl_8h.html#ac0e3afef4e82dd3ae50b4071a20a2c9d", null ]
+      [ "log_value", "logger-inl_8h.html#a12f4fdff59099b28730ba4288877437f", null ]
     ] ],
     [ "array", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array.html", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array" ],
     [ "array_iterator", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array__iterator.html", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array__iterator" ],
