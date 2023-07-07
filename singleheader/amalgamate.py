@@ -126,8 +126,10 @@ def dofile(fid, prepath, filename):
 # Forcing it to be UTC is difficult, because it needs to be portable
 # between gnu date and busybox date.
 try:
-    timestamp = subprocess.run(['git', 'show', '-s', '--format=%ci', 'HEAD'],
-                           stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
+    proc = subprocess.run(['git', 'show', '-s', '--format=%ci', 'HEAD'],
+                           stdout=subprocess.PIPE)
+    print("the commandline is {}".format(proc.args))
+    timestamp = proc.stdout.decode('utf-8').strip()
 except:
     print("git not found, timestamp based on current time")
     timestamp = str(datetime.datetime.now())
