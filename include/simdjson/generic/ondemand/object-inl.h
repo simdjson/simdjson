@@ -5,13 +5,19 @@ namespace ondemand {
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::operator[](const std::string_view key) & noexcept {
@@ -23,13 +29,19 @@ simdjson_inline simdjson_result<value> object::operator[](const std::string_view
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 

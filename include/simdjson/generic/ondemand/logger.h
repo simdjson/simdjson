@@ -10,6 +10,11 @@ class value_iterator;
 // create temporary std::string instances.
 namespace logger {
 
+enum class log_level : int32_t {
+  info = 0,
+  error = 1
+};
+
 #if SIMDJSON_VERBOSE_LOGGING
   static constexpr const bool LOG_ENABLED = true;
 #else
@@ -20,14 +25,18 @@ namespace logger {
 // for performance purposes and if you are using the loggers, you do not care about
 // performance (or should not).
 static inline void log_headers() noexcept;
-static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
-static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
+// If args are provided, title will be treated as format string
+template <typename... Args>
+static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
+template <typename... Args>
+static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
 static inline void log_event(const json_iterator &iter, const char *type, std::string_view detail="", int delta=0, int depth_delta=0) noexcept;
 static inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_value(const json_iterator &iter, const char *type, std::string_view detail="", int delta=-1, int depth_delta=0) noexcept;
 static inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_start_value(const json_iterator &iter, const char *type, int delta=-1, int depth_delta=0) noexcept;
 static inline void log_end_value(const json_iterator &iter, const char *type, int delta=-1, int depth_delta=0) noexcept;
+
 static inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail="") noexcept;
 static inline void log_error(const json_iterator &iter, const char *error, const char *detail="", int delta=-1, int depth_delta=0) noexcept;
 
