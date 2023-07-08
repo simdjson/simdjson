@@ -1,3 +1,4 @@
+#include <cstring>
 #include <limits>
 namespace simdjson {
 namespace internal {

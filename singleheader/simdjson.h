@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-07 20:33:05 -0700. Do not edit! */
+/* auto-generated on 2023-07-08 11:44:02 -0700. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -9681,6 +9681,83 @@ SIMDJSON_POP_DISABLE_WARNINGS
 
 // skipped duplicate #include "simdjson/base.h"
 // skipped duplicate #include "simdjson/implementation.h"
+/* begin file include/simdjson/implementation_detection.h */
+#ifndef SIMDJSON_IMPLEMENTATION_DETECTION_H
+#define SIMDJSON_IMPLEMENTATION_DETECTION_H
+
+// skipped duplicate #include "simdjson/common_defs.h"
+
+//
+// First, figure out which implementations can be run. Doing it here makes it so we don't have to worry about the order
+// in which we include them.
+//
+
+#ifndef SIMDJSON_IMPLEMENTATION_ARM64
+#define SIMDJSON_IMPLEMENTATION_ARM64 (SIMDJSON_IS_ARM64)
+#endif
+#define SIMDJSON_CAN_ALWAYS_RUN_ARM64 SIMDJSON_IMPLEMENTATION_ARM64 && SIMDJSON_IS_ARM64
+
+// Default Icelake to on if this is x86-64. Even if we're not compiled for it, it could be selected
+// at runtime.
+#ifndef SIMDJSON_IMPLEMENTATION_ICELAKE
+#define SIMDJSON_IMPLEMENTATION_ICELAKE ((SIMDJSON_IS_X86_64) && (SIMDJSON_AVX512_ALLOWED) && (SIMDJSON_COMPILER_SUPPORTS_VBMI2))
+#endif
+
+#ifdef _MSC_VER
+// To see why  (__BMI__) && (__PCLMUL__) && (__LZCNT__) are not part of this next line, see
+// https://github.com/simdjson/simdjson/issues/1247
+#define SIMDJSON_CAN_ALWAYS_RUN_ICELAKE ((SIMDJSON_IMPLEMENTATION_ICELAKE) && (__AVX2__) && (__AVX512F__) && (__AVX512DQ__) && (__AVX512CD__) && (__AVX512BW__) && (__AVX512VL__) && (__AVX512VBMI2__))
+#else
+#define SIMDJSON_CAN_ALWAYS_RUN_ICELAKE ((SIMDJSON_IMPLEMENTATION_ICELAKE) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__) && (__AVX512F__) && (__AVX512DQ__) && (__AVX512CD__) && (__AVX512BW__) && (__AVX512VL__) && (__AVX512VBMI2__))
+#endif
+
+// Default Haswell to on if this is x86-64. Even if we're not compiled for it, it could be selected
+// at runtime.
+#ifndef SIMDJSON_IMPLEMENTATION_HASWELL
+#if SIMDJSON_CAN_ALWAYS_RUN_ICELAKE
+// if icelake is always available, never enable haswell.
+#define SIMDJSON_IMPLEMENTATION_HASWELL 0
+#else
+#define SIMDJSON_IMPLEMENTATION_HASWELL SIMDJSON_IS_X86_64
+#endif
+#endif
+#ifdef _MSC_VER
+// To see why  (__BMI__) && (__PCLMUL__) && (__LZCNT__) are not part of this next line, see
+// https://github.com/simdjson/simdjson/issues/1247
+#define SIMDJSON_CAN_ALWAYS_RUN_HASWELL ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__))
+#else
+#define SIMDJSON_CAN_ALWAYS_RUN_HASWELL ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__))
+#endif
+
+// Default Westmere to on if this is x86-64.
+#ifndef SIMDJSON_IMPLEMENTATION_WESTMERE
+#if SIMDJSON_CAN_ALWAYS_RUN_ICELAKE || SIMDJSON_CAN_ALWAYS_RUN_HASWELL
+// if icelake or haswell are always available, never enable westmere.
+#define SIMDJSON_IMPLEMENTATION_WESTMERE 0
+#else
+#define SIMDJSON_IMPLEMENTATION_WESTMERE SIMDJSON_IS_X86_64
+#endif
+#endif
+#define SIMDJSON_CAN_ALWAYS_RUN_WESTMERE (SIMDJSON_IMPLEMENTATION_WESTMERE && SIMDJSON_IS_X86_64 && __SSE4_2__ && __PCLMUL__)
+
+#ifndef SIMDJSON_IMPLEMENTATION_PPC64
+#define SIMDJSON_IMPLEMENTATION_PPC64 (SIMDJSON_IS_PPC64 && SIMDJSON_IS_PPC64_VMX)
+#endif
+#define SIMDJSON_CAN_ALWAYS_RUN_PPC64 SIMDJSON_IMPLEMENTATION_PPC64 && SIMDJSON_IS_PPC64 && SIMDJSON_IS_PPC64_VMX
+
+// Default Fallback to on unless a builtin implementation has already been selected.
+#ifndef SIMDJSON_IMPLEMENTATION_FALLBACK
+#if SIMDJSON_CAN_ALWAYS_RUN_ARM64 || SIMDJSON_CAN_ALWAYS_RUN_ICELAKE || SIMDJSON_CAN_ALWAYS_RUN_HASWELL || SIMDJSON_CAN_ALWAYS_RUN_WESTMERE || SIMDJSON_CAN_ALWAYS_RUN_PPC64
+// if anything at all except fallback can always run, then disable fallback.
+#define SIMDJSON_IMPLEMENTATION_FALLBACK 0
+#else
+#define SIMDJSON_IMPLEMENTATION_FALLBACK 1
+#endif
+#endif
+#define SIMDJSON_CAN_ALWAYS_RUN_FALLBACK SIMDJSON_IMPLEMENTATION_FALLBACK
+
+#endif // SIMDJSON_IMPLEMENTATION_DETECTION_H
+/* end file include/simdjson/implementation_detection.h */
 
 // Implementation-internal files (must be included before the implementations themselves, to keep
 // amalgamation working--otherwise, the first time a file is included, it might be put inside the
@@ -9883,14 +9960,6 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 
-namespace simdjson {
-/**
- * Implementation for NEON (ARMv8).
- */
-namespace arm64 {
-} // namespace arm64
-} // namespace simdjson
-
 /* begin file include/simdjson/arm64/implementation.h */
 #ifndef SIMDJSON_ARM64_IMPLEMENTATION_H
 #define SIMDJSON_ARM64_IMPLEMENTATION_H
@@ -9899,6 +9968,9 @@ namespace arm64 {
 // skipped duplicate #include "simdjson/internal/isadetection.h"
 
 namespace simdjson {
+/**
+ * Implementation for NEON (ARMv8).
+ */
 namespace arm64 {
 
 namespace {
@@ -9928,16 +10000,19 @@ public:
 /* end file include/simdjson/arm64/implementation.h */
 
 /* begin file include/simdjson/arm64/begin.h */
+// skipped duplicate #include "simdjson/arm64/implementation.h"
+
 // defining SIMDJSON_IMPLEMENTATION to "arm64"
 // #define SIMDJSON_IMPLEMENTATION arm64
 #define SIMDJSON_IMPLEMENTATION_MASK (1<<1)
-/* end file include/simdjson/arm64/begin.h */
 
-// Declarations
 /* begin file include/simdjson/generic/dom_parser_implementation.h for arm64 */
 /* begin file include/simdjson/generic_include_defs.h */
 #ifndef SIMDJSON_GENERIC_INCLUDE_DEFS_H
 #define SIMDJSON_GENERIC_INCLUDE_DEFS_H
+
+#define SIMDJSON_GENERIC_ONCE(INCLUDED) ((INCLUDED & (1 << SIMDJSON_IMPLEMENTATION_MASK)) == 0)
+#define SIMDJSON_GENERIC_INCLUDED(INCLUDED) (INCLUDED | (1 << SIMDJSON_IMPLEMENTATION_MASK))
 
 // skipped amalgamate: // BEGIN NOAMALGAMATE
 // skipped amalgamate: // Used by generic files to ensure they are only included once
@@ -9950,8 +10025,6 @@ public:
 // skipped amalgamate: #include "simdjson/fallback/bitmanipulation.h"
 // skipped amalgamate: #endif
 // END NOAMALGAMATE
-#define SIMDJSON_GENERIC_ONCE(INCLUDED) ((INCLUDED & (1 << SIMDJSON_IMPLEMENTATION_MASK)) == 0)
-#define SIMDJSON_GENERIC_INCLUDED(INCLUDED) (INCLUDED | (1 << SIMDJSON_IMPLEMENTATION_MASK))
 
 #endif
 /* end file include/simdjson/generic_include_defs.h */
@@ -12453,6 +12526,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 
 #endif // SIMDJSON_ARM64_NUMBERPARSING_H
 /* end file include/simdjson/arm64/numberparsing.h */
+/* end file include/simdjson/arm64/begin.h */
 /* begin file include/simdjson/arm64/end.h */
 #undef SIMDJSON_IMPLEMENTATION_MASK
 // undefining SIMDJSON_IMPLEMENTATION from "arm64"
@@ -12471,14 +12545,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
 
-namespace simdjson {
-/**
- * Fallback implementation (runs on any machine).
- */
-namespace fallback {
-} // namespace fallback
-} // namespace simdjson
-
+/* begin file include/simdjson/fallback/begin.h */
 /* begin file include/simdjson/fallback/implementation.h */
 #ifndef SIMDJSON_FALLBACK_IMPLEMENTATION_H
 #define SIMDJSON_FALLBACK_IMPLEMENTATION_H
@@ -12486,6 +12553,9 @@ namespace fallback {
 // skipped duplicate #include "simdjson/implementation.h"
 
 namespace simdjson {
+/**
+ * Fallback implementation (runs on any machine).
+ */
 namespace fallback {
 
 namespace {
@@ -12518,13 +12588,10 @@ public:
 #endif // SIMDJSON_FALLBACK_IMPLEMENTATION_H
 /* end file include/simdjson/fallback/implementation.h */
 
-/* begin file include/simdjson/fallback/begin.h */
 // defining SIMDJSON_IMPLEMENTATION to "fallback"
 // #define SIMDJSON_IMPLEMENTATION fallback
 #define SIMDJSON_IMPLEMENTATION_MASK (1<<0)
-/* end file include/simdjson/fallback/begin.h */
 
-// Declarations
 /* begin file include/simdjson/generic/dom_parser_implementation.h for fallback */
 // skipped duplicate #include "simdjson/generic_include_defs.h"
 #if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H)
@@ -14377,6 +14444,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 
 #endif // SIMDJSON_FALLBACK_NUMBERPARSING_H
 /* end file include/simdjson/fallback/numberparsing.h */
+/* end file include/simdjson/fallback/begin.h */
 /* begin file include/simdjson/fallback/end.h */
 #undef SIMDJSON_IMPLEMENTATION_MASK
 // undefining SIMDJSON_IMPLEMENTATION from "fallback"
@@ -14394,14 +14462,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 
 #if SIMDJSON_IMPLEMENTATION_ICELAKE
 
-namespace simdjson {
-/**
- * Implementation for Icelake (Intel AVX512).
- */
-namespace icelake {
-} // namespace icelake
-} // namespace simdjson
-
+/* begin file include/simdjson/icelake/begin.h */
 //
 // These two need to be included outside SIMDJSON_TARGET_ICELAKE
 //
@@ -14413,6 +14474,9 @@ namespace icelake {
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_ICELAKE
 namespace simdjson {
+/**
+ * Implementation for Icelake (Intel AVX512).
+ */
 namespace icelake {
 
 using namespace simdjson;
@@ -14501,11 +14565,6 @@ static_assert(sizeof(__m512i) <= simdjson::SIMDJSON_PADDING, "insufficient paddi
 
 #endif // SIMDJSON_ICELAKE_INTRINSICS_H
 /* end file include/simdjson/icelake/intrinsics.h */
-
-//
-// The rest need to be inside the region
-//
-/* begin file include/simdjson/icelake/begin.h */
 /* begin file include/simdjson/icelake/target.h */
 #ifndef SIMDJSON_ICELAKE_TARGET_H
 #define SIMDJSON_ICELAKE_TARGET_H
@@ -14527,9 +14586,7 @@ static_assert(sizeof(__m512i) <= simdjson::SIMDJSON_PADDING, "insufficient paddi
 // #define SIMDJSON_IMPLEMENTATION icelake
 #define SIMDJSON_IMPLEMENTATION_MASK (1<<3)
 SIMDJSON_TARGET_ICELAKE
-/* end file include/simdjson/icelake/begin.h */
 
-// Declarations
 /* begin file include/simdjson/generic/dom_parser_implementation.h for icelake */
 // skipped duplicate #include "simdjson/generic_include_defs.h"
 #if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H)
@@ -16800,6 +16857,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 
 #endif // SIMDJSON_ICELAKE_NUMBERPARSING_H
 /* end file include/simdjson/icelake/numberparsing.h */
+/* end file include/simdjson/icelake/begin.h */
 /* begin file include/simdjson/icelake/end.h */
 // skipped duplicate #include "simdjson/icelake/target.h"
 
@@ -16820,14 +16878,7 @@ SIMDJSON_UNTARGET_ICELAKE
 
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-} // namespace haswell
-} // namespace simdjson
-
+/* begin file include/simdjson/haswell/begin.h */
 //
 // These two need to be included outside SIMDJSON_TARGET_HASWELL
 //
@@ -16839,6 +16890,9 @@ namespace haswell {
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
 namespace simdjson {
+/**
+ * Implementation for Haswell (Intel AVX2).
+ */
 namespace haswell {
 
 using namespace simdjson;
@@ -16919,11 +16973,6 @@ static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient paddi
 
 #endif // SIMDJSON_HASWELL_INTRINSICS_H
 /* end file include/simdjson/haswell/intrinsics.h */
-
-//
-// The rest need to be inside the region
-//
-/* begin file include/simdjson/haswell/begin.h */
 /* begin file include/simdjson/haswell/target.h */
 #ifndef SIMDJSON_HASWELL_TARGET_H
 #define SIMDJSON_HASWELL_TARGET_H
@@ -16940,11 +16989,11 @@ static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient paddi
 
 #endif // SIMDJSON_HASWELL_TARGET_H
 /* end file include/simdjson/haswell/target.h */
+
 // defining SIMDJSON_IMPLEMENTATION to "haswell"
 // #define SIMDJSON_IMPLEMENTATION haswell
 #define SIMDJSON_IMPLEMENTATION_MASK (1<<2)
 SIMDJSON_TARGET_HASWELL
-/* end file include/simdjson/haswell/begin.h */
 
 // Declarations
 /* begin file include/simdjson/generic/dom_parser_implementation.h for haswell */
@@ -19216,6 +19265,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 
 #endif // SIMDJSON_HASWELL_NUMBERPARSING_H
 /* end file include/simdjson/haswell/numberparsing.h */
+/* end file include/simdjson/haswell/begin.h */
 /* begin file include/simdjson/haswell/end.h */
 // skipped duplicate #include "simdjson/haswell/target.h"
 
@@ -19236,14 +19286,7 @@ SIMDJSON_UNTARGET_HASWELL
 
 #if SIMDJSON_IMPLEMENTATION_PPC64
 
-namespace simdjson {
-/**
- * Implementation for ALTIVEC (PPC64).
- */
-namespace ppc64 {
-} // namespace ppc64
-} // namespace simdjson
-
+/* begin file include/simdjson/ppc64/begin.h */
 /* begin file include/simdjson/ppc64/implementation.h */
 #ifndef SIMDJSON_PPC64_IMPLEMENTATION_H
 #define SIMDJSON_PPC64_IMPLEMENTATION_H
@@ -19252,6 +19295,9 @@ namespace ppc64 {
 // skipped duplicate #include "simdjson/internal/isadetection.h"
 
 namespace simdjson {
+/**
+ * Implementation for ALTIVEC (PPC64).
+ */
 namespace ppc64 {
 
 namespace {
@@ -19284,13 +19330,10 @@ public:
 #endif // SIMDJSON_PPC64_IMPLEMENTATION_H
 /* end file include/simdjson/ppc64/implementation.h */
 
-/* begin file include/simdjson/ppc64/begin.h */
 // defining SIMDJSON_IMPLEMENTATION to "ppc64"
 // #define SIMDJSON_IMPLEMENTATION ppc64
 #define SIMDJSON_IMPLEMENTATION_MASK (1<<4)
-/* end file include/simdjson/ppc64/begin.h */
 
-// Declarations
 /* begin file include/simdjson/generic/dom_parser_implementation.h for ppc64 */
 // skipped duplicate #include "simdjson/generic_include_defs.h"
 #if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H)
@@ -21736,6 +21779,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 
 #endif // SIMDJSON_PPC64_NUMBERPARSING_H
 /* end file include/simdjson/ppc64/numberparsing.h */
+/* end file include/simdjson/ppc64/begin.h */
 /* begin file include/simdjson/ppc64/end.h */
 #undef SIMDJSON_IMPLEMENTATION_MASK
 // undefining SIMDJSON_IMPLEMENTATION from "ppc64"
@@ -21754,16 +21798,9 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
 
-namespace simdjson {
-/**
- * Implementation for Westmere (Intel SSE4.2).
- */
-namespace westmere {
-} // namespace westmere
-} // namespace simdjson
-
+/* begin file include/simdjson/westmere/begin.h */
 //
-// These two need to be included outside SIMDJSON_TARGET_WESTMERE
+// These need to be included outside SIMDJSON_TARGET_WESTMERE
 //
 /* begin file include/simdjson/westmere/implementation.h */
 #ifndef SIMDJSON_WESTMERE_IMPLEMENTATION_H
@@ -21773,6 +21810,9 @@ namespace westmere {
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_WESTMERE
 namespace simdjson {
+/**
+ * Implementation for Westmere (Intel SSE4.2).
+ */
 namespace westmere {
 
 namespace {
@@ -21829,11 +21869,6 @@ static_assert(sizeof(__m128i) <= simdjson::SIMDJSON_PADDING, "insufficient paddi
 
 #endif // SIMDJSON_WESTMERE_INTRINSICS_H
 /* end file include/simdjson/westmere/intrinsics.h */
-
-//
-// The rest need to be inside the region
-//
-/* begin file include/simdjson/westmere/begin.h */
 /* begin file include/simdjson/westmere/target.h */
 #ifndef SIMDJSON_WESTMERE_TARGET_H
 #define SIMDJSON_WESTMERE_TARGET_H
@@ -21855,9 +21890,7 @@ static_assert(sizeof(__m128i) <= simdjson::SIMDJSON_PADDING, "insufficient paddi
 // #define SIMDJSON_IMPLEMENTATION westmere
 #define SIMDJSON_IMPLEMENTATION_MASK (1<<5)
 SIMDJSON_TARGET_WESTMERE
-/* end file include/simdjson/westmere/begin.h */
 
-// Declarations
 /* begin file include/simdjson/generic/dom_parser_implementation.h for westmere */
 // skipped duplicate #include "simdjson/generic_include_defs.h"
 #if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H)
@@ -24105,6 +24138,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 
 #endif //  SIMDJSON_WESTMERE_NUMBERPARSING_H
 /* end file include/simdjson/westmere/numberparsing.h */
+/* end file include/simdjson/westmere/begin.h */
 /* begin file include/simdjson/westmere/end.h */
 // skipped duplicate #include "simdjson/westmere/target.h"
 
