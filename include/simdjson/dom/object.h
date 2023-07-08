@@ -4,6 +4,7 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/error.h"
 #include "simdjson/internal/tape_ref.h"
+#include "simdjson/dom/element.h"
 
 namespace simdjson {
 namespace internal {

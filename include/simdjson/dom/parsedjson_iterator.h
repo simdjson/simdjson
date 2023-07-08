@@ -12,6 +12,7 @@
 
 #include "simdjson/dom/document.h"
 #include "simdjson/dom/parsedjson.h"
+#include "simdjson/dom/parser.h"
 #include "simdjson/internal/jsonformatutils.h"
 
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
@@ -190,9 +191,7 @@ public:
   // "If a referenced member name is not unique in an object, the member that
   // is referenced is undefined, and evaluation fails". Here we just return
   // the first corresponding value.
-  inline bool move_to(const std::string &pointer) {
-      return move_to(pointer.c_str(), uint32_t(pointer.length()));
-  }
+  inline bool move_to(const std::string &pointer);
 
   private:
   // Almost the same as move_to(), except it searches from the current
@@ -240,10 +239,7 @@ public:
   // a scope is a series of nodes at the same level
   inline void to_start_scope();
 
-  inline void rewind() {
-      while (up())
-      ;
-  }
+  inline void rewind();
 
 
 

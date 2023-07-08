@@ -1,2 +1,5 @@
+#include "simdjson/westmere/target.h"
+
 SIMDJSON_UNTARGET_WESTMERE
+#undef SIMDJSON_IMPLEMENTATION_MASK
 #undef SIMDJSON_IMPLEMENTATION

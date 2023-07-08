@@ -1,3 +1,11 @@
+#include "simdjson/generic_include_defs.h"
+#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H)
+#define SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H)
+
+#include "simdjson/generic/ondemand/object_iterator.h"
+#include "simdjson/generic/ondemand/field-inl.h"
+#include "simdjson/generic/ondemand/value_iterator-inl.h"
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -124,3 +132,5 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterat
 }
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONCE

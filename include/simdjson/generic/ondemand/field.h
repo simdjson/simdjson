@@ -1,4 +1,9 @@
-#include "simdjson/error.h"
+#include "simdjson/generic_include_defs.h"
+#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_FIELD_H)
+#define SIMDJSON_GENERIC_ONDEMAND_FIELD_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_FIELD_H)
+
+#include "simdjson/generic/ondemand/raw_json_string.h"
+#include "simdjson/generic/ondemand/value.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -70,3 +75,5 @@ public:
 };
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONCE

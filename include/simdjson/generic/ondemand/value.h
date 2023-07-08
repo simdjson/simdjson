@@ -1,14 +1,12 @@
-#include "simdjson/error.h"
+#include "simdjson/generic_include_defs.h"
+#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_VALUE_H)
+#define SIMDJSON_GENERIC_ONDEMAND_VALUE_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_VALUE_H)
+
+#include "simdjson/generic/ondemand/value_iterator.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
-
-class array;
-class document;
-class field;
-class object;
-class raw_json_string;
 
 /**
  * An ephemeral JSON value returned during iteration. It is only valid for as long as you do
@@ -702,3 +700,5 @@ public:
 };
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONCE

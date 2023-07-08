@@ -4,6 +4,7 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/error.h"
 #include "simdjson/internal/tape_ref.h"
+#include "simdjson/dom/array.h"
 #include <ostream>
 
 namespace simdjson {
@@ -12,7 +13,6 @@ template<typename T>
 class string_builder;
 }
 namespace dom {
-class array;
 class document;
 class object;
 

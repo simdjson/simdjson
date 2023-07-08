@@ -3,9 +3,12 @@
 
 // Inline implementations go in here.
 
+#include <utility>
+
 #include "simdjson/dom/array.h"
 #include "simdjson/dom/element.h"
-#include <utility>
+#include "simdjson/error-inl.h"
+#include "simdjson/internal/tape_ref-inl.h"
 
 namespace simdjson {
 

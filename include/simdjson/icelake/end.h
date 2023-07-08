@@ -1,2 +1,5 @@
+#include "simdjson/icelake/target.h"
+
 SIMDJSON_UNTARGET_ICELAKE
+#undef SIMDJSON_IMPLEMENTATION_MASK
 #undef SIMDJSON_IMPLEMENTATION

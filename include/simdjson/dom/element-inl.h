@@ -2,6 +2,7 @@
 #define SIMDJSON_INLINE_ELEMENT_H
 
 #include "simdjson/dom/array.h"
+#include "simdjson/dom/document.h"
 #include "simdjson/dom/element.h"
 #include "simdjson/dom/object.h"
 #include <cstring>

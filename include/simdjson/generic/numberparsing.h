@@ -1,5 +1,12 @@
-#include "simdjson/internal/numberparsing_tables.h"
+#include "simdjson/generic_include_defs.h"
+#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_NUMBERPARSING_H)
+#define SIMDJSON_GENERIC_NUMBERPARSING_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_NUMBERPARSING_H)
+
+#include "simdjson/generic/base.h"
+#include "simdjson/generic/jsoncharutils.h"
+
 #include <limits>
+#include "simdjson/internal/numberparsing_tables.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -1263,3 +1270,5 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 } // namespace numberparsing
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONCE

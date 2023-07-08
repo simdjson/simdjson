@@ -1,3 +1,11 @@
+#include "simdjson/generic_include_defs.h"
+#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H)
+#define SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H)
+
+#include "simdjson/generic/ondemand/logger.h"
+#include "simdjson/generic/ondemand/json_iterator.h"
+#include "simdjson/generic/ondemand/value_iterator.h"
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -169,3 +177,5 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONCE

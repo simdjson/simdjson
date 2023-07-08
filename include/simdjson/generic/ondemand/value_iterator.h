@@ -1,13 +1,12 @@
+#include "simdjson/generic_include_defs.h"
+#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H)
+#define SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H)
+
+#include "simdjson/generic/ondemand/base.h"
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
-
-class document;
-class object;
-class array;
-class value;
-class raw_json_string;
-class parser;
 
 /**
  * Iterates through a single JSON value at a particular depth.
@@ -481,3 +480,5 @@ public:
 };
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONCE

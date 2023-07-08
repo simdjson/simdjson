@@ -1,14 +1,12 @@
-#include "simdjson/error.h"
+#include "simdjson/generic_include_defs.h"
+#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_PARSER_H)
+#define SIMDJSON_GENERIC_ONDEMAND_PARSER_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_PARSER_H)
+
+#include "simdjson/generic/ondemand/base.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
-
-class array;
-class object;
-class value;
-class raw_json_string;
-class document_stream;
 
 /**
  * The default batch size for document_stream instances for this On Demand kernel.
@@ -349,3 +347,5 @@ public:
 };
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONCE

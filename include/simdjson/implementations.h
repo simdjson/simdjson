@@ -2,6 +2,7 @@
 #define SIMDJSON_IMPLEMENTATIONS_H
 
 #include "simdjson/implementation-base.h"
+#include "simdjson/common_defs.h"
 
 //
 // First, figure out which implementations can be run. Doing it here makes it so we don't have to worry about the order
@@ -12,27 +13,6 @@
 #define SIMDJSON_IMPLEMENTATION_ARM64 (SIMDJSON_IS_ARM64)
 #endif
 #define SIMDJSON_CAN_ALWAYS_RUN_ARM64 SIMDJSON_IMPLEMENTATION_ARM64 && SIMDJSON_IS_ARM64
-
-#ifdef __has_include
-// How do we detect that a compiler supports vbmi2?
-// For sure if the following header is found, we are ok?
-#if __has_include(<avx512vbmi2intrin.h>)
-#define SIMDJSON_COMPILER_SUPPORTS_VBMI2 1
-#endif
-#endif
-
-#ifdef _MSC_VER
-#if _MSC_VER >= 1920
-// Visual Studio 2019 and up support VBMI2 under x64 even if the header
-// avx512vbmi2intrin.h is not found.
-#define SIMDJSON_COMPILER_SUPPORTS_VBMI2 1
-#endif
-#endif
-
-// By default, we allow AVX512.
-#ifndef SIMDJSON_AVX512_ALLOWED
-#define SIMDJSON_AVX512_ALLOWED 1
-#endif
 
 // Default Icelake to on if this is x86-64. Even if we're not compiled for it, it could be selected
 // at runtime.

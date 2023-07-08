@@ -1,6 +1,15 @@
+#include "simdjson/generic_include_defs.h"
+#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H)
+#define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H)
+
+#include "simdjson/generic/base.h"
+#include "simdjson/generic/numberparsing.h"
+#include "simdjson/generic/ondemand/base.h"
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
+
 /**
  * The type of a JSON value.
  */
@@ -13,8 +22,6 @@ enum class json_type {
     boolean, ///< A JSON boolean (true or false)
     null     ///< A JSON null    (null)
 };
-
-class value_iterator;
 
 /**
  * A type representing a JSON number.
@@ -150,3 +157,5 @@ public:
 };
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONCE

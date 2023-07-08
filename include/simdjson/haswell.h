@@ -5,14 +5,6 @@
 
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 
-#if SIMDJSON_CAN_ALWAYS_RUN_HASWELL
-#define SIMDJSON_TARGET_HASWELL
-#define SIMDJSON_UNTARGET_HASWELL
-#else
-#define SIMDJSON_TARGET_HASWELL SIMDJSON_TARGET_REGION("avx2,bmi,pclmul,lzcnt,popcnt")
-#define SIMDJSON_UNTARGET_HASWELL SIMDJSON_UNTARGET_REGION
-#endif
-
 namespace simdjson {
 /**
  * Implementation for Haswell (Intel AVX2).

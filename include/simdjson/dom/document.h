@@ -2,6 +2,7 @@
 #define SIMDJSON_DOM_DOCUMENT_H
 
 #include "simdjson/common_defs.h"
+#include "simdjson/error.h"
 #include <memory>
 #include <ostream>
 

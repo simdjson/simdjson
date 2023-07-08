@@ -1,2 +1,7 @@
 CompileFlags:
     CompilationDatabase: build
+    Add:
+        - -Wno-undefined-inline
+        - -Wno-misc-definitions-in-headers
+        - -Wno-unneeded-internal-declaration
+        - -Wno-unused-function

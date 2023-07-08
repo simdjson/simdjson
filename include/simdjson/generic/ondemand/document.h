@@ -1,16 +1,13 @@
-#include "simdjson/error.h"
+#include "simdjson/generic_include_defs.h"
+#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H)
+#define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H)
+
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/ondemand/json_iterator.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
-
-class parser;
-class array;
-class object;
-class value;
-class raw_json_string;
-class array_iterator;
-class document_stream;
 
 /**
  * A JSON document. It holds a json_iterator instance.
@@ -805,3 +802,5 @@ public:
 
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONCE

@@ -1,5 +1,10 @@
+#include "simdjson/generic_include_defs.h"
+#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H)
+#define SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H)
+
+#include "simdjson/generic/ondemand/base.h"
 #include "simdjson/dom/serialization.h"
-#include "simdjson/error.h"
+#include "simdjson/dom/element.h"
 
 namespace simdjson {
 /**
@@ -95,3 +100,5 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTA
 inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object> x);
 #endif
 }}} // namespace simdjson::SIMDJSON_IMPLEMENTATION::ondemand
+
+#endif // SIMDJSON_GENERIC_ONCE

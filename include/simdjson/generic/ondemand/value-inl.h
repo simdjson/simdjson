@@ -1,3 +1,15 @@
+#include "simdjson/generic_include_defs.h"
+#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H)
+#define SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H)
+
+#include "simdjson/generic/ondemand/array.h"
+#include "simdjson/generic/ondemand/array_iterator.h"
+#include "simdjson/generic/ondemand/json_iterator.h"
+#include "simdjson/generic/ondemand/json_type.h"
+#include "simdjson/generic/ondemand/object.h"
+#include "simdjson/generic/ondemand/raw_json_string.h"
+#include "simdjson/generic/ondemand/value.h"
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -421,3 +433,5 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
 }
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONCE

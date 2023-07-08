@@ -5,6 +5,8 @@
 
 #include "simdjson/dom/document.h"
 #include "simdjson/dom/parsedjson.h"
+#include "simdjson/dom/parser.h"
+#include "simdjson/dom/element.h"
 #include "simdjson/jsonioutil.h"
 
 namespace simdjson {

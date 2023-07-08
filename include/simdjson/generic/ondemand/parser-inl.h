@@ -1,3 +1,12 @@
+#include "simdjson/generic_include_defs.h"
+#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H)
+#define SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H)
+
+#include "simdjson/dom/parser.h"
+#include "simdjson/generic/ondemand/document_stream.h"
+#include "simdjson/generic/ondemand/parser.h"
+#include "simdjson/generic/ondemand/raw_json_string.h"
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -145,3 +154,5 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser>::simd
     : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::parser>(error) {}
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONCE

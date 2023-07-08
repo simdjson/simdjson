@@ -197,6 +197,12 @@ void dom::parser::Iterator::to_start_scope() {
   current_type = uint8_t(current_val >> 56);
 }
 
+inline void dom::parser::Iterator::rewind() {
+    while (up())
+    ;
+}
+
+
 bool dom::parser::Iterator::next() {
   size_t npos;
   if ((current_type == '[') || (current_type == '{')) {
@@ -363,6 +369,10 @@ bool dom::parser::Iterator::move_to(const char *pointer,
   }
 
   return found;
+}
+
+inline bool dom::parser::Iterator::move_to(const std::string &pointer) {
+  return move_to(pointer.c_str(), uint32_t(pointer.length()));
 }
 
 bool dom::parser::Iterator::relative_move_to(const char *pointer,

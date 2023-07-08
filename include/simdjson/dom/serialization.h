@@ -3,12 +3,8 @@
 
 #include "simdjson/common_defs.h"
 #include "simdjson/dom/document.h"
-#include "simdjson/error.h"
-#include "simdjson/internal/dom_parser_implementation.h"
-#include "simdjson/internal/tape_ref.h"
-#include "simdjson/padded_string.h"
-#include "simdjson/portability.h"
-#include <vector>
+#include "simdjson/dom/element.h"
+#include "simdjson/dom/object.h"
 
 namespace simdjson {
 

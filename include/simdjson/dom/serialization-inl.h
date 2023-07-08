@@ -3,6 +3,10 @@
 #define SIMDJSON_SERIALIZATION_INL_H
 
 #include "simdjson/dom/serialization.h"
+#include "simdjson/dom/parser.h"
+#include "simdjson/internal/tape_ref-inl.h"
+#include "simdjson/dom/array-inl.h"
+#include "simdjson/dom/object-inl.h"
 
 #include <cinttypes>
 #include <type_traits>

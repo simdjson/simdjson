@@ -1,3 +1,9 @@
+#include "simdjson/generic_include_defs.h"
+#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H)
+#define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H)
+
+#include "simdjson/generic/implementation_simdjson_result_base.h"
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 
@@ -78,3 +84,5 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONCE

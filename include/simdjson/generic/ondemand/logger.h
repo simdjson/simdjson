@@ -1,9 +1,12 @@
+#include "simdjson/generic_include_defs.h"
+#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_LOGGER_H)
+#define SIMDJSON_GENERIC_ONDEMAND_LOGGER_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_LOGGER_H)
+
+#include "simdjson/generic/ondemand/base.h"
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
-
-class json_iterator;
-class value_iterator;
 
 // Logging should be free unless SIMDJSON_VERBOSE_LOGGING is set. Importantly, it is critical
 // that the call to the log functions be side-effect free. Thus, for example, you should not
@@ -41,3 +44,5 @@ static inline void log_error(const value_iterator &iter, const char *error, cons
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONCE

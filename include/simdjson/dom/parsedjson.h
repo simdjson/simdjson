@@ -3,9 +3,11 @@
 #ifndef SIMDJSON_DOM_PARSEDJSON_H
 #define SIMDJSON_DOM_PARSEDJSON_H
 
-#include "simdjson/dom/document.h"
-
 namespace simdjson {
+
+namespace dom {
+class parser;
+}
 
 /**
  * @deprecated Use `dom::parser` instead.
