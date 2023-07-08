@@ -9,6 +9,7 @@
 
 #include "simdjson/base.h"
 #include "simdjson/implementation.h"
+#include "simdjson/implementation_detection.h"
 
 // Implementation-internal files (must be included before the implementations themselves, to keep
 // amalgamation working--otherwise, the first time a file is included, it might be put inside the

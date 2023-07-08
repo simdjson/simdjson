@@ -5,6 +5,9 @@
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
 namespace simdjson {
+/**
+ * Implementation for Haswell (Intel AVX2).
+ */
 namespace haswell {
 
 using namespace simdjson;

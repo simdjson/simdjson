@@ -5,6 +5,9 @@
 #include "simdjson/internal/isadetection.h"
 
 namespace simdjson {
+/**
+ * Implementation for NEON (ARMv8).
+ */
 namespace arm64 {
 
 namespace {

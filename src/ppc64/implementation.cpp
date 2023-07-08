@@ -1,4 +1,6 @@
+#include "simdjson/ppc64/implementation.h"
 #include "simdjson/ppc64/begin.h"
+#include "simdjson/generic/dom_parser_implementation.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

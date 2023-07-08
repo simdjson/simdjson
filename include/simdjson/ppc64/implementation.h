@@ -5,6 +5,9 @@
 #include "simdjson/internal/isadetection.h"
 
 namespace simdjson {
+/**
+ * Implementation for ALTIVEC (PPC64).
+ */
 namespace ppc64 {
 
 namespace {

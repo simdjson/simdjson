@@ -5,6 +5,9 @@
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_WESTMERE
 namespace simdjson {
+/**
+ * Implementation for Westmere (Intel SSE4.2).
+ */
 namespace westmere {
 
 namespace {

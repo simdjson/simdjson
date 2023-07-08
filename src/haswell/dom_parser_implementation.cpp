@@ -1,3 +1,6 @@
+#include "simdjson/internal/tape_type.h"
+#include "simdjson/dom/document.h"
+
 #include "simdjson/haswell/begin.h"
 
 //

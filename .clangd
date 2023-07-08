@@ -5,3 +5,6 @@ CompileFlags:
         - -Wno-misc-definitions-in-headers
         - -Wno-unneeded-internal-declaration
         - -Wno-unused-function
+Diagnostics:
+    Suppress:
+        - pp_including_mainfile_in_preamble
