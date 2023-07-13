@@ -34,8 +34,16 @@
     }
  */
 
-#include "simdjson/simdjson_version.h"
-#include "simdjson/dom.h"
-#include "simdjson/builtin.h"
+#include "simdjson/common_defs.h"
+
+SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
+
+#include "simdjson/amalgamated.h"
+#include "simdjson/dom/amalgamated.h"
+#include "simdjson/generic/dependencies.h"
+#include "simdjson/builtin/amalgamated.h"
+#include "simdjson/builtin/ondemand/amalgamated.h"
+
+SIMDJSON_POP_DISABLE_UNUSED_WARNINGS
 
 #endif // SIMDJSON_H

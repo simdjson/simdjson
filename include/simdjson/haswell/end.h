@@ -1,5 +1,7 @@
-#include "simdjson/haswell/target.h"
+#include "simdjson/portability.h"
 
-SIMDJSON_UNTARGET_HASWELL
-#undef SIMDJSON_IMPLEMENTATION_MASK
+#if !SIMDJSON_CAN_ALWAYS_RUN_HASWELL
+SIMDJSON_UNTARGET_REGION
+#endif
+
 #undef SIMDJSON_IMPLEMENTATION

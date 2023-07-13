@@ -1,6 +1,15 @@
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
+
+#ifdef SIMDJSON_IN_EDITOR_IMPL
+#define SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
+#include "generic/stage1/base.h"
+#include "simdjson/generic/dom_parser_implementation.h"
+#endif // SIMDJSON_IN_EDITOR_IMPL
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
+namespace stage1 {
 
 /**
   * This algorithm is used to quickly identify the last structural position that
@@ -88,6 +97,9 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
   return 0;
 }
 
+} // namespace stage1
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H

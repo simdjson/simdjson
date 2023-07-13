@@ -1,3 +1,11 @@
+#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
+
+#ifdef SIMDJSON_IN_EDITOR_IMPL
+#define SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
+#include "generic/stage2/base.h"
+#include "simdjson/generic/dom_parser_implementation.h"
+#endif // SIMDJSON_IN_EDITOR_IMPL
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
@@ -52,3 +60,5 @@ public:
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H

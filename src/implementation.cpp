@@ -1,4 +1,8 @@
-#include "simdjson/base.h"
+#ifndef SIMDJSON_SRC_IMPLEMENTATION_CPP
+#define SIMDJSON_SRC_IMPLEMENTATION_CPP
+
+#include "simdjson/implementation.h"
+#include "simdjson/internal/isadetection.h"
 #include <initializer_list>
 
 namespace simdjson {
@@ -9,47 +13,86 @@ bool implementation::supported_by_runtime_system() const {
   return ((supported_instruction_sets & required_instruction_sets) == required_instruction_sets);
 }
 
-namespace internal {
+} // namespace simdjson
 
-// Static array of known implementations. We're hoping these get baked into the executable
-// without requiring a static initializer.
-
-#if SIMDJSON_IMPLEMENTATION_ICELAKE
-static const icelake::implementation* get_icelake_singleton() {
-  static const icelake::implementation icelake_singleton{};
-  return &icelake_singleton;
-}
-#endif
-#if SIMDJSON_IMPLEMENTATION_HASWELL
-static const haswell::implementation* get_haswell_singleton() {
-  static const haswell::implementation haswell_singleton{};
-  return &haswell_singleton;
-}
-#endif
-#if SIMDJSON_IMPLEMENTATION_WESTMERE
-static const westmere::implementation* get_westmere_singleton() {
-  static const westmere::implementation westmere_singleton{};
-  return &westmere_singleton;
-}
-#endif // SIMDJSON_IMPLEMENTATION_WESTMERE
 #if SIMDJSON_IMPLEMENTATION_ARM64
+#include "simdjson/arm64/implementation.h"
+namespace simdjson {
+namespace internal {
 static const arm64::implementation* get_arm64_singleton() {
   static const arm64::implementation arm64_singleton{};
   return &arm64_singleton;
 }
+} // namespace internal
+} // namespace simdjson
 #endif // SIMDJSON_IMPLEMENTATION_ARM64
-#if SIMDJSON_IMPLEMENTATION_PPC64
-static const ppc64::implementation* get_ppc64_singleton() {
-  static const ppc64::implementation ppc64_singleton{};
-  return &ppc64_singleton;
-}
-#endif // SIMDJSON_IMPLEMENTATION_PPC64
+
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
+#include "simdjson/fallback/implementation.h"
+namespace simdjson {
+namespace internal {
 static const fallback::implementation* get_fallback_singleton() {
   static const fallback::implementation fallback_singleton{};
   return &fallback_singleton;
 }
+} // namespace internal
+} // namespace simdjson
 #endif // SIMDJSON_IMPLEMENTATION_FALLBACK
+
+
+#if SIMDJSON_IMPLEMENTATION_HASWELL
+#include "simdjson/haswell/implementation.h"
+namespace simdjson {
+namespace internal {
+static const haswell::implementation* get_haswell_singleton() {
+  static const haswell::implementation haswell_singleton{};
+  return &haswell_singleton;
+}
+} // namespace internal
+} // namespace simdjson
+#endif
+
+#if SIMDJSON_IMPLEMENTATION_ICELAKE
+#include "simdjson/icelake/implementation.h"
+namespace simdjson {
+namespace internal {
+static const icelake::implementation* get_icelake_singleton() {
+  static const icelake::implementation icelake_singleton{};
+  return &icelake_singleton;
+}
+} // namespace internal
+} // namespace simdjson
+#endif
+
+#if SIMDJSON_IMPLEMENTATION_PPC64
+#include "simdjson/ppc64/implementation.h"
+namespace simdjson {
+namespace internal {
+static const ppc64::implementation* get_ppc64_singleton() {
+  static const ppc64::implementation ppc64_singleton{};
+  return &ppc64_singleton;
+}
+} // namespace internal
+} // namespace simdjson
+#endif // SIMDJSON_IMPLEMENTATION_PPC64
+
+#if SIMDJSON_IMPLEMENTATION_WESTMERE
+#include "simdjson/westmere/implementation.h"
+namespace simdjson {
+namespace internal {
+static const simdjson::westmere::implementation* get_westmere_singleton() {
+  static const simdjson::westmere::implementation westmere_singleton{};
+  return &westmere_singleton;
+}
+} // namespace internal
+} // namespace simdjson
+#endif // SIMDJSON_IMPLEMENTATION_WESTMERE
+
+namespace simdjson {
+namespace internal {
+
+// Static array of known implementations. We're hoping these get baked into the executable
+// without requiring a static initializer.
 
 /**
  * @private Detects best supported implementation on first use, and sets it
@@ -194,5 +237,6 @@ const implementation * builtin_implementation() {
   return builtin_impl;
 }
 
-
 } // namespace simdjson
+
+#endif // SIMDJSON_SRC_IMPLEMENTATION_CPP

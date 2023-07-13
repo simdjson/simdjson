@@ -1,7 +1,8 @@
-#include "simdjson/generic_include_defs.h"
-#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H)
-#define SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H)
+#ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 
+#ifdef SIMDJSON_IN_EDITOR_IMPL
+#define SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
+#include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/array.h"
 #include "simdjson/generic/ondemand/array_iterator.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
@@ -9,6 +10,7 @@
 #include "simdjson/generic/ondemand/object.h"
 #include "simdjson/generic/ondemand/raw_json_string.h"
 #include "simdjson/generic/ondemand/value.h"
+#endif // SIMDJSON_IN_EDITOR_IMPL
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -369,7 +371,7 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::o
   if (error()) { return error(); }
   return first.is_integer();
 }
-simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::numberparsing::number_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_number_type() noexcept {
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_number_type() noexcept {
   if (error()) { return error(); }
   return first.get_number_type();
 }
@@ -434,4 +436,4 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
 
 } // namespace simdjson
 
-#endif // SIMDJSON_GENERIC_ONCE
+#endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H

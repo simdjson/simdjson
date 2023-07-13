@@ -2,8 +2,10 @@
 #define SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H
 
 #include "simdjson/dom/parsedjson_iterator.h"
-#include "simdjson/portability.h"
-#include <cstring>
+#include "simdjson/internal/tape_ref-inl.h"
+#include "simdjson/internal/jsonformatutils.h"
+#include <ostream>
+#include <iterator>
 
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
 
@@ -373,6 +375,44 @@ bool dom::parser::Iterator::move_to(const char *pointer,
 
 inline bool dom::parser::Iterator::move_to(const std::string &pointer) {
   return move_to(pointer.c_str(), uint32_t(pointer.length()));
+}
+
+inline int64_t dom::parser::Iterator::get_integer() const {
+    if (location + 1 >= tape_length) {
+    return 0; // default value in case of error
+    }
+    return static_cast<int64_t>(doc.tape[location + 1]);
+}
+
+inline uint64_t dom::parser::Iterator::get_unsigned_integer() const {
+    if (location + 1 >= tape_length) {
+    return 0; // default value in case of error
+    }
+    return doc.tape[location + 1];
+}
+
+inline const char * dom::parser::Iterator::get_string() const {
+    return reinterpret_cast<const char *>(
+        doc.string_buf.get() + (current_val & internal::JSON_VALUE_MASK) + sizeof(uint32_t));
+}
+
+inline uint32_t dom::parser::Iterator::get_string_length() const {
+    uint32_t answer;
+    std::memcpy(&answer,
+        reinterpret_cast<const char *>(doc.string_buf.get() +
+                                        (current_val & internal::JSON_VALUE_MASK)),
+        sizeof(uint32_t));
+    return answer;
+}
+
+inline double dom::parser::Iterator::get_double() const {
+    if (location + 1 >= tape_length) {
+    return std::numeric_limits<double>::quiet_NaN(); // default value in
+                                                    // case of error
+    }
+    double answer;
+    std::memcpy(&answer, &doc.tape[location + 1], sizeof(answer));
+    return answer;
 }
 
 bool dom::parser::Iterator::relative_move_to(const char *pointer,

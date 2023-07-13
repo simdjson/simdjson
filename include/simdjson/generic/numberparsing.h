@@ -1,26 +1,18 @@
-#include "simdjson/generic_include_defs.h"
-#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_NUMBERPARSING_H)
-#define SIMDJSON_GENERIC_NUMBERPARSING_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_NUMBERPARSING_H)
+#ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
+#ifdef SIMDJSON_IN_EDITOR_IMPL
+#define SIMDJSON_GENERIC_NUMBERPARSING_H
 #include "simdjson/generic/base.h"
 #include "simdjson/generic/jsoncharutils.h"
+#include "simdjson/internal/numberparsing_tables.h"
+#endif // SIMDJSON_IN_EDITOR_IMPL
 
 #include <limits>
-#include "simdjson/internal/numberparsing_tables.h"
+#include <ostream>
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
-/// @private
 namespace numberparsing {
-
-/**
- * The type of a JSON number
- */
-enum class number_type {
-    floating_point_number=1, /// a binary64 number
-    signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
-};
 
 #ifdef JSON_TEST_NUMBERS
 #define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
@@ -1257,6 +1249,8 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
 } // unnamed namespace
 #endif // SIMDJSON_SKIPNUMBERPARSING
 
+} // namespace numberparsing
+
 inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
     switch (type) {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
@@ -1267,8 +1261,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
     return out;
 }
 
-} // namespace numberparsing
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#endif // SIMDJSON_GENERIC_ONCE
+#endif // SIMDJSON_GENERIC_NUMBERPARSING_H

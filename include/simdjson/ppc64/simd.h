@@ -1,7 +1,6 @@
 #ifndef SIMDJSON_PPC64_SIMD_H
 #define SIMDJSON_PPC64_SIMD_H
 
-#include "simdjson/base.h"
 #include "simdjson/internal/simdprune_tables.h"
 #include "simdjson/ppc64/bitmanipulation.h"
 #include <type_traits>
@@ -58,9 +57,6 @@ template <typename Child> struct base {
   }
 };
 
-// Forward-declared so they can be used by splat and friends.
-template <typename T> struct simd8;
-
 template <typename T, typename Mask = simd8<bool>>
 struct base8 : base<simd8<T>> {
   typedef uint16_t bitmask_t;
@@ -96,7 +92,7 @@ template <> struct simd8<bool> : base8<bool> {
     return (__m128i)vec_splats((unsigned char)(-(!!_value)));
   }
 
-  simdjson_inline simd8<bool>() : base8() {}
+  simdjson_inline simd8<bool>() : base8<bool>() {}
   simdjson_inline simd8<bool>(const __m128i _value)
       : base8<bool>(_value) {}
   // Splat constructor

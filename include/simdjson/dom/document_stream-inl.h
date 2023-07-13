@@ -1,11 +1,8 @@
 #ifndef SIMDJSON_INLINE_DOCUMENT_STREAM_H
 #define SIMDJSON_INLINE_DOCUMENT_STREAM_H
 
-#include <algorithm>
-#include <limits>
-#include <stdexcept>
-
 #include "simdjson/dom/document_stream.h"
+#include "simdjson/internal/dom_parser_implementation.h"
 #include "simdjson/error-inl.h"
 #include "simdjson/dom/element-inl.h"
 #include "simdjson/dom/parser-inl.h"

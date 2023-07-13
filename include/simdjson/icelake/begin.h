@@ -1,19 +1,13 @@
-//
-// These two need to be included outside SIMDJSON_TARGET_ICELAKE
-//
-#include "simdjson/icelake/implementation.h"
-#include "simdjson/icelake/intrinsics.h"
-#include "simdjson/icelake/target.h"
-
 #define SIMDJSON_IMPLEMENTATION icelake
-#define SIMDJSON_IMPLEMENTATION_MASK (1<<3)
-SIMDJSON_TARGET_ICELAKE
+#include "simdjson/icelake/base.h"
+#include "simdjson/icelake/intrinsics.h"
 
-#include "simdjson/generic/dom_parser_implementation.h"
+#if !SIMDJSON_CAN_ALWAYS_RUN_ICELAKE
+SIMDJSON_TARGET_REGION("avx512f,avx512dq,avx512cd,avx512bw,avx512vbmi,avx512vbmi2,avx512vl,avx2,bmi,pclmul,lzcnt,popcnt")
+#endif
+
 #include "simdjson/icelake/bitmanipulation.h"
 #include "simdjson/icelake/bitmask.h"
 #include "simdjson/icelake/simd.h"
-#include "simdjson/generic/jsoncharutils.h"
-#include "simdjson/generic/atomparsing.h"
-#include "simdjson/icelake/stringparsing.h"
-#include "simdjson/icelake/numberparsing.h"
+#include "simdjson/icelake/stringparsing_defs.h"
+#include "simdjson/icelake/numberparsing_defs.h"

@@ -1,5 +1,7 @@
-#include "simdjson/westmere/target.h"
+#include "simdjson/portability.h"
 
-SIMDJSON_UNTARGET_WESTMERE
-#undef SIMDJSON_IMPLEMENTATION_MASK
+#if !SIMDJSON_CAN_ALWAYS_RUN_WESTMERE
+SIMDJSON_UNTARGET_REGION
+#endif
+
 #undef SIMDJSON_IMPLEMENTATION

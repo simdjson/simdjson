@@ -1,9 +1,10 @@
-#include "simdjson/generic_include_defs.h"
-#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H)
-#define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H)
+#ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 
+#ifdef SIMDJSON_IN_EDITOR_IMPL
+#define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
+#endif // SIMDJSON_IN_EDITOR_IMPL
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -727,7 +728,7 @@ public:
   simdjson_inline bool at_end() const noexcept;
   simdjson_inline bool is_negative() noexcept;
   simdjson_inline simdjson_result<bool> is_integer() noexcept;
-  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::numberparsing::number_type> get_number_type() noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> get_number_type() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
   /** @copydoc simdjson_inline std::string_view document::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
@@ -792,7 +793,7 @@ public:
   simdjson_inline simdjson_result<int32_t> current_depth() const noexcept;
   simdjson_inline simdjson_result<bool> is_negative() noexcept;
   simdjson_inline simdjson_result<bool> is_integer() noexcept;
-  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::numberparsing::number_type> get_number_type() noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> get_number_type() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
   /** @copydoc simdjson_inline std::string_view document_reference::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
@@ -803,4 +804,4 @@ public:
 
 } // namespace simdjson
 
-#endif // SIMDJSON_GENERIC_ONCE
+#endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H

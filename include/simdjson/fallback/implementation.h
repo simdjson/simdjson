@@ -4,15 +4,7 @@
 #include "simdjson/implementation.h"
 
 namespace simdjson {
-/**
- * Fallback implementation (runs on any machine).
- */
 namespace fallback {
-
-namespace {
-using namespace simdjson;
-using namespace simdjson::dom;
-}
 
 /**
  * @private

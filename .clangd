@@ -1,10 +1,74 @@
 CompileFlags:
     CompilationDatabase: build
+Diagnostics:
+    Suppress:
+        - misc-unused-alias-decls
+        - misc-unused-using-decls
+        - misc-definitions-in-headers # TODO fix and remove these violations
+---
+If:
+    PathMatch:
+        - include/.*
+        - src/.*
+    PathExclude:
+        - include/simdjson.h
+        - src/simdjson.cpp
+CompileFlags:
     Add:
-        - -Wno-undefined-inline
-        - -Wno-misc-definitions-in-headers
+        - -DSIMDJSON_IN_EDITOR=1
         - -Wno-unneeded-internal-declaration
+        - -Wno-undefined-inline # TODO fix and remove these violations
+        - -Wno-undefined-internal # TODO fix and remove these violations
         - -Wno-unused-function
+        - -Wno-unused-const-variable
 Diagnostics:
     Suppress:
         - pp_including_mainfile_in_preamble
+---
+# Implementation-specific files (which require SIMDJSON_IMPLEMENTATION already defined)
+If:
+    PathMatch:
+        - include/simdjson/arm64/.*
+        - include/simdjson/builtin/.*
+        - include/simdjson/fallback/.*
+        - include/simdjson/generic/.*
+        - include/simdjson/haswell/.*
+        - include/simdjson/icelake/.*
+        - include/simdjson/ppc64/.*
+        - include/simdjson/westmere/.*
+        - src/generic/.*
+        - src/arm64.cpp
+        - src/fallback.cpp
+        - src/haswell.cpp
+        - src/icelake.cpp
+        - src/ppc64.cpp
+        - src/westmere.cpp
+    PathExclude:
+        - .*/dependencies\.h
+CompileFlags:
+    Add:
+        - -DSIMDJSON_IN_EDITOR_IMPL=1
+---
+# Generic implementation specific files (which require SIMDJSON_IMPLEMENTATION already defined)
+If:
+    PathMatch:
+        - include/simdjson/generic/.*\.h
+        - src/generic/.*\.h
+CompileFlags:
+    Add:
+        - -DSIMDJSON_IN_EDITOR_GENERIC=1
+---
+If:
+    PathMatch:
+        - include/.*/amalgamated\.h
+        - src/.*/amalgamated\.h
+CompileFlags:
+    Add:
+        - -DSIMDJSON_IN_EDITOR_AMALGAMATED=1
+---
+If:
+    PathMatch:
+        - .*/dependencies\.h
+CompileFlags:
+    Add:
+        - -DSIMDJSON_IN_EDITOR_DEPENDENCIES=1

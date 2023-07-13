@@ -1,6 +1,8 @@
 #ifndef SIMDJSON_INTERNAL_SIMDPRUNE_TABLES_H
 #define SIMDJSON_INTERNAL_SIMDPRUNE_TABLES_H
 
+#include "simdjson/base.h"
+
 #include <cstdint>
 
 namespace simdjson { // table modified and copied from

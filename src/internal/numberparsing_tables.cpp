@@ -1,11 +1,12 @@
-#include "simdjson/base.h"
+#ifndef SIMDJSON_SRC_NUMBERPARSING_TABLES_CPP
+#define SIMDJSON_SRC_NUMBERPARSING_TABLES_CPP
 
-namespace simdjson {
-namespace internal {
+#include "simdjson/base.h"
+#include "simdjson/internal/numberparsing_tables.h"
 
 // Precomputed powers of ten from 10^0 to 10^22. These
 // can be represented exactly using the double type.
-SIMDJSON_DLLIMPORTEXPORT const double power_of_ten[] = {
+SIMDJSON_DLLIMPORTEXPORT const double simdjson::internal::power_of_ten[] = {
     1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,  1e10, 1e11,
     1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22};
 
@@ -24,7 +25,7 @@ SIMDJSON_DLLIMPORTEXPORT const double power_of_ten[] = {
 // The truncated powers of five from 5^-342 all the way to 5^308
 // The mantissa is truncated to 128 bits, and
 // never rounded up. Uses about 10KB.
-SIMDJSON_DLLIMPORTEXPORT const uint64_t power_of_five_128[]= {
+SIMDJSON_DLLIMPORTEXPORT const uint64_t simdjson::internal::power_of_five_128[]= {
         0xeef453d6923bd65a,0x113faa2906a13b3f,
         0x9558b4661b6565f8,0x4ac7ca59a424c507,
         0xbaaee17fa23ebf76,0x5d79bcf00d2df649,
@@ -677,5 +678,4 @@ SIMDJSON_DLLIMPORTEXPORT const uint64_t power_of_five_128[]= {
         0xe3d8f9e563a198e5,0x58180fddd97723a6,
         0x8e679c2f5e44ff8f,0x570f09eaa7ea7648,};
 
-} // namespace internal
-} // namespace simdjson
+#endif // SIMDJSON_SRC_NUMBERPARSING_TABLES_CPP

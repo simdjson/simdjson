@@ -1,8 +1,11 @@
-#include "simdjson/generic_include_defs.h"
-#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_OBJECT_H)
-#define SIMDJSON_GENERIC_ONDEMAND_OBJECT_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_OBJECT_H)
+#ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 
+#ifdef SIMDJSON_IN_EDITOR_IMPL
+#define SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/implementation_simdjson_result_base.h"
 #include "simdjson/generic/ondemand/value_iterator.h"
+#endif // SIMDJSON_IN_EDITOR_IMPL
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -233,4 +236,4 @@ public:
 
 } // namespace simdjson
 
-#endif // SIMDJSON_GENERIC_ONCE
+#endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_H

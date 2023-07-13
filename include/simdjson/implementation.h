@@ -1,12 +1,8 @@
 #ifndef SIMDJSON_IMPLEMENTATION_H
 #define SIMDJSON_IMPLEMENTATION_H
 
-#include "simdjson/common_defs.h"
+#include "simdjson/internal/atomic_ptr.h"
 #include "simdjson/internal/dom_parser_implementation.h"
-#include "simdjson/internal/isadetection.h"
-#include <string>
-#include <atomic>
-#include <vector>
 
 namespace simdjson {
 
@@ -37,10 +33,6 @@ simdjson_inline simdjson_warn_unused bool validate_utf8(const std::string_view s
 simdjson_inline simdjson_warn_unused bool validate_utf8(const std::string& s) noexcept {
   return validate_utf8(s.data(), s.size());
 }
-
-namespace dom {
-  class document;
-} // namespace dom
 
 /**
  * An implementation of simdjson for a particular CPU architecture.
@@ -214,24 +206,6 @@ public:
    *         implementation. Will never return nullptr.
    */
   const implementation *detect_best_supported() const noexcept;
-};
-
-template<typename T>
-class atomic_ptr {
-public:
-  atomic_ptr(T *_ptr) : ptr{_ptr} {}
-
-  operator const T*() const { return ptr.load(); }
-  const T& operator*() const { return *ptr; }
-  const T* operator->() const { return ptr.load(); }
-
-  operator T*() { return ptr.load(); }
-  T& operator*() { return *ptr; }
-  T* operator->() { return ptr.load(); }
-  atomic_ptr& operator=(T *_ptr) { ptr = _ptr; return *this; }
-
-private:
-  std::atomic<T*> ptr;
 };
 
 } // namespace internal

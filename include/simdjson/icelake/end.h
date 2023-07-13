@@ -1,5 +1,7 @@
-#include "simdjson/icelake/target.h"
+#include "simdjson/icelake/base.h"
 
-SIMDJSON_UNTARGET_ICELAKE
-#undef SIMDJSON_IMPLEMENTATION_MASK
+#if !SIMDJSON_CAN_ALWAYS_RUN_ICELAKE
+SIMDJSON_UNTARGET_REGION
+#endif
+
 #undef SIMDJSON_IMPLEMENTATION

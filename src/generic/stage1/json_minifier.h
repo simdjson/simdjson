@@ -1,3 +1,12 @@
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
+
+#ifdef SIMDJSON_IN_EDITOR_IMPL
+#define SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
+#include "generic/stage1/base.h"
+#include "generic/stage1/json_scanner.h"
+#include "generic/stage1/buf_block_reader.h"
+#endif // SIMDJSON_IN_EDITOR_IMPL
+
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is included already includes
@@ -91,3 +100,5 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H

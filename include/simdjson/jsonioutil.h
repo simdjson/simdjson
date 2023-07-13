@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_JSONIOUTIL_H
 #define SIMDJSON_JSONIOUTIL_H
 
-#include "simdjson/common_defs.h"
+#include "simdjson/base.h"
 #include "simdjson/padded_string.h"
 
 namespace simdjson {

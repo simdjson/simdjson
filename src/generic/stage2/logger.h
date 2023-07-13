@@ -1,3 +1,10 @@
+#ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
+
+#ifdef SIMDJSON_IN_EDITOR_IMPL
+#define SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
+#include "generic/stage2/base.h"
+#endif // SIMDJSON_IN_EDITOR_IMPL
+
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
 namespace simdjson {
@@ -86,3 +93,5 @@ namespace logger {
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H

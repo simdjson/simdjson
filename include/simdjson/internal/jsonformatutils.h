@@ -1,14 +1,13 @@
 #ifndef SIMDJSON_INTERNAL_JSONFORMATUTILS_H
 #define SIMDJSON_INTERNAL_JSONFORMATUTILS_H
 
+#include "simdjson/base.h"
 #include <iomanip>
 #include <ostream>
 #include <sstream>
 
 namespace simdjson {
 namespace internal {
-
-class escape_json_string;
 
 inline std::ostream& operator<<(std::ostream& out, const escape_json_string &str);
 

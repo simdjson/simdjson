@@ -1,9 +1,11 @@
-#include "simdjson/generic_include_defs.h"
-#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H)
-#define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H)
+#ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 
+#ifdef SIMDJSON_IN_EDITOR_IMPL
+#define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
+#include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/token_iterator.h"
 #include "simdjson/generic/implementation_simdjson_result_base-inl.h"
+#endif // SIMDJSON_IN_EDITOR_IMPL
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -84,4 +86,4 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::token_iterato
 
 } // namespace simdjson
 
-#endif // SIMDJSON_GENERIC_ONCE
+#endif // SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H

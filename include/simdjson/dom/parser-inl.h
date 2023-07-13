@@ -2,14 +2,15 @@
 #define SIMDJSON_INLINE_PARSER_H
 
 #include "simdjson/dom/document_stream.h"
-#include "simdjson/dom/element.h"
-#include "simdjson/dom/parser.h"
 #include "simdjson/implementation.h"
-#include "simdjson/padded_string_view.h"
+#include "simdjson/internal/dom_parser_implementation.h"
 
 #include "simdjson/error-inl.h"
 #include "simdjson/padded_string-inl.h"
 #include "simdjson/dom/element-inl.h"
+
+#include <climits>
+
 namespace simdjson {
 namespace dom {
 

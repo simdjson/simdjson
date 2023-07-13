@@ -1,6 +1,9 @@
 #ifndef SIMDJSON_ICELAKE_BITMANIPULATION_H
 #define SIMDJSON_ICELAKE_BITMANIPULATION_H
 
+#include "simdjson/icelake/base.h"
+#include "simdjson/icelake/intrinsics.h"
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {

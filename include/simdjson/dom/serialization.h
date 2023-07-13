@@ -1,10 +1,11 @@
 #ifndef SIMDJSON_SERIALIZATION_H
 #define SIMDJSON_SERIALIZATION_H
 
-#include "simdjson/common_defs.h"
-#include "simdjson/dom/document.h"
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/element.h"
 #include "simdjson/dom/object.h"
+
+#include <vector>
 
 namespace simdjson {
 

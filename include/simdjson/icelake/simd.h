@@ -1,6 +1,7 @@
 #ifndef SIMDJSON_ICELAKE_SIMD_H
 #define SIMDJSON_ICELAKE_SIMD_H
 
+#include "simdjson/icelake/bitmanipulation.h"
 #include "simdjson/internal/simdprune_tables.h"
 
 

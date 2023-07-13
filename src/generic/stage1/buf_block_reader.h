@@ -1,6 +1,14 @@
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
+
+#ifdef SIMDJSON_IN_EDITOR_IMPL
+#define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
+#include "generic/stage1/base.h"
+#endif // SIMDJSON_IN_EDITOR_IMPL
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
+namespace stage1 {
 
 // Walks through a buffer in block-sized increments, loading the last part with spaces
 template<size_t STEP_SIZE>
@@ -87,6 +95,9 @@ simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
   idx += STEP_SIZE;
 }
 
+} // namespace stage1
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H

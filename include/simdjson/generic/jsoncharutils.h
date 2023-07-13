@@ -1,9 +1,11 @@
-#include "simdjson/generic_include_defs.h"
-#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_JSONCHARUTILS_H)
-#define SIMDJSON_GENERIC_JSONCHARUTILS_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_JSONCHARUTILS_H)
+#ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
+#ifdef SIMDJSON_IN_EDITOR_IMPL
+#define SIMDJSON_GENERIC_JSONCHARUTILS_H
+#include "simdjson/generic/base.h"
 #include "simdjson/internal/jsoncharutils_tables.h"
 #include "simdjson/internal/numberparsing_tables.h"
+#endif // SIMDJSON_IN_EDITOR_IMPL
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -119,4 +121,4 @@ simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#endif // SIMDJSON_GENERIC_ONCE
+#endif // SIMDJSON_GENERIC_JSONCHARUTILS_H

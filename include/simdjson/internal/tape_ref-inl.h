@@ -1,11 +1,15 @@
 #ifndef SIMDJSON_INLINE_TAPE_REF_H
 #define SIMDJSON_INLINE_TAPE_REF_H
 
+#include "simdjson/dom/document.h"
 #include "simdjson/internal/tape_ref.h"
-#include <cstring>
+#include "simdjson/internal/tape_type.h"
 
 namespace simdjson {
 namespace internal {
+
+constexpr const uint64_t JSON_VALUE_MASK = 0x00FFFFFFFFFFFFFF;
+constexpr const uint32_t JSON_COUNT_MASK = 0xFFFFFF;
 
 //
 // tape_ref inline implementation

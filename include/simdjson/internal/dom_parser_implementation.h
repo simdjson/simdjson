@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_INTERNAL_DOM_PARSER_IMPLEMENTATION_H
 #define SIMDJSON_INTERNAL_DOM_PARSER_IMPLEMENTATION_H
 
-#include "simdjson/common_defs.h"
+#include "simdjson/base.h"
 #include "simdjson/error.h"
 #include <memory>
 

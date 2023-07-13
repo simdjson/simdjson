@@ -2,10 +2,10 @@
 #define SIMDJSON_COMMON_DEFS_H
 
 #include <cassert>
+#include "simdjson/compiler_check.h"
 #include "simdjson/portability.h"
 
 namespace simdjson {
-
 namespace internal {
 /**
  * @private
@@ -20,7 +20,6 @@ char *to_chars(char *first, const char *last, double value);
  */
 double from_chars(const char *first) noexcept;
 double from_chars(const char *first, const char* end) noexcept;
-
 }
 
 #ifndef SIMDJSON_EXCEPTIONS
@@ -30,26 +29,6 @@ double from_chars(const char *first, const char* end) noexcept;
 #define SIMDJSON_EXCEPTIONS 0
 #endif
 #endif
-
-/** The maximum document size supported by simdjson. */
-constexpr size_t SIMDJSON_MAXSIZE_BYTES = 0xFFFFFFFF;
-
-/**
- * The amount of padding needed in a buffer to parse JSON.
- *
- * The input buf should be readable up to buf + SIMDJSON_PADDING
- * this is a stopgap; there should be a better description of the
- * main loop and its behavior that abstracts over this
- * See https://github.com/simdjson/simdjson/issues/174
- */
-constexpr size_t SIMDJSON_PADDING = 64;
-
-/**
- * By default, simdjson supports this many nested objects and arrays.
- *
- * This is the default for parser::max_depth().
- */
-constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 } // namespace simdjson
 
@@ -104,6 +83,9 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_VS_WARNING(4996)
   #define SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
   #define SIMDJSON_POP_DISABLE_WARNINGS __pragma(warning( pop ))
+
+  #define SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
+  #define SIMDJSON_POP_DISABLE_UNUSED_WARNINGS
 
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO
 
@@ -163,6 +145,10 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_GCC_WARNING(-Wdeprecated-declarations)
   #define SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING SIMDJSON_DISABLE_GCC_WARNING(-Wstrict-overflow)
   #define SIMDJSON_POP_DISABLE_WARNINGS _Pragma("GCC diagnostic pop")
+
+  #define SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS SIMDJSON_PUSH_DISABLE_WARNINGS \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wunused)
+  #define SIMDJSON_POP_DISABLE_UNUSED_WARNINGS SIMDJSON_POP_DISABLE_WARNINGS
 
 
 

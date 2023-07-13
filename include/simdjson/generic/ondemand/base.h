@@ -1,8 +1,10 @@
-#include "simdjson/generic_include_defs.h"
-#if SIMDJSON_GENERIC_ONCE(SIMDJSON_GENERIC_ONDEMAND_BASE_H)
-#define SIMDJSON_GENERIC_ONDEMAND_BASE_H SIMDJSON_GENERIC_INCLUDED(SIMDJSON_GENERIC_ONDEMAND_BASE_H)
+#ifndef SIMDJSON_GENERIC_ONDEMAND_BASE_H
 
+#ifdef SIMDJSON_IN_EDITOR_IMPL
+#define SIMDJSON_GENERIC_ONDEMAND_BASE_H
 #include "simdjson/generic/base.h"
+#include "simdjson/generic/ondemand/dependencies.h"
+#endif // SIMDJSON_IN_EDITOR_IMPL
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -16,8 +18,8 @@ namespace ondemand {
 /** Represents the depth of a JSON value (number of nested arrays/objects). */
 using depth_t = int32_t;
 
-/** @copydoc simdjson::SIMDJSON_IMPLEMENTATION::numberparsing::number_type */
-using number_type = simdjson::SIMDJSON_IMPLEMENTATION::numberparsing::number_type;
+/** @copydoc simdjson::SIMDJSON_IMPLEMENTATION::number_type */
+using number_type = simdjson::SIMDJSON_IMPLEMENTATION::number_type;
 
 /** @private Position in the JSON buffer indexes */
 using token_position = const uint32_t *;
@@ -43,4 +45,4 @@ class value_iterator;
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#endif // SIMDJSON_GENERIC_ONCE
+#endif // SIMDJSON_GENERIC_ONDEMAND_BASE_H

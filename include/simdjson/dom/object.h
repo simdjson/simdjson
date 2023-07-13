@@ -1,21 +1,12 @@
 #ifndef SIMDJSON_DOM_OBJECT_H
 #define SIMDJSON_DOM_OBJECT_H
 
-#include "simdjson/common_defs.h"
-#include "simdjson/error.h"
-#include "simdjson/internal/tape_ref.h"
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/element.h"
+#include "simdjson/internal/tape_ref.h"
 
 namespace simdjson {
-namespace internal {
-template<typename T>
-class string_builder;
-}
 namespace dom {
-
-class document;
-class element;
-class key_value_pair;
 
 /**
  * JSON object.

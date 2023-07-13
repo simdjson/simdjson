@@ -1,3 +1,12 @@
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
+
+#ifdef SIMDJSON_IN_EDITOR_IMPL
+#define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
+#include "generic/stage1/base.h"
+#include "generic/stage1/buf_block_reader.h"
+#include "generic/stage1/utf8_lookup4_algorithm.h"
+#endif // SIMDJSON_IN_EDITOR_IMPL
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
@@ -32,3 +41,5 @@ bool generic_validate_utf8(const char * input, size_t length) {
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H

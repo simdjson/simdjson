@@ -1,19 +1,11 @@
 #ifndef SIMDJSON_ARM64_IMPLEMENTATION_H
 #define SIMDJSON_ARM64_IMPLEMENTATION_H
 
-#include "simdjson/base.h"
-#include "simdjson/internal/isadetection.h"
+#include "simdjson/implementation.h"
+#include "simdjson/internal/instruction_set.h"
 
 namespace simdjson {
-/**
- * Implementation for NEON (ARMv8).
- */
 namespace arm64 {
-
-namespace {
-using namespace simdjson;
-using namespace simdjson::dom;
-}
 
 /**
  * @private

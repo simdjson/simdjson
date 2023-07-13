@@ -1,20 +1,11 @@
 #ifndef SIMDJSON_DOM_ELEMENT_H
 #define SIMDJSON_DOM_ELEMENT_H
 
-#include "simdjson/common_defs.h"
-#include "simdjson/error.h"
-#include "simdjson/internal/tape_ref.h"
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/array.h"
-#include <ostream>
 
 namespace simdjson {
-namespace internal {
-template<typename T>
-class string_builder;
-}
 namespace dom {
-class document;
-class object;
 
 /**
  * The actual concrete type of a JSON element
@@ -536,7 +527,6 @@ public:
   simdjson_inline dom::array::iterator end() const noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 };
-
 
 } // namespace simdjson
 
