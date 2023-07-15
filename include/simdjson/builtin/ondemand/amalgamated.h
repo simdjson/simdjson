@@ -1,10 +1,6 @@
 #ifndef SIMDJSON_BUILTIN_ONDEMAND_AMALGAMATED_H
 #define SIMDJSON_BUILTIN_ONDEMAND_AMALGAMATED_H
 
-#ifndef SIMDJSON_AMALGAMATED
-#include "simdjson/builtin/amalgamated.h"
-#endif // SIMDJSON_AMALGAMATED
-
 #include "simdjson/builtin/begin.h"
 #include "simdjson/generic/ondemand/amalgamated.h"
 #include "simdjson/builtin/end.h"

@@ -4,7 +4,7 @@
  */
 #ifndef SIMDJSON_AMALGAMATED
 #if defined(SIMDJSON_IMPLEMENTATION) && (defined(SIMDJSON_SRC_SIMDJSON_CPP) || defined(SIMDJSON_H))
-#error "implementation-specific code included in simdjson.cpp or simdjson.h without amalgamating first!"
+#error implementation-specific code included in simdjson.cpp or simdjson.h without amalgamating first!
 #endif
 #endif // SIMDJSON_AMALGAMATED
 #ifndef SIMDJSON_BASE_H

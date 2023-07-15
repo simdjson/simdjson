@@ -1,8 +1,6 @@
 #ifndef SIMDJSON_AMALGAMATED_H
 #define SIMDJSON_AMALGAMATED_H
 
-#define SIMDJSON_AMALGAMATED
-
 // This provides the public API for simdjson.
 // DOM and ondemand are amalgamated separately, in simdjson.h
 #include "simdjson/simdjson_version.h"

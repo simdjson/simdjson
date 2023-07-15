@@ -145,8 +145,6 @@ class Amalgamator:
                         self.write(f"/* amalgamation skipped (editor-only): {line} */")
                         ignoring = False
                         continue
-                    else:
-                        assert line == "#define SIMDJSON_AMALGAMATED", "{file} uses SIMDJSON_AMALGAMATED for unknown purpose: {line}"
 
                 if ignoring:
                     self.write(f"/* amalgamation skipped (editor-only): {line} */")

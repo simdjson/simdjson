@@ -3,7 +3,6 @@
 #ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_GENERIC_ONDEMAND_BASE_H
 #include "simdjson/generic/base.h"
-#include "simdjson/generic/ondemand/dependencies.h"
 #endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {

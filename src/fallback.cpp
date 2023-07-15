@@ -1,10 +1,6 @@
 #ifndef SIMDJSON_SRC_FALLBACK_CPP
 #define SIMDJSON_SRC_FALLBACK_CPP
 
-#ifndef SIMDJSON_AMALGAMATED
-#include "generic/dependencies.h"
-#endif // SIMDJSON_AMALGAMATED
-
 #include "simdjson/fallback/implementation.h"
 #include "simdjson/fallback/amalgamated.h"
 

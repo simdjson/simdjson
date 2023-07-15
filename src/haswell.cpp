@@ -1,11 +1,6 @@
 #ifndef SIMDJSON_SRC_HASWELL_CPP
 #define SIMDJSON_SRC_HASWELL_CPP
 
-#ifndef SIMDJSON_AMALGAMATED
-#include "generic/dependencies.h"
-#endif // SIMDJSON_AMALGAMATED
-
-#include "generic/dependencies.h"
 #include "simdjson/haswell/implementation.h"
 #include "simdjson/haswell/amalgamated.h"
 

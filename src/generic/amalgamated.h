@@ -1,6 +1,6 @@
-#ifndef SIMDJSON_AMALGAMATED
-#include "simdjson/generic/amalgamated.h"
-#endif // SIMDJSON_AMALGAMATED
+#if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_SRC_GENERIC_DEPENDENCIES_H)
+#error generic/dependencies.h must be included before generic/amalgamated.h!
+#endif
 
 #include "generic/base.h"
 #include "generic/dom_parser_implementation.h"

@@ -12,8 +12,10 @@ SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 #include "internal/simdprune_tables.cpp"
 #include "implementation.cpp"
 
-#include "simdjson/amalgamated.h"
+#include "simdjson/generic/dependencies.h"
 #include "generic/dependencies.h"
+
+#define SIMDJSON_AMALGAMATED
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 #include "arm64.cpp"
@@ -33,6 +35,8 @@ SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
 #include "westmere.cpp"
 #endif
+
+#undef SIMDJSON_AMALGAMATED
 
 SIMDJSON_POP_DISABLE_UNUSED_WARNINGS
 

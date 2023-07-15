@@ -1,10 +1,6 @@
 #ifndef SIMDJSON_DOM_AMALGAMATED_H
 #define SIMDJSON_DOM_AMALGAMATED_H
 
-#ifndef SIMDJSON_AMALGAMATED
-#include "simdjson/amalgamated.h"
-#endif // SIMDJSON_AMALGAMATED
-
 #include "simdjson/dom/base.h"
 #include "simdjson/dom/array.h"
 #include "simdjson/dom/document_stream.h"
