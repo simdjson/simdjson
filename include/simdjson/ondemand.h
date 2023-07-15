@@ -7,6 +7,7 @@
 #define SIMDJSON_AMALGAMATED
 
 #include "simdjson/amalgamated.h"
+#include "simdjson/builtin/amalgamated.h"
 #include "simdjson/builtin/ondemand/amalgamated.h"
 
 #undef SIMDJSON_AMALGAMATED

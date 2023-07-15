@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-15 15:55:38 -0700. Do not edit! */
+/* auto-generated on 2023-07-15 16:51:12 -0700. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -3011,7 +3011,6 @@ inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string
 // Internal headers needed for ondemand generics.
 // All includes not under simdjson/generic/ondemand must be here!
 // Otherwise, amalgamation will fail.
-/* skipped duplicate #include "simdjson/generic/dependencies.h" */
 /* begin file include/simdjson/padded_string.h */
 #ifndef SIMDJSON_PADDED_STRING_H
 #define SIMDJSON_PADDED_STRING_H
@@ -3182,6 +3181,8 @@ inline char *allocate_padded_buffer(size_t length) noexcept;
 
 #endif // SIMDJSON_PADDED_STRING_H
 /* end file include/simdjson/padded_string.h */
+/* skipped duplicate #include "simdjson/padded_string_view.h" */
+/* skipped duplicate #include "simdjson/dom/base.h" // for MINIMAL_DOCUMENT_CAPACITY */
 /* skipped duplicate #include "simdjson/internal/jsoncharutils_tables.h" */
 /* skipped duplicate #include "simdjson/internal/numberparsing_tables.h" */
 
@@ -32036,6 +32037,9 @@ simdjson_inline simdjson_result<SIMDJSON_BUILTIN_IMPLEMENTATION::ondemand::objec
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H */
+/* amalgamation skipped (editor-only): #include "simdjson/padded_string.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/padded_string_view.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/dom/base.h" // for MINIMAL_DOCUMENT_CAPACITY */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document_stream.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser.h" */
