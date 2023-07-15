@@ -7,6 +7,9 @@
 #include "simdjson/internal/numberparsing_tables.h"
 #endif // SIMDJSON_IN_EDITOR_IMPL
 
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#include <intrin.h>
+#endif
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
