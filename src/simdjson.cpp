@@ -4,6 +4,9 @@
 
 SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 
+#include "generic/dependencies.h"
+#include "simdjson/amalgamated.h"
+
 #include "to_chars.cpp"
 #include "from_chars.cpp"
 #include "internal/error_tables.cpp"
@@ -11,10 +14,6 @@ SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 #include "internal/numberparsing_tables.cpp"
 #include "internal/simdprune_tables.cpp"
 #include "implementation.cpp"
-
-#include "simdjson/generic/dependencies.h"
-#include "generic/dependencies.h"
-#include "simdjson/amalgamated.h"
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 #include "arm64.cpp"
