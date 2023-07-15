@@ -1,12 +1,12 @@
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 
-#ifdef SIMDJSON_IN_EDITOR_IMPL
+#ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/document_stream.h"
 #include "simdjson/generic/ondemand/parser.h"
 #include "simdjson/generic/ondemand/raw_json_string.h"
-#endif // SIMDJSON_IN_EDITOR_IMPL
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

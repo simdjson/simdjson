@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
-#ifdef SIMDJSON_IN_EDITOR_IMPL
+#ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_GENERIC_ATOMPARSING_H
 #include "simdjson/generic/base.h"
 #include "simdjson/generic/jsoncharutils.h"
-#endif // SIMDJSON_IN_EDITOR_IMPL
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

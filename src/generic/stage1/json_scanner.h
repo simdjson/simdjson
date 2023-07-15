@@ -1,11 +1,11 @@
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H
 
-#ifdef SIMDJSON_IN_EDITOR_IMPL
+#ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H
 #include "generic/stage1/base.h"
 #include "generic/json_character_block.h"
 #include "generic/stage1/json_string_scanner.h"
-#endif // SIMDJSON_IN_EDITOR_IMPL
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

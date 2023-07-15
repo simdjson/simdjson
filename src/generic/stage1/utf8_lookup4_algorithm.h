@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 
-#ifdef SIMDJSON_IN_EDITOR_IMPL
+#ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 #include "generic/stage1/base.h"
 #include "generic/dom_parser_implementation.h"
-#endif // SIMDJSON_IN_EDITOR_IMPL
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

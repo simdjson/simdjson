@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-14 15:10:30 -0700. Do not edit! */
+/* auto-generated on 2023-07-14 20:57:24 -0700. Do not edit! */
 /* begin file src/simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
 
@@ -6651,12 +6651,12 @@ class implementation;
 } // namespace icelake
 } // namespace simdjson
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/begin.h" */
 /* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #endif // SIMDJSON_ICELAKE_BASE_H
 /* end file include/simdjson/icelake/base.h */
@@ -7183,9 +7183,9 @@ inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string
 #ifndef SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
 #define SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dependencies.h" // Included here so checks will run on each #include */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 /* begin file include/simdjson/internal/tape_type.h */
 #ifndef SIMDJSON_INTERNAL_TAPE_TYPE_H
@@ -7223,6 +7223,8 @@ enum class tape_type {
 /* begin file include/simdjson/amalgamated.h */
 #ifndef SIMDJSON_AMALGAMATED_H
 #define SIMDJSON_AMALGAMATED_H
+
+#define SIMDJSON_AMALGAMATED
 
 // This provides the public API for simdjson.
 // DOM and ondemand are amalgamated separately, in simdjson.h
@@ -7704,9 +7706,9 @@ extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
 #ifndef SIMDJSON_SRC_ARM64_CPP
 #define SIMDJSON_SRC_ARM64_CPP
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/dependencies.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 /* skipped duplicate #include "simdjson/arm64/implementation.h" */
 /* begin file include/simdjson/arm64/amalgamated.h */
@@ -7739,12 +7741,12 @@ template <typename T> struct simd8x64;
 } // namespace arm64
 } // namespace simdjson
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/begin.h" */
 /* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #endif // SIMDJSON_ARM64_BASE_H
 /* end file include/simdjson/arm64/base.h */
@@ -7946,10 +7948,10 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 #ifndef SIMDJSON_ARM64_SIMD_H
 #define SIMDJSON_ARM64_SIMD_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 /* skipped duplicate #include "simdjson/arm64/bitmanipulation.h" */
 
@@ -8533,10 +8535,10 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* end file include/simdjson/arm64/stringparsing_defs.h */
 /* end file include/simdjson/arm64/begin.h */
 /* begin file include/simdjson/generic/amalgamated.h for arm64 */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/amalgamated.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dependencies.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #ifndef SIMDJSON_AMALGAMATED_H
 #error simdjson/amalgamated.h must be included before generic/amalgamated.h!
@@ -8548,16 +8550,14 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* begin file include/simdjson/generic/base.h for arm64 */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
-
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_GENERIC */
+/* amalgamation skipped (editor-only): // If we haven't got an implementation yet, just use the builtin one (for the editor) */
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
 /* amalgamation skipped (editor-only): #include "simdjson/builtin/begin.h" */
 /* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_GENERIC */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -8582,13 +8582,16 @@ enum class number_type {
 /* begin file include/simdjson/generic/jsoncharutils.h for arm64 */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_JSONCHARUTILS_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/jsoncharutils_tables.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#include <intrin.h>
+#endif
 namespace simdjson {
 namespace arm64 {
 namespace {
@@ -8708,11 +8711,11 @@ simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 /* begin file include/simdjson/generic/atomparsing.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ATOMPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -8785,10 +8788,10 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* begin file include/simdjson/generic/dom_parser_implementation.h for arm64 */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -8875,10 +8878,10 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for arm64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -9011,12 +9014,12 @@ protected:
 /* begin file include/simdjson/generic/numberparsing.h for arm64 */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_NUMBERPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #include <limits>
 #include <ostream>
@@ -10281,11 +10284,11 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -10389,18 +10392,18 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 /* skipped duplicate #include "simdjson/arm64/stringparsing_defs.h" */
 /* end file include/simdjson/arm64/begin.h */
 /* begin file src/generic/amalgamated.h for arm64 */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 /* begin file src/generic/base.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/dependencies.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -10417,11 +10420,11 @@ struct json_character_block;
 /* begin file src/generic/dom_parser_implementation.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Interface a dom parser implementation must fulfill
 namespace simdjson {
@@ -10440,10 +10443,10 @@ simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 /* begin file src/generic/json_character_block.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -10468,18 +10471,18 @@ struct json_character_block {
 /* end file src/generic/json_character_block.h for arm64 */
 /* end file src/generic/amalgamated.h for arm64 */
 /* begin file src/generic/stage1/amalgamated.h for arm64 */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Stuff other things depend on
 /* begin file src/generic/stage1/base.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -10513,10 +10516,10 @@ using utf8_validation::utf8_checker;
 /* begin file src/generic/stage1/json_string_scanner.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -10677,11 +10680,11 @@ simdjson_inline error_code json_string_scanner::finish() {
 /* begin file src/generic/stage1/utf8_lookup4_algorithm.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -10896,12 +10899,12 @@ using namespace simd;
 /* begin file src/generic/stage1/json_scanner.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/json_character_block.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_string_scanner.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -11068,10 +11071,10 @@ simdjson_inline error_code json_scanner::finish() {
 /* begin file src/generic/stage1/buf_block_reader.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -11173,11 +11176,11 @@ simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
 /* begin file src/generic/stage1/find_next_document_index.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -11280,12 +11283,12 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
 /* begin file src/generic/stage1/json_minifier.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_scanner.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/buf_block_reader.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
@@ -11386,7 +11389,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 /* begin file src/generic/stage1/json_structural_indexer.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/utf8_lookup4_algorithm.h" */
@@ -11395,7 +11398,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_scanner.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_minifier.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/find_next_document_index.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
@@ -11756,12 +11759,12 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
 /* begin file src/generic/stage1/utf8_validator.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/buf_block_reader.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/utf8_lookup4_algorithm.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -11802,18 +11805,18 @@ bool generic_validate_utf8(const char * input, size_t length) {
 /* end file src/generic/stage1/utf8_validator.h for arm64 */
 /* end file src/generic/stage1/amalgamated.h for arm64 */
 /* begin file src/generic/stage2/amalgamated.h for arm64 */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Stuff other things depend on
 /* begin file src/generic/stage2/base.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -11835,10 +11838,10 @@ struct tape_writer;
 /* begin file src/generic/stage2/tape_writer.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -11951,10 +11954,10 @@ simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, intern
 /* begin file src/generic/stage2/logger.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
@@ -12052,12 +12055,12 @@ namespace logger {
 /* begin file src/generic/stage2/json_iterator.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage2/logger.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -12380,11 +12383,11 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 /* begin file src/generic/stage2/stringparsing.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses
 // It is intended to be included multiple times and compiled multiple times
@@ -12630,11 +12633,11 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
 /* begin file src/generic/stage2/structural_iterator.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -12696,7 +12699,7 @@ public:
 /* begin file src/generic/stage2/tape_builder.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage2/json_iterator.h" */
@@ -12705,7 +12708,7 @@ public:
 /* amalgamation skipped (editor-only): #include "simdjson/generic/atomparsing.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/numberparsing.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 
 namespace simdjson {
@@ -13171,9 +13174,9 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 #ifndef SIMDJSON_SRC_FALLBACK_CPP
 #define SIMDJSON_SRC_FALLBACK_CPP
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/dependencies.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 /* skipped duplicate #include "simdjson/fallback/implementation.h" */
 /* begin file include/simdjson/fallback/amalgamated.h */
@@ -13199,12 +13202,12 @@ class implementation;
 } // namespace fallback
 } // namespace simdjson
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
 /* amalgamation skipped (editor-only): #include "simdjson/fallback/begin.h" */
 /* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #endif // SIMDJSON_FALLBACK_BASE_H
 /* end file include/simdjson/fallback/base.h */
@@ -13332,10 +13335,10 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 /* end file include/simdjson/fallback/numberparsing_defs.h */
 /* end file include/simdjson/fallback/begin.h */
 /* begin file include/simdjson/generic/amalgamated.h for fallback */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/amalgamated.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dependencies.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #ifndef SIMDJSON_AMALGAMATED_H
 #error simdjson/amalgamated.h must be included before generic/amalgamated.h!
@@ -13347,16 +13350,14 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 /* begin file include/simdjson/generic/base.h for fallback */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
-
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_GENERIC */
+/* amalgamation skipped (editor-only): // If we haven't got an implementation yet, just use the builtin one (for the editor) */
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
 /* amalgamation skipped (editor-only): #include "simdjson/builtin/begin.h" */
 /* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_GENERIC */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace fallback {
@@ -13381,13 +13382,16 @@ enum class number_type {
 /* begin file include/simdjson/generic/jsoncharutils.h for fallback */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_JSONCHARUTILS_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/jsoncharutils_tables.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#include <intrin.h>
+#endif
 namespace simdjson {
 namespace fallback {
 namespace {
@@ -13507,11 +13511,11 @@ simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 /* begin file include/simdjson/generic/atomparsing.h for fallback */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ATOMPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace fallback {
@@ -13584,10 +13588,10 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* begin file include/simdjson/generic/dom_parser_implementation.h for fallback */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace fallback {
@@ -13674,10 +13678,10 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for fallback */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace fallback {
@@ -13810,12 +13814,12 @@ protected:
 /* begin file include/simdjson/generic/numberparsing.h for fallback */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_NUMBERPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #include <limits>
 #include <ostream>
@@ -15080,11 +15084,11 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace fallback {
@@ -15187,11 +15191,11 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 /* begin file src/generic/stage1/find_next_document_index.h for fallback */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace fallback {
@@ -15294,11 +15298,11 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
 /* begin file src/generic/stage2/stringparsing.h for fallback */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses
 // It is intended to be included multiple times and compiled multiple times
@@ -15544,10 +15548,10 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
 /* begin file src/generic/stage2/logger.h for fallback */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
@@ -15643,12 +15647,12 @@ namespace logger {
 /* begin file src/generic/stage2/json_iterator.h for fallback */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage2/logger.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace fallback {
@@ -15971,10 +15975,10 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 /* begin file src/generic/stage2/tape_writer.h for fallback */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace fallback {
@@ -16087,7 +16091,7 @@ simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, intern
 /* begin file src/generic/stage2/tape_builder.h for fallback */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage2/json_iterator.h" */
@@ -16096,7 +16100,7 @@ simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, intern
 /* amalgamation skipped (editor-only): #include "simdjson/generic/atomparsing.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/numberparsing.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 
 namespace simdjson {
@@ -16784,9 +16788,9 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 #ifndef SIMDJSON_SRC_HASWELL_CPP
 #define SIMDJSON_SRC_HASWELL_CPP
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/dependencies.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 /* skipped duplicate #include "generic/dependencies.h" */
 /* skipped duplicate #include "simdjson/haswell/implementation.h" */
@@ -16821,12 +16825,12 @@ template <typename T> struct simd8x64;
 } // namespace haswell
 } // namespace simdjson
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
 /* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #endif // SIMDJSON_HASWELL_BASE_H
 /* end file include/simdjson/haswell/base.h */
@@ -17447,10 +17451,10 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* end file include/simdjson/haswell/stringparsing_defs.h */
 /* end file include/simdjson/haswell/begin.h */
 /* begin file include/simdjson/generic/amalgamated.h for haswell */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/amalgamated.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dependencies.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #ifndef SIMDJSON_AMALGAMATED_H
 #error simdjson/amalgamated.h must be included before generic/amalgamated.h!
@@ -17462,16 +17466,14 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* begin file include/simdjson/generic/base.h for haswell */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
-
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_GENERIC */
+/* amalgamation skipped (editor-only): // If we haven't got an implementation yet, just use the builtin one (for the editor) */
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
 /* amalgamation skipped (editor-only): #include "simdjson/builtin/begin.h" */
 /* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_GENERIC */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -17496,13 +17498,16 @@ enum class number_type {
 /* begin file include/simdjson/generic/jsoncharutils.h for haswell */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_JSONCHARUTILS_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/jsoncharutils_tables.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#include <intrin.h>
+#endif
 namespace simdjson {
 namespace haswell {
 namespace {
@@ -17622,11 +17627,11 @@ simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 /* begin file include/simdjson/generic/atomparsing.h for haswell */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ATOMPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -17699,10 +17704,10 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* begin file include/simdjson/generic/dom_parser_implementation.h for haswell */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -17789,10 +17794,10 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for haswell */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -17925,12 +17930,12 @@ protected:
 /* begin file include/simdjson/generic/numberparsing.h for haswell */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_NUMBERPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #include <limits>
 #include <ostream>
@@ -19195,11 +19200,11 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -19314,18 +19319,18 @@ SIMDJSON_TARGET_REGION("avx2,bmi,pclmul,lzcnt,popcnt")
 /* skipped duplicate #include "simdjson/haswell/stringparsing_defs.h" */
 /* end file include/simdjson/haswell/begin.h */
 /* begin file src/generic/amalgamated.h for haswell */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 /* begin file src/generic/base.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/dependencies.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -19342,11 +19347,11 @@ struct json_character_block;
 /* begin file src/generic/dom_parser_implementation.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Interface a dom parser implementation must fulfill
 namespace simdjson {
@@ -19365,10 +19370,10 @@ simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 /* begin file src/generic/json_character_block.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -19393,18 +19398,18 @@ struct json_character_block {
 /* end file src/generic/json_character_block.h for haswell */
 /* end file src/generic/amalgamated.h for haswell */
 /* begin file src/generic/stage1/amalgamated.h for haswell */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Stuff other things depend on
 /* begin file src/generic/stage1/base.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -19438,10 +19443,10 @@ using utf8_validation::utf8_checker;
 /* begin file src/generic/stage1/json_string_scanner.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -19602,11 +19607,11 @@ simdjson_inline error_code json_string_scanner::finish() {
 /* begin file src/generic/stage1/utf8_lookup4_algorithm.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -19821,12 +19826,12 @@ using namespace simd;
 /* begin file src/generic/stage1/json_scanner.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/json_character_block.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_string_scanner.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -19993,10 +19998,10 @@ simdjson_inline error_code json_scanner::finish() {
 /* begin file src/generic/stage1/buf_block_reader.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -20098,11 +20103,11 @@ simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
 /* begin file src/generic/stage1/find_next_document_index.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -20205,12 +20210,12 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
 /* begin file src/generic/stage1/json_minifier.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_scanner.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/buf_block_reader.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
@@ -20311,7 +20316,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 /* begin file src/generic/stage1/json_structural_indexer.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/utf8_lookup4_algorithm.h" */
@@ -20320,7 +20325,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_scanner.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_minifier.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/find_next_document_index.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
@@ -20681,12 +20686,12 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
 /* begin file src/generic/stage1/utf8_validator.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/buf_block_reader.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/utf8_lookup4_algorithm.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -20727,18 +20732,18 @@ bool generic_validate_utf8(const char * input, size_t length) {
 /* end file src/generic/stage1/utf8_validator.h for haswell */
 /* end file src/generic/stage1/amalgamated.h for haswell */
 /* begin file src/generic/stage2/amalgamated.h for haswell */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Stuff other things depend on
 /* begin file src/generic/stage2/base.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -20760,10 +20765,10 @@ struct tape_writer;
 /* begin file src/generic/stage2/tape_writer.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -20876,10 +20881,10 @@ simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, intern
 /* begin file src/generic/stage2/logger.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
@@ -20977,12 +20982,12 @@ namespace logger {
 /* begin file src/generic/stage2/json_iterator.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage2/logger.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -21305,11 +21310,11 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 /* begin file src/generic/stage2/stringparsing.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses
 // It is intended to be included multiple times and compiled multiple times
@@ -21555,11 +21560,11 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
 /* begin file src/generic/stage2/structural_iterator.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace haswell {
@@ -21621,7 +21626,7 @@ public:
 /* begin file src/generic/stage2/tape_builder.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage2/json_iterator.h" */
@@ -21630,7 +21635,7 @@ public:
 /* amalgamation skipped (editor-only): #include "simdjson/generic/atomparsing.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/numberparsing.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 
 namespace simdjson {
@@ -22098,9 +22103,9 @@ SIMDJSON_UNTARGET_REGION
 #ifndef SIMDJSON_SRC_ICELAKE_CPP
 #define SIMDJSON_SRC_ICELAKE_CPP
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/dependencies.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 /* skipped duplicate #include "simdjson/icelake/implementation.h" */
 /* begin file include/simdjson/icelake/amalgamated.h */
@@ -22731,10 +22736,10 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 /* end file include/simdjson/icelake/numberparsing_defs.h */
 /* end file include/simdjson/icelake/begin.h */
 /* begin file include/simdjson/generic/amalgamated.h for icelake */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/amalgamated.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dependencies.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #ifndef SIMDJSON_AMALGAMATED_H
 #error simdjson/amalgamated.h must be included before generic/amalgamated.h!
@@ -22746,16 +22751,14 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 /* begin file include/simdjson/generic/base.h for icelake */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
-
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_GENERIC */
+/* amalgamation skipped (editor-only): // If we haven't got an implementation yet, just use the builtin one (for the editor) */
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
 /* amalgamation skipped (editor-only): #include "simdjson/builtin/begin.h" */
 /* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_GENERIC */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -22780,13 +22783,16 @@ enum class number_type {
 /* begin file include/simdjson/generic/jsoncharutils.h for icelake */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_JSONCHARUTILS_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/jsoncharutils_tables.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#include <intrin.h>
+#endif
 namespace simdjson {
 namespace icelake {
 namespace {
@@ -22906,11 +22912,11 @@ simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 /* begin file include/simdjson/generic/atomparsing.h for icelake */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ATOMPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -22983,10 +22989,10 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* begin file include/simdjson/generic/dom_parser_implementation.h for icelake */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -23073,10 +23079,10 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for icelake */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -23209,12 +23215,12 @@ protected:
 /* begin file include/simdjson/generic/numberparsing.h for icelake */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_NUMBERPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #include <limits>
 #include <ostream>
@@ -24479,11 +24485,11 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -24598,18 +24604,18 @@ SIMDJSON_TARGET_REGION("avx512f,avx512dq,avx512cd,avx512bw,avx512vbmi,avx512vbmi
 /* skipped duplicate #include "simdjson/icelake/numberparsing_defs.h" */
 /* end file include/simdjson/icelake/begin.h */
 /* begin file src/generic/amalgamated.h for icelake */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 /* begin file src/generic/base.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/dependencies.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -24626,11 +24632,11 @@ struct json_character_block;
 /* begin file src/generic/dom_parser_implementation.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Interface a dom parser implementation must fulfill
 namespace simdjson {
@@ -24649,10 +24655,10 @@ simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 /* begin file src/generic/json_character_block.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -24679,18 +24685,18 @@ struct json_character_block {
 // defining SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER allows us to provide our own bit_indexer::write
 #define SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 /* begin file src/generic/stage1/amalgamated.h for icelake */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Stuff other things depend on
 /* begin file src/generic/stage1/base.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -24724,10 +24730,10 @@ using utf8_validation::utf8_checker;
 /* begin file src/generic/stage1/json_string_scanner.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -24888,11 +24894,11 @@ simdjson_inline error_code json_string_scanner::finish() {
 /* begin file src/generic/stage1/utf8_lookup4_algorithm.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -25107,12 +25113,12 @@ using namespace simd;
 /* begin file src/generic/stage1/json_scanner.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/json_character_block.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_string_scanner.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -25279,10 +25285,10 @@ simdjson_inline error_code json_scanner::finish() {
 /* begin file src/generic/stage1/buf_block_reader.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -25384,11 +25390,11 @@ simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
 /* begin file src/generic/stage1/find_next_document_index.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -25491,12 +25497,12 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
 /* begin file src/generic/stage1/json_minifier.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_scanner.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/buf_block_reader.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
@@ -25597,7 +25603,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 /* begin file src/generic/stage1/json_structural_indexer.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/utf8_lookup4_algorithm.h" */
@@ -25606,7 +25612,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_scanner.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_minifier.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/find_next_document_index.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
@@ -25967,12 +25973,12 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
 /* begin file src/generic/stage1/utf8_validator.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/buf_block_reader.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/utf8_lookup4_algorithm.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -26013,18 +26019,18 @@ bool generic_validate_utf8(const char * input, size_t length) {
 /* end file src/generic/stage1/utf8_validator.h for icelake */
 /* end file src/generic/stage1/amalgamated.h for icelake */
 /* begin file src/generic/stage2/amalgamated.h for icelake */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Stuff other things depend on
 /* begin file src/generic/stage2/base.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -26046,10 +26052,10 @@ struct tape_writer;
 /* begin file src/generic/stage2/tape_writer.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -26162,10 +26168,10 @@ simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, intern
 /* begin file src/generic/stage2/logger.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
@@ -26263,12 +26269,12 @@ namespace logger {
 /* begin file src/generic/stage2/json_iterator.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage2/logger.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -26591,11 +26597,11 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 /* begin file src/generic/stage2/stringparsing.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses
 // It is intended to be included multiple times and compiled multiple times
@@ -26841,11 +26847,11 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
 /* begin file src/generic/stage2/structural_iterator.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -26907,7 +26913,7 @@ public:
 /* begin file src/generic/stage2/tape_builder.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage2/json_iterator.h" */
@@ -26916,7 +26922,7 @@ public:
 /* amalgamation skipped (editor-only): #include "simdjson/generic/atomparsing.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/numberparsing.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 
 namespace simdjson {
@@ -27425,9 +27431,9 @@ SIMDJSON_UNTARGET_REGION
 #ifndef SIMDJSON_SRC_PPC64_CPP
 #define SIMDJSON_SRC_PPC64_CPP
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/dependencies.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 /* skipped duplicate #include "simdjson/ppc64/implementation.h" */
 /* begin file include/simdjson/ppc64/amalgamated.h */
@@ -27460,12 +27466,12 @@ template <typename T> struct simd8x64;
 } // namespace ppc64
 } // namespace simdjson
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/begin.h" */
 /* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #endif // SIMDJSON_PPC64_BASE_H
 /* end file include/simdjson/ppc64/base.h */
@@ -28196,10 +28202,10 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 /* end file include/simdjson/ppc64/stringparsing_defs.h */
 /* end file include/simdjson/ppc64/begin.h */
 /* begin file include/simdjson/generic/amalgamated.h for ppc64 */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/amalgamated.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dependencies.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #ifndef SIMDJSON_AMALGAMATED_H
 #error simdjson/amalgamated.h must be included before generic/amalgamated.h!
@@ -28211,16 +28217,14 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 /* begin file include/simdjson/generic/base.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
-
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_GENERIC */
+/* amalgamation skipped (editor-only): // If we haven't got an implementation yet, just use the builtin one (for the editor) */
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
 /* amalgamation skipped (editor-only): #include "simdjson/builtin/begin.h" */
 /* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_GENERIC */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -28245,13 +28249,16 @@ enum class number_type {
 /* begin file include/simdjson/generic/jsoncharutils.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_JSONCHARUTILS_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/jsoncharutils_tables.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#include <intrin.h>
+#endif
 namespace simdjson {
 namespace ppc64 {
 namespace {
@@ -28371,11 +28378,11 @@ simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 /* begin file include/simdjson/generic/atomparsing.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ATOMPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -28448,10 +28455,10 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* begin file include/simdjson/generic/dom_parser_implementation.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -28538,10 +28545,10 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -28674,12 +28681,12 @@ protected:
 /* begin file include/simdjson/generic/numberparsing.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_NUMBERPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #include <limits>
 #include <ostream>
@@ -29944,11 +29951,11 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -30052,18 +30059,18 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 /* skipped duplicate #include "simdjson/ppc64/stringparsing_defs.h" */
 /* end file include/simdjson/ppc64/begin.h */
 /* begin file src/generic/amalgamated.h for ppc64 */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 /* begin file src/generic/base.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/dependencies.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -30080,11 +30087,11 @@ struct json_character_block;
 /* begin file src/generic/dom_parser_implementation.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Interface a dom parser implementation must fulfill
 namespace simdjson {
@@ -30103,10 +30110,10 @@ simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 /* begin file src/generic/json_character_block.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -30131,18 +30138,18 @@ struct json_character_block {
 /* end file src/generic/json_character_block.h for ppc64 */
 /* end file src/generic/amalgamated.h for ppc64 */
 /* begin file src/generic/stage1/amalgamated.h for ppc64 */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Stuff other things depend on
 /* begin file src/generic/stage1/base.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -30176,10 +30183,10 @@ using utf8_validation::utf8_checker;
 /* begin file src/generic/stage1/json_string_scanner.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -30340,11 +30347,11 @@ simdjson_inline error_code json_string_scanner::finish() {
 /* begin file src/generic/stage1/utf8_lookup4_algorithm.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -30559,12 +30566,12 @@ using namespace simd;
 /* begin file src/generic/stage1/json_scanner.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/json_character_block.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_string_scanner.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -30731,10 +30738,10 @@ simdjson_inline error_code json_scanner::finish() {
 /* begin file src/generic/stage1/buf_block_reader.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -30836,11 +30843,11 @@ simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
 /* begin file src/generic/stage1/find_next_document_index.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -30943,12 +30950,12 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
 /* begin file src/generic/stage1/json_minifier.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_scanner.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/buf_block_reader.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
@@ -31049,7 +31056,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 /* begin file src/generic/stage1/json_structural_indexer.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/utf8_lookup4_algorithm.h" */
@@ -31058,7 +31065,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_scanner.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_minifier.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/find_next_document_index.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
@@ -31419,12 +31426,12 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
 /* begin file src/generic/stage1/utf8_validator.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/buf_block_reader.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/utf8_lookup4_algorithm.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -31465,18 +31472,18 @@ bool generic_validate_utf8(const char * input, size_t length) {
 /* end file src/generic/stage1/utf8_validator.h for ppc64 */
 /* end file src/generic/stage1/amalgamated.h for ppc64 */
 /* begin file src/generic/stage2/amalgamated.h for ppc64 */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Stuff other things depend on
 /* begin file src/generic/stage2/base.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -31498,10 +31505,10 @@ struct tape_writer;
 /* begin file src/generic/stage2/tape_writer.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -31614,10 +31621,10 @@ simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, intern
 /* begin file src/generic/stage2/logger.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
@@ -31715,12 +31722,12 @@ namespace logger {
 /* begin file src/generic/stage2/json_iterator.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage2/logger.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -32043,11 +32050,11 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 /* begin file src/generic/stage2/stringparsing.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses
 // It is intended to be included multiple times and compiled multiple times
@@ -32293,11 +32300,11 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
 /* begin file src/generic/stage2/structural_iterator.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -32359,7 +32366,7 @@ public:
 /* begin file src/generic/stage2/tape_builder.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage2/json_iterator.h" */
@@ -32368,7 +32375,7 @@ public:
 /* amalgamation skipped (editor-only): #include "simdjson/generic/atomparsing.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/numberparsing.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 
 namespace simdjson {
@@ -32811,9 +32818,9 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 #ifndef SIMDJSON_SRC_WESTMERE_CPP
 #define SIMDJSON_SRC_WESTMERE_CPP
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/dependencies.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 /* skipped duplicate #include "generic/dependencies.h" */
 /* skipped duplicate #include "simdjson/westmere/implementation.h" */
@@ -32848,12 +32855,12 @@ template <typename T> struct simd8x64;
 } // namespace westmere
 } // namespace simdjson
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/begin.h" */
 /* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #endif // SIMDJSON_WESTMERE_BASE_H
 /* end file include/simdjson/westmere/base.h */
@@ -33425,10 +33432,10 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* end file include/simdjson/westmere/stringparsing_defs.h */
 /* end file include/simdjson/westmere/begin.h */
 /* begin file include/simdjson/generic/amalgamated.h for westmere */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/amalgamated.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dependencies.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #ifndef SIMDJSON_AMALGAMATED_H
 #error simdjson/amalgamated.h must be included before generic/amalgamated.h!
@@ -33440,16 +33447,14 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* begin file include/simdjson/generic/base.h for westmere */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
-
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_GENERIC */
+/* amalgamation skipped (editor-only): // If we haven't got an implementation yet, just use the builtin one (for the editor) */
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
 /* amalgamation skipped (editor-only): #include "simdjson/builtin/begin.h" */
 /* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_GENERIC */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -33474,13 +33479,16 @@ enum class number_type {
 /* begin file include/simdjson/generic/jsoncharutils.h for westmere */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_JSONCHARUTILS_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/jsoncharutils_tables.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#include <intrin.h>
+#endif
 namespace simdjson {
 namespace westmere {
 namespace {
@@ -33600,11 +33608,11 @@ simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 /* begin file include/simdjson/generic/atomparsing.h for westmere */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ATOMPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -33677,10 +33685,10 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* begin file include/simdjson/generic/dom_parser_implementation.h for westmere */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -33767,10 +33775,10 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for westmere */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -33903,12 +33911,12 @@ protected:
 /* begin file include/simdjson/generic/numberparsing.h for westmere */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_NUMBERPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 #include <limits>
 #include <ostream>
@@ -35173,11 +35181,11 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -35292,18 +35300,18 @@ SIMDJSON_TARGET_REGION("sse4.2,pclmul,popcnt")
 /* skipped duplicate #include "simdjson/westmere/stringparsing_defs.h" */
 /* end file include/simdjson/westmere/begin.h */
 /* begin file src/generic/amalgamated.h for westmere */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 /* begin file src/generic/base.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/dependencies.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -35320,11 +35328,11 @@ struct json_character_block;
 /* begin file src/generic/dom_parser_implementation.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Interface a dom parser implementation must fulfill
 namespace simdjson {
@@ -35343,10 +35351,10 @@ simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 /* begin file src/generic/json_character_block.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -35371,18 +35379,18 @@ struct json_character_block {
 /* end file src/generic/json_character_block.h for westmere */
 /* end file src/generic/amalgamated.h for westmere */
 /* begin file src/generic/stage1/amalgamated.h for westmere */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Stuff other things depend on
 /* begin file src/generic/stage1/base.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -35416,10 +35424,10 @@ using utf8_validation::utf8_checker;
 /* begin file src/generic/stage1/json_string_scanner.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -35580,11 +35588,11 @@ simdjson_inline error_code json_string_scanner::finish() {
 /* begin file src/generic/stage1/utf8_lookup4_algorithm.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -35799,12 +35807,12 @@ using namespace simd;
 /* begin file src/generic/stage1/json_scanner.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/json_character_block.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_string_scanner.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -35971,10 +35979,10 @@ simdjson_inline error_code json_scanner::finish() {
 /* begin file src/generic/stage1/buf_block_reader.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -36076,11 +36084,11 @@ simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
 /* begin file src/generic/stage1/find_next_document_index.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -36183,12 +36191,12 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
 /* begin file src/generic/stage1/json_minifier.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_scanner.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/buf_block_reader.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
@@ -36289,7 +36297,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 /* begin file src/generic/stage1/json_structural_indexer.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/utf8_lookup4_algorithm.h" */
@@ -36298,7 +36306,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_scanner.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/json_minifier.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/find_next_document_index.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
@@ -36659,12 +36667,12 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
 /* begin file src/generic/stage1/utf8_validator.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage1/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/buf_block_reader.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage1/utf8_lookup4_algorithm.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -36705,18 +36713,18 @@ bool generic_validate_utf8(const char * input, size_t length) {
 /* end file src/generic/stage1/utf8_validator.h for westmere */
 /* end file src/generic/stage1/amalgamated.h for westmere */
 /* begin file src/generic/stage2/amalgamated.h for westmere */
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "generic/amalgamated.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // Stuff other things depend on
 /* begin file src/generic/stage2/base.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_BASE_H */
 /* amalgamation skipped (editor-only): #include "generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -36738,10 +36746,10 @@ struct tape_writer;
 /* begin file src/generic/stage2/tape_writer.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -36854,10 +36862,10 @@ simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, intern
 /* begin file src/generic/stage2/logger.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
@@ -36955,12 +36963,12 @@ namespace logger {
 /* begin file src/generic/stage2/json_iterator.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage2/logger.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -37283,11 +37291,11 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 /* begin file src/generic/stage2/stringparsing.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 // This file contains the common code every implementation uses
 // It is intended to be included multiple times and compiled multiple times
@@ -37533,11 +37541,11 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
 /* begin file src/generic/stage2/structural_iterator.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace westmere {
@@ -37599,7 +37607,7 @@ public:
 /* begin file src/generic/stage2/tape_builder.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 
-/* amalgamation skipped (editor-only): #ifdef SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H */
 /* amalgamation skipped (editor-only): #include "generic/stage2/base.h" */
 /* amalgamation skipped (editor-only): #include "generic/stage2/json_iterator.h" */
@@ -37608,7 +37616,7 @@ public:
 /* amalgamation skipped (editor-only): #include "simdjson/generic/atomparsing.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/numberparsing.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_IN_EDITOR_IMPL */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 
 namespace simdjson {

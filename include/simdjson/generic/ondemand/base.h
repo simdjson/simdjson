@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_GENERIC_ONDEMAND_BASE_H
 
-#ifdef SIMDJSON_IN_EDITOR_IMPL
+#ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_GENERIC_ONDEMAND_BASE_H
 #include "simdjson/generic/base.h"
 #include "simdjson/generic/ondemand/dependencies.h"
-#endif // SIMDJSON_IN_EDITOR_IMPL
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

@@ -1,11 +1,11 @@
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 
-#ifdef SIMDJSON_IN_EDITOR_IMPL
+#ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 #include "generic/stage2/base.h"
 #include "generic/stage2/logger.h"
 #include "simdjson/generic/dom_parser_implementation.h"
-#endif // SIMDJSON_IN_EDITOR_IMPL
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-#ifdef SIMDJSON_IN_EDITOR_IMPL
+#ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 #include "generic/base.h"
 #include "simdjson/generic/dom_parser_implementation.h"
-#endif // SIMDJSON_IN_EDITOR_IMPL
+#endif // SIMDJSON_AMALGAMATED
 
 // Interface a dom parser implementation must fulfill
 namespace simdjson {

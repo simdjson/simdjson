@@ -1,9 +1,9 @@
 #ifndef SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
 #define SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
 
-#ifdef SIMDJSON_IN_EDITOR_IMPL
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/generic/dependencies.h" // Included here so checks will run on each #include
-#endif // SIMDJSON_IN_EDITOR_IMPL
+#endif // SIMDJSON_AMALGAMATED
 
 #include "simdjson/internal/tape_type.h"
 

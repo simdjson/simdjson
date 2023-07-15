@@ -1,7 +1,7 @@
-#ifdef SIMDJSON_IN_EDITOR_IMPL
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/amalgamated.h"
 #include "simdjson/generic/dependencies.h"
-#endif // SIMDJSON_IN_EDITOR_IMPL
+#endif // SIMDJSON_AMALGAMATED
 
 #ifndef SIMDJSON_AMALGAMATED_H
 #error simdjson/amalgamated.h must be included before generic/amalgamated.h!

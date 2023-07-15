@@ -1,6 +1,6 @@
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 
-#ifdef SIMDJSON_IN_EDITOR_IMPL
+#ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 #include "generic/stage2/base.h"
 #include "generic/stage2/json_iterator.h"
@@ -9,7 +9,7 @@
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/generic/dom_parser_implementation.h"
 #include "simdjson/generic/numberparsing.h"
-#endif // SIMDJSON_IN_EDITOR_IMPL
+#endif // SIMDJSON_AMALGAMATED
 
 
 namespace simdjson {

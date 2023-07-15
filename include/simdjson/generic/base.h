@@ -1,15 +1,13 @@
 #ifndef SIMDJSON_GENERIC_BASE_H
 
-#ifdef SIMDJSON_IN_EDITOR_IMPL
+#ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_GENERIC_BASE_H
 #include "simdjson/base.h"
-#endif // SIMDJSON_IN_EDITOR_IMPL
-
-#ifdef SIMDJSON_IN_EDITOR_GENERIC
+// If we haven't got an implementation yet, just use the builtin one (for the editor)
 #ifndef SIMDJSON_IMPLEMENTATION
 #include "simdjson/builtin/begin.h"
 #endif
-#endif // SIMDJSON_IN_EDITOR_GENERIC
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

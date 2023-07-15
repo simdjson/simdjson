@@ -1,6 +1,6 @@
-#ifdef SIMDJSON_IN_EDITOR_AMALGAMATED
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/generic/amalgamated.h"
-#endif // SIMDJSON_IN_EDITOR_AMALGAMATED
+#endif // SIMDJSON_AMALGAMATED
 
 #include "generic/base.h"
 #include "generic/dom_parser_implementation.h"

@@ -1,6 +1,6 @@
-#ifdef SIMDJSON_IN_EDITOR_AMALGAMATED
+#ifndef SIMDJSON_AMALGAMATED
 #include "generic/amalgamated.h"
-#endif // SIMDJSON_IN_EDITOR_AMALGAMATED
+#endif // SIMDJSON_AMALGAMATED
 
 // Stuff other things depend on
 #include "generic/stage2/base.h"

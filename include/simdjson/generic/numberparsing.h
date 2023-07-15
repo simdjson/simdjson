@@ -1,11 +1,11 @@
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
-#ifdef SIMDJSON_IN_EDITOR_IMPL
+#ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_GENERIC_NUMBERPARSING_H
 #include "simdjson/generic/base.h"
 #include "simdjson/generic/jsoncharutils.h"
 #include "simdjson/internal/numberparsing_tables.h"
-#endif // SIMDJSON_IN_EDITOR_IMPL
+#endif // SIMDJSON_AMALGAMATED
 
 #include <limits>
 #include <ostream>

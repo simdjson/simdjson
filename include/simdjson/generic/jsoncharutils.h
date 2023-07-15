@@ -1,11 +1,11 @@
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
-#ifdef SIMDJSON_IN_EDITOR_IMPL
+#ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_GENERIC_JSONCHARUTILS_H
 #include "simdjson/generic/base.h"
 #include "simdjson/internal/jsoncharutils_tables.h"
 #include "simdjson/internal/numberparsing_tables.h"
-#endif // SIMDJSON_IN_EDITOR_IMPL
+#endif // SIMDJSON_AMALGAMATED
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
 #include <intrin.h>
