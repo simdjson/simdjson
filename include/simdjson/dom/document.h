@@ -3,6 +3,8 @@
 
 #include "simdjson/dom/base.h"
 
+#include <memory>
+
 namespace simdjson {
 namespace dom {
 

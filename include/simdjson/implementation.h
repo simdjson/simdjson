@@ -4,6 +4,8 @@
 #include "simdjson/internal/atomic_ptr.h"
 #include "simdjson/internal/dom_parser_implementation.h"
 
+#include <memory>
+
 namespace simdjson {
 
 /**
