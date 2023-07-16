@@ -5,8 +5,9 @@
 #include "simdjson/dom/document.h"
 #include "simdjson/dom/object.h"
 #include "simdjson/internal/tape_type.h"
-#include <ostream>
 
+#include <ostream>
+#include <limits>
 namespace simdjson {
 
 //

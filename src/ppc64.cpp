@@ -1,8 +1,11 @@
 #ifndef SIMDJSON_SRC_PPC64_CPP
 #define SIMDJSON_SRC_PPC64_CPP
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/ppc64/implementation.h"
-#include "simdjson/ppc64/amalgamated.h"
+#endif // SIMDJSON_AMALGAMATED
+
+#include "simdjson/ppc64.h"
 
 #include "simdjson/ppc64/begin.h"
 #include "generic/amalgamated.h"
@@ -85,15 +88,9 @@ simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2,
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#include "generic/stage1/utf8_lookup4_algorithm.h"
-#include "generic/stage1/json_structural_indexer.h"
-#include "generic/stage1/utf8_validator.h"
-
 //
 // Stage 2
 //
-#include "generic/stage2/stringparsing.h"
-#include "generic/stage2/tape_builder.h"
 
 //
 // Implementation-specific overrides

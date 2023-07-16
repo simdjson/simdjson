@@ -1,7 +1,9 @@
 #ifndef SIMDJSON_HASWELL_BASE_H
 #define SIMDJSON_HASWELL_BASE_H
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/base.h"
+#endif // SIMDJSON_AMALGAMATED
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
 namespace simdjson {

@@ -1,7 +1,9 @@
 #ifndef SIMDJSON_ARM64_BASE_H
 #define SIMDJSON_ARM64_BASE_H
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/base.h"
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 /**

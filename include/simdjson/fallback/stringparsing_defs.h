@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_FALLBACK_STRINGPARSING_H
 #define SIMDJSON_FALLBACK_STRINGPARSING_H
 
-#include "simdjson/base.h"
+#include "simdjson/fallback/base.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

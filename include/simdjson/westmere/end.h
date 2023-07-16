@@ -1,4 +1,4 @@
-#include "simdjson/portability.h"
+#include "simdjson/westmere/base.h"
 
 #if !SIMDJSON_CAN_ALWAYS_RUN_WESTMERE
 SIMDJSON_UNTARGET_REGION

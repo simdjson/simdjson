@@ -1,15 +1,13 @@
 #ifndef SIMDJSON_ONDEMAND_H
 #define SIMDJSON_ONDEMAND_H
 
-#include "simdjson/generic/dependencies.h"
-#include "simdjson/generic/ondemand/dependencies.h"
+#include "simdjson/builtin/ondemand.h"
 
-#define SIMDJSON_AMALGAMATED
-
-#include "simdjson/amalgamated.h"
-#include "simdjson/builtin/amalgamated.h"
-#include "simdjson/builtin/ondemand/amalgamated.h"
-
-#undef SIMDJSON_AMALGAMATED
+namespace simdjson {
+  /**
+   * @copydoc simdjson::builtin::ondemand
+   */
+  namespace ondemand = builtin::ondemand;
+} // namespace simdjson
 
 #endif // SIMDJSON_ONDEMAND_H

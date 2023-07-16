@@ -1,8 +1,12 @@
 #ifndef SIMDJSON_PPC64_SIMD_H
 #define SIMDJSON_PPC64_SIMD_H
 
-#include "simdjson/internal/simdprune_tables.h"
 #include "simdjson/ppc64/bitmanipulation.h"
+
+#ifndef SIMDJSON_AMALGAMATED
+#include "simdjson/internal/simdprune_tables.h"
+#endif // SIMDJSON_AMALGAMATED
+
 #include <type_traits>
 
 namespace simdjson {

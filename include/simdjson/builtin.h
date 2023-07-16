@@ -1,29 +1,29 @@
 #ifndef SIMDJSON_BUILTIN_H
 #define SIMDJSON_BUILTIN_H
 
-#include "simdjson/implementation_detection.h"
-
+#include "simdjson/builtin/base.h"
 #include "simdjson/builtin/implementation.h"
 
-namespace simdjson {
-  /**
-   * Represents the best statically linked simdjson implementation that can be used by the compiling
-   * program.
-   *
-   * Detects what options the program is compiled against, and picks the minimum implementation that
-   * will work on any computer that can run the program. For example, if you compile with g++
-   * -march=westmere, it will pick the westmere implementation. The haswell implementation will
-   * still be available, and can be selected at runtime, but the builtin implementation (and any
-   * code that uses it) will use westmere.
-   */
-  namespace builtin = SIMDJSON_BUILTIN_IMPLEMENTATION;
-  /**
-   * Function which returns a pointer to an implementation matching the "builtin" implementation.
-   * The builtin implementation is the best statically linked simdjson implementation that can be used by the compiling
-   * program. If you compile with g++ -march=haswell, this will return the haswell implementation.
-   * It is handy to be able to check what builtin was used: builtin_implementation()->name().
-   */
-  const implementation * builtin_implementation();
-} // namespace simdjson
+#include "simdjson/generic/dependencies.h"
+
+#define SIMDJSON_AMALGAMATED
+
+#if SIMDJSON_BUILTIN_IMPLEMENTATION_IS(arm64)
+#include "simdjson/arm64.h"
+#elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(fallback)
+#include "simdjson/fallback.h"
+#elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(haswell)
+#include "simdjson/haswell.h"
+#elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(icelake)
+#include "simdjson/icelake.h"
+#elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(ppc64)
+#include "simdjson/ppc64.h"
+#elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(westmere)
+#include "simdjson/westmere.h"
+#else
+#error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION
+#endif
+
+#undef SIMDJSON_AMALGAMATED
 
 #endif // SIMDJSON_BUILTIN_H

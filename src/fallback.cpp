@@ -1,8 +1,11 @@
 #ifndef SIMDJSON_SRC_FALLBACK_CPP
 #define SIMDJSON_SRC_FALLBACK_CPP
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/fallback/implementation.h"
-#include "simdjson/fallback/amalgamated.h"
+#endif // SIMDJSON_AMALGAMATED
+
+#include "simdjson/fallback.h"
 
 #include "simdjson/fallback/begin.h"
 #include "generic/stage1/find_next_document_index.h"

@@ -14,9 +14,9 @@ SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 #include "simdjson/generic/dependencies.h"
 #include "generic/dependencies.h"
 
-#define SIMDJSON_AMALGAMATED
-
 #include "implementation.cpp"
+
+#define SIMDJSON_AMALGAMATED
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 #include "arm64.cpp"

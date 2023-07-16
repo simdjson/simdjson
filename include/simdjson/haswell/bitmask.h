@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_HASWELL_BITMASK_H
 #define SIMDJSON_HASWELL_BITMASK_H
 
-#include "simdjson/base.h"
+#include "simdjson/haswell/base.h"
 #include "simdjson/haswell/intrinsics.h"
 
 namespace simdjson {

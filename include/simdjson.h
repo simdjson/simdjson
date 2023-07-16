@@ -36,20 +36,22 @@
 
 #include "simdjson/common_defs.h"
 
-SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
+// This provides the public API for simdjson.
+// DOM and ondemand are amalgamated separately, in simdjson.h
+#include "simdjson/simdjson_version.h"
 
-#include "simdjson/generic/dependencies.h"
-#include "simdjson/generic/ondemand/dependencies.h"
+#include "simdjson/base.h"
 
-#define SIMDJSON_AMALGAMATED
+#include "simdjson/error.h"
+#include "simdjson/error-inl.h"
+#include "simdjson/implementation.h"
+#include "simdjson/minify.h"
+#include "simdjson/padded_string.h"
+#include "simdjson/padded_string-inl.h"
+#include "simdjson/padded_string_view.h"
+#include "simdjson/padded_string_view-inl.h"
 
-#include "simdjson/amalgamated.h"
-#include "simdjson/dom/amalgamated.h"
-#include "simdjson/builtin/amalgamated.h"
-#include "simdjson/builtin/ondemand/amalgamated.h"
-
-#undef SIMDJSON_AMALGAMATED
-
-SIMDJSON_POP_DISABLE_UNUSED_WARNINGS
+#include "simdjson/dom.h"
+#include "simdjson/ondemand.h"
 
 #endif // SIMDJSON_H

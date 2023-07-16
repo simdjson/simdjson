@@ -46,7 +46,7 @@ class Amalgamator:
         print(f"Creating {output_path}")
         fid = open(output_path, 'w')
         print(f"/* auto-generated on {timestamp}. Do not edit! */", file=fid)
-        cls(fid, roots).maybe_write_file(file, "")
+        cls(fid, roots).maybe_write_file(file, "", "")
         fid.close()
 
     def __init__(self, fid: TextIO, roots: List[str]):
@@ -56,6 +56,9 @@ class Amalgamator:
         self.implementation: Optional[str] = None
         self.found_includes: List[str] = []
         self.found_generic_includes: List[tuple[str, str]] = []
+        self.amalgamated_defined = False
+        self.ignoring: Optional[str] = None
+        self.include_stack: List[str] = []
 
     def is_generic(self, filename: str):
         return (
@@ -64,45 +67,40 @@ class Amalgamator:
         ) and not filename.endswith('/dependencies.h')
 
 
-    def should_write_file(self, filename: str):
-        # These files get written out every time they are included
-        if filename.endswith('/begin.h') or filename.endswith('/end.h'):
-            return True
-
-        # These files get written out once per implementation
-        elif self.is_generic(filename):
-            assert self.implementation is not None
-            if (filename, self.implementation) not in self.found_generic_includes:
-                self.found_generic_includes.append((filename, self.implementation))
-                return True
-
-        # Other files get written out once, period
-        elif filename not in self.found_includes:
-            self.found_includes.append(filename)
-            return True
-
-        return False
-
     def find_file_root(self, file: str):
         for root in self.roots:
             if os.path.exists(os.path.join(root, file)):
                 return root
         return None
 
-    def maybe_write_file(self, filename: str, else_line: str):
+    def maybe_write_file(self, filename: str, including_filename: str, else_line: str):
         root = self.find_file_root(filename)
-        if root:
-            # If we're including one of our own files, emit the contents
-            if self.should_write_file(filename):
-                self.write_file(filename, root)
-            else:
-                suffix = ""
-                if self.is_generic(filename):
-                    suffix = f" for {self.implementation}"
-                self.write(f"/* skipped duplicate {else_line}{suffix} */")
-        else:
+        if not root:
             # If it's an external / system include, just emit the #include
             self.write(else_line)
+            return
+
+        # These files get written out every time they are included, and must be included during SIMDJSON_AMALGAMATED
+        if re.search(r'(/|^)(arm64|fallback|haswell|icelake|ppc64|westmere)(\.\w+|)?(/|$)', filename) and not filename.endswith('/implementation.h'):
+            assert self.amalgamated_defined, f"{filename} included from {including_filename} without defining SIMDJSON_AMALGAMATED!"
+        elif self.is_generic(filename):
+            # Generic files may only be included from their actual implementations.
+            assert re.search(r'(/|^)(arm64|fallback|generic|haswell|icelake|ppc64|westmere)(\.\w+|)?(/|$)', filename)
+            # Generic files can only ever be written out once for simdjson.h and once for simdjson.cpp
+            assert self.amalgamated_defined, f"{filename} included from {including_filename} without defining SIMDJSON_AMALGAMATED!"
+            assert self.implementation is not None, f"generic file {filename} included from {including_filename} without defining SIMDJSON_IMPLEMENTATION!"
+            assert (filename, self.implementation) not in self.found_generic_includes, f"generic file {filename} included from {including_filename} a second time for {self.implementation}!"
+            self.found_generic_includes.append((filename, self.implementation))
+        else:
+            # Other files are only output once, and may not be included during SIMDJSON_AMALGAMATED
+            assert not self.amalgamated_defined, f"{filename} included from {including_filename} while SIMDJSON_AMALGAMATED is defined!"
+            if filename in self.found_includes:
+                self.write(f"/* skipped duplicate {else_line} */")
+                return
+            self.found_includes.append(filename)
+
+        self.write(f"/* including {filename}: {else_line} */")
+        self.write_file(filename, root)
 
     def write(self, line: str):
         print(line, file=self.fid)
@@ -112,7 +110,9 @@ class Amalgamator:
             root = self.find_file_root(filename)
             assert root
 
-        # self.write(f"// dofile: invoked with root={root}, filename={filename}")
+        assert filename not in self.include_stack, f"Recursive include: {self.include_stack} -> {filename}"
+        self.include_stack.append(filename)
+
         file = os.path.join(root, filename)
         assert os.path.exists(file)
         RELFILE = os.path.relpath(file, PROJECTPATH)
@@ -124,62 +124,75 @@ class Amalgamator:
         else:
             suffix = ""
         self.write(f"/* begin file {OSRELFILE}{suffix} */")
-        includepattern = re.compile(r'^#include "(.*)"')
-        redefines_simdjson_implementation = re.compile(r'^#define\s+SIMDJSON_IMPLEMENTATION\s+(.*)')
-        undefines_simdjson_implementation = re.compile(r'^#undef\s+SIMDJSON_IMPLEMENTATION\s*$')
-        uses_simdjson_implementation = re.compile(r'\bSIMDJSON_IMPLEMENTATION\b')
-        uses_simdjson_amalgamated = re.compile(r'\bSIMDJSON_AMALGAMATED\b')
+
         if filename.endswith('/builtin/begin.h'):
+            assert self.implementation is None
+            assert not self.builtin_implementation
             self.builtin_implementation = True
             self.implementation = "SIMDJSON_BUILTIN_IMPLEMENTATION"
+
+        assert self.ignoring is None
         with open(file, 'r') as fid2:
-            ignoring = False
             for line in fid2:
                 line = line.rstrip('\n')
-                if uses_simdjson_amalgamated.search(line):
-                    if line == "#ifndef SIMDJSON_AMALGAMATED":
-                        assert not ignoring, "{file} includes two #ifndef SIMDJSON_AMALGAMATED in a row"
-                        ignoring = True
-                    elif line == "#endif // SIMDJSON_AMALGAMATED":
-                        assert ignoring, "{file} has #endif // SIMDJSON_AMALGAMATED without #ifndef SIMDJSON_AMALGAMATED"
-                        self.write(f"/* amalgamation skipped (editor-only): {line} */")
-                        ignoring = False
-                        continue
 
-                if ignoring:
-                    self.write(f"/* amalgamation skipped (editor-only): {line} */")
+                # Ignore lines inside #ifndef SIMDJSON_AMALGAMATED
+                if re.search(r'^#ifndef\s+SIMDJSON_AMALGAMATED\s*$', line):
+                    assert self.amalgamated_defined, f"{filename} uses #ifndef SIMDJSON_AMALGAMATED without a prior #define SIMDJSON_AMALGAMATED: {self.include_stack}"
+                    assert not self.ignoring, f"{filename} uses #ifndef SIMDJSON_AMALGAMATED twice in a row"
+                    self.ignoring = "editor-only"
+
+                # Handle ignored lines (and ending ignore blocks)
+                end_ignore = re.search(r'^#endif\s*//\s*SIMDJSON_AMALGAMATED\s*$', line)
+                if self.ignoring:
+                    self.write(f"/* amalgamation skipped ({self.ignoring}): {line} */")
+                    if end_ignore:
+                        self.ignoring = None
                     continue
+                assert not end_ignore, f"{filename} has #endif // SIMDJSON_AMALGAMATED without #ifndef SIMDJSON_AMALGAMATED"
 
-                included = includepattern.search(line)
+                # Handle #include lines
+                included = re.search(r'^#include "(.*)"', line)
                 if included:
                     includedfile = included.group(1)
                     if includedfile.startswith('../'):
                         includedfile = includedfile[2:]
                     # we explicitly include simdjson headers, one time each (unless they are generic, in which case multiple times is fine)
-                    self.maybe_write_file(includedfile, line)
-                elif uses_simdjson_implementation.search(line):
-                    # does it contain a redefinition of SIMDJSON_IMPLEMENTATION ?
-                    redefined = redefines_simdjson_implementation.search(line)
-                    if redefined:
-                        old_implementation = self.implementation
-                        self.implementation = redefined.group(1)
-                        if old_implementation is None:
-                            self.write(f"/* defining SIMDJSON_IMPLEMENTATION to \"{self.implementation}\": {line} */")
-                        else:
-                            self.write(f"/* redefining SIMDJSON_IMPLEMENTATION from \"{old_implementation}\" to \"{self.implementation}\": {line} */")
-                    elif undefines_simdjson_implementation.search(line):
-                        # Don't include #undef SIMDJSON_IMPLEMENTATION since we're handling it ourselves
-                        self.write(f"/* undefining SIMDJSON_IMPLEMENTATION from \"{self.implementation}\": {line} */")
-                        self.implementation = None
-                    elif filename.endswith('/implementation_detection.h'):
-                        self.write(line)
+                    self.maybe_write_file(includedfile, filename, line)
+                    continue
+
+                # Handle defining and replacing SIMDJSON_IMPLEMENTATION
+                defined = re.search(r'^#define\s+SIMDJSON_IMPLEMENTATION\s+(.+)$', line)
+                if defined:
+                    old_implementation = self.implementation
+                    self.implementation = defined.group(1)
+                    if old_implementation is None:
+                        self.write(f'/* defining SIMDJSON_IMPLEMENTATION to "{self.implementation}" */')
                     else:
-                        # copy the line, with SIMDJSON_IMPLEMENTATION replace to what it is currently defined to
-                        assert self.implementation, f"Use of SIMDJSON_IMPLEMENTATION while not defined in {file}: {line}"
-                        self.write(uses_simdjson_implementation.sub(self.implementation,line))
-                else:
-                    self.write(line)
-            assert not ignoring, f"{filename} ended without #endif // SIMDJSON_AMALGAMATED"
+                        self.write(f'/* redefining SIMDJSON_IMPLEMENTATION from "{old_implementation}" to "{self.implementation}" */')
+                elif re.search(r'^#undef\s+SIMDJSON_IMPLEMENTATION\s*$', line):
+                    # Don't include #undef SIMDJSON_IMPLEMENTATION since we're handling it ourselves
+                    self.write(f'/* undefining SIMDJSON_IMPLEMENTATION from "{self.implementation}" */')
+                    self.implementation = None
+                elif re.search(r'\bSIMDJSON_IMPLEMENTATION\b', line) and not filename.endswith('/implementation_detection.h'):
+                    # copy the line, with SIMDJSON_IMPLEMENTATION replace to what it is currently defined to
+                    assert self.implementation, f"Use of SIMDJSON_IMPLEMENTATION while not defined in {file}: {line}"
+                    line = re.sub(r'\bSIMDJSON_IMPLEMENTATION\b',self.implementation,line)
+
+                # Handle defining and undefining SIMDJSON_AMALGAMATED
+                defined = re.search(r'^#define\s+SIMDJSON_AMALGAMATED\s*$', line)
+                if defined:
+                    assert not self.amalgamated_defined, f"{filename} redefines SIMDJSON_AMALGAMATED"
+                    self.amalgamated_defined = True
+                    self.write(f'/* defining SIMDJSON_AMALGAMATED */')
+                elif re.search(r'^#undef\s+SIMDJSON_AMALGAMATED\s*$', line):
+                    assert self.amalgamated_defined, f"{filename} undefines SIMDJSON_AMALGAMATED without defining it"
+                    self.write(f'/* undefining SIMDJSON_AMALGAMATED */')
+                    self.amalgamated_defined = False
+
+                self.write(line)
+
+            assert self.ignoring is None, f"{filename} ended without #endif // SIMDJSON_AMALGAMATED"
 
         if self.is_generic(filename):
             suffix = f" for {self.implementation}"
@@ -196,6 +209,7 @@ class Amalgamator:
             assert self.builtin_implementation
             self.implementation = None
 
+        self.include_stack.pop()
 
 # Get the generation date from git, so the output is reproducible.
 # The %ci specifier gives the unambiguous ISO 8601 format, and

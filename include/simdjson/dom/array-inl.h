@@ -1,14 +1,14 @@
 #ifndef SIMDJSON_INLINE_ARRAY_H
 #define SIMDJSON_INLINE_ARRAY_H
 
-// Inline implementations go in here.
-
 #include <utility>
 
 #include "simdjson/dom/array.h"
 #include "simdjson/dom/element.h"
 #include "simdjson/error-inl.h"
 #include "simdjson/internal/tape_ref-inl.h"
+
+#include <limits>
 
 namespace simdjson {
 
