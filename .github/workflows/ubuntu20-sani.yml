@@ -20,11 +20,11 @@ jobs:
           cd builddebug &&
           cmake -DSIMDJSON_SANITIZE=ON -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF ..  &&
           cmake --build .   &&
-          ctest -j --output-on-failure -LE explicitonly
+          ctest --output-on-failure -LE explicitonly -j
       - name: Use cmake with undefined sanitizer
         run: |
           mkdir builddebugundefsani &&
           cd builddebugundefsani &&
           cmake -DSIMDJSON_SANITIZE_UNDEFINED=ON -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF ..  &&
           cmake --build .   &&
-          ctest -j --output-on-failure -LE explicitonly
+          ctest --output-on-failure -LE explicitonly -j
