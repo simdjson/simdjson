@@ -10,12 +10,13 @@ SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 #include "internal/jsoncharutils_tables.cpp"
 #include "internal/numberparsing_tables.cpp"
 #include "internal/simdprune_tables.cpp"
-#include "implementation.cpp"
 
 #include "simdjson/generic/dependencies.h"
 #include "generic/dependencies.h"
 
 #define SIMDJSON_AMALGAMATED
+
+#include "implementation.cpp"
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 #include "arm64.cpp"
