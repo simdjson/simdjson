@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-15 16:51:12 -0700. Do not edit! */
+/* auto-generated on 2023-07-15 17:16:18 -0700. Do not edit! */
 /* begin file src/simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
 
@@ -5657,47 +5657,162 @@ SIMDJSON_DLLIMPORTEXPORT  const uint64_t thintable_epi8[256] = {
 
 #endif // SIMDJSON_SRC_SIMDPRUNE_TABLES_CPP
 /* end file src/internal/simdprune_tables.cpp */
-/* begin file src/implementation.cpp */
-#ifndef SIMDJSON_SRC_IMPLEMENTATION_CPP
-#define SIMDJSON_SRC_IMPLEMENTATION_CPP
 
-/* begin file include/simdjson/implementation.h */
-#ifndef SIMDJSON_IMPLEMENTATION_H
-#define SIMDJSON_IMPLEMENTATION_H
+/* begin file include/simdjson/generic/dependencies.h */
+#ifdef SIMDJSON_AMALGAMATED
+#error simdjson/generic/dependencies.h must be included before defining SIMDJSON_AMALGAMATED!
+#endif
 
-/* begin file include/simdjson/internal/atomic_ptr.h */
-#ifndef SIMDJSON_INTERNAL_ATOMIC_PTR_H
-#define SIMDJSON_INTERNAL_ATOMIC_PTR_H
+#ifndef SIMDJSON_GENERIC_DEPENDENCIES_H
+#define SIMDJSON_GENERIC_DEPENDENCIES_H
+
+// Internal headers needed for generics.
+// All includes referencing simdjson headers *not* under simdjson/generic must be here!
+// Otherwise, amalgamation will fail.
+/* begin file include/simdjson/dom/document.h */
+#ifndef SIMDJSON_DOM_DOCUMENT_H
+#define SIMDJSON_DOM_DOCUMENT_H
+
+/* begin file include/simdjson/dom/base.h */
+#ifndef SIMDJSON_DOM_BASE_H
+#define SIMDJSON_DOM_BASE_H
 
 /* skipped duplicate #include "simdjson/base.h" */
-#include <atomic>
 
 namespace simdjson {
+
+/**
+ * @brief A DOM API on top of the simdjson parser.
+ */
+namespace dom {
+
+/** The default batch size for parser.parse_many() and parser.load_many() */
+static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
+/**
+ * Some adversary might try to set the batch size to 0 or 1, which might cause problems.
+ * We set a minimum of 32B since anything else is highly likely to be an error. In practice,
+ * most users will want a much larger batch size.
+ *
+ * All non-negative MINIMAL_BATCH_SIZE values should be 'safe' except that, obviously, no JSON
+ * document can ever span 0 or 1 byte and that very large values would create memory allocation issues.
+ */
+static constexpr size_t MINIMAL_BATCH_SIZE = 32;
+
+/**
+ * It is wasteful to allocate memory for tiny documents (e.g., 4 bytes).
+ */
+static constexpr size_t MINIMAL_DOCUMENT_CAPACITY = 32;
+
+class array;
+class document;
+class document_stream;
+class element;
+class key_value_pair;
+class object;
+class parser;
+
+} // namespace dom
+
 namespace internal {
 
 template<typename T>
-class atomic_ptr {
-public:
-  atomic_ptr(T *_ptr) : ptr{_ptr} {}
-
-  operator const T*() const { return ptr.load(); }
-  const T& operator*() const { return *ptr; }
-  const T* operator->() const { return ptr.load(); }
-
-  operator T*() { return ptr.load(); }
-  T& operator*() { return *ptr; }
-  T* operator->() { return ptr.load(); }
-  atomic_ptr& operator=(T *_ptr) { ptr = _ptr; return *this; }
-
-private:
-  std::atomic<T*> ptr;
-};
+class string_builder;
+class tape_ref;
 
 } // namespace internal
+
 } // namespace simdjson
 
-#endif // SIMDJSON_INTERNAL_ATOMIC_PTR_H
-/* end file include/simdjson/internal/atomic_ptr.h */
+#endif // SIMDJSON_DOM_BASE_H
+/* end file include/simdjson/dom/base.h */
+
+#include <memory>
+
+namespace simdjson {
+namespace dom {
+
+/**
+ * A parsed JSON document.
+ *
+ * This class cannot be copied, only moved, to avoid unintended allocations.
+ */
+class document {
+public:
+  /**
+   * Create a document container with zero capacity.
+   *
+   * The parser will allocate capacity as needed.
+   */
+  document() noexcept = default;
+  ~document() noexcept = default;
+
+  /**
+   * Take another document's buffers.
+   *
+   * @param other The document to take. Its capacity is zeroed and it is invalidated.
+   */
+  document(document &&other) noexcept = default;
+  /** @private */
+  document(const document &) = delete; // Disallow copying
+  /**
+   * Take another document's buffers.
+   *
+   * @param other The document to take. Its capacity is zeroed.
+   */
+  document &operator=(document &&other) noexcept = default;
+  /** @private */
+  document &operator=(const document &) = delete; // Disallow copying
+
+  /**
+   * Get the root element of this document as a JSON array.
+   */
+  element root() const noexcept;
+
+  /**
+   * @private Dump the raw tape for debugging.
+   *
+   * @param os the stream to output to.
+   * @return false if the tape is likely wrong (e.g., you did not parse a valid JSON).
+   */
+  bool dump_raw_tape(std::ostream &os) const noexcept;
+
+  /** @private Structural values. */
+  std::unique_ptr<uint64_t[]> tape{};
+
+  /** @private String values.
+   *
+   * Should be at least byte_capacity.
+   */
+  std::unique_ptr<uint8_t[]> string_buf{};
+  /** @private Allocate memory to support
+   * input JSON documents of up to len bytes.
+   *
+   * When calling this function, you lose
+   * all the data.
+   *
+   * The memory allocation is strict: you
+   * can you use this function to increase
+   * or lower the amount of allocated memory.
+   * Passsing zero clears the memory.
+   */
+  error_code allocate(size_t len) noexcept;
+  /** @private Capacity in bytes, in terms
+   * of how many bytes of input JSON we can
+   * support.
+   */
+  size_t capacity() const noexcept;
+
+
+private:
+  size_t allocated_capacity{0};
+  friend class parser;
+}; // class document
+
+} // namespace dom
+} // namespace simdjson
+
+#endif // SIMDJSON_DOM_DOCUMENT_H
+/* end file include/simdjson/dom/document.h */
 /* begin file include/simdjson/internal/dom_parser_implementation.h */
 #ifndef SIMDJSON_INTERNAL_DOM_PARSER_IMPLEMENTATION_H
 #define SIMDJSON_INTERNAL_DOM_PARSER_IMPLEMENTATION_H
@@ -5952,6 +6067,178 @@ inline error_code dom_parser_implementation::allocate(size_t capacity, size_t ma
 
 #endif // SIMDJSON_INTERNAL_DOM_PARSER_IMPLEMENTATION_H
 /* end file include/simdjson/internal/dom_parser_implementation.h */
+/* skipped duplicate #include "simdjson/internal/jsoncharutils_tables.h" */
+/* skipped duplicate #include "simdjson/internal/numberparsing_tables.h" */
+/* begin file include/simdjson/padded_string_view.h */
+#ifndef SIMDJSON_PADDED_STRING_VIEW_H
+#define SIMDJSON_PADDED_STRING_VIEW_H
+
+/* skipped duplicate #include "simdjson/portability.h" */
+/* skipped duplicate #include "simdjson/base.h" // for SIMDJSON_PADDING */
+/* skipped duplicate #include "simdjson/error.h" */
+
+#include <cstring>
+#include <memory>
+#include <string>
+#include <ostream>
+
+namespace simdjson {
+
+/**
+ * User-provided string that promises it has extra padded bytes at the end for use with parser::parse().
+ */
+class padded_string_view : public std::string_view {
+private:
+  size_t _capacity;
+
+public:
+  /** Create an empty padded_string_view. */
+  inline padded_string_view() noexcept = default;
+
+  /**
+   * Promise the given buffer has at least SIMDJSON_PADDING extra bytes allocated to it.
+   *
+   * @param s The string.
+   * @param len The length of the string (not including padding).
+   * @param capacity The allocated length of the string, including padding.
+   */
+  explicit inline padded_string_view(const char* s, size_t len, size_t capacity) noexcept;
+  /** overload explicit inline padded_string_view(const char* s, size_t len) noexcept */
+  explicit inline padded_string_view(const uint8_t* s, size_t len, size_t capacity) noexcept;
+
+  /**
+   * Promise the given string has at least SIMDJSON_PADDING extra bytes allocated to it.
+   *
+   * The capacity of the string will be used to determine its padding.
+   *
+   * @param s The string.
+   */
+  explicit inline padded_string_view(const std::string &s) noexcept;
+
+  /**
+   * Promise the given string_view has at least SIMDJSON_PADDING extra bytes allocated to it.
+   *
+   * @param s The string.
+   * @param capacity The allocated length of the string, including padding.
+   */
+  explicit inline padded_string_view(std::string_view s, size_t capacity) noexcept;
+
+  /** The number of allocated bytes. */
+  inline size_t capacity() const noexcept;
+
+  /** The amount of padding on the string (capacity() - length()) */
+  inline size_t padding() const noexcept;
+
+}; // padded_string_view
+
+#if SIMDJSON_EXCEPTIONS
+/**
+ * Send padded_string instance to an output stream.
+ *
+ * @param out The output stream.
+ * @param s The padded_string_view.
+ * @throw simdjson_error if the result being printed has an error. If there is an error with the
+ *        underlying output stream, that error will be propagated (simdjson_error will not be
+ *        thrown).
+ */
+inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string_view> &s) noexcept(false) { return out << s.value(); }
+#endif
+
+} // namespace simdjson
+
+#endif // SIMDJSON_PADDED_STRING_VIEW_H
+/* end file include/simdjson/padded_string_view.h */
+
+#endif // SIMDJSON_GENERIC_DEPENDENCIES_H
+/* end file include/simdjson/generic/dependencies.h */
+/* begin file src/generic/dependencies.h */
+#ifdef SIMDJSON_AMALGAMATED
+#error generic/dependencies.h must be included before defining SIMDJSON_AMALGAMATED!
+#endif
+
+#ifndef SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
+#define SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
+
+/* begin file include/simdjson/internal/tape_type.h */
+#ifndef SIMDJSON_INTERNAL_TAPE_TYPE_H
+#define SIMDJSON_INTERNAL_TAPE_TYPE_H
+
+namespace simdjson {
+namespace internal {
+
+/**
+ * The possible types in the tape.
+ */
+enum class tape_type {
+  ROOT = 'r',
+  START_ARRAY = '[',
+  START_OBJECT = '{',
+  END_ARRAY = ']',
+  END_OBJECT = '}',
+  STRING = '"',
+  INT64 = 'l',
+  UINT64 = 'u',
+  DOUBLE = 'd',
+  TRUE_VALUE = 't',
+  FALSE_VALUE = 'f',
+  NULL_VALUE = 'n'
+}; // enum class tape_type
+
+} // namespace internal
+} // namespace simdjson
+
+#endif // SIMDJSON_INTERNAL_TAPE_TYPE_H
+/* end file include/simdjson/internal/tape_type.h */
+
+#endif // SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
+/* end file src/generic/dependencies.h */
+
+#define SIMDJSON_AMALGAMATED
+
+/* begin file src/implementation.cpp */
+#ifndef SIMDJSON_SRC_IMPLEMENTATION_CPP
+#define SIMDJSON_SRC_IMPLEMENTATION_CPP
+
+/* begin file include/simdjson/implementation.h */
+#ifndef SIMDJSON_IMPLEMENTATION_H
+#define SIMDJSON_IMPLEMENTATION_H
+
+/* begin file include/simdjson/internal/atomic_ptr.h */
+#ifndef SIMDJSON_INTERNAL_ATOMIC_PTR_H
+#define SIMDJSON_INTERNAL_ATOMIC_PTR_H
+
+/* skipped duplicate #include "simdjson/base.h" */
+#include <atomic>
+
+namespace simdjson {
+namespace internal {
+
+template<typename T>
+class atomic_ptr {
+public:
+  atomic_ptr(T *_ptr) : ptr{_ptr} {}
+
+  operator const T*() const { return ptr.load(); }
+  const T& operator*() const { return *ptr; }
+  const T* operator->() const { return ptr.load(); }
+
+  operator T*() { return ptr.load(); }
+  T& operator*() { return *ptr; }
+  T* operator->() { return ptr.load(); }
+  atomic_ptr& operator=(T *_ptr) { ptr = _ptr; return *this; }
+
+private:
+  std::atomic<T*> ptr;
+};
+
+} // namespace internal
+} // namespace simdjson
+
+#endif // SIMDJSON_INTERNAL_ATOMIC_PTR_H
+/* end file include/simdjson/internal/atomic_ptr.h */
+/* skipped duplicate #include "simdjson/internal/dom_parser_implementation.h" */
+
+#include <memory>
 
 namespace simdjson {
 
@@ -6950,287 +7237,6 @@ const implementation * builtin_implementation() {
 
 #endif // SIMDJSON_SRC_IMPLEMENTATION_CPP
 /* end file src/implementation.cpp */
-
-/* begin file include/simdjson/generic/dependencies.h */
-#ifdef SIMDJSON_AMALGAMATED
-#error simdjson/generic/dependencies.h must be included before defining SIMDJSON_AMALGAMATED!
-#endif
-
-#ifndef SIMDJSON_GENERIC_DEPENDENCIES_H
-#define SIMDJSON_GENERIC_DEPENDENCIES_H
-
-// Internal headers needed for generics.
-// All includes referencing simdjson headers *not* under simdjson/generic must be here!
-// Otherwise, amalgamation will fail.
-/* begin file include/simdjson/dom/document.h */
-#ifndef SIMDJSON_DOM_DOCUMENT_H
-#define SIMDJSON_DOM_DOCUMENT_H
-
-/* begin file include/simdjson/dom/base.h */
-#ifndef SIMDJSON_DOM_BASE_H
-#define SIMDJSON_DOM_BASE_H
-
-/* skipped duplicate #include "simdjson/base.h" */
-
-namespace simdjson {
-
-/**
- * @brief A DOM API on top of the simdjson parser.
- */
-namespace dom {
-
-/** The default batch size for parser.parse_many() and parser.load_many() */
-static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
-/**
- * Some adversary might try to set the batch size to 0 or 1, which might cause problems.
- * We set a minimum of 32B since anything else is highly likely to be an error. In practice,
- * most users will want a much larger batch size.
- *
- * All non-negative MINIMAL_BATCH_SIZE values should be 'safe' except that, obviously, no JSON
- * document can ever span 0 or 1 byte and that very large values would create memory allocation issues.
- */
-static constexpr size_t MINIMAL_BATCH_SIZE = 32;
-
-/**
- * It is wasteful to allocate memory for tiny documents (e.g., 4 bytes).
- */
-static constexpr size_t MINIMAL_DOCUMENT_CAPACITY = 32;
-
-class array;
-class document;
-class document_stream;
-class element;
-class key_value_pair;
-class object;
-class parser;
-
-} // namespace dom
-
-namespace internal {
-
-template<typename T>
-class string_builder;
-class tape_ref;
-
-} // namespace internal
-
-} // namespace simdjson
-
-#endif // SIMDJSON_DOM_BASE_H
-/* end file include/simdjson/dom/base.h */
-
-namespace simdjson {
-namespace dom {
-
-/**
- * A parsed JSON document.
- *
- * This class cannot be copied, only moved, to avoid unintended allocations.
- */
-class document {
-public:
-  /**
-   * Create a document container with zero capacity.
-   *
-   * The parser will allocate capacity as needed.
-   */
-  document() noexcept = default;
-  ~document() noexcept = default;
-
-  /**
-   * Take another document's buffers.
-   *
-   * @param other The document to take. Its capacity is zeroed and it is invalidated.
-   */
-  document(document &&other) noexcept = default;
-  /** @private */
-  document(const document &) = delete; // Disallow copying
-  /**
-   * Take another document's buffers.
-   *
-   * @param other The document to take. Its capacity is zeroed.
-   */
-  document &operator=(document &&other) noexcept = default;
-  /** @private */
-  document &operator=(const document &) = delete; // Disallow copying
-
-  /**
-   * Get the root element of this document as a JSON array.
-   */
-  element root() const noexcept;
-
-  /**
-   * @private Dump the raw tape for debugging.
-   *
-   * @param os the stream to output to.
-   * @return false if the tape is likely wrong (e.g., you did not parse a valid JSON).
-   */
-  bool dump_raw_tape(std::ostream &os) const noexcept;
-
-  /** @private Structural values. */
-  std::unique_ptr<uint64_t[]> tape{};
-
-  /** @private String values.
-   *
-   * Should be at least byte_capacity.
-   */
-  std::unique_ptr<uint8_t[]> string_buf{};
-  /** @private Allocate memory to support
-   * input JSON documents of up to len bytes.
-   *
-   * When calling this function, you lose
-   * all the data.
-   *
-   * The memory allocation is strict: you
-   * can you use this function to increase
-   * or lower the amount of allocated memory.
-   * Passsing zero clears the memory.
-   */
-  error_code allocate(size_t len) noexcept;
-  /** @private Capacity in bytes, in terms
-   * of how many bytes of input JSON we can
-   * support.
-   */
-  size_t capacity() const noexcept;
-
-
-private:
-  size_t allocated_capacity{0};
-  friend class parser;
-}; // class document
-
-} // namespace dom
-} // namespace simdjson
-
-#endif // SIMDJSON_DOM_DOCUMENT_H
-/* end file include/simdjson/dom/document.h */
-/* skipped duplicate #include "simdjson/internal/jsoncharutils_tables.h" */
-/* skipped duplicate #include "simdjson/internal/numberparsing_tables.h" */
-/* begin file include/simdjson/padded_string_view.h */
-#ifndef SIMDJSON_PADDED_STRING_VIEW_H
-#define SIMDJSON_PADDED_STRING_VIEW_H
-
-/* skipped duplicate #include "simdjson/portability.h" */
-/* skipped duplicate #include "simdjson/base.h" // for SIMDJSON_PADDING */
-/* skipped duplicate #include "simdjson/error.h" */
-
-#include <cstring>
-#include <memory>
-#include <string>
-#include <ostream>
-
-namespace simdjson {
-
-/**
- * User-provided string that promises it has extra padded bytes at the end for use with parser::parse().
- */
-class padded_string_view : public std::string_view {
-private:
-  size_t _capacity;
-
-public:
-  /** Create an empty padded_string_view. */
-  inline padded_string_view() noexcept = default;
-
-  /**
-   * Promise the given buffer has at least SIMDJSON_PADDING extra bytes allocated to it.
-   *
-   * @param s The string.
-   * @param len The length of the string (not including padding).
-   * @param capacity The allocated length of the string, including padding.
-   */
-  explicit inline padded_string_view(const char* s, size_t len, size_t capacity) noexcept;
-  /** overload explicit inline padded_string_view(const char* s, size_t len) noexcept */
-  explicit inline padded_string_view(const uint8_t* s, size_t len, size_t capacity) noexcept;
-
-  /**
-   * Promise the given string has at least SIMDJSON_PADDING extra bytes allocated to it.
-   *
-   * The capacity of the string will be used to determine its padding.
-   *
-   * @param s The string.
-   */
-  explicit inline padded_string_view(const std::string &s) noexcept;
-
-  /**
-   * Promise the given string_view has at least SIMDJSON_PADDING extra bytes allocated to it.
-   *
-   * @param s The string.
-   * @param capacity The allocated length of the string, including padding.
-   */
-  explicit inline padded_string_view(std::string_view s, size_t capacity) noexcept;
-
-  /** The number of allocated bytes. */
-  inline size_t capacity() const noexcept;
-
-  /** The amount of padding on the string (capacity() - length()) */
-  inline size_t padding() const noexcept;
-
-}; // padded_string_view
-
-#if SIMDJSON_EXCEPTIONS
-/**
- * Send padded_string instance to an output stream.
- *
- * @param out The output stream.
- * @param s The padded_string_view.
- * @throw simdjson_error if the result being printed has an error. If there is an error with the
- *        underlying output stream, that error will be propagated (simdjson_error will not be
- *        thrown).
- */
-inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string_view> &s) noexcept(false) { return out << s.value(); }
-#endif
-
-} // namespace simdjson
-
-#endif // SIMDJSON_PADDED_STRING_VIEW_H
-/* end file include/simdjson/padded_string_view.h */
-
-#endif // SIMDJSON_GENERIC_DEPENDENCIES_H
-/* end file include/simdjson/generic/dependencies.h */
-/* begin file src/generic/dependencies.h */
-#ifdef SIMDJSON_AMALGAMATED
-#error generic/dependencies.h must be included before defining SIMDJSON_AMALGAMATED!
-#endif
-
-#ifndef SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
-#define SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
-
-/* begin file include/simdjson/internal/tape_type.h */
-#ifndef SIMDJSON_INTERNAL_TAPE_TYPE_H
-#define SIMDJSON_INTERNAL_TAPE_TYPE_H
-
-namespace simdjson {
-namespace internal {
-
-/**
- * The possible types in the tape.
- */
-enum class tape_type {
-  ROOT = 'r',
-  START_ARRAY = '[',
-  START_OBJECT = '{',
-  END_ARRAY = ']',
-  END_OBJECT = '}',
-  STRING = '"',
-  INT64 = 'l',
-  UINT64 = 'u',
-  DOUBLE = 'd',
-  TRUE_VALUE = 't',
-  FALSE_VALUE = 'f',
-  NULL_VALUE = 'n'
-}; // enum class tape_type
-
-} // namespace internal
-} // namespace simdjson
-
-#endif // SIMDJSON_INTERNAL_TAPE_TYPE_H
-/* end file include/simdjson/internal/tape_type.h */
-
-#endif // SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
-/* end file src/generic/dependencies.h */
-
-#define SIMDJSON_AMALGAMATED
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 /* begin file src/arm64.cpp */
@@ -8310,6 +8316,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
@@ -13089,6 +13096,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
@@ -17214,6 +17222,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
@@ -22478,6 +22487,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
@@ -27926,6 +27936,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
@@ -33134,6 +33145,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
