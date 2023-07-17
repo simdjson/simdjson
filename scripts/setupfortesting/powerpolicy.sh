@@ -12,6 +12,9 @@ cpus=$( grep processor /proc/cpuinfo | cut -d: -f 2 )
 if [ "$1" = "ondemand" ]; then
   echo "setting up ondemand"
   policy="ondemand"
+elif [ "$1" = "singlestage" ]; then
+  echo "setting up singlestage"
+  policy="singlestage"
 elif [ "$1" = "performance" ]; then
   echo "setting up for performance"
   policy="performance"
@@ -19,7 +22,7 @@ elif [ "$1" = "list" ]; then
   cpufreq-info
   exit 0
 else
-  echo "usage: powerpolicy.sh ondemand | performance list"
+  echo "usage: powerpolicy.sh ondemand | singlestage | performance list"
   exit -1
 fi
 
