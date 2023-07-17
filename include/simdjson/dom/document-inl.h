@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_INLINE_DOCUMENT_H
-#define SIMDJSON_INLINE_DOCUMENT_H
+#ifndef SIMDJSON_DOCUMENT_INL_H
+#define SIMDJSON_DOCUMENT_INL_H
 
 // Inline implementations go in here.
 
@@ -154,4 +154,4 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 } // namespace dom
 } // namespace simdjson
 
-#endif // SIMDJSON_INLINE_DOCUMENT_H
+#endif // SIMDJSON_DOCUMENT_INL_H

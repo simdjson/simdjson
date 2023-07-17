@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_INLINE_ERROR_H
-#define SIMDJSON_INLINE_ERROR_H
+#ifndef SIMDJSON_ERROR_INL_H
+#define SIMDJSON_ERROR_INL_H
 
 #include <iostream>
 
@@ -181,4 +181,4 @@ simdjson_inline simdjson_result<T>::simdjson_result() noexcept
 
 } // namespace simdjson
 
-#endif // SIMDJSON_INLINE_ERROR_H
+#endif // SIMDJSON_ERROR_INL_H
