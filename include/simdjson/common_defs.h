@@ -150,7 +150,8 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
     SIMDJSON_DISABLE_GCC_WARNING(-Wshadow) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wunused-parameter) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wunused-variable) \
-    SIMDJSON_DISABLE_GCC_WARNING(-Wmaybe-uninitialized)
+    SIMDJSON_DISABLE_GCC_WARNING(-Wmaybe-uninitialized) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wformat-security)
   #endif // __clang__
 
   #define SIMDJSON_PRAGMA(P) _Pragma(#P)
