@@ -219,167 +219,168 @@ $(document).ready(function(){initNavTree('common__defs_8h_source.html',''); init
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;<span class="preprocessor">    SIMDJSON_DISABLE_GCC_WARNING(-Wshadow) \</span></div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;<span class="preprocessor">    SIMDJSON_DISABLE_GCC_WARNING(-Wunused-parameter) \</span></div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;<span class="preprocessor">    SIMDJSON_DISABLE_GCC_WARNING(-Wunused-variable) \</span></div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;<span class="preprocessor">    SIMDJSON_DISABLE_GCC_WARNING(-Wmaybe-uninitialized)</span></div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;<span class="preprocessor">  #endif </span><span class="comment">// __clang__</span></div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160; </div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;<span class="preprocessor">  #define SIMDJSON_PRAGMA(P) _Pragma(#P)</span></div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;<span class="preprocessor">  #define SIMDJSON_DISABLE_GCC_WARNING(WARNING) SIMDJSON_PRAGMA(GCC diagnostic ignored #WARNING)</span></div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;<span class="preprocessor">  #if SIMDJSON_CLANG_VISUAL_STUDIO</span></div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;<span class="preprocessor">  #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS SIMDJSON_DISABLE_GCC_WARNING(-Wmicrosoft-include)</span></div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;<span class="preprocessor">  #else</span></div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;<span class="preprocessor">  #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS</span></div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;<span class="preprocessor">  #endif</span></div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;<span class="preprocessor">  #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_GCC_WARNING(-Wdeprecated-declarations)</span></div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;<span class="preprocessor">  #define SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING SIMDJSON_DISABLE_GCC_WARNING(-Wstrict-overflow)</span></div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;<span class="preprocessor">  #define SIMDJSON_POP_DISABLE_WARNINGS _Pragma(&quot;GCC diagnostic pop&quot;</span>)</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160; </div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;<span class="preprocessor">    SIMDJSON_DISABLE_GCC_WARNING(-Wmaybe-uninitialized) \</span></div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;<span class="preprocessor">    SIMDJSON_DISABLE_GCC_WARNING(-Wformat-security)</span></div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;<span class="preprocessor">  #endif </span><span class="comment">// __clang__</span></div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160; </div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;<span class="preprocessor">  #define SIMDJSON_PRAGMA(P) _Pragma(#P)</span></div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;<span class="preprocessor">  #define SIMDJSON_DISABLE_GCC_WARNING(WARNING) SIMDJSON_PRAGMA(GCC diagnostic ignored #WARNING)</span></div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;<span class="preprocessor">  #if SIMDJSON_CLANG_VISUAL_STUDIO</span></div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;<span class="preprocessor">  #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS SIMDJSON_DISABLE_GCC_WARNING(-Wmicrosoft-include)</span></div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;<span class="preprocessor">  #else</span></div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;<span class="preprocessor">  #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS</span></div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;<span class="preprocessor">  #endif</span></div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;<span class="preprocessor">  #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_GCC_WARNING(-Wdeprecated-declarations)</span></div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;<span class="preprocessor">  #define SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING SIMDJSON_DISABLE_GCC_WARNING(-Wstrict-overflow)</span></div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;<span class="preprocessor">  #define SIMDJSON_POP_DISABLE_WARNINGS _Pragma(&quot;GCC diagnostic pop&quot;</span>)</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160; </div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160; </div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// MSC_VER</span></div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160; </div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;<span class="preprocessor">#if defined(simdjson_inline)</span></div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;  <span class="comment">// Prefer the user&#39;s definition of simdjson_inline; don&#39;t define it ourselves.</span></div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;<span class="preprocessor">#elif defined(__GNUC__) &amp;&amp; !defined(__OPTIMIZE__)</span></div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;  <span class="comment">// If optimizations are disabled, forcing inlining can lead to significant</span></div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;  <span class="comment">// code bloat and high compile times. Don&#39;t use simdjson_really_inline for</span></div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;  <span class="comment">// unoptimized builds.</span></div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;<span class="preprocessor">  #define simdjson_inline inline</span></div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;  <span class="comment">// Force inlining for most simdjson functions.</span></div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;<span class="preprocessor">  #define simdjson_inline simdjson_really_inline</span></div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160; </div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;<span class="preprocessor">#if SIMDJSON_VISUAL_STUDIO</span></div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;<span class="preprocessor">    #if SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY</span></div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    <span class="comment">// We set SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY when we build a DLL under Windows.</span></div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    <span class="comment">// It should never happen that both SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY and</span></div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;    <span class="comment">// SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY are set.</span></div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;<span class="preprocessor">    #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllexport)</span></div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;<span class="preprocessor">    #elif SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY</span></div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    <span class="comment">// Windows user who call a dynamic library should set SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY to 1.</span></div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;<span class="preprocessor">    #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)</span></div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;<span class="preprocessor">    #else</span></div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    <span class="comment">// We assume by default static linkage</span></div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;<span class="preprocessor">    #define SIMDJSON_DLLIMPORTEXPORT</span></div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;<span class="preprocessor">    #endif</span></div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160; </div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;<span class="preprocessor">#if SIMDJSON_USING_LIBRARY</span></div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;<span class="preprocessor">#define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)</span></div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;<span class="preprocessor">    #define SIMDJSON_DLLIMPORTEXPORT</span></div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160; </div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;<span class="comment">// C++17 requires string_view.</span></div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;<span class="preprocessor">#if SIMDJSON_CPLUSPLUS17</span></div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;<span class="preprocessor">#define SIMDJSON_HAS_STRING_VIEW</span></div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;<span class="preprocessor">#include &lt;string_view&gt;</span> <span class="comment">// by the standard, this has to be safe.</span></div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160; </div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;<span class="comment">// This macro (__cpp_lib_string_view) has to be defined</span></div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;<span class="comment">// for C++17 and better, but if it is otherwise defined,</span></div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;<span class="comment">// we are going to assume that string_view is available</span></div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="comment">// even if we do not have C++17 support.</span></div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;<span class="preprocessor">#ifdef __cpp_lib_string_view</span></div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;<span class="preprocessor">#define SIMDJSON_HAS_STRING_VIEW</span></div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160; </div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;<span class="comment">// Some systems have string_view even if we do not have C++17 support,</span></div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;<span class="comment">// and even if __cpp_lib_string_view is undefined, it is the case</span></div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;<span class="comment">// with Apple clang version 11.</span></div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;<span class="comment">// We must handle it. *This is important.*</span></div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_HAS_STRING_VIEW</span></div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;<span class="preprocessor">#if defined __has_include</span></div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;<span class="comment">// do not combine the next #if with the previous one (unsafe)</span></div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;<span class="preprocessor">#if __has_include (&lt;string_view&gt;)</span></div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;<span class="comment">// now it is safe to trigger the include</span></div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="preprocessor">#include &lt;string_view&gt;</span> <span class="comment">// though the file is there, it does not follow that we got the implementation</span></div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;<span class="preprocessor">#if defined(_LIBCPP_STRING_VIEW)</span></div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;<span class="comment">// Ah! So we under libc++ which under its Library Fundamentals Technical Specification, which preceded C++17,</span></div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;<span class="comment">// included string_view.</span></div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;<span class="comment">// This means that we have string_view *even though* we may not have C++17.</span></div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;<span class="preprocessor">#define SIMDJSON_HAS_STRING_VIEW</span></div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// _LIBCPP_STRING_VIEW</span></div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// __has_include (&lt;string_view&gt;)</span></div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// defined __has_include</span></div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// def SIMDJSON_HAS_STRING_VIEW</span></div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;<span class="comment">// end of complicated but important routine to try to detect string_view.</span></div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160; </div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;<span class="comment">//</span></div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;<span class="comment">// Backfill std::string_view using nonstd::string_view on systems where</span></div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;<span class="comment">// we expect that string_view is missing. Important: if we get this wrong,</span></div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;<span class="comment">// we will end up with two string_view definitions and potential trouble.</span></div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;<span class="comment">// That is why we work so hard above to avoid it.</span></div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;<span class="comment">//</span></div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_HAS_STRING_VIEW</span></div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;SIMDJSON_PUSH_DISABLE_ALL_WARNINGS</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;<span class="preprocessor">#include &quot;simdjson/nonstd/string_view.hpp&quot;</span></div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;SIMDJSON_POP_DISABLE_WARNINGS</div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160; </div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;<span class="keyword">namespace </span>std {</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;  <span class="keyword">using</span> string_view = nonstd::string_view;</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;}</div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_HAS_STRING_VIEW</span></div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;<span class="preprocessor">#undef SIMDJSON_HAS_STRING_VIEW </span><span class="comment">// We are not going to need this macro anymore.</span></div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160; </div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;<span class="preprocessor">#define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }</span></div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160; </div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;<span class="comment">// Unless the programmer has already set SIMDJSON_DEVELOPMENT_CHECKS,</span></div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;<span class="comment">// we want to set it under debug builds. We detect a debug build</span></div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;<span class="comment">// under Visual Studio when the _DEBUG macro is set. Under the other</span></div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;<span class="comment">// compilers, we use the fact that they define __OPTIMIZE__ whenever</span></div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;<span class="comment">// they allow optimizations.</span></div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;<span class="comment">// It is possible that this could miss some cases where SIMDJSON_DEVELOPMENT_CHECKS</span></div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;<span class="comment">// is helpful, but the programmer can set the macro SIMDJSON_DEVELOPMENT_CHECKS.</span></div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;<span class="comment">// It could also wrongly set SIMDJSON_DEVELOPMENT_CHECKS (e.g., if the programmer</span></div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;<span class="comment">// sets _DEBUG in a release build under Visual Studio, or if some compiler fails to</span></div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;<span class="comment">// set the __OPTIMIZE__ macro).</span></div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_DEVELOPMENT_CHECKS</span></div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;<span class="preprocessor">#ifdef _MSC_VER</span></div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;<span class="comment">// Visual Studio seems to set _DEBUG for debug builds.</span></div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;<span class="preprocessor">#ifdef _DEBUG</span></div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;<span class="preprocessor">#define SIMDJSON_DEVELOPMENT_CHECKS 1</span></div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// _DEBUG</span></div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;<span class="preprocessor">#else </span><span class="comment">// _MSC_VER</span></div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;<span class="comment">// All other compilers appear to set __OPTIMIZE__ to a positive integer</span></div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;<span class="comment">// when the compiler is optimizing.</span></div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;<span class="preprocessor">#ifndef __OPTIMIZE__</span></div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;<span class="preprocessor">#define SIMDJSON_DEVELOPMENT_CHECKS 1</span></div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// __OPTIMIZE__</span></div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// _MSC_VER</span></div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_DEVELOPMENT_CHECKS</span></div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160; </div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;<span class="comment">// The SIMDJSON_CHECK_EOF macro is a feature flag for the &quot;don&#39;t require padding&quot;</span></div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;<span class="comment">// feature.</span></div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160; </div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;<span class="preprocessor">#if SIMDJSON_CPLUSPLUS17</span></div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;<span class="comment">// if we have C++, then fallthrough is a default attribute</span></div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;<span class="preprocessor"># define simdjson_fallthrough [[fallthrough]]</span></div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;<span class="comment">// check if we have __attribute__ support</span></div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;<span class="preprocessor">#elif defined(__has_attribute)</span></div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;<span class="comment">// check if we have the __fallthrough__ attribute</span></div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;<span class="preprocessor">#if __has_attribute(__fallthrough__)</span></div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;<span class="comment">// we are good to go:</span></div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;<span class="preprocessor"># define simdjson_fallthrough                    __attribute__((__fallthrough__))</span></div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// __has_attribute(__fallthrough__)</span></div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_CPLUSPLUS17</span></div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;<span class="comment">// on some systems, we simply do not have support for fallthrough, so use a default:</span></div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;<span class="preprocessor">#ifndef simdjson_fallthrough</span></div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;<span class="preprocessor"># define simdjson_fallthrough do {} while (0)  </span><span class="comment">/* fallthrough */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// simdjson_fallthrough</span></div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160; </div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160; </div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// MSC_VER</span></div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160; </div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;<span class="preprocessor">#if defined(simdjson_inline)</span></div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;  <span class="comment">// Prefer the user&#39;s definition of simdjson_inline; don&#39;t define it ourselves.</span></div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;<span class="preprocessor">#elif defined(__GNUC__) &amp;&amp; !defined(__OPTIMIZE__)</span></div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;  <span class="comment">// If optimizations are disabled, forcing inlining can lead to significant</span></div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;  <span class="comment">// code bloat and high compile times. Don&#39;t use simdjson_really_inline for</span></div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;  <span class="comment">// unoptimized builds.</span></div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;<span class="preprocessor">  #define simdjson_inline inline</span></div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;  <span class="comment">// Force inlining for most simdjson functions.</span></div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;<span class="preprocessor">  #define simdjson_inline simdjson_really_inline</span></div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160; </div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;<span class="preprocessor">#if SIMDJSON_VISUAL_STUDIO</span></div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;<span class="preprocessor">    #if SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY</span></div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    <span class="comment">// We set SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY when we build a DLL under Windows.</span></div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;    <span class="comment">// It should never happen that both SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY and</span></div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;    <span class="comment">// SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY are set.</span></div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;<span class="preprocessor">    #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllexport)</span></div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;<span class="preprocessor">    #elif SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY</span></div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;    <span class="comment">// Windows user who call a dynamic library should set SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY to 1.</span></div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;<span class="preprocessor">    #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)</span></div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;<span class="preprocessor">    #else</span></div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    <span class="comment">// We assume by default static linkage</span></div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;<span class="preprocessor">    #define SIMDJSON_DLLIMPORTEXPORT</span></div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;<span class="preprocessor">    #endif</span></div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160; </div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;<span class="preprocessor">#if SIMDJSON_USING_LIBRARY</span></div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;<span class="preprocessor">#define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)</span></div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;<span class="preprocessor">    #define SIMDJSON_DLLIMPORTEXPORT</span></div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160; </div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;<span class="comment">// C++17 requires string_view.</span></div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;<span class="preprocessor">#if SIMDJSON_CPLUSPLUS17</span></div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;<span class="preprocessor">#define SIMDJSON_HAS_STRING_VIEW</span></div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;<span class="preprocessor">#include &lt;string_view&gt;</span> <span class="comment">// by the standard, this has to be safe.</span></div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160; </div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;<span class="comment">// This macro (__cpp_lib_string_view) has to be defined</span></div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;<span class="comment">// for C++17 and better, but if it is otherwise defined,</span></div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="comment">// we are going to assume that string_view is available</span></div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;<span class="comment">// even if we do not have C++17 support.</span></div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;<span class="preprocessor">#ifdef __cpp_lib_string_view</span></div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;<span class="preprocessor">#define SIMDJSON_HAS_STRING_VIEW</span></div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160; </div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;<span class="comment">// Some systems have string_view even if we do not have C++17 support,</span></div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;<span class="comment">// and even if __cpp_lib_string_view is undefined, it is the case</span></div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;<span class="comment">// with Apple clang version 11.</span></div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;<span class="comment">// We must handle it. *This is important.*</span></div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_HAS_STRING_VIEW</span></div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;<span class="preprocessor">#if defined __has_include</span></div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;<span class="comment">// do not combine the next #if with the previous one (unsafe)</span></div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;<span class="preprocessor">#if __has_include (&lt;string_view&gt;)</span></div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="comment">// now it is safe to trigger the include</span></div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;<span class="preprocessor">#include &lt;string_view&gt;</span> <span class="comment">// though the file is there, it does not follow that we got the implementation</span></div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;<span class="preprocessor">#if defined(_LIBCPP_STRING_VIEW)</span></div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;<span class="comment">// Ah! So we under libc++ which under its Library Fundamentals Technical Specification, which preceded C++17,</span></div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;<span class="comment">// included string_view.</span></div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;<span class="comment">// This means that we have string_view *even though* we may not have C++17.</span></div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;<span class="preprocessor">#define SIMDJSON_HAS_STRING_VIEW</span></div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// _LIBCPP_STRING_VIEW</span></div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// __has_include (&lt;string_view&gt;)</span></div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// defined __has_include</span></div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// def SIMDJSON_HAS_STRING_VIEW</span></div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;<span class="comment">// end of complicated but important routine to try to detect string_view.</span></div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160; </div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;<span class="comment">//</span></div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;<span class="comment">// Backfill std::string_view using nonstd::string_view on systems where</span></div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;<span class="comment">// we expect that string_view is missing. Important: if we get this wrong,</span></div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;<span class="comment">// we will end up with two string_view definitions and potential trouble.</span></div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;<span class="comment">// That is why we work so hard above to avoid it.</span></div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;<span class="comment">//</span></div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_HAS_STRING_VIEW</span></div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;SIMDJSON_PUSH_DISABLE_ALL_WARNINGS</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;<span class="preprocessor">#include &quot;simdjson/nonstd/string_view.hpp&quot;</span></div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;SIMDJSON_POP_DISABLE_WARNINGS</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160; </div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;<span class="keyword">namespace </span>std {</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;  <span class="keyword">using</span> string_view = nonstd::string_view;</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;}</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_HAS_STRING_VIEW</span></div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;<span class="preprocessor">#undef SIMDJSON_HAS_STRING_VIEW </span><span class="comment">// We are not going to need this macro anymore.</span></div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160; </div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;<span class="preprocessor">#define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }</span></div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160; </div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;<span class="comment">// Unless the programmer has already set SIMDJSON_DEVELOPMENT_CHECKS,</span></div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;<span class="comment">// we want to set it under debug builds. We detect a debug build</span></div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;<span class="comment">// under Visual Studio when the _DEBUG macro is set. Under the other</span></div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;<span class="comment">// compilers, we use the fact that they define __OPTIMIZE__ whenever</span></div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;<span class="comment">// they allow optimizations.</span></div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;<span class="comment">// It is possible that this could miss some cases where SIMDJSON_DEVELOPMENT_CHECKS</span></div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;<span class="comment">// is helpful, but the programmer can set the macro SIMDJSON_DEVELOPMENT_CHECKS.</span></div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;<span class="comment">// It could also wrongly set SIMDJSON_DEVELOPMENT_CHECKS (e.g., if the programmer</span></div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;<span class="comment">// sets _DEBUG in a release build under Visual Studio, or if some compiler fails to</span></div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;<span class="comment">// set the __OPTIMIZE__ macro).</span></div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_DEVELOPMENT_CHECKS</span></div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;<span class="preprocessor">#ifdef _MSC_VER</span></div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;<span class="comment">// Visual Studio seems to set _DEBUG for debug builds.</span></div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;<span class="preprocessor">#ifdef _DEBUG</span></div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;<span class="preprocessor">#define SIMDJSON_DEVELOPMENT_CHECKS 1</span></div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// _DEBUG</span></div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;<span class="preprocessor">#else </span><span class="comment">// _MSC_VER</span></div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;<span class="comment">// All other compilers appear to set __OPTIMIZE__ to a positive integer</span></div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;<span class="comment">// when the compiler is optimizing.</span></div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;<span class="preprocessor">#ifndef __OPTIMIZE__</span></div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;<span class="preprocessor">#define SIMDJSON_DEVELOPMENT_CHECKS 1</span></div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// __OPTIMIZE__</span></div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// _MSC_VER</span></div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_DEVELOPMENT_CHECKS</span></div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160; </div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;<span class="comment">// The SIMDJSON_CHECK_EOF macro is a feature flag for the &quot;don&#39;t require padding&quot;</span></div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;<span class="comment">// feature.</span></div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160; </div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;<span class="preprocessor">#if SIMDJSON_CPLUSPLUS17</span></div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;<span class="comment">// if we have C++, then fallthrough is a default attribute</span></div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;<span class="preprocessor"># define simdjson_fallthrough [[fallthrough]]</span></div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;<span class="comment">// check if we have __attribute__ support</span></div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;<span class="preprocessor">#elif defined(__has_attribute)</span></div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;<span class="comment">// check if we have the __fallthrough__ attribute</span></div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;<span class="preprocessor">#if __has_attribute(__fallthrough__)</span></div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;<span class="comment">// we are good to go:</span></div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;<span class="preprocessor"># define simdjson_fallthrough                    __attribute__((__fallthrough__))</span></div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// __has_attribute(__fallthrough__)</span></div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_CPLUSPLUS17</span></div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;<span class="comment">// on some systems, we simply do not have support for fallthrough, so use a default:</span></div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;<span class="preprocessor">#ifndef simdjson_fallthrough</span></div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;<span class="preprocessor"># define simdjson_fallthrough do {} while (0)  </span><span class="comment">/* fallthrough */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// simdjson_fallthrough</span></div>
 <div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160; </div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;<span class="preprocessor">#if SIMDJSON_DEVELOPMENT_CHECKS</span></div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;<span class="preprocessor">#define SIMDJSON_DEVELOPMENT_ASSERT(expr) do { assert ((expr)); } while (0)</span></div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;<span class="preprocessor">#define SIMDJSON_DEVELOPMENT_ASSERT(expr) do { } while (0)</span></div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160; </div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_UTF8VALIDATION</span></div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;<span class="preprocessor">#define SIMDJSON_UTF8VALIDATION 1</span></div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160; </div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_COMMON_DEFS_H</span></div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160; </div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;<span class="preprocessor">#if SIMDJSON_DEVELOPMENT_CHECKS</span></div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;<span class="preprocessor">#define SIMDJSON_DEVELOPMENT_ASSERT(expr) do { assert ((expr)); } while (0)</span></div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;<span class="preprocessor">#define SIMDJSON_DEVELOPMENT_ASSERT(expr) do { } while (0)</span></div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160; </div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_UTF8VALIDATION</span></div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;<span class="preprocessor">#define SIMDJSON_UTF8VALIDATION 1</span></div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160; </div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_COMMON_DEFS_H</span></div>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">We want to support argument-dependent lookup (ADL).</div><div class="ttdef"><b>Definition:</b> <a href="arm64_2bitmanipulation_8h_source.html#l00004">bitmanipulation.h:4</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_a6df2598eb1d4e1ea669c41831cc7325d"><div class="ttname"><a href="namespacesimdjson.html#a6df2598eb1d4e1ea669c41831cc7325d">simdjson::DEFAULT_MAX_DEPTH</a></div><div class="ttdeci">constexpr size_t DEFAULT_MAX_DEPTH</div><div class="ttdoc">By default, simdjson supports this many nested objects and arrays.</div><div class="ttdef"><b>Definition:</b> <a href="common__defs_8h_source.html#l00052">common_defs.h:52</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_ac66973a7111dc4aa96ba7b3434344347"><div class="ttname"><a href="namespacesimdjson.html#ac66973a7111dc4aa96ba7b3434344347">simdjson::SIMDJSON_MAXSIZE_BYTES</a></div><div class="ttdeci">constexpr size_t SIMDJSON_MAXSIZE_BYTES</div><div class="ttdoc">The maximum document size supported by simdjson.</div><div class="ttdef"><b>Definition:</b> <a href="common__defs_8h_source.html#l00035">common_defs.h:35</a></div></div>

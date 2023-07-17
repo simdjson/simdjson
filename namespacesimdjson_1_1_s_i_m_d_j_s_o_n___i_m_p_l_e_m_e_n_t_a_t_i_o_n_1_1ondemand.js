@@ -1,6 +1,10 @@
 var namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand =
 [
     [ "logger", null, [
+      [ "log_level", "logger_8h.html#a10405079edbfa28899ad2d9e7a69245f", [
+        [ "info", "logger_8h.html#a10405079edbfa28899ad2d9e7a69245facaf9b6b99962bf5c2264824231d7a40c", null ],
+        [ "error", "logger_8h.html#a10405079edbfa28899ad2d9e7a69245facb5e100e5a9a3e7f6d1fd97512215282", null ]
+      ] ],
       [ "log_end_value", "logger-inl_8h.html#ab8082fd58a3d7e115016a3fc52ee8936", null ],
       [ "log_end_value", "logger-inl_8h.html#a6ca1434e6fe03e97dbc88360cc6ea5db", null ],
       [ "log_error", "logger-inl_8h.html#a273e5f25cfdef1064a5225a47d85eb4f", null ],
@@ -9,8 +13,8 @@ var namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondem
       [ "log_event", "logger-inl_8h.html#aee467b07dcf64f1282096914a1214053", null ],
       [ "log_event", "logger-inl_8h.html#a4427c475cf7d49b372c768201b4d92cb", null ],
       [ "log_headers", "logger-inl_8h.html#ab8b9add577d4aba4fc244fa5a5bcb219", null ],
-      [ "log_line", "logger-inl_8h.html#a7577e5a0dcaf23edf36d162959680a7c", null ],
-      [ "log_line", "logger-inl_8h.html#ad5975f8a32d2daea904160b7ac6fd9cc", null ],
+      [ "log_line", "logger-inl_8h.html#a0176c136680aa97eb8bd8f57033f41be", null ],
+      [ "log_line", "logger-inl_8h.html#a8cd7cf74fd4b1c9386ac006febabeebd", null ],
       [ "log_start_value", "logger-inl_8h.html#a92b499d3d191a02e913f90de4f641e2e", null ],
       [ "log_start_value", "logger-inl_8h.html#aaa4c1a2ef6eb08bb02a8ea6e49d2a786", null ],
       [ "log_start_value", "logger-inl_8h.html#a720bb462b108c1f9bcaa02cdcdfe6546", null ],
