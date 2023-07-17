@@ -1,14 +1,15 @@
-#include "simdjson/error.h"
+#ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ONDEMAND_VALUE_H
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/implementation_simdjson_result_base.h"
+#include "simdjson/generic/ondemand/value_iterator.h"
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
-
-class array;
-class document;
-class field;
-class object;
-class raw_json_string;
 
 /**
  * An ephemeral JSON value returned during iteration. It is only valid for as long as you do
@@ -688,7 +689,7 @@ public:
   simdjson_inline simdjson_result<bool> is_scalar() noexcept;
   simdjson_inline simdjson_result<bool> is_negative() noexcept;
   simdjson_inline simdjson_result<bool> is_integer() noexcept;
-  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::numberparsing::number_type> get_number_type() noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> get_number_type() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
 
   /** @copydoc simdjson_inline std::string_view value::raw_json_token() const noexcept */
@@ -702,3 +703,5 @@ public:
 };
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_H

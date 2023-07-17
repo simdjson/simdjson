@@ -1,14 +1,12 @@
 #ifndef SIMDJSON_DOM_DOCUMENT_H
 #define SIMDJSON_DOM_DOCUMENT_H
 
-#include "simdjson/common_defs.h"
+#include "simdjson/dom/base.h"
+
 #include <memory>
-#include <ostream>
 
 namespace simdjson {
 namespace dom {
-
-class element;
 
 /**
  * A parsed JSON document.

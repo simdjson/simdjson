@@ -73,26 +73,34 @@ simdjson's source structure, from the top level, looks like this:
 
 * **CMakeLists.txt:** The main build system.
 * **include:** User-facing declarations and inline definitions (most user-facing functions are inlined).
-  * simdjson.h: A "main include" that includes files from include/simdjson/. This is equivalent to
+  * simdjson.h: the `simdjson` namespace. A "main include" that includes files from include/simdjson/. This is equivalent to
     the distributed simdjson.h.
-  * simdjson/*.h: Declarations for public simdjson classes and functions.
-  * simdjson/*-inl.h: Definitions for public simdjson classes and functions.
+    * simdjson/*.h: Declarations for public simdjson classes and functions.
+    * simdjson/*-inl.h: Definitions for public simdjson classes and functions.
+    * simdjson/internal/*.h: the `simdjson::internal` namespace. Private classes and functions used by the rest of simdjson.
+  * simdjson/dom.h: the `simdjson::dom` namespace. Includes all public DOM classes.
+    * simdjson/dom/*.h: Declarations/definitions for individual DOM classes.
+  * simdjson/arm64|fallback|haswell|icelake|ppc64|westmere.h: `simdjson::<implementation>` namesapce. Common implementation-specific tools like number and string parsing, as well as minification.
+    * simdjson/arm64|fallback|haswell|icelake|ppc64|westmere/*.h: implementation-specific functions such as , etc.
+    * simdjson/generic/*.h: the bulk of the actual code, written generically and compiled for each implementation, using functions defined in the implementation's .h files.
+      * simdjson/generic/dependencies.h: dependencies on common, non-implementation-specific simdjson classes. This will be included before including amalgamated.h.
+      * simdjson/generic/amalgamated.h: all generic ondemand classes for an implementation.
+  * simdjson/ondemand.h: the `simdjson::ondemand` namespace. Includes all public ondemand classes.
+    * simdjson/builtin.h: the `simdjson::builtin` namespace. Aliased to the most universal implementation available.
+    * simdjson/builtin/ondemand.h: the `simdjson::builtin::ondemand` namespace.
+    * simdjson/arm64|fallback|haswell|icelake|ppc64|westmere/ondemand.h: the `simdjson::<implementation>::ondemand` namespace. on demand compiled for the specific implementation.
+    * simdjson/generic/ondemand/*.h: individual on demand classes, generically written.
+      * simdjson/generic/ondemand/dependencies.h: dependencies on common, non-implementation-specific simdjson classes. This will be included before including amalgamated.h.
+      * simdjson/generic/ondemand/amalgamated.h: all generic ondemand classes for an implementation.
 * **src:** The source files for non-inlined functionality (e.g. the architecture-specific parser
   implementations).
   * simdjson.cpp: A "main source" that includes all implementation files from src/. This is
     equivalent to the distributed simdjson.cpp.
-  * arm64/|fallback/|haswell/|ppc64/|westmere/: Architecture-specific implementations. All functions are
-    Each architecture defines its own namespace, e.g. simdjson::haswell.
-  * generic/: Generic implementations of the simdjson parser. These files may be included and
-    compiled multiple times, from whichever architectures use them. They assume they are already
-    enclosed in a namespace, e.g.:
-    ```c++
-    namespace simdjson {
-      namespace haswell {
-        #include "generic/stage1/json_structural_indexer.h"
-      }
-    }
-    ```
+  * *.cpp: other misc. implementations, such as `simdjson::implementation` and the minifier.
+  * arm64|fallback|haswell|icelake|ppc64|westmere.cpp: Architecture-specific parser implementations.
+    * generic/*.h: `simdjson::<implementation>` namespace. Generic implementation of the parser, particularly the `dom_parser_implementation`.
+    * generic/stage1/*.h: `simdjson::<implementation>::stage1` namespace. Generic implementation of the simd-heavy tokenizer/indexer pass of the simdjson parser. Used for the On Demand interface
+    * generic/stage2/*.h: `simdjson::<implementation>::stage2` namespace. Generic implementation of the tape creator, which consumes the index from stage 1 and actually parses numbers and string and such. Used for the DOM interface.
 
 Other important files and directories:
 * **.drone.yml:** Definitions for Drone CI.

@@ -22,4 +22,4 @@ jobs:
           cd build &&
           CXX=clang++-14 cmake -DSIMDJSON_DEVELOPER_MODE=ON ..  &&
           cmake --build .   &&
-          ctest -j --output-on-failure -LE explicitonly
+          ctest --output-on-failure -LE explicitonly -j

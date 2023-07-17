@@ -1,19 +1,18 @@
+#ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_NUMBERPARSING_H
+#include "simdjson/generic/base.h"
+#include "simdjson/generic/jsoncharutils.h"
 #include "simdjson/internal/numberparsing_tables.h"
+#endif // SIMDJSON_AMALGAMATED
+
 #include <limits>
+#include <ostream>
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
-/// @private
 namespace numberparsing {
-
-/**
- * The type of a JSON number
- */
-enum class number_type {
-    floating_point_number=1, /// a binary64 number
-    signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
-};
 
 #ifdef JSON_TEST_NUMBERS
 #define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
@@ -165,7 +164,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
   // with a returned value of type value128 with a "low component" corresponding to the
   // 64-bit least significant bits of the product and with a "high component" corresponding
   // to the 64-bit most significant bits of the product.
-  simdjson::internal::value128 firstproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index]);
+  simdjson::internal::value128 firstproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index]);
   // Both i and power_of_five_128[index] have their most significant bit set to 1 which
   // implies that the either the most or the second most significant bit of the product
   // is 1. We pack values in this manner for efficiency reasons: it maximizes the use
@@ -199,7 +198,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // with a returned value of type value128 with a "low component" corresponding to the
     // 64-bit least significant bits of the product and with a "high component" corresponding
     // to the 64-bit most significant bits of the product.
-    simdjson::internal::value128 secondproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
+    simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
     // At this point, we might need to add at most one to firstproduct, but this
@@ -1250,6 +1249,8 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
 } // unnamed namespace
 #endif // SIMDJSON_SKIPNUMBERPARSING
 
+} // namespace numberparsing
+
 inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
     switch (type) {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
@@ -1260,6 +1261,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
     return out;
 }
 
-} // namespace numberparsing
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_NUMBERPARSING_H

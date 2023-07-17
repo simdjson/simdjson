@@ -1,3 +1,19 @@
+#ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/ondemand/array-inl.h"
+#include "simdjson/generic/ondemand/array_iterator.h"
+#include "simdjson/generic/ondemand/document.h"
+#include "simdjson/generic/ondemand/json_iterator-inl.h"
+#include "simdjson/generic/ondemand/json_type.h"
+#include "simdjson/generic/ondemand/object-inl.h"
+#include "simdjson/generic/ondemand/raw_json_string.h"
+#include "simdjson/generic/ondemand/value.h"
+#include "simdjson/generic/ondemand/value_iterator-inl.h"
+#endif // SIMDJSON_AMALGAMATED
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -456,7 +472,7 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::o
   return first.is_integer();
 }
 
-simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::numberparsing::number_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_number_type() noexcept {
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_number_type() noexcept {
   if (error()) { return error(); }
   return first.get_number_type();
 }
@@ -739,7 +755,7 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::o
   if (error()) { return error(); }
   return first.is_integer();
 }
-simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::numberparsing::number_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_number_type() noexcept {
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_number_type() noexcept {
   if (error()) { return error(); }
   return first.get_number_type();
 }
@@ -803,3 +819,5 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
 
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H

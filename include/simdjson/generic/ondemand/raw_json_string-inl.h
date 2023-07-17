@@ -1,3 +1,13 @@
+#ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/ondemand/raw_json_string.h"
+#include "simdjson/generic/ondemand/json_iterator-inl.h"
+#include "simdjson/generic/implementation_simdjson_result_base-inl.h"
+#endif // SIMDJSON_AMALGAMATED
+
 namespace simdjson {
 
 namespace SIMDJSON_IMPLEMENTATION {
@@ -189,3 +199,5 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
   return first.unescape_wobbly(iter);
 }
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H

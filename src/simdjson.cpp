@@ -1,7 +1,8 @@
-#include "simdjson.h"
+#define SIMDJSON_SRC_SIMDJSON_CPP
 
-SIMDJSON_PUSH_DISABLE_WARNINGS
-SIMDJSON_DISABLE_UNDESIRED_WARNINGS
+#include "simdjson/common_defs.h"
+
+SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 
 #include "to_chars.cpp"
 #include "from_chars.cpp"
@@ -9,31 +10,34 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "internal/jsoncharutils_tables.cpp"
 #include "internal/numberparsing_tables.cpp"
 #include "internal/simdprune_tables.cpp"
+
+#include "simdjson/generic/dependencies.h"
+#include "generic/dependencies.h"
+
 #include "implementation.cpp"
 
+#define SIMDJSON_AMALGAMATED
+
 #if SIMDJSON_IMPLEMENTATION_ARM64
-#include "arm64/implementation.cpp"
-#include "arm64/dom_parser_implementation.cpp"
+#include "arm64.cpp"
 #endif
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
-#include "fallback/implementation.cpp"
-#include "fallback/dom_parser_implementation.cpp"
-#endif
-#if SIMDJSON_IMPLEMENTATION_ICELAKE
-#include "icelake/implementation.cpp"
-#include "icelake/dom_parser_implementation.cpp"
+#include "fallback.cpp"
 #endif
 #if SIMDJSON_IMPLEMENTATION_HASWELL
-#include "haswell/implementation.cpp"
-#include "haswell/dom_parser_implementation.cpp"
+#include "haswell.cpp"
+#endif
+#if SIMDJSON_IMPLEMENTATION_ICELAKE
+#include "icelake.cpp"
 #endif
 #if SIMDJSON_IMPLEMENTATION_PPC64
-#include "ppc64/implementation.cpp"
-#include "ppc64/dom_parser_implementation.cpp"
+#include "ppc64.cpp"
 #endif
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
-#include "westmere/implementation.cpp"
-#include "westmere/dom_parser_implementation.cpp"
+#include "westmere.cpp"
 #endif
 
-SIMDJSON_POP_DISABLE_WARNINGS
+#undef SIMDJSON_AMALGAMATED
+
+SIMDJSON_POP_DISABLE_UNUSED_WARNINGS
+

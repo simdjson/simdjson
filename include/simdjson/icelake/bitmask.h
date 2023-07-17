@@ -1,6 +1,8 @@
 #ifndef SIMDJSON_ICELAKE_BITMASK_H
 #define SIMDJSON_ICELAKE_BITMASK_H
 
+#include "simdjson/icelake/base.h"
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {

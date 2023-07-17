@@ -1,3 +1,16 @@
+#ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/atomparsing.h"
+#include "simdjson/generic/numberparsing.h"
+#include "simdjson/generic/ondemand/json_iterator.h"
+#include "simdjson/generic/ondemand/json_type-inl.h"
+#include "simdjson/generic/ondemand/raw_json_string-inl.h"
+#include "simdjson/generic/ondemand/value_iterator.h"
+#endif // SIMDJSON_AMALGAMATED
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -584,7 +597,7 @@ simdjson_inline simdjson_result<bool> value_iterator::is_root_integer(bool check
   return answer;
 }
 
-simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::numberparsing::number_type> value_iterator::get_root_number_type(bool check_trailing) noexcept {
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> value_iterator::get_root_number_type(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("number");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
@@ -1034,3 +1047,5 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value_iterato
     : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::value_iterator>(error) {}
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H

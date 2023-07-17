@@ -1,4 +1,13 @@
-#include "simdjson/error.h"
+#ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/implementation_simdjson_result_base.h"
+#include "simdjson/generic/ondemand/document.h"
+#include "simdjson/generic/ondemand/parser.h"
+#endif // SIMDJSON_AMALGAMATED
+
 #ifdef SIMDJSON_THREADS_ENABLED
 #include <thread>
 #include <mutex>
@@ -8,10 +17,6 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
-
-class parser;
-class json_iterator;
-class document;
 
 #ifdef SIMDJSON_THREADS_ENABLED
 /** @private Custom worker class **/
@@ -330,3 +335,5 @@ public:
 };
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H

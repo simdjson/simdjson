@@ -1,13 +1,20 @@
-// This file contains the common code every implementation uses in stage1
-// It is intended to be included multiple times and compiled multiple times
-// We assume the file in which it is included already includes
-// "simdjson/stage1.h" (this simplifies amalgation)
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
+#include "generic/stage1/base.h"
+#include "generic/stage1/utf8_lookup4_algorithm.h"
 #include "generic/stage1/buf_block_reader.h"
 #include "generic/stage1/json_string_scanner.h"
 #include "generic/stage1/json_scanner.h"
 #include "generic/stage1/json_minifier.h"
 #include "generic/stage1/find_next_document_index.h"
+#endif // SIMDJSON_AMALGAMATED
+
+// This file contains the common code every implementation uses in stage1
+// It is intended to be included multiple times and compiled multiple times
+// We assume the file in which it is included already includes
+// "simdjson/stage1.h" (this simplifies amalgation)
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -26,9 +33,9 @@ public:
   // will potentially store extra values beyond end of valid bits, so base_ptr
   // needs to be large enough to handle this
   //
-  // If the kernel sets SIMDJSON_CUSTOM_BIT_INDEXER, then it will provide its own
-  // version of the code.
-#ifdef SIMDJSON_CUSTOM_BIT_INDEXER
+  // If the kernel sets SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER, then it
+  // will provide its own version of the code.
+#ifdef SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
   simdjson_inline void write(uint32_t idx, uint64_t bits);
 #else
   simdjson_inline void write(uint32_t idx, uint64_t bits) {
@@ -123,7 +130,7 @@ public:
     this->tail += cnt;
 #endif
   }
-#endif // SIMDJSON_CUSTOM_BIT_INDEXER
+#endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
 };
 
@@ -354,3 +361,8 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+// Clear CUSTOM_BIT_INDEXER so other implementations can set it if they need to.
+#undef SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H

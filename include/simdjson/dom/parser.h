@@ -1,40 +1,12 @@
 #ifndef SIMDJSON_DOM_PARSER_H
 #define SIMDJSON_DOM_PARSER_H
 
-#include "simdjson/common_defs.h"
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/document.h"
-#include "simdjson/error.h"
-#include "simdjson/internal/dom_parser_implementation.h"
-#include "simdjson/internal/tape_ref.h"
-#include "simdjson/padded_string.h"
-#include "simdjson/portability.h"
-#include <memory>
-#include <ostream>
-#include <string>
 
 namespace simdjson {
 
 namespace dom {
-
-class document_stream;
-class element;
-
-/** The default batch size for parser.parse_many() and parser.load_many() */
-static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
-/**
- * Some adversary might try to set the batch size to 0 or 1, which might cause problems.
- * We set a minimum of 32B since anything else is highly likely to be an error. In practice,
- * most users will want a much larger batch size.
- *
- * All non-negative MINIMAL_BATCH_SIZE values should be 'safe' except that, obviously, no JSON
- * document can ever span 0 or 1 byte and that very large values would create memory allocation issues.
- */
-static constexpr size_t MINIMAL_BATCH_SIZE = 32;
-
-/**
- * It is wasteful to allocate memory for tiny documents (e.g., 4 bytes).
- */
-static constexpr size_t MINIMAL_DOCUMENT_CAPACITY = 32;
 
 /**
  * A persistent document parser.

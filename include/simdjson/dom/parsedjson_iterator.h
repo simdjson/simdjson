@@ -3,16 +3,8 @@
 #ifndef SIMDJSON_DOM_PARSEDJSON_ITERATOR_H
 #define SIMDJSON_DOM_PARSEDJSON_ITERATOR_H
 
-#include <cstring>
-#include <string>
-#include <ostream>
-#include <iterator>
-#include <limits>
-#include <stdexcept>
-
-#include "simdjson/dom/document.h"
-#include "simdjson/dom/parsedjson.h"
-#include "simdjson/internal/jsonformatutils.h"
+#include "simdjson/dom/base.h"
+#include "simdjson/dom/parser.h"
 
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
 
@@ -52,51 +44,23 @@ public:
   }
 
   // get the int64_t value at this node; valid only if get_type is "l"
-  inline int64_t get_integer() const {
-      if (location + 1 >= tape_length) {
-      return 0; // default value in case of error
-      }
-      return static_cast<int64_t>(doc.tape[location + 1]);
-  }
+  inline int64_t get_integer() const;
 
   // get the value as uint64; valid only if  if get_type is "u"
-  inline uint64_t get_unsigned_integer() const {
-      if (location + 1 >= tape_length) {
-      return 0; // default value in case of error
-      }
-      return doc.tape[location + 1];
-  }
+  inline uint64_t get_unsigned_integer() const;
 
   // get the string value at this node (NULL ended); valid only if get_type is "
   // note that tabs, and line endings are escaped in the returned value (see
   // print_with_escapes) return value is valid UTF-8, it may contain NULL chars
   // within the string: get_string_length determines the true string length.
-  inline const char *get_string() const {
-      return reinterpret_cast<const char *>(
-          doc.string_buf.get() + (current_val & internal::JSON_VALUE_MASK) + sizeof(uint32_t));
-  }
+  inline const char *get_string() const;
 
   // return the length of the string in bytes
-  inline uint32_t get_string_length() const {
-      uint32_t answer;
-      std::memcpy(&answer,
-          reinterpret_cast<const char *>(doc.string_buf.get() +
-                                          (current_val & internal::JSON_VALUE_MASK)),
-          sizeof(uint32_t));
-      return answer;
-  }
+  inline uint32_t get_string_length() const;
 
   // get the double value at this node; valid only if
   // get_type() is "d"
-  inline double get_double() const {
-      if (location + 1 >= tape_length) {
-      return std::numeric_limits<double>::quiet_NaN(); // default value in
-                                                      // case of error
-      }
-      double answer;
-      std::memcpy(&answer, &doc.tape[location + 1], sizeof(answer));
-      return answer;
-  }
+  inline double get_double() const;
 
   inline bool is_object_or_array() const { return is_object() || is_array(); }
 
@@ -190,9 +154,7 @@ public:
   // "If a referenced member name is not unique in an object, the member that
   // is referenced is undefined, and evaluation fails". Here we just return
   // the first corresponding value.
-  inline bool move_to(const std::string &pointer) {
-      return move_to(pointer.c_str(), uint32_t(pointer.length()));
-  }
+  inline bool move_to(const std::string &pointer);
 
   private:
   // Almost the same as move_to(), except it searches from the current
@@ -240,10 +202,7 @@ public:
   // a scope is a series of nodes at the same level
   inline void to_start_scope();
 
-  inline void rewind() {
-      while (up())
-      ;
-  }
+  inline void rewind();
 
 
 

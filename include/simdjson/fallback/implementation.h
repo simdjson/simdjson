@@ -6,11 +6,6 @@
 namespace simdjson {
 namespace fallback {
 
-namespace {
-using namespace simdjson;
-using namespace simdjson::dom;
-}
-
 /**
  * @private
  */
@@ -24,7 +19,7 @@ public:
   simdjson_warn_unused error_code create_dom_parser_implementation(
     size_t capacity,
     size_t max_length,
-    std::unique_ptr<internal::dom_parser_implementation>& dst
+    std::unique_ptr<simdjson::internal::dom_parser_implementation>& dst
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;

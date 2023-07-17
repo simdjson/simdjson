@@ -1,26 +1,59 @@
+/**
+ * @file Base declarations for all simdjson headers
+ * @private
+ */
 #ifndef SIMDJSON_BASE_H
 #define SIMDJSON_BASE_H
 
-#include "simdjson/compiler_check.h"
 #include "simdjson/common_defs.h"
-#include "simdjson/portability.h"
-
-SIMDJSON_PUSH_DISABLE_WARNINGS
-SIMDJSON_DISABLE_UNDESIRED_WARNINGS
-
-// Public API
-#include "simdjson/simdjson_version.h"
+#include "simdjson/compiler_check.h"
 #include "simdjson/error.h"
-#include "simdjson/minify.h"
-#include "simdjson/padded_string.h"
-#include "simdjson/padded_string_view.h"
-#include "simdjson/implementation.h"
 
-// Inline functions
-#include "simdjson/error-inl.h"
-#include "simdjson/padded_string-inl.h"
-#include "simdjson/padded_string_view-inl.h"
+/**
+ * @brief The top level simdjson namespace, containing everything the library provides.
+ */
+namespace simdjson {
 
-SIMDJSON_POP_DISABLE_WARNINGS
+SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
+
+/** The maximum document size supported by simdjson. */
+constexpr size_t SIMDJSON_MAXSIZE_BYTES = 0xFFFFFFFF;
+
+/**
+ * The amount of padding needed in a buffer to parse JSON.
+ *
+ * The input buf should be readable up to buf + SIMDJSON_PADDING
+ * this is a stopgap; there should be a better description of the
+ * main loop and its behavior that abstracts over this
+ * See https://github.com/simdjson/simdjson/issues/174
+ */
+constexpr size_t SIMDJSON_PADDING = 64;
+
+/**
+ * By default, simdjson supports this many nested objects and arrays.
+ *
+ * This is the default for parser::max_depth().
+ */
+constexpr size_t DEFAULT_MAX_DEPTH = 1024;
+
+SIMDJSON_POP_DISABLE_UNUSED_WARNINGS
+
+class implementation;
+struct padded_string;
+class padded_string_view;
+enum class stage1_mode;
+
+namespace internal {
+
+template<typename T>
+class atomic_ptr;
+class dom_parser_implementation;
+class escape_json_string;
+class tape_ref;
+struct value128;
+enum class tape_type;
+
+} // namespace internal
+} // namespace simdjson
 
 #endif // SIMDJSON_BASE_H

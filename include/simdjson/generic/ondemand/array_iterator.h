@@ -1,12 +1,16 @@
-#include "simdjson/error.h"
+#ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
+#include "simdjson/generic/implementation_simdjson_result_base.h"
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/ondemand/value_iterator.h"
+#endif // SIMDJSON_AMALGAMATED
+
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
-
-class array;
-class value;
-class document;
 
 /**
  * A forward-only JSON array.
@@ -88,3 +92,5 @@ public:
 };
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
