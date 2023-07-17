@@ -12,6 +12,7 @@
 #include "simdjson/internal/dom_parser_implementation.h"
 #include "simdjson/internal/jsoncharutils_tables.h"
 #include "simdjson/internal/numberparsing_tables.h"
+#include "simdjson/internal/simdprune_tables.h"
 #include "simdjson/padded_string_view.h"
 
 #endif // SIMDJSON_GENERIC_DEPENDENCIES_H

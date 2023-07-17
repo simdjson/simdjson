@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-16 14:34:42 -0700. Do not edit! */
+/* auto-generated on 2023-07-16 19:07:31 -0700. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file src/simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -6085,6 +6085,30 @@ inline error_code dom_parser_implementation::allocate(size_t capacity, size_t ma
 /* end file include/simdjson/internal/dom_parser_implementation.h */
 /* skipped duplicate #include "simdjson/internal/jsoncharutils_tables.h" */
 /* skipped duplicate #include "simdjson/internal/numberparsing_tables.h" */
+/* including simdjson/internal/simdprune_tables.h: #include "simdjson/internal/simdprune_tables.h" */
+/* begin file include/simdjson/internal/simdprune_tables.h */
+#ifndef SIMDJSON_INTERNAL_SIMDPRUNE_TABLES_H
+#define SIMDJSON_INTERNAL_SIMDPRUNE_TABLES_H
+
+/* skipped duplicate #include "simdjson/base.h" */
+
+#include <cstdint>
+
+namespace simdjson { // table modified and copied from
+namespace internal { // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetTable
+
+extern SIMDJSON_DLLIMPORTEXPORT const unsigned char BitsSetTable256mul2[256];
+
+extern SIMDJSON_DLLIMPORTEXPORT const uint8_t pshufb_combine_table[272];
+
+// 256 * 8 bytes = 2kB, easily fits in cache.
+extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
+
+} // namespace internal
+} // namespace simdjson
+
+#endif // SIMDJSON_INTERNAL_SIMDPRUNE_TABLES_H
+/* end file include/simdjson/internal/simdprune_tables.h */
 /* including simdjson/padded_string_view.h: #include "simdjson/padded_string_view.h" */
 /* begin file include/simdjson/padded_string_view.h */
 #ifndef SIMDJSON_PADDED_STRING_VIEW_H
@@ -6208,30 +6232,7 @@ enum class tape_type {
 
 #endif // SIMDJSON_INTERNAL_TAPE_TYPE_H
 /* end file include/simdjson/internal/tape_type.h */
-/* including simdjson/internal/simdprune_tables.h: #include "simdjson/internal/simdprune_tables.h" */
-/* begin file include/simdjson/internal/simdprune_tables.h */
-#ifndef SIMDJSON_INTERNAL_SIMDPRUNE_TABLES_H
-#define SIMDJSON_INTERNAL_SIMDPRUNE_TABLES_H
-
-/* skipped duplicate #include "simdjson/base.h" */
-
-#include <cstdint>
-
-namespace simdjson { // table modified and copied from
-namespace internal { // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetTable
-
-extern SIMDJSON_DLLIMPORTEXPORT const unsigned char BitsSetTable256mul2[256];
-
-extern SIMDJSON_DLLIMPORTEXPORT const uint8_t pshufb_combine_table[272];
-
-// 256 * 8 bytes = 2kB, easily fits in cache.
-extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
-
-} // namespace internal
-} // namespace simdjson
-
-#endif // SIMDJSON_INTERNAL_SIMDPRUNE_TABLES_H
-/* end file include/simdjson/internal/simdprune_tables.h */
+/* skipped duplicate #include "simdjson/internal/simdprune_tables.h" */
 
 #endif // SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
 /* end file src/generic/dependencies.h */
