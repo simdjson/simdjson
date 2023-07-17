@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_PPC64_STRINGPARSING_H
-#define SIMDJSON_PPC64_STRINGPARSING_H
+#ifndef SIMDJSON_PPC64_STRINGPARSING_DEFS_H
+#define SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 
 #include "simdjson/ppc64/bitmanipulation.h"
 #include "simdjson/ppc64/simd.h"
@@ -59,4 +59,4 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#endif // SIMDJSON_PPC64_STRINGPARSING_H
+#endif // SIMDJSON_PPC64_STRINGPARSING_DEFS_H

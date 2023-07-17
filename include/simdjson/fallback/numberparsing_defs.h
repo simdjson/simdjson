@@ -3,6 +3,10 @@
 
 #include "simdjson/fallback/base.h"
 
+#ifndef SIMDJSON_AMALGAMATED
+#include "simdjson/internal/numberparsing_tables.h"
+#endif // SIMDJSON_AMALGAMATED
+
 #ifdef JSON_TEST_NUMBERS // for unit testing
 void found_invalid_number(const uint8_t *buf);
 void found_integer(int64_t result, const uint8_t *buf);
@@ -13,6 +17,7 @@ void found_float(double result, const uint8_t *buf);
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace numberparsing {
+
 // credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
 /** @private */
 static simdjson_inline uint32_t parse_eight_digits_unrolled(const char *chars) {
@@ -22,9 +27,29 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
   return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
 }
+
 /** @private */
 static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
   return parse_eight_digits_unrolled(reinterpret_cast<const char *>(chars));
+}
+
+/** @private */
+simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
+  internal::value128 answer;
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
+#else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
+#endif
+  return answer;
 }
 
 } // namespace numberparsing

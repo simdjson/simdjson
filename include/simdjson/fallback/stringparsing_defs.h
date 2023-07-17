@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_FALLBACK_STRINGPARSING_H
-#define SIMDJSON_FALLBACK_STRINGPARSING_H
+#ifndef SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H
+#define SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H
 
 #include "simdjson/fallback/base.h"
 
@@ -31,4 +31,4 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#endif // SIMDJSON_FALLBACK_STRINGPARSING_H
+#endif // SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H

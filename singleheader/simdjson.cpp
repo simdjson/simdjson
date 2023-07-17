@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-16 19:07:31 -0700. Do not edit! */
+/* auto-generated on 2023-07-16 22:05:42 -0700. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file src/simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -7684,7 +7684,62 @@ template <typename T> struct simd8x64;
 
 #endif // SIMDJSON_ARM64_BASE_H
 /* end file include/simdjson/arm64/base.h */
+/* including simdjson/arm64/intrinsics.h: #include "simdjson/arm64/intrinsics.h" */
+/* begin file include/simdjson/arm64/intrinsics.h */
+#ifndef SIMDJSON_ARM64_INTRINSICS_H
+#define SIMDJSON_ARM64_INTRINSICS_H
+
+// This should be the correct header whether
+// you use visual studio or other compilers.
+#include <arm_neon.h>
+
+/* including simdjson/arm64/base.h: #include "simdjson/arm64/base.h" */
+/* begin file include/simdjson/arm64/base.h */
+#ifndef SIMDJSON_ARM64_BASE_H
+#define SIMDJSON_ARM64_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+namespace simdjson {
+/**
+ * Implementation for NEON (ARMv8).
+ */
+namespace arm64 {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace arm64
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/arm64/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_ARM64_BASE_H
+/* end file include/simdjson/arm64/base.h */
+
+static_assert(sizeof(uint8x16_t) <= simdjson::SIMDJSON_PADDING, "insufficient padding for arm64");
+
+#endif //  SIMDJSON_ARM64_INTRINSICS_H
+/* end file include/simdjson/arm64/intrinsics.h */
+
 #include <cstring>
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -7699,6 +7754,24 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
   val = (val & 0x0F0F0F0F0F0F0F0F) * 2561 >> 8;
   val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
   return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
+}
+
+simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
+  internal::value128 answer;
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
+#else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
+#endif
+  return answer;
 }
 
 } // namespace numberparsing
@@ -9600,26 +9673,6 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 }
 #endif
 
-using internal::value128;
-
-simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
-  value128 answer;
-#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
-  // ARM64 has native support for 64-bit multiplications, no need to emultate
-  answer.high = __umulh(value1, value2);
-  answer.low = value1 * value2;
-#else
-  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
-#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
-  answer.low = uint64_t(r);
-  answer.high = uint64_t(r >> 64);
-#endif
-  return answer;
-}
-
 } // namespace jsoncharutils
 } // unnamed namespace
 } // namespace arm64
@@ -10102,7 +10155,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
   // with a returned value of type value128 with a "low component" corresponding to the
   // 64-bit least significant bits of the product and with a "high component" corresponding
   // to the 64-bit most significant bits of the product.
-  simdjson::internal::value128 firstproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index]);
+  simdjson::internal::value128 firstproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index]);
   // Both i and power_of_five_128[index] have their most significant bit set to 1 which
   // implies that the either the most or the second most significant bit of the product
   // is 1. We pack values in this manner for efficiency reasons: it maximizes the use
@@ -10136,7 +10189,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // with a returned value of type value128 with a "low component" corresponding to the
     // 64-bit least significant bits of the product and with a "high component" corresponding
     // to the 64-bit most significant bits of the product.
-    simdjson::internal::value128 secondproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
+    simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
     // At this point, we might need to add at most one to firstproduct, but this
@@ -11710,7 +11763,62 @@ template <typename T> struct simd8x64;
 
 #endif // SIMDJSON_ARM64_BASE_H
 /* end file include/simdjson/arm64/base.h */
+/* including simdjson/arm64/intrinsics.h: #include "simdjson/arm64/intrinsics.h" */
+/* begin file include/simdjson/arm64/intrinsics.h */
+#ifndef SIMDJSON_ARM64_INTRINSICS_H
+#define SIMDJSON_ARM64_INTRINSICS_H
+
+// This should be the correct header whether
+// you use visual studio or other compilers.
+#include <arm_neon.h>
+
+/* including simdjson/arm64/base.h: #include "simdjson/arm64/base.h" */
+/* begin file include/simdjson/arm64/base.h */
+#ifndef SIMDJSON_ARM64_BASE_H
+#define SIMDJSON_ARM64_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+namespace simdjson {
+/**
+ * Implementation for NEON (ARMv8).
+ */
+namespace arm64 {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace arm64
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/arm64/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_ARM64_BASE_H
+/* end file include/simdjson/arm64/base.h */
+
+static_assert(sizeof(uint8x16_t) <= simdjson::SIMDJSON_PADDING, "insufficient padding for arm64");
+
+#endif //  SIMDJSON_ARM64_INTRINSICS_H
+/* end file include/simdjson/arm64/intrinsics.h */
+
 #include <cstring>
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -11725,6 +11833,24 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
   val = (val & 0x0F0F0F0F0F0F0F0F) * 2561 >> 8;
   val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
   return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
+}
+
+simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
+  internal::value128 answer;
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
+#else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
+#endif
+  return answer;
 }
 
 } // namespace numberparsing
@@ -16486,6 +16612,10 @@ class implementation;
 #endif // SIMDJSON_FALLBACK_BASE_H
 /* end file include/simdjson/fallback/base.h */
 
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
 #ifdef JSON_TEST_NUMBERS // for unit testing
 void found_invalid_number(const uint8_t *buf);
 void found_integer(int64_t result, const uint8_t *buf);
@@ -16496,6 +16626,7 @@ void found_float(double result, const uint8_t *buf);
 namespace simdjson {
 namespace fallback {
 namespace numberparsing {
+
 // credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
 /** @private */
 static simdjson_inline uint32_t parse_eight_digits_unrolled(const char *chars) {
@@ -16505,9 +16636,29 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
   return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
 }
+
 /** @private */
 static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
   return parse_eight_digits_unrolled(reinterpret_cast<const char *>(chars));
+}
+
+/** @private */
+simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
+  internal::value128 answer;
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
+#else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
+#endif
+  return answer;
 }
 
 } // namespace numberparsing
@@ -16676,26 +16827,6 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
   return lo;
 }
 #endif
-
-using internal::value128;
-
-simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
-  value128 answer;
-#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
-  // ARM64 has native support for 64-bit multiplications, no need to emultate
-  answer.high = __umulh(value1, value2);
-  answer.low = value1 * value2;
-#else
-  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
-#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
-  answer.low = uint64_t(r);
-  answer.high = uint64_t(r >> 64);
-#endif
-  return answer;
-}
 
 } // namespace jsoncharutils
 } // unnamed namespace
@@ -17179,7 +17310,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
   // with a returned value of type value128 with a "low component" corresponding to the
   // 64-bit least significant bits of the product and with a "high component" corresponding
   // to the 64-bit most significant bits of the product.
-  simdjson::internal::value128 firstproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index]);
+  simdjson::internal::value128 firstproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index]);
   // Both i and power_of_five_128[index] have their most significant bit set to 1 which
   // implies that the either the most or the second most significant bit of the product
   // is 1. We pack values in this manner for efficiency reasons: it maximizes the use
@@ -17213,7 +17344,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // with a returned value of type value128 with a "low component" corresponding to the
     // 64-bit least significant bits of the product and with a "high component" corresponding
     // to the 64-bit most significant bits of the product.
-    simdjson::internal::value128 secondproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
+    simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
     // At this point, we might need to add at most one to firstproduct, but this
@@ -18595,6 +18726,10 @@ class implementation;
 #endif // SIMDJSON_FALLBACK_BASE_H
 /* end file include/simdjson/fallback/base.h */
 
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
 #ifdef JSON_TEST_NUMBERS // for unit testing
 void found_invalid_number(const uint8_t *buf);
 void found_integer(int64_t result, const uint8_t *buf);
@@ -18605,6 +18740,7 @@ void found_float(double result, const uint8_t *buf);
 namespace simdjson {
 namespace fallback {
 namespace numberparsing {
+
 // credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
 /** @private */
 static simdjson_inline uint32_t parse_eight_digits_unrolled(const char *chars) {
@@ -18614,9 +18750,29 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
   return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
 }
+
 /** @private */
 static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
   return parse_eight_digits_unrolled(reinterpret_cast<const char *>(chars));
+}
+
+/** @private */
+simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
+  internal::value128 answer;
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
+#else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
+#endif
+  return answer;
 }
 
 } // namespace numberparsing
@@ -21018,6 +21174,10 @@ static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient paddi
 #endif // SIMDJSON_HASWELL_INTRINSICS_H
 /* end file include/simdjson/haswell/intrinsics.h */
 
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
 namespace simdjson {
 namespace haswell {
 namespace numberparsing {
@@ -21039,6 +21199,25 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
   const __m128i t4 = _mm_madd_epi16(t3, mul_1_10000);
   return _mm_cvtsi128_si32(
       t4); // only captures the sum of the first 8 digits, drop the rest
+}
+
+/** @private */
+simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
+  internal::value128 answer;
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
+#else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
+#endif
+  return answer;
 }
 
 } // namespace numberparsing
@@ -23302,26 +23481,6 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 }
 #endif
 
-using internal::value128;
-
-simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
-  value128 answer;
-#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
-  // ARM64 has native support for 64-bit multiplications, no need to emultate
-  answer.high = __umulh(value1, value2);
-  answer.low = value1 * value2;
-#else
-  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
-#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
-  answer.low = uint64_t(r);
-  answer.high = uint64_t(r >> 64);
-#endif
-  return answer;
-}
-
 } // namespace jsoncharutils
 } // unnamed namespace
 } // namespace haswell
@@ -23804,7 +23963,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
   // with a returned value of type value128 with a "low component" corresponding to the
   // 64-bit least significant bits of the product and with a "high component" corresponding
   // to the 64-bit most significant bits of the product.
-  simdjson::internal::value128 firstproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index]);
+  simdjson::internal::value128 firstproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index]);
   // Both i and power_of_five_128[index] have their most significant bit set to 1 which
   // implies that the either the most or the second most significant bit of the product
   // is 1. We pack values in this manner for efficiency reasons: it maximizes the use
@@ -23838,7 +23997,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // with a returned value of type value128 with a "low component" corresponding to the
     // 64-bit least significant bits of the product and with a "high component" corresponding
     // to the 64-bit most significant bits of the product.
-    simdjson::internal::value128 secondproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
+    simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
     // At this point, we might need to add at most one to firstproduct, but this
@@ -25824,6 +25983,10 @@ static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient paddi
 #endif // SIMDJSON_HASWELL_INTRINSICS_H
 /* end file include/simdjson/haswell/intrinsics.h */
 
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
 namespace simdjson {
 namespace haswell {
 namespace numberparsing {
@@ -25845,6 +26008,25 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
   const __m128i t4 = _mm_madd_epi16(t3, mul_1_10000);
   return _mm_cvtsi128_si32(
       t4); // only captures the sum of the first 8 digits, drop the rest
+}
+
+/** @private */
+simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
+  internal::value128 answer;
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
+#else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
+#endif
+  return answer;
 }
 
 } // namespace numberparsing
@@ -32567,6 +32749,100 @@ class implementation;
 
 #endif // SIMDJSON_ICELAKE_BASE_H
 /* end file include/simdjson/icelake/base.h */
+/* including simdjson/icelake/intrinsics.h: #include "simdjson/icelake/intrinsics.h" */
+/* begin file include/simdjson/icelake/intrinsics.h */
+#ifndef SIMDJSON_ICELAKE_INTRINSICS_H
+#define SIMDJSON_ICELAKE_INTRINSICS_H
+
+/* including simdjson/icelake/base.h: #include "simdjson/icelake/base.h" */
+/* begin file include/simdjson/icelake/base.h */
+#ifndef SIMDJSON_ICELAKE_BASE_H
+#define SIMDJSON_ICELAKE_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_ICELAKE
+namespace simdjson {
+/**
+ * Implementation for Icelake (Intel AVX512).
+ */
+namespace icelake {
+
+class implementation;
+
+} // namespace icelake
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/icelake/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_ICELAKE_BASE_H
+/* end file include/simdjson/icelake/base.h */
+
+#if SIMDJSON_VISUAL_STUDIO
+// under clang within visual studio, this will include <x86intrin.h>
+#include <intrin.h>  // visual studio or clang
+#else
+#include <x86intrin.h> // elsewhere
+#endif // SIMDJSON_VISUAL_STUDIO
+
+#if SIMDJSON_CLANG_VISUAL_STUDIO
+/**
+ * You are not supposed, normally, to include these
+ * headers directly. Instead you should either include intrin.h
+ * or x86intrin.h. However, when compiling with clang
+ * under Windows (i.e., when _MSC_VER is set), these headers
+ * only get included *if* the corresponding features are detected
+ * from macros:
+ * e.g., if __AVX2__ is set... in turn,  we normally set these
+ * macros by compiling against the corresponding architecture
+ * (e.g., arch:AVX2, -mavx2, etc.) which compiles the whole
+ * software with these advanced instructions. In simdjson, we
+ * want to compile the whole program for a generic target,
+ * and only target our specific kernels. As a workaround,
+ * we directly include the needed headers. These headers would
+ * normally guard against such usage, but we carefully included
+ * <x86intrin.h>  (or <intrin.h>) before, so the headers
+ * are fooled.
+ */
+#include <bmiintrin.h>   // for _blsr_u64
+#include <lzcntintrin.h> // for  __lzcnt64
+#include <immintrin.h>   // for most things (AVX2, AVX512, _popcnt64)
+#include <smmintrin.h>
+#include <tmmintrin.h>
+#include <avxintrin.h>
+#include <avx2intrin.h>
+#include <wmmintrin.h>   // for  _mm_clmulepi64_si128
+// Important: we need the AVX-512 headers:
+#include <avx512fintrin.h>
+#include <avx512dqintrin.h>
+#include <avx512cdintrin.h>
+#include <avx512bwintrin.h>
+#include <avx512vlintrin.h>
+#include <avx512vbmiintrin.h>
+#include <avx512vbmi2intrin.h>
+// unfortunately, we may not get _blsr_u64, but, thankfully, clang
+// has it as a macro.
+#ifndef _blsr_u64
+// we roll our own
+#define _blsr_u64(n) ((n - 1) & n)
+#endif //  _blsr_u64
+#endif // SIMDJSON_CLANG_VISUAL_STUDIO
+
+static_assert(sizeof(__m512i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for icelake");
+
+#endif // SIMDJSON_ICELAKE_INTRINSICS_H
+/* end file include/simdjson/icelake/intrinsics.h */
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -32588,6 +32864,25 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
   const __m128i t4 = _mm_madd_epi16(t3, mul_1_10000);
   return _mm_cvtsi128_si32(
       t4); // only captures the sum of the first 8 digits, drop the rest
+}
+
+/** @private */
+simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
+  internal::value128 answer;
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
+#else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
+#endif
+  return answer;
 }
 
 } // namespace numberparsing
@@ -32756,26 +33051,6 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
   return lo;
 }
 #endif
-
-using internal::value128;
-
-simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
-  value128 answer;
-#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
-  // ARM64 has native support for 64-bit multiplications, no need to emultate
-  answer.high = __umulh(value1, value2);
-  answer.low = value1 * value2;
-#else
-  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
-#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
-  answer.low = uint64_t(r);
-  answer.high = uint64_t(r >> 64);
-#endif
-  return answer;
-}
 
 } // namespace jsoncharutils
 } // unnamed namespace
@@ -33259,7 +33534,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
   // with a returned value of type value128 with a "low component" corresponding to the
   // 64-bit least significant bits of the product and with a "high component" corresponding
   // to the 64-bit most significant bits of the product.
-  simdjson::internal::value128 firstproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index]);
+  simdjson::internal::value128 firstproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index]);
   // Both i and power_of_five_128[index] have their most significant bit set to 1 which
   // implies that the either the most or the second most significant bit of the product
   // is 1. We pack values in this manner for efficiency reasons: it maximizes the use
@@ -33293,7 +33568,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // with a returned value of type value128 with a "low component" corresponding to the
     // 64-bit least significant bits of the product and with a "high component" corresponding
     // to the 64-bit most significant bits of the product.
-    simdjson::internal::value128 secondproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
+    simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
     // At this point, we might need to add at most one to firstproduct, but this
@@ -36274,6 +36549,100 @@ class implementation;
 
 #endif // SIMDJSON_ICELAKE_BASE_H
 /* end file include/simdjson/icelake/base.h */
+/* including simdjson/icelake/intrinsics.h: #include "simdjson/icelake/intrinsics.h" */
+/* begin file include/simdjson/icelake/intrinsics.h */
+#ifndef SIMDJSON_ICELAKE_INTRINSICS_H
+#define SIMDJSON_ICELAKE_INTRINSICS_H
+
+/* including simdjson/icelake/base.h: #include "simdjson/icelake/base.h" */
+/* begin file include/simdjson/icelake/base.h */
+#ifndef SIMDJSON_ICELAKE_BASE_H
+#define SIMDJSON_ICELAKE_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_ICELAKE
+namespace simdjson {
+/**
+ * Implementation for Icelake (Intel AVX512).
+ */
+namespace icelake {
+
+class implementation;
+
+} // namespace icelake
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/icelake/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_ICELAKE_BASE_H
+/* end file include/simdjson/icelake/base.h */
+
+#if SIMDJSON_VISUAL_STUDIO
+// under clang within visual studio, this will include <x86intrin.h>
+#include <intrin.h>  // visual studio or clang
+#else
+#include <x86intrin.h> // elsewhere
+#endif // SIMDJSON_VISUAL_STUDIO
+
+#if SIMDJSON_CLANG_VISUAL_STUDIO
+/**
+ * You are not supposed, normally, to include these
+ * headers directly. Instead you should either include intrin.h
+ * or x86intrin.h. However, when compiling with clang
+ * under Windows (i.e., when _MSC_VER is set), these headers
+ * only get included *if* the corresponding features are detected
+ * from macros:
+ * e.g., if __AVX2__ is set... in turn,  we normally set these
+ * macros by compiling against the corresponding architecture
+ * (e.g., arch:AVX2, -mavx2, etc.) which compiles the whole
+ * software with these advanced instructions. In simdjson, we
+ * want to compile the whole program for a generic target,
+ * and only target our specific kernels. As a workaround,
+ * we directly include the needed headers. These headers would
+ * normally guard against such usage, but we carefully included
+ * <x86intrin.h>  (or <intrin.h>) before, so the headers
+ * are fooled.
+ */
+#include <bmiintrin.h>   // for _blsr_u64
+#include <lzcntintrin.h> // for  __lzcnt64
+#include <immintrin.h>   // for most things (AVX2, AVX512, _popcnt64)
+#include <smmintrin.h>
+#include <tmmintrin.h>
+#include <avxintrin.h>
+#include <avx2intrin.h>
+#include <wmmintrin.h>   // for  _mm_clmulepi64_si128
+// Important: we need the AVX-512 headers:
+#include <avx512fintrin.h>
+#include <avx512dqintrin.h>
+#include <avx512cdintrin.h>
+#include <avx512bwintrin.h>
+#include <avx512vlintrin.h>
+#include <avx512vbmiintrin.h>
+#include <avx512vbmi2intrin.h>
+// unfortunately, we may not get _blsr_u64, but, thankfully, clang
+// has it as a macro.
+#ifndef _blsr_u64
+// we roll our own
+#define _blsr_u64(n) ((n - 1) & n)
+#endif //  _blsr_u64
+#endif // SIMDJSON_CLANG_VISUAL_STUDIO
+
+static_assert(sizeof(__m512i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for icelake");
+
+#endif // SIMDJSON_ICELAKE_INTRINSICS_H
+/* end file include/simdjson/icelake/intrinsics.h */
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace icelake {
@@ -36295,6 +36664,25 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
   const __m128i t4 = _mm_madd_epi16(t3, mul_1_10000);
   return _mm_cvtsi128_si32(
       t4); // only captures the sum of the first 8 digits, drop the rest
+}
+
+/** @private */
+simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
+  internal::value128 answer;
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
+#else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
+#endif
+  return answer;
 }
 
 } // namespace numberparsing
@@ -39524,6 +39912,65 @@ template <typename T> struct simd8x64;
 
 #endif // SIMDJSON_PPC64_BASE_H
 /* end file include/simdjson/ppc64/base.h */
+/* including simdjson/ppc64/intrinsics.h: #include "simdjson/ppc64/intrinsics.h" */
+/* begin file include/simdjson/ppc64/intrinsics.h */
+#ifndef SIMDJSON_PPC64_INTRINSICS_H
+#define SIMDJSON_PPC64_INTRINSICS_H
+
+/* including simdjson/ppc64/base.h: #include "simdjson/ppc64/base.h" */
+/* begin file include/simdjson/ppc64/base.h */
+#ifndef SIMDJSON_PPC64_BASE_H
+#define SIMDJSON_PPC64_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+namespace simdjson {
+/**
+ * Implementation for ALTIVEC (PPC64).
+ */
+namespace ppc64 {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace ppc64
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/ppc64/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_PPC64_BASE_H
+/* end file include/simdjson/ppc64/base.h */
+
+// This should be the correct header whether
+// you use visual studio or other compilers.
+#include <altivec.h>
+
+// These are defined by altivec.h in GCC toolchain, it is safe to undef them.
+#ifdef bool
+#undef bool
+#endif
+
+#ifdef vector
+#undef vector
+#endif
+
+static_assert(sizeof(__vector unsigned char) <= simdjson::SIMDJSON_PADDING, "insufficient padding for ppc64");
+
+#endif //  SIMDJSON_PPC64_INTRINSICS_H
+/* end file include/simdjson/ppc64/intrinsics.h */
 
 #include <cstring>
 
@@ -39532,6 +39979,10 @@ template <typename T> struct simd8x64;
 #elif defined(__FreeBSD__)
 #include <sys/endian.h>
 #endif
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -39553,6 +40004,25 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
   val = (val & 0x0F0F0F0F0F0F0F0F) * 2561 >> 8;
   val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
   return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
+}
+
+/** @private */
+simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
+  internal::value128 answer;
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
+#else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
+#endif
+  return answer;
 }
 
 } // namespace numberparsing
@@ -41075,26 +41545,6 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 }
 #endif
 
-using internal::value128;
-
-simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
-  value128 answer;
-#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
-  // ARM64 has native support for 64-bit multiplications, no need to emultate
-  answer.high = __umulh(value1, value2);
-  answer.low = value1 * value2;
-#else
-  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
-#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
-  answer.low = uint64_t(r);
-  answer.high = uint64_t(r >> 64);
-#endif
-  return answer;
-}
-
 } // namespace jsoncharutils
 } // unnamed namespace
 } // namespace ppc64
@@ -41577,7 +42027,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
   // with a returned value of type value128 with a "low component" corresponding to the
   // 64-bit least significant bits of the product and with a "high component" corresponding
   // to the 64-bit most significant bits of the product.
-  simdjson::internal::value128 firstproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index]);
+  simdjson::internal::value128 firstproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index]);
   // Both i and power_of_five_128[index] have their most significant bit set to 1 which
   // implies that the either the most or the second most significant bit of the product
   // is 1. We pack values in this manner for efficiency reasons: it maximizes the use
@@ -41611,7 +42061,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // with a returned value of type value128 with a "low component" corresponding to the
     // 64-bit least significant bits of the product and with a "high component" corresponding
     // to the 64-bit most significant bits of the product.
-    simdjson::internal::value128 secondproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
+    simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
     // At this point, we might need to add at most one to firstproduct, but this
@@ -43119,6 +43569,65 @@ template <typename T> struct simd8x64;
 
 #endif // SIMDJSON_PPC64_BASE_H
 /* end file include/simdjson/ppc64/base.h */
+/* including simdjson/ppc64/intrinsics.h: #include "simdjson/ppc64/intrinsics.h" */
+/* begin file include/simdjson/ppc64/intrinsics.h */
+#ifndef SIMDJSON_PPC64_INTRINSICS_H
+#define SIMDJSON_PPC64_INTRINSICS_H
+
+/* including simdjson/ppc64/base.h: #include "simdjson/ppc64/base.h" */
+/* begin file include/simdjson/ppc64/base.h */
+#ifndef SIMDJSON_PPC64_BASE_H
+#define SIMDJSON_PPC64_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+namespace simdjson {
+/**
+ * Implementation for ALTIVEC (PPC64).
+ */
+namespace ppc64 {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace ppc64
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/ppc64/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_PPC64_BASE_H
+/* end file include/simdjson/ppc64/base.h */
+
+// This should be the correct header whether
+// you use visual studio or other compilers.
+#include <altivec.h>
+
+// These are defined by altivec.h in GCC toolchain, it is safe to undef them.
+#ifdef bool
+#undef bool
+#endif
+
+#ifdef vector
+#undef vector
+#endif
+
+static_assert(sizeof(__vector unsigned char) <= simdjson::SIMDJSON_PADDING, "insufficient padding for ppc64");
+
+#endif //  SIMDJSON_PPC64_INTRINSICS_H
+/* end file include/simdjson/ppc64/intrinsics.h */
 
 #include <cstring>
 
@@ -43127,6 +43636,10 @@ template <typename T> struct simd8x64;
 #elif defined(__FreeBSD__)
 #include <sys/endian.h>
 #endif
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace ppc64 {
@@ -43148,6 +43661,25 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
   val = (val & 0x0F0F0F0F0F0F0F0F) * 2561 >> 8;
   val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
   return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
+}
+
+/** @private */
+simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
+  internal::value128 answer;
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
+#else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
+#endif
+  return answer;
 }
 
 } // namespace numberparsing
@@ -47629,6 +48161,10 @@ template <typename T> struct simd8x64;
 #endif // SIMDJSON_WESTMERE_BASE_H
 /* end file include/simdjson/westmere/base.h */
 
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
 namespace simdjson {
 namespace westmere {
 namespace numberparsing {
@@ -47650,6 +48186,25 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
   const __m128i t4 = _mm_madd_epi16(t3, mul_1_10000);
   return _mm_cvtsi128_si32(
       t4); // only captures the sum of the first 8 digits, drop the rest
+}
+
+/** @private */
+simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
+  internal::value128 answer;
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
+#else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
+#endif
+  return answer;
 }
 
 } // namespace numberparsing
@@ -48892,26 +49447,6 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 }
 #endif
 
-using internal::value128;
-
-simdjson_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
-  value128 answer;
-#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
-  // ARM64 has native support for 64-bit multiplications, no need to emultate
-  answer.high = __umulh(value1, value2);
-  answer.low = value1 * value2;
-#else
-  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
-#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
-  answer.low = uint64_t(r);
-  answer.high = uint64_t(r >> 64);
-#endif
-  return answer;
-}
-
 } // namespace jsoncharutils
 } // unnamed namespace
 } // namespace westmere
@@ -49394,7 +49929,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
   // with a returned value of type value128 with a "low component" corresponding to the
   // 64-bit least significant bits of the product and with a "high component" corresponding
   // to the 64-bit most significant bits of the product.
-  simdjson::internal::value128 firstproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index]);
+  simdjson::internal::value128 firstproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index]);
   // Both i and power_of_five_128[index] have their most significant bit set to 1 which
   // implies that the either the most or the second most significant bit of the product
   // is 1. We pack values in this manner for efficiency reasons: it maximizes the use
@@ -49428,7 +49963,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // with a returned value of type value128 with a "low component" corresponding to the
     // 64-bit least significant bits of the product and with a "high component" corresponding
     // to the 64-bit most significant bits of the product.
-    simdjson::internal::value128 secondproduct = jsoncharutils::full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
+    simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
     // At this point, we might need to add at most one to firstproduct, but this
@@ -50980,6 +51515,10 @@ template <typename T> struct simd8x64;
 #endif // SIMDJSON_WESTMERE_BASE_H
 /* end file include/simdjson/westmere/base.h */
 
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
 namespace simdjson {
 namespace westmere {
 namespace numberparsing {
@@ -51001,6 +51540,25 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
   const __m128i t4 = _mm_madd_epi16(t3, mul_1_10000);
   return _mm_cvtsi128_si32(
       t4); // only captures the sum of the first 8 digits, drop the rest
+}
+
+/** @private */
+simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
+  internal::value128 answer;
+#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
+#else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
+  __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
+#endif
+  return answer;
 }
 
 } // namespace numberparsing

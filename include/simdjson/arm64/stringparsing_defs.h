@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_ARM64_STRINGPARSING_H
-#define SIMDJSON_ARM64_STRINGPARSING_H
+#ifndef SIMDJSON_ARM64_STRINGPARSING_DEFS_H
+#define SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 
 #include "simdjson/arm64/base.h"
 #include "simdjson/arm64/simd.h"
@@ -48,4 +48,4 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#endif // SIMDJSON_ARM64_STRINGPARSING_H
+#endif // SIMDJSON_ARM64_STRINGPARSING_DEFS_H
