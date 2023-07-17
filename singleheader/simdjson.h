@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-16 22:05:42 -0700. Do not edit! */
+/* auto-generated on 2023-07-16 22:50:54 -0700. Do not edit! */
 /* including simdjson.h:  */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
@@ -10426,8 +10426,8 @@ simdjson_inline uint64_t prefix_xor(uint64_t bitmask) {
 /* end file include/simdjson/arm64/bitmask.h */
 /* including simdjson/arm64/numberparsing_defs.h: #include "simdjson/arm64/numberparsing_defs.h" */
 /* begin file include/simdjson/arm64/numberparsing_defs.h */
-#ifndef SIMDJSON_ARM64_NUMBERPARSING_H
-#define SIMDJSON_ARM64_NUMBERPARSING_H
+#ifndef SIMDJSON_ARM64_NUMBERPARSING_DEFS_H
+#define SIMDJSON_ARM64_NUMBERPARSING_DEFS_H
 
 /* including simdjson/arm64/base.h: #include "simdjson/arm64/base.h" */
 /* begin file include/simdjson/arm64/base.h */
@@ -10561,18 +10561,49 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
 
-#endif // SIMDJSON_ARM64_NUMBERPARSING_H
+#endif // SIMDJSON_ARM64_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/arm64/numberparsing_defs.h */
 /* including simdjson/arm64/simd.h: #include "simdjson/arm64/simd.h" */
 /* begin file include/simdjson/arm64/simd.h */
 #ifndef SIMDJSON_ARM64_SIMD_H
 #define SIMDJSON_ARM64_SIMD_H
 
+/* including simdjson/arm64/base.h: #include "simdjson/arm64/base.h" */
+/* begin file include/simdjson/arm64/base.h */
+#ifndef SIMDJSON_ARM64_BASE_H
+#define SIMDJSON_ARM64_BASE_H
+
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
+namespace simdjson {
+/**
+ * Implementation for NEON (ARMv8).
+ */
+namespace arm64 {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace arm64
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/arm64/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_ARM64_BASE_H
+/* end file include/simdjson/arm64/base.h */
 /* including simdjson/arm64/bitmanipulation.h: #include "simdjson/arm64/bitmanipulation.h" */
 /* begin file include/simdjson/arm64/bitmanipulation.h */
 #ifndef SIMDJSON_ARM64_BITMANIPULATION_H
@@ -10764,6 +10795,10 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *re
 
 #endif // SIMDJSON_ARM64_BITMANIPULATION_H
 /* end file include/simdjson/arm64/bitmanipulation.h */
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -11292,8 +11327,8 @@ simdjson_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int
 /* end file include/simdjson/arm64/simd.h */
 /* including simdjson/arm64/stringparsing_defs.h: #include "simdjson/arm64/stringparsing_defs.h" */
 /* begin file include/simdjson/arm64/stringparsing_defs.h */
-#ifndef SIMDJSON_ARM64_STRINGPARSING_H
-#define SIMDJSON_ARM64_STRINGPARSING_H
+#ifndef SIMDJSON_ARM64_STRINGPARSING_DEFS_H
+#define SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 
 /* including simdjson/arm64/base.h: #include "simdjson/arm64/base.h" */
 /* begin file include/simdjson/arm64/base.h */
@@ -11336,11 +11371,42 @@ template <typename T> struct simd8x64;
 #ifndef SIMDJSON_ARM64_SIMD_H
 #define SIMDJSON_ARM64_SIMD_H
 
+/* including simdjson/arm64/base.h: #include "simdjson/arm64/base.h" */
+/* begin file include/simdjson/arm64/base.h */
+#ifndef SIMDJSON_ARM64_BASE_H
+#define SIMDJSON_ARM64_BASE_H
+
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
+namespace simdjson {
+/**
+ * Implementation for NEON (ARMv8).
+ */
+namespace arm64 {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace arm64
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/arm64/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_ARM64_BASE_H
+/* end file include/simdjson/arm64/base.h */
 /* including simdjson/arm64/bitmanipulation.h: #include "simdjson/arm64/bitmanipulation.h" */
 /* begin file include/simdjson/arm64/bitmanipulation.h */
 #ifndef SIMDJSON_ARM64_BITMANIPULATION_H
@@ -11532,6 +11598,10 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *re
 
 #endif // SIMDJSON_ARM64_BITMANIPULATION_H
 /* end file include/simdjson/arm64/bitmanipulation.h */
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -12293,7 +12363,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 } // namespace arm64
 } // namespace simdjson
 
-#endif // SIMDJSON_ARM64_STRINGPARSING_H
+#endif // SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 /* end file include/simdjson/arm64/stringparsing_defs.h */
 /* end file include/simdjson/arm64/begin.h */
 /* including simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
@@ -12362,9 +12432,6 @@ enum class number_type {
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
-#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#include <intrin.h>
-#endif
 namespace simdjson {
 namespace arm64 {
 namespace {
@@ -14259,8 +14326,8 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 /* end file include/simdjson/fallback/bitmanipulation.h */
 /* including simdjson/fallback/stringparsing_defs.h: #include "simdjson/fallback/stringparsing_defs.h" */
 /* begin file include/simdjson/fallback/stringparsing_defs.h */
-#ifndef SIMDJSON_FALLBACK_STRINGPARSING_H
-#define SIMDJSON_FALLBACK_STRINGPARSING_H
+#ifndef SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H
+#define SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H
 
 /* including simdjson/fallback/base.h: #include "simdjson/fallback/base.h" */
 /* begin file include/simdjson/fallback/base.h */
@@ -14320,7 +14387,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 } // namespace fallback
 } // namespace simdjson
 
-#endif // SIMDJSON_FALLBACK_STRINGPARSING_H
+#endif // SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H
 /* end file include/simdjson/fallback/stringparsing_defs.h */
 /* including simdjson/fallback/numberparsing_defs.h: #include "simdjson/fallback/numberparsing_defs.h" */
 /* begin file include/simdjson/fallback/numberparsing_defs.h */
@@ -14481,9 +14548,6 @@ enum class number_type {
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
-#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#include <intrin.h>
-#endif
 namespace simdjson {
 namespace fallback {
 namespace {
@@ -16908,8 +16972,8 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 /* end file include/simdjson/haswell/bitmask.h */
 /* including simdjson/haswell/numberparsing_defs.h: #include "simdjson/haswell/numberparsing_defs.h" */
 /* begin file include/simdjson/haswell/numberparsing_defs.h */
-#ifndef SIMDJSON_HASWELL_NUMBERPARSING_H
-#define SIMDJSON_HASWELL_NUMBERPARSING_H
+#ifndef SIMDJSON_HASWELL_NUMBERPARSING_DEFS_H
+#define SIMDJSON_HASWELL_NUMBERPARSING_DEFS_H
 
 /* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
 /* begin file include/simdjson/haswell/base.h */
@@ -17090,7 +17154,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
 
-#endif // SIMDJSON_HASWELL_NUMBERPARSING_H
+#endif // SIMDJSON_HASWELL_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/haswell/numberparsing_defs.h */
 /* including simdjson/haswell/simd.h: #include "simdjson/haswell/simd.h" */
 /* begin file include/simdjson/haswell/simd.h */
@@ -17223,356 +17287,6 @@ static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient paddi
 
 #endif // SIMDJSON_HASWELL_INTRINSICS_H
 /* end file include/simdjson/haswell/intrinsics.h */
-/* including simdjson/haswell/bitmanipulation.h: #include "simdjson/haswell/bitmanipulation.h" */
-/* begin file include/simdjson/haswell/bitmanipulation.h */
-#ifndef SIMDJSON_HASWELL_BITMANIPULATION_H
-#define SIMDJSON_HASWELL_BITMANIPULATION_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-/* including simdjson/haswell/intrinsics.h: #include "simdjson/haswell/intrinsics.h" */
-/* begin file include/simdjson/haswell/intrinsics.h */
-#ifndef SIMDJSON_HASWELL_INTRINSICS_H
-#define SIMDJSON_HASWELL_INTRINSICS_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-
-#if SIMDJSON_VISUAL_STUDIO
-// under clang within visual studio, this will include <x86intrin.h>
-#include <intrin.h>  // visual studio or clang
-#else
-#include <x86intrin.h> // elsewhere
-#endif // SIMDJSON_VISUAL_STUDIO
-
-#if SIMDJSON_CLANG_VISUAL_STUDIO
-/**
- * You are not supposed, normally, to include these
- * headers directly. Instead you should either include intrin.h
- * or x86intrin.h. However, when compiling with clang
- * under Windows (i.e., when _MSC_VER is set), these headers
- * only get included *if* the corresponding features are detected
- * from macros:
- * e.g., if __AVX2__ is set... in turn,  we normally set these
- * macros by compiling against the corresponding architecture
- * (e.g., arch:AVX2, -mavx2, etc.) which compiles the whole
- * software with these advanced instructions. In simdjson, we
- * want to compile the whole program for a generic target,
- * and only target our specific kernels. As a workaround,
- * we directly include the needed headers. These headers would
- * normally guard against such usage, but we carefully included
- * <x86intrin.h>  (or <intrin.h>) before, so the headers
- * are fooled.
- */
-#include <bmiintrin.h>   // for _blsr_u64
-#include <lzcntintrin.h> // for  __lzcnt64
-#include <immintrin.h>   // for most things (AVX2, AVX512, _popcnt64)
-#include <smmintrin.h>
-#include <tmmintrin.h>
-#include <avxintrin.h>
-#include <avx2intrin.h>
-#include <wmmintrin.h>   // for  _mm_clmulepi64_si128
-// unfortunately, we may not get _blsr_u64, but, thankfully, clang
-// has it as a macro.
-#ifndef _blsr_u64
-// we roll our own
-#define _blsr_u64(n) ((n - 1) & n)
-#endif //  _blsr_u64
-#endif // SIMDJSON_CLANG_VISUAL_STUDIO
-
-static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for haswell kernel.");
-
-#endif // SIMDJSON_HASWELL_INTRINSICS_H
-/* end file include/simdjson/haswell/intrinsics.h */
-/* including simdjson/haswell/bitmask.h: #include "simdjson/haswell/bitmask.h" */
-/* begin file include/simdjson/haswell/bitmask.h */
-#ifndef SIMDJSON_HASWELL_BITMASK_H
-#define SIMDJSON_HASWELL_BITMASK_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-/* including simdjson/haswell/intrinsics.h: #include "simdjson/haswell/intrinsics.h" */
-/* begin file include/simdjson/haswell/intrinsics.h */
-#ifndef SIMDJSON_HASWELL_INTRINSICS_H
-#define SIMDJSON_HASWELL_INTRINSICS_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-
-#if SIMDJSON_VISUAL_STUDIO
-// under clang within visual studio, this will include <x86intrin.h>
-#include <intrin.h>  // visual studio or clang
-#else
-#include <x86intrin.h> // elsewhere
-#endif // SIMDJSON_VISUAL_STUDIO
-
-#if SIMDJSON_CLANG_VISUAL_STUDIO
-/**
- * You are not supposed, normally, to include these
- * headers directly. Instead you should either include intrin.h
- * or x86intrin.h. However, when compiling with clang
- * under Windows (i.e., when _MSC_VER is set), these headers
- * only get included *if* the corresponding features are detected
- * from macros:
- * e.g., if __AVX2__ is set... in turn,  we normally set these
- * macros by compiling against the corresponding architecture
- * (e.g., arch:AVX2, -mavx2, etc.) which compiles the whole
- * software with these advanced instructions. In simdjson, we
- * want to compile the whole program for a generic target,
- * and only target our specific kernels. As a workaround,
- * we directly include the needed headers. These headers would
- * normally guard against such usage, but we carefully included
- * <x86intrin.h>  (or <intrin.h>) before, so the headers
- * are fooled.
- */
-#include <bmiintrin.h>   // for _blsr_u64
-#include <lzcntintrin.h> // for  __lzcnt64
-#include <immintrin.h>   // for most things (AVX2, AVX512, _popcnt64)
-#include <smmintrin.h>
-#include <tmmintrin.h>
-#include <avxintrin.h>
-#include <avx2intrin.h>
-#include <wmmintrin.h>   // for  _mm_clmulepi64_si128
-// unfortunately, we may not get _blsr_u64, but, thankfully, clang
-// has it as a macro.
-#ifndef _blsr_u64
-// we roll our own
-#define _blsr_u64(n) ((n - 1) & n)
-#endif //  _blsr_u64
-#endif // SIMDJSON_CLANG_VISUAL_STUDIO
-
-static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for haswell kernel.");
-
-#endif // SIMDJSON_HASWELL_INTRINSICS_H
-/* end file include/simdjson/haswell/intrinsics.h */
-
-namespace simdjson {
-namespace haswell {
-namespace {
-
-//
-// Perform a "cumulative bitwise xor," flipping bits each time a 1 is encountered.
-//
-// For example, prefix_xor(00100100) == 00011100
-//
-simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
-  // There should be no such thing with a processor supporting avx2
-  // but not clmul.
-  __m128i all_ones = _mm_set1_epi8('\xFF');
-  __m128i result = _mm_clmulepi64_si128(_mm_set_epi64x(0ULL, bitmask), all_ones, 0);
-  return _mm_cvtsi128_si64(result);
-}
-
-} // unnamed namespace
-} // namespace haswell
-} // namespace simdjson
-
-#endif // SIMDJSON_HASWELL_BITMASK_H
-/* end file include/simdjson/haswell/bitmask.h */
-
-namespace simdjson {
-namespace haswell {
-namespace {
-
-// We sometimes call trailing_zero on inputs that are zero,
-// but the algorithms do not end up using the returned value.
-// Sadly, sanitizers are not smart enough to figure it out.
-SIMDJSON_NO_SANITIZE_UNDEFINED
-// This function can be used safely even if not all bytes have been
-// initialized.
-// See issue https://github.com/simdjson/simdjson/issues/1965
-SIMDJSON_NO_SANITIZE_MEMORY
-simdjson_inline int trailing_zeroes(uint64_t input_num) {
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-  return (int)_tzcnt_u64(input_num);
-#else // SIMDJSON_REGULAR_VISUAL_STUDIO
-  ////////
-  // You might expect the next line to be equivalent to
-  // return (int)_tzcnt_u64(input_num);
-  // but the generated code differs and might be less efficient?
-  ////////
-  return __builtin_ctzll(input_num);
-#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
-}
-
-/* result might be undefined when input_num is zero */
-simdjson_inline uint64_t clear_lowest_bit(uint64_t input_num) {
-  return _blsr_u64(input_num);
-}
-
-/* result might be undefined when input_num is zero */
-simdjson_inline int leading_zeroes(uint64_t input_num) {
-  return int(_lzcnt_u64(input_num));
-}
-
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
-  return __popcnt64(input_num);// Visual Studio wants two underscores
-}
-#else
-simdjson_inline long long int count_ones(uint64_t input_num) {
-  return _popcnt64(input_num);
-}
-#endif
-
-simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
-                                uint64_t *result) {
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-  return _addcarry_u64(0, value1, value2,
-                       reinterpret_cast<unsigned __int64 *>(result));
-#else
-  return __builtin_uaddll_overflow(value1, value2,
-                                   reinterpret_cast<unsigned long long *>(result));
-#endif
-}
-
-} // unnamed namespace
-} // namespace haswell
-} // namespace simdjson
-
-#endif // SIMDJSON_HASWELL_BITMANIPULATION_H
-/* end file include/simdjson/haswell/bitmanipulation.h */
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
@@ -17943,8 +17657,8 @@ namespace simd {
 /* end file include/simdjson/haswell/simd.h */
 /* including simdjson/haswell/stringparsing_defs.h: #include "simdjson/haswell/stringparsing_defs.h" */
 /* begin file include/simdjson/haswell/stringparsing_defs.h */
-#ifndef SIMDJSON_HASWELL_STRINGPARSING_H
-#define SIMDJSON_HASWELL_STRINGPARSING_H
+#ifndef SIMDJSON_HASWELL_STRINGPARSING_DEFS_H
+#define SIMDJSON_HASWELL_STRINGPARSING_DEFS_H
 
 /* including simdjson/haswell/simd.h: #include "simdjson/haswell/simd.h" */
 /* begin file include/simdjson/haswell/simd.h */
@@ -18077,356 +17791,6 @@ static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient paddi
 
 #endif // SIMDJSON_HASWELL_INTRINSICS_H
 /* end file include/simdjson/haswell/intrinsics.h */
-/* including simdjson/haswell/bitmanipulation.h: #include "simdjson/haswell/bitmanipulation.h" */
-/* begin file include/simdjson/haswell/bitmanipulation.h */
-#ifndef SIMDJSON_HASWELL_BITMANIPULATION_H
-#define SIMDJSON_HASWELL_BITMANIPULATION_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-/* including simdjson/haswell/intrinsics.h: #include "simdjson/haswell/intrinsics.h" */
-/* begin file include/simdjson/haswell/intrinsics.h */
-#ifndef SIMDJSON_HASWELL_INTRINSICS_H
-#define SIMDJSON_HASWELL_INTRINSICS_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-
-#if SIMDJSON_VISUAL_STUDIO
-// under clang within visual studio, this will include <x86intrin.h>
-#include <intrin.h>  // visual studio or clang
-#else
-#include <x86intrin.h> // elsewhere
-#endif // SIMDJSON_VISUAL_STUDIO
-
-#if SIMDJSON_CLANG_VISUAL_STUDIO
-/**
- * You are not supposed, normally, to include these
- * headers directly. Instead you should either include intrin.h
- * or x86intrin.h. However, when compiling with clang
- * under Windows (i.e., when _MSC_VER is set), these headers
- * only get included *if* the corresponding features are detected
- * from macros:
- * e.g., if __AVX2__ is set... in turn,  we normally set these
- * macros by compiling against the corresponding architecture
- * (e.g., arch:AVX2, -mavx2, etc.) which compiles the whole
- * software with these advanced instructions. In simdjson, we
- * want to compile the whole program for a generic target,
- * and only target our specific kernels. As a workaround,
- * we directly include the needed headers. These headers would
- * normally guard against such usage, but we carefully included
- * <x86intrin.h>  (or <intrin.h>) before, so the headers
- * are fooled.
- */
-#include <bmiintrin.h>   // for _blsr_u64
-#include <lzcntintrin.h> // for  __lzcnt64
-#include <immintrin.h>   // for most things (AVX2, AVX512, _popcnt64)
-#include <smmintrin.h>
-#include <tmmintrin.h>
-#include <avxintrin.h>
-#include <avx2intrin.h>
-#include <wmmintrin.h>   // for  _mm_clmulepi64_si128
-// unfortunately, we may not get _blsr_u64, but, thankfully, clang
-// has it as a macro.
-#ifndef _blsr_u64
-// we roll our own
-#define _blsr_u64(n) ((n - 1) & n)
-#endif //  _blsr_u64
-#endif // SIMDJSON_CLANG_VISUAL_STUDIO
-
-static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for haswell kernel.");
-
-#endif // SIMDJSON_HASWELL_INTRINSICS_H
-/* end file include/simdjson/haswell/intrinsics.h */
-/* including simdjson/haswell/bitmask.h: #include "simdjson/haswell/bitmask.h" */
-/* begin file include/simdjson/haswell/bitmask.h */
-#ifndef SIMDJSON_HASWELL_BITMASK_H
-#define SIMDJSON_HASWELL_BITMASK_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-/* including simdjson/haswell/intrinsics.h: #include "simdjson/haswell/intrinsics.h" */
-/* begin file include/simdjson/haswell/intrinsics.h */
-#ifndef SIMDJSON_HASWELL_INTRINSICS_H
-#define SIMDJSON_HASWELL_INTRINSICS_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-
-#if SIMDJSON_VISUAL_STUDIO
-// under clang within visual studio, this will include <x86intrin.h>
-#include <intrin.h>  // visual studio or clang
-#else
-#include <x86intrin.h> // elsewhere
-#endif // SIMDJSON_VISUAL_STUDIO
-
-#if SIMDJSON_CLANG_VISUAL_STUDIO
-/**
- * You are not supposed, normally, to include these
- * headers directly. Instead you should either include intrin.h
- * or x86intrin.h. However, when compiling with clang
- * under Windows (i.e., when _MSC_VER is set), these headers
- * only get included *if* the corresponding features are detected
- * from macros:
- * e.g., if __AVX2__ is set... in turn,  we normally set these
- * macros by compiling against the corresponding architecture
- * (e.g., arch:AVX2, -mavx2, etc.) which compiles the whole
- * software with these advanced instructions. In simdjson, we
- * want to compile the whole program for a generic target,
- * and only target our specific kernels. As a workaround,
- * we directly include the needed headers. These headers would
- * normally guard against such usage, but we carefully included
- * <x86intrin.h>  (or <intrin.h>) before, so the headers
- * are fooled.
- */
-#include <bmiintrin.h>   // for _blsr_u64
-#include <lzcntintrin.h> // for  __lzcnt64
-#include <immintrin.h>   // for most things (AVX2, AVX512, _popcnt64)
-#include <smmintrin.h>
-#include <tmmintrin.h>
-#include <avxintrin.h>
-#include <avx2intrin.h>
-#include <wmmintrin.h>   // for  _mm_clmulepi64_si128
-// unfortunately, we may not get _blsr_u64, but, thankfully, clang
-// has it as a macro.
-#ifndef _blsr_u64
-// we roll our own
-#define _blsr_u64(n) ((n - 1) & n)
-#endif //  _blsr_u64
-#endif // SIMDJSON_CLANG_VISUAL_STUDIO
-
-static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for haswell kernel.");
-
-#endif // SIMDJSON_HASWELL_INTRINSICS_H
-/* end file include/simdjson/haswell/intrinsics.h */
-
-namespace simdjson {
-namespace haswell {
-namespace {
-
-//
-// Perform a "cumulative bitwise xor," flipping bits each time a 1 is encountered.
-//
-// For example, prefix_xor(00100100) == 00011100
-//
-simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
-  // There should be no such thing with a processor supporting avx2
-  // but not clmul.
-  __m128i all_ones = _mm_set1_epi8('\xFF');
-  __m128i result = _mm_clmulepi64_si128(_mm_set_epi64x(0ULL, bitmask), all_ones, 0);
-  return _mm_cvtsi128_si64(result);
-}
-
-} // unnamed namespace
-} // namespace haswell
-} // namespace simdjson
-
-#endif // SIMDJSON_HASWELL_BITMASK_H
-/* end file include/simdjson/haswell/bitmask.h */
-
-namespace simdjson {
-namespace haswell {
-namespace {
-
-// We sometimes call trailing_zero on inputs that are zero,
-// but the algorithms do not end up using the returned value.
-// Sadly, sanitizers are not smart enough to figure it out.
-SIMDJSON_NO_SANITIZE_UNDEFINED
-// This function can be used safely even if not all bytes have been
-// initialized.
-// See issue https://github.com/simdjson/simdjson/issues/1965
-SIMDJSON_NO_SANITIZE_MEMORY
-simdjson_inline int trailing_zeroes(uint64_t input_num) {
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-  return (int)_tzcnt_u64(input_num);
-#else // SIMDJSON_REGULAR_VISUAL_STUDIO
-  ////////
-  // You might expect the next line to be equivalent to
-  // return (int)_tzcnt_u64(input_num);
-  // but the generated code differs and might be less efficient?
-  ////////
-  return __builtin_ctzll(input_num);
-#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
-}
-
-/* result might be undefined when input_num is zero */
-simdjson_inline uint64_t clear_lowest_bit(uint64_t input_num) {
-  return _blsr_u64(input_num);
-}
-
-/* result might be undefined when input_num is zero */
-simdjson_inline int leading_zeroes(uint64_t input_num) {
-  return int(_lzcnt_u64(input_num));
-}
-
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
-  return __popcnt64(input_num);// Visual Studio wants two underscores
-}
-#else
-simdjson_inline long long int count_ones(uint64_t input_num) {
-  return _popcnt64(input_num);
-}
-#endif
-
-simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
-                                uint64_t *result) {
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-  return _addcarry_u64(0, value1, value2,
-                       reinterpret_cast<unsigned __int64 *>(result));
-#else
-  return __builtin_uaddll_overflow(value1, value2,
-                                   reinterpret_cast<unsigned long long *>(result));
-#endif
-}
-
-} // unnamed namespace
-} // namespace haswell
-} // namespace simdjson
-
-#endif // SIMDJSON_HASWELL_BITMANIPULATION_H
-/* end file include/simdjson/haswell/bitmanipulation.h */
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
@@ -19184,7 +18548,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 } // namespace haswell
 } // namespace simdjson
 
-#endif // SIMDJSON_HASWELL_STRINGPARSING_H
+#endif // SIMDJSON_HASWELL_STRINGPARSING_DEFS_H
 /* end file include/simdjson/haswell/stringparsing_defs.h */
 /* end file include/simdjson/haswell/begin.h */
 /* including simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
@@ -19253,9 +18617,6 @@ enum class number_type {
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
-#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#include <intrin.h>
-#endif
 namespace simdjson {
 namespace haswell {
 namespace {
@@ -21462,6 +20823,36 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 #ifndef SIMDJSON_ICELAKE_SIMD_H
 #define SIMDJSON_ICELAKE_SIMD_H
 
+/* including simdjson/icelake/base.h: #include "simdjson/icelake/base.h" */
+/* begin file include/simdjson/icelake/base.h */
+#ifndef SIMDJSON_ICELAKE_BASE_H
+#define SIMDJSON_ICELAKE_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_ICELAKE
+namespace simdjson {
+/**
+ * Implementation for Icelake (Intel AVX512).
+ */
+namespace icelake {
+
+class implementation;
+
+} // namespace icelake
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/icelake/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_ICELAKE_BASE_H
+/* end file include/simdjson/icelake/base.h */
 /* including simdjson/icelake/bitmanipulation.h: #include "simdjson/icelake/bitmanipulation.h" */
 /* begin file include/simdjson/icelake/bitmanipulation.h */
 #ifndef SIMDJSON_ICELAKE_BITMANIPULATION_H
@@ -22021,14 +21412,44 @@ namespace simd {
 /* end file include/simdjson/icelake/simd.h */
 /* including simdjson/icelake/stringparsing_defs.h: #include "simdjson/icelake/stringparsing_defs.h" */
 /* begin file include/simdjson/icelake/stringparsing_defs.h */
-#ifndef SIMDJSON_ICELAKE_STRINGPARSING_H
-#define SIMDJSON_ICELAKE_STRINGPARSING_H
+#ifndef SIMDJSON_ICELAKE_STRINGPARSING_DEFS_H
+#define SIMDJSON_ICELAKE_STRINGPARSING_DEFS_H
 
 /* including simdjson/icelake/simd.h: #include "simdjson/icelake/simd.h" */
 /* begin file include/simdjson/icelake/simd.h */
 #ifndef SIMDJSON_ICELAKE_SIMD_H
 #define SIMDJSON_ICELAKE_SIMD_H
 
+/* including simdjson/icelake/base.h: #include "simdjson/icelake/base.h" */
+/* begin file include/simdjson/icelake/base.h */
+#ifndef SIMDJSON_ICELAKE_BASE_H
+#define SIMDJSON_ICELAKE_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_ICELAKE
+namespace simdjson {
+/**
+ * Implementation for Icelake (Intel AVX512).
+ */
+namespace icelake {
+
+class implementation;
+
+} // namespace icelake
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/icelake/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_ICELAKE_BASE_H
+/* end file include/simdjson/icelake/base.h */
 /* including simdjson/icelake/bitmanipulation.h: #include "simdjson/icelake/bitmanipulation.h" */
 /* begin file include/simdjson/icelake/bitmanipulation.h */
 #ifndef SIMDJSON_ICELAKE_BITMANIPULATION_H
@@ -22814,12 +22235,12 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 } // namespace icelake
 } // namespace simdjson
 
-#endif // SIMDJSON_ICELAKE_STRINGPARSING_H
+#endif // SIMDJSON_ICELAKE_STRINGPARSING_DEFS_H
 /* end file include/simdjson/icelake/stringparsing_defs.h */
 /* including simdjson/icelake/numberparsing_defs.h: #include "simdjson/icelake/numberparsing_defs.h" */
 /* begin file include/simdjson/icelake/numberparsing_defs.h */
-#ifndef SIMDJSON_ICELAKE_NUMBERPARSING_H
-#define SIMDJSON_ICELAKE_NUMBERPARSING_H
+#ifndef SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
+#define SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 
 /* including simdjson/icelake/base.h: #include "simdjson/icelake/base.h" */
 /* begin file include/simdjson/icelake/base.h */
@@ -22993,7 +22414,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
 
-#endif // SIMDJSON_ICELAKE_NUMBERPARSING_H
+#endif // SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/icelake/numberparsing_defs.h */
 /* end file include/simdjson/icelake/begin.h */
 /* including simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
@@ -23062,9 +22483,6 @@ enum class number_type {
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
-#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#include <intrin.h>
-#endif
 namespace simdjson {
 namespace icelake {
 namespace {
@@ -25179,8 +24597,8 @@ simdjson_inline uint64_t prefix_xor(uint64_t bitmask) {
 /* end file include/simdjson/ppc64/bitmask.h */
 /* including simdjson/ppc64/numberparsing_defs.h: #include "simdjson/ppc64/numberparsing_defs.h" */
 /* begin file include/simdjson/ppc64/numberparsing_defs.h */
-#ifndef SIMDJSON_PPC64_NUMBERPARSING_H
-#define SIMDJSON_PPC64_NUMBERPARSING_H
+#ifndef SIMDJSON_PPC64_NUMBERPARSING_DEFS_H
+#define SIMDJSON_PPC64_NUMBERPARSING_DEFS_H
 
 /* including simdjson/ppc64/base.h: #include "simdjson/ppc64/base.h" */
 /* begin file include/simdjson/ppc64/base.h */
@@ -25337,13 +24755,49 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
 
-#endif // SIMDJSON_PPC64_NUMBERPARSING_H
+#endif // SIMDJSON_PPC64_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/ppc64/numberparsing_defs.h */
 /* including simdjson/ppc64/simd.h: #include "simdjson/ppc64/simd.h" */
 /* begin file include/simdjson/ppc64/simd.h */
 #ifndef SIMDJSON_PPC64_SIMD_H
 #define SIMDJSON_PPC64_SIMD_H
 
+/* including simdjson/ppc64/base.h: #include "simdjson/ppc64/base.h" */
+/* begin file include/simdjson/ppc64/base.h */
+#ifndef SIMDJSON_PPC64_BASE_H
+#define SIMDJSON_PPC64_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+namespace simdjson {
+/**
+ * Implementation for ALTIVEC (PPC64).
+ */
+namespace ppc64 {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace ppc64
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/ppc64/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_PPC64_BASE_H
+/* end file include/simdjson/ppc64/base.h */
 /* including simdjson/ppc64/bitmanipulation.h: #include "simdjson/ppc64/bitmanipulation.h" */
 /* begin file include/simdjson/ppc64/bitmanipulation.h */
 #ifndef SIMDJSON_PPC64_BITMANIPULATION_H
@@ -25929,8 +25383,8 @@ template <typename T> struct simd8x64 {
 /* end file include/simdjson/ppc64/simd.h */
 /* including simdjson/ppc64/stringparsing_defs.h: #include "simdjson/ppc64/stringparsing_defs.h" */
 /* begin file include/simdjson/ppc64/stringparsing_defs.h */
-#ifndef SIMDJSON_PPC64_STRINGPARSING_H
-#define SIMDJSON_PPC64_STRINGPARSING_H
+#ifndef SIMDJSON_PPC64_STRINGPARSING_DEFS_H
+#define SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 
 /* including simdjson/ppc64/bitmanipulation.h: #include "simdjson/ppc64/bitmanipulation.h" */
 /* begin file include/simdjson/ppc64/bitmanipulation.h */
@@ -26051,6 +25505,42 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifndef SIMDJSON_PPC64_SIMD_H
 #define SIMDJSON_PPC64_SIMD_H
 
+/* including simdjson/ppc64/base.h: #include "simdjson/ppc64/base.h" */
+/* begin file include/simdjson/ppc64/base.h */
+#ifndef SIMDJSON_PPC64_BASE_H
+#define SIMDJSON_PPC64_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+namespace simdjson {
+/**
+ * Implementation for ALTIVEC (PPC64).
+ */
+namespace ppc64 {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace ppc64
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/ppc64/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_PPC64_BASE_H
+/* end file include/simdjson/ppc64/base.h */
 /* including simdjson/ppc64/bitmanipulation.h: #include "simdjson/ppc64/bitmanipulation.h" */
 /* begin file include/simdjson/ppc64/bitmanipulation.h */
 #ifndef SIMDJSON_PPC64_BITMANIPULATION_H
@@ -26690,7 +26180,7 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 } // namespace ppc64
 } // namespace simdjson
 
-#endif // SIMDJSON_PPC64_STRINGPARSING_H
+#endif // SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 /* end file include/simdjson/ppc64/stringparsing_defs.h */
 /* end file include/simdjson/ppc64/begin.h */
 /* including simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
@@ -26759,9 +26249,6 @@ enum class number_type {
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
-#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#include <intrin.h>
-#endif
 namespace simdjson {
 namespace ppc64 {
 namespace {
@@ -28841,8 +28328,8 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 /* end file include/simdjson/westmere/bitmask.h */
 /* including simdjson/westmere/numberparsing_defs.h: #include "simdjson/westmere/numberparsing_defs.h" */
 /* begin file include/simdjson/westmere/numberparsing_defs.h */
-#ifndef SIMDJSON_WESTMERE_NUMBERPARSING_H
-#define SIMDJSON_WESTMERE_NUMBERPARSING_H
+#ifndef SIMDJSON_WESTMERE_NUMBERPARSING_DEFS_H
+#define SIMDJSON_WESTMERE_NUMBERPARSING_DEFS_H
 
 /* including simdjson/westmere/base.h: #include "simdjson/westmere/base.h" */
 /* begin file include/simdjson/westmere/base.h */
@@ -28881,6 +28368,74 @@ template <typename T> struct simd8x64;
 
 #endif // SIMDJSON_WESTMERE_BASE_H
 /* end file include/simdjson/westmere/base.h */
+/* including simdjson/westmere/intrinsics.h: #include "simdjson/westmere/intrinsics.h" */
+/* begin file include/simdjson/westmere/intrinsics.h */
+#ifndef SIMDJSON_WESTMERE_INTRINSICS_H
+#define SIMDJSON_WESTMERE_INTRINSICS_H
+
+/* including simdjson/westmere/base.h: #include "simdjson/westmere/base.h" */
+/* begin file include/simdjson/westmere/base.h */
+#ifndef SIMDJSON_WESTMERE_BASE_H
+#define SIMDJSON_WESTMERE_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_WESTMERE
+namespace simdjson {
+/**
+ * Implementation for Westmere (Intel SSE4.2).
+ */
+namespace westmere {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace westmere
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/westmere/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_WESTMERE_BASE_H
+/* end file include/simdjson/westmere/base.h */
+
+#if SIMDJSON_VISUAL_STUDIO
+// under clang within visual studio, this will include <x86intrin.h>
+#include <intrin.h> // visual studio or clang
+#else
+#include <x86intrin.h> // elsewhere
+#endif // SIMDJSON_VISUAL_STUDIO
+
+
+#if SIMDJSON_CLANG_VISUAL_STUDIO
+/**
+ * You are not supposed, normally, to include these
+ * headers directly. Instead you should either include intrin.h
+ * or x86intrin.h. However, when compiling with clang
+ * under Windows (i.e., when _MSC_VER is set), these headers
+ * only get included *if* the corresponding features are detected
+ * from macros:
+ */
+#include <smmintrin.h>  // for _mm_alignr_epi8
+#include <wmmintrin.h>  // for  _mm_clmulepi64_si128
+#endif
+
+static_assert(sizeof(__m128i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for westmere");
+
+#endif // SIMDJSON_WESTMERE_INTRINSICS_H
+/* end file include/simdjson/westmere/intrinsics.h */
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
@@ -28934,13 +28489,50 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
 
-#endif //  SIMDJSON_WESTMERE_NUMBERPARSING_H
+#endif //  SIMDJSON_WESTMERE_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/westmere/numberparsing_defs.h */
 /* including simdjson/westmere/simd.h: #include "simdjson/westmere/simd.h" */
 /* begin file include/simdjson/westmere/simd.h */
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
+/* including simdjson/westmere/base.h: #include "simdjson/westmere/base.h" */
+/* begin file include/simdjson/westmere/base.h */
+#ifndef SIMDJSON_WESTMERE_BASE_H
+#define SIMDJSON_WESTMERE_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_WESTMERE
+namespace simdjson {
+/**
+ * Implementation for Westmere (Intel SSE4.2).
+ */
+namespace westmere {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace westmere
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/westmere/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_WESTMERE_BASE_H
+/* end file include/simdjson/westmere/base.h */
 /* including simdjson/westmere/bitmanipulation.h: #include "simdjson/westmere/bitmanipulation.h" */
 /* begin file include/simdjson/westmere/bitmanipulation.h */
 #ifndef SIMDJSON_WESTMERE_BITMANIPULATION_H
@@ -29393,8 +28985,8 @@ namespace simd {
 /* end file include/simdjson/westmere/simd.h */
 /* including simdjson/westmere/stringparsing_defs.h: #include "simdjson/westmere/stringparsing_defs.h" */
 /* begin file include/simdjson/westmere/stringparsing_defs.h */
-#ifndef SIMDJSON_WESTMERE_STRINGPARSING_H
-#define SIMDJSON_WESTMERE_STRINGPARSING_H
+#ifndef SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H
+#define SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H
 
 /* including simdjson/westmere/bitmanipulation.h: #include "simdjson/westmere/bitmanipulation.h" */
 /* begin file include/simdjson/westmere/bitmanipulation.h */
@@ -29516,6 +29108,43 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
+/* including simdjson/westmere/base.h: #include "simdjson/westmere/base.h" */
+/* begin file include/simdjson/westmere/base.h */
+#ifndef SIMDJSON_WESTMERE_BASE_H
+#define SIMDJSON_WESTMERE_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_WESTMERE
+namespace simdjson {
+/**
+ * Implementation for Westmere (Intel SSE4.2).
+ */
+namespace westmere {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace westmere
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/westmere/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_WESTMERE_BASE_H
+/* end file include/simdjson/westmere/base.h */
 /* including simdjson/westmere/bitmanipulation.h: #include "simdjson/westmere/bitmanipulation.h" */
 /* begin file include/simdjson/westmere/bitmanipulation.h */
 #ifndef SIMDJSON_WESTMERE_BITMANIPULATION_H
@@ -30007,7 +29636,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 } // namespace westmere
 } // namespace simdjson
 
-#endif // SIMDJSON_WESTMERE_STRINGPARSING_H
+#endif // SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H
 /* end file include/simdjson/westmere/stringparsing_defs.h */
 /* end file include/simdjson/westmere/begin.h */
 /* including simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
@@ -30076,9 +29705,6 @@ enum class number_type {
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
-#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#include <intrin.h>
-#endif
 namespace simdjson {
 namespace westmere {
 namespace {
@@ -32301,8 +31927,8 @@ simdjson_inline uint64_t prefix_xor(uint64_t bitmask) {
 /* end file include/simdjson/arm64/bitmask.h */
 /* including simdjson/arm64/numberparsing_defs.h: #include "simdjson/arm64/numberparsing_defs.h" */
 /* begin file include/simdjson/arm64/numberparsing_defs.h */
-#ifndef SIMDJSON_ARM64_NUMBERPARSING_H
-#define SIMDJSON_ARM64_NUMBERPARSING_H
+#ifndef SIMDJSON_ARM64_NUMBERPARSING_DEFS_H
+#define SIMDJSON_ARM64_NUMBERPARSING_DEFS_H
 
 /* including simdjson/arm64/base.h: #include "simdjson/arm64/base.h" */
 /* begin file include/simdjson/arm64/base.h */
@@ -32436,18 +32062,49 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
 
-#endif // SIMDJSON_ARM64_NUMBERPARSING_H
+#endif // SIMDJSON_ARM64_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/arm64/numberparsing_defs.h */
 /* including simdjson/arm64/simd.h: #include "simdjson/arm64/simd.h" */
 /* begin file include/simdjson/arm64/simd.h */
 #ifndef SIMDJSON_ARM64_SIMD_H
 #define SIMDJSON_ARM64_SIMD_H
 
+/* including simdjson/arm64/base.h: #include "simdjson/arm64/base.h" */
+/* begin file include/simdjson/arm64/base.h */
+#ifndef SIMDJSON_ARM64_BASE_H
+#define SIMDJSON_ARM64_BASE_H
+
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
+namespace simdjson {
+/**
+ * Implementation for NEON (ARMv8).
+ */
+namespace arm64 {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace arm64
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/arm64/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_ARM64_BASE_H
+/* end file include/simdjson/arm64/base.h */
 /* including simdjson/arm64/bitmanipulation.h: #include "simdjson/arm64/bitmanipulation.h" */
 /* begin file include/simdjson/arm64/bitmanipulation.h */
 #ifndef SIMDJSON_ARM64_BITMANIPULATION_H
@@ -32639,6 +32296,10 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *re
 
 #endif // SIMDJSON_ARM64_BITMANIPULATION_H
 /* end file include/simdjson/arm64/bitmanipulation.h */
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -33167,8 +32828,8 @@ simdjson_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int
 /* end file include/simdjson/arm64/simd.h */
 /* including simdjson/arm64/stringparsing_defs.h: #include "simdjson/arm64/stringparsing_defs.h" */
 /* begin file include/simdjson/arm64/stringparsing_defs.h */
-#ifndef SIMDJSON_ARM64_STRINGPARSING_H
-#define SIMDJSON_ARM64_STRINGPARSING_H
+#ifndef SIMDJSON_ARM64_STRINGPARSING_DEFS_H
+#define SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 
 /* including simdjson/arm64/base.h: #include "simdjson/arm64/base.h" */
 /* begin file include/simdjson/arm64/base.h */
@@ -33211,11 +32872,42 @@ template <typename T> struct simd8x64;
 #ifndef SIMDJSON_ARM64_SIMD_H
 #define SIMDJSON_ARM64_SIMD_H
 
+/* including simdjson/arm64/base.h: #include "simdjson/arm64/base.h" */
+/* begin file include/simdjson/arm64/base.h */
+#ifndef SIMDJSON_ARM64_BASE_H
+#define SIMDJSON_ARM64_BASE_H
+
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
+namespace simdjson {
+/**
+ * Implementation for NEON (ARMv8).
+ */
+namespace arm64 {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace arm64
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/arm64/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_ARM64_BASE_H
+/* end file include/simdjson/arm64/base.h */
 /* including simdjson/arm64/bitmanipulation.h: #include "simdjson/arm64/bitmanipulation.h" */
 /* begin file include/simdjson/arm64/bitmanipulation.h */
 #ifndef SIMDJSON_ARM64_BITMANIPULATION_H
@@ -33407,6 +33099,10 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *re
 
 #endif // SIMDJSON_ARM64_BITMANIPULATION_H
 /* end file include/simdjson/arm64/bitmanipulation.h */
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
 
 namespace simdjson {
 namespace arm64 {
@@ -34168,7 +33864,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 } // namespace arm64
 } // namespace simdjson
 
-#endif // SIMDJSON_ARM64_STRINGPARSING_H
+#endif // SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 /* end file include/simdjson/arm64/stringparsing_defs.h */
 /* end file include/simdjson/arm64/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h: #include "simdjson/generic/ondemand/amalgamated.h" */
@@ -43748,8 +43444,8 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 /* end file include/simdjson/fallback/bitmanipulation.h */
 /* including simdjson/fallback/stringparsing_defs.h: #include "simdjson/fallback/stringparsing_defs.h" */
 /* begin file include/simdjson/fallback/stringparsing_defs.h */
-#ifndef SIMDJSON_FALLBACK_STRINGPARSING_H
-#define SIMDJSON_FALLBACK_STRINGPARSING_H
+#ifndef SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H
+#define SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H
 
 /* including simdjson/fallback/base.h: #include "simdjson/fallback/base.h" */
 /* begin file include/simdjson/fallback/base.h */
@@ -43809,7 +43505,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 } // namespace fallback
 } // namespace simdjson
 
-#endif // SIMDJSON_FALLBACK_STRINGPARSING_H
+#endif // SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H
 /* end file include/simdjson/fallback/stringparsing_defs.h */
 /* including simdjson/fallback/numberparsing_defs.h: #include "simdjson/fallback/numberparsing_defs.h" */
 /* begin file include/simdjson/fallback/numberparsing_defs.h */
@@ -54011,8 +53707,8 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 /* end file include/simdjson/haswell/bitmask.h */
 /* including simdjson/haswell/numberparsing_defs.h: #include "simdjson/haswell/numberparsing_defs.h" */
 /* begin file include/simdjson/haswell/numberparsing_defs.h */
-#ifndef SIMDJSON_HASWELL_NUMBERPARSING_H
-#define SIMDJSON_HASWELL_NUMBERPARSING_H
+#ifndef SIMDJSON_HASWELL_NUMBERPARSING_DEFS_H
+#define SIMDJSON_HASWELL_NUMBERPARSING_DEFS_H
 
 /* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
 /* begin file include/simdjson/haswell/base.h */
@@ -54193,7 +53889,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
 
-#endif // SIMDJSON_HASWELL_NUMBERPARSING_H
+#endif // SIMDJSON_HASWELL_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/haswell/numberparsing_defs.h */
 /* including simdjson/haswell/simd.h: #include "simdjson/haswell/simd.h" */
 /* begin file include/simdjson/haswell/simd.h */
@@ -54326,356 +54022,6 @@ static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient paddi
 
 #endif // SIMDJSON_HASWELL_INTRINSICS_H
 /* end file include/simdjson/haswell/intrinsics.h */
-/* including simdjson/haswell/bitmanipulation.h: #include "simdjson/haswell/bitmanipulation.h" */
-/* begin file include/simdjson/haswell/bitmanipulation.h */
-#ifndef SIMDJSON_HASWELL_BITMANIPULATION_H
-#define SIMDJSON_HASWELL_BITMANIPULATION_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-/* including simdjson/haswell/intrinsics.h: #include "simdjson/haswell/intrinsics.h" */
-/* begin file include/simdjson/haswell/intrinsics.h */
-#ifndef SIMDJSON_HASWELL_INTRINSICS_H
-#define SIMDJSON_HASWELL_INTRINSICS_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-
-#if SIMDJSON_VISUAL_STUDIO
-// under clang within visual studio, this will include <x86intrin.h>
-#include <intrin.h>  // visual studio or clang
-#else
-#include <x86intrin.h> // elsewhere
-#endif // SIMDJSON_VISUAL_STUDIO
-
-#if SIMDJSON_CLANG_VISUAL_STUDIO
-/**
- * You are not supposed, normally, to include these
- * headers directly. Instead you should either include intrin.h
- * or x86intrin.h. However, when compiling with clang
- * under Windows (i.e., when _MSC_VER is set), these headers
- * only get included *if* the corresponding features are detected
- * from macros:
- * e.g., if __AVX2__ is set... in turn,  we normally set these
- * macros by compiling against the corresponding architecture
- * (e.g., arch:AVX2, -mavx2, etc.) which compiles the whole
- * software with these advanced instructions. In simdjson, we
- * want to compile the whole program for a generic target,
- * and only target our specific kernels. As a workaround,
- * we directly include the needed headers. These headers would
- * normally guard against such usage, but we carefully included
- * <x86intrin.h>  (or <intrin.h>) before, so the headers
- * are fooled.
- */
-#include <bmiintrin.h>   // for _blsr_u64
-#include <lzcntintrin.h> // for  __lzcnt64
-#include <immintrin.h>   // for most things (AVX2, AVX512, _popcnt64)
-#include <smmintrin.h>
-#include <tmmintrin.h>
-#include <avxintrin.h>
-#include <avx2intrin.h>
-#include <wmmintrin.h>   // for  _mm_clmulepi64_si128
-// unfortunately, we may not get _blsr_u64, but, thankfully, clang
-// has it as a macro.
-#ifndef _blsr_u64
-// we roll our own
-#define _blsr_u64(n) ((n - 1) & n)
-#endif //  _blsr_u64
-#endif // SIMDJSON_CLANG_VISUAL_STUDIO
-
-static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for haswell kernel.");
-
-#endif // SIMDJSON_HASWELL_INTRINSICS_H
-/* end file include/simdjson/haswell/intrinsics.h */
-/* including simdjson/haswell/bitmask.h: #include "simdjson/haswell/bitmask.h" */
-/* begin file include/simdjson/haswell/bitmask.h */
-#ifndef SIMDJSON_HASWELL_BITMASK_H
-#define SIMDJSON_HASWELL_BITMASK_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-/* including simdjson/haswell/intrinsics.h: #include "simdjson/haswell/intrinsics.h" */
-/* begin file include/simdjson/haswell/intrinsics.h */
-#ifndef SIMDJSON_HASWELL_INTRINSICS_H
-#define SIMDJSON_HASWELL_INTRINSICS_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-
-#if SIMDJSON_VISUAL_STUDIO
-// under clang within visual studio, this will include <x86intrin.h>
-#include <intrin.h>  // visual studio or clang
-#else
-#include <x86intrin.h> // elsewhere
-#endif // SIMDJSON_VISUAL_STUDIO
-
-#if SIMDJSON_CLANG_VISUAL_STUDIO
-/**
- * You are not supposed, normally, to include these
- * headers directly. Instead you should either include intrin.h
- * or x86intrin.h. However, when compiling with clang
- * under Windows (i.e., when _MSC_VER is set), these headers
- * only get included *if* the corresponding features are detected
- * from macros:
- * e.g., if __AVX2__ is set... in turn,  we normally set these
- * macros by compiling against the corresponding architecture
- * (e.g., arch:AVX2, -mavx2, etc.) which compiles the whole
- * software with these advanced instructions. In simdjson, we
- * want to compile the whole program for a generic target,
- * and only target our specific kernels. As a workaround,
- * we directly include the needed headers. These headers would
- * normally guard against such usage, but we carefully included
- * <x86intrin.h>  (or <intrin.h>) before, so the headers
- * are fooled.
- */
-#include <bmiintrin.h>   // for _blsr_u64
-#include <lzcntintrin.h> // for  __lzcnt64
-#include <immintrin.h>   // for most things (AVX2, AVX512, _popcnt64)
-#include <smmintrin.h>
-#include <tmmintrin.h>
-#include <avxintrin.h>
-#include <avx2intrin.h>
-#include <wmmintrin.h>   // for  _mm_clmulepi64_si128
-// unfortunately, we may not get _blsr_u64, but, thankfully, clang
-// has it as a macro.
-#ifndef _blsr_u64
-// we roll our own
-#define _blsr_u64(n) ((n - 1) & n)
-#endif //  _blsr_u64
-#endif // SIMDJSON_CLANG_VISUAL_STUDIO
-
-static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for haswell kernel.");
-
-#endif // SIMDJSON_HASWELL_INTRINSICS_H
-/* end file include/simdjson/haswell/intrinsics.h */
-
-namespace simdjson {
-namespace haswell {
-namespace {
-
-//
-// Perform a "cumulative bitwise xor," flipping bits each time a 1 is encountered.
-//
-// For example, prefix_xor(00100100) == 00011100
-//
-simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
-  // There should be no such thing with a processor supporting avx2
-  // but not clmul.
-  __m128i all_ones = _mm_set1_epi8('\xFF');
-  __m128i result = _mm_clmulepi64_si128(_mm_set_epi64x(0ULL, bitmask), all_ones, 0);
-  return _mm_cvtsi128_si64(result);
-}
-
-} // unnamed namespace
-} // namespace haswell
-} // namespace simdjson
-
-#endif // SIMDJSON_HASWELL_BITMASK_H
-/* end file include/simdjson/haswell/bitmask.h */
-
-namespace simdjson {
-namespace haswell {
-namespace {
-
-// We sometimes call trailing_zero on inputs that are zero,
-// but the algorithms do not end up using the returned value.
-// Sadly, sanitizers are not smart enough to figure it out.
-SIMDJSON_NO_SANITIZE_UNDEFINED
-// This function can be used safely even if not all bytes have been
-// initialized.
-// See issue https://github.com/simdjson/simdjson/issues/1965
-SIMDJSON_NO_SANITIZE_MEMORY
-simdjson_inline int trailing_zeroes(uint64_t input_num) {
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-  return (int)_tzcnt_u64(input_num);
-#else // SIMDJSON_REGULAR_VISUAL_STUDIO
-  ////////
-  // You might expect the next line to be equivalent to
-  // return (int)_tzcnt_u64(input_num);
-  // but the generated code differs and might be less efficient?
-  ////////
-  return __builtin_ctzll(input_num);
-#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
-}
-
-/* result might be undefined when input_num is zero */
-simdjson_inline uint64_t clear_lowest_bit(uint64_t input_num) {
-  return _blsr_u64(input_num);
-}
-
-/* result might be undefined when input_num is zero */
-simdjson_inline int leading_zeroes(uint64_t input_num) {
-  return int(_lzcnt_u64(input_num));
-}
-
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
-  return __popcnt64(input_num);// Visual Studio wants two underscores
-}
-#else
-simdjson_inline long long int count_ones(uint64_t input_num) {
-  return _popcnt64(input_num);
-}
-#endif
-
-simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
-                                uint64_t *result) {
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-  return _addcarry_u64(0, value1, value2,
-                       reinterpret_cast<unsigned __int64 *>(result));
-#else
-  return __builtin_uaddll_overflow(value1, value2,
-                                   reinterpret_cast<unsigned long long *>(result));
-#endif
-}
-
-} // unnamed namespace
-} // namespace haswell
-} // namespace simdjson
-
-#endif // SIMDJSON_HASWELL_BITMANIPULATION_H
-/* end file include/simdjson/haswell/bitmanipulation.h */
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
@@ -55046,8 +54392,8 @@ namespace simd {
 /* end file include/simdjson/haswell/simd.h */
 /* including simdjson/haswell/stringparsing_defs.h: #include "simdjson/haswell/stringparsing_defs.h" */
 /* begin file include/simdjson/haswell/stringparsing_defs.h */
-#ifndef SIMDJSON_HASWELL_STRINGPARSING_H
-#define SIMDJSON_HASWELL_STRINGPARSING_H
+#ifndef SIMDJSON_HASWELL_STRINGPARSING_DEFS_H
+#define SIMDJSON_HASWELL_STRINGPARSING_DEFS_H
 
 /* including simdjson/haswell/simd.h: #include "simdjson/haswell/simd.h" */
 /* begin file include/simdjson/haswell/simd.h */
@@ -55180,356 +54526,6 @@ static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient paddi
 
 #endif // SIMDJSON_HASWELL_INTRINSICS_H
 /* end file include/simdjson/haswell/intrinsics.h */
-/* including simdjson/haswell/bitmanipulation.h: #include "simdjson/haswell/bitmanipulation.h" */
-/* begin file include/simdjson/haswell/bitmanipulation.h */
-#ifndef SIMDJSON_HASWELL_BITMANIPULATION_H
-#define SIMDJSON_HASWELL_BITMANIPULATION_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-/* including simdjson/haswell/intrinsics.h: #include "simdjson/haswell/intrinsics.h" */
-/* begin file include/simdjson/haswell/intrinsics.h */
-#ifndef SIMDJSON_HASWELL_INTRINSICS_H
-#define SIMDJSON_HASWELL_INTRINSICS_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-
-#if SIMDJSON_VISUAL_STUDIO
-// under clang within visual studio, this will include <x86intrin.h>
-#include <intrin.h>  // visual studio or clang
-#else
-#include <x86intrin.h> // elsewhere
-#endif // SIMDJSON_VISUAL_STUDIO
-
-#if SIMDJSON_CLANG_VISUAL_STUDIO
-/**
- * You are not supposed, normally, to include these
- * headers directly. Instead you should either include intrin.h
- * or x86intrin.h. However, when compiling with clang
- * under Windows (i.e., when _MSC_VER is set), these headers
- * only get included *if* the corresponding features are detected
- * from macros:
- * e.g., if __AVX2__ is set... in turn,  we normally set these
- * macros by compiling against the corresponding architecture
- * (e.g., arch:AVX2, -mavx2, etc.) which compiles the whole
- * software with these advanced instructions. In simdjson, we
- * want to compile the whole program for a generic target,
- * and only target our specific kernels. As a workaround,
- * we directly include the needed headers. These headers would
- * normally guard against such usage, but we carefully included
- * <x86intrin.h>  (or <intrin.h>) before, so the headers
- * are fooled.
- */
-#include <bmiintrin.h>   // for _blsr_u64
-#include <lzcntintrin.h> // for  __lzcnt64
-#include <immintrin.h>   // for most things (AVX2, AVX512, _popcnt64)
-#include <smmintrin.h>
-#include <tmmintrin.h>
-#include <avxintrin.h>
-#include <avx2intrin.h>
-#include <wmmintrin.h>   // for  _mm_clmulepi64_si128
-// unfortunately, we may not get _blsr_u64, but, thankfully, clang
-// has it as a macro.
-#ifndef _blsr_u64
-// we roll our own
-#define _blsr_u64(n) ((n - 1) & n)
-#endif //  _blsr_u64
-#endif // SIMDJSON_CLANG_VISUAL_STUDIO
-
-static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for haswell kernel.");
-
-#endif // SIMDJSON_HASWELL_INTRINSICS_H
-/* end file include/simdjson/haswell/intrinsics.h */
-/* including simdjson/haswell/bitmask.h: #include "simdjson/haswell/bitmask.h" */
-/* begin file include/simdjson/haswell/bitmask.h */
-#ifndef SIMDJSON_HASWELL_BITMASK_H
-#define SIMDJSON_HASWELL_BITMASK_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-/* including simdjson/haswell/intrinsics.h: #include "simdjson/haswell/intrinsics.h" */
-/* begin file include/simdjson/haswell/intrinsics.h */
-#ifndef SIMDJSON_HASWELL_INTRINSICS_H
-#define SIMDJSON_HASWELL_INTRINSICS_H
-
-/* including simdjson/haswell/base.h: #include "simdjson/haswell/base.h" */
-/* begin file include/simdjson/haswell/base.h */
-#ifndef SIMDJSON_HASWELL_BASE_H
-#define SIMDJSON_HASWELL_BASE_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
-namespace simdjson {
-/**
- * Implementation for Haswell (Intel AVX2).
- */
-namespace haswell {
-
-class implementation;
-
-namespace {
-namespace simd {
-template <typename T> struct simd8;
-template <typename T> struct simd8x64;
-} // namespace simd
-} // unnamed namespace
-
-} // namespace haswell
-} // namespace simdjson
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
-/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #include "simdjson/haswell/begin.h" */
-/* amalgamation skipped (editor-only): #endif */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
-
-#endif // SIMDJSON_HASWELL_BASE_H
-/* end file include/simdjson/haswell/base.h */
-
-#if SIMDJSON_VISUAL_STUDIO
-// under clang within visual studio, this will include <x86intrin.h>
-#include <intrin.h>  // visual studio or clang
-#else
-#include <x86intrin.h> // elsewhere
-#endif // SIMDJSON_VISUAL_STUDIO
-
-#if SIMDJSON_CLANG_VISUAL_STUDIO
-/**
- * You are not supposed, normally, to include these
- * headers directly. Instead you should either include intrin.h
- * or x86intrin.h. However, when compiling with clang
- * under Windows (i.e., when _MSC_VER is set), these headers
- * only get included *if* the corresponding features are detected
- * from macros:
- * e.g., if __AVX2__ is set... in turn,  we normally set these
- * macros by compiling against the corresponding architecture
- * (e.g., arch:AVX2, -mavx2, etc.) which compiles the whole
- * software with these advanced instructions. In simdjson, we
- * want to compile the whole program for a generic target,
- * and only target our specific kernels. As a workaround,
- * we directly include the needed headers. These headers would
- * normally guard against such usage, but we carefully included
- * <x86intrin.h>  (or <intrin.h>) before, so the headers
- * are fooled.
- */
-#include <bmiintrin.h>   // for _blsr_u64
-#include <lzcntintrin.h> // for  __lzcnt64
-#include <immintrin.h>   // for most things (AVX2, AVX512, _popcnt64)
-#include <smmintrin.h>
-#include <tmmintrin.h>
-#include <avxintrin.h>
-#include <avx2intrin.h>
-#include <wmmintrin.h>   // for  _mm_clmulepi64_si128
-// unfortunately, we may not get _blsr_u64, but, thankfully, clang
-// has it as a macro.
-#ifndef _blsr_u64
-// we roll our own
-#define _blsr_u64(n) ((n - 1) & n)
-#endif //  _blsr_u64
-#endif // SIMDJSON_CLANG_VISUAL_STUDIO
-
-static_assert(sizeof(__m256i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for haswell kernel.");
-
-#endif // SIMDJSON_HASWELL_INTRINSICS_H
-/* end file include/simdjson/haswell/intrinsics.h */
-
-namespace simdjson {
-namespace haswell {
-namespace {
-
-//
-// Perform a "cumulative bitwise xor," flipping bits each time a 1 is encountered.
-//
-// For example, prefix_xor(00100100) == 00011100
-//
-simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
-  // There should be no such thing with a processor supporting avx2
-  // but not clmul.
-  __m128i all_ones = _mm_set1_epi8('\xFF');
-  __m128i result = _mm_clmulepi64_si128(_mm_set_epi64x(0ULL, bitmask), all_ones, 0);
-  return _mm_cvtsi128_si64(result);
-}
-
-} // unnamed namespace
-} // namespace haswell
-} // namespace simdjson
-
-#endif // SIMDJSON_HASWELL_BITMASK_H
-/* end file include/simdjson/haswell/bitmask.h */
-
-namespace simdjson {
-namespace haswell {
-namespace {
-
-// We sometimes call trailing_zero on inputs that are zero,
-// but the algorithms do not end up using the returned value.
-// Sadly, sanitizers are not smart enough to figure it out.
-SIMDJSON_NO_SANITIZE_UNDEFINED
-// This function can be used safely even if not all bytes have been
-// initialized.
-// See issue https://github.com/simdjson/simdjson/issues/1965
-SIMDJSON_NO_SANITIZE_MEMORY
-simdjson_inline int trailing_zeroes(uint64_t input_num) {
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-  return (int)_tzcnt_u64(input_num);
-#else // SIMDJSON_REGULAR_VISUAL_STUDIO
-  ////////
-  // You might expect the next line to be equivalent to
-  // return (int)_tzcnt_u64(input_num);
-  // but the generated code differs and might be less efficient?
-  ////////
-  return __builtin_ctzll(input_num);
-#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
-}
-
-/* result might be undefined when input_num is zero */
-simdjson_inline uint64_t clear_lowest_bit(uint64_t input_num) {
-  return _blsr_u64(input_num);
-}
-
-/* result might be undefined when input_num is zero */
-simdjson_inline int leading_zeroes(uint64_t input_num) {
-  return int(_lzcnt_u64(input_num));
-}
-
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
-  return __popcnt64(input_num);// Visual Studio wants two underscores
-}
-#else
-simdjson_inline long long int count_ones(uint64_t input_num) {
-  return _popcnt64(input_num);
-}
-#endif
-
-simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
-                                uint64_t *result) {
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-  return _addcarry_u64(0, value1, value2,
-                       reinterpret_cast<unsigned __int64 *>(result));
-#else
-  return __builtin_uaddll_overflow(value1, value2,
-                                   reinterpret_cast<unsigned long long *>(result));
-#endif
-}
-
-} // unnamed namespace
-} // namespace haswell
-} // namespace simdjson
-
-#endif // SIMDJSON_HASWELL_BITMANIPULATION_H
-/* end file include/simdjson/haswell/bitmanipulation.h */
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
@@ -56287,7 +55283,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 } // namespace haswell
 } // namespace simdjson
 
-#endif // SIMDJSON_HASWELL_STRINGPARSING_H
+#endif // SIMDJSON_HASWELL_STRINGPARSING_DEFS_H
 /* end file include/simdjson/haswell/stringparsing_defs.h */
 /* end file include/simdjson/haswell/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h: #include "simdjson/generic/ondemand/amalgamated.h" */
@@ -66179,6 +65175,36 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 #ifndef SIMDJSON_ICELAKE_SIMD_H
 #define SIMDJSON_ICELAKE_SIMD_H
 
+/* including simdjson/icelake/base.h: #include "simdjson/icelake/base.h" */
+/* begin file include/simdjson/icelake/base.h */
+#ifndef SIMDJSON_ICELAKE_BASE_H
+#define SIMDJSON_ICELAKE_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_ICELAKE
+namespace simdjson {
+/**
+ * Implementation for Icelake (Intel AVX512).
+ */
+namespace icelake {
+
+class implementation;
+
+} // namespace icelake
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/icelake/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_ICELAKE_BASE_H
+/* end file include/simdjson/icelake/base.h */
 /* including simdjson/icelake/bitmanipulation.h: #include "simdjson/icelake/bitmanipulation.h" */
 /* begin file include/simdjson/icelake/bitmanipulation.h */
 #ifndef SIMDJSON_ICELAKE_BITMANIPULATION_H
@@ -66738,14 +65764,44 @@ namespace simd {
 /* end file include/simdjson/icelake/simd.h */
 /* including simdjson/icelake/stringparsing_defs.h: #include "simdjson/icelake/stringparsing_defs.h" */
 /* begin file include/simdjson/icelake/stringparsing_defs.h */
-#ifndef SIMDJSON_ICELAKE_STRINGPARSING_H
-#define SIMDJSON_ICELAKE_STRINGPARSING_H
+#ifndef SIMDJSON_ICELAKE_STRINGPARSING_DEFS_H
+#define SIMDJSON_ICELAKE_STRINGPARSING_DEFS_H
 
 /* including simdjson/icelake/simd.h: #include "simdjson/icelake/simd.h" */
 /* begin file include/simdjson/icelake/simd.h */
 #ifndef SIMDJSON_ICELAKE_SIMD_H
 #define SIMDJSON_ICELAKE_SIMD_H
 
+/* including simdjson/icelake/base.h: #include "simdjson/icelake/base.h" */
+/* begin file include/simdjson/icelake/base.h */
+#ifndef SIMDJSON_ICELAKE_BASE_H
+#define SIMDJSON_ICELAKE_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_ICELAKE
+namespace simdjson {
+/**
+ * Implementation for Icelake (Intel AVX512).
+ */
+namespace icelake {
+
+class implementation;
+
+} // namespace icelake
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/icelake/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_ICELAKE_BASE_H
+/* end file include/simdjson/icelake/base.h */
 /* including simdjson/icelake/bitmanipulation.h: #include "simdjson/icelake/bitmanipulation.h" */
 /* begin file include/simdjson/icelake/bitmanipulation.h */
 #ifndef SIMDJSON_ICELAKE_BITMANIPULATION_H
@@ -67531,12 +66587,12 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 } // namespace icelake
 } // namespace simdjson
 
-#endif // SIMDJSON_ICELAKE_STRINGPARSING_H
+#endif // SIMDJSON_ICELAKE_STRINGPARSING_DEFS_H
 /* end file include/simdjson/icelake/stringparsing_defs.h */
 /* including simdjson/icelake/numberparsing_defs.h: #include "simdjson/icelake/numberparsing_defs.h" */
 /* begin file include/simdjson/icelake/numberparsing_defs.h */
-#ifndef SIMDJSON_ICELAKE_NUMBERPARSING_H
-#define SIMDJSON_ICELAKE_NUMBERPARSING_H
+#ifndef SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
+#define SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 
 /* including simdjson/icelake/base.h: #include "simdjson/icelake/base.h" */
 /* begin file include/simdjson/icelake/base.h */
@@ -67710,7 +66766,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
 
-#endif // SIMDJSON_ICELAKE_NUMBERPARSING_H
+#endif // SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/icelake/numberparsing_defs.h */
 /* end file include/simdjson/icelake/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h: #include "simdjson/generic/ondemand/amalgamated.h" */
@@ -77510,8 +76566,8 @@ simdjson_inline uint64_t prefix_xor(uint64_t bitmask) {
 /* end file include/simdjson/ppc64/bitmask.h */
 /* including simdjson/ppc64/numberparsing_defs.h: #include "simdjson/ppc64/numberparsing_defs.h" */
 /* begin file include/simdjson/ppc64/numberparsing_defs.h */
-#ifndef SIMDJSON_PPC64_NUMBERPARSING_H
-#define SIMDJSON_PPC64_NUMBERPARSING_H
+#ifndef SIMDJSON_PPC64_NUMBERPARSING_DEFS_H
+#define SIMDJSON_PPC64_NUMBERPARSING_DEFS_H
 
 /* including simdjson/ppc64/base.h: #include "simdjson/ppc64/base.h" */
 /* begin file include/simdjson/ppc64/base.h */
@@ -77668,13 +76724,49 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
 
-#endif // SIMDJSON_PPC64_NUMBERPARSING_H
+#endif // SIMDJSON_PPC64_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/ppc64/numberparsing_defs.h */
 /* including simdjson/ppc64/simd.h: #include "simdjson/ppc64/simd.h" */
 /* begin file include/simdjson/ppc64/simd.h */
 #ifndef SIMDJSON_PPC64_SIMD_H
 #define SIMDJSON_PPC64_SIMD_H
 
+/* including simdjson/ppc64/base.h: #include "simdjson/ppc64/base.h" */
+/* begin file include/simdjson/ppc64/base.h */
+#ifndef SIMDJSON_PPC64_BASE_H
+#define SIMDJSON_PPC64_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+namespace simdjson {
+/**
+ * Implementation for ALTIVEC (PPC64).
+ */
+namespace ppc64 {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace ppc64
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/ppc64/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_PPC64_BASE_H
+/* end file include/simdjson/ppc64/base.h */
 /* including simdjson/ppc64/bitmanipulation.h: #include "simdjson/ppc64/bitmanipulation.h" */
 /* begin file include/simdjson/ppc64/bitmanipulation.h */
 #ifndef SIMDJSON_PPC64_BITMANIPULATION_H
@@ -78260,8 +77352,8 @@ template <typename T> struct simd8x64 {
 /* end file include/simdjson/ppc64/simd.h */
 /* including simdjson/ppc64/stringparsing_defs.h: #include "simdjson/ppc64/stringparsing_defs.h" */
 /* begin file include/simdjson/ppc64/stringparsing_defs.h */
-#ifndef SIMDJSON_PPC64_STRINGPARSING_H
-#define SIMDJSON_PPC64_STRINGPARSING_H
+#ifndef SIMDJSON_PPC64_STRINGPARSING_DEFS_H
+#define SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 
 /* including simdjson/ppc64/bitmanipulation.h: #include "simdjson/ppc64/bitmanipulation.h" */
 /* begin file include/simdjson/ppc64/bitmanipulation.h */
@@ -78382,6 +77474,42 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifndef SIMDJSON_PPC64_SIMD_H
 #define SIMDJSON_PPC64_SIMD_H
 
+/* including simdjson/ppc64/base.h: #include "simdjson/ppc64/base.h" */
+/* begin file include/simdjson/ppc64/base.h */
+#ifndef SIMDJSON_PPC64_BASE_H
+#define SIMDJSON_PPC64_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+namespace simdjson {
+/**
+ * Implementation for ALTIVEC (PPC64).
+ */
+namespace ppc64 {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace ppc64
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/ppc64/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_PPC64_BASE_H
+/* end file include/simdjson/ppc64/base.h */
 /* including simdjson/ppc64/bitmanipulation.h: #include "simdjson/ppc64/bitmanipulation.h" */
 /* begin file include/simdjson/ppc64/bitmanipulation.h */
 #ifndef SIMDJSON_PPC64_BITMANIPULATION_H
@@ -79021,7 +78149,7 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 } // namespace ppc64
 } // namespace simdjson
 
-#endif // SIMDJSON_PPC64_STRINGPARSING_H
+#endif // SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 /* end file include/simdjson/ppc64/stringparsing_defs.h */
 /* end file include/simdjson/ppc64/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h: #include "simdjson/generic/ondemand/amalgamated.h" */
@@ -88786,8 +87914,8 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 /* end file include/simdjson/westmere/bitmask.h */
 /* including simdjson/westmere/numberparsing_defs.h: #include "simdjson/westmere/numberparsing_defs.h" */
 /* begin file include/simdjson/westmere/numberparsing_defs.h */
-#ifndef SIMDJSON_WESTMERE_NUMBERPARSING_H
-#define SIMDJSON_WESTMERE_NUMBERPARSING_H
+#ifndef SIMDJSON_WESTMERE_NUMBERPARSING_DEFS_H
+#define SIMDJSON_WESTMERE_NUMBERPARSING_DEFS_H
 
 /* including simdjson/westmere/base.h: #include "simdjson/westmere/base.h" */
 /* begin file include/simdjson/westmere/base.h */
@@ -88826,6 +87954,74 @@ template <typename T> struct simd8x64;
 
 #endif // SIMDJSON_WESTMERE_BASE_H
 /* end file include/simdjson/westmere/base.h */
+/* including simdjson/westmere/intrinsics.h: #include "simdjson/westmere/intrinsics.h" */
+/* begin file include/simdjson/westmere/intrinsics.h */
+#ifndef SIMDJSON_WESTMERE_INTRINSICS_H
+#define SIMDJSON_WESTMERE_INTRINSICS_H
+
+/* including simdjson/westmere/base.h: #include "simdjson/westmere/base.h" */
+/* begin file include/simdjson/westmere/base.h */
+#ifndef SIMDJSON_WESTMERE_BASE_H
+#define SIMDJSON_WESTMERE_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_WESTMERE
+namespace simdjson {
+/**
+ * Implementation for Westmere (Intel SSE4.2).
+ */
+namespace westmere {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace westmere
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/westmere/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_WESTMERE_BASE_H
+/* end file include/simdjson/westmere/base.h */
+
+#if SIMDJSON_VISUAL_STUDIO
+// under clang within visual studio, this will include <x86intrin.h>
+#include <intrin.h> // visual studio or clang
+#else
+#include <x86intrin.h> // elsewhere
+#endif // SIMDJSON_VISUAL_STUDIO
+
+
+#if SIMDJSON_CLANG_VISUAL_STUDIO
+/**
+ * You are not supposed, normally, to include these
+ * headers directly. Instead you should either include intrin.h
+ * or x86intrin.h. However, when compiling with clang
+ * under Windows (i.e., when _MSC_VER is set), these headers
+ * only get included *if* the corresponding features are detected
+ * from macros:
+ */
+#include <smmintrin.h>  // for _mm_alignr_epi8
+#include <wmmintrin.h>  // for  _mm_clmulepi64_si128
+#endif
+
+static_assert(sizeof(__m128i) <= simdjson::SIMDJSON_PADDING, "insufficient padding for westmere");
+
+#endif // SIMDJSON_WESTMERE_INTRINSICS_H
+/* end file include/simdjson/westmere/intrinsics.h */
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
@@ -88879,13 +88075,50 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
 
-#endif //  SIMDJSON_WESTMERE_NUMBERPARSING_H
+#endif //  SIMDJSON_WESTMERE_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/westmere/numberparsing_defs.h */
 /* including simdjson/westmere/simd.h: #include "simdjson/westmere/simd.h" */
 /* begin file include/simdjson/westmere/simd.h */
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
+/* including simdjson/westmere/base.h: #include "simdjson/westmere/base.h" */
+/* begin file include/simdjson/westmere/base.h */
+#ifndef SIMDJSON_WESTMERE_BASE_H
+#define SIMDJSON_WESTMERE_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_WESTMERE
+namespace simdjson {
+/**
+ * Implementation for Westmere (Intel SSE4.2).
+ */
+namespace westmere {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace westmere
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/westmere/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_WESTMERE_BASE_H
+/* end file include/simdjson/westmere/base.h */
 /* including simdjson/westmere/bitmanipulation.h: #include "simdjson/westmere/bitmanipulation.h" */
 /* begin file include/simdjson/westmere/bitmanipulation.h */
 #ifndef SIMDJSON_WESTMERE_BITMANIPULATION_H
@@ -89338,8 +88571,8 @@ namespace simd {
 /* end file include/simdjson/westmere/simd.h */
 /* including simdjson/westmere/stringparsing_defs.h: #include "simdjson/westmere/stringparsing_defs.h" */
 /* begin file include/simdjson/westmere/stringparsing_defs.h */
-#ifndef SIMDJSON_WESTMERE_STRINGPARSING_H
-#define SIMDJSON_WESTMERE_STRINGPARSING_H
+#ifndef SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H
+#define SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H
 
 /* including simdjson/westmere/bitmanipulation.h: #include "simdjson/westmere/bitmanipulation.h" */
 /* begin file include/simdjson/westmere/bitmanipulation.h */
@@ -89461,6 +88694,43 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
+/* including simdjson/westmere/base.h: #include "simdjson/westmere/base.h" */
+/* begin file include/simdjson/westmere/base.h */
+#ifndef SIMDJSON_WESTMERE_BASE_H
+#define SIMDJSON_WESTMERE_BASE_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #include "simdjson/base.h" */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_WESTMERE
+namespace simdjson {
+/**
+ * Implementation for Westmere (Intel SSE4.2).
+ */
+namespace westmere {
+
+class implementation;
+
+namespace {
+namespace simd {
+template <typename T> struct simd8;
+template <typename T> struct simd8x64;
+} // namespace simd
+} // unnamed namespace
+
+} // namespace westmere
+} // namespace simdjson
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): // If we're editing one of the files in this directory, begin the implementation! */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_IMPLEMENTATION */
+/* amalgamation skipped (editor-only): #include "simdjson/westmere/begin.h" */
+/* amalgamation skipped (editor-only): #endif */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+
+#endif // SIMDJSON_WESTMERE_BASE_H
+/* end file include/simdjson/westmere/base.h */
 /* including simdjson/westmere/bitmanipulation.h: #include "simdjson/westmere/bitmanipulation.h" */
 /* begin file include/simdjson/westmere/bitmanipulation.h */
 #ifndef SIMDJSON_WESTMERE_BITMANIPULATION_H
@@ -89952,7 +89222,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 } // namespace westmere
 } // namespace simdjson
 
-#endif // SIMDJSON_WESTMERE_STRINGPARSING_H
+#endif // SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H
 /* end file include/simdjson/westmere/stringparsing_defs.h */
 /* end file include/simdjson/westmere/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h: #include "simdjson/generic/ondemand/amalgamated.h" */
