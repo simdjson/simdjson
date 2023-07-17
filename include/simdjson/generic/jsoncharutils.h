@@ -96,6 +96,16 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 }
 #endif
 
+inline std::string_view trim(const std::string_view str) noexcept {
+  // We can almost surely do better by rolling our own find_first_not_of function.
+  size_t first = str.find_first_not_of(" \t\n\r");
+  // If we have the empty string (just white space), then no trimming is possible, and
+  // we return the empty string_view.
+  if (std::string_view::npos == first) { return std::string_view(); }
+  size_t last = str.find_last_not_of(" \t\n\r");
+  return str.substr(first, (last - first + 1));
+}
+
 } // namespace jsoncharutils
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION

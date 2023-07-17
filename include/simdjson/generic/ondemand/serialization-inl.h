@@ -13,29 +13,18 @@
 
 namespace simdjson {
 
-inline std::string_view trim(const std::string_view str) noexcept {
-  // We can almost surely do better by rolling our own find_first_not_of function.
-  size_t first = str.find_first_not_of(" \t\n\r");
-  // If we have the empty string (just white space), then no trimming is possible, and
-  // we return the empty string_view.
-  if (std::string_view::npos == first) { return std::string_view(); }
-  size_t last = str.find_last_not_of(" \t\n\r");
-  return str.substr(first, (last - first + 1));
-}
-
-
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::document& x) noexcept {
   std::string_view v;
   auto error = x.raw_json().get(v);
   if(error) {return error; }
-  return trim(v);
+  return SIMDJSON_IMPLEMENTATION::jsoncharutils::trim(v);
 }
 
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::document_reference& x) noexcept {
   std::string_view v;
   auto error = x.raw_json().get(v);
   if(error) {return error; }
-  return trim(v);
+  return SIMDJSON_IMPLEMENTATION::jsoncharutils::trim(v);
 }
 
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::value& x) noexcept {
@@ -66,7 +55,7 @@ inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION:
       return to_json_string(object);
     }
     default:
-      return trim(x.raw_json_token());
+      return SIMDJSON_IMPLEMENTATION::jsoncharutils::trim(x.raw_json_token());
   }
 }
 
@@ -74,14 +63,14 @@ inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION:
   std::string_view v;
   auto error = x.raw_json().get(v);
   if(error) {return error; }
-  return trim(v);
+  return SIMDJSON_IMPLEMENTATION::jsoncharutils::trim(v);
 }
 
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::array& x) noexcept {
   std::string_view v;
   auto error = x.raw_json().get(v);
   if(error) {return error; }
-  return trim(v);
+  return SIMDJSON_IMPLEMENTATION::jsoncharutils::trim(v);
 }
 
 inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> x) {
