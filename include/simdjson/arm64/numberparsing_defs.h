@@ -4,6 +4,11 @@
 #include "simdjson/arm64/base.h"
 #include "simdjson/arm64/intrinsics.h"
 
+#if _M_ARM64
+// __umulh requires intrin.h
+#include <intrin.h>
+#endif // _M_ARM64
+
 #include <cstring>
 
 #ifndef SIMDJSON_AMALGAMATED
