@@ -134,6 +134,8 @@ var namespacesimdjson =
     [ "operator<<", "namespacesimdjson.html#a39bbbf605c0068e4a65c2d8885727fc9", null ],
     [ "operator<<", "namespacesimdjson.html#a61a74357c3e9313ad84c5f1243fdf581", null ],
     [ "operator<<", "namespacesimdjson.html#a4447c2af37e8fa57daa0cedd948a810d", null ],
+    [ "prettify", "namespacesimdjson.html#adf3293e0e757f2db0f279347c3b57914", null ],
+    [ "prettify", "namespacesimdjson.html#aed443864cc94c09c3f88eea39f8ce645", null ],
     [ "to_json_string", "namespacesimdjson.html#a598dd79ec46726de8a6d409ba1bae034", null ],
     [ "to_json_string", "namespacesimdjson.html#a2cda17221b852e5c398bad5bf350d270", null ],
     [ "to_json_string", "namespacesimdjson.html#a44db29a59fd9f65464171bb1caeb0914", null ],

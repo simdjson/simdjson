@@ -270,6 +270,14 @@ template&lt;class T &gt; </td></tr>
 template&lt;class T &gt; </td></tr>
 <tr class="memitem:a083a32b06fd32b6cd5e747abe3db6172"><td class="memTemplItemLeft" align="right" valign="top">std::string&#160;</td><td class="memTemplItemRight" valign="bottom"><b>minify</b> (<a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; T &gt; x)</td></tr>
 <tr class="separator:a083a32b06fd32b6cd5e747abe3db6172"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed443864cc94c09c3f88eea39f8ce645"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
+<tr class="memitem:aed443864cc94c09c3f88eea39f8ce645"><td class="memTemplItemLeft" align="right" valign="top">std::string&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#aed443864cc94c09c3f88eea39f8ce645">prettify</a> (T x)</td></tr>
+<tr class="memdesc:aed443864cc94c09c3f88eea39f8ce645"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prettifies a JSON element or document, printing the valid JSON with indentation.  <a href="namespacesimdjson.html#aed443864cc94c09c3f88eea39f8ce645">More...</a><br /></td></tr>
+<tr class="separator:aed443864cc94c09c3f88eea39f8ce645"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf3293e0e757f2db0f279347c3b57914"><td class="memTemplParams" colspan="2"><a id="adf3293e0e757f2db0f279347c3b57914"></a>
+template&lt;class T &gt; </td></tr>
+<tr class="memitem:adf3293e0e757f2db0f279347c3b57914"><td class="memTemplItemLeft" align="right" valign="top">std::string&#160;</td><td class="memTemplItemRight" valign="bottom"><b>prettify</b> (<a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; T &gt; x)</td></tr>
+<tr class="separator:adf3293e0e757f2db0f279347c3b57914"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a65b00a7a7a9c8fafe9eb3b9b413a36fa"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa">error_message</a> (<a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error) noexcept</td></tr>
 <tr class="memdesc:a65b00a7a7a9c8fafe9eb3b9b413a36fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the error message for the given error code.  <a href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa">More...</a><br /></td></tr>
 <tr class="separator:a65b00a7a7a9c8fafe9eb3b9b413a36fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -724,7 +732,7 @@ template&lt;class T &gt; </div>
 <p>Minifies a JSON element or document, printing the smallest possible valid JSON. </p>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded); cout &lt;&lt; minify(doc) &lt;&lt; endl; // prints [1,2,3] </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2serialization_8h_source.html#l00203">203</a> of file <a class="el" href="dom_2serialization_8h_source.html">serialization.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2serialization_8h_source.html#l00236">236</a> of file <a class="el" href="dom_2serialization_8h_source.html">serialization.h</a>.</p>
 
 </div>
 </div>
@@ -887,6 +895,32 @@ template&lt;class T &gt; </div>
 
 </div>
 </div>
+<a id="aed443864cc94c09c3f88eea39f8ce645"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aed443864cc94c09c3f88eea39f8ce645">&#9670;&nbsp;</a></span>prettify()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string simdjson::prettify </td>
+          <td>(</td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>x</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Prettifies a JSON element or document, printing the valid JSON with indentation. </p>
+<p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);</p>
+<p>// Prints: // { // [ // 1, // 2, // 3 // ] // } cout &lt;&lt; prettify(doc) &lt;&lt; endl; </p>
+
+<p class="definition">Definition at line <a class="el" href="dom_2serialization_8h_source.html#l00266">266</a> of file <a class="el" href="dom_2serialization_8h_source.html">serialization.h</a>.</p>
+
+</div>
+</div>
 <a id="a598dd79ec46726de8a6d409ba1bae034"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a598dd79ec46726de8a6d409ba1bae034">&#9670;&nbsp;</a></span>to_json_string() <span class="overload">[1/4]</span></h2>
 
@@ -1033,7 +1067,7 @@ template&lt;class T &gt; </div>
 <p>Converts JSON to a string. </p>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded); cout &lt;&lt; to_string(doc) &lt;&lt; endl; // prints [1,2,3] </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2serialization_8h_source.html#l00177">177</a> of file <a class="el" href="dom_2serialization_8h_source.html">serialization.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2serialization_8h_source.html#l00210">210</a> of file <a class="el" href="dom_2serialization_8h_source.html">serialization.h</a>.</p>
 
 </div>
 </div>

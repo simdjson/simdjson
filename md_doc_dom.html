@@ -158,7 +158,7 @@ Using the Parsed JSON</h1>
 </blockquote>
 * <b>Array and Object size</b> Given an array or an object, you can get its size (number of elements or keys) with the <code>size()</code> method.</li>
 <li><b>Checking an Element Type:</b> You can check an element's type with <code>element.type()</code>. It returns an <code>element_type</code> with values such as <code>simdjson::dom::element_type::ARRAY</code>, <code>simdjson::dom::element_type::OBJECT</code>, <code>simdjson::dom::element_type::INT64</code>, <code>simdjson::dom::element_type::UINT64</code>,<code>simdjson::dom::element_type::DOUBLE</code>, <code>simdjson::dom::element_type::STRING</code>, <code>simdjson::dom::element_type::BOOL</code> or, <code>simdjson::dom::element_type::NULL_VALUE</code>.</li>
-<li><b>Output to streams and strings:</b> Given a document or an element (or node) out of a JSON document, you can output a minified string version using the C++ stream idiom (<code>out &lt;&lt; element</code>). You can also request the construction of a minified string version (<code>simdjson::minify(element)</code>). Numbers are serialized as 64-bit floating-point numbers (<code>double</code>).</li>
+<li><b>Output to streams and strings:</b> Given a document or an element (or node) out of a JSON document, you can output a minified string version using the C++ stream idiom (<code>out &lt;&lt; element</code>). You can also request the construction of a minified string version (<code>simdjson::minify(element)</code>) or a prettified string version (<code>simdjson::prettify(element)</code>). Numbers are serialized as 64-bit floating-point numbers (<code>double</code>).</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md34"></a>
 Examples</h2>

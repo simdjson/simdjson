@@ -107,122 +107,170 @@ $(document).ready(function(){initNavTree('dom_2serialization_8h_source.html','')
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="keyword">namespace </span>internal {</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="keyword">class </span>mini_formatter;</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> formatter = mini_formatter&gt;</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keyword">class </span>string_builder {</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  string_builder() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keyword">inline</span> <span class="keywordtype">void</span> append(<a class="code" href="classsimdjson_1_1dom_1_1element.html">simdjson::dom::element</a> value);</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <span class="keyword">inline</span> <span class="keywordtype">void</span> append(<a class="code" href="classsimdjson_1_1dom_1_1array.html">simdjson::dom::array</a> value);</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <span class="keyword">inline</span> <span class="keywordtype">void</span> append(<a class="code" href="classsimdjson_1_1dom_1_1object.html">simdjson::dom::object</a> value);</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  simdjson_inline <span class="keywordtype">void</span> clear();</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  simdjson_inline std::string_view str() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  simdjson_inline <span class="keywordtype">void</span> append(<a class="code" href="classsimdjson_1_1dom_1_1key__value__pair.html">simdjson::dom::key_value_pair</a> value);</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  formatter format{};</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;};</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keyword">class </span>mini_formatter {</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  mini_formatter() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  simdjson_inline <span class="keywordtype">void</span> comma();</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  simdjson_inline <span class="keywordtype">void</span> start_array();</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  simdjson_inline <span class="keywordtype">void</span> end_array();</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  simdjson_inline <span class="keywordtype">void</span> start_object();</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  simdjson_inline <span class="keywordtype">void</span> end_object();</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  simdjson_inline <span class="keywordtype">void</span> true_atom();</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  simdjson_inline <span class="keywordtype">void</span> false_atom();</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  simdjson_inline <span class="keywordtype">void</span> null_atom();</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  simdjson_inline <span class="keywordtype">void</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330ab1bc248a7ff2b2e95569f56de68615df">number</a>(int64_t x);</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  simdjson_inline <span class="keywordtype">void</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330ab1bc248a7ff2b2e95569f56de68615df">number</a>(uint64_t x);</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  simdjson_inline <span class="keywordtype">void</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330ab1bc248a7ff2b2e95569f56de68615df">number</a>(<span class="keywordtype">double</span> x);</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;  simdjson_inline <span class="keywordtype">void</span> key(std::string_view unescaped);</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;  simdjson_inline <span class="keywordtype">void</span> string(std::string_view unescaped);</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;  simdjson_inline <span class="keywordtype">void</span> clear();</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  simdjson_inline std::string_view str() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  <span class="comment">// implementation details (subject to change)</span></div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="comment"></span>  simdjson_inline <span class="keywordtype">void</span> one_char(<span class="keywordtype">char</span> c);</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  std::vector&lt;char&gt; buffer{}; <span class="comment">// not ideal!</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;};</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;} <span class="comment">// internal</span></div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="keyword">namespace </span>dom {</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160; </div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;<span class="keyword">inline</span> std::ostream&amp; <a class="code" href="namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27">operator&lt;&lt;</a>(std::ostream&amp; out, <a class="code" href="classsimdjson_1_1dom_1_1element.html">simdjson::dom::element</a> value) {</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    simdjson::internal::string_builder&lt;&gt; sb;</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    sb.append(value);</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <span class="keywordflow">return</span> (out &lt;&lt; sb.str());</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;}</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;<span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;<span class="keyword">inline</span> std::ostream&amp; <a class="code" href="namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27">operator&lt;&lt;</a>(std::ostream&amp; out, <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson::simdjson_result&lt;simdjson::dom::element&gt;</a> x) {</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    <span class="keywordflow">if</span> (x.<a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>()) { <span class="keywordflow">throw</span> <a class="code" href="structsimdjson_1_1simdjson__error.html">simdjson::simdjson_error</a>(x.<a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>()); }</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="keywordflow">return</span> (out &lt;&lt; x.<a class="code" href="structsimdjson_1_1simdjson__result.html#af7f6d5a5e979b60d5231449d53dcd9be">value</a>());</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;}</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;<span class="keyword">inline</span> std::ostream&amp; <a class="code" href="namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27">operator&lt;&lt;</a>(std::ostream&amp; out, <a class="code" href="classsimdjson_1_1dom_1_1array.html">simdjson::dom::array</a> value)  {</div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    simdjson::internal::string_builder&lt;&gt; sb;</div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;    sb.append(value);</div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;    <span class="keywordflow">return</span> (out &lt;&lt; sb.str());</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;}</div>
-<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;<span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
-<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;<span class="keyword">inline</span> std::ostream&amp; <a class="code" href="namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27">operator&lt;&lt;</a>(std::ostream&amp; out, <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson::simdjson_result&lt;simdjson::dom::array&gt;</a> x) {</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;    <span class="keywordflow">if</span> (x.<a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>()) { <span class="keywordflow">throw</span> <a class="code" href="structsimdjson_1_1simdjson__error.html">simdjson::simdjson_error</a>(x.<a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>()); }</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    <span class="keywordflow">return</span> (out &lt;&lt; x.<a class="code" href="structsimdjson_1_1simdjson__result.html#af7f6d5a5e979b60d5231449d53dcd9be">value</a>());</div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;}</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;<span class="keyword">inline</span> std::ostream&amp; <a class="code" href="namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27">operator&lt;&lt;</a>(std::ostream&amp; out, <a class="code" href="classsimdjson_1_1dom_1_1object.html">simdjson::dom::object</a> value)   {</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    simdjson::internal::string_builder&lt;&gt; sb;</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    sb.append(value);</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <span class="keywordflow">return</span> (out &lt;&lt; sb.str());</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;}</div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;<span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;<span class="keyword">inline</span> std::ostream&amp; <a class="code" href="namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27">operator&lt;&lt;</a>(std::ostream&amp; out,  <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson::simdjson_result&lt;simdjson::dom::object&gt;</a> x) {</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    <span class="keywordflow">if</span> (x.<a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>()) { <span class="keywordflow">throw</span>  <a class="code" href="structsimdjson_1_1simdjson__error.html">simdjson::simdjson_error</a>(x.<a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>()); }</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;    <span class="keywordflow">return</span> (out &lt;&lt; x.<a class="code" href="structsimdjson_1_1simdjson__result.html#af7f6d5a5e979b60d5231449d53dcd9be">value</a>());</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;}</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;} <span class="comment">// namespace dom</span></div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160; </div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
-<div class="line"><a name="l00177"></a><span class="lineno"><a class="line" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">  177</a></span>&#160;std::string <a class="code" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">to_string</a>(T x)   {</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    <span class="comment">// in C++, to_string is standard: http://www.cplusplus.com/reference/string/to_string/</span></div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    <span class="comment">// Currently minify and to_string are identical but in the future, they may</span></div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    <span class="comment">// differ.</span></div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;    simdjson::internal::string_builder&lt;&gt; sb;</div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;    sb.append(x);</div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    std::string_view answer = sb.str();</div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    <span class="keywordflow">return</span> std::string(answer.data(), answer.size());</div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;}</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;<span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;std::string <a class="code" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">to_string</a>(simdjson_result&lt;T&gt; x) {</div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;    <span class="keywordflow">if</span> (x.error()) { <span class="keywordflow">throw</span> simdjson_error(x.error()); }</div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">to_string</a>(x.value());</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;}</div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160; </div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
-<div class="line"><a name="l00203"></a><span class="lineno"><a class="line" href="namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c">  203</a></span>&#160;std::string <a class="code" href="namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c">minify</a>(T x)  {</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">to_string</a>(x);</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;}</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160; </div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;<span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;std::string <a class="code" href="namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c">minify</a>(simdjson_result&lt;T&gt; x) {</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;    <span class="keywordflow">if</span> (x.error()) { <span class="keywordflow">throw</span> simdjson_error(x.error()); }</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">to_string</a>(x.value());</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;}</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160; </div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160; </div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160; </div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160; </div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">class</span> formatter&gt;</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="keyword">class </span>base_formatter {</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;  simdjson_inline <span class="keywordtype">void</span> comma();</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;  simdjson_inline <span class="keywordtype">void</span> start_array();</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  simdjson_inline <span class="keywordtype">void</span> end_array();</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  simdjson_inline <span class="keywordtype">void</span> start_object();</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  simdjson_inline <span class="keywordtype">void</span> end_object();</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  simdjson_inline <span class="keywordtype">void</span> true_atom();</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  simdjson_inline <span class="keywordtype">void</span> false_atom();</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  simdjson_inline <span class="keywordtype">void</span> null_atom();</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  simdjson_inline <span class="keywordtype">void</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330ab1bc248a7ff2b2e95569f56de68615df">number</a>(int64_t x);</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  simdjson_inline <span class="keywordtype">void</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330ab1bc248a7ff2b2e95569f56de68615df">number</a>(uint64_t x);</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  simdjson_inline <span class="keywordtype">void</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330ab1bc248a7ff2b2e95569f56de68615df">number</a>(<span class="keywordtype">double</span> x);</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  simdjson_inline <span class="keywordtype">void</span> key(std::string_view unescaped);</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  simdjson_inline <span class="keywordtype">void</span> string(std::string_view unescaped);</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  simdjson_inline <span class="keywordtype">void</span> clear();</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  simdjson_inline std::string_view str() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  simdjson_inline <span class="keywordtype">void</span> one_char(<span class="keywordtype">char</span> c);</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  simdjson_inline <span class="keywordtype">void</span> call_print_newline() {</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;      this-&gt;print_newline();</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  }</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  simdjson_inline <span class="keywordtype">void</span> call_print_indents(<span class="keywordtype">size_t</span> depth) {</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;      this-&gt;print_indents(depth);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  }</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  simdjson_inline <span class="keywordtype">void</span> call_print_space() {</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;      this-&gt;print_space();</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  }</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  <span class="comment">// implementation details (subject to change)</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="comment"></span>  std::vector&lt;char&gt; buffer{}; <span class="comment">// not ideal!</span></div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;};</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="keyword">class </span>mini_formatter : <span class="keyword">public</span> base_formatter&lt;mini_formatter&gt; {</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;  simdjson_inline <span class="keywordtype">void</span> print_newline();</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  simdjson_inline <span class="keywordtype">void</span> print_indents(<span class="keywordtype">size_t</span> depth);</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;  simdjson_inline <span class="keywordtype">void</span> print_space();</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;};</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="keyword">class </span>pretty_formatter : <span class="keyword">public</span> base_formatter&lt;pretty_formatter&gt; {</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  simdjson_inline <span class="keywordtype">void</span> print_newline();</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  simdjson_inline <span class="keywordtype">void</span> print_indents(<span class="keywordtype">size_t</span> depth);</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  simdjson_inline <span class="keywordtype">void</span> print_space();</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;  <span class="keywordtype">int</span> indent_step = 4;</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;};</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> formatter = mini_formatter&gt;</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;<span class="keyword">class </span>string_builder {</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;  string_builder() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;  <span class="keyword">inline</span> <span class="keywordtype">void</span> append(<a class="code" href="classsimdjson_1_1dom_1_1element.html">simdjson::dom::element</a> value);</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;  <span class="keyword">inline</span> <span class="keywordtype">void</span> append(<a class="code" href="classsimdjson_1_1dom_1_1array.html">simdjson::dom::array</a> value);</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;  <span class="keyword">inline</span> <span class="keywordtype">void</span> append(<a class="code" href="classsimdjson_1_1dom_1_1object.html">simdjson::dom::object</a> value);</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;  simdjson_inline <span class="keywordtype">void</span> clear();</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;  simdjson_inline std::string_view str() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;  simdjson_inline <span class="keywordtype">void</span> append(<a class="code" href="classsimdjson_1_1dom_1_1key__value__pair.html">simdjson::dom::key_value_pair</a> value);</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;  formatter format{};</div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;};</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160; </div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;} <span class="comment">// internal</span></div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160; </div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;<span class="keyword">namespace </span>dom {</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160; </div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;<span class="keyword">inline</span> std::ostream&amp; <a class="code" href="namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27">operator&lt;&lt;</a>(std::ostream&amp; out, <a class="code" href="classsimdjson_1_1dom_1_1element.html">simdjson::dom::element</a> value) {</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;    simdjson::internal::string_builder&lt;&gt; sb;</div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;    sb.append(value);</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    <span class="keywordflow">return</span> (out &lt;&lt; sb.str());</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;}</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;<span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;<span class="keyword">inline</span> std::ostream&amp; <a class="code" href="namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27">operator&lt;&lt;</a>(std::ostream&amp; out, <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson::simdjson_result&lt;simdjson::dom::element&gt;</a> x) {</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;    <span class="keywordflow">if</span> (x.<a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>()) { <span class="keywordflow">throw</span> <a class="code" href="structsimdjson_1_1simdjson__error.html">simdjson::simdjson_error</a>(x.<a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>()); }</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    <span class="keywordflow">return</span> (out &lt;&lt; x.<a class="code" href="structsimdjson_1_1simdjson__result.html#af7f6d5a5e979b60d5231449d53dcd9be">value</a>());</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;}</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="keyword">inline</span> std::ostream&amp; <a class="code" href="namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27">operator&lt;&lt;</a>(std::ostream&amp; out, <a class="code" href="classsimdjson_1_1dom_1_1array.html">simdjson::dom::array</a> value)  {</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;    simdjson::internal::string_builder&lt;&gt; sb;</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    sb.append(value);</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;    <span class="keywordflow">return</span> (out &lt;&lt; sb.str());</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;}</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;<span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;<span class="keyword">inline</span> std::ostream&amp; <a class="code" href="namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27">operator&lt;&lt;</a>(std::ostream&amp; out, <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson::simdjson_result&lt;simdjson::dom::array&gt;</a> x) {</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;    <span class="keywordflow">if</span> (x.<a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>()) { <span class="keywordflow">throw</span> <a class="code" href="structsimdjson_1_1simdjson__error.html">simdjson::simdjson_error</a>(x.<a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>()); }</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    <span class="keywordflow">return</span> (out &lt;&lt; x.<a class="code" href="structsimdjson_1_1simdjson__result.html#af7f6d5a5e979b60d5231449d53dcd9be">value</a>());</div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;}</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;<span class="keyword">inline</span> std::ostream&amp; <a class="code" href="namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27">operator&lt;&lt;</a>(std::ostream&amp; out, <a class="code" href="classsimdjson_1_1dom_1_1object.html">simdjson::dom::object</a> value)   {</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;    simdjson::internal::string_builder&lt;&gt; sb;</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;    sb.append(value);</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    <span class="keywordflow">return</span> (out &lt;&lt; sb.str());</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;}</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;<span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;<span class="keyword">inline</span> std::ostream&amp; <a class="code" href="namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27">operator&lt;&lt;</a>(std::ostream&amp; out,  <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson::simdjson_result&lt;simdjson::dom::object&gt;</a> x) {</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    <span class="keywordflow">if</span> (x.<a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>()) { <span class="keywordflow">throw</span>  <a class="code" href="structsimdjson_1_1simdjson__error.html">simdjson::simdjson_error</a>(x.<a class="code" href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">error</a>()); }</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    <span class="keywordflow">return</span> (out &lt;&lt; x.<a class="code" href="structsimdjson_1_1simdjson__result.html#af7f6d5a5e979b60d5231449d53dcd9be">value</a>());</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;}</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;} <span class="comment">// namespace dom</span></div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160; </div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
+<div class="line"><a name="l00210"></a><span class="lineno"><a class="line" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">  210</a></span>&#160;std::string <a class="code" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">to_string</a>(T x)   {</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    <span class="comment">// in C++, to_string is standard: http://www.cplusplus.com/reference/string/to_string/</span></div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    <span class="comment">// Currently minify and to_string are identical but in the future, they may</span></div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    <span class="comment">// differ.</span></div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    simdjson::internal::string_builder&lt;&gt; sb;</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    sb.append(x);</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    std::string_view answer = sb.str();</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    <span class="keywordflow">return</span> std::string(answer.data(), answer.size());</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;}</div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;<span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;std::string <a class="code" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">to_string</a>(simdjson_result&lt;T&gt; x) {</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;    <span class="keywordflow">if</span> (x.error()) { <span class="keywordflow">throw</span> simdjson_error(x.error()); }</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">to_string</a>(x.value());</div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;}</div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160; </div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
+<div class="line"><a name="l00236"></a><span class="lineno"><a class="line" href="namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c">  236</a></span>&#160;std::string <a class="code" href="namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c">minify</a>(T x)  {</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">to_string</a>(x);</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;}</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160; </div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;<span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;std::string <a class="code" href="namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c">minify</a>(simdjson_result&lt;T&gt; x) {</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;    <span class="keywordflow">if</span> (x.error()) { <span class="keywordflow">throw</span> simdjson_error(x.error()); }</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">to_string</a>(x.value());</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;}</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160; </div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
+<div class="line"><a name="l00266"></a><span class="lineno"><a class="line" href="namespacesimdjson.html#aed443864cc94c09c3f88eea39f8ce645">  266</a></span>&#160;std::string <a class="code" href="namespacesimdjson.html#aed443864cc94c09c3f88eea39f8ce645">prettify</a>(T x)  {</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    simdjson::internal::string_builder&lt;simdjson::internal::pretty_formatter&gt; sb;</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    sb.append(x);</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    std::string_view answer = sb.str();</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    <span class="keywordflow">return</span> std::string(answer.data(), answer.size());</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;}</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160; </div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;<span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt;</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;std::string <a class="code" href="namespacesimdjson.html#aed443864cc94c09c3f88eea39f8ce645">prettify</a>(simdjson_result&lt;T&gt; x) {</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;    <span class="keywordflow">if</span> (x.error()) { <span class="keywordflow">throw</span> simdjson_error(x.error()); }</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">to_string</a>(x.value());</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;}</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160; </div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160; </div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160; </div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1array_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1array.html">simdjson::dom::array</a></div><div class="ttdoc">JSON array.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2array_8h_source.html#l00022">array.h:22</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1element_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1element.html">simdjson::dom::element</a></div><div class="ttdoc">A JSON element.</div><div class="ttdef"><b>Definition:</b> <a href="element_8h_source.html#l00040">element.h:40</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1key__value__pair_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1key__value__pair.html">simdjson::dom::key_value_pair</a></div><div class="ttdoc">Key/value pair in an object.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2object_8h_source.html#l00222">object.h:222</a></div></div>
@@ -230,8 +278,9 @@ $(document).ready(function(){initNavTree('dom_2serialization_8h_source.html','')
 <div class="ttc" id="anamespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_html_ac915f0c06e5ab0363e09593bba651330ab1bc248a7ff2b2e95569f56de68615df"><div class="ttname"><a href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330ab1bc248a7ff2b2e95569f56de68615df">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::json_type::number</a></div><div class="ttdeci">@ number</div><div class="ttdoc">A JSON number ( 1 or -2.3 or 4.5e6 ...)</div></div>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">We want to support argument-dependent lookup (ADL).</div><div class="ttdef"><b>Definition:</b> <a href="arm64_2bitmanipulation_8h_source.html#l00004">bitmanipulation.h:4</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_a43514fe76c3095e45f30a050a9551d27"><div class="ttname"><a href="namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27">simdjson::operator&lt;&lt;</a></div><div class="ttdeci">std::ostream &amp; operator&lt;&lt;(std::ostream &amp;out, error_code error) noexcept</div><div class="ttdoc">Write the error message to the output stream.</div><div class="ttdef"><b>Definition:</b> <a href="error-inl_8h_source.html#l00036">error-inl.h:36</a></div></div>
-<div class="ttc" id="anamespacesimdjson_html_ade4516933f53705eacfaed65ed14962d"><div class="ttname"><a href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">simdjson::to_string</a></div><div class="ttdeci">std::string to_string(T x)</div><div class="ttdoc">Converts JSON to a string.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2serialization_8h_source.html#l00177">serialization.h:177</a></div></div>
-<div class="ttc" id="anamespacesimdjson_html_aeb4ef5cab43d52da3fdd99cb689aff2c"><div class="ttname"><a href="namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c">simdjson::minify</a></div><div class="ttdeci">std::string minify(T x)</div><div class="ttdoc">Minifies a JSON element or document, printing the smallest possible valid JSON.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2serialization_8h_source.html#l00203">serialization.h:203</a></div></div>
+<div class="ttc" id="anamespacesimdjson_html_ade4516933f53705eacfaed65ed14962d"><div class="ttname"><a href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">simdjson::to_string</a></div><div class="ttdeci">std::string to_string(T x)</div><div class="ttdoc">Converts JSON to a string.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2serialization_8h_source.html#l00210">serialization.h:210</a></div></div>
+<div class="ttc" id="anamespacesimdjson_html_aeb4ef5cab43d52da3fdd99cb689aff2c"><div class="ttname"><a href="namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c">simdjson::minify</a></div><div class="ttdeci">std::string minify(T x)</div><div class="ttdoc">Minifies a JSON element or document, printing the smallest possible valid JSON.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2serialization_8h_source.html#l00236">serialization.h:236</a></div></div>
+<div class="ttc" id="anamespacesimdjson_html_aed443864cc94c09c3f88eea39f8ce645"><div class="ttname"><a href="namespacesimdjson.html#aed443864cc94c09c3f88eea39f8ce645">simdjson::prettify</a></div><div class="ttdeci">std::string prettify(T x)</div><div class="ttdoc">Prettifies a JSON element or document, printing the valid JSON with indentation.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2serialization_8h_source.html#l00266">serialization.h:266</a></div></div>
 <div class="ttc" id="astructsimdjson_1_1simdjson__error_html"><div class="ttname"><a href="structsimdjson_1_1simdjson__error.html">simdjson::simdjson_error</a></div><div class="ttdoc">Exception thrown when an exception-supporting simdjson method is called.</div><div class="ttdef"><b>Definition:</b> <a href="error_8h_source.html#l00072">error.h:72</a></div></div>
 <div class="ttc" id="astructsimdjson_1_1simdjson__result_html"><div class="ttname"><a href="structsimdjson_1_1simdjson__result.html">simdjson::simdjson_result</a></div><div class="ttdoc">The result of a simdjson operation that could fail.</div><div class="ttdef"><b>Definition:</b> <a href="error_8h_source.html#l00205">error.h:205</a></div></div>
 <div class="ttc" id="astructsimdjson_1_1simdjson__result_html_a23470fcc7f01262019e96d3f3010b4a1"><div class="ttname"><a href="structsimdjson_1_1simdjson__result.html#a23470fcc7f01262019e96d3f3010b4a1">simdjson::simdjson_result::error</a></div><div class="ttdeci">simdjson_inline error_code error() const noexcept</div><div class="ttdoc">The error.</div><div class="ttdef"><b>Definition:</b> <a href="error-inl_8h_source.html#l00132">error-inl.h:132</a></div></div>
