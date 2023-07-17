@@ -1,6 +1,7 @@
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
+#include "simdjson/westmere/base.h"
 #include "simdjson/westmere/bitmanipulation.h"
 
 #ifndef SIMDJSON_AMALGAMATED

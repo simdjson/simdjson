@@ -1,6 +1,7 @@
 #ifndef SIMDJSON_PPC64_SIMD_H
 #define SIMDJSON_PPC64_SIMD_H
 
+#include "simdjson/ppc64/base.h"
 #include "simdjson/ppc64/bitmanipulation.h"
 
 #ifndef SIMDJSON_AMALGAMATED

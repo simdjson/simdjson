@@ -3,7 +3,6 @@
 
 #include "simdjson/haswell/base.h"
 #include "simdjson/haswell/intrinsics.h"
-#include "simdjson/haswell/bitmanipulation.h"
 
 #ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/internal/simdprune_tables.h"
