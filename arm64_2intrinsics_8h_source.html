@@ -98,10 +98,12 @@ $(document).ready(function(){initNavTree('arm64_2intrinsics_8h_source.html','');
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">// you use visual studio or other compilers.</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">#include &lt;arm_neon.h&gt;</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;static_assert(<span class="keyword">sizeof</span>(uint8x16_t) &lt;= <a class="code" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>, <span class="stringliteral">&quot;insufficient padding for arm64&quot;</span>);</div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;simdjson/arm64/base.h&quot;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#endif </span><span class="comment">//  SIMDJSON_ARM64_INTRINSICS_H</span></div>
-<div class="ttc" id="anamespacesimdjson_html_aecdd750132f0eb123a6d61113b4197bf"><div class="ttname"><a href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a></div><div class="ttdeci">constexpr size_t SIMDJSON_PADDING</div><div class="ttdoc">The amount of padding needed in a buffer to parse JSON.</div><div class="ttdef"><b>Definition:</b> <a href="common__defs_8h_source.html#l00045">common_defs.h:45</a></div></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;static_assert(<span class="keyword">sizeof</span>(uint8x16_t) &lt;= <a class="code" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>, <span class="stringliteral">&quot;insufficient padding for arm64&quot;</span>);</div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#endif </span><span class="comment">//  SIMDJSON_ARM64_INTRINSICS_H</span></div>
+<div class="ttc" id="anamespacesimdjson_html_aecdd750132f0eb123a6d61113b4197bf"><div class="ttname"><a href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a></div><div class="ttdeci">constexpr size_t SIMDJSON_PADDING</div><div class="ttdoc">The amount of padding needed in a buffer to parse JSON.</div><div class="ttdef"><b>Definition:</b> <a href="base_8h_source.html#l00030">base.h:30</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

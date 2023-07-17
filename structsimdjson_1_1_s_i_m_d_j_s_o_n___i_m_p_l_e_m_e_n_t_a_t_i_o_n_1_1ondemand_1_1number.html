@@ -102,7 +102,7 @@ $(document).ready(function(){initNavTree('structsimdjson_1_1_s_i_m_d_j_s_o_n___i
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a8c8d29d831635c958e87de0cc2dab8b4"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ad1157b391ebf205df7e747d753746f93">number_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#a8c8d29d831635c958e87de0cc2dab8b4">get_number_type</a> () const noexcept</td></tr>
+<tr class="memitem:a8c8d29d831635c958e87de0cc2dab8b4"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a6a2b39df6a1ac51d9fbb7b39a1fcf89c">ondemand::number_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#a8c8d29d831635c958e87de0cc2dab8b4">get_number_type</a> () const noexcept</td></tr>
 <tr class="memdesc:a8c8d29d831635c958e87de0cc2dab8b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">return the automatically determined type of the number: number_type::floating_point_number, number_type::signed_integer or number_type::unsigned_integer.  <a href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#a8c8d29d831635c958e87de0cc2dab8b4">More...</a><br /></td></tr>
 <tr class="separator:a8c8d29d831635c958e87de0cc2dab8b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af0e89976b80a7a7dedaf8c1a7cfd64a2"><td class="memItemLeft" align="right" valign="top"><a id="af0e89976b80a7a7dedaf8c1a7cfd64a2"></a>
@@ -177,14 +177,14 @@ Protected Attributes</h2></td></tr>
 <tr class="memdesc:aa17e81138859bcef934d9502a9852049"><td class="mdescLeft">&#160;</td><td class="mdescRight">End of friend declarations.  <a href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#aa17e81138859bcef934d9502a9852049">More...</a><br /></td></tr>
 <tr class="separator:aa17e81138859bcef934d9502a9852049"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a73da034f579d79dc2803063e7178a899"><td class="memItemLeft" align="right" valign="top"><a id="a73da034f579d79dc2803063e7178a899"></a>
-<a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ad1157b391ebf205df7e747d753746f93">number_type</a>&#160;</td><td class="memItemRight" valign="bottom"><b>type</b> {number_type::signed_integer}</td></tr>
+<a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a6a2b39df6a1ac51d9fbb7b39a1fcf89c">number_type</a>&#160;</td><td class="memItemRight" valign="bottom"><b>type</b> {number_type::signed_integer}</td></tr>
 <tr class="separator:a73da034f579d79dc2803063e7178a899"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A type representing a JSON number. </p>
 <p>The design of the struct is deliberately straight-forward. All functions return standard values with no error check. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__type_8h_source.html#l00024">24</a> of file <a class="el" href="json__type_8h_source.html">json_type.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__type_8h_source.html#l00032">32</a> of file <a class="el" href="json__type_8h_source.html">json_type.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a41dc1bfd660e0b9c86cb5a5171fd7c02"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a41dc1bfd660e0b9c86cb5a5171fd7c02">&#9670;&nbsp;</a></span>as_double()</h2>
@@ -212,7 +212,7 @@ Protected Attributes</h2></td></tr>
 <p>Convert the number to a double. </p>
 <p>Though it always succeed, the conversion may be lossy if the number cannot be represented exactly. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__type-inl_8h_source.html#l00067">67</a> of file <a class="el" href="json__type-inl_8h_source.html">json_type-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__type-inl_8h_source.html#l00076">76</a> of file <a class="el" href="json__type-inl_8h_source.html">json_type-inl.h</a>.</p>
 
 </div>
 </div>
@@ -226,7 +226,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">simdjson_inline <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ad1157b391ebf205df7e747d753746f93">number_type</a> simdjson::SIMDJSON_IMPLEMENTATION::ondemand::number::get_number_type </td>
+          <td class="memname">simdjson_inline <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a6a2b39df6a1ac51d9fbb7b39a1fcf89c">number_type</a> simdjson::SIMDJSON_IMPLEMENTATION::ondemand::number::get_number_type </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -242,7 +242,7 @@ Protected Attributes</h2></td></tr>
 <p>return the automatically determined type of the number: number_type::floating_point_number, number_type::signed_integer or number_type::unsigned_integer. </p>
 <p>enum class number_type { floating_point_number=1, /// a binary64 number signed_integer, /// a signed integer that fits in a 64-bit word using two's complement unsigned_integer /// a positive integer larger or equal to 1&lt;&lt;63 }; </p>
 
-<p class="definition">Definition at line <a class="el" href="json__type-inl_8h_source.html#l00026">26</a> of file <a class="el" href="json__type-inl_8h_source.html">json_type-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__type-inl_8h_source.html#l00035">35</a> of file <a class="el" href="json__type-inl_8h_source.html">json_type-inl.h</a>.</p>
 
 </div>
 </div>

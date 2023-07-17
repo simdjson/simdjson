@@ -1,6 +1,7 @@
 var dir_49a0b2767ded4a45005c5d6720a18cd1 =
 [
     [ "arm64", "dir_76d8247d4498211a7d04a3794a38eb71.html", "dir_76d8247d4498211a7d04a3794a38eb71" ],
+    [ "builtin", "dir_cae07bd9608c9724f8cbc862866fc74a.html", "dir_cae07bd9608c9724f8cbc862866fc74a" ],
     [ "dom", "dir_438095d7beafc60159803dc5832a82bd.html", "dir_438095d7beafc60159803dc5832a82bd" ],
     [ "fallback", "dir_bdd5d78d80e110a51a7313218161f5b4.html", "dir_bdd5d78d80e110a51a7313218161f5b4" ],
     [ "generic", "dir_53368a02099cf3699f2996a5d88d70b6.html", "dir_53368a02099cf3699f2996a5d88d70b6" ],
@@ -21,11 +22,11 @@ var dir_49a0b2767ded4a45005c5d6720a18cd1 =
     [ "fallback.h", "fallback_8h_source.html", null ],
     [ "haswell.h", "haswell_8h_source.html", null ],
     [ "icelake.h", "icelake_8h_source.html", null ],
-    [ "implementation-base.h", "implementation-base_8h.html", null ],
     [ "implementation.h", "implementation_8h_source.html", null ],
-    [ "implementations.h", "implementations_8h_source.html", null ],
+    [ "implementation_detection.h", "implementation__detection_8h_source.html", null ],
     [ "jsonioutil.h", "jsonioutil_8h_source.html", null ],
     [ "minify.h", "minify_8h_source.html", null ],
+    [ "ondemand.h", "ondemand_8h_source.html", null ],
     [ "padded_string-inl.h", "padded__string-inl_8h_source.html", null ],
     [ "padded_string.h", "padded__string_8h_source.html", null ],
     [ "padded_string_view-inl.h", "padded__string__view-inl_8h_source.html", null ],

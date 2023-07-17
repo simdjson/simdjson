@@ -165,7 +165,7 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="dom_2object_8h_source.html#l00027">27</a> of file <a class="el" href="dom_2object_8h_source.html">object.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object_8h_source.html#l00019">19</a> of file <a class="el" href="dom_2object_8h_source.html">object.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a4807eeb1ed5f596b587d0b61dfb550e7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4807eeb1ed5f596b587d0b61dfb550e7">&#9670;&nbsp;</a></span>key_equals()</h2>
@@ -195,7 +195,7 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <p>Design notes: Instead of constructing a string_view and then comparing it with a user-provided strings, it is probably more performant to have dedicated functions taking as a parameter the string we want to compare against and return true when they are equal.</p>
 <p>That avoids the creation of a temporary std::string_view. Though it is possible for the compiler to avoid entirely any overhead due to string_view, relying too much on compiler magic is problematic: compiler magic sometimes fail, and then what do you do? Also, enticing users to rely on high-performance function is probably better on the long run. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00214">214</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00211">211</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -226,7 +226,7 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <p>Returns true if the key in this key/value pair is equal to the provided string_view in a case-insensitive manner. </p>
 <p>Case comparisons may only be handled correctly for ASCII strings. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00225">225</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00222">222</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -256,7 +256,7 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <p>Get the length (in bytes) of the key in this key/value pair. </p>
 <p>You should expect this function to be faster than <a class="el" href="classsimdjson_1_1dom_1_1object_1_1iterator.html#a951609ca7a164b499ff19adbe2de7983" title="Get the key of this key/value pair.">key()</a>.<a class="el" href="classsimdjson_1_1dom_1_1object.html#a93ec5c36aae913f266f533b2e02bc873" title="Get the size of the object (number of keys).">size()</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00191">191</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00188">188</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -287,7 +287,7 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <p>Check if these values come from the same place in the JSON. </p>
 <p>Part of the std::iterator interface. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00160">160</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00157">157</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -317,7 +317,7 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <p>Get the next key/value pair. </p>
 <p>Part of the std::iterator interface. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00178">178</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00175">175</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -348,7 +348,7 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <p>Get the next key/value pair. </p>
 <p>Part of the std::iterator interface. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00183">183</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00180">180</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -361,7 +361,7 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="namespacesimdjson.html">simdjson</a></li><li class="navelem"><b>dom</b></li><li class="navelem"><a class="el" href="classsimdjson_1_1dom_1_1object.html">object</a></li><li class="navelem"><a class="el" href="classsimdjson_1_1dom_1_1object_1_1iterator.html">iterator</a></li>
+    <li class="navelem"><a class="el" href="namespacesimdjson.html">simdjson</a></li><li class="navelem"><a class="el" href="namespacesimdjson_1_1dom.html">dom</a></li><li class="navelem"><a class="el" href="classsimdjson_1_1dom_1_1object.html">object</a></li><li class="navelem"><a class="el" href="classsimdjson_1_1dom_1_1object_1_1iterator.html">iterator</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1 </li>
   </ul>
 </div>

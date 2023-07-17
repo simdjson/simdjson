@@ -94,50 +94,48 @@ $(document).ready(function(){initNavTree('dom_2document_8h_source.html',''); ini
 <div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_DOM_DOCUMENT_H</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="preprocessor">#define SIMDJSON_DOM_DOCUMENT_H</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160; </div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#include &quot;simdjson/common_defs.h&quot;</span></div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">#include &lt;ostream&gt;</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#include &quot;simdjson/dom/base.h&quot;</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160; </div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacesimdjson.html">simdjson</a> {</div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="keyword">namespace </span>dom {</div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160; </div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="keyword">class </span>element;</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
-<div class="line"><a name="l00018"></a><span class="lineno"><a class="line" href="classsimdjson_1_1dom_1_1document.html">   18</a></span>&#160;<span class="keyword">class </span><a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a> {</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="classsimdjson_1_1dom_1_1document.html#a6947c9d79453071ca73d06e398bcdd2a">   25</a></span>&#160;  <a class="code" href="classsimdjson_1_1dom_1_1document.html#a6947c9d79453071ca73d06e398bcdd2a">document</a>() noexcept = default;</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;  ~<a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a>() noexcept = default;</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
-<div class="line"><a name="l00033"></a><span class="lineno"><a class="line" href="classsimdjson_1_1dom_1_1document.html#af34f108b46f82428bfe4ea33869358f0">   33</a></span>&#160;  <a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a>(<a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a> &amp;&amp;other) noexcept = default;</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a>(const <a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a> &amp;) = delete; <span class="comment">// Disallow copying</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="classsimdjson_1_1dom_1_1document.html#a336814aa587d9ca605e1548b22b2b80c">   41</a></span>&#160;<span class="comment"></span>  <a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a> &amp;operator=(<a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a> &amp;&amp;other) noexcept = default;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  <a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a> &amp;operator=(const <a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a> &amp;) = delete; <span class="comment">// Disallow copying</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <a class="code" href="classsimdjson_1_1dom_1_1element.html">element</a> <a class="code" href="classsimdjson_1_1dom_1_1document.html#ae19dced0eee5f63b9d1591ef51dcda4e">root</a>() const noexcept;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keywordtype">bool</span> dump_raw_tape(std::ostream &amp;os) const noexcept;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  std::unique_ptr&lt;uint64_t[]&gt; tape{};</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  std::unique_ptr&lt;uint8_t[]&gt; string_buf{};</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> allocate(<span class="keywordtype">size_t</span> len) noexcept;</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  <span class="keywordtype">size_t</span> capacity() const noexcept;</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;private:</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  <span class="keywordtype">size_t</span> allocated_capacity{0};</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span>parser;</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;}; <span class="comment">// class document</span></div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;} <span class="comment">// namespace dom</span></div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; </div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_DOM_DOCUMENT_H</span></div>
-<div class="ttc" id="aclasssimdjson_1_1dom_1_1document_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1document.html">simdjson::dom::document</a></div><div class="ttdoc">A parsed JSON document.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2document_8h_source.html#l00018">document.h:18</a></div></div>
+<div class="line"><a name="l00016"></a><span class="lineno"><a class="line" href="classsimdjson_1_1dom_1_1document.html">   16</a></span>&#160;<span class="keyword">class </span><a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a> {</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00023"></a><span class="lineno"><a class="line" href="classsimdjson_1_1dom_1_1document.html#a6947c9d79453071ca73d06e398bcdd2a">   23</a></span>&#160;  <a class="code" href="classsimdjson_1_1dom_1_1document.html#a6947c9d79453071ca73d06e398bcdd2a">document</a>() noexcept = default;</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;  ~<a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a>() noexcept = default;</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
+<div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="classsimdjson_1_1dom_1_1document.html#af34f108b46f82428bfe4ea33869358f0">   31</a></span>&#160;  <a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a>(<a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a> &amp;&amp;other) noexcept = default;</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  <a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a>(const <a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a> &amp;) = delete; <span class="comment">// Disallow copying</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="classsimdjson_1_1dom_1_1document.html#a336814aa587d9ca605e1548b22b2b80c">   39</a></span>&#160;<span class="comment"></span>  <a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a> &amp;operator=(<a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a> &amp;&amp;other) noexcept = default;</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a> &amp;operator=(const <a class="code" href="classsimdjson_1_1dom_1_1document.html">document</a> &amp;) = delete; <span class="comment">// Disallow copying</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <a class="code" href="classsimdjson_1_1dom_1_1element.html">element</a> <a class="code" href="classsimdjson_1_1dom_1_1document.html#ae19dced0eee5f63b9d1591ef51dcda4e">root</a>() const noexcept;</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordtype">bool</span> dump_raw_tape(std::ostream &amp;os) const noexcept;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  std::unique_ptr&lt;uint64_t[]&gt; tape{};</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  std::unique_ptr&lt;uint8_t[]&gt; string_buf{};</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> allocate(<span class="keywordtype">size_t</span> len) noexcept;</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="keywordtype">size_t</span> capacity() const noexcept;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;private:</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  <span class="keywordtype">size_t</span> allocated_capacity{0};</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span>parser;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;}; <span class="comment">// class document</span></div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;} <span class="comment">// namespace dom</span></div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_DOM_DOCUMENT_H</span></div>
+<div class="ttc" id="aclasssimdjson_1_1dom_1_1document_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1document.html">simdjson::dom::document</a></div><div class="ttdoc">A parsed JSON document.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2document_8h_source.html#l00016">document.h:16</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1document_html_a6947c9d79453071ca73d06e398bcdd2a"><div class="ttname"><a href="classsimdjson_1_1dom_1_1document.html#a6947c9d79453071ca73d06e398bcdd2a">simdjson::dom::document::document</a></div><div class="ttdeci">document() noexcept=default</div><div class="ttdoc">Create a document container with zero capacity.</div></div>
-<div class="ttc" id="aclasssimdjson_1_1dom_1_1document_html_ae19dced0eee5f63b9d1591ef51dcda4e"><div class="ttname"><a href="classsimdjson_1_1dom_1_1document.html#ae19dced0eee5f63b9d1591ef51dcda4e">simdjson::dom::document::root</a></div><div class="ttdeci">element root() const noexcept</div><div class="ttdoc">Get the root element of this document as a JSON array.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2document-inl_8h_source.html#l00019">document-inl.h:19</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1dom_1_1element_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1element.html">simdjson::dom::element</a></div><div class="ttdoc">A JSON element.</div><div class="ttdef"><b>Definition:</b> <a href="element_8h_source.html#l00040">element.h:40</a></div></div>
-<div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">We want to support argument-dependent lookup (ADL).</div><div class="ttdef"><b>Definition:</b> <a href="arm64_2bitmanipulation_8h_source.html#l00004">bitmanipulation.h:4</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1dom_1_1document_html_ae19dced0eee5f63b9d1591ef51dcda4e"><div class="ttname"><a href="classsimdjson_1_1dom_1_1document.html#ae19dced0eee5f63b9d1591ef51dcda4e">simdjson::dom::document::root</a></div><div class="ttdeci">element root() const noexcept</div><div class="ttdoc">Get the root element of this document as a JSON array.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2document-inl_8h_source.html#l00017">document-inl.h:17</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1dom_1_1element_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1element.html">simdjson::dom::element</a></div><div class="ttdoc">A JSON element.</div><div class="ttdef"><b>Definition:</b> <a href="element_8h_source.html#l00031">element.h:31</a></div></div>
+<div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">The top level simdjson namespace, containing everything the library provides.</div><div class="ttdef"><b>Definition:</b> <a href="arm64_2base_8h_source.html#l00008">base.h:8</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_a7b735a3a50ba79e3f7f14df5f77d8da9"><div class="ttname"><a href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">simdjson::error_code</a></div><div class="ttdeci">error_code</div><div class="ttdoc">All possible errors returned by simdjson.</div><div class="ttdef"><b>Definition:</b> <a href="error_8h_source.html#l00017">error.h:17</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

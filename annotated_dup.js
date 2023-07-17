@@ -1,7 +1,7 @@
 var annotated_dup =
 [
     [ "simdjson", "namespacesimdjson.html", [
-      [ "dom", null, [
+      [ "dom", "namespacesimdjson_1_1dom.html", [
         [ "array", "classsimdjson_1_1dom_1_1array.html", "classsimdjson_1_1dom_1_1array" ],
         [ "document", "classsimdjson_1_1dom_1_1document.html", "classsimdjson_1_1dom_1_1document" ],
         [ "document_stream", "classsimdjson_1_1dom_1_1document__stream.html", "classsimdjson_1_1dom_1_1document__stream" ],

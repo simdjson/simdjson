@@ -145,7 +145,7 @@ static simdjson_inline bool&#160;</td><td class="memItemRight" valign="bottom"><
 <p>The <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html" title="A string escaped per JSON rules, terminated with quote (&quot;).">raw_json_string</a> is unescaped. If you wish to write an unescaped version of it to your own buffer, you may do so using the parser.unescape(string, buff) method, using an <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html" title="A JSON fragment iterator.">ondemand::parser</a> instance. Doing so requires you to have a sufficiently large buffer.</p>
 <p>The <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html" title="A string escaped per JSON rules, terminated with quote (&quot;).">raw_json_string</a> instances originate typically from field instance which in turn represent key-value pairs from object instances. From a field instance, you get the <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html" title="A string escaped per JSON rules, terminated with quote (&quot;).">raw_json_string</a> instance by calling key(). You can, if you want a more usable string_view instance, call the unescaped_key() method on the field instance. You may also create a <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html" title="A string escaped per JSON rules, terminated with quote (&quot;).">raw_json_string</a> from any other string value, with the <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#aca8b183c4e674a5b4ade8f6d2780f815" title="Cast this JSON value to a raw_json_string.">value.get_raw_json_string()</a> method. Again, you can get a more usable string_view instance by calling get_string(). </p>
 
-<p class="definition">Definition at line <a class="el" href="raw__json__string_8h_source.html#l00034">34</a> of file <a class="el" href="raw__json__string_8h_source.html">raw_json_string.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="raw__json__string_8h_source.html#l00036">36</a> of file <a class="el" href="raw__json__string_8h_source.html">raw_json_string.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a78b420ddb8a0570ee973cdfbccd31c9a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a78b420ddb8a0570ee973cdfbccd31c9a">&#9670;&nbsp;</a></span>raw_json_string() <span class="overload">[1/2]</span></h2>
@@ -203,7 +203,7 @@ static simdjson_inline bool&#160;</td><td class="memItemRight" valign="bottom"><
 <p>The given location must be just <em>after</em> the beginning quote (") in the JSON file.</p>
 <p>It <em>must</em> be terminated by a ", and be a valid JSON string. </p>
 
-<p class="definition">Definition at line <a class="el" href="raw__json__string-inl_8h_source.html#l00006">6</a> of file <a class="el" href="raw__json__string-inl_8h_source.html">raw_json_string-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="raw__json__string-inl_8h_source.html#l00016">16</a> of file <a class="el" href="raw__json__string-inl_8h_source.html">raw_json_string-inl.h</a>.</p>
 
 </div>
 </div>
@@ -235,7 +235,7 @@ static simdjson_inline bool&#160;</td><td class="memItemRight" valign="bottom"><
 <p>Returns true if target is free from unescaped quote. </p>
 <p>If target is known at compile-time, we might expect the computation to happen at compile time with many compilers (not all!). </p>
 
-<p class="definition">Definition at line <a class="el" href="raw__json__string-inl_8h_source.html#l00011">11</a> of file <a class="el" href="raw__json__string-inl_8h_source.html">raw_json_string-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="raw__json__string-inl_8h_source.html#l00021">21</a> of file <a class="el" href="raw__json__string-inl_8h_source.html">raw_json_string-inl.h</a>.</p>
 
 </div>
 </div>
@@ -265,7 +265,7 @@ static simdjson_inline bool&#160;</td><td class="memItemRight" valign="bottom"><
 <p>Get the raw pointer to the beginning of the string in the JSON (just after the "). </p>
 <p>It is possible for this function to return a null pointer if the instance has outlived its existence. </p>
 
-<p class="definition">Definition at line <a class="el" href="raw__json__string-inl_8h_source.html#l00008">8</a> of file <a class="el" href="raw__json__string-inl_8h_source.html">raw_json_string-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="raw__json__string-inl_8h_source.html#l00018">18</a> of file <a class="el" href="raw__json__string-inl_8h_source.html">raw_json_string-inl.h</a>.</p>
 
 </div>
 </div>
@@ -298,7 +298,7 @@ static simdjson_inline bool&#160;</td><td class="memItemRight" valign="bottom"><
 <p>If target is a compile-time constant, and your compiler likes you, you should be able to do the following without performance penalty...</p>
 <p>static_assert(raw_json_string::is_free_from_unescaped_quote(target), ""); s.unsafe_is_equal(target); </p>
 
-<p class="definition">Definition at line <a class="el" href="raw__json__string-inl_8h_source.html#l00092">92</a> of file <a class="el" href="raw__json__string-inl_8h_source.html">raw_json_string-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="raw__json__string-inl_8h_source.html#l00102">102</a> of file <a class="el" href="raw__json__string-inl_8h_source.html">raw_json_string-inl.h</a>.</p>
 
 </div>
 </div>
@@ -341,7 +341,7 @@ static simdjson_inline bool&#160;</td><td class="memItemRight" valign="bottom"><
 <p>The std::string_view instance may contain any characters. However, the caller is responsible for setting length so that length bytes may be read in the <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html" title="A string escaped per JSON rules, terminated with quote (&quot;).">raw_json_string</a>.</p>
 <p>Performance: the comparison may be done using memcmp which may be efficient for long strings. </p>
 
-<p class="definition">Definition at line <a class="el" href="raw__json__string-inl_8h_source.html#l00048">48</a> of file <a class="el" href="raw__json__string-inl_8h_source.html">raw_json_string-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="raw__json__string-inl_8h_source.html#l00058">58</a> of file <a class="el" href="raw__json__string-inl_8h_source.html">raw_json_string-inl.h</a>.</p>
 
 </div>
 </div>
@@ -375,7 +375,7 @@ static simdjson_inline bool&#160;</td><td class="memItemRight" valign="bottom"><
 <p>If target is a compile-time constant, and your compiler likes you, you should be able to do the following without performance penalty...</p>
 <p>static_assert(raw_json_string::is_free_from_unescaped_quote(target), ""); s.unsafe_is_equal(target); </p>
 
-<p class="definition">Definition at line <a class="el" href="raw__json__string-inl_8h_source.html#l00053">53</a> of file <a class="el" href="raw__json__string-inl_8h_source.html">raw_json_string-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="raw__json__string-inl_8h_source.html#l00063">63</a> of file <a class="el" href="raw__json__string-inl_8h_source.html">raw_json_string-inl.h</a>.</p>
 
 </div>
 </div>

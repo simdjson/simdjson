@@ -91,394 +91,406 @@ $(document).ready(function(){initNavTree('generic_2ondemand_2document__stream-in
 <div class="title">document_stream-inl.h</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="preprocessor">#include &lt;algorithm&gt;</span></div>
-<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="preprocessor">#include &lt;limits&gt;</span></div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="preprocessor">#include &lt;stdexcept&gt;</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacesimdjson.html">simdjson</a> {</div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="keyword">namespace </span>SIMDJSON_IMPLEMENTATION {</div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="keyword">namespace </span>ondemand {</div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_THREADS_ENABLED</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> stage1_worker::finish() {</div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;  <span class="comment">// After calling &quot;run&quot; someone would call finish() to wait</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;  <span class="comment">// for the end of the processing.</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;  <span class="comment">// This function will wait until either the thread has done</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;  <span class="comment">// the processing or, else, the destructor has been called.</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;  std::unique_lock&lt;std::mutex&gt; lock(locking_mutex);</div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;  cond_var.wait(lock, [<span class="keyword">this</span>]{<span class="keywordflow">return</span> has_work == <span class="keyword">false</span>;});</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;}</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="keyword">inline</span> stage1_worker::~stage1_worker() {</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;  <span class="comment">// The thread may never outlive the stage1_worker instance</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;  <span class="comment">// and will always be stopped/joined before the stage1_worker</span></div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;  <span class="comment">// instance is gone.</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;  stop_thread();</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;}</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> stage1_worker::start_thread() {</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;  std::unique_lock&lt;std::mutex&gt; lock(locking_mutex);</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;  <span class="keywordflow">if</span>(thread.joinable()) {</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <span class="keywordflow">return</span>; <span class="comment">// This should never happen but we never want to create more than one thread.</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  }</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  thread = std::thread([<span class="keyword">this</span>]{</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;      <span class="keywordflow">while</span>(<span class="keyword">true</span>) {</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;        std::unique_lock&lt;std::mutex&gt; thread_lock(locking_mutex);</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;        <span class="comment">// We wait for either &quot;run&quot; or &quot;stop_thread&quot; to be called.</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;        cond_var.wait(thread_lock, [<span class="keyword">this</span>]{<span class="keywordflow">return</span> has_work || !can_work;});</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;        <span class="comment">// If, for some reason, the stop_thread() method was called (i.e., the</span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;        <span class="comment">// destructor of stage1_worker is called, then we want to immediately destroy</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;        <span class="comment">// the thread (and not do any more processing).</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;        <span class="keywordflow">if</span>(!can_work) {</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;          <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        }</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        this-&gt;owner-&gt;stage1_thread_error = this-&gt;owner-&gt;run_stage1(*this-&gt;stage1_thread_parser,</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;              this-&gt;_next_batch_start);</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        this-&gt;has_work = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;        <span class="comment">// The condition variable call should be moved after thread_lock.unlock() for performance</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        <span class="comment">// reasons but thread sanitizers may report it as a data race if we do.</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;        <span class="comment">// See https://stackoverflow.com/questions/35775501/c-should-condition-variable-be-notified-under-lock</span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        cond_var.notify_one(); <span class="comment">// will notify &quot;finish&quot;</span></div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        thread_lock.unlock();</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;      }</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    }</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  );</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;}</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> stage1_worker::stop_thread() {</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  std::unique_lock&lt;std::mutex&gt; lock(locking_mutex);</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="comment">// We have to make sure that all locks can be released.</span></div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  can_work = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  has_work = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  cond_var.notify_all();</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  lock.unlock();</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <span class="keywordflow">if</span>(thread.joinable()) {</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    thread.join();</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  }</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;}</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> stage1_worker::run(document_stream * ds, parser * stage1, <span class="keywordtype">size_t</span> next_batch_start) {</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  std::unique_lock&lt;std::mutex&gt; lock(locking_mutex);</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  owner = ds;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  _next_batch_start = next_batch_start;</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  stage1_thread_parser = stage1;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  has_work = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  <span class="comment">// The condition variable call should be moved after thread_lock.unlock() for performance</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  <span class="comment">// reasons but thread sanitizers may report it as a data race if we do.</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  <span class="comment">// See https://stackoverflow.com/questions/35775501/c-should-condition-variable-be-notified-under-lock</span></div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  cond_var.notify_one(); <span class="comment">// will notify the thread lock that we have work</span></div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  lock.unlock();</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;}</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="preprocessor">#endif  </span><span class="comment">// SIMDJSON_THREADS_ENABLED</span></div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;simdjson_inline <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#af12dc14d4d16b9f4f4602c738678cb0c">document_stream::document_stream</a>(</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  ondemand::parser &amp;_parser,</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <span class="keyword">const</span> uint8_t *_buf,</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  <span class="keywordtype">size_t</span> _len,</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  <span class="keywordtype">size_t</span> _batch_size,</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;  <span class="keywordtype">bool</span> _allow_comma_separated</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;) noexcept</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  : parser{&amp;_parser},</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    buf{_buf},</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    len{_len},</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    batch_size{_batch_size &lt;= MINIMAL_BATCH_SIZE ? MINIMAL_BATCH_SIZE : _batch_size},</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    allow_comma_separated{_allow_comma_separated},</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    error{<a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa4ffc800804829a88c5b52ac3c4c6681">SUCCESS</a>}</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="preprocessor">    #ifdef SIMDJSON_THREADS_ENABLED</span></div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    , use_thread(_parser.threaded) <span class="comment">// we need to make a copy because _parser.threaded can change</span></div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;{</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_THREADS_ENABLED</span></div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  <span class="keywordflow">if</span>(worker.get() == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    error = <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa0e71422c8ae80ebaa11d8d74d64737f">MEMALLOC</a>;</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  }</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;}</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
-<div class="line"><a name="l00107"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#af12dc14d4d16b9f4f4602c738678cb0c">  107</a></span>&#160;simdjson_inline <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#af12dc14d4d16b9f4f4602c738678cb0c">document_stream::document_stream</a>() noexcept</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;  : <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>{<span class="keyword">nullptr</span>},</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    buf{<span class="keyword">nullptr</span>},</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    len{0},</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    batch_size{0},</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    allow_comma_separated{<span class="keyword">false</span>},</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    error{<a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9ac2aef8f0fc33187cc118c95fade925d2">UNINITIALIZED</a>}</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="preprocessor">    #ifdef SIMDJSON_THREADS_ENABLED</span></div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    , use_thread(<span class="keyword">false</span>)</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;{</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;}</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160; </div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;simdjson_inline document_stream::~document_stream() noexcept</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;{</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;<span class="preprocessor">  #ifdef SIMDJSON_THREADS_ENABLED</span></div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;  worker.reset();</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;<span class="preprocessor">  #endif</span></div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;}</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160; </div>
-<div class="line"><a name="l00127"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a43723c86c43ee3533a3278b5cd2fe2d0">  127</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">size_t</span> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a43723c86c43ee3533a3278b5cd2fe2d0">document_stream::size_in_bytes</a>() const noexcept {</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;  <span class="keywordflow">return</span> len;</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;}</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160; </div>
-<div class="line"><a name="l00131"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#acd3fd372dfd30fcce1d6a103c6682d0e">  131</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">size_t</span> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#acd3fd372dfd30fcce1d6a103c6682d0e">document_stream::truncated_bytes</a>() const noexcept {</div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;  <span class="keywordflow">if</span>(error == <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a2d50048bbe409023df4e88f6ffe3bc71">CAPACITY</a>) { <span class="keywordflow">return</span> len - batch_start; }</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>-&gt;implementation-&gt;structural_indexes[<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>-&gt;implementation-&gt;n_structural_indexes] - <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>-&gt;implementation-&gt;structural_indexes[<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>-&gt;implementation-&gt;n_structural_indexes + 1];</div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;}</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160; </div>
-<div class="line"><a name="l00136"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a3b0ac5e3e64e53167a011afdd0b77345">  136</a></span>&#160;simdjson_inline <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a3b0ac5e3e64e53167a011afdd0b77345">document_stream::iterator::iterator</a>() noexcept</div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;  : stream{<span class="keyword">nullptr</span>}, finished{<span class="keyword">true</span>} {</div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;}</div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160; </div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;simdjson_inline <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a3b0ac5e3e64e53167a011afdd0b77345">document_stream::iterator::iterator</a>(<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#af12dc14d4d16b9f4f4602c738678cb0c">document_stream</a>* _stream, <span class="keywordtype">bool</span> is_end) noexcept</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;  : stream{_stream}, finished{is_end} {</div>
-<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;}</div>
-<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160; </div>
-<div class="line"><a name="l00144"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a5fe3ce985cc1921d5917667d6b25841b">  144</a></span>&#160;simdjson_inline <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson_result&lt;ondemand::document_reference&gt;</a> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a5fe3ce985cc1921d5917667d6b25841b">document_stream::iterator::operator*</a>() noexcept {</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;  <span class="comment">//if(stream-&gt;error) { return stream-&gt;error; }</span></div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson_result&lt;ondemand::document_reference&gt;</a>(stream-&gt;doc, stream-&gt;error);</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;}</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160; </div>
-<div class="line"><a name="l00149"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a03e0c8d93b86a18b10370d51b99548ef">  149</a></span>&#160;simdjson_inline <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html">document_stream::iterator</a>&amp; <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a03e0c8d93b86a18b10370d51b99548ef">document_stream::iterator::operator++</a>() noexcept {</div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;  <span class="comment">// If there is an error, then we want the iterator</span></div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;  <span class="comment">// to be finished, no matter what. (E.g., we do not</span></div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;  <span class="comment">// keep generating documents with errors, or go beyond</span></div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;  <span class="comment">// a document with errors.)</span></div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;  <span class="comment">//</span></div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;  <span class="comment">// Users do not have to call &quot;operator*()&quot; when they use operator++,</span></div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;  <span class="comment">// so we need to end the stream in the operator++ function.</span></div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;  <span class="comment">//</span></div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;  <span class="comment">// Note that setting finished = true is essential otherwise</span></div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;  <span class="comment">// we would enter an infinite loop.</span></div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;  <span class="keywordflow">if</span> (stream-&gt;error) { finished = <span class="keyword">true</span>; }</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;  <span class="comment">// Note that stream-&gt;error() is guarded against error conditions</span></div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;  <span class="comment">// (it will immediately return if stream-&gt;error casts to false).</span></div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;  <span class="comment">// In effect, this next function does nothing when (stream-&gt;error)</span></div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;  <span class="comment">// is true (hence the risk of an infinite loop).</span></div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;  stream-&gt;next();</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;  <span class="comment">// If that was the last document, we&#39;re finished.</span></div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;  <span class="comment">// It is the only type of error we do not want to appear</span></div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;  <span class="comment">// in operator*.</span></div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;  <span class="keywordflow">if</span> (stream-&gt;error == <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7aed571b420dcdfe59742e0df97b415a">EMPTY</a>) { finished = <span class="keyword">true</span>; }</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;  <span class="comment">// If we had any other kind of error (not EMPTY) then we want</span></div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;  <span class="comment">// to pass it along to the operator* and we cannot mark the result</span></div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;  <span class="comment">// as &quot;finished&quot; just yet.</span></div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;  <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;}</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160; </div>
-<div class="line"><a name="l00176"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a05396b8e8322363b523b3bf9730a31f1">  176</a></span>&#160;simdjson_inline <span class="keywordtype">bool</span> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a05396b8e8322363b523b3bf9730a31f1">document_stream::iterator::operator!=</a>(<span class="keyword">const</span> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html">document_stream::iterator</a> &amp;other) <span class="keyword">const</span> noexcept {</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;  <span class="keywordflow">return</span> finished != other.finished;</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;}</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160; </div>
-<div class="line"><a name="l00180"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#ae88253d9f6cef0dfc0bd05c45cdfc06f">  180</a></span>&#160;simdjson_inline <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html">document_stream::iterator</a> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#ae88253d9f6cef0dfc0bd05c45cdfc06f">document_stream::begin</a>() noexcept {</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;  start();</div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;  <span class="comment">// If there are no documents, we&#39;re finished.</span></div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html">iterator</a>(<span class="keyword">this</span>, error == <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7aed571b420dcdfe59742e0df97b415a">EMPTY</a>);</div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H</span></div>
+<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160; </div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_AMALGAMATED</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/base.h&quot;</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/document_stream.h&quot;</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/ondemand/document-inl.h&quot;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;simdjson/generic/implementation_simdjson_result_base-inl.h&quot;</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_AMALGAMATED</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160; </div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &lt;algorithm&gt;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;stdexcept&gt;</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacesimdjson.html">simdjson</a> {</div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="keyword">namespace </span>SIMDJSON_IMPLEMENTATION {</div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keyword">namespace </span>ondemand {</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160; </div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_THREADS_ENABLED</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> stage1_worker::finish() {</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;  <span class="comment">// After calling &quot;run&quot; someone would call finish() to wait</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;  <span class="comment">// for the end of the processing.</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;  <span class="comment">// This function will wait until either the thread has done</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;  <span class="comment">// the processing or, else, the destructor has been called.</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;  std::unique_lock&lt;std::mutex&gt; lock(locking_mutex);</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;  cond_var.wait(lock, [<span class="keyword">this</span>]{<span class="keywordflow">return</span> has_work == <span class="keyword">false</span>;});</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;}</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="keyword">inline</span> stage1_worker::~stage1_worker() {</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  <span class="comment">// The thread may never outlive the stage1_worker instance</span></div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  <span class="comment">// and will always be stopped/joined before the stage1_worker</span></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <span class="comment">// instance is gone.</span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  stop_thread();</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;}</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> stage1_worker::start_thread() {</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  std::unique_lock&lt;std::mutex&gt; lock(locking_mutex);</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <span class="keywordflow">if</span>(thread.joinable()) {</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keywordflow">return</span>; <span class="comment">// This should never happen but we never want to create more than one thread.</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  }</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  thread = std::thread([<span class="keyword">this</span>]{</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;      <span class="keywordflow">while</span>(<span class="keyword">true</span>) {</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        std::unique_lock&lt;std::mutex&gt; thread_lock(locking_mutex);</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        <span class="comment">// We wait for either &quot;run&quot; or &quot;stop_thread&quot; to be called.</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;        cond_var.wait(thread_lock, [<span class="keyword">this</span>]{<span class="keywordflow">return</span> has_work || !can_work;});</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        <span class="comment">// If, for some reason, the stop_thread() method was called (i.e., the</span></div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;        <span class="comment">// destructor of stage1_worker is called, then we want to immediately destroy</span></div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="comment">// the thread (and not do any more processing).</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="keywordflow">if</span>(!can_work) {</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;          <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        }</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        this-&gt;owner-&gt;stage1_thread_error = this-&gt;owner-&gt;run_stage1(*this-&gt;stage1_thread_parser,</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;              this-&gt;_next_batch_start);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        this-&gt;has_work = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="comment">// The condition variable call should be moved after thread_lock.unlock() for performance</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        <span class="comment">// reasons but thread sanitizers may report it as a data race if we do.</span></div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        <span class="comment">// See https://stackoverflow.com/questions/35775501/c-should-condition-variable-be-notified-under-lock</span></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        cond_var.notify_one(); <span class="comment">// will notify &quot;finish&quot;</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        thread_lock.unlock();</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;      }</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    }</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  );</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;}</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> stage1_worker::stop_thread() {</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  std::unique_lock&lt;std::mutex&gt; lock(locking_mutex);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="comment">// We have to make sure that all locks can be released.</span></div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  can_work = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  has_work = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  cond_var.notify_all();</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  lock.unlock();</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  <span class="keywordflow">if</span>(thread.joinable()) {</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    thread.join();</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  }</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;}</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> stage1_worker::run(document_stream * ds, parser * stage1, <span class="keywordtype">size_t</span> next_batch_start) {</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  std::unique_lock&lt;std::mutex&gt; lock(locking_mutex);</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  owner = ds;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  _next_batch_start = next_batch_start;</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  stage1_thread_parser = stage1;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  has_work = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  <span class="comment">// The condition variable call should be moved after thread_lock.unlock() for performance</span></div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <span class="comment">// reasons but thread sanitizers may report it as a data race if we do.</span></div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  <span class="comment">// See https://stackoverflow.com/questions/35775501/c-should-condition-variable-be-notified-under-lock</span></div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  cond_var.notify_one(); <span class="comment">// will notify the thread lock that we have work</span></div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;  lock.unlock();</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;}</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="preprocessor">#endif  </span><span class="comment">// SIMDJSON_THREADS_ENABLED</span></div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; </div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;simdjson_inline <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#af12dc14d4d16b9f4f4602c738678cb0c">document_stream::document_stream</a>(</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  ondemand::parser &amp;_parser,</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  <span class="keyword">const</span> uint8_t *_buf,</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;  <span class="keywordtype">size_t</span> _len,</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  <span class="keywordtype">size_t</span> _batch_size,</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  <span class="keywordtype">bool</span> _allow_comma_separated</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;) noexcept</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  : parser{&amp;_parser},</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    buf{_buf},</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    len{_len},</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    batch_size{_batch_size &lt;= MINIMAL_BATCH_SIZE ? MINIMAL_BATCH_SIZE : _batch_size},</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    allow_comma_separated{_allow_comma_separated},</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    error{<a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa4ffc800804829a88c5b52ac3c4c6681">SUCCESS</a>}</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="preprocessor">    #ifdef SIMDJSON_THREADS_ENABLED</span></div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    , use_thread(_parser.threaded) <span class="comment">// we need to make a copy because _parser.threaded can change</span></div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;{</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_THREADS_ENABLED</span></div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;  <span class="keywordflow">if</span>(worker.get() == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    error = <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa0e71422c8ae80ebaa11d8d74d64737f">MEMALLOC</a>;</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  }</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;}</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160; </div>
+<div class="line"><a name="l00117"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#af12dc14d4d16b9f4f4602c738678cb0c">  117</a></span>&#160;simdjson_inline <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#af12dc14d4d16b9f4f4602c738678cb0c">document_stream::document_stream</a>() noexcept</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;  : <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>{<span class="keyword">nullptr</span>},</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    buf{<span class="keyword">nullptr</span>},</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    len{0},</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    batch_size{0},</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    allow_comma_separated{<span class="keyword">false</span>},</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    error{<a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9ac2aef8f0fc33187cc118c95fade925d2">UNINITIALIZED</a>}</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;<span class="preprocessor">    #ifdef SIMDJSON_THREADS_ENABLED</span></div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    , use_thread(<span class="keyword">false</span>)</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    <span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;{</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;}</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160; </div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;simdjson_inline document_stream::~document_stream() noexcept</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;{</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;<span class="preprocessor">  #ifdef SIMDJSON_THREADS_ENABLED</span></div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;  worker.reset();</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;<span class="preprocessor">  #endif</span></div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;}</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160; </div>
+<div class="line"><a name="l00137"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a43723c86c43ee3533a3278b5cd2fe2d0">  137</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">size_t</span> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a43723c86c43ee3533a3278b5cd2fe2d0">document_stream::size_in_bytes</a>() const noexcept {</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;  <span class="keywordflow">return</span> len;</div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;}</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160; </div>
+<div class="line"><a name="l00141"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#acd3fd372dfd30fcce1d6a103c6682d0e">  141</a></span>&#160;<span class="keyword">inline</span> <span class="keywordtype">size_t</span> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#acd3fd372dfd30fcce1d6a103c6682d0e">document_stream::truncated_bytes</a>() const noexcept {</div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;  <span class="keywordflow">if</span>(error == <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a2d50048bbe409023df4e88f6ffe3bc71">CAPACITY</a>) { <span class="keywordflow">return</span> len - batch_start; }</div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>-&gt;implementation-&gt;structural_indexes[<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>-&gt;implementation-&gt;n_structural_indexes] - <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>-&gt;implementation-&gt;structural_indexes[<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>-&gt;implementation-&gt;n_structural_indexes + 1];</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;}</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160; </div>
+<div class="line"><a name="l00146"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a3b0ac5e3e64e53167a011afdd0b77345">  146</a></span>&#160;simdjson_inline <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a3b0ac5e3e64e53167a011afdd0b77345">document_stream::iterator::iterator</a>() noexcept</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;  : stream{<span class="keyword">nullptr</span>}, finished{<span class="keyword">true</span>} {</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;}</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160; </div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;simdjson_inline <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a3b0ac5e3e64e53167a011afdd0b77345">document_stream::iterator::iterator</a>(<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#af12dc14d4d16b9f4f4602c738678cb0c">document_stream</a>* _stream, <span class="keywordtype">bool</span> is_end) noexcept</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;  : stream{_stream}, finished{is_end} {</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;}</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160; </div>
+<div class="line"><a name="l00154"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a5fe3ce985cc1921d5917667d6b25841b">  154</a></span>&#160;simdjson_inline <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson_result&lt;ondemand::document_reference&gt;</a> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a5fe3ce985cc1921d5917667d6b25841b">document_stream::iterator::operator*</a>() noexcept {</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;  <span class="comment">//if(stream-&gt;error) { return stream-&gt;error; }</span></div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson_result&lt;ondemand::document_reference&gt;</a>(stream-&gt;doc, stream-&gt;error);</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;}</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160; </div>
+<div class="line"><a name="l00159"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a03e0c8d93b86a18b10370d51b99548ef">  159</a></span>&#160;simdjson_inline <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html">document_stream::iterator</a>&amp; <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a03e0c8d93b86a18b10370d51b99548ef">document_stream::iterator::operator++</a>() noexcept {</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;  <span class="comment">// If there is an error, then we want the iterator</span></div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;  <span class="comment">// to be finished, no matter what. (E.g., we do not</span></div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;  <span class="comment">// keep generating documents with errors, or go beyond</span></div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;  <span class="comment">// a document with errors.)</span></div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;  <span class="comment">//</span></div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;  <span class="comment">// Users do not have to call &quot;operator*()&quot; when they use operator++,</span></div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;  <span class="comment">// so we need to end the stream in the operator++ function.</span></div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;  <span class="comment">//</span></div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;  <span class="comment">// Note that setting finished = true is essential otherwise</span></div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;  <span class="comment">// we would enter an infinite loop.</span></div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;  <span class="keywordflow">if</span> (stream-&gt;error) { finished = <span class="keyword">true</span>; }</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;  <span class="comment">// Note that stream-&gt;error() is guarded against error conditions</span></div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;  <span class="comment">// (it will immediately return if stream-&gt;error casts to false).</span></div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;  <span class="comment">// In effect, this next function does nothing when (stream-&gt;error)</span></div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;  <span class="comment">// is true (hence the risk of an infinite loop).</span></div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;  stream-&gt;next();</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;  <span class="comment">// If that was the last document, we&#39;re finished.</span></div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;  <span class="comment">// It is the only type of error we do not want to appear</span></div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;  <span class="comment">// in operator*.</span></div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;  <span class="keywordflow">if</span> (stream-&gt;error == <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7aed571b420dcdfe59742e0df97b415a">EMPTY</a>) { finished = <span class="keyword">true</span>; }</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;  <span class="comment">// If we had any other kind of error (not EMPTY) then we want</span></div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;  <span class="comment">// to pass it along to the operator* and we cannot mark the result</span></div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;  <span class="comment">// as &quot;finished&quot; just yet.</span></div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;  <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;}</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160; </div>
-<div class="line"><a name="l00186"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a0a0d40ed80767c01232a6aacb6258b2b">  186</a></span>&#160;simdjson_inline <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html">document_stream::iterator</a> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a0a0d40ed80767c01232a6aacb6258b2b">document_stream::end</a>() noexcept {</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html">iterator</a>(<span class="keyword">this</span>, <span class="keyword">true</span>);</div>
+<div class="line"><a name="l00186"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a05396b8e8322363b523b3bf9730a31f1">  186</a></span>&#160;simdjson_inline <span class="keywordtype">bool</span> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a05396b8e8322363b523b3bf9730a31f1">document_stream::iterator::operator!=</a>(<span class="keyword">const</span> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html">document_stream::iterator</a> &amp;other) <span class="keyword">const</span> noexcept {</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;  <span class="keywordflow">return</span> finished != other.finished;</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;}</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160; </div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> document_stream::start() noexcept {</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;  <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;  error = parser-&gt;allocate(batch_size);</div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;  <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;  <span class="comment">// Always run the first stage 1 parse immediately</span></div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;  batch_start = 0;</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;  error = run_stage1(*parser, batch_start);</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;  <span class="keywordflow">while</span>(error == <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7aed571b420dcdfe59742e0df97b415a">EMPTY</a>) {</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    <span class="comment">// In exceptional cases, we may start with an empty block</span></div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    batch_start = next_batch_start();</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    <span class="keywordflow">if</span> (batch_start &gt;= len) { <span class="keywordflow">return</span>; }</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    error = run_stage1(*parser, batch_start);</div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;  }</div>
+<div class="line"><a name="l00190"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#ae88253d9f6cef0dfc0bd05c45cdfc06f">  190</a></span>&#160;simdjson_inline <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html">document_stream::iterator</a> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#ae88253d9f6cef0dfc0bd05c45cdfc06f">document_stream::begin</a>() noexcept {</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;  start();</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;  <span class="comment">// If there are no documents, we&#39;re finished.</span></div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html">iterator</a>(<span class="keyword">this</span>, error == <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7aed571b420dcdfe59742e0df97b415a">EMPTY</a>);</div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;}</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160; </div>
+<div class="line"><a name="l00196"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a0a0d40ed80767c01232a6aacb6258b2b">  196</a></span>&#160;simdjson_inline <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html">document_stream::iterator</a> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a0a0d40ed80767c01232a6aacb6258b2b">document_stream::end</a>() noexcept {</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html">iterator</a>(<span class="keyword">this</span>, <span class="keyword">true</span>);</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;}</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160; </div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> document_stream::start() noexcept {</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;  <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;  error = parser-&gt;allocate(batch_size);</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;  <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;  doc_index = batch_start;</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;  doc = document(json_iterator(&amp;buf[batch_start], parser));</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;  doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>._streaming = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160; </div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;<span class="preprocessor">  #ifdef SIMDJSON_THREADS_ENABLED</span></div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;  <span class="keywordflow">if</span> (use_thread &amp;&amp; next_batch_start() &lt; len) {</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;    <span class="comment">// Kick off the first thread on next batch if needed</span></div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    error = stage1_thread_parser.allocate(batch_size);</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    worker-&gt;start_thread();</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    start_stage1_thread();</div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;  }</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;<span class="preprocessor">  #endif </span><span class="comment">// SIMDJSON_THREADS_ENABLED</span></div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;}</div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160; </div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> document_stream::next() noexcept {</div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;  <span class="comment">// We always enter at once once in an error condition.</span></div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;  <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;  next_document();</div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;  <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;  <span class="keyword">auto</span> cur_struct_index = doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>._root - parser-&gt;implementation-&gt;structural_indexes.get();</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;  doc_index = batch_start + parser-&gt;implementation-&gt;structural_indexes[cur_struct_index];</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160; </div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;  <span class="comment">// Check if at end of structural indexes (i.e. at end of batch)</span></div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;  <span class="keywordflow">if</span>(cur_struct_index &gt;= <span class="keyword">static_cast&lt;</span>int64_t<span class="keyword">&gt;</span>(parser-&gt;implementation-&gt;n_structural_indexes)) {</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    error = <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7aed571b420dcdfe59742e0df97b415a">EMPTY</a>;</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;    <span class="comment">// Load another batch (if available)</span></div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    <span class="keywordflow">while</span> (error == <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7aed571b420dcdfe59742e0df97b415a">EMPTY</a>) {</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;      batch_start = next_batch_start();</div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;      <span class="keywordflow">if</span> (batch_start &gt;= len) { <span class="keywordflow">break</span>; }</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="preprocessor">      #ifdef SIMDJSON_THREADS_ENABLED</span></div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;      <span class="keywordflow">if</span>(use_thread) {</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        load_from_stage1_thread();</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        error = run_stage1(*parser, batch_start);</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;      }</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;<span class="preprocessor">      #else</span></div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;      error = run_stage1(*parser, batch_start);</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;<span class="preprocessor">      #endif</span></div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;      doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a> = json_iterator(&amp;buf[batch_start], parser);</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;      doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>._streaming = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;      <span class="keywordflow">if</span> (error) { <span class="keywordflow">continue</span>; } <span class="comment">// If the error was EMPTY, we may want to load another batch.</span></div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;      doc_index = batch_start;</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    }</div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;  }</div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;}</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160; </div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> document_stream::next_document() noexcept {</div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;  <span class="comment">// Go to next place where depth=0 (document depth)</span></div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;  error = doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>.skip_child(0);</div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;  <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;  <span class="comment">// Always set depth=1 at the start of document</span></div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;  doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>._depth = 1;</div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;  <span class="comment">// consume comma if comma separated is allowed</span></div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;  <span class="keywordflow">if</span> (allow_comma_separated) { doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>.consume_character(<span class="charliteral">&#39;,&#39;</span>); }</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;  <span class="comment">// Resets the string buffer at the beginning, thus invalidating the strings.</span></div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;  doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>._string_buf_loc = parser-&gt;string_buf.get();</div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;  doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>._root = doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>.position();</div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;}</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160; </div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">size_t</span> document_stream::next_batch_start() const noexcept {</div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;  <span class="keywordflow">return</span> batch_start + parser-&gt;implementation-&gt;structural_indexes[parser-&gt;implementation-&gt;n_structural_indexes];</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;}</div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160; </div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;<span class="keyword">inline</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> document_stream::run_stage1(ondemand::parser &amp;p, <span class="keywordtype">size_t</span> _batch_start) noexcept {</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;  <span class="comment">// This code only updates the structural index in the parser, it does not update any json_iterator</span></div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;  <span class="comment">// instance.</span></div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;  <span class="keywordtype">size_t</span> remaining = len - _batch_start;</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;  <span class="keywordflow">if</span> (remaining &lt;= batch_size) {</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;    <span class="keywordflow">return</span> p.implementation-&gt;stage1(&amp;buf[_batch_start], remaining, stage1_mode::streaming_final);</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;  } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    <span class="keywordflow">return</span> p.implementation-&gt;stage1(&amp;buf[_batch_start], batch_size, stage1_mode::streaming_partial);</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;  }</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;}</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160; </div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;simdjson_inline <span class="keywordtype">size_t</span> document_stream::iterator::current_index() const noexcept {</div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;  <span class="keywordflow">return</span> stream-&gt;doc_index;</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;}</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160; </div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;simdjson_inline std::string_view document_stream::iterator::source() const noexcept {</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;  <span class="keyword">auto</span> depth = stream-&gt;doc.iter.depth();</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;  <span class="keyword">auto</span> cur_struct_index = stream-&gt;doc.iter._root - stream-&gt;parser-&gt;implementation-&gt;structural_indexes.get();</div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160; </div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;  <span class="comment">// If at root, process the first token to determine if scalar value</span></div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;  <span class="keywordflow">if</span> (stream-&gt;doc.iter.at_root()) {</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    <span class="keywordflow">switch</span> (stream-&gt;buf[stream-&gt;batch_start + stream-&gt;parser-&gt;implementation-&gt;structural_indexes[cur_struct_index]]) {</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;      <span class="keywordflow">case</span> <span class="charliteral">&#39;{&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;[&#39;</span>:   <span class="comment">// Depth=1 already at start of document</span></div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;        <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;      <span class="keywordflow">case</span> <span class="charliteral">&#39;}&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;]&#39;</span>:</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;        depth--;</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;      <span class="keywordflow">default</span>:    <span class="comment">// Scalar value document</span></div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;        <span class="comment">// TODO: Remove any trailing whitespaces</span></div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;        <span class="comment">// This returns a string spanning from start of value to the beginning of the next document (excluded)</span></div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;        <span class="keywordflow">return</span> std::string_view(<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span>*<span class="keyword">&gt;</span>(stream-&gt;buf) + current_index(), stream-&gt;parser-&gt;implementation-&gt;structural_indexes[++cur_struct_index] - current_index() - 1);</div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    }</div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;    cur_struct_index++;</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;  }</div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160; </div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;  <span class="keywordflow">while</span> (cur_struct_index &lt;= <span class="keyword">static_cast&lt;</span>int64_t<span class="keyword">&gt;</span>(stream-&gt;parser-&gt;implementation-&gt;n_structural_indexes)) {</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;    <span class="keywordflow">switch</span> (stream-&gt;buf[stream-&gt;batch_start + stream-&gt;parser-&gt;implementation-&gt;structural_indexes[cur_struct_index]]) {</div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;      <span class="keywordflow">case</span> <span class="charliteral">&#39;{&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;[&#39;</span>:</div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        depth++;</div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;        <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;      <span class="keywordflow">case</span> <span class="charliteral">&#39;}&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;]&#39;</span>:</div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;        depth--;</div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;        <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;    }</div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;    <span class="keywordflow">if</span> (depth == 0) { <span class="keywordflow">break</span>; }</div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;    cur_struct_index++;</div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;  }</div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160; </div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;  <span class="keywordflow">return</span> std::string_view(<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span>*<span class="keyword">&gt;</span>(stream-&gt;buf) + current_index(), stream-&gt;parser-&gt;implementation-&gt;structural_indexes[cur_struct_index] - current_index() + stream-&gt;batch_start + 1);;</div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;}</div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160; </div>
-<div class="line"><a name="l00358"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a4111757108422ffaf647024319205d5c">  358</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a4111757108422ffaf647024319205d5c">document_stream::iterator::error</a>() const noexcept {</div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;  <span class="keywordflow">return</span> stream-&gt;error;</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;}</div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160; </div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_THREADS_ENABLED</span></div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160; </div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> document_stream::load_from_stage1_thread() noexcept {</div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;  worker-&gt;finish();</div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;  <span class="comment">// Swap to the parser that was loaded up in the thread. Make sure the parser has</span></div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;  <span class="comment">// enough memory to swap to, as well.</span></div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;  std::swap(stage1_thread_parser,*<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>);</div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;  error = stage1_thread_error;</div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;  <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;  <span class="comment">// Always run the first stage 1 parse immediately</span></div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;  batch_start = 0;</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;  error = run_stage1(*parser, batch_start);</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;  <span class="keywordflow">while</span>(error == <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7aed571b420dcdfe59742e0df97b415a">EMPTY</a>) {</div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    <span class="comment">// In exceptional cases, we may start with an empty block</span></div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    batch_start = next_batch_start();</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;    <span class="keywordflow">if</span> (batch_start &gt;= len) { <span class="keywordflow">return</span>; }</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    error = run_stage1(*parser, batch_start);</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;  }</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;  <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;  doc_index = batch_start;</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;  doc = document(json_iterator(&amp;buf[batch_start], parser));</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;  doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>._streaming = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160; </div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;<span class="preprocessor">  #ifdef SIMDJSON_THREADS_ENABLED</span></div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;  <span class="keywordflow">if</span> (use_thread &amp;&amp; next_batch_start() &lt; len) {</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;    <span class="comment">// Kick off the first thread on next batch if needed</span></div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;    error = stage1_thread_parser.allocate(batch_size);</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;    <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;    worker-&gt;start_thread();</div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;    start_stage1_thread();</div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;  }</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;<span class="preprocessor">  #endif </span><span class="comment">// SIMDJSON_THREADS_ENABLED</span></div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;}</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160; </div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> document_stream::next() noexcept {</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;  <span class="comment">// We always enter at once once in an error condition.</span></div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;  <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;  next_document();</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;  <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;  <span class="keyword">auto</span> cur_struct_index = doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>._root - parser-&gt;implementation-&gt;structural_indexes.get();</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;  doc_index = batch_start + parser-&gt;implementation-&gt;structural_indexes[cur_struct_index];</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160; </div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;  <span class="comment">// Check if at end of structural indexes (i.e. at end of batch)</span></div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;  <span class="keywordflow">if</span>(cur_struct_index &gt;= <span class="keyword">static_cast&lt;</span>int64_t<span class="keyword">&gt;</span>(parser-&gt;implementation-&gt;n_structural_indexes)) {</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    error = <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7aed571b420dcdfe59742e0df97b415a">EMPTY</a>;</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    <span class="comment">// Load another batch (if available)</span></div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;    <span class="keywordflow">while</span> (error == <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7aed571b420dcdfe59742e0df97b415a">EMPTY</a>) {</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;      batch_start = next_batch_start();</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;      <span class="keywordflow">if</span> (batch_start &gt;= len) { <span class="keywordflow">break</span>; }</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;<span class="preprocessor">      #ifdef SIMDJSON_THREADS_ENABLED</span></div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;      <span class="keywordflow">if</span>(use_thread) {</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;        load_from_stage1_thread();</div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        error = run_stage1(*parser, batch_start);</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;      }</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;<span class="preprocessor">      #else</span></div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;      error = run_stage1(*parser, batch_start);</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;<span class="preprocessor">      #endif</span></div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;      doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a> = json_iterator(&amp;buf[batch_start], parser);</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;      doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>._streaming = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;      <span class="keywordflow">if</span> (error) { <span class="keywordflow">continue</span>; } <span class="comment">// If the error was EMPTY, we may want to load another batch.</span></div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;      doc_index = batch_start;</div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;    }</div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;  }</div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;}</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160; </div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> document_stream::next_document() noexcept {</div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;  <span class="comment">// Go to next place where depth=0 (document depth)</span></div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;  error = doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>.skip_child(0);</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;  <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;  <span class="comment">// Always set depth=1 at the start of document</span></div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;  doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>._depth = 1;</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;  <span class="comment">// consume comma if comma separated is allowed</span></div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;  <span class="keywordflow">if</span> (allow_comma_separated) { doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>.consume_character(<span class="charliteral">&#39;,&#39;</span>); }</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;  <span class="comment">// Resets the string buffer at the beginning, thus invalidating the strings.</span></div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;  doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>._string_buf_loc = parser-&gt;string_buf.get();</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;  doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>._root = doc.<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">iter</a>.position();</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;}</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160; </div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">size_t</span> document_stream::next_batch_start() const noexcept {</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;  <span class="keywordflow">return</span> batch_start + parser-&gt;implementation-&gt;structural_indexes[parser-&gt;implementation-&gt;n_structural_indexes];</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;}</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160; </div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;<span class="keyword">inline</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> document_stream::run_stage1(ondemand::parser &amp;p, <span class="keywordtype">size_t</span> _batch_start) noexcept {</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;  <span class="comment">// This code only updates the structural index in the parser, it does not update any json_iterator</span></div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;  <span class="comment">// instance.</span></div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;  <span class="keywordtype">size_t</span> remaining = len - _batch_start;</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;  <span class="keywordflow">if</span> (remaining &lt;= batch_size) {</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;    <span class="keywordflow">return</span> p.implementation-&gt;stage1(&amp;buf[_batch_start], remaining, stage1_mode::streaming_final);</div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;  } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;    <span class="keywordflow">return</span> p.implementation-&gt;stage1(&amp;buf[_batch_start], batch_size, stage1_mode::streaming_partial);</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;  }</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;}</div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160; </div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;simdjson_inline <span class="keywordtype">size_t</span> document_stream::iterator::current_index() const noexcept {</div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;  <span class="keywordflow">return</span> stream-&gt;doc_index;</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;}</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160; </div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;simdjson_inline std::string_view document_stream::iterator::source() const noexcept {</div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;  <span class="keyword">auto</span> depth = stream-&gt;doc.iter.depth();</div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;  <span class="keyword">auto</span> cur_struct_index = stream-&gt;doc.iter._root - stream-&gt;parser-&gt;implementation-&gt;structural_indexes.get();</div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160; </div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;  <span class="comment">// If at root, process the first token to determine if scalar value</span></div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;  <span class="keywordflow">if</span> (stream-&gt;doc.iter.at_root()) {</div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    <span class="keywordflow">switch</span> (stream-&gt;buf[stream-&gt;batch_start + stream-&gt;parser-&gt;implementation-&gt;structural_indexes[cur_struct_index]]) {</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;      <span class="keywordflow">case</span> <span class="charliteral">&#39;{&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;[&#39;</span>:   <span class="comment">// Depth=1 already at start of document</span></div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;        <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;      <span class="keywordflow">case</span> <span class="charliteral">&#39;}&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;]&#39;</span>:</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;        depth--;</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;        <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;      <span class="keywordflow">default</span>:    <span class="comment">// Scalar value document</span></div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        <span class="comment">// TODO: Remove any trailing whitespaces</span></div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;        <span class="comment">// This returns a string spanning from start of value to the beginning of the next document (excluded)</span></div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;        <span class="keywordflow">return</span> std::string_view(<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span>*<span class="keyword">&gt;</span>(stream-&gt;buf) + current_index(), stream-&gt;parser-&gt;implementation-&gt;structural_indexes[++cur_struct_index] - current_index() - 1);</div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;    }</div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;    cur_struct_index++;</div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;  }</div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160; </div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;  <span class="keywordflow">while</span> (cur_struct_index &lt;= <span class="keyword">static_cast&lt;</span>int64_t<span class="keyword">&gt;</span>(stream-&gt;parser-&gt;implementation-&gt;n_structural_indexes)) {</div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;    <span class="keywordflow">switch</span> (stream-&gt;buf[stream-&gt;batch_start + stream-&gt;parser-&gt;implementation-&gt;structural_indexes[cur_struct_index]]) {</div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;      <span class="keywordflow">case</span> <span class="charliteral">&#39;{&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;[&#39;</span>:</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;        depth++;</div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;        <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;      <span class="keywordflow">case</span> <span class="charliteral">&#39;}&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;]&#39;</span>:</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;        depth--;</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;        <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    }</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;    <span class="keywordflow">if</span> (depth == 0) { <span class="keywordflow">break</span>; }</div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;    cur_struct_index++;</div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;  }</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160; </div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;  <span class="keywordflow">return</span> std::string_view(<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span>*<span class="keyword">&gt;</span>(stream-&gt;buf) + current_index(), stream-&gt;parser-&gt;implementation-&gt;structural_indexes[cur_struct_index] - current_index() + stream-&gt;batch_start + 1);;</div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;}</div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160; </div>
+<div class="line"><a name="l00368"></a><span class="lineno"><a class="line" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a4111757108422ffaf647024319205d5c">  368</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a4111757108422ffaf647024319205d5c">document_stream::iterator::error</a>() const noexcept {</div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;  <span class="keywordflow">return</span> stream-&gt;error;</div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;}</div>
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160; </div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;  <span class="comment">// If there&#39;s anything left, start the stage 1 thread!</span></div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;  <span class="keywordflow">if</span> (next_batch_start() &lt; len) {</div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;    start_stage1_thread();</div>
-<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;  }</div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;}</div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160; </div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> document_stream::start_stage1_thread() noexcept {</div>
-<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;  <span class="comment">// we call the thread on a lambda that will update</span></div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;  <span class="comment">// this-&gt;stage1_thread_error</span></div>
-<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;  <span class="comment">// there is only one thread that may write to this value</span></div>
-<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;  <span class="comment">// TODO this is NOT exception-safe.</span></div>
-<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;  this-&gt;stage1_thread_error = <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9ac2aef8f0fc33187cc118c95fade925d2">UNINITIALIZED</a>; <span class="comment">// In case something goes wrong, make sure it&#39;s an error</span></div>
-<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;  <span class="keywordtype">size_t</span> _next_batch_start = this-&gt;next_batch_start();</div>
-<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160; </div>
-<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;  worker-&gt;run(<span class="keyword">this</span>, &amp; this-&gt;stage1_thread_parser, _next_batch_start);</div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;}</div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160; </div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_THREADS_ENABLED</span></div>
-<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160; </div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;} <span class="comment">// namespace ondemand</span></div>
-<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;} <span class="comment">// namespace SIMDJSON_IMPLEMENTATION</span></div>
-<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160; </div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacesimdjson.html">simdjson</a> {</div>
-<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160; </div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;simdjson_inline simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::document_stream&gt;::simdjson_result(</div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;  <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error</div>
-<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;) noexcept :</div>
-<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;    implementation_simdjson_result_base&lt;SIMDJSON_IMPLEMENTATION::ondemand::document_stream&gt;(error)</div>
-<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;{</div>
-<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;}</div>
-<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;simdjson_inline simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::document_stream&gt;::simdjson_result(</div>
-<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;  SIMDJSON_IMPLEMENTATION::ondemand::document_stream &amp;&amp;value</div>
-<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;) noexcept :</div>
-<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;    implementation_simdjson_result_base&lt;SIMDJSON_IMPLEMENTATION::ondemand::document_stream&gt;(</div>
-<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;      std::forward&lt;SIMDJSON_IMPLEMENTATION::ondemand::document_stream&gt;(value)</div>
-<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;    )</div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;{</div>
-<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;}</div>
-<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160; </div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_THREADS_ENABLED</span></div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160; </div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> document_stream::load_from_stage1_thread() noexcept {</div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;  worker-&gt;finish();</div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;  <span class="comment">// Swap to the parser that was loaded up in the thread. Make sure the parser has</span></div>
+<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;  <span class="comment">// enough memory to swap to, as well.</span></div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;  std::swap(stage1_thread_parser,*<a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>);</div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;  error = stage1_thread_error;</div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;  <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span>; }</div>
+<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160; </div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;  <span class="comment">// If there&#39;s anything left, start the stage 1 thread!</span></div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;  <span class="keywordflow">if</span> (next_batch_start() &lt; len) {</div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;    start_stage1_thread();</div>
+<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;  }</div>
+<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;}</div>
+<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160; </div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> document_stream::start_stage1_thread() noexcept {</div>
+<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;  <span class="comment">// we call the thread on a lambda that will update</span></div>
+<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;  <span class="comment">// this-&gt;stage1_thread_error</span></div>
+<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;  <span class="comment">// there is only one thread that may write to this value</span></div>
+<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;  <span class="comment">// TODO this is NOT exception-safe.</span></div>
+<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;  this-&gt;stage1_thread_error = <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9ac2aef8f0fc33187cc118c95fade925d2">UNINITIALIZED</a>; <span class="comment">// In case something goes wrong, make sure it&#39;s an error</span></div>
+<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;  <span class="keywordtype">size_t</span> _next_batch_start = this-&gt;next_batch_start();</div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160; </div>
+<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;  worker-&gt;run(<span class="keyword">this</span>, &amp; this-&gt;stage1_thread_parser, _next_batch_start);</div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;}</div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160; </div>
+<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_THREADS_ENABLED</span></div>
+<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160; </div>
+<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;} <span class="comment">// namespace ondemand</span></div>
+<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;} <span class="comment">// namespace SIMDJSON_IMPLEMENTATION</span></div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160; </div>
+<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacesimdjson.html">simdjson</a> {</div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160; </div>
+<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;simdjson_inline simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::document_stream&gt;::simdjson_result(</div>
+<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;  <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error</div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;) noexcept :</div>
+<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;    implementation_simdjson_result_base&lt;SIMDJSON_IMPLEMENTATION::ondemand::document_stream&gt;(error)</div>
+<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;{</div>
 <div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;}</div>
-<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator_html"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::iterator</a></div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream_8h_source.html#l00117">document_stream.h:117</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator_html_a03e0c8d93b86a18b10370d51b99548ef"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a03e0c8d93b86a18b10370d51b99548ef">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::iterator::operator++</a></div><div class="ttdeci">iterator &amp; operator++() noexcept</div><div class="ttdoc">Advance to the next document (prefix).</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00149">document_stream-inl.h:149</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator_html_a05396b8e8322363b523b3bf9730a31f1"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a05396b8e8322363b523b3bf9730a31f1">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::iterator::operator!=</a></div><div class="ttdeci">simdjson_inline bool operator!=(const iterator &amp;other) const noexcept</div><div class="ttdoc">Check if we're at the end yet.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00176">document_stream-inl.h:176</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator_html_a3b0ac5e3e64e53167a011afdd0b77345"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a3b0ac5e3e64e53167a011afdd0b77345">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::iterator::iterator</a></div><div class="ttdeci">simdjson_inline iterator() noexcept</div><div class="ttdoc">Default constructor.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00136">document_stream-inl.h:136</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator_html_a4111757108422ffaf647024319205d5c"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a4111757108422ffaf647024319205d5c">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::iterator::error</a></div><div class="ttdeci">error_code error() const noexcept</div><div class="ttdoc">Returns error of the stream (if any).</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00358">document_stream-inl.h:358</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator_html_a5fe3ce985cc1921d5917667d6b25841b"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a5fe3ce985cc1921d5917667d6b25841b">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::iterator::operator*</a></div><div class="ttdeci">simdjson_inline simdjson_result&lt; ondemand::document_reference &gt; operator*() noexcept</div><div class="ttdoc">Get the current document (or error).</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00144">document_stream-inl.h:144</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_html_a0a0d40ed80767c01232a6aacb6258b2b"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a0a0d40ed80767c01232a6aacb6258b2b">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::end</a></div><div class="ttdeci">simdjson_inline iterator end() noexcept</div><div class="ttdoc">The end of the stream, for iterator comparison purposes.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00186">document_stream-inl.h:186</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_html_a43723c86c43ee3533a3278b5cd2fe2d0"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a43723c86c43ee3533a3278b5cd2fe2d0">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::size_in_bytes</a></div><div class="ttdeci">size_t size_in_bytes() const noexcept</div><div class="ttdoc">Returns the input size in bytes.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00127">document_stream-inl.h:127</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_html_acd3fd372dfd30fcce1d6a103c6682d0e"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#acd3fd372dfd30fcce1d6a103c6682d0e">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::truncated_bytes</a></div><div class="ttdeci">size_t truncated_bytes() const noexcept</div><div class="ttdoc">After iterating through the stream, this method returns the number of bytes that were not parsed at t...</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00131">document_stream-inl.h:131</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_html_ae88253d9f6cef0dfc0bd05c45cdfc06f"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#ae88253d9f6cef0dfc0bd05c45cdfc06f">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::begin</a></div><div class="ttdeci">simdjson_inline iterator begin() noexcept</div><div class="ttdoc">Start iterating the documents in the stream.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00180">document_stream-inl.h:180</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_html_af12dc14d4d16b9f4f4602c738678cb0c"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#af12dc14d4d16b9f4f4602c738678cb0c">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::document_stream</a></div><div class="ttdeci">simdjson_inline document_stream() noexcept</div><div class="ttdoc">Construct an uninitialized document_stream.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00107">document_stream-inl.h:107</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_html_a969e1000319391cd2bee3aed88481500"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document::iter</a></div><div class="ttdeci">json_iterator iter</div><div class="ttdoc">Current position in the document.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document_8h_source.html#l00589">document.h:589</a></div></div>
+<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;simdjson_inline simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::document_stream&gt;::simdjson_result(</div>
+<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;  SIMDJSON_IMPLEMENTATION::ondemand::document_stream &amp;&amp;value</div>
+<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;) noexcept :</div>
+<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;    implementation_simdjson_result_base&lt;SIMDJSON_IMPLEMENTATION::ondemand::document_stream&gt;(</div>
+<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;      std::forward&lt;SIMDJSON_IMPLEMENTATION::ondemand::document_stream&gt;(value)</div>
+<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;    )</div>
+<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;{</div>
+<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;}</div>
+<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160; </div>
+<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;}</div>
+<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160; </div>
+<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H</span></div>
+<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator_html"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::iterator</a></div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream_8h_source.html#l00122">document_stream.h:122</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator_html_a03e0c8d93b86a18b10370d51b99548ef"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a03e0c8d93b86a18b10370d51b99548ef">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::iterator::operator++</a></div><div class="ttdeci">iterator &amp; operator++() noexcept</div><div class="ttdoc">Advance to the next document (prefix).</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00159">document_stream-inl.h:159</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator_html_a05396b8e8322363b523b3bf9730a31f1"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a05396b8e8322363b523b3bf9730a31f1">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::iterator::operator!=</a></div><div class="ttdeci">simdjson_inline bool operator!=(const iterator &amp;other) const noexcept</div><div class="ttdoc">Check if we're at the end yet.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00186">document_stream-inl.h:186</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator_html_a3b0ac5e3e64e53167a011afdd0b77345"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a3b0ac5e3e64e53167a011afdd0b77345">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::iterator::iterator</a></div><div class="ttdeci">simdjson_inline iterator() noexcept</div><div class="ttdoc">Default constructor.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00146">document_stream-inl.h:146</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator_html_a4111757108422ffaf647024319205d5c"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a4111757108422ffaf647024319205d5c">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::iterator::error</a></div><div class="ttdeci">error_code error() const noexcept</div><div class="ttdoc">Returns error of the stream (if any).</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00368">document_stream-inl.h:368</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator_html_a5fe3ce985cc1921d5917667d6b25841b"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a5fe3ce985cc1921d5917667d6b25841b">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::iterator::operator*</a></div><div class="ttdeci">simdjson_inline simdjson_result&lt; ondemand::document_reference &gt; operator*() noexcept</div><div class="ttdoc">Get the current document (or error).</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00154">document_stream-inl.h:154</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_html_a0a0d40ed80767c01232a6aacb6258b2b"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a0a0d40ed80767c01232a6aacb6258b2b">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::end</a></div><div class="ttdeci">simdjson_inline iterator end() noexcept</div><div class="ttdoc">The end of the stream, for iterator comparison purposes.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00196">document_stream-inl.h:196</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_html_a43723c86c43ee3533a3278b5cd2fe2d0"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a43723c86c43ee3533a3278b5cd2fe2d0">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::size_in_bytes</a></div><div class="ttdeci">size_t size_in_bytes() const noexcept</div><div class="ttdoc">Returns the input size in bytes.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00137">document_stream-inl.h:137</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_html_acd3fd372dfd30fcce1d6a103c6682d0e"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#acd3fd372dfd30fcce1d6a103c6682d0e">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::truncated_bytes</a></div><div class="ttdeci">size_t truncated_bytes() const noexcept</div><div class="ttdoc">After iterating through the stream, this method returns the number of bytes that were not parsed at t...</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00141">document_stream-inl.h:141</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_html_ae88253d9f6cef0dfc0bd05c45cdfc06f"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#ae88253d9f6cef0dfc0bd05c45cdfc06f">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::begin</a></div><div class="ttdeci">simdjson_inline iterator begin() noexcept</div><div class="ttdoc">Start iterating the documents in the stream.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00190">document_stream-inl.h:190</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_html_af12dc14d4d16b9f4f4602c738678cb0c"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#af12dc14d4d16b9f4f4602c738678cb0c">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream::document_stream</a></div><div class="ttdeci">simdjson_inline document_stream() noexcept</div><div class="ttdoc">Construct an uninitialized document_stream.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document__stream-inl_8h_source.html#l00117">document_stream-inl.h:117</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_html_a969e1000319391cd2bee3aed88481500"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a969e1000319391cd2bee3aed88481500">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document::iter</a></div><div class="ttdeci">json_iterator iter</div><div class="ttdoc">Current position in the document.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2document_8h_source.html#l00587">document.h:587</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser_html"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::parser</a></div><div class="ttdoc">A JSON fragment iterator.</div><div class="ttdef"><b>Definition:</b> <a href="generic_2ondemand_2parser_8h_source.html#l00034">parser.h:34</a></div></div>
-<div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">We want to support argument-dependent lookup (ADL).</div><div class="ttdef"><b>Definition:</b> <a href="arm64_2bitmanipulation_8h_source.html#l00004">bitmanipulation.h:4</a></div></div>
+<div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">The top level simdjson namespace, containing everything the library provides.</div><div class="ttdef"><b>Definition:</b> <a href="arm64_2base_8h_source.html#l00008">base.h:8</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_a7b735a3a50ba79e3f7f14df5f77d8da9"><div class="ttname"><a href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">simdjson::error_code</a></div><div class="ttdeci">error_code</div><div class="ttdoc">All possible errors returned by simdjson.</div><div class="ttdef"><b>Definition:</b> <a href="error_8h_source.html#l00017">error.h:17</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_a7b735a3a50ba79e3f7f14df5f77d8da9a2d50048bbe409023df4e88f6ffe3bc71"><div class="ttname"><a href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a2d50048bbe409023df4e88f6ffe3bc71">simdjson::CAPACITY</a></div><div class="ttdeci">@ CAPACITY</div><div class="ttdoc">This parser can't support a document that big.</div><div class="ttdef"><b>Definition:</b> <a href="error_8h_source.html#l00019">error.h:19</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_a7b735a3a50ba79e3f7f14df5f77d8da9a7aed571b420dcdfe59742e0df97b415a"><div class="ttname"><a href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7aed571b420dcdfe59742e0df97b415a">simdjson::EMPTY</a></div><div class="ttdeci">@ EMPTY</div><div class="ttdoc">no structural element found</div><div class="ttdef"><b>Definition:</b> <a href="error_8h_source.html#l00030">error.h:30</a></div></div>

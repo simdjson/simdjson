@@ -92,7 +92,18 @@ $(document).ready(function(){initNavTree('westmere_2begin_8h_source.html',''); i
 </div><!--header-->
 <div class="contents">
 <div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="preprocessor">#define SIMDJSON_IMPLEMENTATION westmere</span></div>
-<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;SIMDJSON_TARGET_WESTMERE</div>
+<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="preprocessor">#include &quot;simdjson/westmere/base.h&quot;</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="preprocessor">#include &quot;simdjson/westmere/intrinsics.h&quot;</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160; </div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#if !SIMDJSON_CAN_ALWAYS_RUN_WESTMERE</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;SIMDJSON_TARGET_REGION(<span class="stringliteral">&quot;sse4.2,pclmul,popcnt&quot;</span>)</div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160; </div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#include &quot;simdjson/westmere/bitmanipulation.h&quot;</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;simdjson/westmere/bitmask.h&quot;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;simdjson/westmere/numberparsing_defs.h&quot;</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &quot;simdjson/westmere/simd.h&quot;</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;simdjson/westmere/stringparsing_defs.h&quot;</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

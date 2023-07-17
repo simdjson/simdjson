@@ -88,6 +88,7 @@ $(document).ready(function(){initNavTree('namespacesimdjson.html',''); initResiz
 
 <div class="header">
   <div class="summary">
+<a href="#namespaces">Namespaces</a> &#124;
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#typedef-members">Typedefs</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
@@ -98,9 +99,33 @@ $(document).ready(function(){initNavTree('namespacesimdjson.html',''); initResiz
 </div><!--header-->
 <div class="contents">
 
-<p>We want to support argument-dependent lookup (ADL).  
+<p>The top level simdjson namespace, containing everything the library provides.  
 <a href="namespacesimdjson.html#details">More...</a></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:namespacesimdjson_1_1arm64"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1arm64.html">arm64</a></td></tr>
+<tr class="memdesc:namespacesimdjson_1_1arm64"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation for NEON (ARMv8). <br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:namespacesimdjson_1_1dom"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1dom.html">dom</a></td></tr>
+<tr class="memdesc:namespacesimdjson_1_1dom"><td class="mdescLeft">&#160;</td><td class="mdescRight">A DOM API on top of the simdjson parser. <br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:namespacesimdjson_1_1fallback"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1fallback.html">fallback</a></td></tr>
+<tr class="memdesc:namespacesimdjson_1_1fallback"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fallback implementation (runs on any machine). <br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:namespacesimdjson_1_1haswell"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1haswell.html">haswell</a></td></tr>
+<tr class="memdesc:namespacesimdjson_1_1haswell"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation for Haswell (Intel AVX2). <br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:namespacesimdjson_1_1icelake"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1icelake.html">icelake</a></td></tr>
+<tr class="memdesc:namespacesimdjson_1_1icelake"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation for Icelake (Intel AVX512). <br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:namespacesimdjson_1_1ppc64"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1ppc64.html">ppc64</a></td></tr>
+<tr class="memdesc:namespacesimdjson_1_1ppc64"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation for ALTIVEC (PPC64). <br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:namespacesimdjson_1_1westmere"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1westmere.html">westmere</a></td></tr>
+<tr class="memdesc:namespacesimdjson_1_1westmere"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation for Westmere (Intel SSE4.2). <br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1simdjson__result_3_01dom_1_1array_01_4.html">simdjson_result&lt; dom::array &gt;</a></td></tr>
@@ -228,7 +253,7 @@ Enumerations</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:af63210cc51d5c99ad84958daf9812e63"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classsimdjson_1_1implementation.html">implementation</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#af63210cc51d5c99ad84958daf9812e63">builtin_implementation</a> ()</td></tr>
-<tr class="memdesc:af63210cc51d5c99ad84958daf9812e63"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents the best statically linked simdjson implementation that can be used by the compiling program.  <a href="namespacesimdjson.html#af63210cc51d5c99ad84958daf9812e63">More...</a><br /></td></tr>
+<tr class="memdesc:af63210cc51d5c99ad84958daf9812e63"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function which returns a pointer to an implementation matching the "builtin" implementation.  <a href="namespacesimdjson.html#af63210cc51d5c99ad84958daf9812e63">More...</a><br /></td></tr>
 <tr class="separator:af63210cc51d5c99ad84958daf9812e63"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a913aabdb29fe97e1b8246f1e210f1c40"><td class="memItemLeft" align="right" valign="top"><a id="a913aabdb29fe97e1b8246f1e210f1c40"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>json_parse</b> (const uint8_t *buf, size_t len, <a class="el" href="classsimdjson_1_1dom_1_1parser.html">dom::parser</a> &amp;parser, bool realloc_if_needed=true) noexcept</td></tr>
@@ -362,10 +387,10 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="name
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:ac66973a7111dc4aa96ba7b3434344347"><td class="memItemLeft" align="right" valign="top"><a id="ac66973a7111dc4aa96ba7b3434344347"></a>
-constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#ac66973a7111dc4aa96ba7b3434344347">SIMDJSON_MAXSIZE_BYTES</a> = 0xFFFFFFFF</td></tr>
-<tr class="memdesc:ac66973a7111dc4aa96ba7b3434344347"><td class="mdescLeft">&#160;</td><td class="mdescRight">The maximum document size supported by simdjson. <br /></td></tr>
-<tr class="separator:ac66973a7111dc4aa96ba7b3434344347"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a32d36effa0943f5006e9d4151f5de0e4"><td class="memItemLeft" align="right" valign="top"><a id="a32d36effa0943f5006e9d4151f5de0e4"></a>
+constexpr SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a32d36effa0943f5006e9d4151f5de0e4">SIMDJSON_MAXSIZE_BYTES</a> = 0xFFFFFFFF</td></tr>
+<tr class="memdesc:a32d36effa0943f5006e9d4151f5de0e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">The maximum document size supported by simdjson. <br /></td></tr>
+<tr class="separator:a32d36effa0943f5006e9d4151f5de0e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aecdd750132f0eb123a6d61113b4197bf"><td class="memItemLeft" align="right" valign="top">constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">SIMDJSON_PADDING</a> = 64</td></tr>
 <tr class="memdesc:aecdd750132f0eb123a6d61113b4197bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">The amount of padding needed in a buffer to parse JSON.  <a href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">More...</a><br /></td></tr>
 <tr class="separator:aecdd750132f0eb123a6d61113b4197bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -374,7 +399,8 @@ constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el
 <tr class="separator:a6df2598eb1d4e1ea669c41831cc7325d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>We want to support argument-dependent lookup (ADL). </p>
+<div class="textblock"><p>The top level simdjson namespace, containing everything the library provides. </p>
+<p>We want to support argument-dependent lookup (ADL).</p>
 <p>Hence we should define operator&lt;&lt; in the namespace where the argument (here value, object, etc.) resides. Credit: @madhur4127 See <a href="https://github.com/simdjson/simdjson/issues/1768">https://github.com/simdjson/simdjson/issues/1768</a> </p>
 </div><h2 class="groupheader">Typedef Documentation</h2>
 <a id="a63b494af834917af13120dcd57719bdb"></a>
@@ -563,9 +589,8 @@ constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el
       </table>
 </div><div class="memdoc">
 
-<p>Represents the best statically linked simdjson implementation that can be used by the compiling program. </p>
-<p>Detects what options the program is compiled against, and picks the minimum implementation that will work on any computer that can run the program. For example, if you compile with g++ -march=westmere, it will pick the westmere implementation. The haswell implementation will still be available, and can be selected at runtime, but the builtin implementation (and any code that uses it) will use westmere.</p>
-<p>Function which returns a pointer to an implementation matching the "builtin" implementation. The builtin implementation is the best statically linked simdjson implementation that can be used by the compiling program. If you compile with g++ -march=haswell, this will return the haswell implementation. It is handy to be able to check what builtin was used: <a class="el" href="namespacesimdjson.html#af63210cc51d5c99ad84958daf9812e63" title="Represents the best statically linked simdjson implementation that can be used by the compiling progr...">builtin_implementation()</a>-&gt;name(). </p>
+<p>Function which returns a pointer to an implementation matching the "builtin" implementation. </p>
+<p>The builtin implementation is the best statically linked simdjson implementation that can be used by the compiling program. If you compile with g++ -march=haswell, this will return the haswell implementation. It is handy to be able to check what builtin was used: <a class="el" href="namespacesimdjson.html#af63210cc51d5c99ad84958daf9812e63" title="Function which returns a pointer to an implementation matching the &quot;builtin&quot; implementation.">builtin_implementation()</a>-&gt;name(). </p>
 
 </div>
 </div>
@@ -597,7 +622,7 @@ constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; <a class="el" href="classsimdjson_1_1dom_1_1element.html" title="A JSON element.">dom::element</a> doc; auto error = parser.parse("foo",3).get(doc); if (error) { printf("Error: %s\n", error_message(error)); }</p>
 <dl class="section return"><dt>Returns</dt><dd>The error message. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="error-inl_8h_source.html#l00021">21</a> of file <a class="el" href="error-inl_8h_source.html">error-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="error-inl_8h_source.html#l00020">20</a> of file <a class="el" href="error-inl_8h_source.html">error-inl.h</a>.</p>
 
 </div>
 </div>
@@ -626,7 +651,7 @@ constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el
 </div><div class="memdoc">
 <dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000003">Deprecated:</a></b></dt><dd>Error codes should be stored and returned as <code>error_code</code>, use <code><a class="el" href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa" title="Get the error message for the given error code.">error_message()</a></code> instead.</dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="error-inl_8h_source.html#l00028">28</a> of file <a class="el" href="error-inl_8h_source.html">error-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="error-inl_8h_source.html#l00027">27</a> of file <a class="el" href="error-inl_8h_source.html">error-inl.h</a>.</p>
 
 </div>
 </div>
@@ -732,7 +757,7 @@ template&lt;class T &gt; </div>
 <p>Minifies a JSON element or document, printing the smallest possible valid JSON. </p>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded); cout &lt;&lt; minify(doc) &lt;&lt; endl; // prints [1,2,3] </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2serialization_8h_source.html#l00236">236</a> of file <a class="el" href="dom_2serialization_8h_source.html">serialization.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2serialization_8h_source.html#l00233">233</a> of file <a class="el" href="dom_2serialization_8h_source.html">serialization.h</a>.</p>
 
 </div>
 </div>
@@ -917,7 +942,7 @@ template&lt;class T &gt; </div>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);</p>
 <p>// Prints: // { // [ // 1, // 2, // 3 // ] // } cout &lt;&lt; prettify(doc) &lt;&lt; endl; </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2serialization_8h_source.html#l00266">266</a> of file <a class="el" href="dom_2serialization_8h_source.html">serialization.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2serialization_8h_source.html#l00263">263</a> of file <a class="el" href="dom_2serialization_8h_source.html">serialization.h</a>.</p>
 
 </div>
 </div>
@@ -948,7 +973,7 @@ template&lt;class T &gt; </div>
 <p>Create a string-view instance out of an array instance. </p>
 <p>The string-view instance contains JSON text that is suitable to be parsed as JSON again. It does not validate the content. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html#l00069">69</a> of file <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html">serialization-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html#l00080">80</a> of file <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html">serialization-inl.h</a>.</p>
 
 </div>
 </div>
@@ -979,7 +1004,7 @@ template&lt;class T &gt; </div>
 <p>Create a string-view instance out of a document instance. </p>
 <p>The string-view instance contains JSON text that is suitable to be parsed as JSON again. It does not validate the content. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html#l00016">16</a> of file <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html">serialization-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html#l00027">27</a> of file <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html">serialization-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1010,7 +1035,7 @@ template&lt;class T &gt; </div>
 <p>Create a string-view instance out of an object instance. </p>
 <p>The string-view instance contains JSON text that is suitable to be parsed as JSON again. It does not validate the content. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html#l00062">62</a> of file <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html">serialization-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html#l00073">73</a> of file <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html">serialization-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1042,7 +1067,7 @@ template&lt;class T &gt; </div>
 <p>The string-view instance contains JSON text that is suitable to be parsed as JSON again. The value must not have been accessed previously. It does not validate the content. </p>
 <p>If we somehow receive a value that has already been consumed, then the following code could be in trouble. E.g., we create an array as needed, but if an array was already created, then it could be bad.</p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html#l00030">30</a> of file <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html">serialization-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html#l00041">41</a> of file <a class="el" href="generic_2ondemand_2serialization-inl_8h_source.html">serialization-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1067,7 +1092,7 @@ template&lt;class T &gt; </div>
 <p>Converts JSON to a string. </p>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded); cout &lt;&lt; to_string(doc) &lt;&lt; endl; // prints [1,2,3] </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2serialization_8h_source.html#l00210">210</a> of file <a class="el" href="dom_2serialization_8h_source.html">serialization.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2serialization_8h_source.html#l00207">207</a> of file <a class="el" href="dom_2serialization_8h_source.html">serialization.h</a>.</p>
 
 </div>
 </div>
@@ -1150,7 +1175,7 @@ template&lt;class T &gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the string is valid UTF-8. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="implementation_8h_source.html#l00037">37</a> of file <a class="el" href="implementation_8h_source.html">implementation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="implementation_8h_source.html#l00035">35</a> of file <a class="el" href="implementation_8h_source.html">implementation.h</a>.</p>
 
 </div>
 </div>
@@ -1187,7 +1212,7 @@ template&lt;class T &gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the string is valid UTF-8. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="implementation_8h_source.html#l00027">27</a> of file <a class="el" href="implementation_8h_source.html">implementation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="implementation_8h_source.html#l00025">25</a> of file <a class="el" href="implementation_8h_source.html">implementation.h</a>.</p>
 
 </div>
 </div>
@@ -1215,7 +1240,7 @@ template&lt;class T &gt; </div>
 <p>By default, simdjson supports this many nested objects and arrays. </p>
 <p>This is the default for parser::max_depth(). </p>
 
-<p class="definition">Definition at line <a class="el" href="common__defs_8h_source.html#l00052">52</a> of file <a class="el" href="common__defs_8h_source.html">common_defs.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="base_8h_source.html#l00037">37</a> of file <a class="el" href="base_8h_source.html">base.h</a>.</p>
 
 </div>
 </div>
@@ -1242,7 +1267,7 @@ template&lt;class T &gt; </div>
 <p>The amount of padding needed in a buffer to parse JSON. </p>
 <p>The input buf should be readable up to buf + SIMDJSON_PADDING this is a stopgap; there should be a better description of the main loop and its behavior that abstracts over this See <a href="https://github.com/simdjson/simdjson/issues/174">https://github.com/simdjson/simdjson/issues/174</a> </p>
 
-<p class="definition">Definition at line <a class="el" href="common__defs_8h_source.html#l00045">45</a> of file <a class="el" href="common__defs_8h_source.html">common_defs.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="base_8h_source.html#l00030">30</a> of file <a class="el" href="base_8h_source.html">base.h</a>.</p>
 
 </div>
 </div>

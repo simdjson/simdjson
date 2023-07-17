@@ -2,6 +2,7 @@ var dir_438095d7beafc60159803dc5832a82bd =
 [
     [ "array-inl.h", "dom_2array-inl_8h_source.html", null ],
     [ "array.h", "dom_2array_8h_source.html", null ],
+    [ "base.h", "dom_2base_8h_source.html", null ],
     [ "document-inl.h", "dom_2document-inl_8h_source.html", null ],
     [ "document.h", "dom_2document_8h_source.html", null ],
     [ "document_stream-inl.h", "dom_2document__stream-inl_8h_source.html", null ],
