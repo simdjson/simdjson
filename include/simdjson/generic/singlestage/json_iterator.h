@@ -292,7 +292,6 @@ protected:
   simdjson_inline token_position end() const noexcept;
 
   friend class document;
-  friend class document_stream;
   friend class object;
   friend class array;
   friend class value;

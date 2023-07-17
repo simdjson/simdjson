@@ -594,7 +594,6 @@ protected:
   friend class array;
   friend class field;
   friend class token;
-  friend class document_stream;
   friend class document_reference;
 };
 

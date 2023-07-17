@@ -8,7 +8,7 @@
 #include "simdjson/internal/dom_parser_implementation.h"
 #include "simdjson/dom/base.h" // for MINIMAL_DOCUMENT_CAPACITY
 #include "simdjson/generic/singlestage/base.h"
-#include "simdjson/generic/singlestage/document_stream.h"
+#include "simdjson/generic/singlestage/document.h"
 #include "simdjson/generic/singlestage/parser.h"
 #include "simdjson/generic/singlestage/raw_json_string.h"
 #endif // SIMDJSON_AMALGAMATED
@@ -97,21 +97,6 @@ simdjson_warn_unused simdjson_inline simdjson_result<json_iterator> parser::iter
   // Run stage 1.
   SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), stage1_mode::regular) );
   return json_iterator(reinterpret_cast<const uint8_t *>(json.data()), this);
-}
-
-inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size, bool allow_comma_separated) noexcept {
-  if(batch_size < MINIMAL_BATCH_SIZE) { batch_size = MINIMAL_BATCH_SIZE; }
-  if(allow_comma_separated && batch_size < len) { batch_size = len; }
-  return document_stream(*this, buf, len, batch_size, allow_comma_separated);
-}
-inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size, bool allow_comma_separated) noexcept {
-  return iterate_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size, allow_comma_separated);
-}
-inline simdjson_result<document_stream> parser::iterate_many(const std::string &s, size_t batch_size, bool allow_comma_separated) noexcept {
-  return iterate_many(s.data(), s.length(), batch_size, allow_comma_separated);
-}
-inline simdjson_result<document_stream> parser::iterate_many(const padded_string &s, size_t batch_size, bool allow_comma_separated) noexcept {
-  return iterate_many(s.data(), s.length(), batch_size, allow_comma_separated);
 }
 
 simdjson_inline size_t parser::capacity() const noexcept {

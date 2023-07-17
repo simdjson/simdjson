@@ -9,7 +9,7 @@ add_cpp_test(singlestage_active_tests           LABELS singlestage acceptance pe
 add_cpp_test(singlestage_array_tests            LABELS singlestage acceptance per_implementation)
 add_cpp_test(singlestage_array_error_tests      LABELS singlestage acceptance per_implementation)
 add_cpp_test(singlestage_compilation_tests      LABELS singlestage acceptance per_implementation)
-add_cpp_test(singlestage_document_stream_tests  LABELS singlestage acceptance per_implementation)
+# add_cpp_test(singlestage_document_stream_tests  LABELS singlestage acceptance per_implementation)
 add_cpp_test(singlestage_error_tests            LABELS singlestage acceptance per_implementation)
 add_cpp_test(singlestage_error_location_tests   LABELS singlestage acceptance per_implementation)
 add_cpp_test(singlestage_json_pointer_tests     LABELS singlestage acceptance per_implementation)
@@ -25,7 +25,7 @@ add_cpp_test(singlestage_readme_examples        LABELS singlestage acceptance pe
 add_cpp_test(singlestage_scalar_tests           LABELS singlestage acceptance per_implementation)
 add_cpp_test(singlestage_twitter_tests          LABELS singlestage acceptance per_implementation)
 add_cpp_test(singlestage_wrong_type_error_tests LABELS singlestage acceptance per_implementation)
-add_cpp_test(singlestage_iterate_many_csv       LABELS singlestage acceptance per_implementation)
+# add_cpp_test(singlestage_iterate_many_csv       LABELS singlestage acceptance per_implementation)
 
 if(HAVE_POSIX_FORK AND HAVE_POSIX_WAIT) # assert tests use fork and wait, which aren't on MSVC
   add_cpp_test(singlestage_assert_out_of_order_values LABELS assert per_implementation explicitonly singlestage)

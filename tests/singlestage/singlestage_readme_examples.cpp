@@ -799,92 +799,92 @@ bool json_pointer_rewind() {
   TEST_SUCCEED();
 }
 
-bool iterate_many_example() {
-  TEST_START();
-  auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
-  simdjson::singlestage::parser parser;
-  simdjson::singlestage::document_stream stream;
-  ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
-  auto i = stream.begin();
-  size_t count{0};
-  size_t expected_indexes[3] = {0,9,29};
-  std::string_view expected_doc[3] = {"[1,2,3]", R"({"1":1,"2":3,"4":4})", "[1,2,3]"};
-  for(; i != stream.end(); ++i) {
-      auto doc = *i;
-      ASSERT_SUCCESS(doc.type());
-      ASSERT_SUCCESS(i.error());
-      ASSERT_EQUAL(i.current_index(),expected_indexes[count]);
-      ASSERT_EQUAL(i.source(),expected_doc[count]);
-      count++;
-  }
-  TEST_SUCCEED();
-}
+// bool iterate_many_example() {
+//   TEST_START();
+//   auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
+//   simdjson::singlestage::parser parser;
+//   simdjson::singlestage::document_stream stream;
+//   ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+//   auto i = stream.begin();
+//   size_t count{0};
+//   size_t expected_indexes[3] = {0,9,29};
+//   std::string_view expected_doc[3] = {"[1,2,3]", R"({"1":1,"2":3,"4":4})", "[1,2,3]"};
+//   for(; i != stream.end(); ++i) {
+//       auto doc = *i;
+//       ASSERT_SUCCESS(doc.type());
+//       ASSERT_SUCCESS(i.error());
+//       ASSERT_EQUAL(i.current_index(),expected_indexes[count]);
+//       ASSERT_EQUAL(i.source(),expected_doc[count]);
+//       count++;
+//   }
+//   TEST_SUCCEED();
+// }
 
-std::string my_string(singlestage::document& doc) {
-  std::stringstream ss;
-  ss << doc;
-  return ss.str();
-}
+// std::string my_string(singlestage::document& doc) {
+//   std::stringstream ss;
+//   ss << doc;
+//   return ss.str();
+// }
 
-bool iterate_many_truncated_example() {
-  TEST_START();
-  auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
-  simdjson::singlestage::parser parser;
-  simdjson::singlestage::document_stream stream;
-  ASSERT_SUCCESS( parser.iterate_many(json,json.size()).get(stream) );
-  std::string_view expected[2] = {"[1,2,3]", R"({"1":1,"2":3,"4":4})"};
-  size_t count{0};
-  for(auto i = stream.begin(); i != stream.end(); ++i) {
-      ASSERT_EQUAL(i.source(),expected[count++]);
-  }
-  size_t truncated = stream.truncated_bytes();
-  ASSERT_EQUAL(truncated,39);
-  TEST_SUCCEED();
-}
+// bool iterate_many_truncated_example() {
+//   TEST_START();
+//   auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
+//   simdjson::singlestage::parser parser;
+//   simdjson::singlestage::document_stream stream;
+//   ASSERT_SUCCESS( parser.iterate_many(json,json.size()).get(stream) );
+//   std::string_view expected[2] = {"[1,2,3]", R"({"1":1,"2":3,"4":4})"};
+//   size_t count{0};
+//   for(auto i = stream.begin(); i != stream.end(); ++i) {
+//       ASSERT_EQUAL(i.source(),expected[count++]);
+//   }
+//   size_t truncated = stream.truncated_bytes();
+//   ASSERT_EQUAL(truncated,39);
+//   TEST_SUCCEED();
+// }
 
-bool ndjson_basics_example() {
-  TEST_START();
-  auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
-  singlestage::parser parser;
-  singlestage::document_stream docs;
-  ASSERT_SUCCESS( parser.iterate_many(json).get(docs) );
-  size_t count{0};
-  int64_t expected[3] = {1,2,3};
-  for (auto doc : docs) {
-    int64_t actual{};
-    ASSERT_SUCCESS( doc["foo"].get(actual) );
-    ASSERT_EQUAL( actual, expected[count++] );
-  }
-  TEST_SUCCEED();
-}
-bool stream_capacity_example() {
-  auto json = R"([1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100])"_padded;
-  singlestage::parser parser;
-  singlestage::document_stream stream;
-  size_t counter{0};
-  auto error = parser.iterate_many(json, 50).get(stream);
-  if( error ) { /* handle the error */ }
-  for (auto doc: stream) {
-    if(counter < 6) {
-      int64_t val{};
-      error = doc.at_pointer("/4").get(val);
-      if( error ) { /* handle the error */ }
-      std::cout << "5 = " << val << std::endl;
-    } else {
-      singlestage::value val;
-      error = doc.at_pointer("/4").get(val);
-      // error == simdjson::CAPACITY
-      if(error) {
-        std::cerr << error << std::endl;
-        // We left 293 bytes unprocessed at the tail end of the input.
-        std::cout << " unprocessed bytes at the end: " << stream.truncated_bytes() << std::endl;
-        break;
-      }
-    }
-    counter++;
-  }
-  return true;
-}
+// bool ndjson_basics_example() {
+//   TEST_START();
+//   auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
+//   singlestage::parser parser;
+//   singlestage::document_stream docs;
+//   ASSERT_SUCCESS( parser.iterate_many(json).get(docs) );
+//   size_t count{0};
+//   int64_t expected[3] = {1,2,3};
+//   for (auto doc : docs) {
+//     int64_t actual{};
+//     ASSERT_SUCCESS( doc["foo"].get(actual) );
+//     ASSERT_EQUAL( actual, expected[count++] );
+//   }
+//   TEST_SUCCEED();
+// }
+// bool stream_capacity_example() {
+//   auto json = R"([1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5] [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100])"_padded;
+//   singlestage::parser parser;
+//   singlestage::document_stream stream;
+//   size_t counter{0};
+//   auto error = parser.iterate_many(json, 50).get(stream);
+//   if( error ) { /* handle the error */ }
+//   for (auto doc: stream) {
+//     if(counter < 6) {
+//       int64_t val{};
+//       error = doc.at_pointer("/4").get(val);
+//       if( error ) { /* handle the error */ }
+//       std::cout << "5 = " << val << std::endl;
+//     } else {
+//       singlestage::value val;
+//       error = doc.at_pointer("/4").get(val);
+//       // error == simdjson::CAPACITY
+//       if(error) {
+//         std::cerr << error << std::endl;
+//         // We left 293 bytes unprocessed at the tail end of the input.
+//         std::cout << " unprocessed bytes at the end: " << stream.truncated_bytes() << std::endl;
+//         break;
+//       }
+//     }
+//     counter++;
+//   }
+//   return true;
+// }
 
 
 
@@ -1038,21 +1038,21 @@ int load_example_except_morecomplete(void) {
   return EXIT_SUCCESS;
 }
 
-bool allow_comma_separated_example() {
-  TEST_START();
-  auto json = R"( 1, 2, 3, 4, "a", "b", "c", {"hello": "world"} , [1, 2, 3])"_padded;
-  singlestage::parser parser;
-  singlestage::document_stream doc_stream;
-  // We pass '32' as the batch size, but it is a bogus parameter because, since
-  // we pass 'true' to the allow_comma parameter, the batch size will be set to at least
-  // the document size.
-  auto error = parser.iterate_many(json, 32, true).get(doc_stream);
-  if(error) { std::cerr << error << std::endl; return false; }
-  for (auto doc : doc_stream) {
-    std::cout << doc.type() << std::endl;
-  }
-  TEST_SUCCEED();
-}
+// bool allow_comma_separated_example() {
+//   TEST_START();
+//   auto json = R"( 1, 2, 3, 4, "a", "b", "c", {"hello": "world"} , [1, 2, 3])"_padded;
+//   singlestage::parser parser;
+//   singlestage::document_stream doc_stream;
+//   // We pass '32' as the batch size, but it is a bogus parameter because, since
+//   // we pass 'true' to the allow_comma parameter, the batch size will be set to at least
+//   // the document size.
+//   auto error = parser.iterate_many(json, 32, true).get(doc_stream);
+//   if(error) { std::cerr << error << std::endl; return false; }
+//   for (auto doc : doc_stream) {
+//     std::cout << doc.type() << std::endl;
+//   }
+//   TEST_SUCCEED();
+// }
 #endif
 bool test_load_example() {
   TEST_START();

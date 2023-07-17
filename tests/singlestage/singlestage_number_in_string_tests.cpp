@@ -69,59 +69,59 @@ namespace number_in_string_tests {
         TEST_SUCCEED();
     }
 
-    bool stream_of_pure_int64() {
-        TEST_START();
-        auto json = R"( 1 2 3 )"_padded;
+    // bool stream_of_pure_int64() {
+    //     TEST_START();
+    //     auto json = R"( 1 2 3 )"_padded;
 
-        singlestage::parser parser;
-        singlestage::document_stream stream;
-        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
-        int document_index = 0;
-        for (auto doc : stream) {
-            document_index++;
-            int64_t result;
-            ASSERT_SUCCESS(doc.get_int64().get(result));
-            ASSERT_EQUAL(result,document_index);
-        }
-        ASSERT_EQUAL(3,document_index);
-        TEST_SUCCEED();
-    }
+    //     singlestage::parser parser;
+    //     singlestage::document_stream stream;
+    //     ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+    //     int document_index = 0;
+    //     for (auto doc : stream) {
+    //         document_index++;
+    //         int64_t result;
+    //         ASSERT_SUCCESS(doc.get_int64().get(result));
+    //         ASSERT_EQUAL(result,document_index);
+    //     }
+    //     ASSERT_EQUAL(3,document_index);
+    //     TEST_SUCCEED();
+    // }
 
-    bool stream_of_direct_int64() {
-        TEST_START();
-        auto json = R"( "1" "2" "3" )"_padded;
+    // bool stream_of_direct_int64() {
+    //     TEST_START();
+    //     auto json = R"( "1" "2" "3" )"_padded;
 
-        singlestage::parser parser;
-        singlestage::document_stream stream;
-        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
-        int document_index = 0;
-        for (auto doc : stream) {
-            document_index++;
-            int64_t result;
-            ASSERT_SUCCESS(doc.get_int64_in_string().get(result));
-            ASSERT_EQUAL(result,document_index);
-        }
-        ASSERT_EQUAL(3,document_index);
-        TEST_SUCCEED();
-    }
+    //     singlestage::parser parser;
+    //     singlestage::document_stream stream;
+    //     ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+    //     int document_index = 0;
+    //     for (auto doc : stream) {
+    //         document_index++;
+    //         int64_t result;
+    //         ASSERT_SUCCESS(doc.get_int64_in_string().get(result));
+    //         ASSERT_EQUAL(result,document_index);
+    //     }
+    //     ASSERT_EQUAL(3,document_index);
+    //     TEST_SUCCEED();
+    // }
 
-    bool stream_of_int64() {
-        TEST_START();
-        auto json = R"( ["1"] ["2"] ["3"] )"_padded;
+    // bool stream_of_int64() {
+    //     TEST_START();
+    //     auto json = R"( ["1"] ["2"] ["3"] )"_padded;
 
-        singlestage::parser parser;
-        singlestage::document_stream stream;
-        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
-        int document_index = 0;
-        for (auto doc : stream) {
-            document_index++;
-            int64_t result;
-            ASSERT_SUCCESS(doc.get_array().at(0).get_int64_in_string().get(result));
-            ASSERT_EQUAL(result,document_index);
-        }
-        ASSERT_EQUAL(3,document_index);
-        TEST_SUCCEED();
-    }
+    //     singlestage::parser parser;
+    //     singlestage::document_stream stream;
+    //     ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+    //     int document_index = 0;
+    //     for (auto doc : stream) {
+    //         document_index++;
+    //         int64_t result;
+    //         ASSERT_SUCCESS(doc.get_array().at(0).get_int64_in_string().get(result));
+    //         ASSERT_EQUAL(result,document_index);
+    //     }
+    //     ASSERT_EQUAL(3,document_index);
+    //     TEST_SUCCEED();
+    // }
 
     bool array_double() {
         TEST_START();

@@ -27,7 +27,6 @@ class array;
 class array_iterator;
 class document;
 class document_reference;
-class document_stream;
 class field;
 class json_iterator;
 enum class json_type;
