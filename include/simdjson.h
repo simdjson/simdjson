@@ -53,5 +53,6 @@
 
 #include "simdjson/dom.h"
 #include "simdjson/ondemand.h"
+#include "simdjson/singlestage.h"
 
 #endif // SIMDJSON_H
