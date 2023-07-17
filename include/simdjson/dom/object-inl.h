@@ -1,6 +1,7 @@
 #ifndef SIMDJSON_INLINE_OBJECT_H
 #define SIMDJSON_INLINE_OBJECT_H
 
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/object.h"
 #include "simdjson/dom/document.h"
 

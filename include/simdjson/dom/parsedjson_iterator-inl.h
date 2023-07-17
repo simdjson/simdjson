@@ -1,6 +1,7 @@
 #ifndef SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H
 #define SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H
 
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/parsedjson_iterator.h"
 #include "simdjson/internal/tape_ref-inl.h"
 #include "simdjson/internal/jsonformatutils.h"

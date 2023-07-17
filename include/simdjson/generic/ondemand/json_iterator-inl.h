@@ -2,6 +2,7 @@
 
 #ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
+#include "simdjson/internal/dom_parser_implementation.h"
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
 #include "simdjson/generic/ondemand/parser.h"

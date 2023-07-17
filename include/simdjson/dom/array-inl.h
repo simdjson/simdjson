@@ -3,6 +3,7 @@
 
 #include <utility>
 
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/array.h"
 #include "simdjson/dom/element.h"
 #include "simdjson/error-inl.h"

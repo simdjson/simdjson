@@ -3,6 +3,7 @@
 
 // Inline implementations go in here.
 
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/document.h"
 #include "simdjson/dom/element.h"
 #include "simdjson/internal/tape_ref-inl.h"

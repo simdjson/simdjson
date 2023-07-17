@@ -4,6 +4,8 @@
 #define SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 #include "simdjson/padded_string.h"
 #include "simdjson/padded_string_view.h"
+#include "simdjson/implementation.h"
+#include "simdjson/internal/dom_parser_implementation.h"
 #include "simdjson/dom/base.h" // for MINIMAL_DOCUMENT_CAPACITY
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/document_stream.h"

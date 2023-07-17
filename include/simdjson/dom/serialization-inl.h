@@ -2,6 +2,7 @@
 #ifndef SIMDJSON_SERIALIZATION_INL_H
 #define SIMDJSON_SERIALIZATION_INL_H
 
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/serialization.h"
 #include "simdjson/dom/parser.h"
 #include "simdjson/internal/tape_type.h"

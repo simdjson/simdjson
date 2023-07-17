@@ -1,6 +1,7 @@
 #ifndef SIMDJSON_INLINE_PARSER_H
 #define SIMDJSON_INLINE_PARSER_H
 
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/document_stream.h"
 #include "simdjson/implementation.h"
 #include "simdjson/internal/dom_parser_implementation.h"
