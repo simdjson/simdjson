@@ -19,50 +19,9 @@ namespace simdjson {
  */
 namespace internal {
 
-class mini_formatter;
-
-/**
- * @private The string_builder template allows us to construct
- * a string from a document element. It is parametrized
- * by a "formatter" which handles the details. Thus
- * the string_builder template could support both minification
- * and prettification, and various other tradeoffs.
- */
-template <class formatter = mini_formatter>
-class string_builder {
+template<class formatter>
+class base_formatter {
 public:
-  /** Construct an initially empty builder, would print the empty string **/
-  string_builder() = default;
-  /** Append an element to the builder (to be printed) **/
-  inline void append(simdjson::dom::element value);
-  /** Append an array to the builder (to be printed) **/
-  inline void append(simdjson::dom::array value);
-  /** Append an object to the builder (to be printed) **/
-  inline void append(simdjson::dom::object value);
-  /** Reset the builder (so that it would print the empty string) **/
-  simdjson_inline void clear();
-  /**
-   * Get access to the string. The string_view is owned by the builder
-   * and it is invalid to use it after the string_builder has been
-   * destroyed.
-   * However you can make a copy of the string_view on memory that you
-   * own.
-   */
-  simdjson_inline std::string_view str() const;
-  /** Append a key_value_pair to the builder (to be printed) **/
-  simdjson_inline void append(simdjson::dom::key_value_pair value);
-private:
-  formatter format{};
-};
-
-/**
- * @private This is the class that we expect to use with the string_builder
- * template. It tries to produce a compact version of the JSON element
- * as quickly as possible.
- */
-class mini_formatter {
-public:
-  mini_formatter() = default;
   /** Add a comma **/
   simdjson_inline void comma();
   /** Start an array, prints [ **/
@@ -97,12 +56,86 @@ public:
    **/
   simdjson_inline std::string_view str() const;
 
-private:
-  // implementation details (subject to change)
   /** Prints one character **/
   simdjson_inline void one_char(char c);
+
+  simdjson_inline void call_print_newline() {
+      this->print_newline();
+  }
+
+  simdjson_inline void call_print_indents(size_t depth) {
+      this->print_indents(depth);
+  }
+
+  simdjson_inline void call_print_space() {
+      this->print_space();
+  }
+
+protected:
+  // implementation details (subject to change)
   /** Backing buffer **/
   std::vector<char> buffer{}; // not ideal!
+};
+
+
+/**
+ * @private This is the class that we expect to use with the string_builder
+ * template. It tries to produce a compact version of the JSON element
+ * as quickly as possible.
+ */
+class mini_formatter : public base_formatter<mini_formatter> {
+public:
+  simdjson_inline void print_newline();
+
+  simdjson_inline void print_indents(size_t depth);
+
+  simdjson_inline void print_space();
+};
+
+class pretty_formatter : public base_formatter<pretty_formatter> {
+public:
+  simdjson_inline void print_newline();
+
+  simdjson_inline void print_indents(size_t depth);
+
+  simdjson_inline void print_space();
+
+protected:
+  int indent_step = 4;
+};
+
+/**
+ * @private The string_builder template allows us to construct
+ * a string from a document element. It is parametrized
+ * by a "formatter" which handles the details. Thus
+ * the string_builder template could support both minification
+ * and prettification, and various other tradeoffs.
+ */
+template <class formatter = mini_formatter>
+class string_builder {
+public:
+  /** Construct an initially empty builder, would print the empty string **/
+  string_builder() = default;
+  /** Append an element to the builder (to be printed) **/
+  inline void append(simdjson::dom::element value);
+  /** Append an array to the builder (to be printed) **/
+  inline void append(simdjson::dom::array value);
+  /** Append an object to the builder (to be printed) **/
+  inline void append(simdjson::dom::object value);
+  /** Reset the builder (so that it would print the empty string) **/
+  simdjson_inline void clear();
+  /**
+   * Get access to the string. The string_view is owned by the builder
+   * and it is invalid to use it after the string_builder has been
+   * destroyed.
+   * However you can make a copy of the string_view on memory that you
+   * own.
+   */
+  simdjson_inline std::string_view str() const;
+  /** Append a key_value_pair to the builder (to be printed) **/
+  simdjson_inline void append(simdjson::dom::key_value_pair value);
+private:
+  formatter format{};
 };
 
 } // internal
@@ -212,6 +245,38 @@ std::string minify(simdjson_result<T> x) {
 }
 #endif
 
+/**
+ * Prettifies a JSON element or document, printing the valid JSON with indentation.
+ *
+ *   dom::parser parser;
+ *   element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
+ *
+ *   // Prints:
+ *   // {
+ *   //     [
+ *   //         1,
+ *   //         2,
+ *   //         3
+ *   //     ]
+ *   // }
+ *   cout << prettify(doc) << endl;
+ *
+ */
+template <class T>
+std::string prettify(T x)  {
+    simdjson::internal::string_builder<simdjson::internal::pretty_formatter> sb;
+    sb.append(x);
+    std::string_view answer = sb.str();
+    return std::string(answer.data(), answer.size());
+}
+
+#if SIMDJSON_EXCEPTIONS
+template <class T>
+std::string prettify(simdjson_result<T> x) {
+    if (x.error()) { throw simdjson_error(x.error()); }
+    return to_string(x.value());
+}
+#endif
 
 } // namespace simdjson
 

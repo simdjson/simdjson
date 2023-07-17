@@ -100,6 +100,8 @@ char *fast_itoa(char *output, uint64_t value) noexcept {
   std::memcpy(output, write_pointer, len);
   return output + len;
 }
+
+
 } // anonymous namespace
 namespace internal {
 
@@ -107,19 +109,22 @@ namespace internal {
  * Minifier/formatter code.
  **/
 
-simdjson_inline void mini_formatter::number(uint64_t x) {
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::number(uint64_t x) {
   char number_buffer[24];
   char *newp = fast_itoa(number_buffer, x);
   buffer.insert(buffer.end(), number_buffer, newp);
 }
 
-simdjson_inline void mini_formatter::number(int64_t x) {
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::number(int64_t x) {
   char number_buffer[24];
   char *newp = fast_itoa(number_buffer, x);
   buffer.insert(buffer.end(), number_buffer, newp);
 }
 
-simdjson_inline void mini_formatter::number(double x) {
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::number(double x) {
   char number_buffer[24];
   // Currently, passing the nullptr to the second argument is
   // safe because our implementation does not check the second
@@ -128,31 +133,51 @@ simdjson_inline void mini_formatter::number(double x) {
   buffer.insert(buffer.end(), number_buffer, newp);
 }
 
-simdjson_inline void mini_formatter::start_array() { one_char('['); }
-simdjson_inline void mini_formatter::end_array() { one_char(']'); }
-simdjson_inline void mini_formatter::start_object() { one_char('{'); }
-simdjson_inline void mini_formatter::end_object() { one_char('}'); }
-simdjson_inline void mini_formatter::comma() { one_char(','); }
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::start_array() { one_char('['); }
 
 
-simdjson_inline void mini_formatter::true_atom() {
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::end_array() { one_char(']'); }
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::start_object() { one_char('{'); }
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::end_object() { one_char('}'); }
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::comma() { one_char(','); }
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::true_atom() {
   const char * s = "true";
   buffer.insert(buffer.end(), s, s + 4);
 }
-simdjson_inline void mini_formatter::false_atom() {
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::false_atom() {
   const char * s = "false";
   buffer.insert(buffer.end(), s, s + 5);
 }
-simdjson_inline void mini_formatter::null_atom() {
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::null_atom() {
   const char * s = "null";
   buffer.insert(buffer.end(), s, s + 4);
 }
-simdjson_inline void mini_formatter::one_char(char c) { buffer.push_back(c); }
-simdjson_inline void mini_formatter::key(std::string_view unescaped) {
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::one_char(char c) { buffer.push_back(c); }
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::key(std::string_view unescaped) {
   string(unescaped);
   one_char(':');
 }
-simdjson_inline void mini_formatter::string(std::string_view unescaped) {
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::string(std::string_view unescaped) {
   one_char('\"');
   size_t i = 0;
   // Fast path for the case where we have no control character, no ", and no backslash.
@@ -231,14 +256,46 @@ simdjson_inline void mini_formatter::string(std::string_view unescaped) {
   one_char('\"');
 }
 
-inline void mini_formatter::clear() {
+
+template<class formatter>
+inline void base_formatter<formatter>::clear() {
   buffer.clear();
 }
 
-simdjson_inline std::string_view mini_formatter::str() const {
+template<class formatter>
+simdjson_inline std::string_view base_formatter<formatter>::str() const {
   return std::string_view(buffer.data(), buffer.size());
 }
 
+simdjson_inline void mini_formatter::print_newline() {
+    return;
+}
+
+simdjson_inline void mini_formatter::print_indents(size_t depth) {
+    (void)depth;
+    return;
+}
+
+simdjson_inline void mini_formatter::print_space() {
+    return;
+}
+
+simdjson_inline void pretty_formatter::print_newline() {
+    one_char('\n');
+}
+
+simdjson_inline void pretty_formatter::print_indents(size_t depth) {
+    if(this->indent_step <= 0) {
+        return;
+    }
+    for(size_t i = 0; i < this->indent_step * depth; i++) {
+        one_char(' ');
+    }
+}
+
+simdjson_inline void pretty_formatter::print_space() {
+    one_char(' ');
+}
 
 /***
  * String building code.
@@ -258,11 +315,16 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
     // print commas after each value
     if (after_value) {
       format.comma();
+      format.print_newline();
     }
+
+    format.print_indents(depth);
+
     // If we are in an object, print the next key and :, and skip to the next
     // value.
     if (is_object[depth]) {
       format.key(iter.get_string_view());
+      format.print_space();
       iter.json_index++;
     }
     switch (iter.tape_ref_type()) {
@@ -291,6 +353,7 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
 
       is_object[depth] = false;
       after_value = false;
+      format.print_newline();
       continue;
     }
 
@@ -318,6 +381,7 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
 
       is_object[depth] = true;
       after_value = false;
+      format.print_newline();
       continue;
     }
 
@@ -362,17 +426,21 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
     // Handle multiple ends in a row
     while (depth != 0 && (iter.tape_ref_type() == tape_type::END_ARRAY ||
                           iter.tape_ref_type() == tape_type::END_OBJECT)) {
+      format.print_newline();
+      depth--;
+      format.print_indents(depth);
       if (iter.tape_ref_type() == tape_type::END_ARRAY) {
         format.end_array();
       } else {
         format.end_object();
       }
-      depth--;
       iter.json_index++;
     }
 
     // Stop when we're at depth 0
   } while (depth != 0);
+
+  format.print_newline();
 }
 
 template <class serializer>
