@@ -1,8 +1,10 @@
 #ifndef SIMDJSON_ARM64_IMPLEMENTATION_H
 #define SIMDJSON_ARM64_IMPLEMENTATION_H
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/implementation.h"
 #include "simdjson/internal/instruction_set.h"
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 namespace arm64 {

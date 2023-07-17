@@ -3,6 +3,10 @@
 
 #include "simdjson/builtin/base.h"
 
+#include "simdjson/generic/dependencies.h"
+
+#define SIMDJSON_AMALGAMATED
+
 #if SIMDJSON_BUILTIN_IMPLEMENTATION_IS(arm64)
 #include "simdjson/arm64/implementation.h"
 #elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(fallback)
@@ -18,6 +22,8 @@
 #else
 #error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION
 #endif
+
+#undef SIMDJSON_AMALGAMATED
 
 namespace simdjson {
   /**

@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-17 10:02:55 -0700. Do not edit! */
+/* auto-generated on 2023-07-17 13:07:20 -0700. Do not edit! */
 /* including src/simdjson.cpp:  */
 /* begin file src/simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -375,7 +375,8 @@ double from_chars(const char *first, const char* end) noexcept;
     SIMDJSON_DISABLE_GCC_WARNING(-Wshadow) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wunused-parameter) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wunused-variable) \
-    SIMDJSON_DISABLE_GCC_WARNING(-Wmaybe-uninitialized)
+    SIMDJSON_DISABLE_GCC_WARNING(-Wmaybe-uninitialized) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wformat-security)
   #endif // __clang__
 
   #define SIMDJSON_PRAGMA(P) _Pragma(#P)
@@ -4166,6 +4167,7 @@ inline const std::string error_message(int error) noexcept;
 
 #endif // SIMDJSON_ERROR_H
 /* end file include/simdjson/error.h */
+/* skipped duplicate #include "simdjson/portability.h" */
 
 /**
  * @brief The top level simdjson namespace, containing everything the library provides.
@@ -5725,6 +5727,10 @@ class element;
 class key_value_pair;
 class object;
 class parser;
+
+#ifdef SIMDJSON_THREADS_ENABLED
+struct stage1_worker;
+#endif // SIMDJSON_THREADS_ENABLED
 
 } // namespace dom
 
@@ -9590,13 +9596,13 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #endif // SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 /* end file include/simdjson/arm64/stringparsing_defs.h */
 /* end file include/simdjson/arm64/begin.h */
-/* including include/simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
+/* including include/simdjson/generic/amalgamated.h for arm64: #include "simdjson/generic/amalgamated.h" */
 /* begin file include/simdjson/generic/amalgamated.h for arm64 */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
-/* including include/simdjson/generic/base.h: #include "simdjson/generic/base.h" */
+/* including include/simdjson/generic/base.h for arm64: #include "simdjson/generic/base.h" */
 /* begin file include/simdjson/generic/base.h for arm64 */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
@@ -9645,7 +9651,7 @@ enum class number_type {
 
 #endif // SIMDJSON_GENERIC_BASE_H
 /* end file include/simdjson/generic/base.h for arm64 */
-/* including include/simdjson/generic/jsoncharutils.h: #include "simdjson/generic/jsoncharutils.h" */
+/* including include/simdjson/generic/jsoncharutils.h for arm64: #include "simdjson/generic/jsoncharutils.h" */
 /* begin file include/simdjson/generic/jsoncharutils.h for arm64 */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
@@ -9752,7 +9758,7 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 
 #endif // SIMDJSON_GENERIC_JSONCHARUTILS_H
 /* end file include/simdjson/generic/jsoncharutils.h for arm64 */
-/* including include/simdjson/generic/atomparsing.h: #include "simdjson/generic/atomparsing.h" */
+/* including include/simdjson/generic/atomparsing.h for arm64: #include "simdjson/generic/atomparsing.h" */
 /* begin file include/simdjson/generic/atomparsing.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
@@ -9830,7 +9836,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 
 #endif // SIMDJSON_GENERIC_ATOMPARSING_H
 /* end file include/simdjson/generic/atomparsing.h for arm64 */
-/* including include/simdjson/generic/dom_parser_implementation.h: #include "simdjson/generic/dom_parser_implementation.h" */
+/* including include/simdjson/generic/dom_parser_implementation.h for arm64: #include "simdjson/generic/dom_parser_implementation.h" */
 /* begin file include/simdjson/generic/dom_parser_implementation.h for arm64 */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -9922,7 +9928,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 
 #endif // SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file include/simdjson/generic/dom_parser_implementation.h for arm64 */
-/* including include/simdjson/generic/implementation_simdjson_result_base.h: #include "simdjson/generic/implementation_simdjson_result_base.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base.h for arm64: #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for arm64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
@@ -10059,7 +10065,7 @@ protected:
 
 #endif // SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 /* end file include/simdjson/generic/implementation_simdjson_result_base.h for arm64 */
-/* including include/simdjson/generic/numberparsing.h: #include "simdjson/generic/numberparsing.h" */
+/* including include/simdjson/generic/numberparsing.h for arm64: #include "simdjson/generic/numberparsing.h" */
 /* begin file include/simdjson/generic/numberparsing.h for arm64 */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
@@ -11330,7 +11336,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 #endif // SIMDJSON_GENERIC_NUMBERPARSING_H
 /* end file include/simdjson/generic/numberparsing.h for arm64 */
 
-/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h for arm64: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
@@ -13741,13 +13747,13 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #endif // SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 /* end file include/simdjson/arm64/stringparsing_defs.h */
 /* end file include/simdjson/arm64/begin.h */
-/* including src/generic/amalgamated.h: #include "generic/amalgamated.h" */
+/* including src/generic/amalgamated.h for arm64: #include "generic/amalgamated.h" */
 /* begin file src/generic/amalgamated.h for arm64 */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_SRC_GENERIC_DEPENDENCIES_H)
 #error generic/dependencies.h must be included before generic/amalgamated.h!
 #endif
 
-/* including src/generic/base.h: #include "generic/base.h" */
+/* including src/generic/base.h for arm64: #include "generic/base.h" */
 /* begin file src/generic/base.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_BASE_H
 
@@ -13768,7 +13774,7 @@ struct json_character_block;
 
 #endif // SIMDJSON_SRC_GENERIC_BASE_H
 /* end file src/generic/base.h for arm64 */
-/* including src/generic/dom_parser_implementation.h: #include "generic/dom_parser_implementation.h" */
+/* including src/generic/dom_parser_implementation.h for arm64: #include "generic/dom_parser_implementation.h" */
 /* begin file src/generic/dom_parser_implementation.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -13792,7 +13798,7 @@ simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 
 #endif // SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file src/generic/dom_parser_implementation.h for arm64 */
-/* including src/generic/json_character_block.h: #include "generic/json_character_block.h" */
+/* including src/generic/json_character_block.h for arm64: #include "generic/json_character_block.h" */
 /* begin file src/generic/json_character_block.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 
@@ -13823,10 +13829,10 @@ struct json_character_block {
 #endif // SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 /* end file src/generic/json_character_block.h for arm64 */
 /* end file src/generic/amalgamated.h for arm64 */
-/* including src/generic/stage1/amalgamated.h: #include "generic/stage1/amalgamated.h" */
+/* including src/generic/stage1/amalgamated.h for arm64: #include "generic/stage1/amalgamated.h" */
 /* begin file src/generic/stage1/amalgamated.h for arm64 */
 // Stuff other things depend on
-/* including src/generic/stage1/base.h: #include "generic/stage1/base.h" */
+/* including src/generic/stage1/base.h for arm64: #include "generic/stage1/base.h" */
 /* begin file src/generic/stage1/base.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 
@@ -13864,7 +13870,7 @@ using utf8_validation::utf8_checker;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 /* end file src/generic/stage1/base.h for arm64 */
-/* including src/generic/stage1/json_string_scanner.h: #include "generic/stage1/json_string_scanner.h" */
+/* including src/generic/stage1/json_string_scanner.h for arm64: #include "generic/stage1/json_string_scanner.h" */
 /* begin file src/generic/stage1/json_string_scanner.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 
@@ -14029,7 +14035,7 @@ simdjson_inline error_code json_string_scanner::finish() {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 /* end file src/generic/stage1/json_string_scanner.h for arm64 */
-/* including src/generic/stage1/utf8_lookup4_algorithm.h: #include "generic/stage1/utf8_lookup4_algorithm.h" */
+/* including src/generic/stage1/utf8_lookup4_algorithm.h for arm64: #include "generic/stage1/utf8_lookup4_algorithm.h" */
 /* begin file src/generic/stage1/utf8_lookup4_algorithm.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 
@@ -14249,7 +14255,7 @@ using namespace simd;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 /* end file src/generic/stage1/utf8_lookup4_algorithm.h for arm64 */
-/* including src/generic/stage1/json_scanner.h: #include "generic/stage1/json_scanner.h" */
+/* including src/generic/stage1/json_scanner.h for arm64: #include "generic/stage1/json_scanner.h" */
 /* begin file src/generic/stage1/json_scanner.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H
 
@@ -14422,7 +14428,7 @@ simdjson_inline error_code json_scanner::finish() {
 /* end file src/generic/stage1/json_scanner.h for arm64 */
 
 // All other declarations
-/* including src/generic/stage1/buf_block_reader.h: #include "generic/stage1/buf_block_reader.h" */
+/* including src/generic/stage1/buf_block_reader.h for arm64: #include "generic/stage1/buf_block_reader.h" */
 /* begin file src/generic/stage1/buf_block_reader.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 
@@ -14528,7 +14534,7 @@ simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 /* end file src/generic/stage1/buf_block_reader.h for arm64 */
-/* including src/generic/stage1/find_next_document_index.h: #include "generic/stage1/find_next_document_index.h" */
+/* including src/generic/stage1/find_next_document_index.h for arm64: #include "generic/stage1/find_next_document_index.h" */
 /* begin file src/generic/stage1/find_next_document_index.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 
@@ -14636,7 +14642,7 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 /* end file src/generic/stage1/find_next_document_index.h for arm64 */
-/* including src/generic/stage1/json_minifier.h: #include "generic/stage1/json_minifier.h" */
+/* including src/generic/stage1/json_minifier.h for arm64: #include "generic/stage1/json_minifier.h" */
 /* begin file src/generic/stage1/json_minifier.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 
@@ -14743,7 +14749,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 /* end file src/generic/stage1/json_minifier.h for arm64 */
-/* including src/generic/stage1/json_structural_indexer.h: #include "generic/stage1/json_structural_indexer.h" */
+/* including src/generic/stage1/json_structural_indexer.h for arm64: #include "generic/stage1/json_structural_indexer.h" */
 /* begin file src/generic/stage1/json_structural_indexer.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 
@@ -15114,7 +15120,7 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 /* end file src/generic/stage1/json_structural_indexer.h for arm64 */
-/* including src/generic/stage1/utf8_validator.h: #include "generic/stage1/utf8_validator.h" */
+/* including src/generic/stage1/utf8_validator.h for arm64: #include "generic/stage1/utf8_validator.h" */
 /* begin file src/generic/stage1/utf8_validator.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 
@@ -15163,10 +15169,10 @@ bool generic_validate_utf8(const char * input, size_t length) {
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 /* end file src/generic/stage1/utf8_validator.h for arm64 */
 /* end file src/generic/stage1/amalgamated.h for arm64 */
-/* including src/generic/stage2/amalgamated.h: #include "generic/stage2/amalgamated.h" */
+/* including src/generic/stage2/amalgamated.h for arm64: #include "generic/stage2/amalgamated.h" */
 /* begin file src/generic/stage2/amalgamated.h for arm64 */
 // Stuff other things depend on
-/* including src/generic/stage2/base.h: #include "generic/stage2/base.h" */
+/* including src/generic/stage2/base.h for arm64: #include "generic/stage2/base.h" */
 /* begin file src/generic/stage2/base.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 
@@ -15192,7 +15198,7 @@ struct tape_writer;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 /* end file src/generic/stage2/base.h for arm64 */
-/* including src/generic/stage2/tape_writer.h: #include "generic/stage2/tape_writer.h" */
+/* including src/generic/stage2/tape_writer.h for arm64: #include "generic/stage2/tape_writer.h" */
 /* begin file src/generic/stage2/tape_writer.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 
@@ -15309,7 +15315,7 @@ simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, intern
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 /* end file src/generic/stage2/tape_writer.h for arm64 */
-/* including src/generic/stage2/logger.h: #include "generic/stage2/logger.h" */
+/* including src/generic/stage2/logger.h for arm64: #include "generic/stage2/logger.h" */
 /* begin file src/generic/stage2/logger.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
 
@@ -15411,7 +15417,7 @@ namespace logger {
 /* end file src/generic/stage2/logger.h for arm64 */
 
 // All other declarations
-/* including src/generic/stage2/json_iterator.h: #include "generic/stage2/json_iterator.h" */
+/* including src/generic/stage2/json_iterator.h for arm64: #include "generic/stage2/json_iterator.h" */
 /* begin file src/generic/stage2/json_iterator.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 
@@ -15740,7 +15746,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 /* end file src/generic/stage2/json_iterator.h for arm64 */
-/* including src/generic/stage2/stringparsing.h: #include "generic/stage2/stringparsing.h" */
+/* including src/generic/stage2/stringparsing.h for arm64: #include "generic/stage2/stringparsing.h" */
 /* begin file src/generic/stage2/stringparsing.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
@@ -15991,7 +15997,7 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 /* end file src/generic/stage2/stringparsing.h for arm64 */
-/* including src/generic/stage2/structural_iterator.h: #include "generic/stage2/structural_iterator.h" */
+/* including src/generic/stage2/structural_iterator.h for arm64: #include "generic/stage2/structural_iterator.h" */
 /* begin file src/generic/stage2/structural_iterator.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 
@@ -16058,7 +16064,7 @@ public:
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 /* end file src/generic/stage2/structural_iterator.h for arm64 */
-/* including src/generic/stage2/tape_builder.h: #include "generic/stage2/tape_builder.h" */
+/* including src/generic/stage2/tape_builder.h for arm64: #include "generic/stage2/tape_builder.h" */
 /* begin file src/generic/stage2/tape_builder.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 
@@ -16835,13 +16841,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #endif // SIMDJSON_FALLBACK_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/fallback/numberparsing_defs.h */
 /* end file include/simdjson/fallback/begin.h */
-/* including include/simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
+/* including include/simdjson/generic/amalgamated.h for fallback: #include "simdjson/generic/amalgamated.h" */
 /* begin file include/simdjson/generic/amalgamated.h for fallback */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
-/* including include/simdjson/generic/base.h: #include "simdjson/generic/base.h" */
+/* including include/simdjson/generic/base.h for fallback: #include "simdjson/generic/base.h" */
 /* begin file include/simdjson/generic/base.h for fallback */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
@@ -16890,7 +16896,7 @@ enum class number_type {
 
 #endif // SIMDJSON_GENERIC_BASE_H
 /* end file include/simdjson/generic/base.h for fallback */
-/* including include/simdjson/generic/jsoncharutils.h: #include "simdjson/generic/jsoncharutils.h" */
+/* including include/simdjson/generic/jsoncharutils.h for fallback: #include "simdjson/generic/jsoncharutils.h" */
 /* begin file include/simdjson/generic/jsoncharutils.h for fallback */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
@@ -16997,7 +17003,7 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 
 #endif // SIMDJSON_GENERIC_JSONCHARUTILS_H
 /* end file include/simdjson/generic/jsoncharutils.h for fallback */
-/* including include/simdjson/generic/atomparsing.h: #include "simdjson/generic/atomparsing.h" */
+/* including include/simdjson/generic/atomparsing.h for fallback: #include "simdjson/generic/atomparsing.h" */
 /* begin file include/simdjson/generic/atomparsing.h for fallback */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
@@ -17075,7 +17081,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 
 #endif // SIMDJSON_GENERIC_ATOMPARSING_H
 /* end file include/simdjson/generic/atomparsing.h for fallback */
-/* including include/simdjson/generic/dom_parser_implementation.h: #include "simdjson/generic/dom_parser_implementation.h" */
+/* including include/simdjson/generic/dom_parser_implementation.h for fallback: #include "simdjson/generic/dom_parser_implementation.h" */
 /* begin file include/simdjson/generic/dom_parser_implementation.h for fallback */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -17167,7 +17173,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 
 #endif // SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file include/simdjson/generic/dom_parser_implementation.h for fallback */
-/* including include/simdjson/generic/implementation_simdjson_result_base.h: #include "simdjson/generic/implementation_simdjson_result_base.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base.h for fallback: #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for fallback */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
@@ -17304,7 +17310,7 @@ protected:
 
 #endif // SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 /* end file include/simdjson/generic/implementation_simdjson_result_base.h for fallback */
-/* including include/simdjson/generic/numberparsing.h: #include "simdjson/generic/numberparsing.h" */
+/* including include/simdjson/generic/numberparsing.h for fallback: #include "simdjson/generic/numberparsing.h" */
 /* begin file include/simdjson/generic/numberparsing.h for fallback */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
@@ -18575,7 +18581,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 #endif // SIMDJSON_GENERIC_NUMBERPARSING_H
 /* end file include/simdjson/generic/numberparsing.h for fallback */
 
-/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h for fallback: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
@@ -18964,7 +18970,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #endif // SIMDJSON_FALLBACK_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/fallback/numberparsing_defs.h */
 /* end file include/simdjson/fallback/begin.h */
-/* including src/generic/stage1/find_next_document_index.h: #include "generic/stage1/find_next_document_index.h" */
+/* including src/generic/stage1/find_next_document_index.h for fallback: #include "generic/stage1/find_next_document_index.h" */
 /* begin file src/generic/stage1/find_next_document_index.h for fallback */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 
@@ -19072,7 +19078,7 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 /* end file src/generic/stage1/find_next_document_index.h for fallback */
-/* including src/generic/stage2/stringparsing.h: #include "generic/stage2/stringparsing.h" */
+/* including src/generic/stage2/stringparsing.h for fallback: #include "generic/stage2/stringparsing.h" */
 /* begin file src/generic/stage2/stringparsing.h for fallback */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
@@ -19323,7 +19329,7 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 /* end file src/generic/stage2/stringparsing.h for fallback */
-/* including src/generic/stage2/logger.h: #include "generic/stage2/logger.h" */
+/* including src/generic/stage2/logger.h for fallback: #include "generic/stage2/logger.h" */
 /* begin file src/generic/stage2/logger.h for fallback */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
 
@@ -19423,7 +19429,7 @@ namespace logger {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
 /* end file src/generic/stage2/logger.h for fallback */
-/* including src/generic/stage2/json_iterator.h: #include "generic/stage2/json_iterator.h" */
+/* including src/generic/stage2/json_iterator.h for fallback: #include "generic/stage2/json_iterator.h" */
 /* begin file src/generic/stage2/json_iterator.h for fallback */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 
@@ -19752,7 +19758,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 /* end file src/generic/stage2/json_iterator.h for fallback */
-/* including src/generic/stage2/tape_writer.h: #include "generic/stage2/tape_writer.h" */
+/* including src/generic/stage2/tape_writer.h for fallback: #include "generic/stage2/tape_writer.h" */
 /* begin file src/generic/stage2/tape_writer.h for fallback */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 
@@ -19869,7 +19875,7 @@ simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, intern
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 /* end file src/generic/stage2/tape_writer.h for fallback */
-/* including src/generic/stage2/tape_builder.h: #include "generic/stage2/tape_builder.h" */
+/* including src/generic/stage2/tape_builder.h for fallback: #include "generic/stage2/tape_builder.h" */
 /* begin file src/generic/stage2/tape_builder.h for fallback */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 
@@ -22803,13 +22809,13 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #endif // SIMDJSON_HASWELL_STRINGPARSING_DEFS_H
 /* end file include/simdjson/haswell/stringparsing_defs.h */
 /* end file include/simdjson/haswell/begin.h */
-/* including include/simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
+/* including include/simdjson/generic/amalgamated.h for haswell: #include "simdjson/generic/amalgamated.h" */
 /* begin file include/simdjson/generic/amalgamated.h for haswell */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
-/* including include/simdjson/generic/base.h: #include "simdjson/generic/base.h" */
+/* including include/simdjson/generic/base.h for haswell: #include "simdjson/generic/base.h" */
 /* begin file include/simdjson/generic/base.h for haswell */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
@@ -22858,7 +22864,7 @@ enum class number_type {
 
 #endif // SIMDJSON_GENERIC_BASE_H
 /* end file include/simdjson/generic/base.h for haswell */
-/* including include/simdjson/generic/jsoncharutils.h: #include "simdjson/generic/jsoncharutils.h" */
+/* including include/simdjson/generic/jsoncharutils.h for haswell: #include "simdjson/generic/jsoncharutils.h" */
 /* begin file include/simdjson/generic/jsoncharutils.h for haswell */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
@@ -22965,7 +22971,7 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 
 #endif // SIMDJSON_GENERIC_JSONCHARUTILS_H
 /* end file include/simdjson/generic/jsoncharutils.h for haswell */
-/* including include/simdjson/generic/atomparsing.h: #include "simdjson/generic/atomparsing.h" */
+/* including include/simdjson/generic/atomparsing.h for haswell: #include "simdjson/generic/atomparsing.h" */
 /* begin file include/simdjson/generic/atomparsing.h for haswell */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
@@ -23043,7 +23049,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 
 #endif // SIMDJSON_GENERIC_ATOMPARSING_H
 /* end file include/simdjson/generic/atomparsing.h for haswell */
-/* including include/simdjson/generic/dom_parser_implementation.h: #include "simdjson/generic/dom_parser_implementation.h" */
+/* including include/simdjson/generic/dom_parser_implementation.h for haswell: #include "simdjson/generic/dom_parser_implementation.h" */
 /* begin file include/simdjson/generic/dom_parser_implementation.h for haswell */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -23135,7 +23141,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 
 #endif // SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file include/simdjson/generic/dom_parser_implementation.h for haswell */
-/* including include/simdjson/generic/implementation_simdjson_result_base.h: #include "simdjson/generic/implementation_simdjson_result_base.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base.h for haswell: #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for haswell */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
@@ -23272,7 +23278,7 @@ protected:
 
 #endif // SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 /* end file include/simdjson/generic/implementation_simdjson_result_base.h for haswell */
-/* including include/simdjson/generic/numberparsing.h: #include "simdjson/generic/numberparsing.h" */
+/* including include/simdjson/generic/numberparsing.h for haswell: #include "simdjson/generic/numberparsing.h" */
 /* begin file include/simdjson/generic/numberparsing.h for haswell */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
@@ -24543,7 +24549,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 #endif // SIMDJSON_GENERIC_NUMBERPARSING_H
 /* end file include/simdjson/generic/numberparsing.h for haswell */
 
-/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h for haswell: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
@@ -26909,13 +26915,13 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #endif // SIMDJSON_HASWELL_STRINGPARSING_DEFS_H
 /* end file include/simdjson/haswell/stringparsing_defs.h */
 /* end file include/simdjson/haswell/begin.h */
-/* including src/generic/amalgamated.h: #include "generic/amalgamated.h" */
+/* including src/generic/amalgamated.h for haswell: #include "generic/amalgamated.h" */
 /* begin file src/generic/amalgamated.h for haswell */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_SRC_GENERIC_DEPENDENCIES_H)
 #error generic/dependencies.h must be included before generic/amalgamated.h!
 #endif
 
-/* including src/generic/base.h: #include "generic/base.h" */
+/* including src/generic/base.h for haswell: #include "generic/base.h" */
 /* begin file src/generic/base.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_BASE_H
 
@@ -26936,7 +26942,7 @@ struct json_character_block;
 
 #endif // SIMDJSON_SRC_GENERIC_BASE_H
 /* end file src/generic/base.h for haswell */
-/* including src/generic/dom_parser_implementation.h: #include "generic/dom_parser_implementation.h" */
+/* including src/generic/dom_parser_implementation.h for haswell: #include "generic/dom_parser_implementation.h" */
 /* begin file src/generic/dom_parser_implementation.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -26960,7 +26966,7 @@ simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 
 #endif // SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file src/generic/dom_parser_implementation.h for haswell */
-/* including src/generic/json_character_block.h: #include "generic/json_character_block.h" */
+/* including src/generic/json_character_block.h for haswell: #include "generic/json_character_block.h" */
 /* begin file src/generic/json_character_block.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 
@@ -26991,10 +26997,10 @@ struct json_character_block {
 #endif // SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 /* end file src/generic/json_character_block.h for haswell */
 /* end file src/generic/amalgamated.h for haswell */
-/* including src/generic/stage1/amalgamated.h: #include "generic/stage1/amalgamated.h" */
+/* including src/generic/stage1/amalgamated.h for haswell: #include "generic/stage1/amalgamated.h" */
 /* begin file src/generic/stage1/amalgamated.h for haswell */
 // Stuff other things depend on
-/* including src/generic/stage1/base.h: #include "generic/stage1/base.h" */
+/* including src/generic/stage1/base.h for haswell: #include "generic/stage1/base.h" */
 /* begin file src/generic/stage1/base.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 
@@ -27032,7 +27038,7 @@ using utf8_validation::utf8_checker;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 /* end file src/generic/stage1/base.h for haswell */
-/* including src/generic/stage1/json_string_scanner.h: #include "generic/stage1/json_string_scanner.h" */
+/* including src/generic/stage1/json_string_scanner.h for haswell: #include "generic/stage1/json_string_scanner.h" */
 /* begin file src/generic/stage1/json_string_scanner.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 
@@ -27197,7 +27203,7 @@ simdjson_inline error_code json_string_scanner::finish() {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 /* end file src/generic/stage1/json_string_scanner.h for haswell */
-/* including src/generic/stage1/utf8_lookup4_algorithm.h: #include "generic/stage1/utf8_lookup4_algorithm.h" */
+/* including src/generic/stage1/utf8_lookup4_algorithm.h for haswell: #include "generic/stage1/utf8_lookup4_algorithm.h" */
 /* begin file src/generic/stage1/utf8_lookup4_algorithm.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 
@@ -27417,7 +27423,7 @@ using namespace simd;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 /* end file src/generic/stage1/utf8_lookup4_algorithm.h for haswell */
-/* including src/generic/stage1/json_scanner.h: #include "generic/stage1/json_scanner.h" */
+/* including src/generic/stage1/json_scanner.h for haswell: #include "generic/stage1/json_scanner.h" */
 /* begin file src/generic/stage1/json_scanner.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H
 
@@ -27590,7 +27596,7 @@ simdjson_inline error_code json_scanner::finish() {
 /* end file src/generic/stage1/json_scanner.h for haswell */
 
 // All other declarations
-/* including src/generic/stage1/buf_block_reader.h: #include "generic/stage1/buf_block_reader.h" */
+/* including src/generic/stage1/buf_block_reader.h for haswell: #include "generic/stage1/buf_block_reader.h" */
 /* begin file src/generic/stage1/buf_block_reader.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 
@@ -27696,7 +27702,7 @@ simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 /* end file src/generic/stage1/buf_block_reader.h for haswell */
-/* including src/generic/stage1/find_next_document_index.h: #include "generic/stage1/find_next_document_index.h" */
+/* including src/generic/stage1/find_next_document_index.h for haswell: #include "generic/stage1/find_next_document_index.h" */
 /* begin file src/generic/stage1/find_next_document_index.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 
@@ -27804,7 +27810,7 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 /* end file src/generic/stage1/find_next_document_index.h for haswell */
-/* including src/generic/stage1/json_minifier.h: #include "generic/stage1/json_minifier.h" */
+/* including src/generic/stage1/json_minifier.h for haswell: #include "generic/stage1/json_minifier.h" */
 /* begin file src/generic/stage1/json_minifier.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 
@@ -27911,7 +27917,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 /* end file src/generic/stage1/json_minifier.h for haswell */
-/* including src/generic/stage1/json_structural_indexer.h: #include "generic/stage1/json_structural_indexer.h" */
+/* including src/generic/stage1/json_structural_indexer.h for haswell: #include "generic/stage1/json_structural_indexer.h" */
 /* begin file src/generic/stage1/json_structural_indexer.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 
@@ -28282,7 +28288,7 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 /* end file src/generic/stage1/json_structural_indexer.h for haswell */
-/* including src/generic/stage1/utf8_validator.h: #include "generic/stage1/utf8_validator.h" */
+/* including src/generic/stage1/utf8_validator.h for haswell: #include "generic/stage1/utf8_validator.h" */
 /* begin file src/generic/stage1/utf8_validator.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 
@@ -28331,10 +28337,10 @@ bool generic_validate_utf8(const char * input, size_t length) {
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 /* end file src/generic/stage1/utf8_validator.h for haswell */
 /* end file src/generic/stage1/amalgamated.h for haswell */
-/* including src/generic/stage2/amalgamated.h: #include "generic/stage2/amalgamated.h" */
+/* including src/generic/stage2/amalgamated.h for haswell: #include "generic/stage2/amalgamated.h" */
 /* begin file src/generic/stage2/amalgamated.h for haswell */
 // Stuff other things depend on
-/* including src/generic/stage2/base.h: #include "generic/stage2/base.h" */
+/* including src/generic/stage2/base.h for haswell: #include "generic/stage2/base.h" */
 /* begin file src/generic/stage2/base.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 
@@ -28360,7 +28366,7 @@ struct tape_writer;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 /* end file src/generic/stage2/base.h for haswell */
-/* including src/generic/stage2/tape_writer.h: #include "generic/stage2/tape_writer.h" */
+/* including src/generic/stage2/tape_writer.h for haswell: #include "generic/stage2/tape_writer.h" */
 /* begin file src/generic/stage2/tape_writer.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 
@@ -28477,7 +28483,7 @@ simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, intern
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 /* end file src/generic/stage2/tape_writer.h for haswell */
-/* including src/generic/stage2/logger.h: #include "generic/stage2/logger.h" */
+/* including src/generic/stage2/logger.h for haswell: #include "generic/stage2/logger.h" */
 /* begin file src/generic/stage2/logger.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
 
@@ -28579,7 +28585,7 @@ namespace logger {
 /* end file src/generic/stage2/logger.h for haswell */
 
 // All other declarations
-/* including src/generic/stage2/json_iterator.h: #include "generic/stage2/json_iterator.h" */
+/* including src/generic/stage2/json_iterator.h for haswell: #include "generic/stage2/json_iterator.h" */
 /* begin file src/generic/stage2/json_iterator.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 
@@ -28908,7 +28914,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 /* end file src/generic/stage2/json_iterator.h for haswell */
-/* including src/generic/stage2/stringparsing.h: #include "generic/stage2/stringparsing.h" */
+/* including src/generic/stage2/stringparsing.h for haswell: #include "generic/stage2/stringparsing.h" */
 /* begin file src/generic/stage2/stringparsing.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
@@ -29159,7 +29165,7 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 /* end file src/generic/stage2/stringparsing.h for haswell */
-/* including src/generic/stage2/structural_iterator.h: #include "generic/stage2/structural_iterator.h" */
+/* including src/generic/stage2/structural_iterator.h for haswell: #include "generic/stage2/structural_iterator.h" */
 /* begin file src/generic/stage2/structural_iterator.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 
@@ -29226,7 +29232,7 @@ public:
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 /* end file src/generic/stage2/structural_iterator.h for haswell */
-/* including src/generic/stage2/tape_builder.h: #include "generic/stage2/tape_builder.h" */
+/* including src/generic/stage2/tape_builder.h for haswell: #include "generic/stage2/tape_builder.h" */
 /* begin file src/generic/stage2/tape_builder.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 
@@ -31731,13 +31737,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #endif // SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/icelake/numberparsing_defs.h */
 /* end file include/simdjson/icelake/begin.h */
-/* including include/simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
+/* including include/simdjson/generic/amalgamated.h for icelake: #include "simdjson/generic/amalgamated.h" */
 /* begin file include/simdjson/generic/amalgamated.h for icelake */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
-/* including include/simdjson/generic/base.h: #include "simdjson/generic/base.h" */
+/* including include/simdjson/generic/base.h for icelake: #include "simdjson/generic/base.h" */
 /* begin file include/simdjson/generic/base.h for icelake */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
@@ -31786,7 +31792,7 @@ enum class number_type {
 
 #endif // SIMDJSON_GENERIC_BASE_H
 /* end file include/simdjson/generic/base.h for icelake */
-/* including include/simdjson/generic/jsoncharutils.h: #include "simdjson/generic/jsoncharutils.h" */
+/* including include/simdjson/generic/jsoncharutils.h for icelake: #include "simdjson/generic/jsoncharutils.h" */
 /* begin file include/simdjson/generic/jsoncharutils.h for icelake */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
@@ -31893,7 +31899,7 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 
 #endif // SIMDJSON_GENERIC_JSONCHARUTILS_H
 /* end file include/simdjson/generic/jsoncharutils.h for icelake */
-/* including include/simdjson/generic/atomparsing.h: #include "simdjson/generic/atomparsing.h" */
+/* including include/simdjson/generic/atomparsing.h for icelake: #include "simdjson/generic/atomparsing.h" */
 /* begin file include/simdjson/generic/atomparsing.h for icelake */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
@@ -31971,7 +31977,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 
 #endif // SIMDJSON_GENERIC_ATOMPARSING_H
 /* end file include/simdjson/generic/atomparsing.h for icelake */
-/* including include/simdjson/generic/dom_parser_implementation.h: #include "simdjson/generic/dom_parser_implementation.h" */
+/* including include/simdjson/generic/dom_parser_implementation.h for icelake: #include "simdjson/generic/dom_parser_implementation.h" */
 /* begin file include/simdjson/generic/dom_parser_implementation.h for icelake */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -32063,7 +32069,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 
 #endif // SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file include/simdjson/generic/dom_parser_implementation.h for icelake */
-/* including include/simdjson/generic/implementation_simdjson_result_base.h: #include "simdjson/generic/implementation_simdjson_result_base.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base.h for icelake: #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for icelake */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
@@ -32200,7 +32206,7 @@ protected:
 
 #endif // SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 /* end file include/simdjson/generic/implementation_simdjson_result_base.h for icelake */
-/* including include/simdjson/generic/numberparsing.h: #include "simdjson/generic/numberparsing.h" */
+/* including include/simdjson/generic/numberparsing.h for icelake: #include "simdjson/generic/numberparsing.h" */
 /* begin file include/simdjson/generic/numberparsing.h for icelake */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
@@ -33471,7 +33477,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 #endif // SIMDJSON_GENERIC_NUMBERPARSING_H
 /* end file include/simdjson/generic/numberparsing.h for icelake */
 
-/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h for icelake: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
@@ -35588,13 +35594,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #endif // SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/icelake/numberparsing_defs.h */
 /* end file include/simdjson/icelake/begin.h */
-/* including src/generic/amalgamated.h: #include "generic/amalgamated.h" */
+/* including src/generic/amalgamated.h for icelake: #include "generic/amalgamated.h" */
 /* begin file src/generic/amalgamated.h for icelake */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_SRC_GENERIC_DEPENDENCIES_H)
 #error generic/dependencies.h must be included before generic/amalgamated.h!
 #endif
 
-/* including src/generic/base.h: #include "generic/base.h" */
+/* including src/generic/base.h for icelake: #include "generic/base.h" */
 /* begin file src/generic/base.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_BASE_H
 
@@ -35615,7 +35621,7 @@ struct json_character_block;
 
 #endif // SIMDJSON_SRC_GENERIC_BASE_H
 /* end file src/generic/base.h for icelake */
-/* including src/generic/dom_parser_implementation.h: #include "generic/dom_parser_implementation.h" */
+/* including src/generic/dom_parser_implementation.h for icelake: #include "generic/dom_parser_implementation.h" */
 /* begin file src/generic/dom_parser_implementation.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -35639,7 +35645,7 @@ simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 
 #endif // SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file src/generic/dom_parser_implementation.h for icelake */
-/* including src/generic/json_character_block.h: #include "generic/json_character_block.h" */
+/* including src/generic/json_character_block.h for icelake: #include "generic/json_character_block.h" */
 /* begin file src/generic/json_character_block.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 
@@ -35670,10 +35676,10 @@ struct json_character_block {
 #endif // SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 /* end file src/generic/json_character_block.h for icelake */
 /* end file src/generic/amalgamated.h for icelake */
-/* including src/generic/stage1/amalgamated.h: #include "generic/stage1/amalgamated.h" */
+/* including src/generic/stage1/amalgamated.h for icelake: #include "generic/stage1/amalgamated.h" */
 /* begin file src/generic/stage1/amalgamated.h for icelake */
 // Stuff other things depend on
-/* including src/generic/stage1/base.h: #include "generic/stage1/base.h" */
+/* including src/generic/stage1/base.h for icelake: #include "generic/stage1/base.h" */
 /* begin file src/generic/stage1/base.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 
@@ -35711,7 +35717,7 @@ using utf8_validation::utf8_checker;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 /* end file src/generic/stage1/base.h for icelake */
-/* including src/generic/stage1/json_string_scanner.h: #include "generic/stage1/json_string_scanner.h" */
+/* including src/generic/stage1/json_string_scanner.h for icelake: #include "generic/stage1/json_string_scanner.h" */
 /* begin file src/generic/stage1/json_string_scanner.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 
@@ -35876,7 +35882,7 @@ simdjson_inline error_code json_string_scanner::finish() {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 /* end file src/generic/stage1/json_string_scanner.h for icelake */
-/* including src/generic/stage1/utf8_lookup4_algorithm.h: #include "generic/stage1/utf8_lookup4_algorithm.h" */
+/* including src/generic/stage1/utf8_lookup4_algorithm.h for icelake: #include "generic/stage1/utf8_lookup4_algorithm.h" */
 /* begin file src/generic/stage1/utf8_lookup4_algorithm.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 
@@ -36096,7 +36102,7 @@ using namespace simd;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 /* end file src/generic/stage1/utf8_lookup4_algorithm.h for icelake */
-/* including src/generic/stage1/json_scanner.h: #include "generic/stage1/json_scanner.h" */
+/* including src/generic/stage1/json_scanner.h for icelake: #include "generic/stage1/json_scanner.h" */
 /* begin file src/generic/stage1/json_scanner.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H
 
@@ -36269,7 +36275,7 @@ simdjson_inline error_code json_scanner::finish() {
 /* end file src/generic/stage1/json_scanner.h for icelake */
 
 // All other declarations
-/* including src/generic/stage1/buf_block_reader.h: #include "generic/stage1/buf_block_reader.h" */
+/* including src/generic/stage1/buf_block_reader.h for icelake: #include "generic/stage1/buf_block_reader.h" */
 /* begin file src/generic/stage1/buf_block_reader.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 
@@ -36375,7 +36381,7 @@ simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 /* end file src/generic/stage1/buf_block_reader.h for icelake */
-/* including src/generic/stage1/find_next_document_index.h: #include "generic/stage1/find_next_document_index.h" */
+/* including src/generic/stage1/find_next_document_index.h for icelake: #include "generic/stage1/find_next_document_index.h" */
 /* begin file src/generic/stage1/find_next_document_index.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 
@@ -36483,7 +36489,7 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 /* end file src/generic/stage1/find_next_document_index.h for icelake */
-/* including src/generic/stage1/json_minifier.h: #include "generic/stage1/json_minifier.h" */
+/* including src/generic/stage1/json_minifier.h for icelake: #include "generic/stage1/json_minifier.h" */
 /* begin file src/generic/stage1/json_minifier.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 
@@ -36590,7 +36596,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 /* end file src/generic/stage1/json_minifier.h for icelake */
-/* including src/generic/stage1/json_structural_indexer.h: #include "generic/stage1/json_structural_indexer.h" */
+/* including src/generic/stage1/json_structural_indexer.h for icelake: #include "generic/stage1/json_structural_indexer.h" */
 /* begin file src/generic/stage1/json_structural_indexer.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 
@@ -36961,7 +36967,7 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 /* end file src/generic/stage1/json_structural_indexer.h for icelake */
-/* including src/generic/stage1/utf8_validator.h: #include "generic/stage1/utf8_validator.h" */
+/* including src/generic/stage1/utf8_validator.h for icelake: #include "generic/stage1/utf8_validator.h" */
 /* begin file src/generic/stage1/utf8_validator.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 
@@ -37010,10 +37016,10 @@ bool generic_validate_utf8(const char * input, size_t length) {
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 /* end file src/generic/stage1/utf8_validator.h for icelake */
 /* end file src/generic/stage1/amalgamated.h for icelake */
-/* including src/generic/stage2/amalgamated.h: #include "generic/stage2/amalgamated.h" */
+/* including src/generic/stage2/amalgamated.h for icelake: #include "generic/stage2/amalgamated.h" */
 /* begin file src/generic/stage2/amalgamated.h for icelake */
 // Stuff other things depend on
-/* including src/generic/stage2/base.h: #include "generic/stage2/base.h" */
+/* including src/generic/stage2/base.h for icelake: #include "generic/stage2/base.h" */
 /* begin file src/generic/stage2/base.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 
@@ -37039,7 +37045,7 @@ struct tape_writer;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 /* end file src/generic/stage2/base.h for icelake */
-/* including src/generic/stage2/tape_writer.h: #include "generic/stage2/tape_writer.h" */
+/* including src/generic/stage2/tape_writer.h for icelake: #include "generic/stage2/tape_writer.h" */
 /* begin file src/generic/stage2/tape_writer.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 
@@ -37156,7 +37162,7 @@ simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, intern
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 /* end file src/generic/stage2/tape_writer.h for icelake */
-/* including src/generic/stage2/logger.h: #include "generic/stage2/logger.h" */
+/* including src/generic/stage2/logger.h for icelake: #include "generic/stage2/logger.h" */
 /* begin file src/generic/stage2/logger.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
 
@@ -37258,7 +37264,7 @@ namespace logger {
 /* end file src/generic/stage2/logger.h for icelake */
 
 // All other declarations
-/* including src/generic/stage2/json_iterator.h: #include "generic/stage2/json_iterator.h" */
+/* including src/generic/stage2/json_iterator.h for icelake: #include "generic/stage2/json_iterator.h" */
 /* begin file src/generic/stage2/json_iterator.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 
@@ -37587,7 +37593,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 /* end file src/generic/stage2/json_iterator.h for icelake */
-/* including src/generic/stage2/stringparsing.h: #include "generic/stage2/stringparsing.h" */
+/* including src/generic/stage2/stringparsing.h for icelake: #include "generic/stage2/stringparsing.h" */
 /* begin file src/generic/stage2/stringparsing.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
@@ -37838,7 +37844,7 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 /* end file src/generic/stage2/stringparsing.h for icelake */
-/* including src/generic/stage2/structural_iterator.h: #include "generic/stage2/structural_iterator.h" */
+/* including src/generic/stage2/structural_iterator.h for icelake: #include "generic/stage2/structural_iterator.h" */
 /* begin file src/generic/stage2/structural_iterator.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 
@@ -37905,7 +37911,7 @@ public:
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 /* end file src/generic/stage2/structural_iterator.h for icelake */
-/* including src/generic/stage2/tape_builder.h: #include "generic/stage2/tape_builder.h" */
+/* including src/generic/stage2/tape_builder.h for icelake: #include "generic/stage2/tape_builder.h" */
 /* begin file src/generic/stage2/tape_builder.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 
@@ -40353,13 +40359,13 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 #endif // SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 /* end file include/simdjson/ppc64/stringparsing_defs.h */
 /* end file include/simdjson/ppc64/begin.h */
-/* including include/simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
+/* including include/simdjson/generic/amalgamated.h for ppc64: #include "simdjson/generic/amalgamated.h" */
 /* begin file include/simdjson/generic/amalgamated.h for ppc64 */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
-/* including include/simdjson/generic/base.h: #include "simdjson/generic/base.h" */
+/* including include/simdjson/generic/base.h for ppc64: #include "simdjson/generic/base.h" */
 /* begin file include/simdjson/generic/base.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
@@ -40408,7 +40414,7 @@ enum class number_type {
 
 #endif // SIMDJSON_GENERIC_BASE_H
 /* end file include/simdjson/generic/base.h for ppc64 */
-/* including include/simdjson/generic/jsoncharutils.h: #include "simdjson/generic/jsoncharutils.h" */
+/* including include/simdjson/generic/jsoncharutils.h for ppc64: #include "simdjson/generic/jsoncharutils.h" */
 /* begin file include/simdjson/generic/jsoncharutils.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
@@ -40515,7 +40521,7 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 
 #endif // SIMDJSON_GENERIC_JSONCHARUTILS_H
 /* end file include/simdjson/generic/jsoncharutils.h for ppc64 */
-/* including include/simdjson/generic/atomparsing.h: #include "simdjson/generic/atomparsing.h" */
+/* including include/simdjson/generic/atomparsing.h for ppc64: #include "simdjson/generic/atomparsing.h" */
 /* begin file include/simdjson/generic/atomparsing.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
@@ -40593,7 +40599,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 
 #endif // SIMDJSON_GENERIC_ATOMPARSING_H
 /* end file include/simdjson/generic/atomparsing.h for ppc64 */
-/* including include/simdjson/generic/dom_parser_implementation.h: #include "simdjson/generic/dom_parser_implementation.h" */
+/* including include/simdjson/generic/dom_parser_implementation.h for ppc64: #include "simdjson/generic/dom_parser_implementation.h" */
 /* begin file include/simdjson/generic/dom_parser_implementation.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -40685,7 +40691,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 
 #endif // SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file include/simdjson/generic/dom_parser_implementation.h for ppc64 */
-/* including include/simdjson/generic/implementation_simdjson_result_base.h: #include "simdjson/generic/implementation_simdjson_result_base.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base.h for ppc64: #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
@@ -40822,7 +40828,7 @@ protected:
 
 #endif // SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 /* end file include/simdjson/generic/implementation_simdjson_result_base.h for ppc64 */
-/* including include/simdjson/generic/numberparsing.h: #include "simdjson/generic/numberparsing.h" */
+/* including include/simdjson/generic/numberparsing.h for ppc64: #include "simdjson/generic/numberparsing.h" */
 /* begin file include/simdjson/generic/numberparsing.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
@@ -42093,7 +42099,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 #endif // SIMDJSON_GENERIC_NUMBERPARSING_H
 /* end file include/simdjson/generic/numberparsing.h for ppc64 */
 
-/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h for ppc64: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
@@ -44079,13 +44085,13 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 #endif // SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 /* end file include/simdjson/ppc64/stringparsing_defs.h */
 /* end file include/simdjson/ppc64/begin.h */
-/* including src/generic/amalgamated.h: #include "generic/amalgamated.h" */
+/* including src/generic/amalgamated.h for ppc64: #include "generic/amalgamated.h" */
 /* begin file src/generic/amalgamated.h for ppc64 */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_SRC_GENERIC_DEPENDENCIES_H)
 #error generic/dependencies.h must be included before generic/amalgamated.h!
 #endif
 
-/* including src/generic/base.h: #include "generic/base.h" */
+/* including src/generic/base.h for ppc64: #include "generic/base.h" */
 /* begin file src/generic/base.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_BASE_H
 
@@ -44106,7 +44112,7 @@ struct json_character_block;
 
 #endif // SIMDJSON_SRC_GENERIC_BASE_H
 /* end file src/generic/base.h for ppc64 */
-/* including src/generic/dom_parser_implementation.h: #include "generic/dom_parser_implementation.h" */
+/* including src/generic/dom_parser_implementation.h for ppc64: #include "generic/dom_parser_implementation.h" */
 /* begin file src/generic/dom_parser_implementation.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -44130,7 +44136,7 @@ simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 
 #endif // SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file src/generic/dom_parser_implementation.h for ppc64 */
-/* including src/generic/json_character_block.h: #include "generic/json_character_block.h" */
+/* including src/generic/json_character_block.h for ppc64: #include "generic/json_character_block.h" */
 /* begin file src/generic/json_character_block.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 
@@ -44161,10 +44167,10 @@ struct json_character_block {
 #endif // SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 /* end file src/generic/json_character_block.h for ppc64 */
 /* end file src/generic/amalgamated.h for ppc64 */
-/* including src/generic/stage1/amalgamated.h: #include "generic/stage1/amalgamated.h" */
+/* including src/generic/stage1/amalgamated.h for ppc64: #include "generic/stage1/amalgamated.h" */
 /* begin file src/generic/stage1/amalgamated.h for ppc64 */
 // Stuff other things depend on
-/* including src/generic/stage1/base.h: #include "generic/stage1/base.h" */
+/* including src/generic/stage1/base.h for ppc64: #include "generic/stage1/base.h" */
 /* begin file src/generic/stage1/base.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 
@@ -44202,7 +44208,7 @@ using utf8_validation::utf8_checker;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 /* end file src/generic/stage1/base.h for ppc64 */
-/* including src/generic/stage1/json_string_scanner.h: #include "generic/stage1/json_string_scanner.h" */
+/* including src/generic/stage1/json_string_scanner.h for ppc64: #include "generic/stage1/json_string_scanner.h" */
 /* begin file src/generic/stage1/json_string_scanner.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 
@@ -44367,7 +44373,7 @@ simdjson_inline error_code json_string_scanner::finish() {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 /* end file src/generic/stage1/json_string_scanner.h for ppc64 */
-/* including src/generic/stage1/utf8_lookup4_algorithm.h: #include "generic/stage1/utf8_lookup4_algorithm.h" */
+/* including src/generic/stage1/utf8_lookup4_algorithm.h for ppc64: #include "generic/stage1/utf8_lookup4_algorithm.h" */
 /* begin file src/generic/stage1/utf8_lookup4_algorithm.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 
@@ -44587,7 +44593,7 @@ using namespace simd;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 /* end file src/generic/stage1/utf8_lookup4_algorithm.h for ppc64 */
-/* including src/generic/stage1/json_scanner.h: #include "generic/stage1/json_scanner.h" */
+/* including src/generic/stage1/json_scanner.h for ppc64: #include "generic/stage1/json_scanner.h" */
 /* begin file src/generic/stage1/json_scanner.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H
 
@@ -44760,7 +44766,7 @@ simdjson_inline error_code json_scanner::finish() {
 /* end file src/generic/stage1/json_scanner.h for ppc64 */
 
 // All other declarations
-/* including src/generic/stage1/buf_block_reader.h: #include "generic/stage1/buf_block_reader.h" */
+/* including src/generic/stage1/buf_block_reader.h for ppc64: #include "generic/stage1/buf_block_reader.h" */
 /* begin file src/generic/stage1/buf_block_reader.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 
@@ -44866,7 +44872,7 @@ simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 /* end file src/generic/stage1/buf_block_reader.h for ppc64 */
-/* including src/generic/stage1/find_next_document_index.h: #include "generic/stage1/find_next_document_index.h" */
+/* including src/generic/stage1/find_next_document_index.h for ppc64: #include "generic/stage1/find_next_document_index.h" */
 /* begin file src/generic/stage1/find_next_document_index.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 
@@ -44974,7 +44980,7 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 /* end file src/generic/stage1/find_next_document_index.h for ppc64 */
-/* including src/generic/stage1/json_minifier.h: #include "generic/stage1/json_minifier.h" */
+/* including src/generic/stage1/json_minifier.h for ppc64: #include "generic/stage1/json_minifier.h" */
 /* begin file src/generic/stage1/json_minifier.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 
@@ -45081,7 +45087,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 /* end file src/generic/stage1/json_minifier.h for ppc64 */
-/* including src/generic/stage1/json_structural_indexer.h: #include "generic/stage1/json_structural_indexer.h" */
+/* including src/generic/stage1/json_structural_indexer.h for ppc64: #include "generic/stage1/json_structural_indexer.h" */
 /* begin file src/generic/stage1/json_structural_indexer.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 
@@ -45452,7 +45458,7 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 /* end file src/generic/stage1/json_structural_indexer.h for ppc64 */
-/* including src/generic/stage1/utf8_validator.h: #include "generic/stage1/utf8_validator.h" */
+/* including src/generic/stage1/utf8_validator.h for ppc64: #include "generic/stage1/utf8_validator.h" */
 /* begin file src/generic/stage1/utf8_validator.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 
@@ -45501,10 +45507,10 @@ bool generic_validate_utf8(const char * input, size_t length) {
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 /* end file src/generic/stage1/utf8_validator.h for ppc64 */
 /* end file src/generic/stage1/amalgamated.h for ppc64 */
-/* including src/generic/stage2/amalgamated.h: #include "generic/stage2/amalgamated.h" */
+/* including src/generic/stage2/amalgamated.h for ppc64: #include "generic/stage2/amalgamated.h" */
 /* begin file src/generic/stage2/amalgamated.h for ppc64 */
 // Stuff other things depend on
-/* including src/generic/stage2/base.h: #include "generic/stage2/base.h" */
+/* including src/generic/stage2/base.h for ppc64: #include "generic/stage2/base.h" */
 /* begin file src/generic/stage2/base.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 
@@ -45530,7 +45536,7 @@ struct tape_writer;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 /* end file src/generic/stage2/base.h for ppc64 */
-/* including src/generic/stage2/tape_writer.h: #include "generic/stage2/tape_writer.h" */
+/* including src/generic/stage2/tape_writer.h for ppc64: #include "generic/stage2/tape_writer.h" */
 /* begin file src/generic/stage2/tape_writer.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 
@@ -45647,7 +45653,7 @@ simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, intern
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 /* end file src/generic/stage2/tape_writer.h for ppc64 */
-/* including src/generic/stage2/logger.h: #include "generic/stage2/logger.h" */
+/* including src/generic/stage2/logger.h for ppc64: #include "generic/stage2/logger.h" */
 /* begin file src/generic/stage2/logger.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
 
@@ -45749,7 +45755,7 @@ namespace logger {
 /* end file src/generic/stage2/logger.h for ppc64 */
 
 // All other declarations
-/* including src/generic/stage2/json_iterator.h: #include "generic/stage2/json_iterator.h" */
+/* including src/generic/stage2/json_iterator.h for ppc64: #include "generic/stage2/json_iterator.h" */
 /* begin file src/generic/stage2/json_iterator.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 
@@ -46078,7 +46084,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 /* end file src/generic/stage2/json_iterator.h for ppc64 */
-/* including src/generic/stage2/stringparsing.h: #include "generic/stage2/stringparsing.h" */
+/* including src/generic/stage2/stringparsing.h for ppc64: #include "generic/stage2/stringparsing.h" */
 /* begin file src/generic/stage2/stringparsing.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
@@ -46329,7 +46335,7 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 /* end file src/generic/stage2/stringparsing.h for ppc64 */
-/* including src/generic/stage2/structural_iterator.h: #include "generic/stage2/structural_iterator.h" */
+/* including src/generic/stage2/structural_iterator.h for ppc64: #include "generic/stage2/structural_iterator.h" */
 /* begin file src/generic/stage2/structural_iterator.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 
@@ -46396,7 +46402,7 @@ public:
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 /* end file src/generic/stage2/structural_iterator.h for ppc64 */
-/* including src/generic/stage2/tape_builder.h: #include "generic/stage2/tape_builder.h" */
+/* including src/generic/stage2/tape_builder.h for ppc64: #include "generic/stage2/tape_builder.h" */
 /* begin file src/generic/stage2/tape_builder.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 
@@ -48466,13 +48472,13 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #endif // SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H
 /* end file include/simdjson/westmere/stringparsing_defs.h */
 /* end file include/simdjson/westmere/begin.h */
-/* including include/simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
+/* including include/simdjson/generic/amalgamated.h for westmere: #include "simdjson/generic/amalgamated.h" */
 /* begin file include/simdjson/generic/amalgamated.h for westmere */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
-/* including include/simdjson/generic/base.h: #include "simdjson/generic/base.h" */
+/* including include/simdjson/generic/base.h for westmere: #include "simdjson/generic/base.h" */
 /* begin file include/simdjson/generic/base.h for westmere */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
@@ -48521,7 +48527,7 @@ enum class number_type {
 
 #endif // SIMDJSON_GENERIC_BASE_H
 /* end file include/simdjson/generic/base.h for westmere */
-/* including include/simdjson/generic/jsoncharutils.h: #include "simdjson/generic/jsoncharutils.h" */
+/* including include/simdjson/generic/jsoncharutils.h for westmere: #include "simdjson/generic/jsoncharutils.h" */
 /* begin file include/simdjson/generic/jsoncharutils.h for westmere */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
@@ -48628,7 +48634,7 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 
 #endif // SIMDJSON_GENERIC_JSONCHARUTILS_H
 /* end file include/simdjson/generic/jsoncharutils.h for westmere */
-/* including include/simdjson/generic/atomparsing.h: #include "simdjson/generic/atomparsing.h" */
+/* including include/simdjson/generic/atomparsing.h for westmere: #include "simdjson/generic/atomparsing.h" */
 /* begin file include/simdjson/generic/atomparsing.h for westmere */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
@@ -48706,7 +48712,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 
 #endif // SIMDJSON_GENERIC_ATOMPARSING_H
 /* end file include/simdjson/generic/atomparsing.h for westmere */
-/* including include/simdjson/generic/dom_parser_implementation.h: #include "simdjson/generic/dom_parser_implementation.h" */
+/* including include/simdjson/generic/dom_parser_implementation.h for westmere: #include "simdjson/generic/dom_parser_implementation.h" */
 /* begin file include/simdjson/generic/dom_parser_implementation.h for westmere */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -48798,7 +48804,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 
 #endif // SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file include/simdjson/generic/dom_parser_implementation.h for westmere */
-/* including include/simdjson/generic/implementation_simdjson_result_base.h: #include "simdjson/generic/implementation_simdjson_result_base.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base.h for westmere: #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for westmere */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
@@ -48935,7 +48941,7 @@ protected:
 
 #endif // SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 /* end file include/simdjson/generic/implementation_simdjson_result_base.h for westmere */
-/* including include/simdjson/generic/numberparsing.h: #include "simdjson/generic/numberparsing.h" */
+/* including include/simdjson/generic/numberparsing.h for westmere: #include "simdjson/generic/numberparsing.h" */
 /* begin file include/simdjson/generic/numberparsing.h for westmere */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
@@ -50206,7 +50212,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 #endif // SIMDJSON_GENERIC_NUMBERPARSING_H
 /* end file include/simdjson/generic/numberparsing.h for westmere */
 
-/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h for westmere: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
@@ -51959,13 +51965,13 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #endif // SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H
 /* end file include/simdjson/westmere/stringparsing_defs.h */
 /* end file include/simdjson/westmere/begin.h */
-/* including src/generic/amalgamated.h: #include "generic/amalgamated.h" */
+/* including src/generic/amalgamated.h for westmere: #include "generic/amalgamated.h" */
 /* begin file src/generic/amalgamated.h for westmere */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_SRC_GENERIC_DEPENDENCIES_H)
 #error generic/dependencies.h must be included before generic/amalgamated.h!
 #endif
 
-/* including src/generic/base.h: #include "generic/base.h" */
+/* including src/generic/base.h for westmere: #include "generic/base.h" */
 /* begin file src/generic/base.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_BASE_H
 
@@ -51986,7 +51992,7 @@ struct json_character_block;
 
 #endif // SIMDJSON_SRC_GENERIC_BASE_H
 /* end file src/generic/base.h for westmere */
-/* including src/generic/dom_parser_implementation.h: #include "generic/dom_parser_implementation.h" */
+/* including src/generic/dom_parser_implementation.h for westmere: #include "generic/dom_parser_implementation.h" */
 /* begin file src/generic/dom_parser_implementation.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -52010,7 +52016,7 @@ simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 
 #endif // SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file src/generic/dom_parser_implementation.h for westmere */
-/* including src/generic/json_character_block.h: #include "generic/json_character_block.h" */
+/* including src/generic/json_character_block.h for westmere: #include "generic/json_character_block.h" */
 /* begin file src/generic/json_character_block.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 
@@ -52041,10 +52047,10 @@ struct json_character_block {
 #endif // SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
 /* end file src/generic/json_character_block.h for westmere */
 /* end file src/generic/amalgamated.h for westmere */
-/* including src/generic/stage1/amalgamated.h: #include "generic/stage1/amalgamated.h" */
+/* including src/generic/stage1/amalgamated.h for westmere: #include "generic/stage1/amalgamated.h" */
 /* begin file src/generic/stage1/amalgamated.h for westmere */
 // Stuff other things depend on
-/* including src/generic/stage1/base.h: #include "generic/stage1/base.h" */
+/* including src/generic/stage1/base.h for westmere: #include "generic/stage1/base.h" */
 /* begin file src/generic/stage1/base.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 
@@ -52082,7 +52088,7 @@ using utf8_validation::utf8_checker;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 /* end file src/generic/stage1/base.h for westmere */
-/* including src/generic/stage1/json_string_scanner.h: #include "generic/stage1/json_string_scanner.h" */
+/* including src/generic/stage1/json_string_scanner.h for westmere: #include "generic/stage1/json_string_scanner.h" */
 /* begin file src/generic/stage1/json_string_scanner.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 
@@ -52247,7 +52253,7 @@ simdjson_inline error_code json_string_scanner::finish() {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
 /* end file src/generic/stage1/json_string_scanner.h for westmere */
-/* including src/generic/stage1/utf8_lookup4_algorithm.h: #include "generic/stage1/utf8_lookup4_algorithm.h" */
+/* including src/generic/stage1/utf8_lookup4_algorithm.h for westmere: #include "generic/stage1/utf8_lookup4_algorithm.h" */
 /* begin file src/generic/stage1/utf8_lookup4_algorithm.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 
@@ -52467,7 +52473,7 @@ using namespace simd;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 /* end file src/generic/stage1/utf8_lookup4_algorithm.h for westmere */
-/* including src/generic/stage1/json_scanner.h: #include "generic/stage1/json_scanner.h" */
+/* including src/generic/stage1/json_scanner.h for westmere: #include "generic/stage1/json_scanner.h" */
 /* begin file src/generic/stage1/json_scanner.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H
 
@@ -52640,7 +52646,7 @@ simdjson_inline error_code json_scanner::finish() {
 /* end file src/generic/stage1/json_scanner.h for westmere */
 
 // All other declarations
-/* including src/generic/stage1/buf_block_reader.h: #include "generic/stage1/buf_block_reader.h" */
+/* including src/generic/stage1/buf_block_reader.h for westmere: #include "generic/stage1/buf_block_reader.h" */
 /* begin file src/generic/stage1/buf_block_reader.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 
@@ -52746,7 +52752,7 @@ simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 /* end file src/generic/stage1/buf_block_reader.h for westmere */
-/* including src/generic/stage1/find_next_document_index.h: #include "generic/stage1/find_next_document_index.h" */
+/* including src/generic/stage1/find_next_document_index.h for westmere: #include "generic/stage1/find_next_document_index.h" */
 /* begin file src/generic/stage1/find_next_document_index.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 
@@ -52854,7 +52860,7 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
 /* end file src/generic/stage1/find_next_document_index.h for westmere */
-/* including src/generic/stage1/json_minifier.h: #include "generic/stage1/json_minifier.h" */
+/* including src/generic/stage1/json_minifier.h for westmere: #include "generic/stage1/json_minifier.h" */
 /* begin file src/generic/stage1/json_minifier.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 
@@ -52961,7 +52967,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_MINIFIER_H
 /* end file src/generic/stage1/json_minifier.h for westmere */
-/* including src/generic/stage1/json_structural_indexer.h: #include "generic/stage1/json_structural_indexer.h" */
+/* including src/generic/stage1/json_structural_indexer.h for westmere: #include "generic/stage1/json_structural_indexer.h" */
 /* begin file src/generic/stage1/json_structural_indexer.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 
@@ -53332,7 +53338,7 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
 /* end file src/generic/stage1/json_structural_indexer.h for westmere */
-/* including src/generic/stage1/utf8_validator.h: #include "generic/stage1/utf8_validator.h" */
+/* including src/generic/stage1/utf8_validator.h for westmere: #include "generic/stage1/utf8_validator.h" */
 /* begin file src/generic/stage1/utf8_validator.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 
@@ -53381,10 +53387,10 @@ bool generic_validate_utf8(const char * input, size_t length) {
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 /* end file src/generic/stage1/utf8_validator.h for westmere */
 /* end file src/generic/stage1/amalgamated.h for westmere */
-/* including src/generic/stage2/amalgamated.h: #include "generic/stage2/amalgamated.h" */
+/* including src/generic/stage2/amalgamated.h for westmere: #include "generic/stage2/amalgamated.h" */
 /* begin file src/generic/stage2/amalgamated.h for westmere */
 // Stuff other things depend on
-/* including src/generic/stage2/base.h: #include "generic/stage2/base.h" */
+/* including src/generic/stage2/base.h for westmere: #include "generic/stage2/base.h" */
 /* begin file src/generic/stage2/base.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 
@@ -53410,7 +53416,7 @@ struct tape_writer;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_BASE_H
 /* end file src/generic/stage2/base.h for westmere */
-/* including src/generic/stage2/tape_writer.h: #include "generic/stage2/tape_writer.h" */
+/* including src/generic/stage2/tape_writer.h for westmere: #include "generic/stage2/tape_writer.h" */
 /* begin file src/generic/stage2/tape_writer.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 
@@ -53527,7 +53533,7 @@ simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, intern
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 /* end file src/generic/stage2/tape_writer.h for westmere */
-/* including src/generic/stage2/logger.h: #include "generic/stage2/logger.h" */
+/* including src/generic/stage2/logger.h for westmere: #include "generic/stage2/logger.h" */
 /* begin file src/generic/stage2/logger.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
 
@@ -53629,7 +53635,7 @@ namespace logger {
 /* end file src/generic/stage2/logger.h for westmere */
 
 // All other declarations
-/* including src/generic/stage2/json_iterator.h: #include "generic/stage2/json_iterator.h" */
+/* including src/generic/stage2/json_iterator.h for westmere: #include "generic/stage2/json_iterator.h" */
 /* begin file src/generic/stage2/json_iterator.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 
@@ -53958,7 +53964,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 /* end file src/generic/stage2/json_iterator.h for westmere */
-/* including src/generic/stage2/stringparsing.h: #include "generic/stage2/stringparsing.h" */
+/* including src/generic/stage2/stringparsing.h for westmere: #include "generic/stage2/stringparsing.h" */
 /* begin file src/generic/stage2/stringparsing.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
@@ -54209,7 +54215,7 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 /* end file src/generic/stage2/stringparsing.h for westmere */
-/* including src/generic/stage2/structural_iterator.h: #include "generic/stage2/structural_iterator.h" */
+/* including src/generic/stage2/structural_iterator.h for westmere: #include "generic/stage2/structural_iterator.h" */
 /* begin file src/generic/stage2/structural_iterator.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 
@@ -54276,7 +54282,7 @@ public:
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
 /* end file src/generic/stage2/structural_iterator.h for westmere */
-/* including src/generic/stage2/tape_builder.h: #include "generic/stage2/tape_builder.h" */
+/* including src/generic/stage2/tape_builder.h for westmere: #include "generic/stage2/tape_builder.h" */
 /* begin file src/generic/stage2/tape_builder.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 

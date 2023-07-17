@@ -1,11 +1,8 @@
 #ifndef SIMDJSON_SRC_ICELAKE_CPP
 #define SIMDJSON_SRC_ICELAKE_CPP
 
-#ifndef SIMDJSON_AMALGAMATED
-#include "simdjson/icelake/implementation.h"
-#endif // SIMDJSON_AMALGAMATED
-
 #include "simdjson/icelake.h"
+#include "simdjson/icelake/implementation.h"
 
 // defining SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER allows us to provide our own bit_indexer::write
 #define SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER

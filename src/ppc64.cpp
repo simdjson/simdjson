@@ -1,11 +1,8 @@
 #ifndef SIMDJSON_SRC_PPC64_CPP
 #define SIMDJSON_SRC_PPC64_CPP
 
-#ifndef SIMDJSON_AMALGAMATED
-#include "simdjson/ppc64/implementation.h"
-#endif // SIMDJSON_AMALGAMATED
-
 #include "simdjson/ppc64.h"
+#include "simdjson/ppc64/implementation.h"
 
 #include "simdjson/ppc64/begin.h"
 #include "generic/amalgamated.h"

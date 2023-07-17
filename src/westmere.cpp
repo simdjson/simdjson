@@ -1,11 +1,8 @@
 #ifndef SIMDJSON_SRC_WESTMERE_CPP
 #define SIMDJSON_SRC_WESTMERE_CPP
 
-#ifndef SIMDJSON_AMALGAMATED
-#include "simdjson/westmere/implementation.h"
-#endif // SIMDJSON_AMALGAMATED
-
 #include "simdjson/westmere.h"
+#include "simdjson/westmere/implementation.h"
 
 #include "simdjson/westmere/begin.h"
 #include "generic/amalgamated.h"

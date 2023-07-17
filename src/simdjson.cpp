@@ -13,6 +13,8 @@ SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 
 #include "simdjson/generic/dependencies.h"
 #include "generic/dependencies.h"
+#include "generic/stage1/dependencies.h"
+#include "generic/stage2/dependencies.h"
 
 #include "implementation.cpp"
 
