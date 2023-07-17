@@ -1,15 +1,13 @@
 #ifndef SIMDJSON_MINIFY_H
 #define SIMDJSON_MINIFY_H
 
-#include "simdjson/common_defs.h"
+#include "simdjson/base.h"
 #include "simdjson/padded_string.h"
 #include <string>
 #include <ostream>
 #include <sstream>
 
 namespace simdjson {
-
-
 
 /**
  *

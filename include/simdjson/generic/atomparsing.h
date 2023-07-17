@@ -1,3 +1,11 @@
+#ifndef SIMDJSON_GENERIC_ATOMPARSING_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ATOMPARSING_H
+#include "simdjson/generic/base.h"
+#include "simdjson/generic/jsoncharutils.h"
+#endif // SIMDJSON_AMALGAMATED
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
@@ -63,3 +71,5 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ATOMPARSING_H

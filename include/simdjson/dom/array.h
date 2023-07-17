@@ -1,20 +1,11 @@
 #ifndef SIMDJSON_DOM_ARRAY_H
 #define SIMDJSON_DOM_ARRAY_H
 
-#include "simdjson/common_defs.h"
-#include "simdjson/error.h"
+#include "simdjson/dom/base.h"
 #include "simdjson/internal/tape_ref.h"
 
 namespace simdjson {
-
-namespace internal {
-template<typename T>
-class string_builder;
-}
 namespace dom {
-
-class document;
-class element;
 
 /**
  * JSON array.

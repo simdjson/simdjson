@@ -1,4 +1,15 @@
+#ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/ondemand/array.h"
+#include "simdjson/generic/ondemand/document-inl.h"
+#include "simdjson/generic/ondemand/json_type.h"
+#include "simdjson/generic/ondemand/object.h"
+#include "simdjson/generic/ondemand/serialization.h"
+#include "simdjson/generic/ondemand/value.h"
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 
@@ -218,3 +229,5 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::SIMDJSON_IMPLEMENTA
 }
 #endif
 }}} // namespace simdjson::SIMDJSON_IMPLEMENTATION::ondemand
+
+#endif // SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H

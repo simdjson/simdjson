@@ -1,13 +1,7 @@
 #ifndef SIMDJSON_PADDED_STRING_VIEW_INL_H
 #define SIMDJSON_PADDED_STRING_VIEW_INL_H
 
-#include "simdjson/portability.h"
-#include "simdjson/common_defs.h" // for SIMDJSON_PADDING
-
-#include <climits>
-#include <cstring>
-#include <memory>
-#include <string>
+#include "simdjson/padded_string_view.h"
 
 namespace simdjson {
 

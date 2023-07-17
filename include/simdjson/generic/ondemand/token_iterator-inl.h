@@ -1,3 +1,12 @@
+#ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/ondemand/token_iterator.h"
+#include "simdjson/generic/implementation_simdjson_result_base-inl.h"
+#endif // SIMDJSON_AMALGAMATED
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -76,3 +85,5 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::token_iterato
     : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::token_iterator>(error) {}
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H

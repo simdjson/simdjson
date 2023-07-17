@@ -3,9 +3,8 @@
 #define SIMDJSON_SERIALIZATION_INL_H
 
 #include "simdjson/dom/serialization.h"
-
-#include <cinttypes>
-#include <type_traits>
+#include "simdjson/dom/parser.h"
+#include "simdjson/internal/tape_type.h"
 
 namespace simdjson {
 namespace dom {
@@ -41,7 +40,7 @@ struct escape_sequence {
  * adds the to_chars functions which would do as well, but
  * we want to support C++11.
  */
-char *fast_itoa(char *output, int64_t value) noexcept {
+static char *fast_itoa(char *output, int64_t value) noexcept {
   // This is a standard implementation of itoa.
   char buffer[20];
   uint64_t value_positive;
@@ -83,7 +82,7 @@ char *fast_itoa(char *output, int64_t value) noexcept {
  * adds the to_chars functions which would do as well, but
  * we want to support C++11.
  */
-char *fast_itoa(char *output, uint64_t value) noexcept {
+static char *fast_itoa(char *output, uint64_t value) noexcept {
   // This is a standard implementation of itoa.
   char buffer[20];
   const char *const end_buffer = buffer + 20;

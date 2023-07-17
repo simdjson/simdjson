@@ -5,6 +5,7 @@
     ],
     "files.trimTrailingWhitespace": true,
     "files.associations": {
+        ".clangd": "yaml",
         "array": "cpp",
         "iterator": "cpp",
         "chrono": "cpp",

@@ -1,3 +1,10 @@
+#ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
+#include "generic/stage2/base.h"
+#endif // SIMDJSON_AMALGAMATED
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
@@ -53,7 +60,7 @@ private:
    */
   template<typename T>
   simdjson_inline void append2(uint64_t val, T val2, internal::tape_type t) noexcept;
-}; // struct number_writer
+}; // struct tape_writer
 
 simdjson_inline void tape_writer::append_s64(int64_t value) noexcept {
   append2(0, value, internal::tape_type::INT64);
@@ -103,3 +110,5 @@ simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, intern
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H

@@ -1,18 +1,14 @@
 #ifndef SIMDJSON_INTERNAL_TAPE_REF_H
 #define SIMDJSON_INTERNAL_TAPE_REF_H
 
-#include "simdjson/internal/tape_type.h"
+#include "simdjson/base.h"
 
 namespace simdjson {
-
 namespace dom {
-  class document;
-}
+class document;
+} // namespace dom
 
 namespace internal {
-
-constexpr const uint64_t JSON_VALUE_MASK = 0x00FFFFFFFFFFFFFF;
-constexpr const uint32_t JSON_COUNT_MASK = 0xFFFFFF;
 
 /**
  * A reference to an element on the tape. Internal only.

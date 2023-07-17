@@ -1,5 +1,16 @@
+#ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
+#include "generic/stage2/base.h"
 #include "generic/stage2/json_iterator.h"
+#include "generic/stage2/stringparsing.h"
 #include "generic/stage2/tape_writer.h"
+#include "simdjson/generic/atomparsing.h"
+#include "simdjson/generic/dom_parser_implementation.h"
+#include "simdjson/generic/numberparsing.h"
+#endif // SIMDJSON_AMALGAMATED
+
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -81,7 +92,7 @@ private:
   simdjson_warn_unused simdjson_inline error_code empty_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept;
   simdjson_inline uint8_t *on_start_string(json_iterator &iter) noexcept;
   simdjson_inline void on_end_string(uint8_t *dst) noexcept;
-}; // class tape_builder
+}; // struct tape_builder
 
 template<bool STREAMING>
 simdjson_warn_unused simdjson_inline error_code tape_builder::parse_document(
@@ -281,3 +292,5 @@ simdjson_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H

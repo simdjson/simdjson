@@ -1,5 +1,10 @@
-#include "simdjson/base.h"
-#include "simdjson/internal/isadetection.h"
+#ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
+#include "simdjson/generic/base.h"
+#include "simdjson/internal/dom_parser_implementation.h"
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -80,3 +85,5 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H

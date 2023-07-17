@@ -1,3 +1,12 @@
+#ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/ondemand/json_type.h"
+#include "simdjson/generic/implementation_simdjson_result_base-inl.h"
+#endif // SIMDJSON_AMALGAMATED
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -105,3 +114,5 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type>::s
     : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::json_type>(error) {}
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H

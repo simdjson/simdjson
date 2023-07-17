@@ -1,9 +1,9 @@
 #ifndef SIMDJSON_DOCUMENT_STREAM_H
 #define SIMDJSON_DOCUMENT_STREAM_H
 
-#include "simdjson/common_defs.h"
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/parser.h"
-#include "simdjson/error.h"
+
 #ifdef SIMDJSON_THREADS_ENABLED
 #include <thread>
 #include <mutex>
@@ -12,7 +12,6 @@
 
 namespace simdjson {
 namespace dom {
-
 
 #ifdef SIMDJSON_THREADS_ENABLED
 /** @private Custom worker class **/

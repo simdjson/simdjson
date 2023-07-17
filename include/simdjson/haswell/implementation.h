@@ -2,12 +2,11 @@
 #define SIMDJSON_HASWELL_IMPLEMENTATION_H
 
 #include "simdjson/implementation.h"
+#include "simdjson/internal/instruction_set.h"
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
 namespace simdjson {
 namespace haswell {
-
-using namespace simdjson;
 
 /**
  * @private

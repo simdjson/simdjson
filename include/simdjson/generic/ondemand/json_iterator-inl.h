@@ -1,3 +1,16 @@
+#ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/ondemand/json_iterator.h"
+#include "simdjson/generic/ondemand/parser.h"
+#include "simdjson/generic/ondemand/raw_json_string.h"
+#include "simdjson/generic/ondemand/logger-inl.h"
+#include "simdjson/generic/ondemand/parser-inl.h"
+#include "simdjson/generic/ondemand/token_iterator-inl.h"
+#endif // SIMDJSON_AMALGAMATED
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -391,3 +404,5 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_iterator
     : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::json_iterator>(error) {}
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H

@@ -1,12 +1,14 @@
-#include "simdjson/error.h"
+#ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/implementation_simdjson_result_base.h"
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
-
-class object;
-class parser;
-class json_iterator;
 
 /**
  * A string escaped per JSON rules, terminated with quote ("). They are used to represent
@@ -200,3 +202,5 @@ public:
 };
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H

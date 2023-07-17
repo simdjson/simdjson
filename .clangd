@@ -1,2 +1,25 @@
 CompileFlags:
     CompilationDatabase: build
+Diagnostics:
+    Suppress:
+        - misc-unused-alias-decls
+        - misc-unused-using-decls
+        - misc-definitions-in-headers # TODO fix and remove these violations
+---
+If:
+    PathMatch:
+        - include/.*
+        - src/.*
+    PathExclude:
+        - include/simdjson.h
+        - src/simdjson.cpp
+CompileFlags:
+    Add:
+        - -Wno-unneeded-internal-declaration
+        - -Wno-undefined-inline # TODO fix and remove these violations
+        - -Wno-undefined-internal # TODO fix and remove these violations
+        - -Wno-unused-function
+        - -Wno-unused-const-variable
+Diagnostics:
+    Suppress:
+        - pp_including_mainfile_in_preamble

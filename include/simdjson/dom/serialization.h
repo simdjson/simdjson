@@ -1,13 +1,10 @@
 #ifndef SIMDJSON_SERIALIZATION_H
 #define SIMDJSON_SERIALIZATION_H
 
-#include "simdjson/common_defs.h"
-#include "simdjson/dom/document.h"
-#include "simdjson/error.h"
-#include "simdjson/internal/dom_parser_implementation.h"
-#include "simdjson/internal/tape_ref.h"
-#include "simdjson/padded_string.h"
-#include "simdjson/portability.h"
+#include "simdjson/dom/base.h"
+#include "simdjson/dom/element.h"
+#include "simdjson/dom/object.h"
+
 #include <vector>
 
 namespace simdjson {

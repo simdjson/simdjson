@@ -1,6 +1,8 @@
 #ifndef SIMDJSON_WESTMERE_INTRINSICS_H
 #define SIMDJSON_WESTMERE_INTRINSICS_H
 
+#include "simdjson/westmere/base.h"
+
 #if SIMDJSON_VISUAL_STUDIO
 // under clang within visual studio, this will include <x86intrin.h>
 #include <intrin.h> // visual studio or clang

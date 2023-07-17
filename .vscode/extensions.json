@@ -4,10 +4,15 @@
 
 	// List of extensions which should be recommended for users of this workspace.
 	"recommendations": [
-		// Syntax
-		"ms-vscode.cpptools",
-		"ms-vscode.cmake-tools",
+		// C++
+		"llvm-vs-code-extensions.vscode-clangd",
+		"xaver.clang-format",
+		// Python
 		"ms-python.python",
+		// .github/*
+		"github.vscode-github-actions",
+		// cmake
+		"ms-vscode.cmake-tools",
 		"twxs.cmake"
 	],
 	// List of extensions recommended by VS Code that should not be recommended for users of this workspace.

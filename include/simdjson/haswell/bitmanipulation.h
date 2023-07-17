@@ -1,6 +1,10 @@
 #ifndef SIMDJSON_HASWELL_BITMANIPULATION_H
 #define SIMDJSON_HASWELL_BITMANIPULATION_H
 
+#include "simdjson/haswell/base.h"
+#include "simdjson/haswell/intrinsics.h"
+#include "simdjson/haswell/bitmask.h"
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {

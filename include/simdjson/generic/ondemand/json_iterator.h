@@ -1,14 +1,15 @@
+#ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/implementation_simdjson_result_base.h"
+#include "simdjson/generic/ondemand/token_iterator.h"
+#endif // SIMDJSON_AMALGAMATED
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
-
-class document;
-class document_stream;
-class object;
-class array;
-class value;
-class raw_json_string;
-class parser;
 
 /**
  * Iterates through JSON tokens, keeping track of depth and string buffer.
@@ -320,3 +321,5 @@ public:
 };
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H

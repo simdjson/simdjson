@@ -2,7 +2,7 @@
 #define SIMDJSON_PADDED_STRING_H
 
 #include "simdjson/portability.h"
-#include "simdjson/common_defs.h" // for SIMDJSON_PADDING
+#include "simdjson/base.h" // for SIMDJSON_PADDING
 #include "simdjson/error.h"
 #include <cstring>
 #include <memory>

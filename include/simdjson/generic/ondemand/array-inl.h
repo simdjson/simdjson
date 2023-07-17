@@ -1,3 +1,15 @@
+#ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/ondemand/array.h"
+#include "simdjson/generic/ondemand/array_iterator-inl.h"
+#include "simdjson/generic/ondemand/json_iterator.h"
+#include "simdjson/generic/ondemand/value.h"
+#include "simdjson/generic/ondemand/value_iterator-inl.h"
+#endif // SIMDJSON_AMALGAMATED
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -210,3 +222,5 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPL
   return first.raw_json();
 }
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H

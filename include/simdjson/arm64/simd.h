@@ -1,11 +1,12 @@
 #ifndef SIMDJSON_ARM64_SIMD_H
 #define SIMDJSON_ARM64_SIMD_H
 
-#include "simdjson/base.h"
-#include "simdjson/internal/simdprune_tables.h"
+#include "simdjson/arm64/base.h"
 #include "simdjson/arm64/bitmanipulation.h"
-#include <type_traits>
 
+#ifndef SIMDJSON_AMALGAMATED
+#include "simdjson/internal/simdprune_tables.h"
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

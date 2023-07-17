@@ -1,3 +1,10 @@
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
+#include "generic/stage1/base.h"
+#endif // SIMDJSON_AMALGAMATED
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
@@ -151,3 +158,5 @@ simdjson_inline error_code json_string_scanner::finish() {
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H

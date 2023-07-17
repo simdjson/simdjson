@@ -1,7 +1,12 @@
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
+#include "simdjson/westmere/base.h"
+#include "simdjson/westmere/bitmanipulation.h"
+
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/internal/simdprune_tables.h"
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -31,10 +36,6 @@ namespace simd {
     simdjson_inline Child& operator&=(const Child other) { auto this_cast = static_cast<Child*>(this); *this_cast = *this_cast & other; return *this_cast; }
     simdjson_inline Child& operator^=(const Child other) { auto this_cast = static_cast<Child*>(this); *this_cast = *this_cast ^ other; return *this_cast; }
   };
-
-  // Forward-declared so they can be used by splat and friends.
-  template<typename T>
-  struct simd8;
 
   template<typename T, typename Mask=simd8<bool>>
   struct base8: base<simd8<T>> {

@@ -1,6 +1,8 @@
 #ifndef SIMDJSON_PPC64_BITMANIPULATION_H
 #define SIMDJSON_PPC64_BITMANIPULATION_H
 
+#include "simdjson/ppc64/base.h"
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {

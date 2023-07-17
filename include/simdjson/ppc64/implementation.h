@@ -1,16 +1,15 @@
 #ifndef SIMDJSON_PPC64_IMPLEMENTATION_H
 #define SIMDJSON_PPC64_IMPLEMENTATION_H
 
-#include "simdjson/base.h"
-#include "simdjson/internal/isadetection.h"
+#include "simdjson/implementation.h"
+#include "simdjson/internal/instruction_set.h"
 
 namespace simdjson {
-namespace ppc64 {
 
-namespace {
-using namespace simdjson;
-using namespace simdjson::dom;
-} // namespace
+/**
+ * Implementation for ALTIVEC (PPC64).
+ */
+namespace ppc64 {
 
 /**
  * @private
@@ -20,6 +19,7 @@ public:
   simdjson_inline implementation()
       : simdjson::implementation("ppc64", "PPC64 ALTIVEC",
                                  internal::instruction_set::ALTIVEC) {}
+
   simdjson_warn_unused error_code create_dom_parser_implementation(
       size_t capacity, size_t max_length,
       std::unique_ptr<internal::dom_parser_implementation> &dst)

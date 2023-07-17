@@ -1,6 +1,16 @@
+#ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
+
+#ifndef SIMDJSON_AMALGAMATED
+#define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
+#include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/implementation_simdjson_result_base.h"
+#include "simdjson/generic/numberparsing.h"
+#endif // SIMDJSON_AMALGAMATED
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
+
 /**
  * The type of a JSON value.
  */
@@ -13,8 +23,6 @@ enum class json_type {
     boolean, ///< A JSON boolean (true or false)
     null     ///< A JSON null    (null)
 };
-
-class value_iterator;
 
 /**
  * A type representing a JSON number.
@@ -34,7 +42,7 @@ struct number {
    *        unsigned_integer         /// a positive integer larger or equal to 1<<63
    *    };
    */
-  simdjson_inline number_type get_number_type() const noexcept;
+  simdjson_inline ondemand::number_type get_number_type() const noexcept;
   /**
    * return true if the automatically determined type of
    * the number is number_type::unsigned_integer.
@@ -150,3 +158,5 @@ public:
 };
 
 } // namespace simdjson
+
+#endif // SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H

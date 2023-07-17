@@ -1,11 +1,8 @@
 #ifndef SIMDJSON_INLINE_OBJECT_H
 #define SIMDJSON_INLINE_OBJECT_H
 
-#include "simdjson/dom/element.h"
 #include "simdjson/dom/object.h"
-#include "simdjson/portability.h"
-#include <cstring>
-#include <string>
+#include "simdjson/dom/document.h"
 
 namespace simdjson {
 

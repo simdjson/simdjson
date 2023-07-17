@@ -1,6 +1,8 @@
 #ifndef SIMDJSON_WESTMERE_BITMASK_H
 #define SIMDJSON_WESTMERE_BITMASK_H
 
+#include "simdjson/westmere/base.h"
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {

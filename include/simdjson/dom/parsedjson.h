@@ -3,7 +3,7 @@
 #ifndef SIMDJSON_DOM_PARSEDJSON_H
 #define SIMDJSON_DOM_PARSEDJSON_H
 
-#include "simdjson/dom/document.h"
+#include "simdjson/dom/base.h"
 
 namespace simdjson {
 
