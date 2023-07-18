@@ -1,6 +1,7 @@
-#ifndef SIMDJSON_INLINE_ELEMENT_H
-#define SIMDJSON_INLINE_ELEMENT_H
+#ifndef SIMDJSON_ELEMENT_INL_H
+#define SIMDJSON_ELEMENT_INL_H
 
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/element.h"
 #include "simdjson/dom/document.h"
 #include "simdjson/dom/object.h"
@@ -439,4 +440,4 @@ inline std::ostream& operator<<(std::ostream& out, element_type type) {
 
 } // namespace simdjson
 
-#endif // SIMDJSON_INLINE_ELEMENT_H
+#endif // SIMDJSON_ELEMENT_INL_H

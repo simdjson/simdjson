@@ -1,16 +1,18 @@
-#ifndef SIMDJSON_INLINE_DOCUMENT_STREAM_H
-#define SIMDJSON_INLINE_DOCUMENT_STREAM_H
+#ifndef SIMDJSON_DOCUMENT_STREAM_INL_H
+#define SIMDJSON_DOCUMENT_STREAM_INL_H
 
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/document_stream.h"
-#include "simdjson/internal/dom_parser_implementation.h"
-#include "simdjson/error-inl.h"
 #include "simdjson/dom/element-inl.h"
 #include "simdjson/dom/parser-inl.h"
+#include "simdjson/error-inl.h"
+#include "simdjson/internal/dom_parser_implementation.h"
 
 namespace simdjson {
 namespace dom {
 
 #ifdef SIMDJSON_THREADS_ENABLED
+
 inline void stage1_worker::finish() {
   // After calling "run" someone would call finish() to wait
   // for the end of the processing.
@@ -339,4 +341,4 @@ simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_str
 #endif // SIMDJSON_EXCEPTIONS
 
 } // namespace simdjson
-#endif // SIMDJSON_INLINE_DOCUMENT_STREAM_H
+#endif // SIMDJSON_DOCUMENT_STREAM_INL_H

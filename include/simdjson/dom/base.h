@@ -35,6 +35,10 @@ class key_value_pair;
 class object;
 class parser;
 
+#ifdef SIMDJSON_THREADS_ENABLED
+struct stage1_worker;
+#endif // SIMDJSON_THREADS_ENABLED
+
 } // namespace dom
 
 namespace internal {

@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_INLINE_TAPE_REF_H
-#define SIMDJSON_INLINE_TAPE_REF_H
+#ifndef SIMDJSON_TAPE_REF_INL_H
+#define SIMDJSON_TAPE_REF_INL_H
 
 #include "simdjson/dom/document.h"
 #include "simdjson/internal/tape_ref.h"
@@ -113,4 +113,4 @@ inline std::string_view internal::tape_ref::get_string_view() const noexcept {
 } // namespace internal
 } // namespace simdjson
 
-#endif // SIMDJSON_INLINE_TAPE_REF_H
+#endif // SIMDJSON_TAPE_REF_INL_H

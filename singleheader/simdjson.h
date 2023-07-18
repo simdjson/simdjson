@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-17 10:02:55 -0700. Do not edit! */
+/* auto-generated on 2023-07-17 13:07:20 -0700. Do not edit! */
 /* including include/simdjson.h:  */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
@@ -409,7 +409,8 @@ double from_chars(const char *first, const char* end) noexcept;
     SIMDJSON_DISABLE_GCC_WARNING(-Wshadow) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wunused-parameter) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wunused-variable) \
-    SIMDJSON_DISABLE_GCC_WARNING(-Wmaybe-uninitialized)
+    SIMDJSON_DISABLE_GCC_WARNING(-Wmaybe-uninitialized) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wformat-security)
   #endif // __clang__
 
   #define SIMDJSON_PRAGMA(P) _Pragma(#P)
@@ -2659,6 +2660,7 @@ inline const std::string error_message(int error) noexcept;
 
 #endif // SIMDJSON_ERROR_H
 /* end file include/simdjson/error.h */
+/* skipped duplicate #include "simdjson/portability.h" */
 
 /**
  * @brief The top level simdjson namespace, containing everything the library provides.
@@ -3955,6 +3957,10 @@ class element;
 class key_value_pair;
 class object;
 class parser;
+
+#ifdef SIMDJSON_THREADS_ENABLED
+struct stage1_worker;
+#endif // SIMDJSON_THREADS_ENABLED
 
 } // namespace dom
 
@@ -6037,50 +6043,9 @@ namespace simdjson {
  */
 namespace internal {
 
-class mini_formatter;
-
-/**
- * @private The string_builder template allows us to construct
- * a string from a document element. It is parametrized
- * by a "formatter" which handles the details. Thus
- * the string_builder template could support both minification
- * and prettification, and various other tradeoffs.
- */
-template <class formatter = mini_formatter>
-class string_builder {
+template<class formatter>
+class base_formatter {
 public:
-  /** Construct an initially empty builder, would print the empty string **/
-  string_builder() = default;
-  /** Append an element to the builder (to be printed) **/
-  inline void append(simdjson::dom::element value);
-  /** Append an array to the builder (to be printed) **/
-  inline void append(simdjson::dom::array value);
-  /** Append an object to the builder (to be printed) **/
-  inline void append(simdjson::dom::object value);
-  /** Reset the builder (so that it would print the empty string) **/
-  simdjson_inline void clear();
-  /**
-   * Get access to the string. The string_view is owned by the builder
-   * and it is invalid to use it after the string_builder has been
-   * destroyed.
-   * However you can make a copy of the string_view on memory that you
-   * own.
-   */
-  simdjson_inline std::string_view str() const;
-  /** Append a key_value_pair to the builder (to be printed) **/
-  simdjson_inline void append(simdjson::dom::key_value_pair value);
-private:
-  formatter format{};
-};
-
-/**
- * @private This is the class that we expect to use with the string_builder
- * template. It tries to produce a compact version of the JSON element
- * as quickly as possible.
- */
-class mini_formatter {
-public:
-  mini_formatter() = default;
   /** Add a comma **/
   simdjson_inline void comma();
   /** Start an array, prints [ **/
@@ -6115,12 +6080,86 @@ public:
    **/
   simdjson_inline std::string_view str() const;
 
-private:
-  // implementation details (subject to change)
   /** Prints one character **/
   simdjson_inline void one_char(char c);
+
+  simdjson_inline void call_print_newline() {
+      this->print_newline();
+  }
+
+  simdjson_inline void call_print_indents(size_t depth) {
+      this->print_indents(depth);
+  }
+
+  simdjson_inline void call_print_space() {
+      this->print_space();
+  }
+
+protected:
+  // implementation details (subject to change)
   /** Backing buffer **/
   std::vector<char> buffer{}; // not ideal!
+};
+
+
+/**
+ * @private This is the class that we expect to use with the string_builder
+ * template. It tries to produce a compact version of the JSON element
+ * as quickly as possible.
+ */
+class mini_formatter : public base_formatter<mini_formatter> {
+public:
+  simdjson_inline void print_newline();
+
+  simdjson_inline void print_indents(size_t depth);
+
+  simdjson_inline void print_space();
+};
+
+class pretty_formatter : public base_formatter<pretty_formatter> {
+public:
+  simdjson_inline void print_newline();
+
+  simdjson_inline void print_indents(size_t depth);
+
+  simdjson_inline void print_space();
+
+protected:
+  int indent_step = 4;
+};
+
+/**
+ * @private The string_builder template allows us to construct
+ * a string from a document element. It is parametrized
+ * by a "formatter" which handles the details. Thus
+ * the string_builder template could support both minification
+ * and prettification, and various other tradeoffs.
+ */
+template <class formatter = mini_formatter>
+class string_builder {
+public:
+  /** Construct an initially empty builder, would print the empty string **/
+  string_builder() = default;
+  /** Append an element to the builder (to be printed) **/
+  inline void append(simdjson::dom::element value);
+  /** Append an array to the builder (to be printed) **/
+  inline void append(simdjson::dom::array value);
+  /** Append an object to the builder (to be printed) **/
+  inline void append(simdjson::dom::object value);
+  /** Reset the builder (so that it would print the empty string) **/
+  simdjson_inline void clear();
+  /**
+   * Get access to the string. The string_view is owned by the builder
+   * and it is invalid to use it after the string_builder has been
+   * destroyed.
+   * However you can make a copy of the string_view on memory that you
+   * own.
+   */
+  simdjson_inline std::string_view str() const;
+  /** Append a key_value_pair to the builder (to be printed) **/
+  simdjson_inline void append(simdjson::dom::key_value_pair value);
+private:
+  formatter format{};
 };
 
 } // internal
@@ -6230,6 +6269,38 @@ std::string minify(simdjson_result<T> x) {
 }
 #endif
 
+/**
+ * Prettifies a JSON element or document, printing the valid JSON with indentation.
+ *
+ *   dom::parser parser;
+ *   element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
+ *
+ *   // Prints:
+ *   // {
+ *   //     [
+ *   //         1,
+ *   //         2,
+ *   //         3
+ *   //     ]
+ *   // }
+ *   cout << prettify(doc) << endl;
+ *
+ */
+template <class T>
+std::string prettify(T x)  {
+    simdjson::internal::string_builder<simdjson::internal::pretty_formatter> sb;
+    sb.append(x);
+    std::string_view answer = sb.str();
+    return std::string(answer.data(), answer.size());
+}
+
+#if SIMDJSON_EXCEPTIONS
+template <class T>
+std::string prettify(simdjson_result<T> x) {
+    if (x.error()) { throw simdjson_error(x.error()); }
+    return to_string(x.value());
+}
+#endif
 
 } // namespace simdjson
 
@@ -6623,6 +6694,7 @@ public:
 
 #include <utility>
 
+/* skipped duplicate #include "simdjson/dom/base.h" */
 /* skipped duplicate #include "simdjson/dom/array.h" */
 /* skipped duplicate #include "simdjson/dom/element.h" */
 /* skipped duplicate #include "simdjson/error-inl.h" */
@@ -6935,6 +7007,7 @@ inline bool array::iterator::operator>(const array::iterator& other) const noexc
 #ifndef SIMDJSON_INLINE_ELEMENT_H
 #define SIMDJSON_INLINE_ELEMENT_H
 
+/* skipped duplicate #include "simdjson/dom/base.h" */
 /* skipped duplicate #include "simdjson/dom/element.h" */
 /* skipped duplicate #include "simdjson/dom/document.h" */
 /* skipped duplicate #include "simdjson/dom/object.h" */
@@ -7392,6 +7465,7 @@ static_assert(std::ranges::sized_range<simdjson::simdjson_result<simdjson::dom::
 #ifndef SIMDJSON_INLINE_DOCUMENT_STREAM_H
 #define SIMDJSON_INLINE_DOCUMENT_STREAM_H
 
+/* skipped duplicate #include "simdjson/dom/base.h" */
 /* skipped duplicate #include "simdjson/dom/document_stream.h" */
 /* skipped duplicate #include "simdjson/internal/dom_parser_implementation.h" */
 /* skipped duplicate #include "simdjson/error-inl.h" */
@@ -7401,6 +7475,7 @@ static_assert(std::ranges::sized_range<simdjson::simdjson_result<simdjson::dom::
 #ifndef SIMDJSON_INLINE_PARSER_H
 #define SIMDJSON_INLINE_PARSER_H
 
+/* skipped duplicate #include "simdjson/dom/base.h" */
 /* skipped duplicate #include "simdjson/dom/document_stream.h" */
 /* skipped duplicate #include "simdjson/implementation.h" */
 /* skipped duplicate #include "simdjson/internal/dom_parser_implementation.h" */
@@ -7641,10 +7716,17 @@ simdjson_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
 #endif // SIMDJSON_INLINE_PARSER_H
 /* end file include/simdjson/dom/parser-inl.h */
 
+#ifdef SIMDJSON_THREADS_ENABLED
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#endif
+
 namespace simdjson {
 namespace dom {
 
 #ifdef SIMDJSON_THREADS_ENABLED
+
 inline void stage1_worker::finish() {
   // After calling "run" someone would call finish() to wait
   // for the end of the processing.
@@ -7982,6 +8064,7 @@ simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_str
 
 // Inline implementations go in here.
 
+/* skipped duplicate #include "simdjson/dom/base.h" */
 /* skipped duplicate #include "simdjson/dom/document.h" */
 /* skipped duplicate #include "simdjson/dom/element.h" */
 /* skipped duplicate #include "simdjson/internal/tape_ref-inl.h" */
@@ -8206,6 +8289,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 #ifndef SIMDJSON_INLINE_OBJECT_H
 #define SIMDJSON_INLINE_OBJECT_H
 
+/* skipped duplicate #include "simdjson/dom/base.h" */
 /* skipped duplicate #include "simdjson/dom/object.h" */
 /* skipped duplicate #include "simdjson/dom/document.h" */
 
@@ -8462,6 +8546,7 @@ static_assert(std::ranges::sized_range<simdjson::simdjson_result<simdjson::dom::
 #ifndef SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H
 #define SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H
 
+/* skipped duplicate #include "simdjson/dom/base.h" */
 /* skipped duplicate #include "simdjson/dom/parsedjson_iterator.h" */
 /* skipped duplicate #include "simdjson/internal/tape_ref-inl.h" */
 /* skipped duplicate #include "simdjson/internal/jsonformatutils.h" */
@@ -9007,6 +9092,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #ifndef SIMDJSON_SERIALIZATION_INL_H
 #define SIMDJSON_SERIALIZATION_INL_H
 
+/* skipped duplicate #include "simdjson/dom/base.h" */
 /* skipped duplicate #include "simdjson/dom/serialization.h" */
 /* skipped duplicate #include "simdjson/dom/parser.h" */
 /* skipped duplicate #include "simdjson/internal/tape_type.h" */
@@ -9104,6 +9190,8 @@ static char *fast_itoa(char *output, uint64_t value) noexcept {
   std::memcpy(output, write_pointer, len);
   return output + len;
 }
+
+
 } // anonymous namespace
 namespace internal {
 
@@ -9111,19 +9199,22 @@ namespace internal {
  * Minifier/formatter code.
  **/
 
-simdjson_inline void mini_formatter::number(uint64_t x) {
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::number(uint64_t x) {
   char number_buffer[24];
   char *newp = fast_itoa(number_buffer, x);
   buffer.insert(buffer.end(), number_buffer, newp);
 }
 
-simdjson_inline void mini_formatter::number(int64_t x) {
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::number(int64_t x) {
   char number_buffer[24];
   char *newp = fast_itoa(number_buffer, x);
   buffer.insert(buffer.end(), number_buffer, newp);
 }
 
-simdjson_inline void mini_formatter::number(double x) {
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::number(double x) {
   char number_buffer[24];
   // Currently, passing the nullptr to the second argument is
   // safe because our implementation does not check the second
@@ -9132,31 +9223,51 @@ simdjson_inline void mini_formatter::number(double x) {
   buffer.insert(buffer.end(), number_buffer, newp);
 }
 
-simdjson_inline void mini_formatter::start_array() { one_char('['); }
-simdjson_inline void mini_formatter::end_array() { one_char(']'); }
-simdjson_inline void mini_formatter::start_object() { one_char('{'); }
-simdjson_inline void mini_formatter::end_object() { one_char('}'); }
-simdjson_inline void mini_formatter::comma() { one_char(','); }
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::start_array() { one_char('['); }
 
 
-simdjson_inline void mini_formatter::true_atom() {
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::end_array() { one_char(']'); }
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::start_object() { one_char('{'); }
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::end_object() { one_char('}'); }
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::comma() { one_char(','); }
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::true_atom() {
   const char * s = "true";
   buffer.insert(buffer.end(), s, s + 4);
 }
-simdjson_inline void mini_formatter::false_atom() {
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::false_atom() {
   const char * s = "false";
   buffer.insert(buffer.end(), s, s + 5);
 }
-simdjson_inline void mini_formatter::null_atom() {
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::null_atom() {
   const char * s = "null";
   buffer.insert(buffer.end(), s, s + 4);
 }
-simdjson_inline void mini_formatter::one_char(char c) { buffer.push_back(c); }
-simdjson_inline void mini_formatter::key(std::string_view unescaped) {
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::one_char(char c) { buffer.push_back(c); }
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::key(std::string_view unescaped) {
   string(unescaped);
   one_char(':');
 }
-simdjson_inline void mini_formatter::string(std::string_view unescaped) {
+
+template<class formatter>
+simdjson_inline void base_formatter<formatter>::string(std::string_view unescaped) {
   one_char('\"');
   size_t i = 0;
   // Fast path for the case where we have no control character, no ", and no backslash.
@@ -9235,14 +9346,46 @@ simdjson_inline void mini_formatter::string(std::string_view unescaped) {
   one_char('\"');
 }
 
-inline void mini_formatter::clear() {
+
+template<class formatter>
+inline void base_formatter<formatter>::clear() {
   buffer.clear();
 }
 
-simdjson_inline std::string_view mini_formatter::str() const {
+template<class formatter>
+simdjson_inline std::string_view base_formatter<formatter>::str() const {
   return std::string_view(buffer.data(), buffer.size());
 }
 
+simdjson_inline void mini_formatter::print_newline() {
+    return;
+}
+
+simdjson_inline void mini_formatter::print_indents(size_t depth) {
+    (void)depth;
+    return;
+}
+
+simdjson_inline void mini_formatter::print_space() {
+    return;
+}
+
+simdjson_inline void pretty_formatter::print_newline() {
+    one_char('\n');
+}
+
+simdjson_inline void pretty_formatter::print_indents(size_t depth) {
+    if(this->indent_step <= 0) {
+        return;
+    }
+    for(size_t i = 0; i < this->indent_step * depth; i++) {
+        one_char(' ');
+    }
+}
+
+simdjson_inline void pretty_formatter::print_space() {
+    one_char(' ');
+}
 
 /***
  * String building code.
@@ -9262,11 +9405,16 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
     // print commas after each value
     if (after_value) {
       format.comma();
+      format.print_newline();
     }
+
+    format.print_indents(depth);
+
     // If we are in an object, print the next key and :, and skip to the next
     // value.
     if (is_object[depth]) {
       format.key(iter.get_string_view());
+      format.print_space();
       iter.json_index++;
     }
     switch (iter.tape_ref_type()) {
@@ -9295,6 +9443,7 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
 
       is_object[depth] = false;
       after_value = false;
+      format.print_newline();
       continue;
     }
 
@@ -9322,6 +9471,7 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
 
       is_object[depth] = true;
       after_value = false;
+      format.print_newline();
       continue;
     }
 
@@ -9366,17 +9516,21 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
     // Handle multiple ends in a row
     while (depth != 0 && (iter.tape_ref_type() == tape_type::END_ARRAY ||
                           iter.tape_ref_type() == tape_type::END_OBJECT)) {
+      format.print_newline();
+      depth--;
+      format.print_indents(depth);
       if (iter.tape_ref_type() == tape_type::END_ARRAY) {
         format.end_array();
       } else {
         format.end_object();
       }
-      depth--;
       iter.json_index++;
     }
 
     // Stop when we're at depth 0
   } while (depth != 0);
+
+  format.print_newline();
 }
 
 template <class serializer>
@@ -12371,13 +12525,13 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #endif // SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 /* end file include/simdjson/arm64/stringparsing_defs.h */
 /* end file include/simdjson/arm64/begin.h */
-/* including include/simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
+/* including include/simdjson/generic/amalgamated.h for arm64: #include "simdjson/generic/amalgamated.h" */
 /* begin file include/simdjson/generic/amalgamated.h for arm64 */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
-/* including include/simdjson/generic/base.h: #include "simdjson/generic/base.h" */
+/* including include/simdjson/generic/base.h for arm64: #include "simdjson/generic/base.h" */
 /* begin file include/simdjson/generic/base.h for arm64 */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
@@ -12426,7 +12580,7 @@ enum class number_type {
 
 #endif // SIMDJSON_GENERIC_BASE_H
 /* end file include/simdjson/generic/base.h for arm64 */
-/* including include/simdjson/generic/jsoncharutils.h: #include "simdjson/generic/jsoncharutils.h" */
+/* including include/simdjson/generic/jsoncharutils.h for arm64: #include "simdjson/generic/jsoncharutils.h" */
 /* begin file include/simdjson/generic/jsoncharutils.h for arm64 */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
@@ -12533,7 +12687,7 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 
 #endif // SIMDJSON_GENERIC_JSONCHARUTILS_H
 /* end file include/simdjson/generic/jsoncharutils.h for arm64 */
-/* including include/simdjson/generic/atomparsing.h: #include "simdjson/generic/atomparsing.h" */
+/* including include/simdjson/generic/atomparsing.h for arm64: #include "simdjson/generic/atomparsing.h" */
 /* begin file include/simdjson/generic/atomparsing.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
@@ -12611,7 +12765,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 
 #endif // SIMDJSON_GENERIC_ATOMPARSING_H
 /* end file include/simdjson/generic/atomparsing.h for arm64 */
-/* including include/simdjson/generic/dom_parser_implementation.h: #include "simdjson/generic/dom_parser_implementation.h" */
+/* including include/simdjson/generic/dom_parser_implementation.h for arm64: #include "simdjson/generic/dom_parser_implementation.h" */
 /* begin file include/simdjson/generic/dom_parser_implementation.h for arm64 */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -12703,7 +12857,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 
 #endif // SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file include/simdjson/generic/dom_parser_implementation.h for arm64 */
-/* including include/simdjson/generic/implementation_simdjson_result_base.h: #include "simdjson/generic/implementation_simdjson_result_base.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base.h for arm64: #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for arm64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
@@ -12840,7 +12994,7 @@ protected:
 
 #endif // SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 /* end file include/simdjson/generic/implementation_simdjson_result_base.h for arm64 */
-/* including include/simdjson/generic/numberparsing.h: #include "simdjson/generic/numberparsing.h" */
+/* including include/simdjson/generic/numberparsing.h for arm64: #include "simdjson/generic/numberparsing.h" */
 /* begin file include/simdjson/generic/numberparsing.h for arm64 */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
@@ -14111,7 +14265,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 #endif // SIMDJSON_GENERIC_NUMBERPARSING_H
 /* end file include/simdjson/generic/numberparsing.h for arm64 */
 
-/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h for arm64: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
@@ -14505,13 +14659,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #endif // SIMDJSON_FALLBACK_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/fallback/numberparsing_defs.h */
 /* end file include/simdjson/fallback/begin.h */
-/* including include/simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
+/* including include/simdjson/generic/amalgamated.h for fallback: #include "simdjson/generic/amalgamated.h" */
 /* begin file include/simdjson/generic/amalgamated.h for fallback */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
-/* including include/simdjson/generic/base.h: #include "simdjson/generic/base.h" */
+/* including include/simdjson/generic/base.h for fallback: #include "simdjson/generic/base.h" */
 /* begin file include/simdjson/generic/base.h for fallback */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
@@ -14560,7 +14714,7 @@ enum class number_type {
 
 #endif // SIMDJSON_GENERIC_BASE_H
 /* end file include/simdjson/generic/base.h for fallback */
-/* including include/simdjson/generic/jsoncharutils.h: #include "simdjson/generic/jsoncharutils.h" */
+/* including include/simdjson/generic/jsoncharutils.h for fallback: #include "simdjson/generic/jsoncharutils.h" */
 /* begin file include/simdjson/generic/jsoncharutils.h for fallback */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
@@ -14667,7 +14821,7 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 
 #endif // SIMDJSON_GENERIC_JSONCHARUTILS_H
 /* end file include/simdjson/generic/jsoncharutils.h for fallback */
-/* including include/simdjson/generic/atomparsing.h: #include "simdjson/generic/atomparsing.h" */
+/* including include/simdjson/generic/atomparsing.h for fallback: #include "simdjson/generic/atomparsing.h" */
 /* begin file include/simdjson/generic/atomparsing.h for fallback */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
@@ -14745,7 +14899,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 
 #endif // SIMDJSON_GENERIC_ATOMPARSING_H
 /* end file include/simdjson/generic/atomparsing.h for fallback */
-/* including include/simdjson/generic/dom_parser_implementation.h: #include "simdjson/generic/dom_parser_implementation.h" */
+/* including include/simdjson/generic/dom_parser_implementation.h for fallback: #include "simdjson/generic/dom_parser_implementation.h" */
 /* begin file include/simdjson/generic/dom_parser_implementation.h for fallback */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -14837,7 +14991,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 
 #endif // SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file include/simdjson/generic/dom_parser_implementation.h for fallback */
-/* including include/simdjson/generic/implementation_simdjson_result_base.h: #include "simdjson/generic/implementation_simdjson_result_base.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base.h for fallback: #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for fallback */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
@@ -14974,7 +15128,7 @@ protected:
 
 #endif // SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 /* end file include/simdjson/generic/implementation_simdjson_result_base.h for fallback */
-/* including include/simdjson/generic/numberparsing.h: #include "simdjson/generic/numberparsing.h" */
+/* including include/simdjson/generic/numberparsing.h for fallback: #include "simdjson/generic/numberparsing.h" */
 /* begin file include/simdjson/generic/numberparsing.h for fallback */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
@@ -16245,7 +16399,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 #endif // SIMDJSON_GENERIC_NUMBERPARSING_H
 /* end file include/simdjson/generic/numberparsing.h for fallback */
 
-/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h for fallback: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
@@ -18574,13 +18728,13 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #endif // SIMDJSON_HASWELL_STRINGPARSING_DEFS_H
 /* end file include/simdjson/haswell/stringparsing_defs.h */
 /* end file include/simdjson/haswell/begin.h */
-/* including include/simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
+/* including include/simdjson/generic/amalgamated.h for haswell: #include "simdjson/generic/amalgamated.h" */
 /* begin file include/simdjson/generic/amalgamated.h for haswell */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
-/* including include/simdjson/generic/base.h: #include "simdjson/generic/base.h" */
+/* including include/simdjson/generic/base.h for haswell: #include "simdjson/generic/base.h" */
 /* begin file include/simdjson/generic/base.h for haswell */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
@@ -18629,7 +18783,7 @@ enum class number_type {
 
 #endif // SIMDJSON_GENERIC_BASE_H
 /* end file include/simdjson/generic/base.h for haswell */
-/* including include/simdjson/generic/jsoncharutils.h: #include "simdjson/generic/jsoncharutils.h" */
+/* including include/simdjson/generic/jsoncharutils.h for haswell: #include "simdjson/generic/jsoncharutils.h" */
 /* begin file include/simdjson/generic/jsoncharutils.h for haswell */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
@@ -18736,7 +18890,7 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 
 #endif // SIMDJSON_GENERIC_JSONCHARUTILS_H
 /* end file include/simdjson/generic/jsoncharutils.h for haswell */
-/* including include/simdjson/generic/atomparsing.h: #include "simdjson/generic/atomparsing.h" */
+/* including include/simdjson/generic/atomparsing.h for haswell: #include "simdjson/generic/atomparsing.h" */
 /* begin file include/simdjson/generic/atomparsing.h for haswell */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
@@ -18814,7 +18968,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 
 #endif // SIMDJSON_GENERIC_ATOMPARSING_H
 /* end file include/simdjson/generic/atomparsing.h for haswell */
-/* including include/simdjson/generic/dom_parser_implementation.h: #include "simdjson/generic/dom_parser_implementation.h" */
+/* including include/simdjson/generic/dom_parser_implementation.h for haswell: #include "simdjson/generic/dom_parser_implementation.h" */
 /* begin file include/simdjson/generic/dom_parser_implementation.h for haswell */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -18906,7 +19060,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 
 #endif // SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file include/simdjson/generic/dom_parser_implementation.h for haswell */
-/* including include/simdjson/generic/implementation_simdjson_result_base.h: #include "simdjson/generic/implementation_simdjson_result_base.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base.h for haswell: #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for haswell */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
@@ -19043,7 +19197,7 @@ protected:
 
 #endif // SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 /* end file include/simdjson/generic/implementation_simdjson_result_base.h for haswell */
-/* including include/simdjson/generic/numberparsing.h: #include "simdjson/generic/numberparsing.h" */
+/* including include/simdjson/generic/numberparsing.h for haswell: #include "simdjson/generic/numberparsing.h" */
 /* begin file include/simdjson/generic/numberparsing.h for haswell */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
@@ -20314,7 +20468,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 #endif // SIMDJSON_GENERIC_NUMBERPARSING_H
 /* end file include/simdjson/generic/numberparsing.h for haswell */
 
-/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h for haswell: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
@@ -22440,13 +22594,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #endif // SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/icelake/numberparsing_defs.h */
 /* end file include/simdjson/icelake/begin.h */
-/* including include/simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
+/* including include/simdjson/generic/amalgamated.h for icelake: #include "simdjson/generic/amalgamated.h" */
 /* begin file include/simdjson/generic/amalgamated.h for icelake */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
-/* including include/simdjson/generic/base.h: #include "simdjson/generic/base.h" */
+/* including include/simdjson/generic/base.h for icelake: #include "simdjson/generic/base.h" */
 /* begin file include/simdjson/generic/base.h for icelake */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
@@ -22495,7 +22649,7 @@ enum class number_type {
 
 #endif // SIMDJSON_GENERIC_BASE_H
 /* end file include/simdjson/generic/base.h for icelake */
-/* including include/simdjson/generic/jsoncharutils.h: #include "simdjson/generic/jsoncharutils.h" */
+/* including include/simdjson/generic/jsoncharutils.h for icelake: #include "simdjson/generic/jsoncharutils.h" */
 /* begin file include/simdjson/generic/jsoncharutils.h for icelake */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
@@ -22602,7 +22756,7 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 
 #endif // SIMDJSON_GENERIC_JSONCHARUTILS_H
 /* end file include/simdjson/generic/jsoncharutils.h for icelake */
-/* including include/simdjson/generic/atomparsing.h: #include "simdjson/generic/atomparsing.h" */
+/* including include/simdjson/generic/atomparsing.h for icelake: #include "simdjson/generic/atomparsing.h" */
 /* begin file include/simdjson/generic/atomparsing.h for icelake */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
@@ -22680,7 +22834,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 
 #endif // SIMDJSON_GENERIC_ATOMPARSING_H
 /* end file include/simdjson/generic/atomparsing.h for icelake */
-/* including include/simdjson/generic/dom_parser_implementation.h: #include "simdjson/generic/dom_parser_implementation.h" */
+/* including include/simdjson/generic/dom_parser_implementation.h for icelake: #include "simdjson/generic/dom_parser_implementation.h" */
 /* begin file include/simdjson/generic/dom_parser_implementation.h for icelake */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -22772,7 +22926,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 
 #endif // SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file include/simdjson/generic/dom_parser_implementation.h for icelake */
-/* including include/simdjson/generic/implementation_simdjson_result_base.h: #include "simdjson/generic/implementation_simdjson_result_base.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base.h for icelake: #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for icelake */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
@@ -22909,7 +23063,7 @@ protected:
 
 #endif // SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 /* end file include/simdjson/generic/implementation_simdjson_result_base.h for icelake */
-/* including include/simdjson/generic/numberparsing.h: #include "simdjson/generic/numberparsing.h" */
+/* including include/simdjson/generic/numberparsing.h for icelake: #include "simdjson/generic/numberparsing.h" */
 /* begin file include/simdjson/generic/numberparsing.h for icelake */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
@@ -24180,7 +24334,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 #endif // SIMDJSON_GENERIC_NUMBERPARSING_H
 /* end file include/simdjson/generic/numberparsing.h for icelake */
 
-/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h for icelake: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
@@ -26206,13 +26360,13 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 #endif // SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 /* end file include/simdjson/ppc64/stringparsing_defs.h */
 /* end file include/simdjson/ppc64/begin.h */
-/* including include/simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
+/* including include/simdjson/generic/amalgamated.h for ppc64: #include "simdjson/generic/amalgamated.h" */
 /* begin file include/simdjson/generic/amalgamated.h for ppc64 */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
-/* including include/simdjson/generic/base.h: #include "simdjson/generic/base.h" */
+/* including include/simdjson/generic/base.h for ppc64: #include "simdjson/generic/base.h" */
 /* begin file include/simdjson/generic/base.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
@@ -26261,7 +26415,7 @@ enum class number_type {
 
 #endif // SIMDJSON_GENERIC_BASE_H
 /* end file include/simdjson/generic/base.h for ppc64 */
-/* including include/simdjson/generic/jsoncharutils.h: #include "simdjson/generic/jsoncharutils.h" */
+/* including include/simdjson/generic/jsoncharutils.h for ppc64: #include "simdjson/generic/jsoncharutils.h" */
 /* begin file include/simdjson/generic/jsoncharutils.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
@@ -26368,7 +26522,7 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 
 #endif // SIMDJSON_GENERIC_JSONCHARUTILS_H
 /* end file include/simdjson/generic/jsoncharutils.h for ppc64 */
-/* including include/simdjson/generic/atomparsing.h: #include "simdjson/generic/atomparsing.h" */
+/* including include/simdjson/generic/atomparsing.h for ppc64: #include "simdjson/generic/atomparsing.h" */
 /* begin file include/simdjson/generic/atomparsing.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
@@ -26446,7 +26600,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 
 #endif // SIMDJSON_GENERIC_ATOMPARSING_H
 /* end file include/simdjson/generic/atomparsing.h for ppc64 */
-/* including include/simdjson/generic/dom_parser_implementation.h: #include "simdjson/generic/dom_parser_implementation.h" */
+/* including include/simdjson/generic/dom_parser_implementation.h for ppc64: #include "simdjson/generic/dom_parser_implementation.h" */
 /* begin file include/simdjson/generic/dom_parser_implementation.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -26538,7 +26692,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 
 #endif // SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file include/simdjson/generic/dom_parser_implementation.h for ppc64 */
-/* including include/simdjson/generic/implementation_simdjson_result_base.h: #include "simdjson/generic/implementation_simdjson_result_base.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base.h for ppc64: #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
@@ -26675,7 +26829,7 @@ protected:
 
 #endif // SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 /* end file include/simdjson/generic/implementation_simdjson_result_base.h for ppc64 */
-/* including include/simdjson/generic/numberparsing.h: #include "simdjson/generic/numberparsing.h" */
+/* including include/simdjson/generic/numberparsing.h for ppc64: #include "simdjson/generic/numberparsing.h" */
 /* begin file include/simdjson/generic/numberparsing.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
@@ -27946,7 +28100,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 #endif // SIMDJSON_GENERIC_NUMBERPARSING_H
 /* end file include/simdjson/generic/numberparsing.h for ppc64 */
 
-/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h for ppc64: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
@@ -29662,13 +29816,13 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #endif // SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H
 /* end file include/simdjson/westmere/stringparsing_defs.h */
 /* end file include/simdjson/westmere/begin.h */
-/* including include/simdjson/generic/amalgamated.h: #include "simdjson/generic/amalgamated.h" */
+/* including include/simdjson/generic/amalgamated.h for westmere: #include "simdjson/generic/amalgamated.h" */
 /* begin file include/simdjson/generic/amalgamated.h for westmere */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
-/* including include/simdjson/generic/base.h: #include "simdjson/generic/base.h" */
+/* including include/simdjson/generic/base.h for westmere: #include "simdjson/generic/base.h" */
 /* begin file include/simdjson/generic/base.h for westmere */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
@@ -29717,7 +29871,7 @@ enum class number_type {
 
 #endif // SIMDJSON_GENERIC_BASE_H
 /* end file include/simdjson/generic/base.h for westmere */
-/* including include/simdjson/generic/jsoncharutils.h: #include "simdjson/generic/jsoncharutils.h" */
+/* including include/simdjson/generic/jsoncharutils.h for westmere: #include "simdjson/generic/jsoncharutils.h" */
 /* begin file include/simdjson/generic/jsoncharutils.h for westmere */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
@@ -29824,7 +29978,7 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 
 #endif // SIMDJSON_GENERIC_JSONCHARUTILS_H
 /* end file include/simdjson/generic/jsoncharutils.h for westmere */
-/* including include/simdjson/generic/atomparsing.h: #include "simdjson/generic/atomparsing.h" */
+/* including include/simdjson/generic/atomparsing.h for westmere: #include "simdjson/generic/atomparsing.h" */
 /* begin file include/simdjson/generic/atomparsing.h for westmere */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
@@ -29902,7 +30056,7 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 
 #endif // SIMDJSON_GENERIC_ATOMPARSING_H
 /* end file include/simdjson/generic/atomparsing.h for westmere */
-/* including include/simdjson/generic/dom_parser_implementation.h: #include "simdjson/generic/dom_parser_implementation.h" */
+/* including include/simdjson/generic/dom_parser_implementation.h for westmere: #include "simdjson/generic/dom_parser_implementation.h" */
 /* begin file include/simdjson/generic/dom_parser_implementation.h for westmere */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
@@ -29994,7 +30148,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 
 #endif // SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 /* end file include/simdjson/generic/dom_parser_implementation.h for westmere */
-/* including include/simdjson/generic/implementation_simdjson_result_base.h: #include "simdjson/generic/implementation_simdjson_result_base.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base.h for westmere: #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base.h for westmere */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
@@ -30131,7 +30285,7 @@ protected:
 
 #endif // SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 /* end file include/simdjson/generic/implementation_simdjson_result_base.h for westmere */
-/* including include/simdjson/generic/numberparsing.h: #include "simdjson/generic/numberparsing.h" */
+/* including include/simdjson/generic/numberparsing.h for westmere: #include "simdjson/generic/numberparsing.h" */
 /* begin file include/simdjson/generic/numberparsing.h for westmere */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
@@ -31402,7 +31556,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 #endif // SIMDJSON_GENERIC_NUMBERPARSING_H
 /* end file include/simdjson/generic/numberparsing.h for westmere */
 
-/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
+/* including include/simdjson/generic/implementation_simdjson_result_base-inl.h for westmere: #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
 /* begin file include/simdjson/generic/implementation_simdjson_result_base-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
@@ -33895,14 +34049,14 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #endif // SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 /* end file include/simdjson/arm64/stringparsing_defs.h */
 /* end file include/simdjson/arm64/begin.h */
-/* including include/simdjson/generic/ondemand/amalgamated.h: #include "simdjson/generic/ondemand/amalgamated.h" */
+/* including include/simdjson/generic/ondemand/amalgamated.h for arm64: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file include/simdjson/generic/ondemand/amalgamated.h for arm64 */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
 // Stuff other things depend on
-/* including include/simdjson/generic/ondemand/base.h: #include "simdjson/generic/ondemand/base.h" */
+/* including include/simdjson/generic/ondemand/base.h for arm64: #include "simdjson/generic/ondemand/base.h" */
 /* begin file include/simdjson/generic/ondemand/base.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_BASE_H
 
@@ -33952,7 +34106,7 @@ class value_iterator;
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_BASE_H
 /* end file include/simdjson/generic/ondemand/base.h for arm64 */
-/* including include/simdjson/generic/ondemand/value_iterator.h: #include "simdjson/generic/ondemand/value_iterator.h" */
+/* including include/simdjson/generic/ondemand/value_iterator.h for arm64: #include "simdjson/generic/ondemand/value_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/value_iterator.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 
@@ -34441,7 +34595,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/value_iterator.h for arm64 */
-/* including include/simdjson/generic/ondemand/value.h: #include "simdjson/generic/ondemand/value.h" */
+/* including include/simdjson/generic/ondemand/value.h for arm64: #include "simdjson/generic/ondemand/value.h" */
 /* begin file include/simdjson/generic/ondemand/value.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 
@@ -35151,7 +35305,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 /* end file include/simdjson/generic/ondemand/value.h for arm64 */
-/* including include/simdjson/generic/ondemand/logger.h: #include "simdjson/generic/ondemand/logger.h" */
+/* including include/simdjson/generic/ondemand/logger.h for arm64: #include "simdjson/generic/ondemand/logger.h" */
 /* begin file include/simdjson/generic/ondemand/logger.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 
@@ -35169,6 +35323,11 @@ namespace ondemand {
 // create temporary std::string instances.
 namespace logger {
 
+enum class log_level : int32_t {
+  info = 0,
+  error = 1
+};
+
 #if SIMDJSON_VERBOSE_LOGGING
   static constexpr const bool LOG_ENABLED = true;
 #else
@@ -35179,14 +35338,18 @@ namespace logger {
 // for performance purposes and if you are using the loggers, you do not care about
 // performance (or should not).
 static inline void log_headers() noexcept;
-static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
-static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
+// If args are provided, title will be treated as format string
+template <typename... Args>
+static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
+template <typename... Args>
+static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
 static inline void log_event(const json_iterator &iter, const char *type, std::string_view detail="", int delta=0, int depth_delta=0) noexcept;
 static inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_value(const json_iterator &iter, const char *type, std::string_view detail="", int delta=-1, int depth_delta=0) noexcept;
 static inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_start_value(const json_iterator &iter, const char *type, int delta=-1, int depth_delta=0) noexcept;
 static inline void log_end_value(const json_iterator &iter, const char *type, int delta=-1, int depth_delta=0) noexcept;
+
 static inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail="") noexcept;
 static inline void log_error(const json_iterator &iter, const char *error, const char *detail="", int delta=-1, int depth_delta=0) noexcept;
 
@@ -35203,7 +35366,7 @@ static inline void log_error(const value_iterator &iter, const char *error, cons
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 /* end file include/simdjson/generic/ondemand/logger.h for arm64 */
-/* including include/simdjson/generic/ondemand/token_iterator.h: #include "simdjson/generic/ondemand/token_iterator.h" */
+/* including include/simdjson/generic/ondemand/token_iterator.h for arm64: #include "simdjson/generic/ondemand/token_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/token_iterator.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 
@@ -35332,8 +35495,10 @@ protected:
   friend class json_iterator;
   friend class value_iterator;
   friend class object;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
 };
 
 } // namespace ondemand
@@ -35355,7 +35520,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/token_iterator.h for arm64 */
-/* including include/simdjson/generic/ondemand/json_iterator.h: #include "simdjson/generic/ondemand/json_iterator.h" */
+/* including include/simdjson/generic/ondemand/json_iterator.h for arm64: #include "simdjson/generic/ondemand/json_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/json_iterator.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 
@@ -35658,8 +35823,10 @@ protected:
   friend class raw_json_string;
   friend class parser;
   friend class value_iterator;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
 }; // json_iterator
 
 } // namespace ondemand
@@ -35681,7 +35848,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/json_iterator.h for arm64 */
-/* including include/simdjson/generic/ondemand/json_type.h: #include "simdjson/generic/ondemand/json_type.h" */
+/* including include/simdjson/generic/ondemand/json_type.h for arm64: #include "simdjson/generic/ondemand/json_type.h" */
 /* begin file include/simdjson/generic/ondemand/json_type.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 
@@ -35846,7 +36013,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 /* end file include/simdjson/generic/ondemand/json_type.h for arm64 */
-/* including include/simdjson/generic/ondemand/raw_json_string.h: #include "simdjson/generic/ondemand/raw_json_string.h" */
+/* including include/simdjson/generic/ondemand/raw_json_string.h for arm64: #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* begin file include/simdjson/generic/ondemand/raw_json_string.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 
@@ -36055,7 +36222,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 /* end file include/simdjson/generic/ondemand/raw_json_string.h for arm64 */
-/* including include/simdjson/generic/ondemand/parser.h: #include "simdjson/generic/ondemand/parser.h" */
+/* including include/simdjson/generic/ondemand/parser.h for arm64: #include "simdjson/generic/ondemand/parser.h" */
 /* begin file include/simdjson/generic/ondemand/parser.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_H
 
@@ -36413,7 +36580,7 @@ public:
 /* end file include/simdjson/generic/ondemand/parser.h for arm64 */
 
 // All other declarations
-/* including include/simdjson/generic/ondemand/array.h: #include "simdjson/generic/ondemand/array.h" */
+/* including include/simdjson/generic/ondemand/array.h for arm64: #include "simdjson/generic/ondemand/array.h" */
 /* begin file include/simdjson/generic/ondemand/array.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 
@@ -36615,7 +36782,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 /* end file include/simdjson/generic/ondemand/array.h for arm64 */
-/* including include/simdjson/generic/ondemand/array_iterator.h: #include "simdjson/generic/ondemand/array_iterator.h" */
+/* including include/simdjson/generic/ondemand/array_iterator.h for arm64: #include "simdjson/generic/ondemand/array_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/array_iterator.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 
@@ -36714,7 +36881,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/array_iterator.h for arm64 */
-/* including include/simdjson/generic/ondemand/document.h: #include "simdjson/generic/ondemand/document.h" */
+/* including include/simdjson/generic/ondemand/document.h for arm64: #include "simdjson/generic/ondemand/document.h" */
 /* begin file include/simdjson/generic/ondemand/document.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 
@@ -37524,7 +37691,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 /* end file include/simdjson/generic/ondemand/document.h for arm64 */
-/* including include/simdjson/generic/ondemand/document_stream.h: #include "simdjson/generic/ondemand/document_stream.h" */
+/* including include/simdjson/generic/ondemand/document_stream.h for arm64: #include "simdjson/generic/ondemand/document_stream.h" */
 /* begin file include/simdjson/generic/ondemand/document_stream.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 
@@ -37866,7 +38033,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 /* end file include/simdjson/generic/ondemand/document_stream.h for arm64 */
-/* including include/simdjson/generic/ondemand/field.h: #include "simdjson/generic/ondemand/field.h" */
+/* including include/simdjson/generic/ondemand/field.h for arm64: #include "simdjson/generic/ondemand/field.h" */
 /* begin file include/simdjson/generic/ondemand/field.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 
@@ -37951,7 +38118,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 /* end file include/simdjson/generic/ondemand/field.h for arm64 */
-/* including include/simdjson/generic/ondemand/object.h: #include "simdjson/generic/ondemand/object.h" */
+/* including include/simdjson/generic/ondemand/object.h for arm64: #include "simdjson/generic/ondemand/object.h" */
 /* begin file include/simdjson/generic/ondemand/object.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 
@@ -38193,7 +38360,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 /* end file include/simdjson/generic/ondemand/object.h for arm64 */
-/* including include/simdjson/generic/ondemand/object_iterator.h: #include "simdjson/generic/ondemand/object_iterator.h" */
+/* including include/simdjson/generic/ondemand/object_iterator.h for arm64: #include "simdjson/generic/ondemand/object_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/object_iterator.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 
@@ -38276,7 +38443,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/object_iterator.h for arm64 */
-/* including include/simdjson/generic/ondemand/serialization.h: #include "simdjson/generic/ondemand/serialization.h" */
+/* including include/simdjson/generic/ondemand/serialization.h for arm64: #include "simdjson/generic/ondemand/serialization.h" */
 /* begin file include/simdjson/generic/ondemand/serialization.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H
 
@@ -38384,7 +38551,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* end file include/simdjson/generic/ondemand/serialization.h for arm64 */
 
 // Inline definitions
-/* including include/simdjson/generic/ondemand/array-inl.h: #include "simdjson/generic/ondemand/array-inl.h" */
+/* including include/simdjson/generic/ondemand/array-inl.h for arm64: #include "simdjson/generic/ondemand/array-inl.h" */
 /* begin file include/simdjson/generic/ondemand/array-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 
@@ -38613,7 +38780,7 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<arm64::ondema
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 /* end file include/simdjson/generic/ondemand/array-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/array_iterator-inl.h: #include "simdjson/generic/ondemand/array_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/array_iterator-inl.h for arm64: #include "simdjson/generic/ondemand/array_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/array_iterator-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 
@@ -38694,7 +38861,7 @@ simdjson_inline simdjson_result<arm64::ondemand::array_iterator> &simdjson_resul
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/array_iterator-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/document-inl.h: #include "simdjson/generic/ondemand/document-inl.h" */
+/* including include/simdjson/generic/ondemand/document-inl.h for arm64: #include "simdjson/generic/ondemand/document-inl.h" */
 /* begin file include/simdjson/generic/ondemand/document-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 
@@ -39520,7 +39687,7 @@ simdjson_inline simdjson_result<arm64::ondemand::value> simdjson_result<arm64::o
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 /* end file include/simdjson/generic/ondemand/document-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/document_stream-inl.h: #include "simdjson/generic/ondemand/document_stream-inl.h" */
+/* including include/simdjson/generic/ondemand/document_stream-inl.h for arm64: #include "simdjson/generic/ondemand/document_stream-inl.h" */
 /* begin file include/simdjson/generic/ondemand/document_stream-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 
@@ -39947,7 +40114,7 @@ simdjson_inline simdjson_result<arm64::ondemand::document_stream>::simdjson_resu
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 /* end file include/simdjson/generic/ondemand/document_stream-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/field-inl.h: #include "simdjson/generic/ondemand/field-inl.h" */
+/* including include/simdjson/generic/ondemand/field-inl.h for arm64: #include "simdjson/generic/ondemand/field-inl.h" */
 /* begin file include/simdjson/generic/ondemand/field-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 
@@ -40040,7 +40207,7 @@ simdjson_inline simdjson_result<arm64::ondemand::value> simdjson_result<arm64::o
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 /* end file include/simdjson/generic/ondemand/field-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/json_iterator-inl.h: #include "simdjson/generic/ondemand/json_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/json_iterator-inl.h for arm64: #include "simdjson/generic/ondemand/json_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/json_iterator-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 
@@ -40451,7 +40618,7 @@ simdjson_inline simdjson_result<arm64::ondemand::json_iterator>::simdjson_result
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/json_iterator-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/json_type-inl.h: #include "simdjson/generic/ondemand/json_type-inl.h" */
+/* including include/simdjson/generic/ondemand/json_type-inl.h for arm64: #include "simdjson/generic/ondemand/json_type-inl.h" */
 /* begin file include/simdjson/generic/ondemand/json_type-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 
@@ -40572,7 +40739,7 @@ simdjson_inline simdjson_result<arm64::ondemand::json_type>::simdjson_result(err
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 /* end file include/simdjson/generic/ondemand/json_type-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/logger-inl.h: #include "simdjson/generic/ondemand/logger-inl.h" */
+/* including include/simdjson/generic/ondemand/logger-inl.h for arm64: #include "simdjson/generic/ondemand/logger-inl.h" */
 /* begin file include/simdjson/generic/ondemand/logger-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 
@@ -40604,36 +40771,70 @@ static inline char printable_char(char c) {
   }
 }
 
+template<typename... Args>
+static inline std::string string_format(const std::string& format, const Args&... args)
+{
+  SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+  int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1;
+  auto size = static_cast<size_t>(size_s);
+  if (size <= 0) return std::string();
+  std::unique_ptr<char[]> buf(new char[size]);
+  std::snprintf(buf.get(), size, format.c_str(), args...);
+  SIMDJSON_POP_DISABLE_WARNINGS
+  return std::string(buf.get(), buf.get() + size - 1);
+}
+
+static inline log_level get_log_level_from_env()
+{
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
+      char *lvl = getenv("SIMDJSON_LOG_LEVEL");
+  SIMDJSON_POP_DISABLE_WARNINGS
+  if (lvl && simdjson_strcasecmp(lvl, "ERROR") == 0) { return log_level::error; }
+  return log_level::info;
+}
+
+static inline log_level log_threshold()
+{
+  static log_level threshold = get_log_level_from_env();
+  return threshold;
+}
+
+static inline bool should_log(log_level level)
+{
+  return level >= log_threshold();
+}
+
 inline void log_event(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::info);
 }
 
 inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "", type, detail);
+  log_line(iter, index, depth, "", type, detail, log_level::info);
 }
 inline void log_value(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::info);
 }
 
 inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "+", type, detail);
+  log_line(iter, index, depth, "+", type, detail, log_level::info);
   if (LOG_ENABLED) { log_depth++; }
 }
 inline void log_start_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
-  log_line(iter, "+", type, "", delta, depth_delta);
+  log_line(iter, "+", type, "", delta, depth_delta, log_level::info);
   if (LOG_ENABLED) { log_depth++; }
 }
 
 inline void log_end_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
   if (LOG_ENABLED) { log_depth--; }
-  log_line(iter, "-", type, "", delta, depth_delta);
+  log_line(iter, "-", type, "", delta, depth_delta, log_level::info);
 }
 
 inline void log_error(const json_iterator &iter, const char *error, const char *detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "ERROR: ", error, detail, delta, depth_delta);
+  log_line(iter, "ERROR: ", error, detail, delta, depth_delta, log_level::error);
 }
 inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail) noexcept {
-  log_line(iter, index, depth, "ERROR: ", error, detail);
+  log_line(iter, index, depth, "ERROR: ", error, detail, log_level::error);
 }
 
 inline void log_event(const value_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
@@ -40658,96 +40859,101 @@ inline void log_error(const value_iterator &iter, const char *error, const char 
 
 inline void log_headers() noexcept {
   if (LOG_ENABLED) {
-    // Technically a static variable is not thread-safe, but if you are using threads
-    // and logging... well...
-    static bool displayed_hint{false};
-    log_depth = 0;
-    printf("\n");
-    if(!displayed_hint) {
-      // We only print this helpful header once.
-      printf("# Logging provides the depth and position of the iterator user-visible steps:\n");
-      printf("# +array says 'this is where we were when we discovered the start array'\n");
-      printf("# -array says 'this is where we were when we ended the array'\n");
-      printf("# skip says 'this is a structural or value I am skipping'\n");
-      printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
-      printf("#\n");
-      printf("# The indentation of the terms (array, string,...) indicates the depth,\n");
-      printf("# in addition to the depth being displayed.\n");
-      printf("#\n");
-      printf("# Every token in the document has a single depth determined by the tokens before it,\n");
-      printf("# and is not affected by what the token actually is.\n");
-      printf("#\n");
-      printf("# Not all structural elements are presented as tokens in the logs.\n");
-      printf("#\n");
-      printf("# We never give control to the user within an empty array or an empty object.\n");
-      printf("#\n");
-      printf("# Inside an array, having a depth greater than the array's depth means that\n");
-      printf("# we are pointing inside a value.\n");
-      printf("# Having a depth equal to the array means that we are pointing right before a value.\n");
-      printf("# Having a depth smaller than the array means that we have moved beyond the array.\n");
-      displayed_hint = true;
-    }
-    printf("\n");
-    printf("| %-*s ", LOG_EVENT_LEN,        "Event");
-    printf("| %-*s ", LOG_BUFFER_LEN,       "Buffer");
-    printf("| %-*s ", LOG_SMALL_BUFFER_LEN, "Next");
-    // printf("| %-*s ", 5,                    "Next#");
-    printf("| %-*s ", 5,                    "Depth");
-    printf("| Detail ");
-    printf("|\n");
+    if (simdjson_unlikely(should_log(log_level::info))) {
+      // Technically a static variable is not thread-safe, but if you are using threads and logging... well...
+      static bool displayed_hint{false};
+      log_depth = 0;
+      printf("\n");
+      if (!displayed_hint) {
+        // We only print this helpful header once.
+        printf("# Logging provides the depth and position of the iterator user-visible steps:\n");
+        printf("# +array says 'this is where we were when we discovered the start array'\n");
+        printf(
+            "# -array says 'this is where we were when we ended the array'\n");
+        printf("# skip says 'this is a structural or value I am skipping'\n");
+        printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
+        printf("#\n");
+        printf("# The indentation of the terms (array, string,...) indicates the depth,\n");
+        printf("# in addition to the depth being displayed.\n");
+        printf("#\n");
+        printf("# Every token in the document has a single depth determined by the tokens before it,\n");
+        printf("# and is not affected by what the token actually is.\n");
+        printf("#\n");
+        printf("# Not all structural elements are presented as tokens in the logs.\n");
+        printf("#\n");
+        printf("# We never give control to the user within an empty array or an empty object.\n");
+        printf("#\n");
+        printf("# Inside an array, having a depth greater than the array's depth means that\n");
+        printf("# we are pointing inside a value.\n");
+        printf("# Having a depth equal to the array means that we are pointing right before a value.\n");
+        printf("# Having a depth smaller than the array means that we have moved beyond the array.\n");
+        displayed_hint = true;
+      }
+      printf("\n");
+      printf("| %-*s ", LOG_EVENT_LEN, "Event");
+      printf("| %-*s ", LOG_BUFFER_LEN, "Buffer");
+      printf("| %-*s ", LOG_SMALL_BUFFER_LEN, "Next");
+      // printf("| %-*s ", 5,                    "Next#");
+      printf("| %-*s ", 5, "Depth");
+      printf("| Detail ");
+      printf("|\n");
 
-    printf("|%.*s", LOG_EVENT_LEN+2, DASHES);
-    printf("|%.*s", LOG_BUFFER_LEN+2, DASHES);
-    printf("|%.*s", LOG_SMALL_BUFFER_LEN+2, DASHES);
-    // printf("|%.*s", 5+2, DASHES);
-    printf("|%.*s", 5+2, DASHES);
-    printf("|--------");
-    printf("|\n");
-    fflush(stdout);
+      printf("|%.*s", LOG_EVENT_LEN + 2, DASHES);
+      printf("|%.*s", LOG_BUFFER_LEN + 2, DASHES);
+      printf("|%.*s", LOG_SMALL_BUFFER_LEN + 2, DASHES);
+      // printf("|%.*s", 5+2, DASHES);
+      printf("|%.*s", 5 + 2, DASHES);
+      printf("|--------");
+      printf("|\n");
+      fflush(stdout);
+    }
   }
 }
 
-inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail);
+template <typename... Args>
+inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, log_level level, Args&&... args) noexcept {
+  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail, level, std::forward<Args>(args)...);
 }
-inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept {
+
+template <typename... Args>
+inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, log_level level, Args&&... args) noexcept {
   if (LOG_ENABLED) {
-    const int indent = depth*2;
-    const auto buf = iter.token.buf;
-    printf("| %*s%s%-*s ",
-      indent, "",
-      title_prefix,
-      LOG_EVENT_LEN - indent - int(strlen(title_prefix)), title
-      );
-    {
-      // Print the current structural.
-      printf("| ");
-      // Before we begin, the index might point right before the document.
-      // This could be unsafe, see https://github.com/simdjson/simdjson/discussions/1938
-      if(index < iter._root) {
-        printf("%*s", LOG_BUFFER_LEN, "");
-      } else {
-        auto current_structural = &buf[*index];
-        for (int i=0;i<LOG_BUFFER_LEN;i++) {
+    if (simdjson_unlikely(should_log(level))) {
+      const int indent = depth * 2;
+      const auto buf = iter.token.buf;
+      auto msg = string_format(title, std::forward<Args>(args)...);
+      printf("| %*s%s%-*s ", indent, "", title_prefix,
+             LOG_EVENT_LEN - indent - int(strlen(title_prefix)), msg.c_str());
+      {
+        // Print the current structural.
+        printf("| ");
+        // Before we begin, the index might point right before the document.
+        // This could be unsafe, see https://github.com/simdjson/simdjson/discussions/1938
+        if (index < iter._root) {
+          printf("%*s", LOG_BUFFER_LEN, "");
+        } else {
+          auto current_structural = &buf[*index];
+          for (int i = 0; i < LOG_BUFFER_LEN; i++) {
             printf("%c", printable_char(current_structural[i]));
+          }
         }
+        printf(" ");
       }
-      printf(" ");
-    }
-    {
-      // Print the next structural.
-      printf("| ");
-      auto next_structural = &buf[*(index+1)];
-      for (int i=0;i<LOG_SMALL_BUFFER_LEN;i++) {
-        printf("%c", printable_char(next_structural[i]));
+      {
+        // Print the next structural.
+        printf("| ");
+        auto next_structural = &buf[*(index + 1)];
+        for (int i = 0; i < LOG_SMALL_BUFFER_LEN; i++) {
+          printf("%c", printable_char(next_structural[i]));
+        }
+        printf(" ");
       }
-      printf(" ");
+      // printf("| %5u ", *(index+1));
+      printf("| %5i ", depth);
+      printf("| %6.*s ", int(detail.size()), detail.data());
+      printf("|\n");
+      fflush(stdout);
     }
-    // printf("| %5u ", *(index+1));
-    printf("| %5i ", depth);
-    printf("| %6.*s ", int(detail.size()) , detail.data());
-    printf("|\n");
-    fflush(stdout);
   }
 }
 
@@ -40758,7 +40964,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 /* end file include/simdjson/generic/ondemand/logger-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/object-inl.h: #include "simdjson/generic/ondemand/object-inl.h" */
+/* including include/simdjson/generic/ondemand/object-inl.h for arm64: #include "simdjson/generic/ondemand/object-inl.h" */
 /* begin file include/simdjson/generic/ondemand/object-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 
@@ -40780,13 +40986,19 @@ namespace ondemand {
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::operator[](const std::string_view key) & noexcept {
@@ -40798,13 +41010,19 @@ simdjson_inline simdjson_result<value> object::operator[](const std::string_view
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 
@@ -41009,7 +41227,7 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<arm64::ondema
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 /* end file include/simdjson/generic/ondemand/object-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/object_iterator-inl.h: #include "simdjson/generic/ondemand/object_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/object_iterator-inl.h for arm64: #include "simdjson/generic/ondemand/object_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/object_iterator-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 
@@ -41150,7 +41368,7 @@ simdjson_inline simdjson_result<arm64::ondemand::object_iterator> &simdjson_resu
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/object_iterator-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/parser-inl.h: #include "simdjson/generic/ondemand/parser-inl.h" */
+/* including include/simdjson/generic/ondemand/parser-inl.h for arm64: #include "simdjson/generic/ondemand/parser-inl.h" */
 /* begin file include/simdjson/generic/ondemand/parser-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 
@@ -41315,7 +41533,7 @@ simdjson_inline simdjson_result<arm64::ondemand::parser>::simdjson_result(error_
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 /* end file include/simdjson/generic/ondemand/parser-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/raw_json_string-inl.h: #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
+/* including include/simdjson/generic/ondemand/raw_json_string-inl.h for arm64: #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
 /* begin file include/simdjson/generic/ondemand/raw_json_string-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 
@@ -41521,7 +41739,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 /* end file include/simdjson/generic/ondemand/raw_json_string-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/serialization-inl.h: #include "simdjson/generic/ondemand/serialization-inl.h" */
+/* including include/simdjson/generic/ondemand/serialization-inl.h for arm64: #include "simdjson/generic/ondemand/serialization-inl.h" */
 /* begin file include/simdjson/generic/ondemand/serialization-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 
@@ -41757,7 +41975,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::arm64::ondemand::ob
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 /* end file include/simdjson/generic/ondemand/serialization-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/token_iterator-inl.h: #include "simdjson/generic/ondemand/token_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/token_iterator-inl.h for arm64: #include "simdjson/generic/ondemand/token_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/token_iterator-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 
@@ -41849,7 +42067,7 @@ simdjson_inline simdjson_result<arm64::ondemand::token_iterator>::simdjson_resul
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/token_iterator-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/value-inl.h: #include "simdjson/generic/ondemand/value-inl.h" */
+/* including include/simdjson/generic/ondemand/value-inl.h for arm64: #include "simdjson/generic/ondemand/value-inl.h" */
 /* begin file include/simdjson/generic/ondemand/value-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 
@@ -42291,7 +42509,7 @@ simdjson_inline simdjson_result<arm64::ondemand::value> simdjson_result<arm64::o
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 /* end file include/simdjson/generic/ondemand/value-inl.h for arm64 */
-/* including include/simdjson/generic/ondemand/value_iterator-inl.h: #include "simdjson/generic/ondemand/value_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/value_iterator-inl.h for arm64: #include "simdjson/generic/ondemand/value_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/value_iterator-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
 
@@ -43646,14 +43864,14 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #endif // SIMDJSON_FALLBACK_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/fallback/numberparsing_defs.h */
 /* end file include/simdjson/fallback/begin.h */
-/* including include/simdjson/generic/ondemand/amalgamated.h: #include "simdjson/generic/ondemand/amalgamated.h" */
+/* including include/simdjson/generic/ondemand/amalgamated.h for fallback: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file include/simdjson/generic/ondemand/amalgamated.h for fallback */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
 // Stuff other things depend on
-/* including include/simdjson/generic/ondemand/base.h: #include "simdjson/generic/ondemand/base.h" */
+/* including include/simdjson/generic/ondemand/base.h for fallback: #include "simdjson/generic/ondemand/base.h" */
 /* begin file include/simdjson/generic/ondemand/base.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_BASE_H
 
@@ -43703,7 +43921,7 @@ class value_iterator;
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_BASE_H
 /* end file include/simdjson/generic/ondemand/base.h for fallback */
-/* including include/simdjson/generic/ondemand/value_iterator.h: #include "simdjson/generic/ondemand/value_iterator.h" */
+/* including include/simdjson/generic/ondemand/value_iterator.h for fallback: #include "simdjson/generic/ondemand/value_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/value_iterator.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 
@@ -44192,7 +44410,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/value_iterator.h for fallback */
-/* including include/simdjson/generic/ondemand/value.h: #include "simdjson/generic/ondemand/value.h" */
+/* including include/simdjson/generic/ondemand/value.h for fallback: #include "simdjson/generic/ondemand/value.h" */
 /* begin file include/simdjson/generic/ondemand/value.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 
@@ -44902,7 +45120,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 /* end file include/simdjson/generic/ondemand/value.h for fallback */
-/* including include/simdjson/generic/ondemand/logger.h: #include "simdjson/generic/ondemand/logger.h" */
+/* including include/simdjson/generic/ondemand/logger.h for fallback: #include "simdjson/generic/ondemand/logger.h" */
 /* begin file include/simdjson/generic/ondemand/logger.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 
@@ -44920,6 +45138,11 @@ namespace ondemand {
 // create temporary std::string instances.
 namespace logger {
 
+enum class log_level : int32_t {
+  info = 0,
+  error = 1
+};
+
 #if SIMDJSON_VERBOSE_LOGGING
   static constexpr const bool LOG_ENABLED = true;
 #else
@@ -44930,14 +45153,18 @@ namespace logger {
 // for performance purposes and if you are using the loggers, you do not care about
 // performance (or should not).
 static inline void log_headers() noexcept;
-static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
-static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
+// If args are provided, title will be treated as format string
+template <typename... Args>
+static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
+template <typename... Args>
+static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
 static inline void log_event(const json_iterator &iter, const char *type, std::string_view detail="", int delta=0, int depth_delta=0) noexcept;
 static inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_value(const json_iterator &iter, const char *type, std::string_view detail="", int delta=-1, int depth_delta=0) noexcept;
 static inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_start_value(const json_iterator &iter, const char *type, int delta=-1, int depth_delta=0) noexcept;
 static inline void log_end_value(const json_iterator &iter, const char *type, int delta=-1, int depth_delta=0) noexcept;
+
 static inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail="") noexcept;
 static inline void log_error(const json_iterator &iter, const char *error, const char *detail="", int delta=-1, int depth_delta=0) noexcept;
 
@@ -44954,7 +45181,7 @@ static inline void log_error(const value_iterator &iter, const char *error, cons
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 /* end file include/simdjson/generic/ondemand/logger.h for fallback */
-/* including include/simdjson/generic/ondemand/token_iterator.h: #include "simdjson/generic/ondemand/token_iterator.h" */
+/* including include/simdjson/generic/ondemand/token_iterator.h for fallback: #include "simdjson/generic/ondemand/token_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/token_iterator.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 
@@ -45083,8 +45310,10 @@ protected:
   friend class json_iterator;
   friend class value_iterator;
   friend class object;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
 };
 
 } // namespace ondemand
@@ -45106,7 +45335,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/token_iterator.h for fallback */
-/* including include/simdjson/generic/ondemand/json_iterator.h: #include "simdjson/generic/ondemand/json_iterator.h" */
+/* including include/simdjson/generic/ondemand/json_iterator.h for fallback: #include "simdjson/generic/ondemand/json_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/json_iterator.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 
@@ -45409,8 +45638,10 @@ protected:
   friend class raw_json_string;
   friend class parser;
   friend class value_iterator;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
 }; // json_iterator
 
 } // namespace ondemand
@@ -45432,7 +45663,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/json_iterator.h for fallback */
-/* including include/simdjson/generic/ondemand/json_type.h: #include "simdjson/generic/ondemand/json_type.h" */
+/* including include/simdjson/generic/ondemand/json_type.h for fallback: #include "simdjson/generic/ondemand/json_type.h" */
 /* begin file include/simdjson/generic/ondemand/json_type.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 
@@ -45597,7 +45828,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 /* end file include/simdjson/generic/ondemand/json_type.h for fallback */
-/* including include/simdjson/generic/ondemand/raw_json_string.h: #include "simdjson/generic/ondemand/raw_json_string.h" */
+/* including include/simdjson/generic/ondemand/raw_json_string.h for fallback: #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* begin file include/simdjson/generic/ondemand/raw_json_string.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 
@@ -45806,7 +46037,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 /* end file include/simdjson/generic/ondemand/raw_json_string.h for fallback */
-/* including include/simdjson/generic/ondemand/parser.h: #include "simdjson/generic/ondemand/parser.h" */
+/* including include/simdjson/generic/ondemand/parser.h for fallback: #include "simdjson/generic/ondemand/parser.h" */
 /* begin file include/simdjson/generic/ondemand/parser.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_H
 
@@ -46164,7 +46395,7 @@ public:
 /* end file include/simdjson/generic/ondemand/parser.h for fallback */
 
 // All other declarations
-/* including include/simdjson/generic/ondemand/array.h: #include "simdjson/generic/ondemand/array.h" */
+/* including include/simdjson/generic/ondemand/array.h for fallback: #include "simdjson/generic/ondemand/array.h" */
 /* begin file include/simdjson/generic/ondemand/array.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 
@@ -46366,7 +46597,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 /* end file include/simdjson/generic/ondemand/array.h for fallback */
-/* including include/simdjson/generic/ondemand/array_iterator.h: #include "simdjson/generic/ondemand/array_iterator.h" */
+/* including include/simdjson/generic/ondemand/array_iterator.h for fallback: #include "simdjson/generic/ondemand/array_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/array_iterator.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 
@@ -46465,7 +46696,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/array_iterator.h for fallback */
-/* including include/simdjson/generic/ondemand/document.h: #include "simdjson/generic/ondemand/document.h" */
+/* including include/simdjson/generic/ondemand/document.h for fallback: #include "simdjson/generic/ondemand/document.h" */
 /* begin file include/simdjson/generic/ondemand/document.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 
@@ -47275,7 +47506,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 /* end file include/simdjson/generic/ondemand/document.h for fallback */
-/* including include/simdjson/generic/ondemand/document_stream.h: #include "simdjson/generic/ondemand/document_stream.h" */
+/* including include/simdjson/generic/ondemand/document_stream.h for fallback: #include "simdjson/generic/ondemand/document_stream.h" */
 /* begin file include/simdjson/generic/ondemand/document_stream.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 
@@ -47617,7 +47848,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 /* end file include/simdjson/generic/ondemand/document_stream.h for fallback */
-/* including include/simdjson/generic/ondemand/field.h: #include "simdjson/generic/ondemand/field.h" */
+/* including include/simdjson/generic/ondemand/field.h for fallback: #include "simdjson/generic/ondemand/field.h" */
 /* begin file include/simdjson/generic/ondemand/field.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 
@@ -47702,7 +47933,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 /* end file include/simdjson/generic/ondemand/field.h for fallback */
-/* including include/simdjson/generic/ondemand/object.h: #include "simdjson/generic/ondemand/object.h" */
+/* including include/simdjson/generic/ondemand/object.h for fallback: #include "simdjson/generic/ondemand/object.h" */
 /* begin file include/simdjson/generic/ondemand/object.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 
@@ -47944,7 +48175,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 /* end file include/simdjson/generic/ondemand/object.h for fallback */
-/* including include/simdjson/generic/ondemand/object_iterator.h: #include "simdjson/generic/ondemand/object_iterator.h" */
+/* including include/simdjson/generic/ondemand/object_iterator.h for fallback: #include "simdjson/generic/ondemand/object_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/object_iterator.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 
@@ -48027,7 +48258,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/object_iterator.h for fallback */
-/* including include/simdjson/generic/ondemand/serialization.h: #include "simdjson/generic/ondemand/serialization.h" */
+/* including include/simdjson/generic/ondemand/serialization.h for fallback: #include "simdjson/generic/ondemand/serialization.h" */
 /* begin file include/simdjson/generic/ondemand/serialization.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H
 
@@ -48135,7 +48366,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* end file include/simdjson/generic/ondemand/serialization.h for fallback */
 
 // Inline definitions
-/* including include/simdjson/generic/ondemand/array-inl.h: #include "simdjson/generic/ondemand/array-inl.h" */
+/* including include/simdjson/generic/ondemand/array-inl.h for fallback: #include "simdjson/generic/ondemand/array-inl.h" */
 /* begin file include/simdjson/generic/ondemand/array-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 
@@ -48364,7 +48595,7 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<fallback::ond
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 /* end file include/simdjson/generic/ondemand/array-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/array_iterator-inl.h: #include "simdjson/generic/ondemand/array_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/array_iterator-inl.h for fallback: #include "simdjson/generic/ondemand/array_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/array_iterator-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 
@@ -48445,7 +48676,7 @@ simdjson_inline simdjson_result<fallback::ondemand::array_iterator> &simdjson_re
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/array_iterator-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/document-inl.h: #include "simdjson/generic/ondemand/document-inl.h" */
+/* including include/simdjson/generic/ondemand/document-inl.h for fallback: #include "simdjson/generic/ondemand/document-inl.h" */
 /* begin file include/simdjson/generic/ondemand/document-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 
@@ -49271,7 +49502,7 @@ simdjson_inline simdjson_result<fallback::ondemand::value> simdjson_result<fallb
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 /* end file include/simdjson/generic/ondemand/document-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/document_stream-inl.h: #include "simdjson/generic/ondemand/document_stream-inl.h" */
+/* including include/simdjson/generic/ondemand/document_stream-inl.h for fallback: #include "simdjson/generic/ondemand/document_stream-inl.h" */
 /* begin file include/simdjson/generic/ondemand/document_stream-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 
@@ -49698,7 +49929,7 @@ simdjson_inline simdjson_result<fallback::ondemand::document_stream>::simdjson_r
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 /* end file include/simdjson/generic/ondemand/document_stream-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/field-inl.h: #include "simdjson/generic/ondemand/field-inl.h" */
+/* including include/simdjson/generic/ondemand/field-inl.h for fallback: #include "simdjson/generic/ondemand/field-inl.h" */
 /* begin file include/simdjson/generic/ondemand/field-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 
@@ -49791,7 +50022,7 @@ simdjson_inline simdjson_result<fallback::ondemand::value> simdjson_result<fallb
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 /* end file include/simdjson/generic/ondemand/field-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/json_iterator-inl.h: #include "simdjson/generic/ondemand/json_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/json_iterator-inl.h for fallback: #include "simdjson/generic/ondemand/json_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/json_iterator-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 
@@ -50202,7 +50433,7 @@ simdjson_inline simdjson_result<fallback::ondemand::json_iterator>::simdjson_res
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/json_iterator-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/json_type-inl.h: #include "simdjson/generic/ondemand/json_type-inl.h" */
+/* including include/simdjson/generic/ondemand/json_type-inl.h for fallback: #include "simdjson/generic/ondemand/json_type-inl.h" */
 /* begin file include/simdjson/generic/ondemand/json_type-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 
@@ -50323,7 +50554,7 @@ simdjson_inline simdjson_result<fallback::ondemand::json_type>::simdjson_result(
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 /* end file include/simdjson/generic/ondemand/json_type-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/logger-inl.h: #include "simdjson/generic/ondemand/logger-inl.h" */
+/* including include/simdjson/generic/ondemand/logger-inl.h for fallback: #include "simdjson/generic/ondemand/logger-inl.h" */
 /* begin file include/simdjson/generic/ondemand/logger-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 
@@ -50355,36 +50586,70 @@ static inline char printable_char(char c) {
   }
 }
 
+template<typename... Args>
+static inline std::string string_format(const std::string& format, const Args&... args)
+{
+  SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+  int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1;
+  auto size = static_cast<size_t>(size_s);
+  if (size <= 0) return std::string();
+  std::unique_ptr<char[]> buf(new char[size]);
+  std::snprintf(buf.get(), size, format.c_str(), args...);
+  SIMDJSON_POP_DISABLE_WARNINGS
+  return std::string(buf.get(), buf.get() + size - 1);
+}
+
+static inline log_level get_log_level_from_env()
+{
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
+      char *lvl = getenv("SIMDJSON_LOG_LEVEL");
+  SIMDJSON_POP_DISABLE_WARNINGS
+  if (lvl && simdjson_strcasecmp(lvl, "ERROR") == 0) { return log_level::error; }
+  return log_level::info;
+}
+
+static inline log_level log_threshold()
+{
+  static log_level threshold = get_log_level_from_env();
+  return threshold;
+}
+
+static inline bool should_log(log_level level)
+{
+  return level >= log_threshold();
+}
+
 inline void log_event(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::info);
 }
 
 inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "", type, detail);
+  log_line(iter, index, depth, "", type, detail, log_level::info);
 }
 inline void log_value(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::info);
 }
 
 inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "+", type, detail);
+  log_line(iter, index, depth, "+", type, detail, log_level::info);
   if (LOG_ENABLED) { log_depth++; }
 }
 inline void log_start_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
-  log_line(iter, "+", type, "", delta, depth_delta);
+  log_line(iter, "+", type, "", delta, depth_delta, log_level::info);
   if (LOG_ENABLED) { log_depth++; }
 }
 
 inline void log_end_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
   if (LOG_ENABLED) { log_depth--; }
-  log_line(iter, "-", type, "", delta, depth_delta);
+  log_line(iter, "-", type, "", delta, depth_delta, log_level::info);
 }
 
 inline void log_error(const json_iterator &iter, const char *error, const char *detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "ERROR: ", error, detail, delta, depth_delta);
+  log_line(iter, "ERROR: ", error, detail, delta, depth_delta, log_level::error);
 }
 inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail) noexcept {
-  log_line(iter, index, depth, "ERROR: ", error, detail);
+  log_line(iter, index, depth, "ERROR: ", error, detail, log_level::error);
 }
 
 inline void log_event(const value_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
@@ -50409,96 +50674,101 @@ inline void log_error(const value_iterator &iter, const char *error, const char 
 
 inline void log_headers() noexcept {
   if (LOG_ENABLED) {
-    // Technically a static variable is not thread-safe, but if you are using threads
-    // and logging... well...
-    static bool displayed_hint{false};
-    log_depth = 0;
-    printf("\n");
-    if(!displayed_hint) {
-      // We only print this helpful header once.
-      printf("# Logging provides the depth and position of the iterator user-visible steps:\n");
-      printf("# +array says 'this is where we were when we discovered the start array'\n");
-      printf("# -array says 'this is where we were when we ended the array'\n");
-      printf("# skip says 'this is a structural or value I am skipping'\n");
-      printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
-      printf("#\n");
-      printf("# The indentation of the terms (array, string,...) indicates the depth,\n");
-      printf("# in addition to the depth being displayed.\n");
-      printf("#\n");
-      printf("# Every token in the document has a single depth determined by the tokens before it,\n");
-      printf("# and is not affected by what the token actually is.\n");
-      printf("#\n");
-      printf("# Not all structural elements are presented as tokens in the logs.\n");
-      printf("#\n");
-      printf("# We never give control to the user within an empty array or an empty object.\n");
-      printf("#\n");
-      printf("# Inside an array, having a depth greater than the array's depth means that\n");
-      printf("# we are pointing inside a value.\n");
-      printf("# Having a depth equal to the array means that we are pointing right before a value.\n");
-      printf("# Having a depth smaller than the array means that we have moved beyond the array.\n");
-      displayed_hint = true;
-    }
-    printf("\n");
-    printf("| %-*s ", LOG_EVENT_LEN,        "Event");
-    printf("| %-*s ", LOG_BUFFER_LEN,       "Buffer");
-    printf("| %-*s ", LOG_SMALL_BUFFER_LEN, "Next");
-    // printf("| %-*s ", 5,                    "Next#");
-    printf("| %-*s ", 5,                    "Depth");
-    printf("| Detail ");
-    printf("|\n");
+    if (simdjson_unlikely(should_log(log_level::info))) {
+      // Technically a static variable is not thread-safe, but if you are using threads and logging... well...
+      static bool displayed_hint{false};
+      log_depth = 0;
+      printf("\n");
+      if (!displayed_hint) {
+        // We only print this helpful header once.
+        printf("# Logging provides the depth and position of the iterator user-visible steps:\n");
+        printf("# +array says 'this is where we were when we discovered the start array'\n");
+        printf(
+            "# -array says 'this is where we were when we ended the array'\n");
+        printf("# skip says 'this is a structural or value I am skipping'\n");
+        printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
+        printf("#\n");
+        printf("# The indentation of the terms (array, string,...) indicates the depth,\n");
+        printf("# in addition to the depth being displayed.\n");
+        printf("#\n");
+        printf("# Every token in the document has a single depth determined by the tokens before it,\n");
+        printf("# and is not affected by what the token actually is.\n");
+        printf("#\n");
+        printf("# Not all structural elements are presented as tokens in the logs.\n");
+        printf("#\n");
+        printf("# We never give control to the user within an empty array or an empty object.\n");
+        printf("#\n");
+        printf("# Inside an array, having a depth greater than the array's depth means that\n");
+        printf("# we are pointing inside a value.\n");
+        printf("# Having a depth equal to the array means that we are pointing right before a value.\n");
+        printf("# Having a depth smaller than the array means that we have moved beyond the array.\n");
+        displayed_hint = true;
+      }
+      printf("\n");
+      printf("| %-*s ", LOG_EVENT_LEN, "Event");
+      printf("| %-*s ", LOG_BUFFER_LEN, "Buffer");
+      printf("| %-*s ", LOG_SMALL_BUFFER_LEN, "Next");
+      // printf("| %-*s ", 5,                    "Next#");
+      printf("| %-*s ", 5, "Depth");
+      printf("| Detail ");
+      printf("|\n");
 
-    printf("|%.*s", LOG_EVENT_LEN+2, DASHES);
-    printf("|%.*s", LOG_BUFFER_LEN+2, DASHES);
-    printf("|%.*s", LOG_SMALL_BUFFER_LEN+2, DASHES);
-    // printf("|%.*s", 5+2, DASHES);
-    printf("|%.*s", 5+2, DASHES);
-    printf("|--------");
-    printf("|\n");
-    fflush(stdout);
+      printf("|%.*s", LOG_EVENT_LEN + 2, DASHES);
+      printf("|%.*s", LOG_BUFFER_LEN + 2, DASHES);
+      printf("|%.*s", LOG_SMALL_BUFFER_LEN + 2, DASHES);
+      // printf("|%.*s", 5+2, DASHES);
+      printf("|%.*s", 5 + 2, DASHES);
+      printf("|--------");
+      printf("|\n");
+      fflush(stdout);
+    }
   }
 }
 
-inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail);
+template <typename... Args>
+inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, log_level level, Args&&... args) noexcept {
+  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail, level, std::forward<Args>(args)...);
 }
-inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept {
+
+template <typename... Args>
+inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, log_level level, Args&&... args) noexcept {
   if (LOG_ENABLED) {
-    const int indent = depth*2;
-    const auto buf = iter.token.buf;
-    printf("| %*s%s%-*s ",
-      indent, "",
-      title_prefix,
-      LOG_EVENT_LEN - indent - int(strlen(title_prefix)), title
-      );
-    {
-      // Print the current structural.
-      printf("| ");
-      // Before we begin, the index might point right before the document.
-      // This could be unsafe, see https://github.com/simdjson/simdjson/discussions/1938
-      if(index < iter._root) {
-        printf("%*s", LOG_BUFFER_LEN, "");
-      } else {
-        auto current_structural = &buf[*index];
-        for (int i=0;i<LOG_BUFFER_LEN;i++) {
+    if (simdjson_unlikely(should_log(level))) {
+      const int indent = depth * 2;
+      const auto buf = iter.token.buf;
+      auto msg = string_format(title, std::forward<Args>(args)...);
+      printf("| %*s%s%-*s ", indent, "", title_prefix,
+             LOG_EVENT_LEN - indent - int(strlen(title_prefix)), msg.c_str());
+      {
+        // Print the current structural.
+        printf("| ");
+        // Before we begin, the index might point right before the document.
+        // This could be unsafe, see https://github.com/simdjson/simdjson/discussions/1938
+        if (index < iter._root) {
+          printf("%*s", LOG_BUFFER_LEN, "");
+        } else {
+          auto current_structural = &buf[*index];
+          for (int i = 0; i < LOG_BUFFER_LEN; i++) {
             printf("%c", printable_char(current_structural[i]));
+          }
         }
+        printf(" ");
       }
-      printf(" ");
-    }
-    {
-      // Print the next structural.
-      printf("| ");
-      auto next_structural = &buf[*(index+1)];
-      for (int i=0;i<LOG_SMALL_BUFFER_LEN;i++) {
-        printf("%c", printable_char(next_structural[i]));
+      {
+        // Print the next structural.
+        printf("| ");
+        auto next_structural = &buf[*(index + 1)];
+        for (int i = 0; i < LOG_SMALL_BUFFER_LEN; i++) {
+          printf("%c", printable_char(next_structural[i]));
+        }
+        printf(" ");
       }
-      printf(" ");
+      // printf("| %5u ", *(index+1));
+      printf("| %5i ", depth);
+      printf("| %6.*s ", int(detail.size()), detail.data());
+      printf("|\n");
+      fflush(stdout);
     }
-    // printf("| %5u ", *(index+1));
-    printf("| %5i ", depth);
-    printf("| %6.*s ", int(detail.size()) , detail.data());
-    printf("|\n");
-    fflush(stdout);
   }
 }
 
@@ -50509,7 +50779,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 /* end file include/simdjson/generic/ondemand/logger-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/object-inl.h: #include "simdjson/generic/ondemand/object-inl.h" */
+/* including include/simdjson/generic/ondemand/object-inl.h for fallback: #include "simdjson/generic/ondemand/object-inl.h" */
 /* begin file include/simdjson/generic/ondemand/object-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 
@@ -50531,13 +50801,19 @@ namespace ondemand {
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::operator[](const std::string_view key) & noexcept {
@@ -50549,13 +50825,19 @@ simdjson_inline simdjson_result<value> object::operator[](const std::string_view
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 
@@ -50760,7 +51042,7 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<fallback::ond
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 /* end file include/simdjson/generic/ondemand/object-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/object_iterator-inl.h: #include "simdjson/generic/ondemand/object_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/object_iterator-inl.h for fallback: #include "simdjson/generic/ondemand/object_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/object_iterator-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 
@@ -50901,7 +51183,7 @@ simdjson_inline simdjson_result<fallback::ondemand::object_iterator> &simdjson_r
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/object_iterator-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/parser-inl.h: #include "simdjson/generic/ondemand/parser-inl.h" */
+/* including include/simdjson/generic/ondemand/parser-inl.h for fallback: #include "simdjson/generic/ondemand/parser-inl.h" */
 /* begin file include/simdjson/generic/ondemand/parser-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 
@@ -51066,7 +51348,7 @@ simdjson_inline simdjson_result<fallback::ondemand::parser>::simdjson_result(err
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 /* end file include/simdjson/generic/ondemand/parser-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/raw_json_string-inl.h: #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
+/* including include/simdjson/generic/ondemand/raw_json_string-inl.h for fallback: #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
 /* begin file include/simdjson/generic/ondemand/raw_json_string-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 
@@ -51272,7 +51554,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 /* end file include/simdjson/generic/ondemand/raw_json_string-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/serialization-inl.h: #include "simdjson/generic/ondemand/serialization-inl.h" */
+/* including include/simdjson/generic/ondemand/serialization-inl.h for fallback: #include "simdjson/generic/ondemand/serialization-inl.h" */
 /* begin file include/simdjson/generic/ondemand/serialization-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 
@@ -51508,7 +51790,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::fallback::ondemand:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 /* end file include/simdjson/generic/ondemand/serialization-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/token_iterator-inl.h: #include "simdjson/generic/ondemand/token_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/token_iterator-inl.h for fallback: #include "simdjson/generic/ondemand/token_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/token_iterator-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 
@@ -51600,7 +51882,7 @@ simdjson_inline simdjson_result<fallback::ondemand::token_iterator>::simdjson_re
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/token_iterator-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/value-inl.h: #include "simdjson/generic/ondemand/value-inl.h" */
+/* including include/simdjson/generic/ondemand/value-inl.h for fallback: #include "simdjson/generic/ondemand/value-inl.h" */
 /* begin file include/simdjson/generic/ondemand/value-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 
@@ -52042,7 +52324,7 @@ simdjson_inline simdjson_result<fallback::ondemand::value> simdjson_result<fallb
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 /* end file include/simdjson/generic/ondemand/value-inl.h for fallback */
-/* including include/simdjson/generic/ondemand/value_iterator-inl.h: #include "simdjson/generic/ondemand/value_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/value_iterator-inl.h for fallback: #include "simdjson/generic/ondemand/value_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/value_iterator-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
 
@@ -55332,14 +55614,14 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #endif // SIMDJSON_HASWELL_STRINGPARSING_DEFS_H
 /* end file include/simdjson/haswell/stringparsing_defs.h */
 /* end file include/simdjson/haswell/begin.h */
-/* including include/simdjson/generic/ondemand/amalgamated.h: #include "simdjson/generic/ondemand/amalgamated.h" */
+/* including include/simdjson/generic/ondemand/amalgamated.h for haswell: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file include/simdjson/generic/ondemand/amalgamated.h for haswell */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
 // Stuff other things depend on
-/* including include/simdjson/generic/ondemand/base.h: #include "simdjson/generic/ondemand/base.h" */
+/* including include/simdjson/generic/ondemand/base.h for haswell: #include "simdjson/generic/ondemand/base.h" */
 /* begin file include/simdjson/generic/ondemand/base.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_BASE_H
 
@@ -55389,7 +55671,7 @@ class value_iterator;
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_BASE_H
 /* end file include/simdjson/generic/ondemand/base.h for haswell */
-/* including include/simdjson/generic/ondemand/value_iterator.h: #include "simdjson/generic/ondemand/value_iterator.h" */
+/* including include/simdjson/generic/ondemand/value_iterator.h for haswell: #include "simdjson/generic/ondemand/value_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/value_iterator.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 
@@ -55878,7 +56160,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/value_iterator.h for haswell */
-/* including include/simdjson/generic/ondemand/value.h: #include "simdjson/generic/ondemand/value.h" */
+/* including include/simdjson/generic/ondemand/value.h for haswell: #include "simdjson/generic/ondemand/value.h" */
 /* begin file include/simdjson/generic/ondemand/value.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 
@@ -56588,7 +56870,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 /* end file include/simdjson/generic/ondemand/value.h for haswell */
-/* including include/simdjson/generic/ondemand/logger.h: #include "simdjson/generic/ondemand/logger.h" */
+/* including include/simdjson/generic/ondemand/logger.h for haswell: #include "simdjson/generic/ondemand/logger.h" */
 /* begin file include/simdjson/generic/ondemand/logger.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 
@@ -56606,6 +56888,11 @@ namespace ondemand {
 // create temporary std::string instances.
 namespace logger {
 
+enum class log_level : int32_t {
+  info = 0,
+  error = 1
+};
+
 #if SIMDJSON_VERBOSE_LOGGING
   static constexpr const bool LOG_ENABLED = true;
 #else
@@ -56616,14 +56903,18 @@ namespace logger {
 // for performance purposes and if you are using the loggers, you do not care about
 // performance (or should not).
 static inline void log_headers() noexcept;
-static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
-static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
+// If args are provided, title will be treated as format string
+template <typename... Args>
+static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
+template <typename... Args>
+static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
 static inline void log_event(const json_iterator &iter, const char *type, std::string_view detail="", int delta=0, int depth_delta=0) noexcept;
 static inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_value(const json_iterator &iter, const char *type, std::string_view detail="", int delta=-1, int depth_delta=0) noexcept;
 static inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_start_value(const json_iterator &iter, const char *type, int delta=-1, int depth_delta=0) noexcept;
 static inline void log_end_value(const json_iterator &iter, const char *type, int delta=-1, int depth_delta=0) noexcept;
+
 static inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail="") noexcept;
 static inline void log_error(const json_iterator &iter, const char *error, const char *detail="", int delta=-1, int depth_delta=0) noexcept;
 
@@ -56640,7 +56931,7 @@ static inline void log_error(const value_iterator &iter, const char *error, cons
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 /* end file include/simdjson/generic/ondemand/logger.h for haswell */
-/* including include/simdjson/generic/ondemand/token_iterator.h: #include "simdjson/generic/ondemand/token_iterator.h" */
+/* including include/simdjson/generic/ondemand/token_iterator.h for haswell: #include "simdjson/generic/ondemand/token_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/token_iterator.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 
@@ -56769,8 +57060,10 @@ protected:
   friend class json_iterator;
   friend class value_iterator;
   friend class object;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
 };
 
 } // namespace ondemand
@@ -56792,7 +57085,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/token_iterator.h for haswell */
-/* including include/simdjson/generic/ondemand/json_iterator.h: #include "simdjson/generic/ondemand/json_iterator.h" */
+/* including include/simdjson/generic/ondemand/json_iterator.h for haswell: #include "simdjson/generic/ondemand/json_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/json_iterator.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 
@@ -57095,8 +57388,10 @@ protected:
   friend class raw_json_string;
   friend class parser;
   friend class value_iterator;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
 }; // json_iterator
 
 } // namespace ondemand
@@ -57118,7 +57413,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/json_iterator.h for haswell */
-/* including include/simdjson/generic/ondemand/json_type.h: #include "simdjson/generic/ondemand/json_type.h" */
+/* including include/simdjson/generic/ondemand/json_type.h for haswell: #include "simdjson/generic/ondemand/json_type.h" */
 /* begin file include/simdjson/generic/ondemand/json_type.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 
@@ -57283,7 +57578,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 /* end file include/simdjson/generic/ondemand/json_type.h for haswell */
-/* including include/simdjson/generic/ondemand/raw_json_string.h: #include "simdjson/generic/ondemand/raw_json_string.h" */
+/* including include/simdjson/generic/ondemand/raw_json_string.h for haswell: #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* begin file include/simdjson/generic/ondemand/raw_json_string.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 
@@ -57492,7 +57787,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 /* end file include/simdjson/generic/ondemand/raw_json_string.h for haswell */
-/* including include/simdjson/generic/ondemand/parser.h: #include "simdjson/generic/ondemand/parser.h" */
+/* including include/simdjson/generic/ondemand/parser.h for haswell: #include "simdjson/generic/ondemand/parser.h" */
 /* begin file include/simdjson/generic/ondemand/parser.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_H
 
@@ -57850,7 +58145,7 @@ public:
 /* end file include/simdjson/generic/ondemand/parser.h for haswell */
 
 // All other declarations
-/* including include/simdjson/generic/ondemand/array.h: #include "simdjson/generic/ondemand/array.h" */
+/* including include/simdjson/generic/ondemand/array.h for haswell: #include "simdjson/generic/ondemand/array.h" */
 /* begin file include/simdjson/generic/ondemand/array.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 
@@ -58052,7 +58347,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 /* end file include/simdjson/generic/ondemand/array.h for haswell */
-/* including include/simdjson/generic/ondemand/array_iterator.h: #include "simdjson/generic/ondemand/array_iterator.h" */
+/* including include/simdjson/generic/ondemand/array_iterator.h for haswell: #include "simdjson/generic/ondemand/array_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/array_iterator.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 
@@ -58151,7 +58446,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/array_iterator.h for haswell */
-/* including include/simdjson/generic/ondemand/document.h: #include "simdjson/generic/ondemand/document.h" */
+/* including include/simdjson/generic/ondemand/document.h for haswell: #include "simdjson/generic/ondemand/document.h" */
 /* begin file include/simdjson/generic/ondemand/document.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 
@@ -58961,7 +59256,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 /* end file include/simdjson/generic/ondemand/document.h for haswell */
-/* including include/simdjson/generic/ondemand/document_stream.h: #include "simdjson/generic/ondemand/document_stream.h" */
+/* including include/simdjson/generic/ondemand/document_stream.h for haswell: #include "simdjson/generic/ondemand/document_stream.h" */
 /* begin file include/simdjson/generic/ondemand/document_stream.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 
@@ -59303,7 +59598,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 /* end file include/simdjson/generic/ondemand/document_stream.h for haswell */
-/* including include/simdjson/generic/ondemand/field.h: #include "simdjson/generic/ondemand/field.h" */
+/* including include/simdjson/generic/ondemand/field.h for haswell: #include "simdjson/generic/ondemand/field.h" */
 /* begin file include/simdjson/generic/ondemand/field.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 
@@ -59388,7 +59683,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 /* end file include/simdjson/generic/ondemand/field.h for haswell */
-/* including include/simdjson/generic/ondemand/object.h: #include "simdjson/generic/ondemand/object.h" */
+/* including include/simdjson/generic/ondemand/object.h for haswell: #include "simdjson/generic/ondemand/object.h" */
 /* begin file include/simdjson/generic/ondemand/object.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 
@@ -59630,7 +59925,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 /* end file include/simdjson/generic/ondemand/object.h for haswell */
-/* including include/simdjson/generic/ondemand/object_iterator.h: #include "simdjson/generic/ondemand/object_iterator.h" */
+/* including include/simdjson/generic/ondemand/object_iterator.h for haswell: #include "simdjson/generic/ondemand/object_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/object_iterator.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 
@@ -59713,7 +60008,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/object_iterator.h for haswell */
-/* including include/simdjson/generic/ondemand/serialization.h: #include "simdjson/generic/ondemand/serialization.h" */
+/* including include/simdjson/generic/ondemand/serialization.h for haswell: #include "simdjson/generic/ondemand/serialization.h" */
 /* begin file include/simdjson/generic/ondemand/serialization.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H
 
@@ -59821,7 +60116,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* end file include/simdjson/generic/ondemand/serialization.h for haswell */
 
 // Inline definitions
-/* including include/simdjson/generic/ondemand/array-inl.h: #include "simdjson/generic/ondemand/array-inl.h" */
+/* including include/simdjson/generic/ondemand/array-inl.h for haswell: #include "simdjson/generic/ondemand/array-inl.h" */
 /* begin file include/simdjson/generic/ondemand/array-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 
@@ -60050,7 +60345,7 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<haswell::onde
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 /* end file include/simdjson/generic/ondemand/array-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/array_iterator-inl.h: #include "simdjson/generic/ondemand/array_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/array_iterator-inl.h for haswell: #include "simdjson/generic/ondemand/array_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/array_iterator-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 
@@ -60131,7 +60426,7 @@ simdjson_inline simdjson_result<haswell::ondemand::array_iterator> &simdjson_res
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/array_iterator-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/document-inl.h: #include "simdjson/generic/ondemand/document-inl.h" */
+/* including include/simdjson/generic/ondemand/document-inl.h for haswell: #include "simdjson/generic/ondemand/document-inl.h" */
 /* begin file include/simdjson/generic/ondemand/document-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 
@@ -60957,7 +61252,7 @@ simdjson_inline simdjson_result<haswell::ondemand::value> simdjson_result<haswel
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 /* end file include/simdjson/generic/ondemand/document-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/document_stream-inl.h: #include "simdjson/generic/ondemand/document_stream-inl.h" */
+/* including include/simdjson/generic/ondemand/document_stream-inl.h for haswell: #include "simdjson/generic/ondemand/document_stream-inl.h" */
 /* begin file include/simdjson/generic/ondemand/document_stream-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 
@@ -61384,7 +61679,7 @@ simdjson_inline simdjson_result<haswell::ondemand::document_stream>::simdjson_re
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 /* end file include/simdjson/generic/ondemand/document_stream-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/field-inl.h: #include "simdjson/generic/ondemand/field-inl.h" */
+/* including include/simdjson/generic/ondemand/field-inl.h for haswell: #include "simdjson/generic/ondemand/field-inl.h" */
 /* begin file include/simdjson/generic/ondemand/field-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 
@@ -61477,7 +61772,7 @@ simdjson_inline simdjson_result<haswell::ondemand::value> simdjson_result<haswel
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 /* end file include/simdjson/generic/ondemand/field-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/json_iterator-inl.h: #include "simdjson/generic/ondemand/json_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/json_iterator-inl.h for haswell: #include "simdjson/generic/ondemand/json_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/json_iterator-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 
@@ -61888,7 +62183,7 @@ simdjson_inline simdjson_result<haswell::ondemand::json_iterator>::simdjson_resu
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/json_iterator-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/json_type-inl.h: #include "simdjson/generic/ondemand/json_type-inl.h" */
+/* including include/simdjson/generic/ondemand/json_type-inl.h for haswell: #include "simdjson/generic/ondemand/json_type-inl.h" */
 /* begin file include/simdjson/generic/ondemand/json_type-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 
@@ -62009,7 +62304,7 @@ simdjson_inline simdjson_result<haswell::ondemand::json_type>::simdjson_result(e
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 /* end file include/simdjson/generic/ondemand/json_type-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/logger-inl.h: #include "simdjson/generic/ondemand/logger-inl.h" */
+/* including include/simdjson/generic/ondemand/logger-inl.h for haswell: #include "simdjson/generic/ondemand/logger-inl.h" */
 /* begin file include/simdjson/generic/ondemand/logger-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 
@@ -62041,36 +62336,70 @@ static inline char printable_char(char c) {
   }
 }
 
+template<typename... Args>
+static inline std::string string_format(const std::string& format, const Args&... args)
+{
+  SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+  int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1;
+  auto size = static_cast<size_t>(size_s);
+  if (size <= 0) return std::string();
+  std::unique_ptr<char[]> buf(new char[size]);
+  std::snprintf(buf.get(), size, format.c_str(), args...);
+  SIMDJSON_POP_DISABLE_WARNINGS
+  return std::string(buf.get(), buf.get() + size - 1);
+}
+
+static inline log_level get_log_level_from_env()
+{
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
+      char *lvl = getenv("SIMDJSON_LOG_LEVEL");
+  SIMDJSON_POP_DISABLE_WARNINGS
+  if (lvl && simdjson_strcasecmp(lvl, "ERROR") == 0) { return log_level::error; }
+  return log_level::info;
+}
+
+static inline log_level log_threshold()
+{
+  static log_level threshold = get_log_level_from_env();
+  return threshold;
+}
+
+static inline bool should_log(log_level level)
+{
+  return level >= log_threshold();
+}
+
 inline void log_event(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::info);
 }
 
 inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "", type, detail);
+  log_line(iter, index, depth, "", type, detail, log_level::info);
 }
 inline void log_value(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::info);
 }
 
 inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "+", type, detail);
+  log_line(iter, index, depth, "+", type, detail, log_level::info);
   if (LOG_ENABLED) { log_depth++; }
 }
 inline void log_start_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
-  log_line(iter, "+", type, "", delta, depth_delta);
+  log_line(iter, "+", type, "", delta, depth_delta, log_level::info);
   if (LOG_ENABLED) { log_depth++; }
 }
 
 inline void log_end_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
   if (LOG_ENABLED) { log_depth--; }
-  log_line(iter, "-", type, "", delta, depth_delta);
+  log_line(iter, "-", type, "", delta, depth_delta, log_level::info);
 }
 
 inline void log_error(const json_iterator &iter, const char *error, const char *detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "ERROR: ", error, detail, delta, depth_delta);
+  log_line(iter, "ERROR: ", error, detail, delta, depth_delta, log_level::error);
 }
 inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail) noexcept {
-  log_line(iter, index, depth, "ERROR: ", error, detail);
+  log_line(iter, index, depth, "ERROR: ", error, detail, log_level::error);
 }
 
 inline void log_event(const value_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
@@ -62095,96 +62424,101 @@ inline void log_error(const value_iterator &iter, const char *error, const char 
 
 inline void log_headers() noexcept {
   if (LOG_ENABLED) {
-    // Technically a static variable is not thread-safe, but if you are using threads
-    // and logging... well...
-    static bool displayed_hint{false};
-    log_depth = 0;
-    printf("\n");
-    if(!displayed_hint) {
-      // We only print this helpful header once.
-      printf("# Logging provides the depth and position of the iterator user-visible steps:\n");
-      printf("# +array says 'this is where we were when we discovered the start array'\n");
-      printf("# -array says 'this is where we were when we ended the array'\n");
-      printf("# skip says 'this is a structural or value I am skipping'\n");
-      printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
-      printf("#\n");
-      printf("# The indentation of the terms (array, string,...) indicates the depth,\n");
-      printf("# in addition to the depth being displayed.\n");
-      printf("#\n");
-      printf("# Every token in the document has a single depth determined by the tokens before it,\n");
-      printf("# and is not affected by what the token actually is.\n");
-      printf("#\n");
-      printf("# Not all structural elements are presented as tokens in the logs.\n");
-      printf("#\n");
-      printf("# We never give control to the user within an empty array or an empty object.\n");
-      printf("#\n");
-      printf("# Inside an array, having a depth greater than the array's depth means that\n");
-      printf("# we are pointing inside a value.\n");
-      printf("# Having a depth equal to the array means that we are pointing right before a value.\n");
-      printf("# Having a depth smaller than the array means that we have moved beyond the array.\n");
-      displayed_hint = true;
-    }
-    printf("\n");
-    printf("| %-*s ", LOG_EVENT_LEN,        "Event");
-    printf("| %-*s ", LOG_BUFFER_LEN,       "Buffer");
-    printf("| %-*s ", LOG_SMALL_BUFFER_LEN, "Next");
-    // printf("| %-*s ", 5,                    "Next#");
-    printf("| %-*s ", 5,                    "Depth");
-    printf("| Detail ");
-    printf("|\n");
+    if (simdjson_unlikely(should_log(log_level::info))) {
+      // Technically a static variable is not thread-safe, but if you are using threads and logging... well...
+      static bool displayed_hint{false};
+      log_depth = 0;
+      printf("\n");
+      if (!displayed_hint) {
+        // We only print this helpful header once.
+        printf("# Logging provides the depth and position of the iterator user-visible steps:\n");
+        printf("# +array says 'this is where we were when we discovered the start array'\n");
+        printf(
+            "# -array says 'this is where we were when we ended the array'\n");
+        printf("# skip says 'this is a structural or value I am skipping'\n");
+        printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
+        printf("#\n");
+        printf("# The indentation of the terms (array, string,...) indicates the depth,\n");
+        printf("# in addition to the depth being displayed.\n");
+        printf("#\n");
+        printf("# Every token in the document has a single depth determined by the tokens before it,\n");
+        printf("# and is not affected by what the token actually is.\n");
+        printf("#\n");
+        printf("# Not all structural elements are presented as tokens in the logs.\n");
+        printf("#\n");
+        printf("# We never give control to the user within an empty array or an empty object.\n");
+        printf("#\n");
+        printf("# Inside an array, having a depth greater than the array's depth means that\n");
+        printf("# we are pointing inside a value.\n");
+        printf("# Having a depth equal to the array means that we are pointing right before a value.\n");
+        printf("# Having a depth smaller than the array means that we have moved beyond the array.\n");
+        displayed_hint = true;
+      }
+      printf("\n");
+      printf("| %-*s ", LOG_EVENT_LEN, "Event");
+      printf("| %-*s ", LOG_BUFFER_LEN, "Buffer");
+      printf("| %-*s ", LOG_SMALL_BUFFER_LEN, "Next");
+      // printf("| %-*s ", 5,                    "Next#");
+      printf("| %-*s ", 5, "Depth");
+      printf("| Detail ");
+      printf("|\n");
 
-    printf("|%.*s", LOG_EVENT_LEN+2, DASHES);
-    printf("|%.*s", LOG_BUFFER_LEN+2, DASHES);
-    printf("|%.*s", LOG_SMALL_BUFFER_LEN+2, DASHES);
-    // printf("|%.*s", 5+2, DASHES);
-    printf("|%.*s", 5+2, DASHES);
-    printf("|--------");
-    printf("|\n");
-    fflush(stdout);
+      printf("|%.*s", LOG_EVENT_LEN + 2, DASHES);
+      printf("|%.*s", LOG_BUFFER_LEN + 2, DASHES);
+      printf("|%.*s", LOG_SMALL_BUFFER_LEN + 2, DASHES);
+      // printf("|%.*s", 5+2, DASHES);
+      printf("|%.*s", 5 + 2, DASHES);
+      printf("|--------");
+      printf("|\n");
+      fflush(stdout);
+    }
   }
 }
 
-inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail);
+template <typename... Args>
+inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, log_level level, Args&&... args) noexcept {
+  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail, level, std::forward<Args>(args)...);
 }
-inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept {
+
+template <typename... Args>
+inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, log_level level, Args&&... args) noexcept {
   if (LOG_ENABLED) {
-    const int indent = depth*2;
-    const auto buf = iter.token.buf;
-    printf("| %*s%s%-*s ",
-      indent, "",
-      title_prefix,
-      LOG_EVENT_LEN - indent - int(strlen(title_prefix)), title
-      );
-    {
-      // Print the current structural.
-      printf("| ");
-      // Before we begin, the index might point right before the document.
-      // This could be unsafe, see https://github.com/simdjson/simdjson/discussions/1938
-      if(index < iter._root) {
-        printf("%*s", LOG_BUFFER_LEN, "");
-      } else {
-        auto current_structural = &buf[*index];
-        for (int i=0;i<LOG_BUFFER_LEN;i++) {
+    if (simdjson_unlikely(should_log(level))) {
+      const int indent = depth * 2;
+      const auto buf = iter.token.buf;
+      auto msg = string_format(title, std::forward<Args>(args)...);
+      printf("| %*s%s%-*s ", indent, "", title_prefix,
+             LOG_EVENT_LEN - indent - int(strlen(title_prefix)), msg.c_str());
+      {
+        // Print the current structural.
+        printf("| ");
+        // Before we begin, the index might point right before the document.
+        // This could be unsafe, see https://github.com/simdjson/simdjson/discussions/1938
+        if (index < iter._root) {
+          printf("%*s", LOG_BUFFER_LEN, "");
+        } else {
+          auto current_structural = &buf[*index];
+          for (int i = 0; i < LOG_BUFFER_LEN; i++) {
             printf("%c", printable_char(current_structural[i]));
+          }
         }
+        printf(" ");
       }
-      printf(" ");
-    }
-    {
-      // Print the next structural.
-      printf("| ");
-      auto next_structural = &buf[*(index+1)];
-      for (int i=0;i<LOG_SMALL_BUFFER_LEN;i++) {
-        printf("%c", printable_char(next_structural[i]));
+      {
+        // Print the next structural.
+        printf("| ");
+        auto next_structural = &buf[*(index + 1)];
+        for (int i = 0; i < LOG_SMALL_BUFFER_LEN; i++) {
+          printf("%c", printable_char(next_structural[i]));
+        }
+        printf(" ");
       }
-      printf(" ");
+      // printf("| %5u ", *(index+1));
+      printf("| %5i ", depth);
+      printf("| %6.*s ", int(detail.size()), detail.data());
+      printf("|\n");
+      fflush(stdout);
     }
-    // printf("| %5u ", *(index+1));
-    printf("| %5i ", depth);
-    printf("| %6.*s ", int(detail.size()) , detail.data());
-    printf("|\n");
-    fflush(stdout);
   }
 }
 
@@ -62195,7 +62529,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 /* end file include/simdjson/generic/ondemand/logger-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/object-inl.h: #include "simdjson/generic/ondemand/object-inl.h" */
+/* including include/simdjson/generic/ondemand/object-inl.h for haswell: #include "simdjson/generic/ondemand/object-inl.h" */
 /* begin file include/simdjson/generic/ondemand/object-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 
@@ -62217,13 +62551,19 @@ namespace ondemand {
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::operator[](const std::string_view key) & noexcept {
@@ -62235,13 +62575,19 @@ simdjson_inline simdjson_result<value> object::operator[](const std::string_view
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 
@@ -62446,7 +62792,7 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<haswell::onde
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 /* end file include/simdjson/generic/ondemand/object-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/object_iterator-inl.h: #include "simdjson/generic/ondemand/object_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/object_iterator-inl.h for haswell: #include "simdjson/generic/ondemand/object_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/object_iterator-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 
@@ -62587,7 +62933,7 @@ simdjson_inline simdjson_result<haswell::ondemand::object_iterator> &simdjson_re
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/object_iterator-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/parser-inl.h: #include "simdjson/generic/ondemand/parser-inl.h" */
+/* including include/simdjson/generic/ondemand/parser-inl.h for haswell: #include "simdjson/generic/ondemand/parser-inl.h" */
 /* begin file include/simdjson/generic/ondemand/parser-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 
@@ -62752,7 +63098,7 @@ simdjson_inline simdjson_result<haswell::ondemand::parser>::simdjson_result(erro
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 /* end file include/simdjson/generic/ondemand/parser-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/raw_json_string-inl.h: #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
+/* including include/simdjson/generic/ondemand/raw_json_string-inl.h for haswell: #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
 /* begin file include/simdjson/generic/ondemand/raw_json_string-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 
@@ -62958,7 +63304,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 /* end file include/simdjson/generic/ondemand/raw_json_string-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/serialization-inl.h: #include "simdjson/generic/ondemand/serialization-inl.h" */
+/* including include/simdjson/generic/ondemand/serialization-inl.h for haswell: #include "simdjson/generic/ondemand/serialization-inl.h" */
 /* begin file include/simdjson/generic/ondemand/serialization-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 
@@ -63194,7 +63540,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::haswell::ondemand::
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 /* end file include/simdjson/generic/ondemand/serialization-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/token_iterator-inl.h: #include "simdjson/generic/ondemand/token_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/token_iterator-inl.h for haswell: #include "simdjson/generic/ondemand/token_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/token_iterator-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 
@@ -63286,7 +63632,7 @@ simdjson_inline simdjson_result<haswell::ondemand::token_iterator>::simdjson_res
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/token_iterator-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/value-inl.h: #include "simdjson/generic/ondemand/value-inl.h" */
+/* including include/simdjson/generic/ondemand/value-inl.h for haswell: #include "simdjson/generic/ondemand/value-inl.h" */
 /* begin file include/simdjson/generic/ondemand/value-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 
@@ -63728,7 +64074,7 @@ simdjson_inline simdjson_result<haswell::ondemand::value> simdjson_result<haswel
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 /* end file include/simdjson/generic/ondemand/value-inl.h for haswell */
-/* including include/simdjson/generic/ondemand/value_iterator-inl.h: #include "simdjson/generic/ondemand/value_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/value_iterator-inl.h for haswell: #include "simdjson/generic/ondemand/value_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/value_iterator-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
 
@@ -66815,14 +67161,14 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #endif // SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 /* end file include/simdjson/icelake/numberparsing_defs.h */
 /* end file include/simdjson/icelake/begin.h */
-/* including include/simdjson/generic/ondemand/amalgamated.h: #include "simdjson/generic/ondemand/amalgamated.h" */
+/* including include/simdjson/generic/ondemand/amalgamated.h for icelake: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file include/simdjson/generic/ondemand/amalgamated.h for icelake */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
 // Stuff other things depend on
-/* including include/simdjson/generic/ondemand/base.h: #include "simdjson/generic/ondemand/base.h" */
+/* including include/simdjson/generic/ondemand/base.h for icelake: #include "simdjson/generic/ondemand/base.h" */
 /* begin file include/simdjson/generic/ondemand/base.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_BASE_H
 
@@ -66872,7 +67218,7 @@ class value_iterator;
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_BASE_H
 /* end file include/simdjson/generic/ondemand/base.h for icelake */
-/* including include/simdjson/generic/ondemand/value_iterator.h: #include "simdjson/generic/ondemand/value_iterator.h" */
+/* including include/simdjson/generic/ondemand/value_iterator.h for icelake: #include "simdjson/generic/ondemand/value_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/value_iterator.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 
@@ -67361,7 +67707,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/value_iterator.h for icelake */
-/* including include/simdjson/generic/ondemand/value.h: #include "simdjson/generic/ondemand/value.h" */
+/* including include/simdjson/generic/ondemand/value.h for icelake: #include "simdjson/generic/ondemand/value.h" */
 /* begin file include/simdjson/generic/ondemand/value.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 
@@ -68071,7 +68417,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 /* end file include/simdjson/generic/ondemand/value.h for icelake */
-/* including include/simdjson/generic/ondemand/logger.h: #include "simdjson/generic/ondemand/logger.h" */
+/* including include/simdjson/generic/ondemand/logger.h for icelake: #include "simdjson/generic/ondemand/logger.h" */
 /* begin file include/simdjson/generic/ondemand/logger.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 
@@ -68089,6 +68435,11 @@ namespace ondemand {
 // create temporary std::string instances.
 namespace logger {
 
+enum class log_level : int32_t {
+  info = 0,
+  error = 1
+};
+
 #if SIMDJSON_VERBOSE_LOGGING
   static constexpr const bool LOG_ENABLED = true;
 #else
@@ -68099,14 +68450,18 @@ namespace logger {
 // for performance purposes and if you are using the loggers, you do not care about
 // performance (or should not).
 static inline void log_headers() noexcept;
-static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
-static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
+// If args are provided, title will be treated as format string
+template <typename... Args>
+static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
+template <typename... Args>
+static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
 static inline void log_event(const json_iterator &iter, const char *type, std::string_view detail="", int delta=0, int depth_delta=0) noexcept;
 static inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_value(const json_iterator &iter, const char *type, std::string_view detail="", int delta=-1, int depth_delta=0) noexcept;
 static inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_start_value(const json_iterator &iter, const char *type, int delta=-1, int depth_delta=0) noexcept;
 static inline void log_end_value(const json_iterator &iter, const char *type, int delta=-1, int depth_delta=0) noexcept;
+
 static inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail="") noexcept;
 static inline void log_error(const json_iterator &iter, const char *error, const char *detail="", int delta=-1, int depth_delta=0) noexcept;
 
@@ -68123,7 +68478,7 @@ static inline void log_error(const value_iterator &iter, const char *error, cons
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 /* end file include/simdjson/generic/ondemand/logger.h for icelake */
-/* including include/simdjson/generic/ondemand/token_iterator.h: #include "simdjson/generic/ondemand/token_iterator.h" */
+/* including include/simdjson/generic/ondemand/token_iterator.h for icelake: #include "simdjson/generic/ondemand/token_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/token_iterator.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 
@@ -68252,8 +68607,10 @@ protected:
   friend class json_iterator;
   friend class value_iterator;
   friend class object;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
 };
 
 } // namespace ondemand
@@ -68275,7 +68632,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/token_iterator.h for icelake */
-/* including include/simdjson/generic/ondemand/json_iterator.h: #include "simdjson/generic/ondemand/json_iterator.h" */
+/* including include/simdjson/generic/ondemand/json_iterator.h for icelake: #include "simdjson/generic/ondemand/json_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/json_iterator.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 
@@ -68578,8 +68935,10 @@ protected:
   friend class raw_json_string;
   friend class parser;
   friend class value_iterator;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
 }; // json_iterator
 
 } // namespace ondemand
@@ -68601,7 +68960,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/json_iterator.h for icelake */
-/* including include/simdjson/generic/ondemand/json_type.h: #include "simdjson/generic/ondemand/json_type.h" */
+/* including include/simdjson/generic/ondemand/json_type.h for icelake: #include "simdjson/generic/ondemand/json_type.h" */
 /* begin file include/simdjson/generic/ondemand/json_type.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 
@@ -68766,7 +69125,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 /* end file include/simdjson/generic/ondemand/json_type.h for icelake */
-/* including include/simdjson/generic/ondemand/raw_json_string.h: #include "simdjson/generic/ondemand/raw_json_string.h" */
+/* including include/simdjson/generic/ondemand/raw_json_string.h for icelake: #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* begin file include/simdjson/generic/ondemand/raw_json_string.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 
@@ -68975,7 +69334,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 /* end file include/simdjson/generic/ondemand/raw_json_string.h for icelake */
-/* including include/simdjson/generic/ondemand/parser.h: #include "simdjson/generic/ondemand/parser.h" */
+/* including include/simdjson/generic/ondemand/parser.h for icelake: #include "simdjson/generic/ondemand/parser.h" */
 /* begin file include/simdjson/generic/ondemand/parser.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_H
 
@@ -69333,7 +69692,7 @@ public:
 /* end file include/simdjson/generic/ondemand/parser.h for icelake */
 
 // All other declarations
-/* including include/simdjson/generic/ondemand/array.h: #include "simdjson/generic/ondemand/array.h" */
+/* including include/simdjson/generic/ondemand/array.h for icelake: #include "simdjson/generic/ondemand/array.h" */
 /* begin file include/simdjson/generic/ondemand/array.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 
@@ -69535,7 +69894,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 /* end file include/simdjson/generic/ondemand/array.h for icelake */
-/* including include/simdjson/generic/ondemand/array_iterator.h: #include "simdjson/generic/ondemand/array_iterator.h" */
+/* including include/simdjson/generic/ondemand/array_iterator.h for icelake: #include "simdjson/generic/ondemand/array_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/array_iterator.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 
@@ -69634,7 +69993,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/array_iterator.h for icelake */
-/* including include/simdjson/generic/ondemand/document.h: #include "simdjson/generic/ondemand/document.h" */
+/* including include/simdjson/generic/ondemand/document.h for icelake: #include "simdjson/generic/ondemand/document.h" */
 /* begin file include/simdjson/generic/ondemand/document.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 
@@ -70444,7 +70803,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 /* end file include/simdjson/generic/ondemand/document.h for icelake */
-/* including include/simdjson/generic/ondemand/document_stream.h: #include "simdjson/generic/ondemand/document_stream.h" */
+/* including include/simdjson/generic/ondemand/document_stream.h for icelake: #include "simdjson/generic/ondemand/document_stream.h" */
 /* begin file include/simdjson/generic/ondemand/document_stream.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 
@@ -70786,7 +71145,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 /* end file include/simdjson/generic/ondemand/document_stream.h for icelake */
-/* including include/simdjson/generic/ondemand/field.h: #include "simdjson/generic/ondemand/field.h" */
+/* including include/simdjson/generic/ondemand/field.h for icelake: #include "simdjson/generic/ondemand/field.h" */
 /* begin file include/simdjson/generic/ondemand/field.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 
@@ -70871,7 +71230,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 /* end file include/simdjson/generic/ondemand/field.h for icelake */
-/* including include/simdjson/generic/ondemand/object.h: #include "simdjson/generic/ondemand/object.h" */
+/* including include/simdjson/generic/ondemand/object.h for icelake: #include "simdjson/generic/ondemand/object.h" */
 /* begin file include/simdjson/generic/ondemand/object.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 
@@ -71113,7 +71472,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 /* end file include/simdjson/generic/ondemand/object.h for icelake */
-/* including include/simdjson/generic/ondemand/object_iterator.h: #include "simdjson/generic/ondemand/object_iterator.h" */
+/* including include/simdjson/generic/ondemand/object_iterator.h for icelake: #include "simdjson/generic/ondemand/object_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/object_iterator.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 
@@ -71196,7 +71555,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/object_iterator.h for icelake */
-/* including include/simdjson/generic/ondemand/serialization.h: #include "simdjson/generic/ondemand/serialization.h" */
+/* including include/simdjson/generic/ondemand/serialization.h for icelake: #include "simdjson/generic/ondemand/serialization.h" */
 /* begin file include/simdjson/generic/ondemand/serialization.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H
 
@@ -71304,7 +71663,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* end file include/simdjson/generic/ondemand/serialization.h for icelake */
 
 // Inline definitions
-/* including include/simdjson/generic/ondemand/array-inl.h: #include "simdjson/generic/ondemand/array-inl.h" */
+/* including include/simdjson/generic/ondemand/array-inl.h for icelake: #include "simdjson/generic/ondemand/array-inl.h" */
 /* begin file include/simdjson/generic/ondemand/array-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 
@@ -71533,7 +71892,7 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<icelake::onde
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 /* end file include/simdjson/generic/ondemand/array-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/array_iterator-inl.h: #include "simdjson/generic/ondemand/array_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/array_iterator-inl.h for icelake: #include "simdjson/generic/ondemand/array_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/array_iterator-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 
@@ -71614,7 +71973,7 @@ simdjson_inline simdjson_result<icelake::ondemand::array_iterator> &simdjson_res
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/array_iterator-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/document-inl.h: #include "simdjson/generic/ondemand/document-inl.h" */
+/* including include/simdjson/generic/ondemand/document-inl.h for icelake: #include "simdjson/generic/ondemand/document-inl.h" */
 /* begin file include/simdjson/generic/ondemand/document-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 
@@ -72440,7 +72799,7 @@ simdjson_inline simdjson_result<icelake::ondemand::value> simdjson_result<icelak
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 /* end file include/simdjson/generic/ondemand/document-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/document_stream-inl.h: #include "simdjson/generic/ondemand/document_stream-inl.h" */
+/* including include/simdjson/generic/ondemand/document_stream-inl.h for icelake: #include "simdjson/generic/ondemand/document_stream-inl.h" */
 /* begin file include/simdjson/generic/ondemand/document_stream-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 
@@ -72867,7 +73226,7 @@ simdjson_inline simdjson_result<icelake::ondemand::document_stream>::simdjson_re
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 /* end file include/simdjson/generic/ondemand/document_stream-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/field-inl.h: #include "simdjson/generic/ondemand/field-inl.h" */
+/* including include/simdjson/generic/ondemand/field-inl.h for icelake: #include "simdjson/generic/ondemand/field-inl.h" */
 /* begin file include/simdjson/generic/ondemand/field-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 
@@ -72960,7 +73319,7 @@ simdjson_inline simdjson_result<icelake::ondemand::value> simdjson_result<icelak
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 /* end file include/simdjson/generic/ondemand/field-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/json_iterator-inl.h: #include "simdjson/generic/ondemand/json_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/json_iterator-inl.h for icelake: #include "simdjson/generic/ondemand/json_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/json_iterator-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 
@@ -73371,7 +73730,7 @@ simdjson_inline simdjson_result<icelake::ondemand::json_iterator>::simdjson_resu
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/json_iterator-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/json_type-inl.h: #include "simdjson/generic/ondemand/json_type-inl.h" */
+/* including include/simdjson/generic/ondemand/json_type-inl.h for icelake: #include "simdjson/generic/ondemand/json_type-inl.h" */
 /* begin file include/simdjson/generic/ondemand/json_type-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 
@@ -73492,7 +73851,7 @@ simdjson_inline simdjson_result<icelake::ondemand::json_type>::simdjson_result(e
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 /* end file include/simdjson/generic/ondemand/json_type-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/logger-inl.h: #include "simdjson/generic/ondemand/logger-inl.h" */
+/* including include/simdjson/generic/ondemand/logger-inl.h for icelake: #include "simdjson/generic/ondemand/logger-inl.h" */
 /* begin file include/simdjson/generic/ondemand/logger-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 
@@ -73524,36 +73883,70 @@ static inline char printable_char(char c) {
   }
 }
 
+template<typename... Args>
+static inline std::string string_format(const std::string& format, const Args&... args)
+{
+  SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+  int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1;
+  auto size = static_cast<size_t>(size_s);
+  if (size <= 0) return std::string();
+  std::unique_ptr<char[]> buf(new char[size]);
+  std::snprintf(buf.get(), size, format.c_str(), args...);
+  SIMDJSON_POP_DISABLE_WARNINGS
+  return std::string(buf.get(), buf.get() + size - 1);
+}
+
+static inline log_level get_log_level_from_env()
+{
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
+      char *lvl = getenv("SIMDJSON_LOG_LEVEL");
+  SIMDJSON_POP_DISABLE_WARNINGS
+  if (lvl && simdjson_strcasecmp(lvl, "ERROR") == 0) { return log_level::error; }
+  return log_level::info;
+}
+
+static inline log_level log_threshold()
+{
+  static log_level threshold = get_log_level_from_env();
+  return threshold;
+}
+
+static inline bool should_log(log_level level)
+{
+  return level >= log_threshold();
+}
+
 inline void log_event(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::info);
 }
 
 inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "", type, detail);
+  log_line(iter, index, depth, "", type, detail, log_level::info);
 }
 inline void log_value(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::info);
 }
 
 inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "+", type, detail);
+  log_line(iter, index, depth, "+", type, detail, log_level::info);
   if (LOG_ENABLED) { log_depth++; }
 }
 inline void log_start_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
-  log_line(iter, "+", type, "", delta, depth_delta);
+  log_line(iter, "+", type, "", delta, depth_delta, log_level::info);
   if (LOG_ENABLED) { log_depth++; }
 }
 
 inline void log_end_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
   if (LOG_ENABLED) { log_depth--; }
-  log_line(iter, "-", type, "", delta, depth_delta);
+  log_line(iter, "-", type, "", delta, depth_delta, log_level::info);
 }
 
 inline void log_error(const json_iterator &iter, const char *error, const char *detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "ERROR: ", error, detail, delta, depth_delta);
+  log_line(iter, "ERROR: ", error, detail, delta, depth_delta, log_level::error);
 }
 inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail) noexcept {
-  log_line(iter, index, depth, "ERROR: ", error, detail);
+  log_line(iter, index, depth, "ERROR: ", error, detail, log_level::error);
 }
 
 inline void log_event(const value_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
@@ -73578,96 +73971,101 @@ inline void log_error(const value_iterator &iter, const char *error, const char 
 
 inline void log_headers() noexcept {
   if (LOG_ENABLED) {
-    // Technically a static variable is not thread-safe, but if you are using threads
-    // and logging... well...
-    static bool displayed_hint{false};
-    log_depth = 0;
-    printf("\n");
-    if(!displayed_hint) {
-      // We only print this helpful header once.
-      printf("# Logging provides the depth and position of the iterator user-visible steps:\n");
-      printf("# +array says 'this is where we were when we discovered the start array'\n");
-      printf("# -array says 'this is where we were when we ended the array'\n");
-      printf("# skip says 'this is a structural or value I am skipping'\n");
-      printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
-      printf("#\n");
-      printf("# The indentation of the terms (array, string,...) indicates the depth,\n");
-      printf("# in addition to the depth being displayed.\n");
-      printf("#\n");
-      printf("# Every token in the document has a single depth determined by the tokens before it,\n");
-      printf("# and is not affected by what the token actually is.\n");
-      printf("#\n");
-      printf("# Not all structural elements are presented as tokens in the logs.\n");
-      printf("#\n");
-      printf("# We never give control to the user within an empty array or an empty object.\n");
-      printf("#\n");
-      printf("# Inside an array, having a depth greater than the array's depth means that\n");
-      printf("# we are pointing inside a value.\n");
-      printf("# Having a depth equal to the array means that we are pointing right before a value.\n");
-      printf("# Having a depth smaller than the array means that we have moved beyond the array.\n");
-      displayed_hint = true;
-    }
-    printf("\n");
-    printf("| %-*s ", LOG_EVENT_LEN,        "Event");
-    printf("| %-*s ", LOG_BUFFER_LEN,       "Buffer");
-    printf("| %-*s ", LOG_SMALL_BUFFER_LEN, "Next");
-    // printf("| %-*s ", 5,                    "Next#");
-    printf("| %-*s ", 5,                    "Depth");
-    printf("| Detail ");
-    printf("|\n");
+    if (simdjson_unlikely(should_log(log_level::info))) {
+      // Technically a static variable is not thread-safe, but if you are using threads and logging... well...
+      static bool displayed_hint{false};
+      log_depth = 0;
+      printf("\n");
+      if (!displayed_hint) {
+        // We only print this helpful header once.
+        printf("# Logging provides the depth and position of the iterator user-visible steps:\n");
+        printf("# +array says 'this is where we were when we discovered the start array'\n");
+        printf(
+            "# -array says 'this is where we were when we ended the array'\n");
+        printf("# skip says 'this is a structural or value I am skipping'\n");
+        printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
+        printf("#\n");
+        printf("# The indentation of the terms (array, string,...) indicates the depth,\n");
+        printf("# in addition to the depth being displayed.\n");
+        printf("#\n");
+        printf("# Every token in the document has a single depth determined by the tokens before it,\n");
+        printf("# and is not affected by what the token actually is.\n");
+        printf("#\n");
+        printf("# Not all structural elements are presented as tokens in the logs.\n");
+        printf("#\n");
+        printf("# We never give control to the user within an empty array or an empty object.\n");
+        printf("#\n");
+        printf("# Inside an array, having a depth greater than the array's depth means that\n");
+        printf("# we are pointing inside a value.\n");
+        printf("# Having a depth equal to the array means that we are pointing right before a value.\n");
+        printf("# Having a depth smaller than the array means that we have moved beyond the array.\n");
+        displayed_hint = true;
+      }
+      printf("\n");
+      printf("| %-*s ", LOG_EVENT_LEN, "Event");
+      printf("| %-*s ", LOG_BUFFER_LEN, "Buffer");
+      printf("| %-*s ", LOG_SMALL_BUFFER_LEN, "Next");
+      // printf("| %-*s ", 5,                    "Next#");
+      printf("| %-*s ", 5, "Depth");
+      printf("| Detail ");
+      printf("|\n");
 
-    printf("|%.*s", LOG_EVENT_LEN+2, DASHES);
-    printf("|%.*s", LOG_BUFFER_LEN+2, DASHES);
-    printf("|%.*s", LOG_SMALL_BUFFER_LEN+2, DASHES);
-    // printf("|%.*s", 5+2, DASHES);
-    printf("|%.*s", 5+2, DASHES);
-    printf("|--------");
-    printf("|\n");
-    fflush(stdout);
+      printf("|%.*s", LOG_EVENT_LEN + 2, DASHES);
+      printf("|%.*s", LOG_BUFFER_LEN + 2, DASHES);
+      printf("|%.*s", LOG_SMALL_BUFFER_LEN + 2, DASHES);
+      // printf("|%.*s", 5+2, DASHES);
+      printf("|%.*s", 5 + 2, DASHES);
+      printf("|--------");
+      printf("|\n");
+      fflush(stdout);
+    }
   }
 }
 
-inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail);
+template <typename... Args>
+inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, log_level level, Args&&... args) noexcept {
+  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail, level, std::forward<Args>(args)...);
 }
-inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept {
+
+template <typename... Args>
+inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, log_level level, Args&&... args) noexcept {
   if (LOG_ENABLED) {
-    const int indent = depth*2;
-    const auto buf = iter.token.buf;
-    printf("| %*s%s%-*s ",
-      indent, "",
-      title_prefix,
-      LOG_EVENT_LEN - indent - int(strlen(title_prefix)), title
-      );
-    {
-      // Print the current structural.
-      printf("| ");
-      // Before we begin, the index might point right before the document.
-      // This could be unsafe, see https://github.com/simdjson/simdjson/discussions/1938
-      if(index < iter._root) {
-        printf("%*s", LOG_BUFFER_LEN, "");
-      } else {
-        auto current_structural = &buf[*index];
-        for (int i=0;i<LOG_BUFFER_LEN;i++) {
+    if (simdjson_unlikely(should_log(level))) {
+      const int indent = depth * 2;
+      const auto buf = iter.token.buf;
+      auto msg = string_format(title, std::forward<Args>(args)...);
+      printf("| %*s%s%-*s ", indent, "", title_prefix,
+             LOG_EVENT_LEN - indent - int(strlen(title_prefix)), msg.c_str());
+      {
+        // Print the current structural.
+        printf("| ");
+        // Before we begin, the index might point right before the document.
+        // This could be unsafe, see https://github.com/simdjson/simdjson/discussions/1938
+        if (index < iter._root) {
+          printf("%*s", LOG_BUFFER_LEN, "");
+        } else {
+          auto current_structural = &buf[*index];
+          for (int i = 0; i < LOG_BUFFER_LEN; i++) {
             printf("%c", printable_char(current_structural[i]));
+          }
         }
+        printf(" ");
       }
-      printf(" ");
-    }
-    {
-      // Print the next structural.
-      printf("| ");
-      auto next_structural = &buf[*(index+1)];
-      for (int i=0;i<LOG_SMALL_BUFFER_LEN;i++) {
-        printf("%c", printable_char(next_structural[i]));
+      {
+        // Print the next structural.
+        printf("| ");
+        auto next_structural = &buf[*(index + 1)];
+        for (int i = 0; i < LOG_SMALL_BUFFER_LEN; i++) {
+          printf("%c", printable_char(next_structural[i]));
+        }
+        printf(" ");
       }
-      printf(" ");
+      // printf("| %5u ", *(index+1));
+      printf("| %5i ", depth);
+      printf("| %6.*s ", int(detail.size()), detail.data());
+      printf("|\n");
+      fflush(stdout);
     }
-    // printf("| %5u ", *(index+1));
-    printf("| %5i ", depth);
-    printf("| %6.*s ", int(detail.size()) , detail.data());
-    printf("|\n");
-    fflush(stdout);
   }
 }
 
@@ -73678,7 +74076,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 /* end file include/simdjson/generic/ondemand/logger-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/object-inl.h: #include "simdjson/generic/ondemand/object-inl.h" */
+/* including include/simdjson/generic/ondemand/object-inl.h for icelake: #include "simdjson/generic/ondemand/object-inl.h" */
 /* begin file include/simdjson/generic/ondemand/object-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 
@@ -73700,13 +74098,19 @@ namespace ondemand {
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::operator[](const std::string_view key) & noexcept {
@@ -73718,13 +74122,19 @@ simdjson_inline simdjson_result<value> object::operator[](const std::string_view
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 
@@ -73929,7 +74339,7 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<icelake::onde
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 /* end file include/simdjson/generic/ondemand/object-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/object_iterator-inl.h: #include "simdjson/generic/ondemand/object_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/object_iterator-inl.h for icelake: #include "simdjson/generic/ondemand/object_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/object_iterator-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 
@@ -74070,7 +74480,7 @@ simdjson_inline simdjson_result<icelake::ondemand::object_iterator> &simdjson_re
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/object_iterator-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/parser-inl.h: #include "simdjson/generic/ondemand/parser-inl.h" */
+/* including include/simdjson/generic/ondemand/parser-inl.h for icelake: #include "simdjson/generic/ondemand/parser-inl.h" */
 /* begin file include/simdjson/generic/ondemand/parser-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 
@@ -74235,7 +74645,7 @@ simdjson_inline simdjson_result<icelake::ondemand::parser>::simdjson_result(erro
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 /* end file include/simdjson/generic/ondemand/parser-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/raw_json_string-inl.h: #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
+/* including include/simdjson/generic/ondemand/raw_json_string-inl.h for icelake: #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
 /* begin file include/simdjson/generic/ondemand/raw_json_string-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 
@@ -74441,7 +74851,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 /* end file include/simdjson/generic/ondemand/raw_json_string-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/serialization-inl.h: #include "simdjson/generic/ondemand/serialization-inl.h" */
+/* including include/simdjson/generic/ondemand/serialization-inl.h for icelake: #include "simdjson/generic/ondemand/serialization-inl.h" */
 /* begin file include/simdjson/generic/ondemand/serialization-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 
@@ -74677,7 +75087,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::icelake::ondemand::
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 /* end file include/simdjson/generic/ondemand/serialization-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/token_iterator-inl.h: #include "simdjson/generic/ondemand/token_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/token_iterator-inl.h for icelake: #include "simdjson/generic/ondemand/token_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/token_iterator-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 
@@ -74769,7 +75179,7 @@ simdjson_inline simdjson_result<icelake::ondemand::token_iterator>::simdjson_res
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/token_iterator-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/value-inl.h: #include "simdjson/generic/ondemand/value-inl.h" */
+/* including include/simdjson/generic/ondemand/value-inl.h for icelake: #include "simdjson/generic/ondemand/value-inl.h" */
 /* begin file include/simdjson/generic/ondemand/value-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 
@@ -75211,7 +75621,7 @@ simdjson_inline simdjson_result<icelake::ondemand::value> simdjson_result<icelak
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 /* end file include/simdjson/generic/ondemand/value-inl.h for icelake */
-/* including include/simdjson/generic/ondemand/value_iterator-inl.h: #include "simdjson/generic/ondemand/value_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/value_iterator-inl.h for icelake: #include "simdjson/generic/ondemand/value_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/value_iterator-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
 
@@ -78198,14 +78608,14 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 #endif // SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 /* end file include/simdjson/ppc64/stringparsing_defs.h */
 /* end file include/simdjson/ppc64/begin.h */
-/* including include/simdjson/generic/ondemand/amalgamated.h: #include "simdjson/generic/ondemand/amalgamated.h" */
+/* including include/simdjson/generic/ondemand/amalgamated.h for ppc64: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file include/simdjson/generic/ondemand/amalgamated.h for ppc64 */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
 // Stuff other things depend on
-/* including include/simdjson/generic/ondemand/base.h: #include "simdjson/generic/ondemand/base.h" */
+/* including include/simdjson/generic/ondemand/base.h for ppc64: #include "simdjson/generic/ondemand/base.h" */
 /* begin file include/simdjson/generic/ondemand/base.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_BASE_H
 
@@ -78255,7 +78665,7 @@ class value_iterator;
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_BASE_H
 /* end file include/simdjson/generic/ondemand/base.h for ppc64 */
-/* including include/simdjson/generic/ondemand/value_iterator.h: #include "simdjson/generic/ondemand/value_iterator.h" */
+/* including include/simdjson/generic/ondemand/value_iterator.h for ppc64: #include "simdjson/generic/ondemand/value_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/value_iterator.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 
@@ -78744,7 +79154,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/value_iterator.h for ppc64 */
-/* including include/simdjson/generic/ondemand/value.h: #include "simdjson/generic/ondemand/value.h" */
+/* including include/simdjson/generic/ondemand/value.h for ppc64: #include "simdjson/generic/ondemand/value.h" */
 /* begin file include/simdjson/generic/ondemand/value.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 
@@ -79454,7 +79864,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 /* end file include/simdjson/generic/ondemand/value.h for ppc64 */
-/* including include/simdjson/generic/ondemand/logger.h: #include "simdjson/generic/ondemand/logger.h" */
+/* including include/simdjson/generic/ondemand/logger.h for ppc64: #include "simdjson/generic/ondemand/logger.h" */
 /* begin file include/simdjson/generic/ondemand/logger.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 
@@ -79472,6 +79882,11 @@ namespace ondemand {
 // create temporary std::string instances.
 namespace logger {
 
+enum class log_level : int32_t {
+  info = 0,
+  error = 1
+};
+
 #if SIMDJSON_VERBOSE_LOGGING
   static constexpr const bool LOG_ENABLED = true;
 #else
@@ -79482,14 +79897,18 @@ namespace logger {
 // for performance purposes and if you are using the loggers, you do not care about
 // performance (or should not).
 static inline void log_headers() noexcept;
-static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
-static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
+// If args are provided, title will be treated as format string
+template <typename... Args>
+static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
+template <typename... Args>
+static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
 static inline void log_event(const json_iterator &iter, const char *type, std::string_view detail="", int delta=0, int depth_delta=0) noexcept;
 static inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_value(const json_iterator &iter, const char *type, std::string_view detail="", int delta=-1, int depth_delta=0) noexcept;
 static inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_start_value(const json_iterator &iter, const char *type, int delta=-1, int depth_delta=0) noexcept;
 static inline void log_end_value(const json_iterator &iter, const char *type, int delta=-1, int depth_delta=0) noexcept;
+
 static inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail="") noexcept;
 static inline void log_error(const json_iterator &iter, const char *error, const char *detail="", int delta=-1, int depth_delta=0) noexcept;
 
@@ -79506,7 +79925,7 @@ static inline void log_error(const value_iterator &iter, const char *error, cons
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 /* end file include/simdjson/generic/ondemand/logger.h for ppc64 */
-/* including include/simdjson/generic/ondemand/token_iterator.h: #include "simdjson/generic/ondemand/token_iterator.h" */
+/* including include/simdjson/generic/ondemand/token_iterator.h for ppc64: #include "simdjson/generic/ondemand/token_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/token_iterator.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 
@@ -79635,8 +80054,10 @@ protected:
   friend class json_iterator;
   friend class value_iterator;
   friend class object;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
 };
 
 } // namespace ondemand
@@ -79658,7 +80079,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/token_iterator.h for ppc64 */
-/* including include/simdjson/generic/ondemand/json_iterator.h: #include "simdjson/generic/ondemand/json_iterator.h" */
+/* including include/simdjson/generic/ondemand/json_iterator.h for ppc64: #include "simdjson/generic/ondemand/json_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/json_iterator.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 
@@ -79961,8 +80382,10 @@ protected:
   friend class raw_json_string;
   friend class parser;
   friend class value_iterator;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
 }; // json_iterator
 
 } // namespace ondemand
@@ -79984,7 +80407,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/json_iterator.h for ppc64 */
-/* including include/simdjson/generic/ondemand/json_type.h: #include "simdjson/generic/ondemand/json_type.h" */
+/* including include/simdjson/generic/ondemand/json_type.h for ppc64: #include "simdjson/generic/ondemand/json_type.h" */
 /* begin file include/simdjson/generic/ondemand/json_type.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 
@@ -80149,7 +80572,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 /* end file include/simdjson/generic/ondemand/json_type.h for ppc64 */
-/* including include/simdjson/generic/ondemand/raw_json_string.h: #include "simdjson/generic/ondemand/raw_json_string.h" */
+/* including include/simdjson/generic/ondemand/raw_json_string.h for ppc64: #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* begin file include/simdjson/generic/ondemand/raw_json_string.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 
@@ -80358,7 +80781,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 /* end file include/simdjson/generic/ondemand/raw_json_string.h for ppc64 */
-/* including include/simdjson/generic/ondemand/parser.h: #include "simdjson/generic/ondemand/parser.h" */
+/* including include/simdjson/generic/ondemand/parser.h for ppc64: #include "simdjson/generic/ondemand/parser.h" */
 /* begin file include/simdjson/generic/ondemand/parser.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_H
 
@@ -80716,7 +81139,7 @@ public:
 /* end file include/simdjson/generic/ondemand/parser.h for ppc64 */
 
 // All other declarations
-/* including include/simdjson/generic/ondemand/array.h: #include "simdjson/generic/ondemand/array.h" */
+/* including include/simdjson/generic/ondemand/array.h for ppc64: #include "simdjson/generic/ondemand/array.h" */
 /* begin file include/simdjson/generic/ondemand/array.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 
@@ -80918,7 +81341,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 /* end file include/simdjson/generic/ondemand/array.h for ppc64 */
-/* including include/simdjson/generic/ondemand/array_iterator.h: #include "simdjson/generic/ondemand/array_iterator.h" */
+/* including include/simdjson/generic/ondemand/array_iterator.h for ppc64: #include "simdjson/generic/ondemand/array_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/array_iterator.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 
@@ -81017,7 +81440,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/array_iterator.h for ppc64 */
-/* including include/simdjson/generic/ondemand/document.h: #include "simdjson/generic/ondemand/document.h" */
+/* including include/simdjson/generic/ondemand/document.h for ppc64: #include "simdjson/generic/ondemand/document.h" */
 /* begin file include/simdjson/generic/ondemand/document.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 
@@ -81827,7 +82250,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 /* end file include/simdjson/generic/ondemand/document.h for ppc64 */
-/* including include/simdjson/generic/ondemand/document_stream.h: #include "simdjson/generic/ondemand/document_stream.h" */
+/* including include/simdjson/generic/ondemand/document_stream.h for ppc64: #include "simdjson/generic/ondemand/document_stream.h" */
 /* begin file include/simdjson/generic/ondemand/document_stream.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 
@@ -82169,7 +82592,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 /* end file include/simdjson/generic/ondemand/document_stream.h for ppc64 */
-/* including include/simdjson/generic/ondemand/field.h: #include "simdjson/generic/ondemand/field.h" */
+/* including include/simdjson/generic/ondemand/field.h for ppc64: #include "simdjson/generic/ondemand/field.h" */
 /* begin file include/simdjson/generic/ondemand/field.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 
@@ -82254,7 +82677,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 /* end file include/simdjson/generic/ondemand/field.h for ppc64 */
-/* including include/simdjson/generic/ondemand/object.h: #include "simdjson/generic/ondemand/object.h" */
+/* including include/simdjson/generic/ondemand/object.h for ppc64: #include "simdjson/generic/ondemand/object.h" */
 /* begin file include/simdjson/generic/ondemand/object.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 
@@ -82496,7 +82919,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 /* end file include/simdjson/generic/ondemand/object.h for ppc64 */
-/* including include/simdjson/generic/ondemand/object_iterator.h: #include "simdjson/generic/ondemand/object_iterator.h" */
+/* including include/simdjson/generic/ondemand/object_iterator.h for ppc64: #include "simdjson/generic/ondemand/object_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/object_iterator.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 
@@ -82579,7 +83002,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/object_iterator.h for ppc64 */
-/* including include/simdjson/generic/ondemand/serialization.h: #include "simdjson/generic/ondemand/serialization.h" */
+/* including include/simdjson/generic/ondemand/serialization.h for ppc64: #include "simdjson/generic/ondemand/serialization.h" */
 /* begin file include/simdjson/generic/ondemand/serialization.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H
 
@@ -82687,7 +83110,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* end file include/simdjson/generic/ondemand/serialization.h for ppc64 */
 
 // Inline definitions
-/* including include/simdjson/generic/ondemand/array-inl.h: #include "simdjson/generic/ondemand/array-inl.h" */
+/* including include/simdjson/generic/ondemand/array-inl.h for ppc64: #include "simdjson/generic/ondemand/array-inl.h" */
 /* begin file include/simdjson/generic/ondemand/array-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 
@@ -82916,7 +83339,7 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<ppc64::ondema
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 /* end file include/simdjson/generic/ondemand/array-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/array_iterator-inl.h: #include "simdjson/generic/ondemand/array_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/array_iterator-inl.h for ppc64: #include "simdjson/generic/ondemand/array_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/array_iterator-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 
@@ -82997,7 +83420,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::array_iterator> &simdjson_resul
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/array_iterator-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/document-inl.h: #include "simdjson/generic/ondemand/document-inl.h" */
+/* including include/simdjson/generic/ondemand/document-inl.h for ppc64: #include "simdjson/generic/ondemand/document-inl.h" */
 /* begin file include/simdjson/generic/ondemand/document-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 
@@ -83823,7 +84246,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::value> simdjson_result<ppc64::o
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 /* end file include/simdjson/generic/ondemand/document-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/document_stream-inl.h: #include "simdjson/generic/ondemand/document_stream-inl.h" */
+/* including include/simdjson/generic/ondemand/document_stream-inl.h for ppc64: #include "simdjson/generic/ondemand/document_stream-inl.h" */
 /* begin file include/simdjson/generic/ondemand/document_stream-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 
@@ -84250,7 +84673,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::document_stream>::simdjson_resu
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 /* end file include/simdjson/generic/ondemand/document_stream-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/field-inl.h: #include "simdjson/generic/ondemand/field-inl.h" */
+/* including include/simdjson/generic/ondemand/field-inl.h for ppc64: #include "simdjson/generic/ondemand/field-inl.h" */
 /* begin file include/simdjson/generic/ondemand/field-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 
@@ -84343,7 +84766,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::value> simdjson_result<ppc64::o
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 /* end file include/simdjson/generic/ondemand/field-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/json_iterator-inl.h: #include "simdjson/generic/ondemand/json_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/json_iterator-inl.h for ppc64: #include "simdjson/generic/ondemand/json_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/json_iterator-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 
@@ -84754,7 +85177,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::json_iterator>::simdjson_result
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/json_iterator-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/json_type-inl.h: #include "simdjson/generic/ondemand/json_type-inl.h" */
+/* including include/simdjson/generic/ondemand/json_type-inl.h for ppc64: #include "simdjson/generic/ondemand/json_type-inl.h" */
 /* begin file include/simdjson/generic/ondemand/json_type-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 
@@ -84875,7 +85298,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::json_type>::simdjson_result(err
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 /* end file include/simdjson/generic/ondemand/json_type-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/logger-inl.h: #include "simdjson/generic/ondemand/logger-inl.h" */
+/* including include/simdjson/generic/ondemand/logger-inl.h for ppc64: #include "simdjson/generic/ondemand/logger-inl.h" */
 /* begin file include/simdjson/generic/ondemand/logger-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 
@@ -84907,36 +85330,70 @@ static inline char printable_char(char c) {
   }
 }
 
+template<typename... Args>
+static inline std::string string_format(const std::string& format, const Args&... args)
+{
+  SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+  int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1;
+  auto size = static_cast<size_t>(size_s);
+  if (size <= 0) return std::string();
+  std::unique_ptr<char[]> buf(new char[size]);
+  std::snprintf(buf.get(), size, format.c_str(), args...);
+  SIMDJSON_POP_DISABLE_WARNINGS
+  return std::string(buf.get(), buf.get() + size - 1);
+}
+
+static inline log_level get_log_level_from_env()
+{
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
+      char *lvl = getenv("SIMDJSON_LOG_LEVEL");
+  SIMDJSON_POP_DISABLE_WARNINGS
+  if (lvl && simdjson_strcasecmp(lvl, "ERROR") == 0) { return log_level::error; }
+  return log_level::info;
+}
+
+static inline log_level log_threshold()
+{
+  static log_level threshold = get_log_level_from_env();
+  return threshold;
+}
+
+static inline bool should_log(log_level level)
+{
+  return level >= log_threshold();
+}
+
 inline void log_event(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::info);
 }
 
 inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "", type, detail);
+  log_line(iter, index, depth, "", type, detail, log_level::info);
 }
 inline void log_value(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::info);
 }
 
 inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "+", type, detail);
+  log_line(iter, index, depth, "+", type, detail, log_level::info);
   if (LOG_ENABLED) { log_depth++; }
 }
 inline void log_start_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
-  log_line(iter, "+", type, "", delta, depth_delta);
+  log_line(iter, "+", type, "", delta, depth_delta, log_level::info);
   if (LOG_ENABLED) { log_depth++; }
 }
 
 inline void log_end_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
   if (LOG_ENABLED) { log_depth--; }
-  log_line(iter, "-", type, "", delta, depth_delta);
+  log_line(iter, "-", type, "", delta, depth_delta, log_level::info);
 }
 
 inline void log_error(const json_iterator &iter, const char *error, const char *detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "ERROR: ", error, detail, delta, depth_delta);
+  log_line(iter, "ERROR: ", error, detail, delta, depth_delta, log_level::error);
 }
 inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail) noexcept {
-  log_line(iter, index, depth, "ERROR: ", error, detail);
+  log_line(iter, index, depth, "ERROR: ", error, detail, log_level::error);
 }
 
 inline void log_event(const value_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
@@ -84961,96 +85418,101 @@ inline void log_error(const value_iterator &iter, const char *error, const char 
 
 inline void log_headers() noexcept {
   if (LOG_ENABLED) {
-    // Technically a static variable is not thread-safe, but if you are using threads
-    // and logging... well...
-    static bool displayed_hint{false};
-    log_depth = 0;
-    printf("\n");
-    if(!displayed_hint) {
-      // We only print this helpful header once.
-      printf("# Logging provides the depth and position of the iterator user-visible steps:\n");
-      printf("# +array says 'this is where we were when we discovered the start array'\n");
-      printf("# -array says 'this is where we were when we ended the array'\n");
-      printf("# skip says 'this is a structural or value I am skipping'\n");
-      printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
-      printf("#\n");
-      printf("# The indentation of the terms (array, string,...) indicates the depth,\n");
-      printf("# in addition to the depth being displayed.\n");
-      printf("#\n");
-      printf("# Every token in the document has a single depth determined by the tokens before it,\n");
-      printf("# and is not affected by what the token actually is.\n");
-      printf("#\n");
-      printf("# Not all structural elements are presented as tokens in the logs.\n");
-      printf("#\n");
-      printf("# We never give control to the user within an empty array or an empty object.\n");
-      printf("#\n");
-      printf("# Inside an array, having a depth greater than the array's depth means that\n");
-      printf("# we are pointing inside a value.\n");
-      printf("# Having a depth equal to the array means that we are pointing right before a value.\n");
-      printf("# Having a depth smaller than the array means that we have moved beyond the array.\n");
-      displayed_hint = true;
-    }
-    printf("\n");
-    printf("| %-*s ", LOG_EVENT_LEN,        "Event");
-    printf("| %-*s ", LOG_BUFFER_LEN,       "Buffer");
-    printf("| %-*s ", LOG_SMALL_BUFFER_LEN, "Next");
-    // printf("| %-*s ", 5,                    "Next#");
-    printf("| %-*s ", 5,                    "Depth");
-    printf("| Detail ");
-    printf("|\n");
+    if (simdjson_unlikely(should_log(log_level::info))) {
+      // Technically a static variable is not thread-safe, but if you are using threads and logging... well...
+      static bool displayed_hint{false};
+      log_depth = 0;
+      printf("\n");
+      if (!displayed_hint) {
+        // We only print this helpful header once.
+        printf("# Logging provides the depth and position of the iterator user-visible steps:\n");
+        printf("# +array says 'this is where we were when we discovered the start array'\n");
+        printf(
+            "# -array says 'this is where we were when we ended the array'\n");
+        printf("# skip says 'this is a structural or value I am skipping'\n");
+        printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
+        printf("#\n");
+        printf("# The indentation of the terms (array, string,...) indicates the depth,\n");
+        printf("# in addition to the depth being displayed.\n");
+        printf("#\n");
+        printf("# Every token in the document has a single depth determined by the tokens before it,\n");
+        printf("# and is not affected by what the token actually is.\n");
+        printf("#\n");
+        printf("# Not all structural elements are presented as tokens in the logs.\n");
+        printf("#\n");
+        printf("# We never give control to the user within an empty array or an empty object.\n");
+        printf("#\n");
+        printf("# Inside an array, having a depth greater than the array's depth means that\n");
+        printf("# we are pointing inside a value.\n");
+        printf("# Having a depth equal to the array means that we are pointing right before a value.\n");
+        printf("# Having a depth smaller than the array means that we have moved beyond the array.\n");
+        displayed_hint = true;
+      }
+      printf("\n");
+      printf("| %-*s ", LOG_EVENT_LEN, "Event");
+      printf("| %-*s ", LOG_BUFFER_LEN, "Buffer");
+      printf("| %-*s ", LOG_SMALL_BUFFER_LEN, "Next");
+      // printf("| %-*s ", 5,                    "Next#");
+      printf("| %-*s ", 5, "Depth");
+      printf("| Detail ");
+      printf("|\n");
 
-    printf("|%.*s", LOG_EVENT_LEN+2, DASHES);
-    printf("|%.*s", LOG_BUFFER_LEN+2, DASHES);
-    printf("|%.*s", LOG_SMALL_BUFFER_LEN+2, DASHES);
-    // printf("|%.*s", 5+2, DASHES);
-    printf("|%.*s", 5+2, DASHES);
-    printf("|--------");
-    printf("|\n");
-    fflush(stdout);
+      printf("|%.*s", LOG_EVENT_LEN + 2, DASHES);
+      printf("|%.*s", LOG_BUFFER_LEN + 2, DASHES);
+      printf("|%.*s", LOG_SMALL_BUFFER_LEN + 2, DASHES);
+      // printf("|%.*s", 5+2, DASHES);
+      printf("|%.*s", 5 + 2, DASHES);
+      printf("|--------");
+      printf("|\n");
+      fflush(stdout);
+    }
   }
 }
 
-inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail);
+template <typename... Args>
+inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, log_level level, Args&&... args) noexcept {
+  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail, level, std::forward<Args>(args)...);
 }
-inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept {
+
+template <typename... Args>
+inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, log_level level, Args&&... args) noexcept {
   if (LOG_ENABLED) {
-    const int indent = depth*2;
-    const auto buf = iter.token.buf;
-    printf("| %*s%s%-*s ",
-      indent, "",
-      title_prefix,
-      LOG_EVENT_LEN - indent - int(strlen(title_prefix)), title
-      );
-    {
-      // Print the current structural.
-      printf("| ");
-      // Before we begin, the index might point right before the document.
-      // This could be unsafe, see https://github.com/simdjson/simdjson/discussions/1938
-      if(index < iter._root) {
-        printf("%*s", LOG_BUFFER_LEN, "");
-      } else {
-        auto current_structural = &buf[*index];
-        for (int i=0;i<LOG_BUFFER_LEN;i++) {
+    if (simdjson_unlikely(should_log(level))) {
+      const int indent = depth * 2;
+      const auto buf = iter.token.buf;
+      auto msg = string_format(title, std::forward<Args>(args)...);
+      printf("| %*s%s%-*s ", indent, "", title_prefix,
+             LOG_EVENT_LEN - indent - int(strlen(title_prefix)), msg.c_str());
+      {
+        // Print the current structural.
+        printf("| ");
+        // Before we begin, the index might point right before the document.
+        // This could be unsafe, see https://github.com/simdjson/simdjson/discussions/1938
+        if (index < iter._root) {
+          printf("%*s", LOG_BUFFER_LEN, "");
+        } else {
+          auto current_structural = &buf[*index];
+          for (int i = 0; i < LOG_BUFFER_LEN; i++) {
             printf("%c", printable_char(current_structural[i]));
+          }
         }
+        printf(" ");
       }
-      printf(" ");
-    }
-    {
-      // Print the next structural.
-      printf("| ");
-      auto next_structural = &buf[*(index+1)];
-      for (int i=0;i<LOG_SMALL_BUFFER_LEN;i++) {
-        printf("%c", printable_char(next_structural[i]));
+      {
+        // Print the next structural.
+        printf("| ");
+        auto next_structural = &buf[*(index + 1)];
+        for (int i = 0; i < LOG_SMALL_BUFFER_LEN; i++) {
+          printf("%c", printable_char(next_structural[i]));
+        }
+        printf(" ");
       }
-      printf(" ");
+      // printf("| %5u ", *(index+1));
+      printf("| %5i ", depth);
+      printf("| %6.*s ", int(detail.size()), detail.data());
+      printf("|\n");
+      fflush(stdout);
     }
-    // printf("| %5u ", *(index+1));
-    printf("| %5i ", depth);
-    printf("| %6.*s ", int(detail.size()) , detail.data());
-    printf("|\n");
-    fflush(stdout);
   }
 }
 
@@ -85061,7 +85523,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 /* end file include/simdjson/generic/ondemand/logger-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/object-inl.h: #include "simdjson/generic/ondemand/object-inl.h" */
+/* including include/simdjson/generic/ondemand/object-inl.h for ppc64: #include "simdjson/generic/ondemand/object-inl.h" */
 /* begin file include/simdjson/generic/ondemand/object-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 
@@ -85083,13 +85545,19 @@ namespace ondemand {
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::operator[](const std::string_view key) & noexcept {
@@ -85101,13 +85569,19 @@ simdjson_inline simdjson_result<value> object::operator[](const std::string_view
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 
@@ -85312,7 +85786,7 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<ppc64::ondema
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 /* end file include/simdjson/generic/ondemand/object-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/object_iterator-inl.h: #include "simdjson/generic/ondemand/object_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/object_iterator-inl.h for ppc64: #include "simdjson/generic/ondemand/object_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/object_iterator-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 
@@ -85453,7 +85927,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::object_iterator> &simdjson_resu
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/object_iterator-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/parser-inl.h: #include "simdjson/generic/ondemand/parser-inl.h" */
+/* including include/simdjson/generic/ondemand/parser-inl.h for ppc64: #include "simdjson/generic/ondemand/parser-inl.h" */
 /* begin file include/simdjson/generic/ondemand/parser-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 
@@ -85618,7 +86092,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::parser>::simdjson_result(error_
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 /* end file include/simdjson/generic/ondemand/parser-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/raw_json_string-inl.h: #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
+/* including include/simdjson/generic/ondemand/raw_json_string-inl.h for ppc64: #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
 /* begin file include/simdjson/generic/ondemand/raw_json_string-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 
@@ -85824,7 +86298,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 /* end file include/simdjson/generic/ondemand/raw_json_string-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/serialization-inl.h: #include "simdjson/generic/ondemand/serialization-inl.h" */
+/* including include/simdjson/generic/ondemand/serialization-inl.h for ppc64: #include "simdjson/generic/ondemand/serialization-inl.h" */
 /* begin file include/simdjson/generic/ondemand/serialization-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 
@@ -86060,7 +86534,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::ppc64::ondemand::ob
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 /* end file include/simdjson/generic/ondemand/serialization-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/token_iterator-inl.h: #include "simdjson/generic/ondemand/token_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/token_iterator-inl.h for ppc64: #include "simdjson/generic/ondemand/token_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/token_iterator-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 
@@ -86152,7 +86626,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::token_iterator>::simdjson_resul
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/token_iterator-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/value-inl.h: #include "simdjson/generic/ondemand/value-inl.h" */
+/* including include/simdjson/generic/ondemand/value-inl.h for ppc64: #include "simdjson/generic/ondemand/value-inl.h" */
 /* begin file include/simdjson/generic/ondemand/value-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 
@@ -86594,7 +87068,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::value> simdjson_result<ppc64::o
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 /* end file include/simdjson/generic/ondemand/value-inl.h for ppc64 */
-/* including include/simdjson/generic/ondemand/value_iterator-inl.h: #include "simdjson/generic/ondemand/value_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/value_iterator-inl.h for ppc64: #include "simdjson/generic/ondemand/value_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/value_iterator-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
 
@@ -89271,14 +89745,14 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #endif // SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H
 /* end file include/simdjson/westmere/stringparsing_defs.h */
 /* end file include/simdjson/westmere/begin.h */
-/* including include/simdjson/generic/ondemand/amalgamated.h: #include "simdjson/generic/ondemand/amalgamated.h" */
+/* including include/simdjson/generic/ondemand/amalgamated.h for westmere: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file include/simdjson/generic/ondemand/amalgamated.h for westmere */
 #if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
 // Stuff other things depend on
-/* including include/simdjson/generic/ondemand/base.h: #include "simdjson/generic/ondemand/base.h" */
+/* including include/simdjson/generic/ondemand/base.h for westmere: #include "simdjson/generic/ondemand/base.h" */
 /* begin file include/simdjson/generic/ondemand/base.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_BASE_H
 
@@ -89328,7 +89802,7 @@ class value_iterator;
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_BASE_H
 /* end file include/simdjson/generic/ondemand/base.h for westmere */
-/* including include/simdjson/generic/ondemand/value_iterator.h: #include "simdjson/generic/ondemand/value_iterator.h" */
+/* including include/simdjson/generic/ondemand/value_iterator.h for westmere: #include "simdjson/generic/ondemand/value_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/value_iterator.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 
@@ -89817,7 +90291,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/value_iterator.h for westmere */
-/* including include/simdjson/generic/ondemand/value.h: #include "simdjson/generic/ondemand/value.h" */
+/* including include/simdjson/generic/ondemand/value.h for westmere: #include "simdjson/generic/ondemand/value.h" */
 /* begin file include/simdjson/generic/ondemand/value.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 
@@ -90527,7 +91001,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 /* end file include/simdjson/generic/ondemand/value.h for westmere */
-/* including include/simdjson/generic/ondemand/logger.h: #include "simdjson/generic/ondemand/logger.h" */
+/* including include/simdjson/generic/ondemand/logger.h for westmere: #include "simdjson/generic/ondemand/logger.h" */
 /* begin file include/simdjson/generic/ondemand/logger.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 
@@ -90545,6 +91019,11 @@ namespace ondemand {
 // create temporary std::string instances.
 namespace logger {
 
+enum class log_level : int32_t {
+  info = 0,
+  error = 1
+};
+
 #if SIMDJSON_VERBOSE_LOGGING
   static constexpr const bool LOG_ENABLED = true;
 #else
@@ -90555,14 +91034,18 @@ namespace logger {
 // for performance purposes and if you are using the loggers, you do not care about
 // performance (or should not).
 static inline void log_headers() noexcept;
-static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
-static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
+// If args are provided, title will be treated as format string
+template <typename... Args>
+static inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
+template <typename... Args>
+static inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
 static inline void log_event(const json_iterator &iter, const char *type, std::string_view detail="", int delta=0, int depth_delta=0) noexcept;
 static inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_value(const json_iterator &iter, const char *type, std::string_view detail="", int delta=-1, int depth_delta=0) noexcept;
 static inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail="") noexcept;
 static inline void log_start_value(const json_iterator &iter, const char *type, int delta=-1, int depth_delta=0) noexcept;
 static inline void log_end_value(const json_iterator &iter, const char *type, int delta=-1, int depth_delta=0) noexcept;
+
 static inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail="") noexcept;
 static inline void log_error(const json_iterator &iter, const char *error, const char *detail="", int delta=-1, int depth_delta=0) noexcept;
 
@@ -90579,7 +91062,7 @@ static inline void log_error(const value_iterator &iter, const char *error, cons
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 /* end file include/simdjson/generic/ondemand/logger.h for westmere */
-/* including include/simdjson/generic/ondemand/token_iterator.h: #include "simdjson/generic/ondemand/token_iterator.h" */
+/* including include/simdjson/generic/ondemand/token_iterator.h for westmere: #include "simdjson/generic/ondemand/token_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/token_iterator.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 
@@ -90708,8 +91191,10 @@ protected:
   friend class json_iterator;
   friend class value_iterator;
   friend class object;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
 };
 
 } // namespace ondemand
@@ -90731,7 +91216,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/token_iterator.h for westmere */
-/* including include/simdjson/generic/ondemand/json_iterator.h: #include "simdjson/generic/ondemand/json_iterator.h" */
+/* including include/simdjson/generic/ondemand/json_iterator.h for westmere: #include "simdjson/generic/ondemand/json_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/json_iterator.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 
@@ -91034,8 +91519,10 @@ protected:
   friend class raw_json_string;
   friend class parser;
   friend class value_iterator;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept;
-  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, logger::log_level level, Args&&... args) noexcept;
+  template <typename... Args>
+  friend simdjson_inline void logger::log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, logger::log_level level, Args&&... args) noexcept;
 }; // json_iterator
 
 } // namespace ondemand
@@ -91057,7 +91544,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/json_iterator.h for westmere */
-/* including include/simdjson/generic/ondemand/json_type.h: #include "simdjson/generic/ondemand/json_type.h" */
+/* including include/simdjson/generic/ondemand/json_type.h for westmere: #include "simdjson/generic/ondemand/json_type.h" */
 /* begin file include/simdjson/generic/ondemand/json_type.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 
@@ -91222,7 +91709,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 /* end file include/simdjson/generic/ondemand/json_type.h for westmere */
-/* including include/simdjson/generic/ondemand/raw_json_string.h: #include "simdjson/generic/ondemand/raw_json_string.h" */
+/* including include/simdjson/generic/ondemand/raw_json_string.h for westmere: #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* begin file include/simdjson/generic/ondemand/raw_json_string.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 
@@ -91431,7 +91918,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 /* end file include/simdjson/generic/ondemand/raw_json_string.h for westmere */
-/* including include/simdjson/generic/ondemand/parser.h: #include "simdjson/generic/ondemand/parser.h" */
+/* including include/simdjson/generic/ondemand/parser.h for westmere: #include "simdjson/generic/ondemand/parser.h" */
 /* begin file include/simdjson/generic/ondemand/parser.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_H
 
@@ -91789,7 +92276,7 @@ public:
 /* end file include/simdjson/generic/ondemand/parser.h for westmere */
 
 // All other declarations
-/* including include/simdjson/generic/ondemand/array.h: #include "simdjson/generic/ondemand/array.h" */
+/* including include/simdjson/generic/ondemand/array.h for westmere: #include "simdjson/generic/ondemand/array.h" */
 /* begin file include/simdjson/generic/ondemand/array.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 
@@ -91991,7 +92478,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 /* end file include/simdjson/generic/ondemand/array.h for westmere */
-/* including include/simdjson/generic/ondemand/array_iterator.h: #include "simdjson/generic/ondemand/array_iterator.h" */
+/* including include/simdjson/generic/ondemand/array_iterator.h for westmere: #include "simdjson/generic/ondemand/array_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/array_iterator.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 
@@ -92090,7 +92577,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/array_iterator.h for westmere */
-/* including include/simdjson/generic/ondemand/document.h: #include "simdjson/generic/ondemand/document.h" */
+/* including include/simdjson/generic/ondemand/document.h for westmere: #include "simdjson/generic/ondemand/document.h" */
 /* begin file include/simdjson/generic/ondemand/document.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 
@@ -92900,7 +93387,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 /* end file include/simdjson/generic/ondemand/document.h for westmere */
-/* including include/simdjson/generic/ondemand/document_stream.h: #include "simdjson/generic/ondemand/document_stream.h" */
+/* including include/simdjson/generic/ondemand/document_stream.h for westmere: #include "simdjson/generic/ondemand/document_stream.h" */
 /* begin file include/simdjson/generic/ondemand/document_stream.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 
@@ -93242,7 +93729,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 /* end file include/simdjson/generic/ondemand/document_stream.h for westmere */
-/* including include/simdjson/generic/ondemand/field.h: #include "simdjson/generic/ondemand/field.h" */
+/* including include/simdjson/generic/ondemand/field.h for westmere: #include "simdjson/generic/ondemand/field.h" */
 /* begin file include/simdjson/generic/ondemand/field.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 
@@ -93327,7 +93814,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 /* end file include/simdjson/generic/ondemand/field.h for westmere */
-/* including include/simdjson/generic/ondemand/object.h: #include "simdjson/generic/ondemand/object.h" */
+/* including include/simdjson/generic/ondemand/object.h for westmere: #include "simdjson/generic/ondemand/object.h" */
 /* begin file include/simdjson/generic/ondemand/object.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 
@@ -93569,7 +94056,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 /* end file include/simdjson/generic/ondemand/object.h for westmere */
-/* including include/simdjson/generic/ondemand/object_iterator.h: #include "simdjson/generic/ondemand/object_iterator.h" */
+/* including include/simdjson/generic/ondemand/object_iterator.h for westmere: #include "simdjson/generic/ondemand/object_iterator.h" */
 /* begin file include/simdjson/generic/ondemand/object_iterator.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 
@@ -93652,7 +94139,7 @@ public:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 /* end file include/simdjson/generic/ondemand/object_iterator.h for westmere */
-/* including include/simdjson/generic/ondemand/serialization.h: #include "simdjson/generic/ondemand/serialization.h" */
+/* including include/simdjson/generic/ondemand/serialization.h for westmere: #include "simdjson/generic/ondemand/serialization.h" */
 /* begin file include/simdjson/generic/ondemand/serialization.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H
 
@@ -93760,7 +94247,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* end file include/simdjson/generic/ondemand/serialization.h for westmere */
 
 // Inline definitions
-/* including include/simdjson/generic/ondemand/array-inl.h: #include "simdjson/generic/ondemand/array-inl.h" */
+/* including include/simdjson/generic/ondemand/array-inl.h for westmere: #include "simdjson/generic/ondemand/array-inl.h" */
 /* begin file include/simdjson/generic/ondemand/array-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 
@@ -93989,7 +94476,7 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<westmere::ond
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 /* end file include/simdjson/generic/ondemand/array-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/array_iterator-inl.h: #include "simdjson/generic/ondemand/array_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/array_iterator-inl.h for westmere: #include "simdjson/generic/ondemand/array_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/array_iterator-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 
@@ -94070,7 +94557,7 @@ simdjson_inline simdjson_result<westmere::ondemand::array_iterator> &simdjson_re
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/array_iterator-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/document-inl.h: #include "simdjson/generic/ondemand/document-inl.h" */
+/* including include/simdjson/generic/ondemand/document-inl.h for westmere: #include "simdjson/generic/ondemand/document-inl.h" */
 /* begin file include/simdjson/generic/ondemand/document-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 
@@ -94896,7 +95383,7 @@ simdjson_inline simdjson_result<westmere::ondemand::value> simdjson_result<westm
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 /* end file include/simdjson/generic/ondemand/document-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/document_stream-inl.h: #include "simdjson/generic/ondemand/document_stream-inl.h" */
+/* including include/simdjson/generic/ondemand/document_stream-inl.h for westmere: #include "simdjson/generic/ondemand/document_stream-inl.h" */
 /* begin file include/simdjson/generic/ondemand/document_stream-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 
@@ -95323,7 +95810,7 @@ simdjson_inline simdjson_result<westmere::ondemand::document_stream>::simdjson_r
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 /* end file include/simdjson/generic/ondemand/document_stream-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/field-inl.h: #include "simdjson/generic/ondemand/field-inl.h" */
+/* including include/simdjson/generic/ondemand/field-inl.h for westmere: #include "simdjson/generic/ondemand/field-inl.h" */
 /* begin file include/simdjson/generic/ondemand/field-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 
@@ -95416,7 +95903,7 @@ simdjson_inline simdjson_result<westmere::ondemand::value> simdjson_result<westm
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 /* end file include/simdjson/generic/ondemand/field-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/json_iterator-inl.h: #include "simdjson/generic/ondemand/json_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/json_iterator-inl.h for westmere: #include "simdjson/generic/ondemand/json_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/json_iterator-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 
@@ -95827,7 +96314,7 @@ simdjson_inline simdjson_result<westmere::ondemand::json_iterator>::simdjson_res
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/json_iterator-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/json_type-inl.h: #include "simdjson/generic/ondemand/json_type-inl.h" */
+/* including include/simdjson/generic/ondemand/json_type-inl.h for westmere: #include "simdjson/generic/ondemand/json_type-inl.h" */
 /* begin file include/simdjson/generic/ondemand/json_type-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 
@@ -95948,7 +96435,7 @@ simdjson_inline simdjson_result<westmere::ondemand::json_type>::simdjson_result(
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 /* end file include/simdjson/generic/ondemand/json_type-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/logger-inl.h: #include "simdjson/generic/ondemand/logger-inl.h" */
+/* including include/simdjson/generic/ondemand/logger-inl.h for westmere: #include "simdjson/generic/ondemand/logger-inl.h" */
 /* begin file include/simdjson/generic/ondemand/logger-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 
@@ -95980,36 +96467,70 @@ static inline char printable_char(char c) {
   }
 }
 
+template<typename... Args>
+static inline std::string string_format(const std::string& format, const Args&... args)
+{
+  SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+  int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1;
+  auto size = static_cast<size_t>(size_s);
+  if (size <= 0) return std::string();
+  std::unique_ptr<char[]> buf(new char[size]);
+  std::snprintf(buf.get(), size, format.c_str(), args...);
+  SIMDJSON_POP_DISABLE_WARNINGS
+  return std::string(buf.get(), buf.get() + size - 1);
+}
+
+static inline log_level get_log_level_from_env()
+{
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
+      char *lvl = getenv("SIMDJSON_LOG_LEVEL");
+  SIMDJSON_POP_DISABLE_WARNINGS
+  if (lvl && simdjson_strcasecmp(lvl, "ERROR") == 0) { return log_level::error; }
+  return log_level::info;
+}
+
+static inline log_level log_threshold()
+{
+  static log_level threshold = get_log_level_from_env();
+  return threshold;
+}
+
+static inline bool should_log(log_level level)
+{
+  return level >= log_threshold();
+}
+
 inline void log_event(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::info);
 }
 
 inline void log_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "", type, detail);
+  log_line(iter, index, depth, "", type, detail, log_level::info);
 }
 inline void log_value(const json_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "", type, detail, delta, depth_delta);
+  log_line(iter, "", type, detail, delta, depth_delta, log_level::info);
 }
 
 inline void log_start_value(const json_iterator &iter, token_position index, depth_t depth, const char *type, std::string_view detail) noexcept {
-  log_line(iter, index, depth, "+", type, detail);
+  log_line(iter, index, depth, "+", type, detail, log_level::info);
   if (LOG_ENABLED) { log_depth++; }
 }
 inline void log_start_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
-  log_line(iter, "+", type, "", delta, depth_delta);
+  log_line(iter, "+", type, "", delta, depth_delta, log_level::info);
   if (LOG_ENABLED) { log_depth++; }
 }
 
 inline void log_end_value(const json_iterator &iter, const char *type, int delta, int depth_delta) noexcept {
   if (LOG_ENABLED) { log_depth--; }
-  log_line(iter, "-", type, "", delta, depth_delta);
+  log_line(iter, "-", type, "", delta, depth_delta, log_level::info);
 }
 
 inline void log_error(const json_iterator &iter, const char *error, const char *detail, int delta, int depth_delta) noexcept {
-  log_line(iter, "ERROR: ", error, detail, delta, depth_delta);
+  log_line(iter, "ERROR: ", error, detail, delta, depth_delta, log_level::error);
 }
 inline void log_error(const json_iterator &iter, token_position index, depth_t depth, const char *error, const char *detail) noexcept {
-  log_line(iter, index, depth, "ERROR: ", error, detail);
+  log_line(iter, index, depth, "ERROR: ", error, detail, log_level::error);
 }
 
 inline void log_event(const value_iterator &iter, const char *type, std::string_view detail, int delta, int depth_delta) noexcept {
@@ -96034,96 +96555,101 @@ inline void log_error(const value_iterator &iter, const char *error, const char 
 
 inline void log_headers() noexcept {
   if (LOG_ENABLED) {
-    // Technically a static variable is not thread-safe, but if you are using threads
-    // and logging... well...
-    static bool displayed_hint{false};
-    log_depth = 0;
-    printf("\n");
-    if(!displayed_hint) {
-      // We only print this helpful header once.
-      printf("# Logging provides the depth and position of the iterator user-visible steps:\n");
-      printf("# +array says 'this is where we were when we discovered the start array'\n");
-      printf("# -array says 'this is where we were when we ended the array'\n");
-      printf("# skip says 'this is a structural or value I am skipping'\n");
-      printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
-      printf("#\n");
-      printf("# The indentation of the terms (array, string,...) indicates the depth,\n");
-      printf("# in addition to the depth being displayed.\n");
-      printf("#\n");
-      printf("# Every token in the document has a single depth determined by the tokens before it,\n");
-      printf("# and is not affected by what the token actually is.\n");
-      printf("#\n");
-      printf("# Not all structural elements are presented as tokens in the logs.\n");
-      printf("#\n");
-      printf("# We never give control to the user within an empty array or an empty object.\n");
-      printf("#\n");
-      printf("# Inside an array, having a depth greater than the array's depth means that\n");
-      printf("# we are pointing inside a value.\n");
-      printf("# Having a depth equal to the array means that we are pointing right before a value.\n");
-      printf("# Having a depth smaller than the array means that we have moved beyond the array.\n");
-      displayed_hint = true;
-    }
-    printf("\n");
-    printf("| %-*s ", LOG_EVENT_LEN,        "Event");
-    printf("| %-*s ", LOG_BUFFER_LEN,       "Buffer");
-    printf("| %-*s ", LOG_SMALL_BUFFER_LEN, "Next");
-    // printf("| %-*s ", 5,                    "Next#");
-    printf("| %-*s ", 5,                    "Depth");
-    printf("| Detail ");
-    printf("|\n");
+    if (simdjson_unlikely(should_log(log_level::info))) {
+      // Technically a static variable is not thread-safe, but if you are using threads and logging... well...
+      static bool displayed_hint{false};
+      log_depth = 0;
+      printf("\n");
+      if (!displayed_hint) {
+        // We only print this helpful header once.
+        printf("# Logging provides the depth and position of the iterator user-visible steps:\n");
+        printf("# +array says 'this is where we were when we discovered the start array'\n");
+        printf(
+            "# -array says 'this is where we were when we ended the array'\n");
+        printf("# skip says 'this is a structural or value I am skipping'\n");
+        printf("# +/-skip says 'this is a start/end array or object I am skipping'\n");
+        printf("#\n");
+        printf("# The indentation of the terms (array, string,...) indicates the depth,\n");
+        printf("# in addition to the depth being displayed.\n");
+        printf("#\n");
+        printf("# Every token in the document has a single depth determined by the tokens before it,\n");
+        printf("# and is not affected by what the token actually is.\n");
+        printf("#\n");
+        printf("# Not all structural elements are presented as tokens in the logs.\n");
+        printf("#\n");
+        printf("# We never give control to the user within an empty array or an empty object.\n");
+        printf("#\n");
+        printf("# Inside an array, having a depth greater than the array's depth means that\n");
+        printf("# we are pointing inside a value.\n");
+        printf("# Having a depth equal to the array means that we are pointing right before a value.\n");
+        printf("# Having a depth smaller than the array means that we have moved beyond the array.\n");
+        displayed_hint = true;
+      }
+      printf("\n");
+      printf("| %-*s ", LOG_EVENT_LEN, "Event");
+      printf("| %-*s ", LOG_BUFFER_LEN, "Buffer");
+      printf("| %-*s ", LOG_SMALL_BUFFER_LEN, "Next");
+      // printf("| %-*s ", 5,                    "Next#");
+      printf("| %-*s ", 5, "Depth");
+      printf("| Detail ");
+      printf("|\n");
 
-    printf("|%.*s", LOG_EVENT_LEN+2, DASHES);
-    printf("|%.*s", LOG_BUFFER_LEN+2, DASHES);
-    printf("|%.*s", LOG_SMALL_BUFFER_LEN+2, DASHES);
-    // printf("|%.*s", 5+2, DASHES);
-    printf("|%.*s", 5+2, DASHES);
-    printf("|--------");
-    printf("|\n");
-    fflush(stdout);
+      printf("|%.*s", LOG_EVENT_LEN + 2, DASHES);
+      printf("|%.*s", LOG_BUFFER_LEN + 2, DASHES);
+      printf("|%.*s", LOG_SMALL_BUFFER_LEN + 2, DASHES);
+      // printf("|%.*s", 5+2, DASHES);
+      printf("|%.*s", 5 + 2, DASHES);
+      printf("|--------");
+      printf("|\n");
+      fflush(stdout);
+    }
   }
 }
 
-inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta) noexcept {
-  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail);
+template <typename... Args>
+inline void log_line(const json_iterator &iter, const char *title_prefix, const char *title, std::string_view detail, int delta, int depth_delta, log_level level, Args&&... args) noexcept {
+  log_line(iter, iter.position()+delta, depth_t(iter.depth()+depth_delta), title_prefix, title, detail, level, std::forward<Args>(args)...);
 }
-inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail) noexcept {
+
+template <typename... Args>
+inline void log_line(const json_iterator &iter, token_position index, depth_t depth, const char *title_prefix, const char *title, std::string_view detail, log_level level, Args&&... args) noexcept {
   if (LOG_ENABLED) {
-    const int indent = depth*2;
-    const auto buf = iter.token.buf;
-    printf("| %*s%s%-*s ",
-      indent, "",
-      title_prefix,
-      LOG_EVENT_LEN - indent - int(strlen(title_prefix)), title
-      );
-    {
-      // Print the current structural.
-      printf("| ");
-      // Before we begin, the index might point right before the document.
-      // This could be unsafe, see https://github.com/simdjson/simdjson/discussions/1938
-      if(index < iter._root) {
-        printf("%*s", LOG_BUFFER_LEN, "");
-      } else {
-        auto current_structural = &buf[*index];
-        for (int i=0;i<LOG_BUFFER_LEN;i++) {
+    if (simdjson_unlikely(should_log(level))) {
+      const int indent = depth * 2;
+      const auto buf = iter.token.buf;
+      auto msg = string_format(title, std::forward<Args>(args)...);
+      printf("| %*s%s%-*s ", indent, "", title_prefix,
+             LOG_EVENT_LEN - indent - int(strlen(title_prefix)), msg.c_str());
+      {
+        // Print the current structural.
+        printf("| ");
+        // Before we begin, the index might point right before the document.
+        // This could be unsafe, see https://github.com/simdjson/simdjson/discussions/1938
+        if (index < iter._root) {
+          printf("%*s", LOG_BUFFER_LEN, "");
+        } else {
+          auto current_structural = &buf[*index];
+          for (int i = 0; i < LOG_BUFFER_LEN; i++) {
             printf("%c", printable_char(current_structural[i]));
+          }
         }
+        printf(" ");
       }
-      printf(" ");
-    }
-    {
-      // Print the next structural.
-      printf("| ");
-      auto next_structural = &buf[*(index+1)];
-      for (int i=0;i<LOG_SMALL_BUFFER_LEN;i++) {
-        printf("%c", printable_char(next_structural[i]));
+      {
+        // Print the next structural.
+        printf("| ");
+        auto next_structural = &buf[*(index + 1)];
+        for (int i = 0; i < LOG_SMALL_BUFFER_LEN; i++) {
+          printf("%c", printable_char(next_structural[i]));
+        }
+        printf(" ");
       }
-      printf(" ");
+      // printf("| %5u ", *(index+1));
+      printf("| %5i ", depth);
+      printf("| %6.*s ", int(detail.size()), detail.data());
+      printf("|\n");
+      fflush(stdout);
     }
-    // printf("| %5u ", *(index+1));
-    printf("| %5i ", depth);
-    printf("| %6.*s ", int(detail.size()) , detail.data());
-    printf("|\n");
-    fflush(stdout);
   }
 }
 
@@ -96134,7 +96660,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 /* end file include/simdjson/generic/ondemand/logger-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/object-inl.h: #include "simdjson/generic/ondemand/object-inl.h" */
+/* including include/simdjson/generic/ondemand/object-inl.h for westmere: #include "simdjson/generic/ondemand/object-inl.h" */
 /* begin file include/simdjson/generic/ondemand/object-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 
@@ -96156,13 +96682,19 @@ namespace ondemand {
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::operator[](const std::string_view key) & noexcept {
@@ -96174,13 +96706,19 @@ simdjson_inline simdjson_result<value> object::operator[](const std::string_view
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) && noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
-  if (!has_value) { return NO_SUCH_FIELD; }
+  if (!has_value) {
+    logger::log_line(iter.json_iter(), "ERROR: ", "Cannot find key %.*s", "", -1, 0, logger::log_level::error, static_cast<int>(key.size()), key.data());
+    return NO_SUCH_FIELD;
+  }
   return value(iter.child());
 }
 
@@ -96385,7 +96923,7 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<westmere::ond
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 /* end file include/simdjson/generic/ondemand/object-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/object_iterator-inl.h: #include "simdjson/generic/ondemand/object_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/object_iterator-inl.h for westmere: #include "simdjson/generic/ondemand/object_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/object_iterator-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 
@@ -96526,7 +97064,7 @@ simdjson_inline simdjson_result<westmere::ondemand::object_iterator> &simdjson_r
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/object_iterator-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/parser-inl.h: #include "simdjson/generic/ondemand/parser-inl.h" */
+/* including include/simdjson/generic/ondemand/parser-inl.h for westmere: #include "simdjson/generic/ondemand/parser-inl.h" */
 /* begin file include/simdjson/generic/ondemand/parser-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 
@@ -96691,7 +97229,7 @@ simdjson_inline simdjson_result<westmere::ondemand::parser>::simdjson_result(err
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 /* end file include/simdjson/generic/ondemand/parser-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/raw_json_string-inl.h: #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
+/* including include/simdjson/generic/ondemand/raw_json_string-inl.h for westmere: #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
 /* begin file include/simdjson/generic/ondemand/raw_json_string-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 
@@ -96897,7 +97435,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 /* end file include/simdjson/generic/ondemand/raw_json_string-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/serialization-inl.h: #include "simdjson/generic/ondemand/serialization-inl.h" */
+/* including include/simdjson/generic/ondemand/serialization-inl.h for westmere: #include "simdjson/generic/ondemand/serialization-inl.h" */
 /* begin file include/simdjson/generic/ondemand/serialization-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 
@@ -97133,7 +97671,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::westmere::ondemand:
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 /* end file include/simdjson/generic/ondemand/serialization-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/token_iterator-inl.h: #include "simdjson/generic/ondemand/token_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/token_iterator-inl.h for westmere: #include "simdjson/generic/ondemand/token_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/token_iterator-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 
@@ -97225,7 +97763,7 @@ simdjson_inline simdjson_result<westmere::ondemand::token_iterator>::simdjson_re
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 /* end file include/simdjson/generic/ondemand/token_iterator-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/value-inl.h: #include "simdjson/generic/ondemand/value-inl.h" */
+/* including include/simdjson/generic/ondemand/value-inl.h for westmere: #include "simdjson/generic/ondemand/value-inl.h" */
 /* begin file include/simdjson/generic/ondemand/value-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 
@@ -97667,7 +98205,7 @@ simdjson_inline simdjson_result<westmere::ondemand::value> simdjson_result<westm
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 /* end file include/simdjson/generic/ondemand/value-inl.h for westmere */
-/* including include/simdjson/generic/ondemand/value_iterator-inl.h: #include "simdjson/generic/ondemand/value_iterator-inl.h" */
+/* including include/simdjson/generic/ondemand/value_iterator-inl.h for westmere: #include "simdjson/generic/ondemand/value_iterator-inl.h" */
 /* begin file include/simdjson/generic/ondemand/value_iterator-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
 

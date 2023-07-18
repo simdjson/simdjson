@@ -1,6 +1,7 @@
-#ifndef SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H
-#define SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H
+#ifndef SIMDJSON_PARSEDJSON_ITERATOR_INL_H
+#define SIMDJSON_PARSEDJSON_ITERATOR_INL_H
 
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/parsedjson_iterator.h"
 #include "simdjson/internal/tape_ref-inl.h"
 #include "simdjson/internal/jsonformatutils.h"
@@ -536,4 +537,4 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #endif // SIMDJSON_DISABLE_DEPRECATED_API
 
 
-#endif // SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H
+#endif // SIMDJSON_PARSEDJSON_ITERATOR_INL_H

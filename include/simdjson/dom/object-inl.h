@@ -1,6 +1,7 @@
-#ifndef SIMDJSON_INLINE_OBJECT_H
-#define SIMDJSON_INLINE_OBJECT_H
+#ifndef SIMDJSON_OBJECT_INL_H
+#define SIMDJSON_OBJECT_INL_H
 
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/object.h"
 #include "simdjson/dom/document.h"
 
@@ -250,4 +251,4 @@ static_assert(std::ranges::sized_range<simdjson::simdjson_result<simdjson::dom::
 #endif // SIMDJSON_EXCEPTIONS
 #endif // defined(__cpp_lib_ranges)
 
-#endif // SIMDJSON_INLINE_OBJECT_H
+#endif // SIMDJSON_OBJECT_INL_H

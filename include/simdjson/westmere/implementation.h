@@ -1,9 +1,10 @@
 #ifndef SIMDJSON_WESTMERE_IMPLEMENTATION_H
 #define SIMDJSON_WESTMERE_IMPLEMENTATION_H
 
-#include "simdjson/base.h"
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/implementation.h"
 #include "simdjson/internal/instruction_set.h"
+#endif // SIMDJSON_AMALGAMATED
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_WESTMERE
 namespace simdjson {

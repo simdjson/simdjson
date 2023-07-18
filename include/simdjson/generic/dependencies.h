@@ -8,11 +8,12 @@
 // Internal headers needed for generics.
 // All includes referencing simdjson headers *not* under simdjson/generic must be here!
 // Otherwise, amalgamation will fail.
-#include "simdjson/dom/document.h"
+#include "simdjson/base.h"
+#include "simdjson/implementation.h"
+#include "simdjson/internal/instruction_set.h"
 #include "simdjson/internal/dom_parser_implementation.h"
 #include "simdjson/internal/jsoncharutils_tables.h"
 #include "simdjson/internal/numberparsing_tables.h"
 #include "simdjson/internal/simdprune_tables.h"
-#include "simdjson/padded_string_view.h"
 
 #endif // SIMDJSON_GENERIC_DEPENDENCIES_H

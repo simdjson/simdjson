@@ -1,8 +1,9 @@
-#ifndef SIMDJSON_INLINE_ARRAY_H
-#define SIMDJSON_INLINE_ARRAY_H
+#ifndef SIMDJSON_ARRAY_INL_H
+#define SIMDJSON_ARRAY_INL_H
 
 #include <utility>
 
+#include "simdjson/dom/base.h"
 #include "simdjson/dom/array.h"
 #include "simdjson/dom/element.h"
 #include "simdjson/error-inl.h"
@@ -173,4 +174,4 @@ static_assert(std::ranges::sized_range<simdjson::simdjson_result<simdjson::dom::
 #endif // SIMDJSON_EXCEPTIONS
 #endif // defined(__cpp_lib_ranges)
 
-#endif // SIMDJSON_INLINE_ARRAY_H
+#endif // SIMDJSON_ARRAY_INL_H

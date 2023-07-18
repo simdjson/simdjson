@@ -1,6 +1,7 @@
 #ifndef SIMDJSON_SRC_IMPLEMENTATION_CPP
 #define SIMDJSON_SRC_IMPLEMENTATION_CPP
 
+#include "generic/dependencies.h"
 #include "simdjson/implementation.h"
 #include "simdjson/internal/isadetection.h"
 #include <initializer_list>
@@ -14,6 +15,8 @@ bool implementation::supported_by_runtime_system() const {
 }
 
 } // namespace simdjson
+
+#define SIMDJSON_AMALGAMATED
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 #include "simdjson/arm64/implementation.h"
@@ -87,6 +90,8 @@ static const simdjson::westmere::implementation* get_westmere_singleton() {
 } // namespace internal
 } // namespace simdjson
 #endif // SIMDJSON_IMPLEMENTATION_WESTMERE
+
+#undef SIMDJSON_AMALGAMATED
 
 namespace simdjson {
 namespace internal {
