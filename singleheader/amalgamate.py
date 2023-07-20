@@ -10,7 +10,7 @@ import os
 import re
 import shutil
 import datetime
-from typing import Dict, Iterable, List, Literal, Optional, Protocol, Set, TextIO, Union, cast
+from typing import Dict, List, Optional, Set, TextIO, Union, cast
 
 if sys.version_info < (3, 0):
     sys.stdout.write("Sorry, requires Python 3.x or better\n")
@@ -36,9 +36,9 @@ if "AMALGAMATE_OUTPUT_PATH" not in os.environ:
 else:
     AMALGAMATE_OUTPUT_PATH = os.environ["AMALGAMATE_OUTPUT_PATH"]
 
-RelativeRoot = Literal['src','include']
+RelativeRoot = str # Literal['src','include'] # Literal not supported in Python 3.7 (CI)
 RELATIVE_ROOTS: List[RelativeRoot] = ['src', 'include' ]
-Implementation = Literal['arm64', 'fallback', 'haswell', 'icelake', 'ppc64', 'westmere']
+Implementation = str # Literal['arm64', 'fallback', 'haswell', 'icelake', 'ppc64', 'westmere'] # Literal not supported in Python 3.7 (CI)
 IMPLEMENTATIONS: List[Implementation] = [ 'arm64', 'fallback', 'haswell', 'icelake', 'ppc64', 'westmere' ]
 GENERIC_INCLUDE = "simdjson/generic"
 GENERIC_SRC = "generic"
