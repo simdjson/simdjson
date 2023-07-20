@@ -6,6 +6,8 @@
 #include "simdjson/generic/jsoncharutils.h"
 #endif // SIMDJSON_AMALGAMATED
 
+#include <cstring>
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {

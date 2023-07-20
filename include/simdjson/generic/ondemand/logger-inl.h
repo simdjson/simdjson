@@ -8,6 +8,9 @@
 #include "simdjson/generic/ondemand/value_iterator.h"
 #endif // SIMDJSON_AMALGAMATED
 
+#include <memory>
+#include <cstring>
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {

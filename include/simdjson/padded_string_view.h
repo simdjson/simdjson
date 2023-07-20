@@ -69,7 +69,7 @@ public:
  *        underlying output stream, that error will be propagated (simdjson_error will not be
  *        thrown).
  */
-inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string_view> &s) noexcept(false) { return out << s.value(); }
+inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string_view> &s) noexcept(false);
 #endif
 
 } // namespace simdjson

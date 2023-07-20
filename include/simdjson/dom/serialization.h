@@ -146,16 +146,9 @@ namespace dom {
  * @param value The element.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, simdjson::dom::element value) {
-    simdjson::internal::string_builder<> sb;
-    sb.append(value);
-    return (out << sb.str());
-}
+inline std::ostream& operator<<(std::ostream& out, simdjson::dom::element value);
 #if SIMDJSON_EXCEPTIONS
-inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::dom::element> x) {
-    if (x.error()) { throw simdjson::simdjson_error(x.error()); }
-    return (out << x.value());
-}
+inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::dom::element> x);
 #endif
 /**
  * Print JSON to an output stream.
@@ -164,16 +157,9 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
  * @param value The array.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, simdjson::dom::array value)  {
-    simdjson::internal::string_builder<> sb;
-    sb.append(value);
-    return (out << sb.str());
-}
+inline std::ostream& operator<<(std::ostream& out, simdjson::dom::array value);
 #if SIMDJSON_EXCEPTIONS
-inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::dom::array> x) {
-    if (x.error()) { throw simdjson::simdjson_error(x.error()); }
-    return (out << x.value());
-}
+inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::dom::array> x);
 #endif
 /**
  * Print JSON to an output stream.
@@ -182,16 +168,9 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
  * @param value The object.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, simdjson::dom::object value)   {
-    simdjson::internal::string_builder<> sb;
-    sb.append(value);
-    return (out << sb.str());
-}
+inline std::ostream& operator<<(std::ostream& out, simdjson::dom::object value);
 #if SIMDJSON_EXCEPTIONS
-inline std::ostream& operator<<(std::ostream& out,  simdjson::simdjson_result<simdjson::dom::object> x) {
-    if (x.error()) { throw  simdjson::simdjson_error(x.error()); }
-    return (out << x.value());
-}
+inline std::ostream& operator<<(std::ostream& out,  simdjson::simdjson_result<simdjson::dom::object> x);
 #endif
 } // namespace dom
 

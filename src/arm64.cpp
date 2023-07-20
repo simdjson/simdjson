@@ -1,6 +1,10 @@
 #ifndef SIMDJSON_SRC_ARM64_CPP
 #define SIMDJSON_SRC_ARM64_CPP
 
+#ifndef SIMDJSON_AMALGAMATED
+#include "base.h"
+#endif // SIMDJSON_AMALGAMATED
+
 #include "simdjson/arm64.h"
 #include "simdjson/arm64/implementation.h"
 
@@ -13,7 +17,7 @@
 // Stage 1
 //
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 
 simdjson_warn_unused error_code implementation::create_dom_parser_implementation(
   size_t capacity,
@@ -111,7 +115,7 @@ simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2,
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 
 //
@@ -122,7 +126,7 @@ simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2,
 // Implementation-specific overrides
 //
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 namespace stage1 {
 
@@ -172,7 +176,7 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   return stage2(_doc);
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 
 #include "simdjson/arm64/end.h"

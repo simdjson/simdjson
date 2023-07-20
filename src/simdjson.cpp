@@ -1,6 +1,6 @@
 #define SIMDJSON_SRC_SIMDJSON_CPP
 
-#include "simdjson/common_defs.h"
+#include "base.h"
 
 SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 

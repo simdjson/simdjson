@@ -1,6 +1,10 @@
 #ifndef SIMDJSON_SRC_ICELAKE_CPP
 #define SIMDJSON_SRC_ICELAKE_CPP
 
+#ifndef SIMDJSON_AMALGAMATED
+#include "base.h"
+#endif // SIMDJSON_AMALGAMATED
+
 #include "simdjson/icelake.h"
 #include "simdjson/icelake/implementation.h"
 
@@ -19,7 +23,7 @@
 //
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace icelake {
 
 simdjson_warn_unused error_code implementation::create_dom_parser_implementation(
   size_t capacity,
@@ -111,7 +115,7 @@ simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2,
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace icelake
 } // namespace simdjson
 
 /**
@@ -122,7 +126,7 @@ simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2,
 // Under GCC 12, the intrinsic _mm512_extracti32x4_epi32 may generate 'maybe uninitialized'.
 // as a workaround, we disable warnings within the following function.
 SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
-namespace simdjson { namespace SIMDJSON_IMPLEMENTATION { namespace { namespace stage1 {
+namespace simdjson { namespace icelake { namespace { namespace stage1 {
 simdjson_inline void bit_indexer::write(uint32_t idx, uint64_t bits) {
     // In some instances, the next branch is expensive because it is mispredicted.
     // Unfortunately, in other cases,
@@ -166,7 +170,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 // Implementation-specific overrides
 //
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace icelake {
 namespace {
 namespace stage1 {
 
@@ -214,7 +218,7 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   return stage2(_doc);
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace icelake
 } // namespace simdjson
 
 #include "simdjson/icelake/end.h"

@@ -1,5 +1,7 @@
 CompileFlags:
     CompilationDatabase: build
+    Add:
+        - -Wundefined-inline
 Diagnostics:
     Suppress:
         - misc-unused-alias-decls
@@ -16,10 +18,28 @@ If:
 CompileFlags:
     Add:
         - -Wno-unneeded-internal-declaration
-        - -Wno-undefined-inline # TODO fix and remove these violations
         - -Wno-undefined-internal # TODO fix and remove these violations
         - -Wno-unused-function
         - -Wno-unused-const-variable
 Diagnostics:
     Suppress:
         - pp_including_mainfile_in_preamble
+---
+# Amalgamated files that require or partly define an implementation
+If:
+    PathMatch:
+        - .*/(arm64|fallback|haswell|icelake|ppc64|westmere)/begin.h
+        - .*/generic/.*
+Diagnostics:
+    Suppress:
+        - pragma_attribute_no_pop_eof
+---
+# clang has a bad time detecting the push/pop together in src/ for some reason
+If:
+    PathMatch:
+        - include/simdjson/.*/end.h
+        - src/(arm64|fallback|haswell|icelake|ppc64|westmere).cpp
+Diagnostics:
+    Suppress:
+        - pragma_attribute_no_pop_eof
+        - pragma_attribute_stack_mismatch

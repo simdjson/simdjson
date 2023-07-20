@@ -9,6 +9,7 @@
 
 #include <limits>
 #include <ostream>
+#include <cstring>
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

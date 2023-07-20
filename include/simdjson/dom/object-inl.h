@@ -5,6 +5,11 @@
 #include "simdjson/dom/object.h"
 #include "simdjson/dom/document.h"
 
+#include "simdjson/dom/element-inl.h"
+#include "simdjson/error-inl.h"
+
+#include <cstring>
+
 namespace simdjson {
 
 //

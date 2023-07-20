@@ -1,12 +1,14 @@
 #ifndef SIMDJSON_HASWELL_BITMANIPULATION_H
 #define SIMDJSON_HASWELL_BITMANIPULATION_H
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/haswell/base.h"
 #include "simdjson/haswell/intrinsics.h"
 #include "simdjson/haswell/bitmask.h"
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 
 // We sometimes call trailing_zero on inputs that are zero,
@@ -63,7 +65,7 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 
 #endif // SIMDJSON_HASWELL_BITMANIPULATION_H

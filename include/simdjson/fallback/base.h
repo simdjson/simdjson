@@ -16,11 +16,4 @@ class implementation;
 } // namespace fallback
 } // namespace simdjson
 
-#ifndef SIMDJSON_AMALGAMATED
-// If we're editing one of the files in this directory, begin the implementation!
-#ifndef SIMDJSON_IMPLEMENTATION
-#include "simdjson/fallback/begin.h"
-#endif
-#endif // SIMDJSON_AMALGAMATED
-
 #endif // SIMDJSON_FALLBACK_BASE_H

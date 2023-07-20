@@ -1,15 +1,14 @@
 #ifndef SIMDJSON_ARM64_SIMD_H
 #define SIMDJSON_ARM64_SIMD_H
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/arm64/base.h"
 #include "simdjson/arm64/bitmanipulation.h"
-
-#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/internal/simdprune_tables.h"
 #endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 namespace simd {
 
@@ -528,7 +527,7 @@ simdjson_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int
 
 } // namespace simd
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 
 #endif // SIMDJSON_ARM64_SIMD_H

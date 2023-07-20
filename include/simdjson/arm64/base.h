@@ -23,11 +23,4 @@ template <typename T> struct simd8x64;
 } // namespace arm64
 } // namespace simdjson
 
-#ifndef SIMDJSON_AMALGAMATED
-// If we're editing one of the files in this directory, begin the implementation!
-#ifndef SIMDJSON_IMPLEMENTATION
-#include "simdjson/arm64/begin.h"
-#endif
-#endif // SIMDJSON_AMALGAMATED
-
 #endif // SIMDJSON_ARM64_BASE_H

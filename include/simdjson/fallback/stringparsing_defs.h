@@ -1,10 +1,12 @@
 #ifndef SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H
 #define SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/fallback/base.h"
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 namespace {
 
 // Holds backslashes and quotes locations.
@@ -28,7 +30,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H

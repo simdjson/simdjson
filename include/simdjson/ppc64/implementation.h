@@ -2,6 +2,7 @@
 #define SIMDJSON_PPC64_IMPLEMENTATION_H
 
 #ifndef SIMDJSON_AMALGAMATED
+#include "simdjson/ppc64/base.h"
 #include "simdjson/implementation.h"
 #include "simdjson/internal/instruction_set.h"
 #endif // SIMDJSON_AMALGAMATED

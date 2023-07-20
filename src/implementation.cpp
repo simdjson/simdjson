@@ -1,9 +1,11 @@
 #ifndef SIMDJSON_SRC_IMPLEMENTATION_CPP
 #define SIMDJSON_SRC_IMPLEMENTATION_CPP
 
+#include "base.h"
 #include "generic/dependencies.h"
 #include "simdjson/implementation.h"
 #include "simdjson/internal/isadetection.h"
+
 #include <initializer_list>
 
 namespace simdjson {

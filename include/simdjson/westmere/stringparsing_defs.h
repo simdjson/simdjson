@@ -5,7 +5,7 @@
 #include "simdjson/westmere/simd.h"
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 
 using namespace simd;
@@ -41,7 +41,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 
 #endif // SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H

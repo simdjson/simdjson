@@ -8,6 +8,7 @@
 
 #include "simdjson/error-inl.h"
 #include "simdjson/padded_string-inl.h"
+#include "simdjson/dom/document_stream-inl.h"
 #include "simdjson/dom/element-inl.h"
 
 #include <climits>

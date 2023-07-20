@@ -2,6 +2,7 @@
 #define SIMDJSON_ARM64_IMPLEMENTATION_H
 
 #ifndef SIMDJSON_AMALGAMATED
+#include "simdjson/base.h"
 #include "simdjson/implementation.h"
 #include "simdjson/internal/instruction_set.h"
 #endif // SIMDJSON_AMALGAMATED

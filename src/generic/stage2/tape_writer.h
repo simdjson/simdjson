@@ -6,6 +6,8 @@
 #include "simdjson/internal/tape_type.h"
 #endif // SIMDJSON_AMALGAMATED
 
+#include <cstring>
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {

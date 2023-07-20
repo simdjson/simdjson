@@ -9,7 +9,7 @@
 #endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace numberparsing {
 
 /** @private */
@@ -51,7 +51,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 }
 
 } // namespace numberparsing
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1

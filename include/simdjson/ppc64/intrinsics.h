@@ -1,7 +1,9 @@
 #ifndef SIMDJSON_PPC64_INTRINSICS_H
 #define SIMDJSON_PPC64_INTRINSICS_H
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/ppc64/base.h"
+#endif // SIMDJSON_AMALGAMATED
 
 // This should be the correct header whether
 // you use visual studio or other compilers.

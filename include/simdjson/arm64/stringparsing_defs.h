@@ -1,12 +1,14 @@
 #ifndef SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 #define SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/arm64/base.h"
 #include "simdjson/arm64/simd.h"
 #include "simdjson/arm64/bitmanipulation.h"
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 
 using namespace simd;
@@ -45,7 +47,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 
 #endif // SIMDJSON_ARM64_STRINGPARSING_DEFS_H

@@ -5,6 +5,9 @@
 #include "generic/stage2/base.h"
 #endif // SIMDJSON_AMALGAMATED
 
+#include <cstring>
+
+
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
 namespace simdjson {

@@ -10,6 +10,7 @@
 // Otherwise, amalgamation will fail.
 #include "simdjson/base.h"
 #include "simdjson/implementation.h"
+#include "simdjson/implementation_detection.h"
 #include "simdjson/internal/instruction_set.h"
 #include "simdjson/internal/dom_parser_implementation.h"
 #include "simdjson/internal/jsoncharutils_tables.h"

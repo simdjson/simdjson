@@ -1,6 +1,10 @@
 #ifndef SIMDJSON_SRC_FALLBACK_CPP
 #define SIMDJSON_SRC_FALLBACK_CPP
 
+#ifndef SIMDJSON_AMALGAMATED
+#include "base.h"
+#endif // SIMDJSON_AMALGAMATED
+
 #include "simdjson/fallback.h"
 #include "simdjson/fallback/implementation.h"
 
@@ -17,7 +21,7 @@
 //
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 
 simdjson_warn_unused error_code implementation::create_dom_parser_implementation(
   size_t capacity,
@@ -366,7 +370,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
   return true;
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 
 //
@@ -374,7 +378,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
 //
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 
 simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<false>(*this, _doc);
@@ -398,7 +402,7 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   return stage2(_doc);
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 
 #include "simdjson/fallback/end.h"

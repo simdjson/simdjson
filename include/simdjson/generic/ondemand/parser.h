@@ -6,6 +6,8 @@
 #include "simdjson/generic/implementation_simdjson_result_base.h"
 #endif // SIMDJSON_AMALGAMATED
 
+#include <memory>
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {

@@ -1,11 +1,12 @@
 #ifndef SIMDJSON_FALLBACK_NUMBERPARSING_DEFS_H
 #define SIMDJSON_FALLBACK_NUMBERPARSING_DEFS_H
 
-#include "simdjson/fallback/base.h"
-
 #ifndef SIMDJSON_AMALGAMATED
+#include "simdjson/fallback/base.h"
 #include "simdjson/internal/numberparsing_tables.h"
 #endif // SIMDJSON_AMALGAMATED
+
+#include <cstring>
 
 #ifdef JSON_TEST_NUMBERS // for unit testing
 void found_invalid_number(const uint8_t *buf);
@@ -15,7 +16,7 @@ void found_float(double result, const uint8_t *buf);
 #endif
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 namespace numberparsing {
 
 // credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
@@ -71,7 +72,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 }
 
 } // namespace numberparsing
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1

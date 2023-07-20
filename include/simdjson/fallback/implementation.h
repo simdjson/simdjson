@@ -2,6 +2,7 @@
 #define SIMDJSON_FALLBACK_IMPLEMENTATION_H
 
 #ifndef SIMDJSON_AMALGAMATED
+#include "simdjson/fallback/base.h"
 #include "simdjson/implementation.h"
 #endif // SIMDJSON_AMALGAMATED
 

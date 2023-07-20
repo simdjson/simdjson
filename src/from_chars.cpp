@@ -1,6 +1,9 @@
 #ifndef SIMDJSON_SRC_FROM_CHARS_CPP
 #define SIMDJSON_SRC_FROM_CHARS_CPP
 
+#include "base.h"
+
+#include <cstdint>
 #include <cstring>
 #include <limits>
 

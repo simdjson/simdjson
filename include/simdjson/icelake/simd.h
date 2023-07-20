@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_ICELAKE_SIMD_H
 #define SIMDJSON_ICELAKE_SIMD_H
 
-#include "simdjson/icelake/base.h"
-#include "simdjson/icelake/bitmanipulation.h"
-
 #ifndef SIMDJSON_AMALGAMATED
+#include "simdjson/icelake/base.h"
+#include "simdjson/icelake/intrinsics.h"
+#include "simdjson/icelake/bitmanipulation.h"
 #include "simdjson/internal/simdprune_tables.h"
 #endif // SIMDJSON_AMALGAMATED
 
@@ -33,7 +33,7 @@ inline __m512i _mm512_set_epi8(uint8_t a0, uint8_t a1, uint8_t a2, uint8_t a3, u
 
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace icelake {
 namespace {
 namespace simd {
 
@@ -366,7 +366,7 @@ namespace simd {
 } // namespace simd
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace icelake
 } // namespace simdjson
 
 #endif // SIMDJSON_ICELAKE_SIMD_H

@@ -16,19 +16,14 @@ class implementation;
 
 namespace {
 namespace simd {
+
 template <typename T> struct simd8;
 template <typename T> struct simd8x64;
+
 } // namespace simd
 } // unnamed namespace
 
 } // namespace westmere
 } // namespace simdjson
-
-#ifndef SIMDJSON_AMALGAMATED
-// If we're editing one of the files in this directory, begin the implementation!
-#ifndef SIMDJSON_IMPLEMENTATION
-#include "simdjson/westmere/begin.h"
-#endif
-#endif // SIMDJSON_AMALGAMATED
 
 #endif // SIMDJSON_WESTMERE_BASE_H

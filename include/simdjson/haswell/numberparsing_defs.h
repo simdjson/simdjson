@@ -1,15 +1,17 @@
 #ifndef SIMDJSON_HASWELL_NUMBERPARSING_DEFS_H
 #define SIMDJSON_HASWELL_NUMBERPARSING_DEFS_H
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/haswell/base.h"
 #include "simdjson/haswell/intrinsics.h"
+#endif // SIMDJSON_AMALGAMATED
 
 #ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/internal/numberparsing_tables.h"
 #endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace numberparsing {
 
 /** @private */
@@ -51,7 +53,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 }
 
 } // namespace numberparsing
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1

@@ -1,8 +1,11 @@
 #ifndef SIMDJSON_PPC64_NUMBERPARSING_DEFS_H
 #define SIMDJSON_PPC64_NUMBERPARSING_DEFS_H
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/ppc64/base.h"
 #include "simdjson/ppc64/intrinsics.h"
+#include "simdjson/internal/numberparsing_tables.h"
+#endif // SIMDJSON_AMALGAMATED
 
 #include <cstring>
 
@@ -12,12 +15,8 @@
 #include <sys/endian.h>
 #endif
 
-#ifndef SIMDJSON_AMALGAMATED
-#include "simdjson/internal/numberparsing_tables.h"
-#endif // SIMDJSON_AMALGAMATED
-
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace numberparsing {
 
 // we don't have appropriate instructions, so let us use a scalar function
@@ -58,7 +57,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 }
 
 } // namespace numberparsing
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1

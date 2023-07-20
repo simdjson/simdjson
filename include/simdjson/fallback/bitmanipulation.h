@@ -1,10 +1,12 @@
 #ifndef SIMDJSON_FALLBACK_BITMANIPULATION_H
 #define SIMDJSON_FALLBACK_BITMANIPULATION_H
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/fallback/base.h"
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 namespace {
 
 #if defined(_MSC_VER) && !defined(_M_ARM64) && !defined(_M_X64)
@@ -40,7 +42,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_BITMANIPULATION_H

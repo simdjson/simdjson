@@ -1,11 +1,14 @@
 #ifndef SIMDJSON_ICELAKE_STRINGPARSING_DEFS_H
 #define SIMDJSON_ICELAKE_STRINGPARSING_DEFS_H
 
+#ifndef SIMDJSON_AMALGAMATED
+#include "simdjson/icelake/base.h"
 #include "simdjson/icelake/simd.h"
 #include "simdjson/icelake/bitmanipulation.h"
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace icelake {
 namespace {
 
 using namespace simd;
@@ -39,7 +42,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace icelake
 } // namespace simdjson
 
 #endif // SIMDJSON_ICELAKE_STRINGPARSING_DEFS_H

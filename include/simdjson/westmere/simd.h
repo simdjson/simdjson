@@ -1,15 +1,14 @@
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/westmere/base.h"
 #include "simdjson/westmere/bitmanipulation.h"
-
-#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/internal/simdprune_tables.h"
 #endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 namespace simd {
 
@@ -333,7 +332,7 @@ namespace simd {
 
 } // namespace simd
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 
 #endif // SIMDJSON_WESTMERE_SIMD_INPUT_H

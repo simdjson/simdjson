@@ -5,6 +5,8 @@
 #include "generic/stage1/base.h"
 #endif // SIMDJSON_AMALGAMATED
 
+#include <cstring>
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {

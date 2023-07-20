@@ -3,6 +3,8 @@
 
 #include "simdjson/padded_string_view.h"
 
+#include "simdjson/error-inl.h"
+
 namespace simdjson {
 
 inline padded_string_view::padded_string_view(const char* s, size_t len, size_t capacity) noexcept
@@ -29,6 +31,11 @@ inline size_t padded_string_view::capacity() const noexcept { return _capacity; 
 
 inline size_t padded_string_view::padding() const noexcept { return capacity() - length(); }
 
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string_view> &s) noexcept(false) { return out << s.value(); }
+#endif
+
 } // namespace simdjson
+
 
 #endif // SIMDJSON_PADDED_STRING_VIEW_INL_H

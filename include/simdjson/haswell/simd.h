@@ -1,15 +1,15 @@
 #ifndef SIMDJSON_HASWELL_SIMD_H
 #define SIMDJSON_HASWELL_SIMD_H
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/haswell/base.h"
 #include "simdjson/haswell/intrinsics.h"
-
-#ifndef SIMDJSON_AMALGAMATED
+#include "simdjson/haswell/bitmanipulation.h"
 #include "simdjson/internal/simdprune_tables.h"
 #endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 namespace simd {
 
@@ -366,7 +366,7 @@ namespace simd {
 } // namespace simd
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 
 #endif // SIMDJSON_HASWELL_SIMD_H

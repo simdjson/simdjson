@@ -1,11 +1,13 @@
 #ifndef SIMDJSON_HASWELL_BITMASK_H
 #define SIMDJSON_HASWELL_BITMASK_H
 
+#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/haswell/base.h"
 #include "simdjson/haswell/intrinsics.h"
+#endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace haswell {
 namespace {
 
 //
@@ -22,7 +24,7 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace haswell
 } // namespace simdjson
 
 #endif // SIMDJSON_HASWELL_BITMASK_H
