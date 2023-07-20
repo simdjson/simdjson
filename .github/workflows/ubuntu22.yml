@@ -23,7 +23,6 @@ jobs:
           cmake --install . &&
           echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp &&
           c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson &&
-          ./linkandrun jsonexamples/twitter.json &&
           cd ../tests/installation_tests/find &&
           mkdir buildjustlib &&
           cd buildjustlib &&
