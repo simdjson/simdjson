@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_HASWELL_BITMASK_H
 #define SIMDJSON_HASWELL_BITMASK_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/haswell/base.h"
 #include "simdjson/haswell/intrinsics.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace haswell {

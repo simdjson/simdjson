@@ -1,4 +1,4 @@
-#if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_SRC_GENERIC_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_SRC_GENERIC_DEPENDENCIES_H)
 #error generic/dependencies.h must be included before generic/amalgamated.h!
 #endif
 

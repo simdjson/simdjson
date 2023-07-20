@@ -1,11 +1,11 @@
 #ifndef SIMDJSON_HASWELL_IMPLEMENTATION_H
 #define SIMDJSON_HASWELL_IMPLEMENTATION_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/haswell/base.h"
 #include "simdjson/implementation.h"
 #include "simdjson/internal/instruction_set.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
 namespace simdjson {

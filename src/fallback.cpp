@@ -1,9 +1,9 @@
 #ifndef SIMDJSON_SRC_FALLBACK_CPP
 #define SIMDJSON_SRC_FALLBACK_CPP
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include <base.h>
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <simdjson/fallback.h>
 #include <simdjson/fallback/implementation.h>

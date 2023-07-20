@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_ICELAKE_BITMANIPULATION_H
 #define SIMDJSON_ICELAKE_BITMANIPULATION_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/icelake/base.h"
 #include "simdjson/icelake/intrinsics.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace icelake {

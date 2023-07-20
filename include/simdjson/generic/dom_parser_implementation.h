@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 #include "simdjson/generic/base.h"
 #include "simdjson/internal/dom_parser_implementation.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

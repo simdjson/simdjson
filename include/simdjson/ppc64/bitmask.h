@@ -1,9 +1,9 @@
 #ifndef SIMDJSON_PPC64_BITMASK_H
 #define SIMDJSON_PPC64_BITMASK_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/ppc64/base.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace ppc64 {

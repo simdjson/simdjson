@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_FALLBACK_IMPLEMENTATION_H
 #define SIMDJSON_FALLBACK_IMPLEMENTATION_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/fallback/base.h"
 #include "simdjson/implementation.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace fallback {

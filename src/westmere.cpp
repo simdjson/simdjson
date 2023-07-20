@@ -1,9 +1,9 @@
 #ifndef SIMDJSON_SRC_WESTMERE_CPP
 #define SIMDJSON_SRC_WESTMERE_CPP
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include <base.h>
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <simdjson/westmere.h>
 #include <simdjson/westmere/implementation.h>

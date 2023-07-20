@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 #include <generic/stage2/base.h>
 #include <simdjson/generic/jsoncharutils.h>
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 // This file contains the common code every implementation uses
 // It is intended to be included multiple times and compiled multiple times

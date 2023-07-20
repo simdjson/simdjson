@@ -1,12 +1,12 @@
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/logger.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
 #include "simdjson/generic/ondemand/value_iterator.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <memory>
 #include <cstring>

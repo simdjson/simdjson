@@ -1,12 +1,12 @@
 #ifndef SIMDJSON_ICELAKE_SIMD_H
 #define SIMDJSON_ICELAKE_SIMD_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/icelake/base.h"
 #include "simdjson/icelake/intrinsics.h"
 #include "simdjson/icelake/bitmanipulation.h"
 #include "simdjson/internal/simdprune_tables.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #if defined(__GNUC__) && !defined(__clang__)
 #if __GNUC__ == 8

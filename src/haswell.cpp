@@ -1,9 +1,9 @@
 #ifndef SIMDJSON_SRC_HASWELL_CPP
 #define SIMDJSON_SRC_HASWELL_CPP
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include <base.h>
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <simdjson/haswell.h>
 #include <simdjson/haswell/implementation.h>

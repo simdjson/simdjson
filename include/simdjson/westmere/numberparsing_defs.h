@@ -4,9 +4,9 @@
 #include "simdjson/westmere/base.h"
 #include "simdjson/westmere/intrinsics.h"
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/internal/numberparsing_tables.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace westmere {

@@ -1,11 +1,11 @@
 #ifndef SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 #define SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/ppc64/base.h"
 #include "simdjson/ppc64/bitmanipulation.h"
 #include "simdjson/ppc64/simd.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace ppc64 {

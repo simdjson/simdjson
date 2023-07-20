@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-20 10:01:22 -0700. Do not edit! */
+/* auto-generated on 2023-07-20 10:48:25 -0700. Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -9815,8 +9815,8 @@ namespace simdjson {
 
 /* including simdjson/generic/dependencies.h: #include "simdjson/generic/dependencies.h" */
 /* begin file simdjson/generic/dependencies.h */
-#ifdef SIMDJSON_AMALGAMATED
-#error simdjson/generic/dependencies.h must be included before defining SIMDJSON_AMALGAMATED!
+#ifdef SIMDJSON_CONDITIONAL_INCLUDE
+#error simdjson/generic/dependencies.h must be included before defining SIMDJSON_CONDITIONAL_INCLUDE!
 #endif
 
 #ifndef SIMDJSON_GENERIC_DEPENDENCIES_H
@@ -10026,8 +10026,8 @@ extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
 #endif // SIMDJSON_GENERIC_DEPENDENCIES_H
 /* end file simdjson/generic/dependencies.h */
 
-/* defining SIMDJSON_AMALGAMATED */
-#define SIMDJSON_AMALGAMATED
+/* defining SIMDJSON_CONDITIONAL_INCLUDE */
+#define SIMDJSON_CONDITIONAL_INCLUDE
 
 #if SIMDJSON_BUILTIN_IMPLEMENTATION_IS(arm64)
 /* including simdjson/arm64/implementation.h: #include "simdjson/arm64/implementation.h" */
@@ -10035,11 +10035,11 @@ extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
 #ifndef SIMDJSON_ARM64_IMPLEMENTATION_H
 #define SIMDJSON_ARM64_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/instruction_set.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -10070,10 +10070,10 @@ public:
 #ifndef SIMDJSON_FALLBACK_IMPLEMENTATION_H
 #define SIMDJSON_FALLBACK_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/fallback/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -10108,11 +10108,11 @@ public:
 #ifndef SIMDJSON_HASWELL_IMPLEMENTATION_H
 #define SIMDJSON_HASWELL_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/instruction_set.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
 namespace simdjson {
@@ -10148,11 +10148,11 @@ public:
 #ifndef SIMDJSON_ICELAKE_IMPLEMENTATION_H
 #define SIMDJSON_ICELAKE_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/instruction_set.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_ICELAKE
 namespace simdjson {
@@ -10188,11 +10188,11 @@ public:
 #ifndef SIMDJSON_PPC64_IMPLEMENTATION_H
 #define SIMDJSON_PPC64_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/instruction_set.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 
@@ -10232,11 +10232,11 @@ public:
 #ifndef SIMDJSON_WESTMERE_IMPLEMENTATION_H
 #define SIMDJSON_WESTMERE_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/instruction_set.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_WESTMERE
 namespace simdjson {
@@ -10266,8 +10266,8 @@ public:
 #error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION
 #endif
 
-/* undefining SIMDJSON_AMALGAMATED */
-#undef SIMDJSON_AMALGAMATED
+/* undefining SIMDJSON_CONDITIONAL_INCLUDE */
+#undef SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
   /**
@@ -10284,8 +10284,8 @@ namespace simdjson {
 
 /* skipped duplicate #include "simdjson/generic/dependencies.h" */
 
-/* defining SIMDJSON_AMALGAMATED */
-#define SIMDJSON_AMALGAMATED
+/* defining SIMDJSON_CONDITIONAL_INCLUDE */
+#define SIMDJSON_CONDITIONAL_INCLUDE
 
 #if SIMDJSON_BUILTIN_IMPLEMENTATION_IS(arm64)
 /* including simdjson/arm64.h: #include "simdjson/arm64.h" */
@@ -10302,9 +10302,9 @@ namespace simdjson {
 #ifndef SIMDJSON_ARM64_BASE_H
 #define SIMDJSON_ARM64_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 /**
@@ -10331,9 +10331,9 @@ template <typename T> struct simd8x64;
 #ifndef SIMDJSON_ARM64_INTRINSICS_H
 #define SIMDJSON_ARM64_INTRINSICS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // This should be the correct header whether
 // you use visual studio or other compilers.
@@ -10348,10 +10348,10 @@ static_assert(sizeof(uint8x16_t) <= simdjson::SIMDJSON_PADDING, "insufficient pa
 #ifndef SIMDJSON_ARM64_BITMANIPULATION_H
 #define SIMDJSON_ARM64_BITMANIPULATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -10457,9 +10457,9 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *re
 #ifndef SIMDJSON_ARM64_BITMASK_H
 #define SIMDJSON_ARM64_BITMASK_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -10504,11 +10504,11 @@ simdjson_inline uint64_t prefix_xor(uint64_t bitmask) {
 #ifndef SIMDJSON_ARM64_NUMBERPARSING_DEFS_H
 #define SIMDJSON_ARM64_NUMBERPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/intrinsics.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <cstring>
 
@@ -10563,11 +10563,11 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #ifndef SIMDJSON_ARM64_SIMD_H
 #define SIMDJSON_ARM64_SIMD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -11099,11 +11099,11 @@ simdjson_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int
 #ifndef SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 #define SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/simd.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/bitmanipulation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -11153,7 +11153,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* end file simdjson/arm64/begin.h */
 /* including simdjson/generic/amalgamated.h for arm64: #include "simdjson/generic/amalgamated.h" */
 /* begin file simdjson/generic/amalgamated.h for arm64 */
-#if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
@@ -11161,7 +11161,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* begin file simdjson/generic/base.h for arm64 */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
 /* amalgamation skipped (editor-only): // If we haven't got an implementation yet, we're in the editor, editing a generic file! Just */
@@ -11184,7 +11184,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* amalgamation skipped (editor-only): #error "All possible implementations (including fallback) have been disabled! simdjson will not run." */
 /* amalgamation skipped (editor-only): #endif */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -11210,12 +11210,12 @@ enum class number_type {
 /* begin file simdjson/generic/jsoncharutils.h for arm64 */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_JSONCHARUTILS_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/jsoncharutils_tables.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -11317,11 +11317,11 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 /* begin file simdjson/generic/atomparsing.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ATOMPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <cstring>
 
@@ -11397,11 +11397,11 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* begin file simdjson/generic/dom_parser_implementation.h for arm64 */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -11489,10 +11489,10 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* begin file simdjson/generic/implementation_simdjson_result_base.h for arm64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -11626,12 +11626,12 @@ protected:
 /* begin file simdjson/generic/numberparsing.h for arm64 */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_NUMBERPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <limits>
 #include <ostream>
@@ -12898,11 +12898,11 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 /* begin file simdjson/generic/implementation_simdjson_result_base-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -12990,9 +12990,9 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 /* end file simdjson/generic/amalgamated.h for arm64 */
 /* including simdjson/arm64/end.h: #include "simdjson/arm64/end.h" */
 /* begin file simdjson/arm64/end.h */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 /* undefining SIMDJSON_IMPLEMENTATION from "arm64" */
 #undef SIMDJSON_IMPLEMENTATION
@@ -13015,9 +13015,9 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 #ifndef SIMDJSON_FALLBACK_BASE_H
 #define SIMDJSON_FALLBACK_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 /**
@@ -13037,9 +13037,9 @@ class implementation;
 #ifndef SIMDJSON_FALLBACK_BITMANIPULATION_H
 #define SIMDJSON_FALLBACK_BITMANIPULATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/fallback/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -13088,9 +13088,9 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 #ifndef SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H
 #define SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/fallback/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -13127,10 +13127,10 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #ifndef SIMDJSON_FALLBACK_NUMBERPARSING_DEFS_H
 #define SIMDJSON_FALLBACK_NUMBERPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/fallback/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <cstring>
 
@@ -13208,7 +13208,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* end file simdjson/fallback/begin.h */
 /* including simdjson/generic/amalgamated.h for fallback: #include "simdjson/generic/amalgamated.h" */
 /* begin file simdjson/generic/amalgamated.h for fallback */
-#if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
@@ -13216,7 +13216,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* begin file simdjson/generic/base.h for fallback */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
 /* amalgamation skipped (editor-only): // If we haven't got an implementation yet, we're in the editor, editing a generic file! Just */
@@ -13239,7 +13239,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* amalgamation skipped (editor-only): #error "All possible implementations (including fallback) have been disabled! simdjson will not run." */
 /* amalgamation skipped (editor-only): #endif */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -13265,12 +13265,12 @@ enum class number_type {
 /* begin file simdjson/generic/jsoncharutils.h for fallback */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_JSONCHARUTILS_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/jsoncharutils_tables.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -13372,11 +13372,11 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 /* begin file simdjson/generic/atomparsing.h for fallback */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ATOMPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <cstring>
 
@@ -13452,11 +13452,11 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* begin file simdjson/generic/dom_parser_implementation.h for fallback */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -13544,10 +13544,10 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* begin file simdjson/generic/implementation_simdjson_result_base.h for fallback */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -13681,12 +13681,12 @@ protected:
 /* begin file simdjson/generic/numberparsing.h for fallback */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_NUMBERPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <limits>
 #include <ostream>
@@ -14953,11 +14953,11 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 /* begin file simdjson/generic/implementation_simdjson_result_base-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -15045,9 +15045,9 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 /* end file simdjson/generic/amalgamated.h for fallback */
 /* including simdjson/fallback/end.h: #include "simdjson/fallback/end.h" */
 /* begin file simdjson/fallback/end.h */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/fallback/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 /* undefining SIMDJSON_IMPLEMENTATION from "fallback" */
 #undef SIMDJSON_IMPLEMENTATION
@@ -15071,9 +15071,9 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 #ifndef SIMDJSON_HASWELL_BASE_H
 #define SIMDJSON_HASWELL_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
 namespace simdjson {
@@ -15101,9 +15101,9 @@ template <typename T> struct simd8x64;
 #ifndef SIMDJSON_HASWELL_INTRINSICS_H
 #define SIMDJSON_HASWELL_INTRINSICS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if SIMDJSON_VISUAL_STUDIO
 // under clang within visual studio, this will include <x86intrin.h>
@@ -15161,11 +15161,11 @@ SIMDJSON_TARGET_REGION("avx2,bmi,pclmul,lzcnt,popcnt")
 #ifndef SIMDJSON_HASWELL_BITMANIPULATION_H
 #define SIMDJSON_HASWELL_BITMANIPULATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/intrinsics.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/bitmask.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -15235,10 +15235,10 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifndef SIMDJSON_HASWELL_BITMASK_H
 #define SIMDJSON_HASWELL_BITMASK_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -15268,14 +15268,14 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 #ifndef SIMDJSON_HASWELL_NUMBERPARSING_DEFS_H
 #define SIMDJSON_HASWELL_NUMBERPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -15332,12 +15332,12 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #ifndef SIMDJSON_HASWELL_SIMD_H
 #define SIMDJSON_HASWELL_SIMD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/intrinsics.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -15707,11 +15707,11 @@ namespace simd {
 #ifndef SIMDJSON_HASWELL_STRINGPARSING_DEFS_H
 #define SIMDJSON_HASWELL_STRINGPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/simd.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/bitmanipulation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -15756,7 +15756,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* end file simdjson/haswell/begin.h */
 /* including simdjson/generic/amalgamated.h for haswell: #include "simdjson/generic/amalgamated.h" */
 /* begin file simdjson/generic/amalgamated.h for haswell */
-#if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
@@ -15764,7 +15764,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* begin file simdjson/generic/base.h for haswell */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
 /* amalgamation skipped (editor-only): // If we haven't got an implementation yet, we're in the editor, editing a generic file! Just */
@@ -15787,7 +15787,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* amalgamation skipped (editor-only): #error "All possible implementations (including fallback) have been disabled! simdjson will not run." */
 /* amalgamation skipped (editor-only): #endif */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -15813,12 +15813,12 @@ enum class number_type {
 /* begin file simdjson/generic/jsoncharutils.h for haswell */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_JSONCHARUTILS_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/jsoncharutils_tables.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -15920,11 +15920,11 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 /* begin file simdjson/generic/atomparsing.h for haswell */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ATOMPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <cstring>
 
@@ -16000,11 +16000,11 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* begin file simdjson/generic/dom_parser_implementation.h for haswell */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -16092,10 +16092,10 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* begin file simdjson/generic/implementation_simdjson_result_base.h for haswell */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -16229,12 +16229,12 @@ protected:
 /* begin file simdjson/generic/numberparsing.h for haswell */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_NUMBERPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <limits>
 #include <ostream>
@@ -17501,11 +17501,11 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 /* begin file simdjson/generic/implementation_simdjson_result_base-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -17593,9 +17593,9 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 /* end file simdjson/generic/amalgamated.h for haswell */
 /* including simdjson/haswell/end.h: #include "simdjson/haswell/end.h" */
 /* begin file simdjson/haswell/end.h */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if !SIMDJSON_CAN_ALWAYS_RUN_HASWELL
 SIMDJSON_UNTARGET_REGION
@@ -17622,9 +17622,9 @@ SIMDJSON_UNTARGET_REGION
 #ifndef SIMDJSON_ICELAKE_BASE_H
 #define SIMDJSON_ICELAKE_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_ICELAKE
 namespace simdjson {
@@ -17645,9 +17645,9 @@ class implementation;
 #ifndef SIMDJSON_ICELAKE_INTRINSICS_H
 #define SIMDJSON_ICELAKE_INTRINSICS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if SIMDJSON_VISUAL_STUDIO
 // under clang within visual studio, this will include <x86intrin.h>
@@ -17713,10 +17713,10 @@ SIMDJSON_TARGET_REGION("avx512f,avx512dq,avx512cd,avx512bw,avx512vbmi,avx512vbmi
 #ifndef SIMDJSON_ICELAKE_BITMANIPULATION_H
 #define SIMDJSON_ICELAKE_BITMANIPULATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -17786,10 +17786,10 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifndef SIMDJSON_ICELAKE_BITMASK_H
 #define SIMDJSON_ICELAKE_BITMASK_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -17819,12 +17819,12 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 #ifndef SIMDJSON_ICELAKE_SIMD_H
 #define SIMDJSON_ICELAKE_SIMD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/intrinsics.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if defined(__GNUC__) && !defined(__clang__)
 #if __GNUC__ == 8
@@ -18194,11 +18194,11 @@ namespace simd {
 #ifndef SIMDJSON_ICELAKE_STRINGPARSING_DEFS_H
 #define SIMDJSON_ICELAKE_STRINGPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/simd.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/bitmanipulation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -18245,11 +18245,11 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #ifndef SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 #define SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/intrinsics.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -18303,7 +18303,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* end file simdjson/icelake/begin.h */
 /* including simdjson/generic/amalgamated.h for icelake: #include "simdjson/generic/amalgamated.h" */
 /* begin file simdjson/generic/amalgamated.h for icelake */
-#if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
@@ -18311,7 +18311,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* begin file simdjson/generic/base.h for icelake */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
 /* amalgamation skipped (editor-only): // If we haven't got an implementation yet, we're in the editor, editing a generic file! Just */
@@ -18334,7 +18334,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* amalgamation skipped (editor-only): #error "All possible implementations (including fallback) have been disabled! simdjson will not run." */
 /* amalgamation skipped (editor-only): #endif */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -18360,12 +18360,12 @@ enum class number_type {
 /* begin file simdjson/generic/jsoncharutils.h for icelake */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_JSONCHARUTILS_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/jsoncharutils_tables.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -18467,11 +18467,11 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 /* begin file simdjson/generic/atomparsing.h for icelake */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ATOMPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <cstring>
 
@@ -18547,11 +18547,11 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* begin file simdjson/generic/dom_parser_implementation.h for icelake */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -18639,10 +18639,10 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* begin file simdjson/generic/implementation_simdjson_result_base.h for icelake */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -18776,12 +18776,12 @@ protected:
 /* begin file simdjson/generic/numberparsing.h for icelake */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_NUMBERPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <limits>
 #include <ostream>
@@ -20048,11 +20048,11 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 /* begin file simdjson/generic/implementation_simdjson_result_base-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -20140,9 +20140,9 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 /* end file simdjson/generic/amalgamated.h for icelake */
 /* including simdjson/icelake/end.h: #include "simdjson/icelake/end.h" */
 /* begin file simdjson/icelake/end.h */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if !SIMDJSON_CAN_ALWAYS_RUN_ICELAKE
 SIMDJSON_UNTARGET_REGION
@@ -20169,9 +20169,9 @@ SIMDJSON_UNTARGET_REGION
 #ifndef SIMDJSON_PPC64_BASE_H
 #define SIMDJSON_PPC64_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 /**
@@ -20198,9 +20198,9 @@ template <typename T> struct simd8x64;
 #ifndef SIMDJSON_PPC64_INTRINSICS_H
 #define SIMDJSON_PPC64_INTRINSICS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // This should be the correct header whether
 // you use visual studio or other compilers.
@@ -20224,9 +20224,9 @@ static_assert(sizeof(__vector unsigned char) <= simdjson::SIMDJSON_PADDING, "ins
 #ifndef SIMDJSON_PPC64_BITMANIPULATION_H
 #define SIMDJSON_PPC64_BITMANIPULATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -20305,9 +20305,9 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifndef SIMDJSON_PPC64_BITMASK_H
 #define SIMDJSON_PPC64_BITMASK_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -20354,11 +20354,11 @@ simdjson_inline uint64_t prefix_xor(uint64_t bitmask) {
 #ifndef SIMDJSON_PPC64_NUMBERPARSING_DEFS_H
 #define SIMDJSON_PPC64_NUMBERPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/intrinsics.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <cstring>
 
@@ -20422,11 +20422,11 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #ifndef SIMDJSON_PPC64_SIMD_H
 #define SIMDJSON_PPC64_SIMD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <type_traits>
 
@@ -20897,11 +20897,11 @@ template <typename T> struct simd8x64 {
 #ifndef SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 #define SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/simd.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -20963,7 +20963,7 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 /* end file simdjson/ppc64/begin.h */
 /* including simdjson/generic/amalgamated.h for ppc64: #include "simdjson/generic/amalgamated.h" */
 /* begin file simdjson/generic/amalgamated.h for ppc64 */
-#if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
@@ -20971,7 +20971,7 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 /* begin file simdjson/generic/base.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
 /* amalgamation skipped (editor-only): // If we haven't got an implementation yet, we're in the editor, editing a generic file! Just */
@@ -20994,7 +20994,7 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 /* amalgamation skipped (editor-only): #error "All possible implementations (including fallback) have been disabled! simdjson will not run." */
 /* amalgamation skipped (editor-only): #endif */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -21020,12 +21020,12 @@ enum class number_type {
 /* begin file simdjson/generic/jsoncharutils.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_JSONCHARUTILS_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/jsoncharutils_tables.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -21127,11 +21127,11 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 /* begin file simdjson/generic/atomparsing.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ATOMPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <cstring>
 
@@ -21207,11 +21207,11 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* begin file simdjson/generic/dom_parser_implementation.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -21299,10 +21299,10 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* begin file simdjson/generic/implementation_simdjson_result_base.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -21436,12 +21436,12 @@ protected:
 /* begin file simdjson/generic/numberparsing.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_NUMBERPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <limits>
 #include <ostream>
@@ -22708,11 +22708,11 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 /* begin file simdjson/generic/implementation_simdjson_result_base-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -22800,9 +22800,9 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 /* end file simdjson/generic/amalgamated.h for ppc64 */
 /* including simdjson/ppc64/end.h: #include "simdjson/ppc64/end.h" */
 /* begin file simdjson/ppc64/end.h */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 /* undefining SIMDJSON_IMPLEMENTATION from "ppc64" */
 #undef SIMDJSON_IMPLEMENTATION
@@ -22825,9 +22825,9 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 #ifndef SIMDJSON_WESTMERE_BASE_H
 #define SIMDJSON_WESTMERE_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_WESTMERE
 namespace simdjson {
@@ -22857,9 +22857,9 @@ template <typename T> struct simd8x64;
 #ifndef SIMDJSON_WESTMERE_INTRINSICS_H
 #define SIMDJSON_WESTMERE_INTRINSICS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if SIMDJSON_VISUAL_STUDIO
 // under clang within visual studio, this will include <x86intrin.h>
@@ -22896,10 +22896,10 @@ SIMDJSON_TARGET_REGION("sse4.2,pclmul,popcnt")
 #ifndef SIMDJSON_WESTMERE_BITMANIPULATION_H
 #define SIMDJSON_WESTMERE_BITMANIPULATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -22978,10 +22978,10 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifndef SIMDJSON_WESTMERE_BITMASK_H
 #define SIMDJSON_WESTMERE_BITMASK_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -23016,9 +23016,9 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 #ifndef SIMDJSON_WESTMERE_BASE_H
 #define SIMDJSON_WESTMERE_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_WESTMERE
 namespace simdjson {
@@ -23048,9 +23048,9 @@ template <typename T> struct simd8x64;
 #ifndef SIMDJSON_WESTMERE_INTRINSICS_H
 #define SIMDJSON_WESTMERE_INTRINSICS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if SIMDJSON_VISUAL_STUDIO
 // under clang within visual studio, this will include <x86intrin.h>
@@ -23078,9 +23078,9 @@ static_assert(sizeof(__m128i) <= simdjson::SIMDJSON_PADDING, "insufficient paddi
 #endif // SIMDJSON_WESTMERE_INTRINSICS_H
 /* end file simdjson/westmere/intrinsics.h */
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -23137,11 +23137,11 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -23483,10 +23483,10 @@ namespace simd {
 #ifndef SIMDJSON_WESTMERE_BITMANIPULATION_H
 #define SIMDJSON_WESTMERE_BITMANIPULATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -23565,11 +23565,11 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -23947,7 +23947,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* end file simdjson/westmere/begin.h */
 /* including simdjson/generic/amalgamated.h for westmere: #include "simdjson/generic/amalgamated.h" */
 /* begin file simdjson/generic/amalgamated.h for westmere */
-#if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_DEPENDENCIES_H)
 #error simdjson/generic/dependencies.h must be included before simdjson/generic/amalgamated.h!
 #endif
 
@@ -23955,7 +23955,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* begin file simdjson/generic/base.h for westmere */
 #ifndef SIMDJSON_GENERIC_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
 /* amalgamation skipped (editor-only): // If we haven't got an implementation yet, we're in the editor, editing a generic file! Just */
@@ -23978,7 +23978,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* amalgamation skipped (editor-only): #error "All possible implementations (including fallback) have been disabled! simdjson will not run." */
 /* amalgamation skipped (editor-only): #endif */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_IMPLEMENTATION */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -24004,12 +24004,12 @@ enum class number_type {
 /* begin file simdjson/generic/jsoncharutils.h for westmere */
 #ifndef SIMDJSON_GENERIC_JSONCHARUTILS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_JSONCHARUTILS_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/jsoncharutils_tables.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -24111,11 +24111,11 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 /* begin file simdjson/generic/atomparsing.h for westmere */
 #ifndef SIMDJSON_GENERIC_ATOMPARSING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ATOMPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <cstring>
 
@@ -24191,11 +24191,11 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 /* begin file simdjson/generic/dom_parser_implementation.h for westmere */
 #ifndef SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_DOM_PARSER_IMPLEMENTATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -24283,10 +24283,10 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* begin file simdjson/generic/implementation_simdjson_result_base.h for westmere */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -24420,12 +24420,12 @@ protected:
 /* begin file simdjson/generic/numberparsing.h for westmere */
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_NUMBERPARSING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/jsoncharutils.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <limits>
 #include <ostream>
@@ -25692,11 +25692,11 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
 /* begin file simdjson/generic/implementation_simdjson_result_base-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -25784,9 +25784,9 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 /* end file simdjson/generic/amalgamated.h for westmere */
 /* including simdjson/westmere/end.h: #include "simdjson/westmere/end.h" */
 /* begin file simdjson/westmere/end.h */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if !SIMDJSON_CAN_ALWAYS_RUN_WESTMERE
 SIMDJSON_UNTARGET_REGION
@@ -25802,8 +25802,8 @@ SIMDJSON_UNTARGET_REGION
 #error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION
 #endif
 
-/* undefining SIMDJSON_AMALGAMATED */
-#undef SIMDJSON_AMALGAMATED
+/* undefining SIMDJSON_CONDITIONAL_INCLUDE */
+#undef SIMDJSON_CONDITIONAL_INCLUDE
 
 #endif // SIMDJSON_BUILTIN_H
 /* end file simdjson/builtin.h */
@@ -25811,8 +25811,8 @@ SIMDJSON_UNTARGET_REGION
 
 /* including simdjson/generic/ondemand/dependencies.h: #include "simdjson/generic/ondemand/dependencies.h" */
 /* begin file simdjson/generic/ondemand/dependencies.h */
-#ifdef SIMDJSON_AMALGAMATED
-#error simdjson/generic/ondemand/dependencies.h must be included before defining SIMDJSON_AMALGAMATED!
+#ifdef SIMDJSON_CONDITIONAL_INCLUDE
+#error simdjson/generic/ondemand/dependencies.h must be included before defining SIMDJSON_CONDITIONAL_INCLUDE!
 #endif
 
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H
@@ -25830,8 +25830,8 @@ SIMDJSON_UNTARGET_REGION
 #endif // SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H
 /* end file simdjson/generic/ondemand/dependencies.h */
 
-/* defining SIMDJSON_AMALGAMATED */
-#define SIMDJSON_AMALGAMATED
+/* defining SIMDJSON_CONDITIONAL_INCLUDE */
+#define SIMDJSON_CONDITIONAL_INCLUDE
 
 #if SIMDJSON_BUILTIN_IMPLEMENTATION_IS(arm64)
 /* including simdjson/arm64/ondemand.h: #include "simdjson/arm64/ondemand.h" */
@@ -25848,9 +25848,9 @@ SIMDJSON_UNTARGET_REGION
 #ifndef SIMDJSON_ARM64_BASE_H
 #define SIMDJSON_ARM64_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 /**
@@ -25877,9 +25877,9 @@ template <typename T> struct simd8x64;
 #ifndef SIMDJSON_ARM64_INTRINSICS_H
 #define SIMDJSON_ARM64_INTRINSICS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // This should be the correct header whether
 // you use visual studio or other compilers.
@@ -25894,10 +25894,10 @@ static_assert(sizeof(uint8x16_t) <= simdjson::SIMDJSON_PADDING, "insufficient pa
 #ifndef SIMDJSON_ARM64_BITMANIPULATION_H
 #define SIMDJSON_ARM64_BITMANIPULATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -26003,9 +26003,9 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *re
 #ifndef SIMDJSON_ARM64_BITMASK_H
 #define SIMDJSON_ARM64_BITMASK_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -26050,11 +26050,11 @@ simdjson_inline uint64_t prefix_xor(uint64_t bitmask) {
 #ifndef SIMDJSON_ARM64_NUMBERPARSING_DEFS_H
 #define SIMDJSON_ARM64_NUMBERPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/intrinsics.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <cstring>
 
@@ -26109,11 +26109,11 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #ifndef SIMDJSON_ARM64_SIMD_H
 #define SIMDJSON_ARM64_SIMD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -26645,11 +26645,11 @@ simdjson_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int
 #ifndef SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 #define SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/simd.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/bitmanipulation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -26699,7 +26699,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* end file simdjson/arm64/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for arm64: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for arm64 */
-#if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -26708,10 +26708,10 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* begin file simdjson/generic/ondemand/base.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -26758,11 +26758,11 @@ class value_iterator;
 /* begin file simdjson/generic/ondemand/value_iterator.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -27247,12 +27247,12 @@ public:
 /* begin file simdjson/generic/ondemand/value.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -27957,10 +27957,10 @@ public:
 /* begin file simdjson/generic/ondemand/logger.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_LOGGER_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -28018,12 +28018,12 @@ static inline void log_error(const value_iterator &iter, const char *error, cons
 /* begin file simdjson/generic/ondemand/token_iterator.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -28172,12 +28172,12 @@ public:
 /* begin file simdjson/generic/ondemand/json_iterator.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -28500,12 +28500,12 @@ public:
 /* begin file simdjson/generic/ondemand/json_type.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/numberparsing.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -28665,11 +28665,11 @@ public:
 /* begin file simdjson/generic/ondemand/raw_json_string.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -28874,11 +28874,11 @@ public:
 /* begin file simdjson/generic/ondemand/parser.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_PARSER_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <memory>
 
@@ -29234,12 +29234,12 @@ public:
 /* begin file simdjson/generic/ondemand/array.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -29436,12 +29436,12 @@ public:
 /* begin file simdjson/generic/ondemand/array_iterator.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 
 namespace simdjson {
@@ -29535,11 +29535,11 @@ public:
 /* begin file simdjson/generic/ondemand/document.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -30345,13 +30345,13 @@ public:
 /* begin file simdjson/generic/ondemand/document_stream.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #ifdef SIMDJSON_THREADS_ENABLED
 #include <thread>
@@ -30687,13 +30687,13 @@ public:
 /* begin file simdjson/generic/ondemand/field.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_FIELD_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -30772,12 +30772,12 @@ public:
 /* begin file simdjson/generic/ondemand/object.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -31014,12 +31014,12 @@ public:
 /* begin file simdjson/generic/ondemand/object_iterator.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -31097,10 +31097,10 @@ public:
 /* begin file simdjson/generic/ondemand/serialization.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 /**
@@ -31205,7 +31205,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* begin file simdjson/generic/ondemand/array-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -31213,7 +31213,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -31434,13 +31434,13 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<arm64::ondema
 /* begin file simdjson/generic/ondemand/array_iterator-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -31515,7 +31515,7 @@ simdjson_inline simdjson_result<arm64::ondemand::array_iterator> &simdjson_resul
 /* begin file simdjson/generic/ondemand/document-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array-inl.h" */
@@ -31527,7 +31527,7 @@ simdjson_inline simdjson_result<arm64::ondemand::array_iterator> &simdjson_resul
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -32341,13 +32341,13 @@ simdjson_inline simdjson_result<arm64::ondemand::value> simdjson_result<arm64::o
 /* begin file simdjson/generic/ondemand/document_stream-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document_stream.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <algorithm>
 #include <stdexcept>
@@ -32768,13 +32768,13 @@ simdjson_inline simdjson_result<arm64::ondemand::document_stream>::simdjson_resu
 /* begin file simdjson/generic/ondemand/field-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -32861,7 +32861,7 @@ simdjson_inline simdjson_result<arm64::ondemand::value> simdjson_result<arm64::o
 /* begin file simdjson/generic/ondemand/json_iterator-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
@@ -32871,7 +32871,7 @@ simdjson_inline simdjson_result<arm64::ondemand::value> simdjson_result<arm64::o
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -33273,12 +33273,12 @@ simdjson_inline simdjson_result<arm64::ondemand::json_iterator>::simdjson_result
 /* begin file simdjson/generic/ondemand/json_type-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_type.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -33394,13 +33394,13 @@ simdjson_inline simdjson_result<arm64::ondemand::json_type>::simdjson_result(err
 /* begin file simdjson/generic/ondemand/logger-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <memory>
 #include <cstring>
@@ -33622,7 +33622,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 /* begin file simdjson/generic/ondemand/object-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field.h" */
@@ -33631,7 +33631,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -33885,13 +33885,13 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<arm64::ondema
 /* begin file simdjson/generic/ondemand/object_iterator-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -34026,7 +34026,7 @@ simdjson_inline simdjson_result<arm64::ondemand::object_iterator> &simdjson_resu
 /* begin file simdjson/generic/ondemand/parser-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/padded_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/padded_string_view.h" */
@@ -34037,7 +34037,7 @@ simdjson_inline simdjson_result<arm64::ondemand::object_iterator> &simdjson_resu
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document_stream.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -34193,13 +34193,13 @@ simdjson_inline simdjson_result<arm64::ondemand::parser>::simdjson_result(error_
 /* begin file simdjson/generic/ondemand/raw_json_string-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 
@@ -34399,7 +34399,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 /* begin file simdjson/generic/ondemand/serialization-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -34408,7 +34408,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/serialization.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 
@@ -34635,12 +34635,12 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::arm64::ondemand::ob
 /* begin file simdjson/generic/ondemand/token_iterator-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -34727,7 +34727,7 @@ simdjson_inline simdjson_result<arm64::ondemand::token_iterator>::simdjson_resul
 /* begin file simdjson/generic/ondemand/value-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -34737,7 +34737,7 @@ simdjson_inline simdjson_result<arm64::ondemand::token_iterator>::simdjson_resul
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -35169,7 +35169,7 @@ simdjson_inline simdjson_result<arm64::ondemand::value> simdjson_result<arm64::o
 /* begin file simdjson/generic/ondemand/value_iterator-inl.h for arm64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/atomparsing.h" */
@@ -35178,7 +35178,7 @@ simdjson_inline simdjson_result<arm64::ondemand::value> simdjson_result<arm64::o
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_type-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace arm64 {
@@ -36222,9 +36222,9 @@ simdjson_inline simdjson_result<arm64::ondemand::value_iterator>::simdjson_resul
 /* end file simdjson/generic/ondemand/amalgamated.h for arm64 */
 /* including simdjson/arm64/end.h: #include "simdjson/arm64/end.h" */
 /* begin file simdjson/arm64/end.h */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 /* undefining SIMDJSON_IMPLEMENTATION from "arm64" */
 #undef SIMDJSON_IMPLEMENTATION
@@ -36247,9 +36247,9 @@ simdjson_inline simdjson_result<arm64::ondemand::value_iterator>::simdjson_resul
 #ifndef SIMDJSON_FALLBACK_BASE_H
 #define SIMDJSON_FALLBACK_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 /**
@@ -36269,9 +36269,9 @@ class implementation;
 #ifndef SIMDJSON_FALLBACK_BITMANIPULATION_H
 #define SIMDJSON_FALLBACK_BITMANIPULATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/fallback/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -36320,9 +36320,9 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 #ifndef SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H
 #define SIMDJSON_FALLBACK_STRINGPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/fallback/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -36359,10 +36359,10 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #ifndef SIMDJSON_FALLBACK_NUMBERPARSING_DEFS_H
 #define SIMDJSON_FALLBACK_NUMBERPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/fallback/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <cstring>
 
@@ -36440,7 +36440,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* end file simdjson/fallback/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for fallback: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for fallback */
-#if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -36449,10 +36449,10 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* begin file simdjson/generic/ondemand/base.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -36499,11 +36499,11 @@ class value_iterator;
 /* begin file simdjson/generic/ondemand/value_iterator.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -36988,12 +36988,12 @@ public:
 /* begin file simdjson/generic/ondemand/value.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -37698,10 +37698,10 @@ public:
 /* begin file simdjson/generic/ondemand/logger.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_LOGGER_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -37759,12 +37759,12 @@ static inline void log_error(const value_iterator &iter, const char *error, cons
 /* begin file simdjson/generic/ondemand/token_iterator.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -37913,12 +37913,12 @@ public:
 /* begin file simdjson/generic/ondemand/json_iterator.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -38241,12 +38241,12 @@ public:
 /* begin file simdjson/generic/ondemand/json_type.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/numberparsing.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -38406,11 +38406,11 @@ public:
 /* begin file simdjson/generic/ondemand/raw_json_string.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -38615,11 +38615,11 @@ public:
 /* begin file simdjson/generic/ondemand/parser.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_PARSER_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <memory>
 
@@ -38975,12 +38975,12 @@ public:
 /* begin file simdjson/generic/ondemand/array.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -39177,12 +39177,12 @@ public:
 /* begin file simdjson/generic/ondemand/array_iterator.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 
 namespace simdjson {
@@ -39276,11 +39276,11 @@ public:
 /* begin file simdjson/generic/ondemand/document.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -40086,13 +40086,13 @@ public:
 /* begin file simdjson/generic/ondemand/document_stream.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #ifdef SIMDJSON_THREADS_ENABLED
 #include <thread>
@@ -40428,13 +40428,13 @@ public:
 /* begin file simdjson/generic/ondemand/field.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_FIELD_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -40513,12 +40513,12 @@ public:
 /* begin file simdjson/generic/ondemand/object.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -40755,12 +40755,12 @@ public:
 /* begin file simdjson/generic/ondemand/object_iterator.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -40838,10 +40838,10 @@ public:
 /* begin file simdjson/generic/ondemand/serialization.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 /**
@@ -40946,7 +40946,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* begin file simdjson/generic/ondemand/array-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -40954,7 +40954,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -41175,13 +41175,13 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<fallback::ond
 /* begin file simdjson/generic/ondemand/array_iterator-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -41256,7 +41256,7 @@ simdjson_inline simdjson_result<fallback::ondemand::array_iterator> &simdjson_re
 /* begin file simdjson/generic/ondemand/document-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array-inl.h" */
@@ -41268,7 +41268,7 @@ simdjson_inline simdjson_result<fallback::ondemand::array_iterator> &simdjson_re
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -42082,13 +42082,13 @@ simdjson_inline simdjson_result<fallback::ondemand::value> simdjson_result<fallb
 /* begin file simdjson/generic/ondemand/document_stream-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document_stream.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <algorithm>
 #include <stdexcept>
@@ -42509,13 +42509,13 @@ simdjson_inline simdjson_result<fallback::ondemand::document_stream>::simdjson_r
 /* begin file simdjson/generic/ondemand/field-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -42602,7 +42602,7 @@ simdjson_inline simdjson_result<fallback::ondemand::value> simdjson_result<fallb
 /* begin file simdjson/generic/ondemand/json_iterator-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
@@ -42612,7 +42612,7 @@ simdjson_inline simdjson_result<fallback::ondemand::value> simdjson_result<fallb
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -43014,12 +43014,12 @@ simdjson_inline simdjson_result<fallback::ondemand::json_iterator>::simdjson_res
 /* begin file simdjson/generic/ondemand/json_type-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_type.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -43135,13 +43135,13 @@ simdjson_inline simdjson_result<fallback::ondemand::json_type>::simdjson_result(
 /* begin file simdjson/generic/ondemand/logger-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <memory>
 #include <cstring>
@@ -43363,7 +43363,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 /* begin file simdjson/generic/ondemand/object-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field.h" */
@@ -43372,7 +43372,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -43626,13 +43626,13 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<fallback::ond
 /* begin file simdjson/generic/ondemand/object_iterator-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -43767,7 +43767,7 @@ simdjson_inline simdjson_result<fallback::ondemand::object_iterator> &simdjson_r
 /* begin file simdjson/generic/ondemand/parser-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/padded_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/padded_string_view.h" */
@@ -43778,7 +43778,7 @@ simdjson_inline simdjson_result<fallback::ondemand::object_iterator> &simdjson_r
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document_stream.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -43934,13 +43934,13 @@ simdjson_inline simdjson_result<fallback::ondemand::parser>::simdjson_result(err
 /* begin file simdjson/generic/ondemand/raw_json_string-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 
@@ -44140,7 +44140,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 /* begin file simdjson/generic/ondemand/serialization-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -44149,7 +44149,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/serialization.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 
@@ -44376,12 +44376,12 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::fallback::ondemand:
 /* begin file simdjson/generic/ondemand/token_iterator-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -44468,7 +44468,7 @@ simdjson_inline simdjson_result<fallback::ondemand::token_iterator>::simdjson_re
 /* begin file simdjson/generic/ondemand/value-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -44478,7 +44478,7 @@ simdjson_inline simdjson_result<fallback::ondemand::token_iterator>::simdjson_re
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -44910,7 +44910,7 @@ simdjson_inline simdjson_result<fallback::ondemand::value> simdjson_result<fallb
 /* begin file simdjson/generic/ondemand/value_iterator-inl.h for fallback */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/atomparsing.h" */
@@ -44919,7 +44919,7 @@ simdjson_inline simdjson_result<fallback::ondemand::value> simdjson_result<fallb
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_type-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace fallback {
@@ -45963,9 +45963,9 @@ simdjson_inline simdjson_result<fallback::ondemand::value_iterator>::simdjson_re
 /* end file simdjson/generic/ondemand/amalgamated.h for fallback */
 /* including simdjson/fallback/end.h: #include "simdjson/fallback/end.h" */
 /* begin file simdjson/fallback/end.h */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/fallback/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 /* undefining SIMDJSON_IMPLEMENTATION from "fallback" */
 #undef SIMDJSON_IMPLEMENTATION
@@ -45989,9 +45989,9 @@ simdjson_inline simdjson_result<fallback::ondemand::value_iterator>::simdjson_re
 #ifndef SIMDJSON_HASWELL_BASE_H
 #define SIMDJSON_HASWELL_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_HASWELL
 namespace simdjson {
@@ -46019,9 +46019,9 @@ template <typename T> struct simd8x64;
 #ifndef SIMDJSON_HASWELL_INTRINSICS_H
 #define SIMDJSON_HASWELL_INTRINSICS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if SIMDJSON_VISUAL_STUDIO
 // under clang within visual studio, this will include <x86intrin.h>
@@ -46079,11 +46079,11 @@ SIMDJSON_TARGET_REGION("avx2,bmi,pclmul,lzcnt,popcnt")
 #ifndef SIMDJSON_HASWELL_BITMANIPULATION_H
 #define SIMDJSON_HASWELL_BITMANIPULATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/intrinsics.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/bitmask.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -46153,10 +46153,10 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifndef SIMDJSON_HASWELL_BITMASK_H
 #define SIMDJSON_HASWELL_BITMASK_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -46186,14 +46186,14 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 #ifndef SIMDJSON_HASWELL_NUMBERPARSING_DEFS_H
 #define SIMDJSON_HASWELL_NUMBERPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -46250,12 +46250,12 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #ifndef SIMDJSON_HASWELL_SIMD_H
 #define SIMDJSON_HASWELL_SIMD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/intrinsics.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -46625,11 +46625,11 @@ namespace simd {
 #ifndef SIMDJSON_HASWELL_STRINGPARSING_DEFS_H
 #define SIMDJSON_HASWELL_STRINGPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/simd.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/bitmanipulation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -46674,7 +46674,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* end file simdjson/haswell/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for haswell: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for haswell */
-#if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -46683,10 +46683,10 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* begin file simdjson/generic/ondemand/base.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -46733,11 +46733,11 @@ class value_iterator;
 /* begin file simdjson/generic/ondemand/value_iterator.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -47222,12 +47222,12 @@ public:
 /* begin file simdjson/generic/ondemand/value.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -47932,10 +47932,10 @@ public:
 /* begin file simdjson/generic/ondemand/logger.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_LOGGER_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -47993,12 +47993,12 @@ static inline void log_error(const value_iterator &iter, const char *error, cons
 /* begin file simdjson/generic/ondemand/token_iterator.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -48147,12 +48147,12 @@ public:
 /* begin file simdjson/generic/ondemand/json_iterator.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -48475,12 +48475,12 @@ public:
 /* begin file simdjson/generic/ondemand/json_type.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/numberparsing.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -48640,11 +48640,11 @@ public:
 /* begin file simdjson/generic/ondemand/raw_json_string.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -48849,11 +48849,11 @@ public:
 /* begin file simdjson/generic/ondemand/parser.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_PARSER_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <memory>
 
@@ -49209,12 +49209,12 @@ public:
 /* begin file simdjson/generic/ondemand/array.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -49411,12 +49411,12 @@ public:
 /* begin file simdjson/generic/ondemand/array_iterator.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 
 namespace simdjson {
@@ -49510,11 +49510,11 @@ public:
 /* begin file simdjson/generic/ondemand/document.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -50320,13 +50320,13 @@ public:
 /* begin file simdjson/generic/ondemand/document_stream.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #ifdef SIMDJSON_THREADS_ENABLED
 #include <thread>
@@ -50662,13 +50662,13 @@ public:
 /* begin file simdjson/generic/ondemand/field.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_FIELD_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -50747,12 +50747,12 @@ public:
 /* begin file simdjson/generic/ondemand/object.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -50989,12 +50989,12 @@ public:
 /* begin file simdjson/generic/ondemand/object_iterator.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -51072,10 +51072,10 @@ public:
 /* begin file simdjson/generic/ondemand/serialization.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 /**
@@ -51180,7 +51180,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* begin file simdjson/generic/ondemand/array-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -51188,7 +51188,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -51409,13 +51409,13 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<haswell::onde
 /* begin file simdjson/generic/ondemand/array_iterator-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -51490,7 +51490,7 @@ simdjson_inline simdjson_result<haswell::ondemand::array_iterator> &simdjson_res
 /* begin file simdjson/generic/ondemand/document-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array-inl.h" */
@@ -51502,7 +51502,7 @@ simdjson_inline simdjson_result<haswell::ondemand::array_iterator> &simdjson_res
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -52316,13 +52316,13 @@ simdjson_inline simdjson_result<haswell::ondemand::value> simdjson_result<haswel
 /* begin file simdjson/generic/ondemand/document_stream-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document_stream.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <algorithm>
 #include <stdexcept>
@@ -52743,13 +52743,13 @@ simdjson_inline simdjson_result<haswell::ondemand::document_stream>::simdjson_re
 /* begin file simdjson/generic/ondemand/field-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -52836,7 +52836,7 @@ simdjson_inline simdjson_result<haswell::ondemand::value> simdjson_result<haswel
 /* begin file simdjson/generic/ondemand/json_iterator-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
@@ -52846,7 +52846,7 @@ simdjson_inline simdjson_result<haswell::ondemand::value> simdjson_result<haswel
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -53248,12 +53248,12 @@ simdjson_inline simdjson_result<haswell::ondemand::json_iterator>::simdjson_resu
 /* begin file simdjson/generic/ondemand/json_type-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_type.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -53369,13 +53369,13 @@ simdjson_inline simdjson_result<haswell::ondemand::json_type>::simdjson_result(e
 /* begin file simdjson/generic/ondemand/logger-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <memory>
 #include <cstring>
@@ -53597,7 +53597,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 /* begin file simdjson/generic/ondemand/object-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field.h" */
@@ -53606,7 +53606,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -53860,13 +53860,13 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<haswell::onde
 /* begin file simdjson/generic/ondemand/object_iterator-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -54001,7 +54001,7 @@ simdjson_inline simdjson_result<haswell::ondemand::object_iterator> &simdjson_re
 /* begin file simdjson/generic/ondemand/parser-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/padded_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/padded_string_view.h" */
@@ -54012,7 +54012,7 @@ simdjson_inline simdjson_result<haswell::ondemand::object_iterator> &simdjson_re
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document_stream.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -54168,13 +54168,13 @@ simdjson_inline simdjson_result<haswell::ondemand::parser>::simdjson_result(erro
 /* begin file simdjson/generic/ondemand/raw_json_string-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 
@@ -54374,7 +54374,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 /* begin file simdjson/generic/ondemand/serialization-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -54383,7 +54383,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/serialization.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 
@@ -54610,12 +54610,12 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::haswell::ondemand::
 /* begin file simdjson/generic/ondemand/token_iterator-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -54702,7 +54702,7 @@ simdjson_inline simdjson_result<haswell::ondemand::token_iterator>::simdjson_res
 /* begin file simdjson/generic/ondemand/value-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -54712,7 +54712,7 @@ simdjson_inline simdjson_result<haswell::ondemand::token_iterator>::simdjson_res
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -55144,7 +55144,7 @@ simdjson_inline simdjson_result<haswell::ondemand::value> simdjson_result<haswel
 /* begin file simdjson/generic/ondemand/value_iterator-inl.h for haswell */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/atomparsing.h" */
@@ -55153,7 +55153,7 @@ simdjson_inline simdjson_result<haswell::ondemand::value> simdjson_result<haswel
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_type-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace haswell {
@@ -56197,9 +56197,9 @@ simdjson_inline simdjson_result<haswell::ondemand::value_iterator>::simdjson_res
 /* end file simdjson/generic/ondemand/amalgamated.h for haswell */
 /* including simdjson/haswell/end.h: #include "simdjson/haswell/end.h" */
 /* begin file simdjson/haswell/end.h */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if !SIMDJSON_CAN_ALWAYS_RUN_HASWELL
 SIMDJSON_UNTARGET_REGION
@@ -56226,9 +56226,9 @@ SIMDJSON_UNTARGET_REGION
 #ifndef SIMDJSON_ICELAKE_BASE_H
 #define SIMDJSON_ICELAKE_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_ICELAKE
 namespace simdjson {
@@ -56249,9 +56249,9 @@ class implementation;
 #ifndef SIMDJSON_ICELAKE_INTRINSICS_H
 #define SIMDJSON_ICELAKE_INTRINSICS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if SIMDJSON_VISUAL_STUDIO
 // under clang within visual studio, this will include <x86intrin.h>
@@ -56317,10 +56317,10 @@ SIMDJSON_TARGET_REGION("avx512f,avx512dq,avx512cd,avx512bw,avx512vbmi,avx512vbmi
 #ifndef SIMDJSON_ICELAKE_BITMANIPULATION_H
 #define SIMDJSON_ICELAKE_BITMANIPULATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -56390,10 +56390,10 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifndef SIMDJSON_ICELAKE_BITMASK_H
 #define SIMDJSON_ICELAKE_BITMASK_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -56423,12 +56423,12 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 #ifndef SIMDJSON_ICELAKE_SIMD_H
 #define SIMDJSON_ICELAKE_SIMD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/intrinsics.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if defined(__GNUC__) && !defined(__clang__)
 #if __GNUC__ == 8
@@ -56798,11 +56798,11 @@ namespace simd {
 #ifndef SIMDJSON_ICELAKE_STRINGPARSING_DEFS_H
 #define SIMDJSON_ICELAKE_STRINGPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/simd.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/bitmanipulation.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -56849,11 +56849,11 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 #ifndef SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 #define SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/intrinsics.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -56907,7 +56907,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* end file simdjson/icelake/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for icelake: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for icelake */
-#if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -56916,10 +56916,10 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* begin file simdjson/generic/ondemand/base.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -56966,11 +56966,11 @@ class value_iterator;
 /* begin file simdjson/generic/ondemand/value_iterator.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -57455,12 +57455,12 @@ public:
 /* begin file simdjson/generic/ondemand/value.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -58165,10 +58165,10 @@ public:
 /* begin file simdjson/generic/ondemand/logger.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_LOGGER_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -58226,12 +58226,12 @@ static inline void log_error(const value_iterator &iter, const char *error, cons
 /* begin file simdjson/generic/ondemand/token_iterator.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -58380,12 +58380,12 @@ public:
 /* begin file simdjson/generic/ondemand/json_iterator.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -58708,12 +58708,12 @@ public:
 /* begin file simdjson/generic/ondemand/json_type.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/numberparsing.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -58873,11 +58873,11 @@ public:
 /* begin file simdjson/generic/ondemand/raw_json_string.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -59082,11 +59082,11 @@ public:
 /* begin file simdjson/generic/ondemand/parser.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_PARSER_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <memory>
 
@@ -59442,12 +59442,12 @@ public:
 /* begin file simdjson/generic/ondemand/array.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -59644,12 +59644,12 @@ public:
 /* begin file simdjson/generic/ondemand/array_iterator.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 
 namespace simdjson {
@@ -59743,11 +59743,11 @@ public:
 /* begin file simdjson/generic/ondemand/document.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -60553,13 +60553,13 @@ public:
 /* begin file simdjson/generic/ondemand/document_stream.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #ifdef SIMDJSON_THREADS_ENABLED
 #include <thread>
@@ -60895,13 +60895,13 @@ public:
 /* begin file simdjson/generic/ondemand/field.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_FIELD_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -60980,12 +60980,12 @@ public:
 /* begin file simdjson/generic/ondemand/object.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -61222,12 +61222,12 @@ public:
 /* begin file simdjson/generic/ondemand/object_iterator.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -61305,10 +61305,10 @@ public:
 /* begin file simdjson/generic/ondemand/serialization.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 /**
@@ -61413,7 +61413,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* begin file simdjson/generic/ondemand/array-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -61421,7 +61421,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -61642,13 +61642,13 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<icelake::onde
 /* begin file simdjson/generic/ondemand/array_iterator-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -61723,7 +61723,7 @@ simdjson_inline simdjson_result<icelake::ondemand::array_iterator> &simdjson_res
 /* begin file simdjson/generic/ondemand/document-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array-inl.h" */
@@ -61735,7 +61735,7 @@ simdjson_inline simdjson_result<icelake::ondemand::array_iterator> &simdjson_res
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -62549,13 +62549,13 @@ simdjson_inline simdjson_result<icelake::ondemand::value> simdjson_result<icelak
 /* begin file simdjson/generic/ondemand/document_stream-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document_stream.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <algorithm>
 #include <stdexcept>
@@ -62976,13 +62976,13 @@ simdjson_inline simdjson_result<icelake::ondemand::document_stream>::simdjson_re
 /* begin file simdjson/generic/ondemand/field-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -63069,7 +63069,7 @@ simdjson_inline simdjson_result<icelake::ondemand::value> simdjson_result<icelak
 /* begin file simdjson/generic/ondemand/json_iterator-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
@@ -63079,7 +63079,7 @@ simdjson_inline simdjson_result<icelake::ondemand::value> simdjson_result<icelak
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -63481,12 +63481,12 @@ simdjson_inline simdjson_result<icelake::ondemand::json_iterator>::simdjson_resu
 /* begin file simdjson/generic/ondemand/json_type-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_type.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -63602,13 +63602,13 @@ simdjson_inline simdjson_result<icelake::ondemand::json_type>::simdjson_result(e
 /* begin file simdjson/generic/ondemand/logger-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <memory>
 #include <cstring>
@@ -63830,7 +63830,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 /* begin file simdjson/generic/ondemand/object-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field.h" */
@@ -63839,7 +63839,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -64093,13 +64093,13 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<icelake::onde
 /* begin file simdjson/generic/ondemand/object_iterator-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -64234,7 +64234,7 @@ simdjson_inline simdjson_result<icelake::ondemand::object_iterator> &simdjson_re
 /* begin file simdjson/generic/ondemand/parser-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/padded_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/padded_string_view.h" */
@@ -64245,7 +64245,7 @@ simdjson_inline simdjson_result<icelake::ondemand::object_iterator> &simdjson_re
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document_stream.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -64401,13 +64401,13 @@ simdjson_inline simdjson_result<icelake::ondemand::parser>::simdjson_result(erro
 /* begin file simdjson/generic/ondemand/raw_json_string-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 
@@ -64607,7 +64607,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 /* begin file simdjson/generic/ondemand/serialization-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -64616,7 +64616,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/serialization.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 
@@ -64843,12 +64843,12 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::icelake::ondemand::
 /* begin file simdjson/generic/ondemand/token_iterator-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -64935,7 +64935,7 @@ simdjson_inline simdjson_result<icelake::ondemand::token_iterator>::simdjson_res
 /* begin file simdjson/generic/ondemand/value-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -64945,7 +64945,7 @@ simdjson_inline simdjson_result<icelake::ondemand::token_iterator>::simdjson_res
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -65377,7 +65377,7 @@ simdjson_inline simdjson_result<icelake::ondemand::value> simdjson_result<icelak
 /* begin file simdjson/generic/ondemand/value_iterator-inl.h for icelake */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/atomparsing.h" */
@@ -65386,7 +65386,7 @@ simdjson_inline simdjson_result<icelake::ondemand::value> simdjson_result<icelak
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_type-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace icelake {
@@ -66430,9 +66430,9 @@ simdjson_inline simdjson_result<icelake::ondemand::value_iterator>::simdjson_res
 /* end file simdjson/generic/ondemand/amalgamated.h for icelake */
 /* including simdjson/icelake/end.h: #include "simdjson/icelake/end.h" */
 /* begin file simdjson/icelake/end.h */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/icelake/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if !SIMDJSON_CAN_ALWAYS_RUN_ICELAKE
 SIMDJSON_UNTARGET_REGION
@@ -66459,9 +66459,9 @@ SIMDJSON_UNTARGET_REGION
 #ifndef SIMDJSON_PPC64_BASE_H
 #define SIMDJSON_PPC64_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 /**
@@ -66488,9 +66488,9 @@ template <typename T> struct simd8x64;
 #ifndef SIMDJSON_PPC64_INTRINSICS_H
 #define SIMDJSON_PPC64_INTRINSICS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // This should be the correct header whether
 // you use visual studio or other compilers.
@@ -66514,9 +66514,9 @@ static_assert(sizeof(__vector unsigned char) <= simdjson::SIMDJSON_PADDING, "ins
 #ifndef SIMDJSON_PPC64_BITMANIPULATION_H
 #define SIMDJSON_PPC64_BITMANIPULATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -66595,9 +66595,9 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifndef SIMDJSON_PPC64_BITMASK_H
 #define SIMDJSON_PPC64_BITMASK_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -66644,11 +66644,11 @@ simdjson_inline uint64_t prefix_xor(uint64_t bitmask) {
 #ifndef SIMDJSON_PPC64_NUMBERPARSING_DEFS_H
 #define SIMDJSON_PPC64_NUMBERPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/intrinsics.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <cstring>
 
@@ -66712,11 +66712,11 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #ifndef SIMDJSON_PPC64_SIMD_H
 #define SIMDJSON_PPC64_SIMD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <type_traits>
 
@@ -67187,11 +67187,11 @@ template <typename T> struct simd8x64 {
 #ifndef SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 #define SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/simd.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -67253,7 +67253,7 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 /* end file simdjson/ppc64/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for ppc64: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for ppc64 */
-#if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -67262,10 +67262,10 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 /* begin file simdjson/generic/ondemand/base.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -67312,11 +67312,11 @@ class value_iterator;
 /* begin file simdjson/generic/ondemand/value_iterator.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -67801,12 +67801,12 @@ public:
 /* begin file simdjson/generic/ondemand/value.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -68511,10 +68511,10 @@ public:
 /* begin file simdjson/generic/ondemand/logger.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_LOGGER_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -68572,12 +68572,12 @@ static inline void log_error(const value_iterator &iter, const char *error, cons
 /* begin file simdjson/generic/ondemand/token_iterator.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -68726,12 +68726,12 @@ public:
 /* begin file simdjson/generic/ondemand/json_iterator.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -69054,12 +69054,12 @@ public:
 /* begin file simdjson/generic/ondemand/json_type.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/numberparsing.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -69219,11 +69219,11 @@ public:
 /* begin file simdjson/generic/ondemand/raw_json_string.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -69428,11 +69428,11 @@ public:
 /* begin file simdjson/generic/ondemand/parser.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_PARSER_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <memory>
 
@@ -69788,12 +69788,12 @@ public:
 /* begin file simdjson/generic/ondemand/array.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -69990,12 +69990,12 @@ public:
 /* begin file simdjson/generic/ondemand/array_iterator.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 
 namespace simdjson {
@@ -70089,11 +70089,11 @@ public:
 /* begin file simdjson/generic/ondemand/document.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -70899,13 +70899,13 @@ public:
 /* begin file simdjson/generic/ondemand/document_stream.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #ifdef SIMDJSON_THREADS_ENABLED
 #include <thread>
@@ -71241,13 +71241,13 @@ public:
 /* begin file simdjson/generic/ondemand/field.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_FIELD_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -71326,12 +71326,12 @@ public:
 /* begin file simdjson/generic/ondemand/object.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -71568,12 +71568,12 @@ public:
 /* begin file simdjson/generic/ondemand/object_iterator.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -71651,10 +71651,10 @@ public:
 /* begin file simdjson/generic/ondemand/serialization.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 /**
@@ -71759,7 +71759,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* begin file simdjson/generic/ondemand/array-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -71767,7 +71767,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -71988,13 +71988,13 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<ppc64::ondema
 /* begin file simdjson/generic/ondemand/array_iterator-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -72069,7 +72069,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::array_iterator> &simdjson_resul
 /* begin file simdjson/generic/ondemand/document-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array-inl.h" */
@@ -72081,7 +72081,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::array_iterator> &simdjson_resul
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -72895,13 +72895,13 @@ simdjson_inline simdjson_result<ppc64::ondemand::value> simdjson_result<ppc64::o
 /* begin file simdjson/generic/ondemand/document_stream-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document_stream.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <algorithm>
 #include <stdexcept>
@@ -73322,13 +73322,13 @@ simdjson_inline simdjson_result<ppc64::ondemand::document_stream>::simdjson_resu
 /* begin file simdjson/generic/ondemand/field-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -73415,7 +73415,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::value> simdjson_result<ppc64::o
 /* begin file simdjson/generic/ondemand/json_iterator-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
@@ -73425,7 +73425,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::value> simdjson_result<ppc64::o
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -73827,12 +73827,12 @@ simdjson_inline simdjson_result<ppc64::ondemand::json_iterator>::simdjson_result
 /* begin file simdjson/generic/ondemand/json_type-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_type.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -73948,13 +73948,13 @@ simdjson_inline simdjson_result<ppc64::ondemand::json_type>::simdjson_result(err
 /* begin file simdjson/generic/ondemand/logger-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <memory>
 #include <cstring>
@@ -74176,7 +74176,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 /* begin file simdjson/generic/ondemand/object-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field.h" */
@@ -74185,7 +74185,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -74439,13 +74439,13 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<ppc64::ondema
 /* begin file simdjson/generic/ondemand/object_iterator-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -74580,7 +74580,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::object_iterator> &simdjson_resu
 /* begin file simdjson/generic/ondemand/parser-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/padded_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/padded_string_view.h" */
@@ -74591,7 +74591,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::object_iterator> &simdjson_resu
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document_stream.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -74747,13 +74747,13 @@ simdjson_inline simdjson_result<ppc64::ondemand::parser>::simdjson_result(error_
 /* begin file simdjson/generic/ondemand/raw_json_string-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 
@@ -74953,7 +74953,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 /* begin file simdjson/generic/ondemand/serialization-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -74962,7 +74962,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/serialization.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 
@@ -75189,12 +75189,12 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::ppc64::ondemand::ob
 /* begin file simdjson/generic/ondemand/token_iterator-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -75281,7 +75281,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::token_iterator>::simdjson_resul
 /* begin file simdjson/generic/ondemand/value-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -75291,7 +75291,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::token_iterator>::simdjson_resul
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -75723,7 +75723,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::value> simdjson_result<ppc64::o
 /* begin file simdjson/generic/ondemand/value_iterator-inl.h for ppc64 */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/atomparsing.h" */
@@ -75732,7 +75732,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::value> simdjson_result<ppc64::o
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_type-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace ppc64 {
@@ -76776,9 +76776,9 @@ simdjson_inline simdjson_result<ppc64::ondemand::value_iterator>::simdjson_resul
 /* end file simdjson/generic/ondemand/amalgamated.h for ppc64 */
 /* including simdjson/ppc64/end.h: #include "simdjson/ppc64/end.h" */
 /* begin file simdjson/ppc64/end.h */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 /* undefining SIMDJSON_IMPLEMENTATION from "ppc64" */
 #undef SIMDJSON_IMPLEMENTATION
@@ -76801,9 +76801,9 @@ simdjson_inline simdjson_result<ppc64::ondemand::value_iterator>::simdjson_resul
 #ifndef SIMDJSON_WESTMERE_BASE_H
 #define SIMDJSON_WESTMERE_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_WESTMERE
 namespace simdjson {
@@ -76833,9 +76833,9 @@ template <typename T> struct simd8x64;
 #ifndef SIMDJSON_WESTMERE_INTRINSICS_H
 #define SIMDJSON_WESTMERE_INTRINSICS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if SIMDJSON_VISUAL_STUDIO
 // under clang within visual studio, this will include <x86intrin.h>
@@ -76872,10 +76872,10 @@ SIMDJSON_TARGET_REGION("sse4.2,pclmul,popcnt")
 #ifndef SIMDJSON_WESTMERE_BITMANIPULATION_H
 #define SIMDJSON_WESTMERE_BITMANIPULATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -76954,10 +76954,10 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifndef SIMDJSON_WESTMERE_BITMASK_H
 #define SIMDJSON_WESTMERE_BITMASK_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -76992,9 +76992,9 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 #ifndef SIMDJSON_WESTMERE_BASE_H
 #define SIMDJSON_WESTMERE_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_WESTMERE
 namespace simdjson {
@@ -77024,9 +77024,9 @@ template <typename T> struct simd8x64;
 #ifndef SIMDJSON_WESTMERE_INTRINSICS_H
 #define SIMDJSON_WESTMERE_INTRINSICS_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if SIMDJSON_VISUAL_STUDIO
 // under clang within visual studio, this will include <x86intrin.h>
@@ -77054,9 +77054,9 @@ static_assert(sizeof(__m128i) <= simdjson::SIMDJSON_PADDING, "insufficient paddi
 #endif // SIMDJSON_WESTMERE_INTRINSICS_H
 /* end file simdjson/westmere/intrinsics.h */
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/numberparsing_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -77113,11 +77113,11 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -77459,10 +77459,10 @@ namespace simd {
 #ifndef SIMDJSON_WESTMERE_BITMANIPULATION_H
 #define SIMDJSON_WESTMERE_BITMANIPULATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/intrinsics.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -77541,11 +77541,11 @@ simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -77923,7 +77923,7 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* end file simdjson/westmere/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for westmere: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for westmere */
-#if defined(SIMDJSON_AMALGAMATED) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -77932,10 +77932,10 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 /* begin file simdjson/generic/ondemand/base.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_BASE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -77982,11 +77982,11 @@ class value_iterator;
 /* begin file simdjson/generic/ondemand/value_iterator.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -78471,12 +78471,12 @@ public:
 /* begin file simdjson/generic/ondemand/value.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -79181,10 +79181,10 @@ public:
 /* begin file simdjson/generic/ondemand/logger.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_LOGGER_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -79242,12 +79242,12 @@ static inline void log_error(const value_iterator &iter, const char *error, cons
 /* begin file simdjson/generic/ondemand/token_iterator.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -79396,12 +79396,12 @@ public:
 /* begin file simdjson/generic/ondemand/json_iterator.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -79724,12 +79724,12 @@ public:
 /* begin file simdjson/generic/ondemand/json_type.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/numberparsing.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -79889,11 +79889,11 @@ public:
 /* begin file simdjson/generic/ondemand/raw_json_string.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -80098,11 +80098,11 @@ public:
 /* begin file simdjson/generic/ondemand/parser.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_PARSER_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <memory>
 
@@ -80458,12 +80458,12 @@ public:
 /* begin file simdjson/generic/ondemand/array.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -80660,12 +80660,12 @@ public:
 /* begin file simdjson/generic/ondemand/array_iterator.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 
 namespace simdjson {
@@ -80759,11 +80759,11 @@ public:
 /* begin file simdjson/generic/ondemand/document.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -81569,13 +81569,13 @@ public:
 /* begin file simdjson/generic/ondemand/document_stream.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #ifdef SIMDJSON_THREADS_ENABLED
 #include <thread>
@@ -81911,13 +81911,13 @@ public:
 /* begin file simdjson/generic/ondemand/field.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_FIELD_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -81996,12 +81996,12 @@ public:
 /* begin file simdjson/generic/ondemand/object.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -82238,12 +82238,12 @@ public:
 /* begin file simdjson/generic/ondemand/object_iterator.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -82321,10 +82321,10 @@ public:
 /* begin file simdjson/generic/ondemand/serialization.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 /**
@@ -82429,7 +82429,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* begin file simdjson/generic/ondemand/array-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -82437,7 +82437,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<sim
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -82658,13 +82658,13 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<westmere::ond
 /* begin file simdjson/generic/ondemand/array_iterator-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -82739,7 +82739,7 @@ simdjson_inline simdjson_result<westmere::ondemand::array_iterator> &simdjson_re
 /* begin file simdjson/generic/ondemand/document-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array-inl.h" */
@@ -82751,7 +82751,7 @@ simdjson_inline simdjson_result<westmere::ondemand::array_iterator> &simdjson_re
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -83565,13 +83565,13 @@ simdjson_inline simdjson_result<westmere::ondemand::value> simdjson_result<westm
 /* begin file simdjson/generic/ondemand/document_stream-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document_stream.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <algorithm>
 #include <stdexcept>
@@ -83992,13 +83992,13 @@ simdjson_inline simdjson_result<westmere::ondemand::document_stream>::simdjson_r
 /* begin file simdjson/generic/ondemand/field-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_FIELD_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -84085,7 +84085,7 @@ simdjson_inline simdjson_result<westmere::ondemand::value> simdjson_result<westm
 /* begin file simdjson/generic/ondemand/json_iterator-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/dom_parser_implementation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
@@ -84095,7 +84095,7 @@ simdjson_inline simdjson_result<westmere::ondemand::value> simdjson_result<westm
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -84497,12 +84497,12 @@ simdjson_inline simdjson_result<westmere::ondemand::json_iterator>::simdjson_res
 /* begin file simdjson/generic/ondemand/json_type-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_JSON_TYPE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_type.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -84618,13 +84618,13 @@ simdjson_inline simdjson_result<westmere::ondemand::json_type>::simdjson_result(
 /* begin file simdjson/generic/ondemand/logger-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_LOGGER_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/logger.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #include <memory>
 #include <cstring>
@@ -84846,7 +84846,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 /* begin file simdjson/generic/ondemand/object-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field.h" */
@@ -84855,7 +84855,7 @@ inline void log_line(const json_iterator &iter, token_position index, depth_t de
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -85109,13 +85109,13 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<westmere::ond
 /* begin file simdjson/generic/ondemand/object_iterator-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/field-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -85250,7 +85250,7 @@ simdjson_inline simdjson_result<westmere::ondemand::object_iterator> &simdjson_r
 /* begin file simdjson/generic/ondemand/parser-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_PARSER_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/padded_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/padded_string_view.h" */
@@ -85261,7 +85261,7 @@ simdjson_inline simdjson_result<westmere::ondemand::object_iterator> &simdjson_r
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/document_stream.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/parser.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -85417,13 +85417,13 @@ simdjson_inline simdjson_result<westmere::ondemand::parser>::simdjson_result(err
 /* begin file simdjson/generic/ondemand/raw_json_string-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_iterator-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 
@@ -85623,7 +85623,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 /* begin file simdjson/generic/ondemand/serialization-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_SERIALIZATION_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -85632,7 +85632,7 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/serialization.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 
@@ -85859,12 +85859,12 @@ inline std::ostream& operator<<(std::ostream& out, simdjson::westmere::ondemand:
 /* begin file simdjson/generic/ondemand/token_iterator-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/token_iterator.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/implementation_simdjson_result_base-inl.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -85951,7 +85951,7 @@ simdjson_inline simdjson_result<westmere::ondemand::token_iterator>::simdjson_re
 /* begin file simdjson/generic/ondemand/value-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/array.h" */
@@ -85961,7 +85961,7 @@ simdjson_inline simdjson_result<westmere::ondemand::token_iterator>::simdjson_re
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/object.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -86393,7 +86393,7 @@ simdjson_inline simdjson_result<westmere::ondemand::value> simdjson_result<westm
 /* begin file simdjson/generic/ondemand/value_iterator-inl.h for westmere */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
 
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/atomparsing.h" */
@@ -86402,7 +86402,7 @@ simdjson_inline simdjson_result<westmere::ondemand::value> simdjson_result<westm
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/json_type-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/raw_json_string-inl.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/ondemand/value_iterator.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
 namespace westmere {
@@ -87446,9 +87446,9 @@ simdjson_inline simdjson_result<westmere::ondemand::value_iterator>::simdjson_re
 /* end file simdjson/generic/ondemand/amalgamated.h for westmere */
 /* including simdjson/westmere/end.h: #include "simdjson/westmere/end.h" */
 /* begin file simdjson/westmere/end.h */
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_AMALGAMATED */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 #if !SIMDJSON_CAN_ALWAYS_RUN_WESTMERE
 SIMDJSON_UNTARGET_REGION
@@ -87464,8 +87464,8 @@ SIMDJSON_UNTARGET_REGION
 #error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION
 #endif
 
-/* undefining SIMDJSON_AMALGAMATED */
-#undef SIMDJSON_AMALGAMATED
+/* undefining SIMDJSON_CONDITIONAL_INCLUDE */
+#undef SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
   /**

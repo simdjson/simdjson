@@ -1,11 +1,11 @@
 #ifndef SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_ONDEMAND_TOKEN_ITERATOR_INL_H
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/token_iterator.h"
 #include "simdjson/generic/implementation_simdjson_result_base-inl.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

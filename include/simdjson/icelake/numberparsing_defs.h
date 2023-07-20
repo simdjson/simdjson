@@ -1,11 +1,11 @@
 #ifndef SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 #define SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/icelake/base.h"
 #include "simdjson/icelake/intrinsics.h"
 #include "simdjson/internal/numberparsing_tables.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace icelake {

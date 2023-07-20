@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-20 10:01:22 -0700. Do not edit! */
+/* auto-generated on 2023-07-20 10:48:25 -0700. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -21,8 +21,8 @@ SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 
 #include <implementation.cpp>
 
-/* defining SIMDJSON_AMALGAMATED */
-#define SIMDJSON_AMALGAMATED
+/* defining SIMDJSON_CONDITIONAL_INCLUDE */
+#define SIMDJSON_CONDITIONAL_INCLUDE
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 #include <arm64.cpp>
@@ -43,8 +43,8 @@ SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 #include <westmere.cpp>
 #endif
 
-/* undefining SIMDJSON_AMALGAMATED */
-#undef SIMDJSON_AMALGAMATED
+/* undefining SIMDJSON_CONDITIONAL_INCLUDE */
+#undef SIMDJSON_CONDITIONAL_INCLUDE
 
 SIMDJSON_POP_DISABLE_UNUSED_WARNINGS
 

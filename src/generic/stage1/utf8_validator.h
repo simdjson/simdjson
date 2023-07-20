@@ -1,11 +1,11 @@
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
 #include <generic/stage1/base.h>
 #include <generic/stage1/buf_block_reader.h>
 #include <generic/stage1/utf8_lookup4_algorithm.h>
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

@@ -1,11 +1,11 @@
 #ifndef SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 #define SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/arm64/base.h"
 #include "simdjson/arm64/simd.h"
 #include "simdjson/arm64/bitmanipulation.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace arm64 {

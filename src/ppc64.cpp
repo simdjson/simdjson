@@ -1,9 +1,9 @@
 #ifndef SIMDJSON_SRC_PPC64_CPP
 #define SIMDJSON_SRC_PPC64_CPP
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include <base.h>
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <simdjson/ppc64.h>
 #include <simdjson/ppc64/implementation.h>

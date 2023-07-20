@@ -91,8 +91,8 @@ class SimdjsonFile:
             return cast(Implementation, str(match.group(2)))
 
     @property
-    def free_dependency_file(self):
-        if self.is_free_dependency_file:
+    def dependency_file(self):
+        if self.is_dependency_file:
             return None
 
         if self.implementation:
@@ -120,52 +120,34 @@ class SimdjsonFile:
         else:
             return self.filename == 'amalgamated.h'
 
-    # The file that is authorized to include this file in amalgamation. If this is blank, it's
-    # generally because it *is* an amalgamator file.
-    @property
-    def amalgamator_file(self):
-        # generic/dependencies.h and things like amd64.h must not be in dependencies
-        if self.is_free_dependency_file or self.is_amalgamator or self.implementation:
-            return None
-
-        # generic/*.h -> generic/amalgamated.h
-        # generic/stage1/*.h -> generic/stage1/amalgamated.h
-        # simdjson/generic/*.h -> simdjson/generic/amalgamated.h
-        # simdjson/generic/ondemand/*.h -> simdjson/generic/ondemand/amalgamated.h
-        if self.is_generic:
-            return self.repository[f"{self.include_dir}/amalgamated.h"]
-
-        return None
-
     @property
     def is_free_dependency(self):
-        return self.free_dependency_file is None
+        return self.dependency_file is None
 
     @property
-    def is_amalgamated(self):
-        return not self.is_free_dependency
+    def is_conditional_include(self):
+        return self.dependency_file is not None
 
     @property
-    def is_free_dependency_file(self):
+    def is_dependency_file(self):
         return self.filename == 'dependencies.h'
 
     def add_include(self, include: 'SimdjsonFile'):
-        # If there's a place we have to put dependencies, figure out if this is valid to include
-        if self.is_free_dependency:
-            assert include.is_free_dependency or include.is_amalgamator, f"{self} cannot include {include} because it is an amalgamated file."
-        else:
-            assert not include.is_free_dependency, f"{self} cannot include {include} without #ifndef SIMDJSON_AMALGAMATED."
+        if self.is_conditional_include:
+            assert include.is_conditional_include, f"{self} cannot include {include} without #ifndef SIMDJSON_CONDITIONAL_INCLUDE."
             # TODO make sure we only include amalgamated files that are guaranteed to be included with us (or before us)
             # if include.amalgamator_file:
             #     assert include.amalgamator_file == self, f"{self} cannot include {include}: it should be included from {include.amalgamator_file} instead."
+        else:
+            assert include.is_amalgamator or not include.is_conditional_include, f"{self} cannot include {include} because it is an amalgamated file."
 
         self.includes.append(include)
         include.included_from.add(self)
 
     def add_editor_only_include(self, include: 'SimdjsonFile'):
-        assert self.is_amalgamated, f"Cannot use #ifndef SIMDJSON_AMALGAMATED in {self} because it is not an amalgamated file."
-        if include.is_free_dependency:
-            assert self.free_dependency_file, f"{self} cannot include {include} without #ifndef SIMDJSON_AMALGAMATED."
+        assert self.is_conditional_include, f"Cannot use #ifndef SIMDJSON_CONDITIONAL_INCLUDE in {self} because it is not an amalgamated file."
+        if not include.is_conditional_include:
+            assert self.dependency_file, f"{self} cannot include {include} without #ifndef SIMDJSON_CONDITIONAL_INCLUDE."
         # TODO make sure we only include amalgamated files that are guaranteed to be included with us (or before us)
         # elif include.amalgamator_file:
         #     assert self.is_amalgamated_before(self.amalgamator_file), f"{self} cannot include {include}: it should be included from {include.amalgamator_file} instead."
@@ -174,12 +156,12 @@ class SimdjsonFile:
         include.editor_only_included_from.add(self)
 
     def validate_free_dependency_file(self):
-        if self.is_free_dependency_file:
+        if self.is_dependency_file:
             extra_include_set = set(self.includes)
             for file in self.repository:
-                if file.free_dependency_file == self:
+                if file.dependency_file == self:
                     for editor_only_include in file.editor_only_includes:
-                        if editor_only_include.is_free_dependency:
+                        if not editor_only_include.is_conditional_include:
                             assert editor_only_include in self.includes, f"{file} includes {editor_only_include}, but it is not included from {self}. It must be added to {self}."
                             if editor_only_include in extra_include_set:
                                 extra_include_set.remove(editor_only_include)
@@ -240,14 +222,14 @@ class Amalgamator:
         self.builtin_implementation = False
         self.implementation: Optional[str] = None
         self.found_includes: Set[SimdjsonFile] = set()
-        self.found_includes_per_amalgamation: Set[SimdjsonFile] = set()
+        self.found_includes_per_conditional_block: Set[SimdjsonFile] = set()
         self.found_generic_includes: List[tuple[SimdjsonFile, str]] = []
-        self.amalgamated_defined = False
+        self.in_conditional_include_block = False
         self.editor_only_region = False
         self.include_stack: List[SimdjsonFile] = []
 
     def maybe_write_file(self, file: SimdjsonFile, including_file: Optional[SimdjsonFile], else_line: str):
-        if file.is_amalgamated:
+        if file.is_conditional_include:
             if file.is_generic:
                 # Generic files get written out once per implementation in a well-defined order
                 assert (file, self.implementation) not in self.found_generic_includes, f"generic file {file} included from {including_file} a second time for {self.implementation}!"
@@ -255,8 +237,8 @@ class Amalgamator:
                 self.found_generic_includes.append((file, self.implementation))
             else:
                 # Other amalgamated files, on the other hand, may only be included once per *amalgamation*
-                if file not in self.found_includes_per_amalgamation:
-                    self.found_includes_per_amalgamation.add(file)
+                if file not in self.found_includes_per_conditional_block:
+                    self.found_includes_per_conditional_block.add(file)
         else:
             if file in self.found_includes:
                 self.write(f"/* skipped duplicate {else_line} */")
@@ -270,7 +252,7 @@ class Amalgamator:
         print(line, file=self.fid)
 
     def file_to_str(self, file: SimdjsonFile):
-        if file.is_generic and file.is_amalgamated:
+        if file.is_generic and file.is_conditional_include:
             assert self.implementation, file
             return f"{file} for {self.implementation}"
         return file
@@ -295,15 +277,15 @@ class Amalgamator:
             for line in fid2:
                 line = line.rstrip('\n')
 
-                # Ignore lines inside #ifndef SIMDJSON_AMALGAMATED
-                if re.search(r'^#ifndef\s+SIMDJSON_AMALGAMATED\s*$', line):
-                    assert file.is_amalgamated, f"{file} uses #ifndef SIMDJSON_AMALGAMATED but is not an amalgamated file!"
-                    assert self.amalgamated_defined, f"{file} uses #ifndef SIMDJSON_AMALGAMATED without a prior #define SIMDJSON_AMALGAMATED: {self.include_stack}"
-                    assert not self.editor_only_region, f"{file} uses #ifndef SIMDJSON_AMALGAMATED twice in a row"
+                # Ignore lines inside #ifndef SIMDJSON_CONDITIONAL_INCLUDE
+                if re.search(r'^#ifndef\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$', line):
+                    assert file.is_conditional_include, f"{file} uses #ifndef SIMDJSON_CONDITIONAL_INCLUDE but is not an amalgamated file!"
+                    assert self.in_conditional_include_block, f"{file} uses #ifndef SIMDJSON_CONDITIONAL_INCLUDE without a prior #define SIMDJSON_CONDITIONAL_INCLUDE: {self.include_stack}"
+                    assert not self.editor_only_region, f"{file} uses #ifndef SIMDJSON_CONDITIONAL_INCLUDE twice in a row"
                     self.editor_only_region = True
 
                 # Handle ignored lines (and ending ignore blocks)
-                end_ignore = re.search(r'^#endif\s*//\s*SIMDJSON_AMALGAMATED\s*$', line)
+                end_ignore = re.search(r'^#endif\s*//\s*SIMDJSON_CONDITIONAL_INCLUDE\s*$', line)
                 if self.editor_only_region:
                     self.write(f"/* amalgamation skipped (editor-only): {line} */")
 
@@ -315,7 +297,7 @@ class Amalgamator:
                         self.editor_only_region = False
                     continue
 
-                assert not end_ignore, f"{file} has #endif // SIMDJSON_AMALGAMATED without #ifndef SIMDJSON_AMALGAMATED"
+                assert not end_ignore, f"{file} has #endif // SIMDJSON_CONDITIONAL_INCLUDE without #ifndef SIMDJSON_CONDITIONAL_INCLUDE"
 
                 # Handle #include lines
                 included = re.search(r'^#include "([^"]*)"', line)
@@ -344,23 +326,23 @@ class Amalgamator:
                     assert self.implementation, f"Use of SIMDJSON_IMPLEMENTATION while not defined in {file}: {line}"
                     line = re.sub(r'\bSIMDJSON_IMPLEMENTATION\b',self.implementation,line)
 
-                # Handle defining and undefining SIMDJSON_AMALGAMATED
-                defined = re.search(r'^#define\s+SIMDJSON_AMALGAMATED\s*$', line)
+                # Handle defining and undefining SIMDJSON_CONDITIONAL_INCLUDE
+                defined = re.search(r'^#define\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$', line)
                 if defined:
-                    assert not file.is_amalgamated, "SIMDJSON_AMALGAMATED defined in amalgamated file {file}! Not allowed."
-                    assert not self.amalgamated_defined, f"{file} redefines SIMDJSON_AMALGAMATED"
-                    self.amalgamated_defined = True
-                    self.found_includes_per_amalgamation.clear()
-                    self.write(f'/* defining SIMDJSON_AMALGAMATED */')
-                elif re.search(r'^#undef\s+SIMDJSON_AMALGAMATED\s*$', line):
-                    assert not file.is_amalgamated, "SIMDJSON_AMALGAMATED undefined in amalgamated file {file}! Not allowed."
-                    assert self.amalgamated_defined, f"{file} undefines SIMDJSON_AMALGAMATED without defining it"
-                    self.write(f'/* undefining SIMDJSON_AMALGAMATED */')
-                    self.amalgamated_defined = False
+                    assert not file.is_conditional_include, "SIMDJSON_CONDITIONAL_INCLUDE defined in amalgamated file {file}! Not allowed."
+                    assert not self.in_conditional_include_block, f"{file} redefines SIMDJSON_CONDITIONAL_INCLUDE"
+                    self.in_conditional_include_block = True
+                    self.found_includes_per_conditional_block.clear()
+                    self.write(f'/* defining SIMDJSON_CONDITIONAL_INCLUDE */')
+                elif re.search(r'^#undef\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$', line):
+                    assert not file.is_conditional_include, "SIMDJSON_CONDITIONAL_INCLUDE undefined in amalgamated file {file}! Not allowed."
+                    assert self.in_conditional_include_block, f"{file} undefines SIMDJSON_CONDITIONAL_INCLUDE without defining it"
+                    self.write(f'/* undefining SIMDJSON_CONDITIONAL_INCLUDE */')
+                    self.in_conditional_include_block = False
 
                 self.write(line)
 
-            assert not self.editor_only_region, f"{file} ended without #endif // SIMDJSON_AMALGAMATED"
+            assert not self.editor_only_region, f"{file} ended without #endif // SIMDJSON_CONDITIONAL_INCLUDE"
 
         self.write(f"/* end file {self.file_to_str(file)} */")
 

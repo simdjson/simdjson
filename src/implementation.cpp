@@ -18,7 +18,7 @@ bool implementation::supported_by_runtime_system() const {
 
 } // namespace simdjson
 
-#define SIMDJSON_AMALGAMATED
+#define SIMDJSON_CONDITIONAL_INCLUDE
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 #include <simdjson/arm64/implementation.h>
@@ -93,7 +93,7 @@ static const simdjson::westmere::implementation* get_westmere_singleton() {
 } // namespace simdjson
 #endif // SIMDJSON_IMPLEMENTATION_WESTMERE
 
-#undef SIMDJSON_AMALGAMATED
+#undef SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace internal {

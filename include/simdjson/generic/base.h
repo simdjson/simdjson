@@ -1,6 +1,6 @@
 #ifndef SIMDJSON_GENERIC_BASE_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_BASE_H
 #include "simdjson/base.h"
 // If we haven't got an implementation yet, we're in the editor, editing a generic file! Just
@@ -23,7 +23,7 @@
 #error "All possible implementations (including fallback) have been disabled! simdjson will not run."
 #endif
 #endif // SIMDJSON_IMPLEMENTATION
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
