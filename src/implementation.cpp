@@ -4,7 +4,7 @@
 #include <base.h>
 #include <simdjson/generic/dependencies.h>
 #include <simdjson/implementation.h>
-#include <simdjson/internal/isadetection.h>
+#include <internal/isadetection.h>
 
 #include <initializer_list>
 

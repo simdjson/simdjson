@@ -46,6 +46,7 @@ BUILTIN = "simdjson/builtin"
 BUILTIN_BEGIN_H = f"{BUILTIN}/begin.h"
 BUILTIN_END_H = f"{BUILTIN}/end.h"
 IMPLEMENTATION_DETECTION_H = "simdjson/implementation_detection.h"
+DEPRECATED_FILES = set(["simdjson/simdjson.h", "simdjson/jsonioutil.h"])
 
 class SimdjsonFile:
     def __init__(self, repository: 'SimdjsonRepository', root: RelativeRoot, include_path: str):
@@ -63,6 +64,33 @@ class SimdjsonFile:
 
     def __repr__(self):
         return self.include_path
+
+    def __lt__(self, other: Union['SimdjsonFile', str]):
+        if isinstance(other, SimdjsonFile):
+            other = other.include_path
+        return self.include_path < other
+    def __le__(self, other: Union['SimdjsonFile', str]):
+        if isinstance(other, SimdjsonFile):
+            other = other.include_path
+        return self.include_path <= other
+    def __eq__(self, other: Union['SimdjsonFile', str]):
+        if isinstance(other, SimdjsonFile):
+            other = other.include_path
+        return self.include_path == other
+    def __ne__(self, other: Union['SimdjsonFile', str]):
+        if isinstance(other, SimdjsonFile):
+            other = other.include_path
+        return self.include_path != other
+    def __gt__(self, other: Union['SimdjsonFile', str]):
+        if isinstance(other, SimdjsonFile):
+            other = other.include_path
+        return self.include_path > other
+    def __ge__(self, other: Union['SimdjsonFile', str]):
+        if isinstance(other, SimdjsonFile):
+            other = other.include_path
+        return self.include_path >= other
+    def __hash__(self):
+        return hash(self.include_path)
 
     @property
     def project_relative_path(self):
@@ -189,7 +217,10 @@ class SimdjsonRepository:
 
     def __getitem__(self, include_path: str):
         if include_path not in self.files:
-            self.files[include_path] = SimdjsonFile(self, self._included_filename_root(include_path), include_path)
+            root = self._included_filename_root(include_path)
+            if not root:
+                return None
+            self.files[include_path] = SimdjsonFile(self, root, include_path)
         return self.files[include_path]
 
     def __iter__(self):
@@ -201,20 +232,35 @@ class SimdjsonRepository:
             if os.path.exists(os.path.join(self.project_path, relative_root, filename)):
                 assert result is None, "{file} exists in both {result} and {root}!"
                 result = relative_root
-        assert result, f"{filename} not found in {self.relative_roots}"
         return result
 
+    def validate_all_files_used(self, root: RelativeRoot):
+        assert root in self.relative_roots
+        absolute_root = os.path.join(self.project_path, root)
+        all_files = set([
+            os.path.relpath(os.path.join(dir, file).replace('\\', '/'), absolute_root)
+            for dir, _, files in os.walk(absolute_root)
+            for file in files
+            if file.endswith('.h') or file.endswith('.cpp')
+        ])
+        used_files = set([file.include_path for file in self if file.root == root])
+        all_files.difference_update(used_files)
+        all_files.difference_update(DEPRECATED_FILES)
+        assert len(all_files) == 0, f"Files not used: {sorted(all_files)}"
 
 class Amalgamator:
     @classmethod
-    def amalgamate(cls, output_path: str, file: str, roots: List[RelativeRoot], timestamp: str):
+    def amalgamate(cls, output_path: str, filename: str, roots: List[RelativeRoot], timestamp: str):
         print(f"Creating {output_path}")
         fid = open(output_path, 'w')
         print(f"/* auto-generated on {timestamp}. Do not edit! */", file=fid)
         amalgamator = cls(fid, SimdjsonRepository(PROJECTPATH, roots))
-        amalgamator.maybe_write_file(amalgamator.repository[file], None, "")
+        file = amalgamator.repository[filename]
+        assert file, f"{filename} not found in {[os.path.join(PROJECTPATH, root) for root in roots]}!"
+        amalgamator.maybe_write_file(file, None, "")
         amalgamator.repository.validate_free_dependency_files()
         fid.close()
+        return amalgamator.repository
 
     def __init__(self, fid: TextIO, repository: SimdjsonRepository):
         self.fid = fid
@@ -290,9 +336,11 @@ class Amalgamator:
                     self.write(f"/* amalgamation skipped (editor-only): {line} */")
 
                     # Add the editor-only include so we can check dependencies.h for completeness later
-                    included = re.search(r'^#include "([^"]*)"', line)
+                    included = re.search(r'^#include\s+["<]([^">]*)[">]', line)
                     if included:
-                        file.add_editor_only_include(self.repository[included.group(1)])
+                        included_file = self.repository[included.group(1)]
+                        if included_file:
+                            file.add_editor_only_include(included_file)
                     if end_ignore:
                         self.editor_only_region = False
                     continue
@@ -300,13 +348,14 @@ class Amalgamator:
                 assert not end_ignore, f"{file} has #endif // SIMDJSON_CONDITIONAL_INCLUDE without #ifndef SIMDJSON_CONDITIONAL_INCLUDE"
 
                 # Handle #include lines
-                included = re.search(r'^#include "([^"]*)"', line)
+                included = re.search(r'^#include\s+["<]([^">]*)[">]', line)
                 if included:
                     # we explicitly include simdjson headers, one time each (unless they are generic, in which case multiple times is fine)
                     included_file = self.repository[included.group(1)]
-                    file.add_include(included_file)
-                    self.maybe_write_file(included_file, file, line)
-                    continue
+                    if included_file:
+                        file.add_include(included_file)
+                        self.maybe_write_file(included_file, file, line)
+                        continue
 
                 # Handle defining and replacing SIMDJSON_IMPLEMENTATION
                 defined = re.search(r'^#define\s+SIMDJSON_IMPLEMENTATION\s+(.+)$', line)
@@ -380,8 +429,8 @@ AMAL_C = os.path.join(AMALGAMATE_OUTPUT_PATH, "simdjson.cpp")
 DEMOCPP = os.path.join(AMALGAMATE_OUTPUT_PATH, "amalgamate_demo.cpp")
 README = os.path.join(AMALGAMATE_OUTPUT_PATH, "README.md")
 
-Amalgamator.amalgamate(AMAL_H, "simdjson.h", ['include'], timestamp)
-Amalgamator.amalgamate(AMAL_C, "simdjson.cpp", ['src', 'include'], timestamp)
+Amalgamator.amalgamate(AMAL_H, "simdjson.h", ['include'], timestamp).validate_all_files_used('include')
+Amalgamator.amalgamate(AMAL_C, "simdjson.cpp", ['src', 'include'], timestamp).validate_all_files_used('src')
 
 # copy the README and DEMOCPP
 if SCRIPTPATH != AMALGAMATE_OUTPUT_PATH:

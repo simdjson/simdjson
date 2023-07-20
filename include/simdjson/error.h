@@ -4,6 +4,7 @@
 #include "simdjson/base.h"
 
 #include <string>
+#include <ostream>
 
 namespace simdjson {
 

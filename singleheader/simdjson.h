@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-20 10:48:25 -0700. Do not edit! */
+/* auto-generated on 2023-07-20 14:14:44 -0700. Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -2357,6 +2357,7 @@ enum {
 /* skipped duplicate #include "simdjson/base.h" */
 
 #include <string>
+#include <ostream>
 
 namespace simdjson {
 
@@ -9904,7 +9905,7 @@ enum instruction_set {
 } // namespace internal
 } // namespace simdjson
 
-#endif // SIMDJSON_INTERNAL_ISADETECTION_H
+#endif // SIMDJSON_INTERNAL_INSTRUCTION_SET_H
 /* end file simdjson/internal/instruction_set.h */
 /* skipped duplicate #include "simdjson/internal/dom_parser_implementation.h" */
 /* including simdjson/internal/jsoncharutils_tables.h: #include "simdjson/internal/jsoncharutils_tables.h" */
