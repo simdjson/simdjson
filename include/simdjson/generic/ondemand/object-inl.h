@@ -96,7 +96,7 @@ simdjson_inline simdjson_result<std::string_view> object::raw_json() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
   if(error) { return error; }
-  const uint8_t * final_point{iter._json_iter->peek(0)};
+  const uint8_t * final_point{iter._json_iter->peek()};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 

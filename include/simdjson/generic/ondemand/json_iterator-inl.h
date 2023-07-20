@@ -254,7 +254,7 @@ simdjson_inline const uint8_t *json_iterator::return_current_and_advance() noexc
 
 simdjson_inline const uint8_t *json_iterator::unsafe_pointer() const noexcept {
   // deliberately done without safety guard:
-  return token.peek(0);
+  return token.peek();
 }
 
 simdjson_inline const uint8_t *json_iterator::peek(int32_t delta) const noexcept {
