@@ -21,11 +21,14 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_DEVELOPER_MODE=OFF -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
           cmake --build .   &&
           cmake --install . &&
-          echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp
-          && c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson
-          && ./linkandrun jsonexamples/twitter.json &&
+          echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp &&
+          c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson &&
+          ./linkandrun jsonexamples/twitter.json &&
           cd ../tests/installation_tests/find &&
-          mkdir buildjustlib && cd buildjustlib && cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../buildjustlib/destination .. &&  cmake --build .
+          mkdir buildjustlib &&
+          cd buildjustlib &&
+          cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../buildjustlib/destination .. &&
+          cmake --build .
       - name: Use cmake
         run: |
           mkdir builddebug &&
