@@ -1,6 +1,7 @@
 CompileFlags:
     CompilationDatabase: build
     Add:
+        - -Werror -Wall -Wextra -Weffc++ -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion
         - -Wundefined-inline
 Diagnostics:
     Suppress:

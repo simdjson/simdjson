@@ -2,8 +2,8 @@
 
 #ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
-#include "generic/stage2/base.h"
-#include "simdjson/internal/tape_type.h"
+#include <generic/stage2/base.h>
+#include <simdjson/internal/tape_type.h>
 #endif // SIMDJSON_AMALGAMATED
 
 #include <cstring>

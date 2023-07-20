@@ -2,19 +2,19 @@
 #define SIMDJSON_SRC_FALLBACK_CPP
 
 #ifndef SIMDJSON_AMALGAMATED
-#include "base.h"
+#include <base.h>
 #endif // SIMDJSON_AMALGAMATED
 
-#include "simdjson/fallback.h"
-#include "simdjson/fallback/implementation.h"
+#include <simdjson/fallback.h>
+#include <simdjson/fallback/implementation.h>
 
-#include "simdjson/fallback/begin.h"
-#include "generic/stage1/find_next_document_index.h"
-#include "generic/stage2/stringparsing.h"
-#include "generic/stage2/logger.h"
-#include "generic/stage2/json_iterator.h"
-#include "generic/stage2/tape_writer.h"
-#include "generic/stage2/tape_builder.h"
+#include <simdjson/fallback/begin.h>
+#include <generic/stage1/find_next_document_index.h>
+#include <generic/stage2/stringparsing.h>
+#include <generic/stage2/logger.h>
+#include <generic/stage2/json_iterator.h>
+#include <generic/stage2/tape_writer.h>
+#include <generic/stage2/tape_builder.h>
 
 //
 // Stage 1
@@ -405,6 +405,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 } // namespace fallback
 } // namespace simdjson
 
-#include "simdjson/fallback/end.h"
+#include <simdjson/fallback/end.h>
 
 #endif // SIMDJSON_SRC_FALLBACK_CPP

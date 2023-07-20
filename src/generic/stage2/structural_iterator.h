@@ -2,8 +2,8 @@
 
 #ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
-#include "generic/stage2/base.h"
-#include "simdjson/generic/dom_parser_implementation.h"
+#include <generic/stage2/base.h>
+#include <simdjson/generic/dom_parser_implementation.h>
 #endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {

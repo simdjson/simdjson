@@ -2,8 +2,8 @@
 
 #ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
-#include "generic/stage1/base.h"
-#include "generic/dom_parser_implementation.h"
+#include <generic/stage1/base.h>
+#include <generic/dom_parser_implementation.h>
 #endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {

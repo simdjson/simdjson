@@ -5,6 +5,6 @@
 #ifndef SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
 #define SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
 
-#include "base.h"
+#include <base.h>
 
 #endif // SIMDJSON_SRC_GENERIC_DEPENDENCIES_H

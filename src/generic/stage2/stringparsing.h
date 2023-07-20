@@ -2,8 +2,8 @@
 
 #ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-#include "generic/stage2/base.h"
-#include "simdjson/generic/jsoncharutils.h"
+#include <generic/stage2/base.h>
+#include <simdjson/generic/jsoncharutils.h>
 #endif // SIMDJSON_AMALGAMATED
 
 // This file contains the common code every implementation uses

@@ -2,9 +2,9 @@
 
 #ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_VALIDATOR_H
-#include "generic/stage1/base.h"
-#include "generic/stage1/buf_block_reader.h"
-#include "generic/stage1/utf8_lookup4_algorithm.h"
+#include <generic/stage1/base.h>
+#include <generic/stage1/buf_block_reader.h>
+#include <generic/stage1/utf8_lookup4_algorithm.h>
 #endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {

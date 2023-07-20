@@ -2,6 +2,6 @@
 #error generic/dependencies.h must be included before generic/amalgamated.h!
 #endif
 
-#include "generic/base.h"
-#include "generic/dom_parser_implementation.h"
-#include "generic/json_character_block.h"
+#include <generic/base.h>
+#include <generic/dom_parser_implementation.h>
+#include <generic/json_character_block.h>

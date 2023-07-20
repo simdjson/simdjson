@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_SRC_JSONCHARUTILS_TABLES_CPP
 #define SIMDJSON_SRC_JSONCHARUTILS_TABLES_CPP
 
-#include "simdjson/base.h"
+#include <simdjson/base.h>
 
 namespace simdjson {
 namespace internal {

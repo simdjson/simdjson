@@ -2,7 +2,7 @@
 
 #ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
-#include "generic/stage2/base.h"
+#include <generic/stage2/base.h>
 #endif // SIMDJSON_AMALGAMATED
 
 #include <cstring>

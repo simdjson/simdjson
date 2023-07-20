@@ -2,8 +2,8 @@
 
 #ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_DOM_PARSER_IMPLEMENTATION_H
-#include "generic/base.h"
-#include "simdjson/generic/dom_parser_implementation.h"
+#include <generic/base.h>
+#include <simdjson/generic/dom_parser_implementation.h>
 #endif // SIMDJSON_AMALGAMATED
 
 // Interface a dom parser implementation must fulfill

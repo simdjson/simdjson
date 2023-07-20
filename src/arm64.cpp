@@ -2,16 +2,16 @@
 #define SIMDJSON_SRC_ARM64_CPP
 
 #ifndef SIMDJSON_AMALGAMATED
-#include "base.h"
+#include <base.h>
 #endif // SIMDJSON_AMALGAMATED
 
-#include "simdjson/arm64.h"
-#include "simdjson/arm64/implementation.h"
+#include <simdjson/arm64.h>
+#include <simdjson/arm64/implementation.h>
 
-#include "simdjson/arm64/begin.h"
-#include "generic/amalgamated.h"
-#include "generic/stage1/amalgamated.h"
-#include "generic/stage2/amalgamated.h"
+#include <simdjson/arm64/begin.h>
+#include <generic/amalgamated.h>
+#include <generic/stage1/amalgamated.h>
+#include <generic/stage2/amalgamated.h>
 
 //
 // Stage 1
@@ -179,6 +179,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 } // namespace arm64
 } // namespace simdjson
 
-#include "simdjson/arm64/end.h"
+#include <simdjson/arm64/end.h>
 
 #endif // SIMDJSON_SRC_ARM64_CPP

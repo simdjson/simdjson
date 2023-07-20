@@ -2,13 +2,13 @@
 
 #ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRUCTURAL_INDEXER_H
-#include "generic/stage1/base.h"
-#include "generic/stage1/utf8_lookup4_algorithm.h"
-#include "generic/stage1/buf_block_reader.h"
-#include "generic/stage1/json_string_scanner.h"
-#include "generic/stage1/json_scanner.h"
-#include "generic/stage1/json_minifier.h"
-#include "generic/stage1/find_next_document_index.h"
+#include <generic/stage1/base.h>
+#include <generic/stage1/utf8_lookup4_algorithm.h>
+#include <generic/stage1/buf_block_reader.h>
+#include <generic/stage1/json_string_scanner.h>
+#include <generic/stage1/json_scanner.h>
+#include <generic/stage1/json_minifier.h>
+#include <generic/stage1/find_next_document_index.h>
 #endif // SIMDJSON_AMALGAMATED
 
 // This file contains the common code every implementation uses in stage1

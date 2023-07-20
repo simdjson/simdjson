@@ -2,7 +2,7 @@
 
 #ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_JSON_CHARACTER_BLOCK_H
-#include "generic/base.h"
+#include <generic/base.h>
 #endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {

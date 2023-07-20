@@ -2,7 +2,7 @@
 
 #ifndef SIMDJSON_AMALGAMATED
 #define SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
-#include "generic/base.h"
+#include <generic/base.h>
 #endif // SIMDJSON_AMALGAMATED
 
 namespace simdjson {
