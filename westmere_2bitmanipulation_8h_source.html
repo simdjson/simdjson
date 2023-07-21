@@ -142,7 +142,7 @@ $(document).ready(function(){initNavTree('westmere_2bitmanipulation_8h_source.ht
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="preprocessor">#if SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;simdjson_inline <span class="keywordtype">unsigned</span> __int64 count_ones(uint64_t input_num) {</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="comment">// note: we do not support legacy 32-bit Windows</span></div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="comment">// note: we do not support legacy 32-bit Windows in this kernel</span></div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keywordflow">return</span> __popcnt64(input_num);<span class="comment">// Visual Studio wants two underscores</span></div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;}</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="preprocessor">#else</span></div>
