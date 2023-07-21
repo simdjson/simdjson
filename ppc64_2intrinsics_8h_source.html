@@ -94,24 +94,26 @@ $(document).ready(function(){initNavTree('ppc64_2intrinsics_8h_source.html','');
 <div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_PPC64_INTRINSICS_H</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="preprocessor">#define SIMDJSON_PPC64_INTRINSICS_H</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160; </div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#include &quot;simdjson/ppc64/base.h&quot;</span></div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160; </div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">// This should be the correct header whether</span></div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment">// you use visual studio or other compilers.</span></div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &lt;altivec.h&gt;</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment">// These are defined by altivec.h in GCC toolchain, it is safe to undef them.</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#ifdef bool</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#undef bool</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#ifdef vector</span></div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#undef vector</span></div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;static_assert(<span class="keyword">sizeof</span>(__vector <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>) &lt;= <a class="code" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>, <span class="stringliteral">&quot;insufficient padding for ppc64&quot;</span>);</div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_CONDITIONAL_INCLUDE</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#include &quot;simdjson/ppc64/base.h&quot;</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_CONDITIONAL_INCLUDE</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment">// This should be the correct header whether</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment">// you use visual studio or other compilers.</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;altivec.h&gt;</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment">// These are defined by altivec.h in GCC toolchain, it is safe to undef them.</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#ifdef bool</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#undef bool</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#ifdef vector</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#undef vector</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#endif </span><span class="comment">//  SIMDJSON_PPC64_INTRINSICS_H</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;static_assert(<span class="keyword">sizeof</span>(__vector <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>) &lt;= <a class="code" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>, <span class="stringliteral">&quot;insufficient padding for ppc64&quot;</span>);</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#endif </span><span class="comment">//  SIMDJSON_PPC64_INTRINSICS_H</span></div>
 <div class="ttc" id="anamespacesimdjson_html_aecdd750132f0eb123a6d61113b4197bf"><div class="ttname"><a href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a></div><div class="ttdeci">constexpr size_t SIMDJSON_PADDING</div><div class="ttdoc">The amount of padding needed in a buffer to parse JSON.</div><div class="ttdef"><b>Definition:</b> <a href="base_8h_source.html#l00031">base.h:31</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

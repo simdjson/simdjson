@@ -94,40 +94,41 @@ $(document).ready(function(){initNavTree('icelake_2implementation_8h_source.html
 <div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_ICELAKE_IMPLEMENTATION_H</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="preprocessor">#define SIMDJSON_ICELAKE_IMPLEMENTATION_H</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160; </div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_AMALGAMATED</span></div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#include &quot;simdjson/implementation.h&quot;</span></div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">#include &quot;simdjson/internal/instruction_set.h&quot;</span></div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_AMALGAMATED</span></div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160; </div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment">// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_ICELAKE</span></div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacesimdjson.html">simdjson</a> {</div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="keyword">namespace </span>icelake {</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keyword">class </span>implementation final : <span class="keyword">public</span> <a class="code" href="classsimdjson_1_1implementation.html">simdjson::implementation</a> {</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;  simdjson_inline implementation() : <a class="code" href="namespacesimdjson.html">simdjson</a>::implementation(</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;      <span class="stringliteral">&quot;icelake&quot;</span>,</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;      <span class="stringliteral">&quot;Intel/AMD AVX512&quot;</span>,</div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;      internal::instruction_set::AVX2 | internal::instruction_set::PCLMULQDQ | internal::instruction_set::BMI1 | internal::instruction_set::BMI2 | internal::instruction_set::AVX512F | internal::instruction_set::AVX512DQ | internal::instruction_set::AVX512CD | internal::instruction_set::AVX512BW | internal::instruction_set::AVX512VL | internal::instruction_set::AVX512VBMI2</div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;  ) {}</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;  simdjson_warn_unused <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> create_dom_parser_implementation(</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <span class="keywordtype">size_t</span> capacity,</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keywordtype">size_t</span> max_length,</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    std::unique_ptr&lt;internal::dom_parser_implementation&gt;&amp; dst</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;  ) <span class="keyword">const</span> noexcept <span class="keyword">final</span>;</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;  simdjson_warn_unused <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> <a class="code" href="namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c">minify</a>(<span class="keyword">const</span> uint8_t *buf, <span class="keywordtype">size_t</span> len, uint8_t *dst, <span class="keywordtype">size_t</span> &amp;dst_len) <span class="keyword">const</span> noexcept <span class="keyword">final</span>;</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;  simdjson_warn_unused <span class="keywordtype">bool</span> <a class="code" href="namespacesimdjson.html#a53546f3af0ed6840ffbeefcbefd305a1">validate_utf8</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *buf, <span class="keywordtype">size_t</span> len) <span class="keyword">const</span> noexcept <span class="keyword">final</span>;</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;};</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;} <span class="comment">// namespace icelake</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_ICELAKE_IMPLEMENTATION_H</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_CONDITIONAL_INCLUDE</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#include &quot;simdjson/icelake/base.h&quot;</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">#include &quot;simdjson/implementation.h&quot;</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#include &quot;simdjson/internal/instruction_set.h&quot;</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_CONDITIONAL_INCLUDE</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment">// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_ICELAKE</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacesimdjson.html">simdjson</a> {</div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="keyword">namespace </span>icelake {</div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">class </span>implementation final : <span class="keyword">public</span> <a class="code" href="classsimdjson_1_1implementation.html">simdjson::implementation</a> {</div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;  simdjson_inline implementation() : <a class="code" href="namespacesimdjson.html">simdjson</a>::implementation(</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;      <span class="stringliteral">&quot;icelake&quot;</span>,</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;      <span class="stringliteral">&quot;Intel/AMD AVX512&quot;</span>,</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;      internal::instruction_set::AVX2 | internal::instruction_set::PCLMULQDQ | internal::instruction_set::BMI1 | internal::instruction_set::BMI2 | internal::instruction_set::AVX512F | internal::instruction_set::AVX512DQ | internal::instruction_set::AVX512CD | internal::instruction_set::AVX512BW | internal::instruction_set::AVX512VL | internal::instruction_set::AVX512VBMI2</div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;  ) {}</div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;  simdjson_warn_unused <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> create_dom_parser_implementation(</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;    <span class="keywordtype">size_t</span> capacity,</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    <span class="keywordtype">size_t</span> max_length,</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    std::unique_ptr&lt;internal::dom_parser_implementation&gt;&amp; dst</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;  ) <span class="keyword">const</span> noexcept <span class="keyword">final</span>;</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;  simdjson_warn_unused <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> <a class="code" href="namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c">minify</a>(<span class="keyword">const</span> uint8_t *buf, <span class="keywordtype">size_t</span> len, uint8_t *dst, <span class="keywordtype">size_t</span> &amp;dst_len) <span class="keyword">const</span> noexcept <span class="keyword">final</span>;</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  simdjson_warn_unused <span class="keywordtype">bool</span> <a class="code" href="namespacesimdjson.html#a53546f3af0ed6840ffbeefcbefd305a1">validate_utf8</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *buf, <span class="keywordtype">size_t</span> len) <span class="keyword">const</span> noexcept <span class="keyword">final</span>;</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;};</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;} <span class="comment">// namespace icelake</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_ICELAKE_IMPLEMENTATION_H</span></div>
 <div class="ttc" id="aclasssimdjson_1_1implementation_html"><div class="ttname"><a href="classsimdjson_1_1implementation.html">simdjson::implementation</a></div><div class="ttdoc">An implementation of simdjson for a particular CPU architecture.</div><div class="ttdef"><b>Definition:</b> <a href="implementation_8h_source.html#l00045">implementation.h:45</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">The top level simdjson namespace, containing everything the library provides.</div><div class="ttdef"><b>Definition:</b> <a href="arm64_2base_8h_source.html#l00008">base.h:8</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_a53546f3af0ed6840ffbeefcbefd305a1"><div class="ttname"><a href="namespacesimdjson.html#a53546f3af0ed6840ffbeefcbefd305a1">simdjson::validate_utf8</a></div><div class="ttdeci">simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) noexcept</div><div class="ttdoc">Validate the UTF-8 string.</div></div>
-<div class="ttc" id="anamespacesimdjson_html_a7b735a3a50ba79e3f7f14df5f77d8da9"><div class="ttname"><a href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">simdjson::error_code</a></div><div class="ttdeci">error_code</div><div class="ttdoc">All possible errors returned by simdjson.</div><div class="ttdef"><b>Definition:</b> <a href="error_8h_source.html#l00017">error.h:17</a></div></div>
-<div class="ttc" id="anamespacesimdjson_html_aeb4ef5cab43d52da3fdd99cb689aff2c"><div class="ttname"><a href="namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c">simdjson::minify</a></div><div class="ttdeci">std::string minify(T x)</div><div class="ttdoc">Minifies a JSON element or document, printing the smallest possible valid JSON.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2serialization_8h_source.html#l00233">serialization.h:233</a></div></div>
+<div class="ttc" id="anamespacesimdjson_html_a7b735a3a50ba79e3f7f14df5f77d8da9"><div class="ttname"><a href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">simdjson::error_code</a></div><div class="ttdeci">error_code</div><div class="ttdoc">All possible errors returned by simdjson.</div><div class="ttdef"><b>Definition:</b> <a href="error_8h_source.html#l00019">error.h:19</a></div></div>
+<div class="ttc" id="anamespacesimdjson_html_aeb4ef5cab43d52da3fdd99cb689aff2c"><div class="ttname"><a href="namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c">simdjson::minify</a></div><div class="ttdeci">std::string minify(T x)</div><div class="ttdoc">Minifies a JSON element or document, printing the smallest possible valid JSON.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2serialization_8h_source.html#l00212">serialization.h:212</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

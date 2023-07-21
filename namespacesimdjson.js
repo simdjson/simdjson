@@ -8,7 +8,6 @@ var namespacesimdjson =
     [ "ppc64", "namespacesimdjson_1_1ppc64.html", null ],
     [ "SIMDJSON_IMPLEMENTATION", null, [
       [ "numberparsing", null, [
-        [ "full_multiplication", "arm64_2numberparsing__defs_8h.html#ae2f7c9103f5e8c993f915094150c2d99", null ],
         [ "parse_number", "numberparsing_8h.html#abfab4a11a66cf3429d4b584165a0d47e", null ],
         [ "slow_float_parsing", "numberparsing_8h.html#a8a19d7f5fc0e7495a136073daee8df78", null ],
         [ "write_float", "numberparsing_8h.html#a4c645a86ea19178e55e6ceaa96ad29ae", null ]
@@ -113,7 +112,7 @@ var namespacesimdjson =
     [ "operator<<", "namespacesimdjson.html#a537445bb236ae76d2b5559b1851b7108", null ],
     [ "operator<<", "namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27", null ],
     [ "operator<<", "namespacesimdjson.html#a39bbbf605c0068e4a65c2d8885727fc9", null ],
-    [ "operator<<", "namespacesimdjson.html#a61a74357c3e9313ad84c5f1243fdf581", null ],
+    [ "operator<<", "namespacesimdjson.html#a667605c4c36cfa45bf111d6c76d39284", null ],
     [ "operator<<", "namespacesimdjson.html#a4447c2af37e8fa57daa0cedd948a810d", null ],
     [ "prettify", "namespacesimdjson.html#adf3293e0e757f2db0f279347c3b57914", null ],
     [ "prettify", "namespacesimdjson.html#aed443864cc94c09c3f88eea39f8ce645", null ],
