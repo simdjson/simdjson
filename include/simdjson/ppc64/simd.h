@@ -1,17 +1,16 @@
 #ifndef SIMDJSON_PPC64_SIMD_H
 #define SIMDJSON_PPC64_SIMD_H
 
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/ppc64/base.h"
 #include "simdjson/ppc64/bitmanipulation.h"
-
-#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/internal/simdprune_tables.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <type_traits>
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 namespace simd {
 
@@ -467,7 +466,7 @@ template <typename T> struct simd8x64 {
 
 } // namespace simd
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 
 #endif // SIMDJSON_PPC64_SIMD_INPUT_H

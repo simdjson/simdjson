@@ -4,6 +4,9 @@
 #include "simdjson/padded_string.h"
 #include "simdjson/padded_string_view.h"
 
+#include "simdjson/error-inl.h"
+#include "simdjson/padded_string_view-inl.h"
+
 #include <climits>
 
 namespace simdjson {
@@ -166,5 +169,9 @@ inline simdjson_result<padded_string> padded_string::load(std::string_view filen
 }
 
 } // namespace simdjson
+
+inline simdjson::padded_string operator "" _padded(const char *str, size_t len) {
+  return simdjson::padded_string(str, len);
+}
 
 #endif // SIMDJSON_PADDED_STRING_INL_H

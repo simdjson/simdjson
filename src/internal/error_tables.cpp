@@ -1,8 +1,8 @@
 #ifndef SIMDJSON_SRC_ERROR_TABLES_CPP
 #define SIMDJSON_SRC_ERROR_TABLES_CPP
 
-#include "simdjson/internal/jsoncharutils_tables.h"
-#include "simdjson/error-inl.h"
+#include <simdjson/internal/jsoncharutils_tables.h>
+#include <simdjson/error-inl.h>
 
 namespace simdjson {
 namespace internal {

@@ -4,12 +4,12 @@
 #include "simdjson/westmere/base.h"
 #include "simdjson/westmere/intrinsics.h"
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/internal/numberparsing_tables.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace numberparsing {
 
 /** @private */
@@ -51,7 +51,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 }
 
 } // namespace numberparsing
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1

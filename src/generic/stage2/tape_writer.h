@@ -1,10 +1,12 @@
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_SRC_GENERIC_STAGE2_TAPE_WRITER_H
-#include "generic/stage2/base.h"
-#include "simdjson/internal/tape_type.h"
-#endif // SIMDJSON_AMALGAMATED
+#include <generic/stage2/base.h>
+#include <simdjson/internal/tape_type.h>
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
+
+#include <cstring>
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

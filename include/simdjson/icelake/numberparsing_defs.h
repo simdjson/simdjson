@@ -1,15 +1,14 @@
 #ifndef SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 #define SIMDJSON_ICELAKE_NUMBERPARSING_DEFS_H
 
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/icelake/base.h"
 #include "simdjson/icelake/intrinsics.h"
-
-#ifndef SIMDJSON_AMALGAMATED
 #include "simdjson/internal/numberparsing_tables.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace icelake {
 namespace numberparsing {
 
 static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
@@ -50,7 +49,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 }
 
 } // namespace numberparsing
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace icelake
 } // namespace simdjson
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1

@@ -3,10 +3,15 @@
 
 #include "simdjson/dom/base.h"
 #include "simdjson/dom/parsedjson_iterator.h"
-#include "simdjson/internal/tape_ref-inl.h"
 #include "simdjson/internal/jsonformatutils.h"
-#include <ostream>
+
+#include "simdjson/dom/parser-inl.h"
+#include "simdjson/internal/tape_ref-inl.h"
+
+#include <cstring>
 #include <iterator>
+#include <limits>
+#include <ostream>
 
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
 

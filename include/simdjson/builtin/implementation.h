@@ -5,7 +5,7 @@
 
 #include "simdjson/generic/dependencies.h"
 
-#define SIMDJSON_AMALGAMATED
+#define SIMDJSON_CONDITIONAL_INCLUDE
 
 #if SIMDJSON_BUILTIN_IMPLEMENTATION_IS(arm64)
 #include "simdjson/arm64/implementation.h"
@@ -23,7 +23,7 @@
 #error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION
 #endif
 
-#undef SIMDJSON_AMALGAMATED
+#undef SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
   /**

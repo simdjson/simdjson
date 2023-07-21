@@ -5,6 +5,8 @@
 #include "simdjson/internal/tape_ref.h"
 #include "simdjson/internal/tape_type.h"
 
+#include <cstring>
+
 namespace simdjson {
 namespace internal {
 

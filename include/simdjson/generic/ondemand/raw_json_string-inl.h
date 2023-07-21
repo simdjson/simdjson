@@ -1,12 +1,12 @@
 #ifndef SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_INL_H
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/raw_json_string.h"
 #include "simdjson/generic/ondemand/json_iterator-inl.h"
 #include "simdjson/generic/implementation_simdjson_result_base-inl.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 

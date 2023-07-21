@@ -1,9 +1,12 @@
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
-#include "generic/stage2/base.h"
-#endif // SIMDJSON_AMALGAMATED
+#include <generic/stage2/base.h>
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
+
+#include <cstring>
+
 
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!

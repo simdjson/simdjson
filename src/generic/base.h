@@ -1,9 +1,10 @@
 #ifndef SIMDJSON_SRC_GENERIC_BASE_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_SRC_GENERIC_BASE_H
-#include "simdjson/generic/base.h"
-#endif // SIMDJSON_AMALGAMATED
+#include <base.h>
+#include <simdjson/generic/base.h>
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

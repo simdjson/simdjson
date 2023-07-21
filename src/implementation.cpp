@@ -1,9 +1,11 @@
 #ifndef SIMDJSON_SRC_IMPLEMENTATION_CPP
 #define SIMDJSON_SRC_IMPLEMENTATION_CPP
 
-#include "generic/dependencies.h"
-#include "simdjson/implementation.h"
-#include "simdjson/internal/isadetection.h"
+#include <base.h>
+#include <simdjson/generic/dependencies.h>
+#include <simdjson/implementation.h>
+#include <internal/isadetection.h>
+
 #include <initializer_list>
 
 namespace simdjson {
@@ -16,10 +18,10 @@ bool implementation::supported_by_runtime_system() const {
 
 } // namespace simdjson
 
-#define SIMDJSON_AMALGAMATED
+#define SIMDJSON_CONDITIONAL_INCLUDE
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
-#include "simdjson/arm64/implementation.h"
+#include <simdjson/arm64/implementation.h>
 namespace simdjson {
 namespace internal {
 static const arm64::implementation* get_arm64_singleton() {
@@ -31,7 +33,7 @@ static const arm64::implementation* get_arm64_singleton() {
 #endif // SIMDJSON_IMPLEMENTATION_ARM64
 
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
-#include "simdjson/fallback/implementation.h"
+#include <simdjson/fallback/implementation.h>
 namespace simdjson {
 namespace internal {
 static const fallback::implementation* get_fallback_singleton() {
@@ -44,7 +46,7 @@ static const fallback::implementation* get_fallback_singleton() {
 
 
 #if SIMDJSON_IMPLEMENTATION_HASWELL
-#include "simdjson/haswell/implementation.h"
+#include <simdjson/haswell/implementation.h>
 namespace simdjson {
 namespace internal {
 static const haswell::implementation* get_haswell_singleton() {
@@ -56,7 +58,7 @@ static const haswell::implementation* get_haswell_singleton() {
 #endif
 
 #if SIMDJSON_IMPLEMENTATION_ICELAKE
-#include "simdjson/icelake/implementation.h"
+#include <simdjson/icelake/implementation.h>
 namespace simdjson {
 namespace internal {
 static const icelake::implementation* get_icelake_singleton() {
@@ -68,7 +70,7 @@ static const icelake::implementation* get_icelake_singleton() {
 #endif
 
 #if SIMDJSON_IMPLEMENTATION_PPC64
-#include "simdjson/ppc64/implementation.h"
+#include <simdjson/ppc64/implementation.h>
 namespace simdjson {
 namespace internal {
 static const ppc64::implementation* get_ppc64_singleton() {
@@ -80,7 +82,7 @@ static const ppc64::implementation* get_ppc64_singleton() {
 #endif // SIMDJSON_IMPLEMENTATION_PPC64
 
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
-#include "simdjson/westmere/implementation.h"
+#include <simdjson/westmere/implementation.h>
 namespace simdjson {
 namespace internal {
 static const simdjson::westmere::implementation* get_westmere_singleton() {
@@ -91,7 +93,7 @@ static const simdjson::westmere::implementation* get_westmere_singleton() {
 } // namespace simdjson
 #endif // SIMDJSON_IMPLEMENTATION_WESTMERE
 
-#undef SIMDJSON_AMALGAMATED
+#undef SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace internal {

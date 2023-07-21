@@ -1,12 +1,12 @@
 #ifndef SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_STREAM_INL_H
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/document_stream.h"
 #include "simdjson/generic/ondemand/document-inl.h"
 #include "simdjson/generic/implementation_simdjson_result_base-inl.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <algorithm>
 #include <stdexcept>

@@ -7,6 +7,12 @@
 #include "simdjson/dom/parser.h"
 #include "simdjson/internal/tape_type.h"
 
+#include "simdjson/dom/array-inl.h"
+#include "simdjson/dom/object-inl.h"
+#include "simdjson/internal/tape_ref-inl.h"
+
+#include <cstring>
+
 namespace simdjson {
 namespace dom {
 inline bool parser::print_json(std::ostream &os) const noexcept {
@@ -17,12 +23,46 @@ inline bool parser::print_json(std::ostream &os) const noexcept {
   os << answer;
   return true;
 }
+
+inline std::ostream& operator<<(std::ostream& out, simdjson::dom::element value) {
+    simdjson::internal::string_builder<> sb;
+    sb.append(value);
+    return (out << sb.str());
 }
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::dom::element> x) {
+    if (x.error()) { throw simdjson::simdjson_error(x.error()); }
+    return (out << x.value());
+}
+#endif
+inline std::ostream& operator<<(std::ostream& out, simdjson::dom::array value)  {
+    simdjson::internal::string_builder<> sb;
+    sb.append(value);
+    return (out << sb.str());
+}
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::dom::array> x) {
+    if (x.error()) { throw simdjson::simdjson_error(x.error()); }
+    return (out << x.value());
+}
+#endif
+inline std::ostream& operator<<(std::ostream& out, simdjson::dom::object value)   {
+    simdjson::internal::string_builder<> sb;
+    sb.append(value);
+    return (out << sb.str());
+}
+#if SIMDJSON_EXCEPTIONS
+inline std::ostream& operator<<(std::ostream& out,  simdjson::simdjson_result<simdjson::dom::object> x) {
+    if (x.error()) { throw  simdjson::simdjson_error(x.error()); }
+    return (out << x.value());
+}
+#endif
+
+} // namespace dom
+
 /***
  * Number utility functions
  **/
-
-
 namespace {
 /**@private
  * Escape sequence like \b or \u0001

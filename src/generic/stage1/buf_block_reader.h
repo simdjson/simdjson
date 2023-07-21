@@ -1,9 +1,11 @@
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
-#include "generic/stage1/base.h"
-#endif // SIMDJSON_AMALGAMATED
+#include <generic/stage1/base.h>
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
+
+#include <cstring>
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

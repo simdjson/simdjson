@@ -1,10 +1,12 @@
 #ifndef SIMDJSON_ARM64_BITMASK_H
 #define SIMDJSON_ARM64_BITMASK_H
 
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/arm64/base.h"
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace {
 
 //

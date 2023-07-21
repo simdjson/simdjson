@@ -1,10 +1,12 @@
 #ifndef SIMDJSON_PPC64_BITMASK_H
 #define SIMDJSON_PPC64_BITMASK_H
 
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/ppc64/base.h"
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 
 //
@@ -38,7 +40,7 @@ simdjson_inline uint64_t prefix_xor(uint64_t bitmask) {
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 
 #endif

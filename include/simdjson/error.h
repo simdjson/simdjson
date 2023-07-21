@@ -2,7 +2,9 @@
 #define SIMDJSON_ERROR_H
 
 #include "simdjson/base.h"
+
 #include <string>
+#include <ostream>
 
 namespace simdjson {
 

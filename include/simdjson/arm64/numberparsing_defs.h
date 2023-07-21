@@ -1,22 +1,21 @@
 #ifndef SIMDJSON_ARM64_NUMBERPARSING_DEFS_H
 #define SIMDJSON_ARM64_NUMBERPARSING_DEFS_H
 
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/arm64/base.h"
 #include "simdjson/arm64/intrinsics.h"
+#include "simdjson/internal/numberparsing_tables.h"
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
+
+#include <cstring>
 
 #if _M_ARM64
 // __umulh requires intrin.h
 #include <intrin.h>
 #endif // _M_ARM64
 
-#include <cstring>
-
-#ifndef SIMDJSON_AMALGAMATED
-#include "simdjson/internal/numberparsing_tables.h"
-#endif // SIMDJSON_AMALGAMATED
-
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace arm64 {
 namespace numberparsing {
 
 // we don't have SSE, so let us use a scalar function
@@ -49,7 +48,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 }
 
 } // namespace numberparsing
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace arm64
 } // namespace simdjson
 
 #define SIMDJSON_SWAR_NUMBER_PARSING 1

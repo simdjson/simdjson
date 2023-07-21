@@ -1,19 +1,23 @@
 #ifndef SIMDJSON_SRC_PPC64_CPP
 #define SIMDJSON_SRC_PPC64_CPP
 
-#include "simdjson/ppc64.h"
-#include "simdjson/ppc64/implementation.h"
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
+#include <base.h>
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
-#include "simdjson/ppc64/begin.h"
-#include "generic/amalgamated.h"
-#include "generic/stage1/amalgamated.h"
-#include "generic/stage2/amalgamated.h"
+#include <simdjson/ppc64.h>
+#include <simdjson/ppc64/implementation.h>
+
+#include <simdjson/ppc64/begin.h>
+#include <generic/amalgamated.h>
+#include <generic/stage1/amalgamated.h>
+#include <generic/stage2/amalgamated.h>
 
 //
 // Stage 1
 //
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 
 simdjson_warn_unused error_code implementation::create_dom_parser_implementation(
   size_t capacity,
@@ -82,7 +86,7 @@ simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2,
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 
 //
@@ -93,7 +97,7 @@ simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2,
 // Implementation-specific overrides
 //
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 namespace stage1 {
 
@@ -143,9 +147,9 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   return stage2(_doc);
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 
-#include "simdjson/ppc64/end.h"
+#include <simdjson/ppc64/end.h>
 
 #endif // SIMDJSON_SRC_PPC64_CPP

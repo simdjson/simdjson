@@ -1,10 +1,13 @@
 #ifndef SIMDJSON_WESTMERE_BITMASK_H
 #define SIMDJSON_WESTMERE_BITMASK_H
 
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/westmere/base.h"
+#include "simdjson/westmere/intrinsics.h"
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace westmere {
 namespace {
 
 //
@@ -21,7 +24,7 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace westmere
 } // namespace simdjson
 
 #endif // SIMDJSON_WESTMERE_BITMASK_H

@@ -1,14 +1,15 @@
 #ifndef SIMDJSON_GENERIC_NUMBERPARSING_H
 
-#ifndef SIMDJSON_AMALGAMATED
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_NUMBERPARSING_H
 #include "simdjson/generic/base.h"
 #include "simdjson/generic/jsoncharutils.h"
 #include "simdjson/internal/numberparsing_tables.h"
-#endif // SIMDJSON_AMALGAMATED
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <limits>
 #include <ostream>
+#include <cstring>
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

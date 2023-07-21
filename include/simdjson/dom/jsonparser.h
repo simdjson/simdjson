@@ -7,6 +7,8 @@
 #include "simdjson/dom/parser.h"
 #include "simdjson/dom/element.h"
 
+#include "simdjson/dom/parser-inl.h"
+
 namespace simdjson {
 
 //

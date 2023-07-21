@@ -1,23 +1,27 @@
 #ifndef SIMDJSON_SRC_FALLBACK_CPP
 #define SIMDJSON_SRC_FALLBACK_CPP
 
-#include "simdjson/fallback.h"
-#include "simdjson/fallback/implementation.h"
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
+#include <base.h>
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
-#include "simdjson/fallback/begin.h"
-#include "generic/stage1/find_next_document_index.h"
-#include "generic/stage2/stringparsing.h"
-#include "generic/stage2/logger.h"
-#include "generic/stage2/json_iterator.h"
-#include "generic/stage2/tape_writer.h"
-#include "generic/stage2/tape_builder.h"
+#include <simdjson/fallback.h>
+#include <simdjson/fallback/implementation.h>
+
+#include <simdjson/fallback/begin.h>
+#include <generic/stage1/find_next_document_index.h>
+#include <generic/stage2/stringparsing.h>
+#include <generic/stage2/logger.h>
+#include <generic/stage2/json_iterator.h>
+#include <generic/stage2/tape_writer.h>
+#include <generic/stage2/tape_builder.h>
 
 //
 // Stage 1
 //
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 
 simdjson_warn_unused error_code implementation::create_dom_parser_implementation(
   size_t capacity,
@@ -366,7 +370,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
   return true;
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 
 //
@@ -374,7 +378,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
 //
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace fallback {
 
 simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<false>(*this, _doc);
@@ -398,9 +402,9 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   return stage2(_doc);
 }
 
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace fallback
 } // namespace simdjson
 
-#include "simdjson/fallback/end.h"
+#include <simdjson/fallback/end.h>
 
 #endif // SIMDJSON_SRC_FALLBACK_CPP

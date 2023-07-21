@@ -5,9 +5,11 @@
 
 #include "simdjson/dom/base.h"
 #include "simdjson/dom/document.h"
-#include "simdjson/dom/element.h"
+#include "simdjson/dom/element-inl.h"
 #include "simdjson/internal/tape_ref-inl.h"
 #include "simdjson/internal/jsonformatutils.h"
+
+#include <cstring>
 
 namespace simdjson {
 namespace dom {

@@ -1,10 +1,13 @@
 #ifndef SIMDJSON_ICELAKE_BITMASK_H
 #define SIMDJSON_ICELAKE_BITMASK_H
 
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/icelake/base.h"
+#include "simdjson/icelake/intrinsics.h"
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace icelake {
 namespace {
 
 //
@@ -21,7 +24,7 @@ simdjson_inline uint64_t prefix_xor(const uint64_t bitmask) {
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace icelake
 } // namespace simdjson
 
 #endif // SIMDJSON_ICELAKE_BITMASK_H

@@ -1,11 +1,14 @@
 #ifndef SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 #define SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
+#include "simdjson/ppc64/base.h"
 #include "simdjson/ppc64/bitmanipulation.h"
 #include "simdjson/ppc64/simd.h"
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+namespace ppc64 {
 namespace {
 
 using namespace simd;
@@ -56,7 +59,7 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 }
 
 } // unnamed namespace
-} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace ppc64
 } // namespace simdjson
 
 #endif // SIMDJSON_PPC64_STRINGPARSING_DEFS_H

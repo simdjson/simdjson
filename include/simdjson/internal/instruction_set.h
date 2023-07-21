@@ -72,4 +72,4 @@ enum instruction_set {
 } // namespace internal
 } // namespace simdjson
 
-#endif // SIMDJSON_INTERNAL_ISADETECTION_H
+#endif // SIMDJSON_INTERNAL_INSTRUCTION_SET_H

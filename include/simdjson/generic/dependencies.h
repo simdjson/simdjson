@@ -1,5 +1,5 @@
-#ifdef SIMDJSON_AMALGAMATED
-#error simdjson/generic/dependencies.h must be included before defining SIMDJSON_AMALGAMATED!
+#ifdef SIMDJSON_CONDITIONAL_INCLUDE
+#error simdjson/generic/dependencies.h must be included before defining SIMDJSON_CONDITIONAL_INCLUDE!
 #endif
 
 #ifndef SIMDJSON_GENERIC_DEPENDENCIES_H
@@ -10,6 +10,7 @@
 // Otherwise, amalgamation will fail.
 #include "simdjson/base.h"
 #include "simdjson/implementation.h"
+#include "simdjson/implementation_detection.h"
 #include "simdjson/internal/instruction_set.h"
 #include "simdjson/internal/dom_parser_implementation.h"
 #include "simdjson/internal/jsoncharutils_tables.h"

@@ -1,8 +1,8 @@
 #ifndef SIMDJSON_SRC_NUMBERPARSING_TABLES_CPP
 #define SIMDJSON_SRC_NUMBERPARSING_TABLES_CPP
 
-#include "simdjson/base.h"
-#include "simdjson/internal/numberparsing_tables.h"
+#include <simdjson/base.h>
+#include <simdjson/internal/numberparsing_tables.h>
 
 // Precomputed powers of ten from 10^0 to 10^22. These
 // can be represented exactly using the double type.

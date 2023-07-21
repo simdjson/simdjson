@@ -7,8 +7,12 @@
 #include "simdjson/dom/object.h"
 #include "simdjson/internal/tape_type.h"
 
+#include "simdjson/dom/object-inl.h"
+#include "simdjson/error-inl.h"
+
 #include <ostream>
 #include <limits>
+
 namespace simdjson {
 
 //

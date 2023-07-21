@@ -4,6 +4,8 @@
 #include "simdjson/base.h"
 #include "simdjson/padded_string.h"
 
+#include "simdjson/padded_string-inl.h"
+
 namespace simdjson {
 
 #if SIMDJSON_EXCEPTIONS

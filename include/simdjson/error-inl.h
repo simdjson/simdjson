@@ -1,9 +1,9 @@
 #ifndef SIMDJSON_ERROR_INL_H
 #define SIMDJSON_ERROR_INL_H
 
-#include <iostream>
-
 #include "simdjson/error.h"
+
+#include <iostream>
 
 namespace simdjson {
 namespace internal {
