@@ -347,7 +347,7 @@ $(document).ready(function(){initNavTree('json__iterator-inl_8h_source.html','')
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160; </div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;simdjson_inline <span class="keyword">const</span> uint8_t *json_iterator::unsafe_pointer() const noexcept {</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;  <span class="comment">// deliberately done without safety guard:</span></div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;  <span class="keywordflow">return</span> token.peek(0);</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;  <span class="keywordflow">return</span> token.peek();</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;}</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160; </div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;simdjson_inline <span class="keyword">const</span> uint8_t *json_iterator::peek(int32_t delta) <span class="keyword">const</span> noexcept {</div>

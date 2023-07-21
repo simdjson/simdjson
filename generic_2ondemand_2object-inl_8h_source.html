@@ -176,7 +176,7 @@ $(document).ready(function(){initNavTree('generic_2ondemand_2object-inl_8h_sourc
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;  <span class="keyword">const</span> uint8_t * starting_point{iter.peek_start()};</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  <span class="keyword">auto</span> error = <a class="code" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#add102ee85423a75e22e4d7ca9a3eaacd">consume</a>();</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  <span class="keywordflow">if</span>(error) { <span class="keywordflow">return</span> error; }</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  <span class="keyword">const</span> uint8_t * final_point{iter._json_iter-&gt;peek(0)};</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  <span class="keyword">const</span> uint8_t * final_point{iter._json_iter-&gt;peek()};</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  <span class="keywordflow">return</span> std::string_view(<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span>*<span class="keyword">&gt;</span>(starting_point), <span class="keywordtype">size_t</span>(final_point - starting_point));</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;}</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
