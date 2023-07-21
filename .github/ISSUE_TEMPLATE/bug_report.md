@@ -49,7 +49,7 @@ It is fine to report bugs against our main branch, but if that is what you are d
  - Version [e.g. 22]
  - Optimization setting (e.g., -O3)
 
-We support up-to-date 64-bit ARM and x64 FreeBSD, macOS, Windows and Linux systems. Please ensure that your configuration is supported before labelling the issue as a bug. In particular, we do not support legacy 32-bit systems.
+We support up-to-date 64-bit ARM and x64 FreeBSD, macOS, Windows and Linux systems. Please ensure that your configuration is supported before labelling the issue as a bug.
 
 **Indicate whether you are willing or able to provide a bug fix as a pull request**
 

@@ -43,8 +43,6 @@
 #else
 #define SIMDJSON_IS_32BITS 1
 
-// We do not support 32-bit platforms, but it can be
-// handy to identify them.
 #if defined(_M_IX86) || defined(__i386__)
 #define SIMDJSON_IS_X86_32BITS 1
 #elif defined(__arm__) || defined(_M_ARM)
