@@ -16,7 +16,7 @@ namespace stage1 {
  */
 struct json_escape_scanner {
   /** The actual escape characters (the backslashes themselves). */
-  uint64_t next_is_escaped;
+  uint64_t next_is_escaped = 0ULL;
 
   struct escaped_and_escape {
     /**
@@ -55,8 +55,8 @@ struct json_escape_scanner {
 
     // |                                | Mask (shows characters instead of 1's) | Depth | Instructions        |
     // |--------------------------------|----------------------------------------|-------|---------------------|
-    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |
-    // |                                | `    even   odd    even   odd   odd`   |
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |       |                     |
+    // |                                | `    even   odd    even   odd   odd`   |       |                     |
     // | potential_escape               | ` \  \\\    \\\    \\\\   \\\\  \\\`   | 1     | 1 (backslash & ~first_is_escaped)
     // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 5     | 5 (next_escape_and_terminal_code())
     // | escaped                        | `\    \ n    \ n    \ \    \ \   \ ` X | 6     | 7 (escape_and_terminal_code ^ (potential_escape | first_is_escaped))

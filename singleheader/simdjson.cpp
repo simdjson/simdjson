@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-21 12:09:57 -0700. Do not edit! */
+/* auto-generated on 2023-08-01 00:07:58 -0700. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -11134,7 +11134,7 @@ namespace stage1 {
  */
 struct json_escape_scanner {
   /** The actual escape characters (the backslashes themselves). */
-  uint64_t next_is_escaped;
+  uint64_t next_is_escaped = 0ULL;
 
   struct escaped_and_escape {
     /**
@@ -11173,8 +11173,8 @@ struct json_escape_scanner {
 
     // |                                | Mask (shows characters instead of 1's) | Depth | Instructions        |
     // |--------------------------------|----------------------------------------|-------|---------------------|
-    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |
-    // |                                | `    even   odd    even   odd   odd`   |
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |       |                     |
+    // |                                | `    even   odd    even   odd   odd`   |       |                     |
     // | potential_escape               | ` \  \\\    \\\    \\\\   \\\\  \\\`   | 1     | 1 (backslash & ~first_is_escaped)
     // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 5     | 5 (next_escape_and_terminal_code())
     // | escaped                        | `\    \ n    \ n    \ \    \ \   \ ` X | 6     | 7 (escape_and_terminal_code ^ (potential_escape | first_is_escaped))
@@ -11318,7 +11318,7 @@ public:
 
 private:
   // Scans for escape characters
-  json_escape_scanner escape_scanner;
+  json_escape_scanner escape_scanner{};
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
   uint64_t prev_in_string = 0ULL;
 };
@@ -21242,7 +21242,7 @@ namespace stage1 {
  */
 struct json_escape_scanner {
   /** The actual escape characters (the backslashes themselves). */
-  uint64_t next_is_escaped;
+  uint64_t next_is_escaped = 0ULL;
 
   struct escaped_and_escape {
     /**
@@ -21281,8 +21281,8 @@ struct json_escape_scanner {
 
     // |                                | Mask (shows characters instead of 1's) | Depth | Instructions        |
     // |--------------------------------|----------------------------------------|-------|---------------------|
-    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |
-    // |                                | `    even   odd    even   odd   odd`   |
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |       |                     |
+    // |                                | `    even   odd    even   odd   odd`   |       |                     |
     // | potential_escape               | ` \  \\\    \\\    \\\\   \\\\  \\\`   | 1     | 1 (backslash & ~first_is_escaped)
     // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 5     | 5 (next_escape_and_terminal_code())
     // | escaped                        | `\    \ n    \ n    \ \    \ \   \ ` X | 6     | 7 (escape_and_terminal_code ^ (potential_escape | first_is_escaped))
@@ -21426,7 +21426,7 @@ public:
 
 private:
   // Scans for escape characters
-  json_escape_scanner escape_scanner;
+  json_escape_scanner escape_scanner{};
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
   uint64_t prev_in_string = 0ULL;
 };
@@ -27428,7 +27428,7 @@ namespace stage1 {
  */
 struct json_escape_scanner {
   /** The actual escape characters (the backslashes themselves). */
-  uint64_t next_is_escaped;
+  uint64_t next_is_escaped = 0ULL;
 
   struct escaped_and_escape {
     /**
@@ -27467,8 +27467,8 @@ struct json_escape_scanner {
 
     // |                                | Mask (shows characters instead of 1's) | Depth | Instructions        |
     // |--------------------------------|----------------------------------------|-------|---------------------|
-    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |
-    // |                                | `    even   odd    even   odd   odd`   |
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |       |                     |
+    // |                                | `    even   odd    even   odd   odd`   |       |                     |
     // | potential_escape               | ` \  \\\    \\\    \\\\   \\\\  \\\`   | 1     | 1 (backslash & ~first_is_escaped)
     // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 5     | 5 (next_escape_and_terminal_code())
     // | escaped                        | `\    \ n    \ n    \ \    \ \   \ ` X | 6     | 7 (escape_and_terminal_code ^ (potential_escape | first_is_escaped))
@@ -27612,7 +27612,7 @@ public:
 
 private:
   // Scans for escape characters
-  json_escape_scanner escape_scanner;
+  json_escape_scanner escape_scanner{};
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
   uint64_t prev_in_string = 0ULL;
 };
@@ -33885,7 +33885,7 @@ namespace stage1 {
  */
 struct json_escape_scanner {
   /** The actual escape characters (the backslashes themselves). */
-  uint64_t next_is_escaped;
+  uint64_t next_is_escaped = 0ULL;
 
   struct escaped_and_escape {
     /**
@@ -33924,8 +33924,8 @@ struct json_escape_scanner {
 
     // |                                | Mask (shows characters instead of 1's) | Depth | Instructions        |
     // |--------------------------------|----------------------------------------|-------|---------------------|
-    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |
-    // |                                | `    even   odd    even   odd   odd`   |
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |       |                     |
+    // |                                | `    even   odd    even   odd   odd`   |       |                     |
     // | potential_escape               | ` \  \\\    \\\    \\\\   \\\\  \\\`   | 1     | 1 (backslash & ~first_is_escaped)
     // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 5     | 5 (next_escape_and_terminal_code())
     // | escaped                        | `\    \ n    \ n    \ \    \ \   \ ` X | 6     | 7 (escape_and_terminal_code ^ (potential_escape | first_is_escaped))
@@ -34069,7 +34069,7 @@ public:
 
 private:
   // Scans for escape characters
-  json_escape_scanner escape_scanner;
+  json_escape_scanner escape_scanner{};
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
   uint64_t prev_in_string = 0ULL;
 };
@@ -40916,7 +40916,7 @@ namespace stage1 {
  */
 struct json_escape_scanner {
   /** The actual escape characters (the backslashes themselves). */
-  uint64_t next_is_escaped;
+  uint64_t next_is_escaped = 0ULL;
 
   struct escaped_and_escape {
     /**
@@ -40955,8 +40955,8 @@ struct json_escape_scanner {
 
     // |                                | Mask (shows characters instead of 1's) | Depth | Instructions        |
     // |--------------------------------|----------------------------------------|-------|---------------------|
-    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |
-    // |                                | `    even   odd    even   odd   odd`   |
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |       |                     |
+    // |                                | `    even   odd    even   odd   odd`   |       |                     |
     // | potential_escape               | ` \  \\\    \\\    \\\\   \\\\  \\\`   | 1     | 1 (backslash & ~first_is_escaped)
     // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 5     | 5 (next_escape_and_terminal_code())
     // | escaped                        | `\    \ n    \ n    \ \    \ \   \ ` X | 6     | 7 (escape_and_terminal_code ^ (potential_escape | first_is_escaped))
@@ -41100,7 +41100,7 @@ public:
 
 private:
   // Scans for escape characters
-  json_escape_scanner escape_scanner;
+  json_escape_scanner escape_scanner{};
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
   uint64_t prev_in_string = 0ULL;
 };
