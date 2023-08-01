@@ -14,8 +14,6 @@ jobs:
         with:
           path: dependencies/.cache
           key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
-      - name: Install clang++-14
-        run: sudo apt-get install -y clang++-14
       - name: Use cmake
         run: |
           mkdir build &&
