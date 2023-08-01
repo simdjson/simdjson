@@ -127,18 +127,6 @@ simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2,
 //
 namespace simdjson {
 namespace arm64 {
-namespace {
-namespace stage1 {
-
-simdjson_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
-  // On ARM, we don't short-circuit this if there are no backslashes, because the branch gives us no
-  // benefit and therefore makes things worse.
-  // if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
-  return find_escaped_branchless(backslash);
-}
-
-} // namespace stage1
-} // unnamed namespace
 
 simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
   return arm64::stage1::json_minifier::minify<64>(buf, len, dst, dst_len);
