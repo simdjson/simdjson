@@ -1,4 +1,4 @@
-/* auto-generated on 2023-08-01 00:07:58 -0700. Do not edit! */
+/* auto-generated on 2023-08-01 01:24:06 -0700. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -11185,7 +11185,7 @@ struct json_escape_scanner {
     uint64_t escaped = escape_and_terminal_code ^ (backslash | this->next_is_escaped);
     uint64_t escape = escape_and_terminal_code & backslash;
     this->next_is_escaped = escape >> 63;
-    return {.escaped=escaped, .escape=escape};
+    return {escaped, escape};
   }
 
 private:
@@ -21293,7 +21293,7 @@ struct json_escape_scanner {
     uint64_t escaped = escape_and_terminal_code ^ (backslash | this->next_is_escaped);
     uint64_t escape = escape_and_terminal_code & backslash;
     this->next_is_escaped = escape >> 63;
-    return {.escaped=escaped, .escape=escape};
+    return {escaped, escape};
   }
 
 private:
@@ -27479,7 +27479,7 @@ struct json_escape_scanner {
     uint64_t escaped = escape_and_terminal_code ^ (backslash | this->next_is_escaped);
     uint64_t escape = escape_and_terminal_code & backslash;
     this->next_is_escaped = escape >> 63;
-    return {.escaped=escaped, .escape=escape};
+    return {escaped, escape};
   }
 
 private:
@@ -33936,7 +33936,7 @@ struct json_escape_scanner {
     uint64_t escaped = escape_and_terminal_code ^ (backslash | this->next_is_escaped);
     uint64_t escape = escape_and_terminal_code & backslash;
     this->next_is_escaped = escape >> 63;
-    return {.escaped=escaped, .escape=escape};
+    return {escaped, escape};
   }
 
 private:
@@ -40967,7 +40967,7 @@ struct json_escape_scanner {
     uint64_t escaped = escape_and_terminal_code ^ (backslash | this->next_is_escaped);
     uint64_t escape = escape_and_terminal_code & backslash;
     this->next_is_escaped = escape >> 63;
-    return {.escaped=escaped, .escape=escape};
+    return {escaped, escape};
   }
 
 private:
