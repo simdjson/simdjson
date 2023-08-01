@@ -67,7 +67,7 @@ struct json_escape_scanner {
     uint64_t escaped = escape_and_terminal_code ^ (backslash | this->next_is_escaped);
     uint64_t escape = escape_and_terminal_code & backslash;
     this->next_is_escaped = escape >> 63;
-    return {.escaped=escaped, .escape=escape};
+    return {escaped, escape};
   }
 
 private:
