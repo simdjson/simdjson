@@ -1,4 +1,4 @@
-/* auto-generated on 2023-08-02 08:28:05 -0700. Do not edit! */
+/* auto-generated on 2023-08-02 16:00:45 -0400. Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -2314,7 +2314,7 @@ namespace std {
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "3.2.1"
+#define SIMDJSON_VERSION "3.2.2"
 
 namespace simdjson {
 enum {
@@ -2329,7 +2329,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 1
+  SIMDJSON_VERSION_REVISION = 2
 };
 } // namespace simdjson
 
@@ -35761,7 +35761,8 @@ simdjson_inline simdjson_result<number> value_iterator::get_number() noexcept {
 simdjson_inline simdjson_result<bool> value_iterator::is_root_integer(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("is_root_integer");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     return false; // if there are more than 20 characters, it cannot be represented as an integer.
   }
@@ -35779,7 +35780,8 @@ simdjson_inline simdjson_result<arm64::number_type> value_iterator::get_root_num
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1];
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -35794,7 +35796,8 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1];
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -35822,7 +35825,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -35837,7 +35841,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -35852,7 +35857,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
+  uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -35868,7 +35874,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
+  uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -35887,7 +35894,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -35906,7 +35914,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -35921,7 +35930,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_root_bool(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("bool");
-  uint8_t tmpbuf[5+1];
+  uint8_t tmpbuf[5+1+1]; // +1 for null termination
+  tmpbuf[5+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 5+1)) { return incorrect_type_error("Not a boolean"); }
   auto result = parse_bool(tmpbuf);
   if(result.error() == SUCCESS) {
@@ -45503,7 +45513,8 @@ simdjson_inline simdjson_result<number> value_iterator::get_number() noexcept {
 simdjson_inline simdjson_result<bool> value_iterator::is_root_integer(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("is_root_integer");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     return false; // if there are more than 20 characters, it cannot be represented as an integer.
   }
@@ -45521,7 +45532,8 @@ simdjson_inline simdjson_result<fallback::number_type> value_iterator::get_root_
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1];
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -45536,7 +45548,8 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1];
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -45564,7 +45577,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -45579,7 +45593,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -45594,7 +45609,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
+  uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -45610,7 +45626,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
+  uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -45629,7 +45646,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -45648,7 +45666,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -45663,7 +45682,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_root_bool(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("bool");
-  uint8_t tmpbuf[5+1];
+  uint8_t tmpbuf[5+1+1]; // +1 for null termination
+  tmpbuf[5+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 5+1)) { return incorrect_type_error("Not a boolean"); }
   auto result = parse_bool(tmpbuf);
   if(result.error() == SUCCESS) {
@@ -55737,7 +55757,8 @@ simdjson_inline simdjson_result<number> value_iterator::get_number() noexcept {
 simdjson_inline simdjson_result<bool> value_iterator::is_root_integer(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("is_root_integer");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     return false; // if there are more than 20 characters, it cannot be represented as an integer.
   }
@@ -55755,7 +55776,8 @@ simdjson_inline simdjson_result<haswell::number_type> value_iterator::get_root_n
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1];
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -55770,7 +55792,8 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1];
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -55798,7 +55821,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -55813,7 +55837,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -55828,7 +55853,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
+  uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -55844,7 +55870,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
+  uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -55863,7 +55890,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -55882,7 +55910,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -55897,7 +55926,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_root_bool(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("bool");
-  uint8_t tmpbuf[5+1];
+  uint8_t tmpbuf[5+1+1]; // +1 for null termination
+  tmpbuf[5+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 5+1)) { return incorrect_type_error("Not a boolean"); }
   auto result = parse_bool(tmpbuf);
   if(result.error() == SUCCESS) {
@@ -65970,7 +66000,8 @@ simdjson_inline simdjson_result<number> value_iterator::get_number() noexcept {
 simdjson_inline simdjson_result<bool> value_iterator::is_root_integer(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("is_root_integer");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     return false; // if there are more than 20 characters, it cannot be represented as an integer.
   }
@@ -65988,7 +66019,8 @@ simdjson_inline simdjson_result<icelake::number_type> value_iterator::get_root_n
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1];
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -66003,7 +66035,8 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1];
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -66031,7 +66064,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -66046,7 +66080,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -66061,7 +66096,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
+  uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -66077,7 +66113,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
+  uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -66096,7 +66133,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -66115,7 +66153,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -66130,7 +66169,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_root_bool(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("bool");
-  uint8_t tmpbuf[5+1];
+  uint8_t tmpbuf[5+1+1]; // +1 for null termination
+  tmpbuf[5+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 5+1)) { return incorrect_type_error("Not a boolean"); }
   auto result = parse_bool(tmpbuf);
   if(result.error() == SUCCESS) {
@@ -76318,7 +76358,8 @@ simdjson_inline simdjson_result<number> value_iterator::get_number() noexcept {
 simdjson_inline simdjson_result<bool> value_iterator::is_root_integer(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("is_root_integer");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     return false; // if there are more than 20 characters, it cannot be represented as an integer.
   }
@@ -76336,7 +76377,8 @@ simdjson_inline simdjson_result<ppc64::number_type> value_iterator::get_root_num
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1];
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -76351,7 +76393,8 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1];
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -76379,7 +76422,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -76394,7 +76438,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -76409,7 +76454,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
+  uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -76425,7 +76471,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
+  uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -76444,7 +76491,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -76463,7 +76511,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -76478,7 +76527,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_root_bool(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("bool");
-  uint8_t tmpbuf[5+1];
+  uint8_t tmpbuf[5+1+1]; // +1 for null termination
+  tmpbuf[5+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 5+1)) { return incorrect_type_error("Not a boolean"); }
   auto result = parse_bool(tmpbuf);
   if(result.error() == SUCCESS) {
@@ -86989,7 +87039,8 @@ simdjson_inline simdjson_result<number> value_iterator::get_number() noexcept {
 simdjson_inline simdjson_result<bool> value_iterator::is_root_integer(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("is_root_integer");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     return false; // if there are more than 20 characters, it cannot be represented as an integer.
   }
@@ -87007,7 +87058,8 @@ simdjson_inline simdjson_result<westmere::number_type> value_iterator::get_root_
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1];
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -87022,7 +87074,8 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1];
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -87050,7 +87103,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -87065,7 +87119,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("uint64");
-  uint8_t tmpbuf[20+1]; // <20 digits> is the longest possible unsigned integer
+  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -87080,7 +87135,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
+  uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -87096,7 +87152,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
+  uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
+  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
     return NUMBER_ERROR;
@@ -87115,7 +87172,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -87134,7 +87192,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1];
+  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -87149,7 +87208,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_root_bool(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("bool");
-  uint8_t tmpbuf[5+1];
+  uint8_t tmpbuf[5+1+1]; // +1 for null termination
+  tmpbuf[5+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 5+1)) { return incorrect_type_error("Not a boolean"); }
   auto result = parse_bool(tmpbuf);
   if(result.error() == SUCCESS) {
