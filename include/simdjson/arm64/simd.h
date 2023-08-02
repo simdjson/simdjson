@@ -137,7 +137,8 @@ simdjson_constexpr int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  
     simdjson_constexpr simd8<T>& operator&=(const simd8<T> other) { auto this_cast = static_cast<simd8<T>*>(this); *this_cast = *this_cast & other; return *this_cast; }
     simdjson_constexpr simd8<T>& operator^=(const simd8<T> other) { auto this_cast = static_cast<simd8<T>*>(this); *this_cast = *this_cast ^ other; return *this_cast; }
 
-    friend simdjson_constexpr Mask operator==(const simd8<T> lhs, const simd8<T> rhs) { return vceqq_u8(lhs, rhs); }
+    simdjson_constexpr Mask eq(const simd8<T> rhs) const { return vceqq_u8(*this, rhs); }
+    friend simdjson_constexpr Mask operator==(const simd8<T> lhs, const simd8<T> rhs) { return lhs.eq(rhs); }
 
     template<int N=1>
     simdjson_constexpr simd8<T> prev(const simd8<T> prev_chunk) const {
@@ -181,9 +182,12 @@ simdjson_constexpr int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base_u8<uint8_t> {
+    using typename base_u8<uint8_t>::simd_t;
+    using base_u8<uint8_t>::LANES;
+
     static simdjson_constexpr simd_t splat(uint8_t _value) { return vmovq_n_u8(_value); }
     static simdjson_constexpr simd_t zero() { return vdupq_n_u8(0); }
-    static simdjson_constexpr uint8x16_t load(const uint8_t* values) { return vld1q_u8(values); }
+    static simdjson_constexpr simd_t load(const uint8_t* values) { return vld1q_u8(values); }
 
     simdjson_constexpr simd8(const simd_t _value) : base_u8<uint8_t>(_value) {}
     // Zero constructor
@@ -326,6 +330,52 @@ simdjson_constexpr int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  
       // store each result (with the second store possibly overlapping the first)
       vst1_u8((uint8_t*)output1, vqtbl1_u8(*this, compactmask1));
       vst1_u8((uint8_t*)output2, vqtbl1_u8(*this, compactmask2));
+    }
+
+    struct lane_with_value { int lane; T value; };
+
+    /**
+     * Initialize a simd8 by filling in only specific lanes.
+     *
+     * @param entries A set of index/value pairs, like {{1, 'a'}, {2, 'b'}, ...}
+     * @param default_value The value to use for other lanes.
+     */
+    static simdjson_constexpr simd8<T> create_sparse(
+      std::initializer_list<lane_with_value> entries,
+      T default_value = {}
+    ) noexcept {
+      bool filled[LANES] = {0};
+      uint8_t table[LANES] = {default_value};
+      for (auto [lane, value] : entries) {
+        assert(lane < LANES);
+        assert(!filled[lane]);
+        filled[lane] = true;
+        table[lane] = value;
+      }
+      return table;
+    }
+
+    static simdjson_constexpr simd8<T> create_eq_lookup_16_table(std::initializer_list<T> values) {
+      bool filled[16] = {0};
+
+      // Set the defaults to 0, except at 0 itself (which we set to 1 so it won't accidentally match 0).
+      uint8_t table[LANES] = {0};
+      for (int lane = 0; lane < 16; lane += 16) { table[lane] = 1; }
+
+      for (T value : values) {
+        int lane = value & 0x0F;
+        assert(!filled[lane]);
+        filled[lane] = true;
+        // Repeat the value at the same position in each 16-byte section of lanes.
+        for (; lane < LANES; lane += 16) { table[lane] = value; }
+      }
+      return table;
+    }
+
+    template <typename ...V>
+    simdjson_inline simd8<T> eq_any(V ...values) const {
+      static constexpr const simd8<T> LOOKUP_TABLE = create_eq_lookup_16_table({values...});
+      return eq(lookup_16(LOOKUP_TABLE));
     }
 
     template<typename L>
@@ -517,6 +567,21 @@ simdjson_constexpr int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  
         this->chunks[2] == mask,
         this->chunks[3] == mask
       ).to_bitmask();
+    }
+
+    simdjson_inline simd8x64<T> lookup_16(simd8<T> lookup_table) const {
+      return {
+        this->chunks[0].lookup_16(lookup_table),
+        this->chunks[1].lookup_16(lookup_table),
+        this->chunks[2].lookup_16(lookup_table),
+        this->chunks[3].lookup_16(lookup_table),
+      };
+    }
+
+    template <typename ...V>
+    simdjson_inline uint64_t eq_any(V ...values) const {
+      static constexpr const simd8<T> LOOKUP_TABLE = simd8<T>::create_eq_lookup_16_table({values...});
+      return eq(lookup_16(LOOKUP_TABLE));
     }
 
     simdjson_constexpr uint64_t lteq(const T m) const {

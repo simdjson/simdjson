@@ -69,7 +69,7 @@ namespace simd {
 
   template<typename T, typename Mask=simd8<bool>>
   struct base8: base<simd8<T>> {
-    using simd_t = typename base<simd8<T>>::simd_t;
+    using typename base<simd8<T>>::simd_t;
     static constexpr const int LANES = sizeof(simd_t);
     using bitmask_t = uint64_t;
     static_assert(sizeof(bitmask_t)*8 == LANES);
@@ -77,9 +77,8 @@ namespace simd {
     simdjson_constexpr base8() : base<simd8<T>>() {}
     simdjson_constexpr base8(const simd_t _value) : base<simd8<T>>(_value) {}
 
-    friend simdjson_really_inline uint64_t operator==(const simd8<T> lhs, const simd8<T> rhs) {
-      return _mm512_cmpeq_epi8_mask(lhs, rhs);
-    }
+    simdjson_constexpr uint64_t eq(const simd8<T> rhs) const { return _mm512_cmpeq_epi8_mask(*this, rhs); }
+    friend simdjson_constexpr uint64_t operator==(const simd8<T> lhs, const simd8<T> rhs) { return lhs.eq(rhs); }
 
     template<int N=1>
     simdjson_constexpr simd8<T> prev(const simd8<T> prev_chunk) const {
@@ -104,7 +103,9 @@ namespace simd {
 
   template<typename T>
   struct base8_numeric: base8<T> {
-    using simd_t = typename base8<T>::simd_t;
+    using typename base8<T>::simd_t;
+    using base8<T>::LANES;
+
     static simdjson_constexpr simd8<T> splat(T _value) { return _mm512_set1_epi8(_value); }
     static simdjson_constexpr simd8<T> zero() { return _mm512_setzero_si512(); }
     static simdjson_constexpr simd8<T> load(const T values[64]) {
@@ -158,6 +159,52 @@ namespace simd {
     template<typename L>
     simdjson_constexpr void compress(uint64_t mask, L * output) const {
       _mm512_mask_compressstoreu_epi8 (output,~mask,*this);
+    }
+
+    struct lane_with_value { int lane; T value; };
+
+    /**
+     * Initialize a simd8 by filling in only specific lanes.
+     *
+     * @param entries A set of index/value pairs, like {{1, 'a'}, {2, 'b'}, ...}
+     * @param default_value The value to use for other lanes.
+     */
+    static simdjson_constexpr simd8<T> create_sparse(
+      std::initializer_list<lane_with_value> entries,
+      T default_value = {}
+    ) noexcept {
+      bool filled[LANES] = {0};
+      uint8_t table[LANES] = {default_value};
+      for (auto [lane, value] : entries) {
+        assert(lane < LANES);
+        assert(!filled[lane]);
+        filled[lane] = true;
+        table[lane] = value;
+      }
+      return table;
+    }
+
+    static simdjson_constexpr simd8<T> create_eq_lookup_16_table(std::initializer_list<T> values) {
+      bool filled[16] = {0};
+
+      // Set the defaults to 0, except at 0 itself (which we set to 1 so it won't accidentally match 0).
+      uint8_t table[LANES] = {0};
+      for (int lane = 0; lane < 16; lane += 16) { table[lane] = 1; }
+
+      for (T value : values) {
+        int lane = value & 0x0F;
+        assert(!filled[lane]);
+        filled[lane] = true;
+        // Repeat the value at the same position in each 16-byte section of lanes.
+        for (; lane < LANES; lane += 16) { table[lane] = value; }
+      }
+      return table;
+    }
+
+    template <typename ...V>
+    simdjson_inline simd8<T> eq_any(V ...values) const {
+      static constexpr const simd8<T> LOOKUP_TABLE = create_eq_lookup_16_table({values...});
+      return eq(lookup_16(LOOKUP_TABLE));
     }
 
     template<typename L>
@@ -355,8 +402,18 @@ namespace simd {
       return this->chunks[0] == mask;
     }
 
-    simdjson_constexpr uint64_t eq(const simd8x64<uint8_t> &other) const {
+    simdjson_constexpr uint64_t eq(const simd8x64<T> &other) const {
       return this->chunks[0] == other.chunks[0];
+    }
+
+    simdjson_inline uint64_t lookup_16(simd8<T> lookup_table) const {
+      return { this->chunks[0].lookup_16(lookup_table) };
+    }
+
+    template <typename ...V>
+    simdjson_inline uint64_t eq_any(V ...values) const {
+      static constexpr const simd8<T> LOOKUP_TABLE = create_eq_lookup_16_table({values...});
+      return eq(lookup_16(LOOKUP_TABLE));
     }
 
     simdjson_constexpr uint64_t lteq(const T m) const {
