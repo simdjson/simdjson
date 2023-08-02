@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-20 14:14:44 -0700. Do not edit! */
+/* auto-generated on 2023-08-02 08:28:05 -0700. Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -128,8 +128,6 @@
 #else
 #define SIMDJSON_IS_32BITS 1
 
-// We do not support 32-bit platforms, but it can be
-// handy to identify them.
 #if defined(_M_IX86) || defined(__i386__)
 #define SIMDJSON_IS_X86_32BITS 1
 #elif defined(__arm__) || defined(_M_ARM)
@@ -11151,6 +11149,8 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 
 #endif // SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 /* end file simdjson/arm64/stringparsing_defs.h */
+
+#define SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT 1
 /* end file simdjson/arm64/begin.h */
 /* including simdjson/generic/amalgamated.h for arm64: #include "simdjson/generic/amalgamated.h" */
 /* begin file simdjson/generic/amalgamated.h for arm64 */
@@ -12995,6 +12995,7 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
+#undef SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT
 /* undefining SIMDJSON_IMPLEMENTATION from "arm64" */
 #undef SIMDJSON_IMPLEMENTATION
 /* end file simdjson/arm64/end.h */
@@ -15205,7 +15206,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num);// Visual Studio wants two underscores
 }
 #else
@@ -20275,7 +20276,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline int count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num); // Visual Studio wants two underscores
 }
 #else
@@ -20961,6 +20962,8 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 
 #endif // SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 /* end file simdjson/ppc64/stringparsing_defs.h */
+
+#define SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT 1
 /* end file simdjson/ppc64/begin.h */
 /* including simdjson/generic/amalgamated.h for ppc64: #include "simdjson/generic/amalgamated.h" */
 /* begin file simdjson/generic/amalgamated.h for ppc64 */
@@ -22805,6 +22808,7 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
+#undef SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT
 /* undefining SIMDJSON_IMPLEMENTATION from "ppc64" */
 #undef SIMDJSON_IMPLEMENTATION
 /* end file simdjson/ppc64/end.h */
@@ -22948,7 +22952,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num);// Visual Studio wants two underscores
 }
 #else
@@ -23535,7 +23539,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num);// Visual Studio wants two underscores
 }
 #else
@@ -26697,6 +26701,8 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 
 #endif // SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 /* end file simdjson/arm64/stringparsing_defs.h */
+
+#define SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT 1
 /* end file simdjson/arm64/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for arm64: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for arm64 */
@@ -33116,7 +33122,7 @@ simdjson_inline const uint8_t *json_iterator::return_current_and_advance() noexc
 
 simdjson_inline const uint8_t *json_iterator::unsafe_pointer() const noexcept {
   // deliberately done without safety guard:
-  return token.peek(0);
+  return token.peek();
 }
 
 simdjson_inline const uint8_t *json_iterator::peek(int32_t delta) const noexcept {
@@ -33719,7 +33725,7 @@ simdjson_inline simdjson_result<std::string_view> object::raw_json() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
   if(error) { return error; }
-  const uint8_t * final_point{iter._json_iter->peek(0)};
+  const uint8_t * final_point{iter._json_iter->peek()};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 
@@ -36227,6 +36233,7 @@ simdjson_inline simdjson_result<arm64::ondemand::value_iterator>::simdjson_resul
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
+#undef SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT
 /* undefining SIMDJSON_IMPLEMENTATION from "arm64" */
 #undef SIMDJSON_IMPLEMENTATION
 /* end file simdjson/arm64/end.h */
@@ -42857,7 +42864,7 @@ simdjson_inline const uint8_t *json_iterator::return_current_and_advance() noexc
 
 simdjson_inline const uint8_t *json_iterator::unsafe_pointer() const noexcept {
   // deliberately done without safety guard:
-  return token.peek(0);
+  return token.peek();
 }
 
 simdjson_inline const uint8_t *json_iterator::peek(int32_t delta) const noexcept {
@@ -43460,7 +43467,7 @@ simdjson_inline simdjson_result<std::string_view> object::raw_json() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
   if(error) { return error; }
-  const uint8_t * final_point{iter._json_iter->peek(0)};
+  const uint8_t * final_point{iter._json_iter->peek()};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 
@@ -46123,7 +46130,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num);// Visual Studio wants two underscores
 }
 #else
@@ -53091,7 +53098,7 @@ simdjson_inline const uint8_t *json_iterator::return_current_and_advance() noexc
 
 simdjson_inline const uint8_t *json_iterator::unsafe_pointer() const noexcept {
   // deliberately done without safety guard:
-  return token.peek(0);
+  return token.peek();
 }
 
 simdjson_inline const uint8_t *json_iterator::peek(int32_t delta) const noexcept {
@@ -53694,7 +53701,7 @@ simdjson_inline simdjson_result<std::string_view> object::raw_json() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
   if(error) { return error; }
-  const uint8_t * final_point{iter._json_iter->peek(0)};
+  const uint8_t * final_point{iter._json_iter->peek()};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 
@@ -63324,7 +63331,7 @@ simdjson_inline const uint8_t *json_iterator::return_current_and_advance() noexc
 
 simdjson_inline const uint8_t *json_iterator::unsafe_pointer() const noexcept {
   // deliberately done without safety guard:
-  return token.peek(0);
+  return token.peek();
 }
 
 simdjson_inline const uint8_t *json_iterator::peek(int32_t delta) const noexcept {
@@ -63927,7 +63934,7 @@ simdjson_inline simdjson_result<std::string_view> object::raw_json() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
   if(error) { return error; }
-  const uint8_t * final_point{iter._json_iter->peek(0)};
+  const uint8_t * final_point{iter._json_iter->peek()};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 
@@ -66565,7 +66572,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline int count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num); // Visual Studio wants two underscores
 }
 #else
@@ -67251,6 +67258,8 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 
 #endif // SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 /* end file simdjson/ppc64/stringparsing_defs.h */
+
+#define SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT 1
 /* end file simdjson/ppc64/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for ppc64: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for ppc64 */
@@ -73670,7 +73679,7 @@ simdjson_inline const uint8_t *json_iterator::return_current_and_advance() noexc
 
 simdjson_inline const uint8_t *json_iterator::unsafe_pointer() const noexcept {
   // deliberately done without safety guard:
-  return token.peek(0);
+  return token.peek();
 }
 
 simdjson_inline const uint8_t *json_iterator::peek(int32_t delta) const noexcept {
@@ -74273,7 +74282,7 @@ simdjson_inline simdjson_result<std::string_view> object::raw_json() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
   if(error) { return error; }
-  const uint8_t * final_point{iter._json_iter->peek(0)};
+  const uint8_t * final_point{iter._json_iter->peek()};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 
@@ -76781,6 +76790,7 @@ simdjson_inline simdjson_result<ppc64::ondemand::value_iterator>::simdjson_resul
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
+#undef SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT
 /* undefining SIMDJSON_IMPLEMENTATION from "ppc64" */
 #undef SIMDJSON_IMPLEMENTATION
 /* end file simdjson/ppc64/end.h */
@@ -76924,7 +76934,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num);// Visual Studio wants two underscores
 }
 #else
@@ -77511,7 +77521,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num);// Visual Studio wants two underscores
 }
 #else
@@ -84340,7 +84350,7 @@ simdjson_inline const uint8_t *json_iterator::return_current_and_advance() noexc
 
 simdjson_inline const uint8_t *json_iterator::unsafe_pointer() const noexcept {
   // deliberately done without safety guard:
-  return token.peek(0);
+  return token.peek();
 }
 
 simdjson_inline const uint8_t *json_iterator::peek(int32_t delta) const noexcept {
@@ -84943,7 +84953,7 @@ simdjson_inline simdjson_result<std::string_view> object::raw_json() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
   if(error) { return error; }
-  const uint8_t * final_point{iter._json_iter->peek(0)};
+  const uint8_t * final_point{iter._json_iter->peek()};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 

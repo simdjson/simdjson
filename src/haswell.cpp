@@ -125,16 +125,6 @@ simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2,
 //
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
-namespace {
-namespace stage1 {
-
-simdjson_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
-  if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
-  return find_escaped_branchless(backslash);
-}
-
-} // namespace stage1
-} // unnamed namespace
 
 simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
   return haswell::stage1::json_minifier::minify<128>(buf, len, dst, dst_len);

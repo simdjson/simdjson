@@ -2261,7 +2261,8 @@ int main(int argc, char *argv[]) {
       dom_api_tests::run() &&
       type_tests::run() &&
       format_tests::run() &&
-      number_tests::run()
+      number_tests::run() &&
+      true
   ) {
     std::cout << "Basic tests are ok." << std::endl;
     return EXIT_SUCCESS;

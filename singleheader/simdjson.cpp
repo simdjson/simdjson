@@ -1,4 +1,4 @@
-/* auto-generated on 2023-07-20 14:14:44 -0700. Do not edit! */
+/* auto-generated on 2023-08-02 08:28:05 -0700. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -108,8 +108,6 @@
 #else
 #define SIMDJSON_IS_32BITS 1
 
-// We do not support 32-bit platforms, but it can be
-// handy to identify them.
 #if defined(_M_IX86) || defined(__i386__)
 #define SIMDJSON_IS_X86_32BITS 1
 #elif defined(__arm__) || defined(_M_ARM)
@@ -8125,6 +8123,8 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 
 #endif // SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 /* end file simdjson/arm64/stringparsing_defs.h */
+
+#define SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT 1
 /* end file simdjson/arm64/begin.h */
 /* including simdjson/generic/amalgamated.h for arm64: #include "simdjson/generic/amalgamated.h" */
 /* begin file simdjson/generic/amalgamated.h for arm64 */
@@ -9969,6 +9969,7 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
+#undef SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT
 /* undefining SIMDJSON_IMPLEMENTATION from "arm64" */
 #undef SIMDJSON_IMPLEMENTATION
 /* end file simdjson/arm64/end.h */
@@ -10867,6 +10868,8 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
 
 #endif // SIMDJSON_ARM64_STRINGPARSING_DEFS_H
 /* end file simdjson/arm64/stringparsing_defs.h */
+
+#define SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT 1
 /* end file simdjson/arm64/begin.h */
 /* including generic/amalgamated.h for arm64: #include <generic/amalgamated.h> */
 /* begin file generic/amalgamated.h for arm64 */
@@ -10992,6 +10995,279 @@ using utf8_validation::utf8_checker;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 /* end file generic/stage1/base.h for arm64 */
+/* including generic/stage1/buf_block_reader.h for arm64: #include <generic/stage1/buf_block_reader.h> */
+/* begin file generic/stage1/buf_block_reader.h for arm64 */
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
+/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+#include <cstring>
+
+namespace simdjson {
+namespace arm64 {
+namespace {
+namespace stage1 {
+
+// Walks through a buffer in block-sized increments, loading the last part with spaces
+template<size_t STEP_SIZE>
+struct buf_block_reader {
+public:
+  simdjson_inline buf_block_reader(const uint8_t *_buf, size_t _len);
+  simdjson_inline size_t block_index();
+  simdjson_inline bool has_full_block() const;
+  simdjson_inline const uint8_t *full_block() const;
+  /**
+   * Get the last block, padded with spaces.
+   *
+   * There will always be a last block, with at least 1 byte, unless len == 0 (in which case this
+   * function fills the buffer with spaces and returns 0. In particular, if len == STEP_SIZE there
+   * will be 0 full_blocks and 1 remainder block with STEP_SIZE bytes and no spaces for padding.
+   *
+   * @return the number of effective characters in the last block.
+   */
+  simdjson_inline size_t get_remainder(uint8_t *dst) const;
+  simdjson_inline void advance();
+private:
+  const uint8_t *buf;
+  const size_t len;
+  const size_t lenminusstep;
+  size_t idx;
+};
+
+// Routines to print masks and text for debugging bitmask operations
+simdjson_unused static char * format_input_text_64(const uint8_t *text) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+// Routines to print masks and text for debugging bitmask operations
+simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  in.store(reinterpret_cast<uint8_t*>(buf));
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] < ' ') { buf[i] = '_'; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in, uint64_t mask) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  in.store(reinterpret_cast<uint8_t*>(buf));
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] <= ' ') { buf[i] = '_'; }
+    if (!(mask & (size_t(1) << i))) { buf[i] = ' '; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+simdjson_unused static char * format_mask(uint64_t mask) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  for (size_t i=0; i<64; i++) {
+    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
+  }
+  buf[64] = '\0';
+  return buf;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline buf_block_reader<STEP_SIZE>::buf_block_reader(const uint8_t *_buf, size_t _len) : buf{_buf}, len{_len}, lenminusstep{len < STEP_SIZE ? 0 : len - STEP_SIZE}, idx{0} {}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::block_index() { return idx; }
+
+template<size_t STEP_SIZE>
+simdjson_inline bool buf_block_reader<STEP_SIZE>::has_full_block() const {
+  return idx < lenminusstep;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline const uint8_t *buf_block_reader<STEP_SIZE>::full_block() const {
+  return &buf[idx];
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) const {
+  if(len == idx) { return 0; } // memcpy(dst, null, 0) will trigger an error with some sanitizers
+  std::memset(dst, 0x20, STEP_SIZE); // std::memset STEP_SIZE because it's more efficient to write out 8 or 16 bytes at once.
+  std::memcpy(dst, buf + idx, len - idx);
+  return len - idx;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
+  idx += STEP_SIZE;
+}
+
+} // namespace stage1
+} // unnamed namespace
+} // namespace arm64
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
+/* end file generic/stage1/buf_block_reader.h for arm64 */
+/* including generic/stage1/json_escape_scanner.h for arm64: #include <generic/stage1/json_escape_scanner.h> */
+/* begin file generic/stage1/json_escape_scanner.h for arm64 */
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_ESCAPE_SCANNER_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_ESCAPE_SCANNER_H */
+/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #include <generic/stage1/buf_block_reader.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+namespace simdjson {
+namespace arm64 {
+namespace {
+namespace stage1 {
+
+/**
+ * Scans for escape characters in JSON, taking care with multiple backslashes (\\n vs. \n).
+ */
+struct json_escape_scanner {
+  /** The actual escape characters (the backslashes themselves). */
+  uint64_t next_is_escaped = 0ULL;
+
+  struct escaped_and_escape {
+    /**
+     * Mask of escaped characters.
+     *
+     * ```
+     * \n \\n \\\n \\\\n \
+     * 0100100010100101000
+     *  n  \   \ n  \ \
+     * ```
+     */
+    uint64_t escaped;
+    /**
+     * Mask of escape characters.
+     *
+     * ```
+     * \n \\n \\\n \\\\n \
+     * 1001000101001010001
+     * \  \   \ \  \ \   \
+     * ```
+     */
+    uint64_t escape;
+  };
+
+  /**
+   * Get a mask of both escape and escaped characters (the characters following a backslash).
+   *
+   * @param potential_escape A mask of the character that can escape others (but could be
+   *        escaped itself). e.g. block.eq('\\')
+   */
+  simdjson_really_inline escaped_and_escape next(uint64_t backslash) noexcept {
+
+#if !SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT
+    if (!backslash) { return {next_escaped_without_backslashes(), 0}; }
+#endif
+
+    // |                                | Mask (shows characters instead of 1's) | Depth | Instructions        |
+    // |--------------------------------|----------------------------------------|-------|---------------------|
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |       |                     |
+    // |                                | `    even   odd    even   odd   odd`   |       |                     |
+    // | potential_escape               | ` \  \\\    \\\    \\\\   \\\\  \\\`   | 1     | 1 (backslash & ~first_is_escaped)
+    // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 5     | 5 (next_escape_and_terminal_code())
+    // | escaped                        | `\    \ n    \ n    \ \    \ \   \ ` X | 6     | 7 (escape_and_terminal_code ^ (potential_escape | first_is_escaped))
+    // | escape                         | `    \ \    \ \    \ \    \ \   \ \`   | 6     | 8 (escape_and_terminal_code & backslash)
+    // | first_is_escaped               | `\                                 `   | 7 (*) | 9 (escape >> 63) ()
+    //                                                                               (*) this is not needed until the next iteration
+    uint64_t escape_and_terminal_code = next_escape_and_terminal_code(backslash & ~this->next_is_escaped);
+    uint64_t escaped = escape_and_terminal_code ^ (backslash | this->next_is_escaped);
+    uint64_t escape = escape_and_terminal_code & backslash;
+    this->next_is_escaped = escape >> 63;
+    return {escaped, escape};
+  }
+
+private:
+  static constexpr const uint64_t ODD_BITS = 0xAAAAAAAAAAAAAAAAULL;
+
+  simdjson_really_inline uint64_t next_escaped_without_backslashes() noexcept {
+    uint64_t escaped = this->next_is_escaped;
+    this->next_is_escaped = 0;
+    return escaped;
+  }
+
+  /**
+   * Returns a mask of the next escape characters (masking out escaped backslashes), along with
+   * any non-backslash escape codes.
+   *
+   * \n \\n \\\n \\\\n returns:
+   * \n \   \ \n \ \
+   * 11 100 1011 10100
+   *
+   * You are expected to mask out the first bit yourself if the previous block had a trailing
+   * escape.
+   *
+   * & the result with potential_escape to get just the escape characters.
+   * ^ the result with (potential_escape | first_is_escaped) to get escaped characters.
+   */
+  static simdjson_really_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
+    // If we were to just shift and mask out any odd bits, we'd actually get a *half* right answer:
+    // any even-aligned backslash runs would be correct! Odd-aligned backslash runs would be
+    // inverted (\\\ would be 010 instead of 101).
+    //
+    // ```
+    // string:              | ____\\\\_\\\\_____ |
+    // maybe_escaped | ODD  |     \ \   \ \      |
+    //               even-aligned ^^^  ^^^^ odd-aligned
+    // ```
+    //
+    // Taking that into account, our basic strategy is:
+    //
+    // 1. Use subtraction to produce a mask with 1's for even-aligned runs and 0's for
+    //    odd-aligned runs.
+    // 2. XOR all odd bits, which masks out the odd bits in even-aligned runs, and brings IN the
+    //    odd bits in odd-aligned runs.
+    // 3. & with backslash to clean up any stray bits.
+    // runs are set to 0, and then XORing with "odd":
+    //
+    // |                                | Mask (shows characters instead of 1's) | Instructions        |
+    // |--------------------------------|----------------------------------------|---------------------|
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |
+    // |                                | `    even   odd    even   odd   odd`   |
+    // | maybe_escaped                  | `  n  \\n    \\n    \\\_   \\\_  \\` X | 1 (potential_escape << 1)
+    // | maybe_escaped_and_odd          | ` \n_ \\n _ \\\n_ _ \\\__ _\\\_ \\\`   | 1 (maybe_escaped | odd)
+    // | even_series_codes_and_odd      | `  n_\\\  _    n_ _\\\\ _     _    `   | 1 (maybe_escaped_and_odd - potential_escape)
+    // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 1 (^ odd)
+    //
+
+    // Escaped characters are characters following an escape.
+    uint64_t maybe_escaped = potential_escape << 1;
+
+    // To distinguish odd from even escape sequences, therefore, we turn on any *starting*
+    // escapes that are on an odd byte. (We actually bring in all odd bits, for speed.)
+    // - Odd runs of backslashes are 0000, and the code at the end ("n" in \n or \\n) is 1.
+    // - Odd runs of backslashes are 1111, and the code at the end ("n" in \n or \\n) is 0.
+    // - All other odd bytes are 1, and even bytes are 0.
+    uint64_t maybe_escaped_and_odd_bits     = maybe_escaped | ODD_BITS;
+    uint64_t even_series_codes_and_odd_bits = maybe_escaped_and_odd_bits - potential_escape;
+
+    // Now we flip all odd bytes back with xor. This:
+    // - Makes odd runs of backslashes go from 0000 to 1010
+    // - Makes even runs of backslashes go from 1111 to 1010
+    // - Sets actually-escaped codes to 1 (the n in \n and \\n: \n = 11, \\n = 100)
+    // - Resets all other bytes to 0
+    return even_series_codes_and_odd_bits ^ ODD_BITS;
+  }
+};
+
+} // namespace stage1
+} // unnamed namespace
+} // namespace arm64
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
+/* end file generic/stage1/json_escape_scanner.h for arm64 */
 /* including generic/stage1/json_string_scanner.h for arm64: #include <generic/stage1/json_string_scanner.h> */
 /* begin file generic/stage1/json_string_scanner.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
@@ -10999,6 +11275,7 @@ using utf8_validation::utf8_checker;
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H */
 /* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #include <generic/stage1/json_escape_scanner.h> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -11008,33 +11285,25 @@ namespace stage1 {
 
 struct json_string_block {
   // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
-  simdjson_inline json_string_block(uint64_t backslash, uint64_t escaped, uint64_t quote, uint64_t in_string) :
-  _backslash(backslash), _escaped(escaped), _quote(quote), _in_string(in_string) {}
+  simdjson_really_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  _escaped(escaped), _quote(quote), _in_string(in_string) {}
 
   // Escaped characters (characters following an escape() character)
-  simdjson_inline uint64_t escaped() const { return _escaped; }
-  // Escape characters (backslashes that are not escaped--i.e. in \\, includes only the first \)
-  simdjson_inline uint64_t escape() const { return _backslash & ~_escaped; }
+  simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Real (non-backslashed) quotes
-  simdjson_inline uint64_t quote() const { return _quote; }
-  // Start quotes of strings
-  simdjson_inline uint64_t string_start() const { return _quote & _in_string; }
-  // End quotes of strings
-  simdjson_inline uint64_t string_end() const { return _quote & ~_in_string; }
+  simdjson_really_inline uint64_t quote() const { return _quote; }
   // Only characters inside the string (not including the quotes)
-  simdjson_inline uint64_t string_content() const { return _in_string & ~_quote; }
+  simdjson_really_inline uint64_t string_content() const { return _in_string & ~_quote; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
   // Tail of string (everything except the start quote)
-  simdjson_inline uint64_t string_tail() const { return _in_string ^ _quote; }
+  simdjson_really_inline uint64_t string_tail() const { return _in_string ^ _quote; }
 
-  // backslash characters
-  uint64_t _backslash;
   // escaped characters (backslashed--does not include the hex characters after \u)
   uint64_t _escaped;
-  // real quotes (non-backslashed ones)
+  // real quotes (non-escaped ones)
   uint64_t _quote;
   // string characters (includes start quote but not end quote)
   uint64_t _in_string;
@@ -11043,64 +11312,16 @@ struct json_string_block {
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  simdjson_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
+  simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_really_inline error_code finish();
 
 private:
-  // Intended to be defined by the implementation
-  simdjson_inline uint64_t find_escaped(uint64_t escape);
-  simdjson_inline uint64_t find_escaped_branchless(uint64_t escape);
-
+  // Scans for escape characters
+  json_escape_scanner escape_scanner{};
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
   uint64_t prev_in_string = 0ULL;
-  // Whether the first character of the next iteration is escaped.
-  uint64_t prev_escaped = 0ULL;
 };
-
-//
-// Finds escaped characters (characters following \).
-//
-// Handles runs of backslashes like \\\" and \\\\" correctly (yielding 0101 and 01010, respectively).
-//
-// Does this by:
-// - Shift the escape mask to get potentially escaped characters (characters after backslashes).
-// - Mask escaped sequences that start on *even* bits with 1010101010 (odd bits are escaped, even bits are not)
-// - Mask escaped sequences that start on *odd* bits with 0101010101 (even bits are escaped, odd bits are not)
-//
-// To distinguish between escaped sequences starting on even/odd bits, it finds the start of all
-// escape sequences, filters out the ones that start on even bits, and adds that to the mask of
-// escape sequences. This causes the addition to clear out the sequences starting on odd bits (since
-// the start bit causes a carry), and leaves even-bit sequences alone.
-//
-// Example:
-//
-// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
-// escape         |  xxx |  xx xxx  xxx  xx xx  | Removed overflow backslash; will | it into follows_escape
-// odd_starts     |  x   |  x       x       x   | escape & ~even_bits & ~follows_escape
-// even_seq       |     c|    cxxx     c xx   c | c = carry bit -- will be masked out later
-// invert_mask    |      |     cxxx     c xx   c| even_seq << 1
-// follows_escape |   xx | x xx xxx  xxx  xx xx | Includes overflow bit
-// escaped        |   x  | x x  x x  x x  x  x  |
-// desired        |   x  | x x  x x  x x  x  x  |
-// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
-//
-simdjson_inline uint64_t json_string_scanner::find_escaped_branchless(uint64_t backslash) {
-  // If there was overflow, pretend the first character isn't a backslash
-  backslash &= ~prev_escaped;
-  uint64_t follows_escape = backslash << 1 | prev_escaped;
-
-  // Get sequences starting on even bits by clearing out the odd series using +
-  const uint64_t even_bits = 0x5555555555555555ULL;
-  uint64_t odd_sequence_starts = backslash & ~even_bits & ~follows_escape;
-  uint64_t sequences_starting_on_even_bits;
-  prev_escaped = add_overflow(odd_sequence_starts, backslash, &sequences_starting_on_even_bits);
-  uint64_t invert_mask = sequences_starting_on_even_bits << 1; // The mask we want to return is the *escaped* bits, not escapes.
-
-  // Mask every other backslashed character as an escaped character
-  // Flip the mask for sequences that start on even bits, to correct them
-  return (even_bits ^ invert_mask) & follows_escape;
-}
 
 //
 // Return a mask of all string characters plus end quotes.
@@ -11110,9 +11331,9 @@ simdjson_inline uint64_t json_string_scanner::find_escaped_branchless(uint64_t b
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
+simdjson_really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
   const uint64_t backslash = in.eq('\\');
-  const uint64_t escaped = find_escaped(backslash);
+  const uint64_t escaped = escape_scanner.next(backslash).escaped;
   const uint64_t quote = in.eq('"') & ~escaped;
 
   //
@@ -11126,24 +11347,16 @@ simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64
   //
   // Check if we're still in a string at the end of the box so the next block will know
   //
-  // right shift of a signed value expected to be well-defined and standard
-  // compliant as of C++20, John Regher from Utah U. says this is fine code
-  //
   prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
 
   // Use ^ to turn the beginning quote off, and the end quote on.
 
   // We are returning a function-local object so either we get a move constructor
   // or we get copy elision.
-  return json_string_block(
-    backslash,
-    escaped,
-    quote,
-    in_string
-  );
+  return json_string_block(escaped, quote, in_string);
 }
 
-simdjson_inline error_code json_string_scanner::finish() {
+simdjson_really_inline error_code json_string_scanner::finish() {
   if (prev_in_string) {
     return UNCLOSED_STRING;
   }
@@ -11550,114 +11763,6 @@ simdjson_inline error_code json_scanner::finish() {
 /* end file generic/stage1/json_scanner.h for arm64 */
 
 // All other declarations
-/* including generic/stage1/buf_block_reader.h for arm64: #include <generic/stage1/buf_block_reader.h> */
-/* begin file generic/stage1/buf_block_reader.h for arm64 */
-#ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
-/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
-/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
-
-#include <cstring>
-
-namespace simdjson {
-namespace arm64 {
-namespace {
-namespace stage1 {
-
-// Walks through a buffer in block-sized increments, loading the last part with spaces
-template<size_t STEP_SIZE>
-struct buf_block_reader {
-public:
-  simdjson_inline buf_block_reader(const uint8_t *_buf, size_t _len);
-  simdjson_inline size_t block_index();
-  simdjson_inline bool has_full_block() const;
-  simdjson_inline const uint8_t *full_block() const;
-  /**
-   * Get the last block, padded with spaces.
-   *
-   * There will always be a last block, with at least 1 byte, unless len == 0 (in which case this
-   * function fills the buffer with spaces and returns 0. In particular, if len == STEP_SIZE there
-   * will be 0 full_blocks and 1 remainder block with STEP_SIZE bytes and no spaces for padding.
-   *
-   * @return the number of effective characters in the last block.
-   */
-  simdjson_inline size_t get_remainder(uint8_t *dst) const;
-  simdjson_inline void advance();
-private:
-  const uint8_t *buf;
-  const size_t len;
-  const size_t lenminusstep;
-  size_t idx;
-};
-
-// Routines to print masks and text for debugging bitmask operations
-simdjson_unused static char * format_input_text_64(const uint8_t *text) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
-    buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
-  }
-  buf[sizeof(simd8x64<uint8_t>)] = '\0';
-  return buf;
-}
-
-// Routines to print masks and text for debugging bitmask operations
-simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  in.store(reinterpret_cast<uint8_t*>(buf));
-  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
-    if (buf[i] < ' ') { buf[i] = '_'; }
-  }
-  buf[sizeof(simd8x64<uint8_t>)] = '\0';
-  return buf;
-}
-
-simdjson_unused static char * format_mask(uint64_t mask) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  for (size_t i=0; i<64; i++) {
-    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
-  }
-  buf[64] = '\0';
-  return buf;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline buf_block_reader<STEP_SIZE>::buf_block_reader(const uint8_t *_buf, size_t _len) : buf{_buf}, len{_len}, lenminusstep{len < STEP_SIZE ? 0 : len - STEP_SIZE}, idx{0} {}
-
-template<size_t STEP_SIZE>
-simdjson_inline size_t buf_block_reader<STEP_SIZE>::block_index() { return idx; }
-
-template<size_t STEP_SIZE>
-simdjson_inline bool buf_block_reader<STEP_SIZE>::has_full_block() const {
-  return idx < lenminusstep;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline const uint8_t *buf_block_reader<STEP_SIZE>::full_block() const {
-  return &buf[idx];
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) const {
-  if(len == idx) { return 0; } // memcpy(dst, null, 0) will trigger an error with some sanitizers
-  std::memset(dst, 0x20, STEP_SIZE); // std::memset STEP_SIZE because it's more efficient to write out 8 or 16 bytes at once.
-  std::memcpy(dst, buf + idx, len - idx);
-  return len - idx;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
-  idx += STEP_SIZE;
-}
-
-} // namespace stage1
-} // unnamed namespace
-} // namespace arm64
-} // namespace simdjson
-
-#endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
-/* end file generic/stage1/buf_block_reader.h for arm64 */
 /* including generic/stage1/find_next_document_index.h for arm64: #include <generic/stage1/find_next_document_index.h> */
 /* begin file generic/stage1/find_next_document_index.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
@@ -13610,18 +13715,6 @@ simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2,
 //
 namespace simdjson {
 namespace arm64 {
-namespace {
-namespace stage1 {
-
-simdjson_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
-  // On ARM, we don't short-circuit this if there are no backslashes, because the branch gives us no
-  // benefit and therefore makes things worse.
-  // if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
-  return find_escaped_branchless(backslash);
-}
-
-} // namespace stage1
-} // unnamed namespace
 
 simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
   return arm64::stage1::json_minifier::minify<64>(buf, len, dst, dst_len);
@@ -13668,6 +13761,7 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
+#undef SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT
 /* undefining SIMDJSON_IMPLEMENTATION from "arm64" */
 #undef SIMDJSON_IMPLEMENTATION
 /* end file simdjson/arm64/end.h */
@@ -17749,7 +17843,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num);// Visual Studio wants two underscores
 }
 #else
@@ -20335,7 +20429,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num);// Visual Studio wants two underscores
 }
 #else
@@ -21009,6 +21103,279 @@ using utf8_validation::utf8_checker;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 /* end file generic/stage1/base.h for haswell */
+/* including generic/stage1/buf_block_reader.h for haswell: #include <generic/stage1/buf_block_reader.h> */
+/* begin file generic/stage1/buf_block_reader.h for haswell */
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
+/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+#include <cstring>
+
+namespace simdjson {
+namespace haswell {
+namespace {
+namespace stage1 {
+
+// Walks through a buffer in block-sized increments, loading the last part with spaces
+template<size_t STEP_SIZE>
+struct buf_block_reader {
+public:
+  simdjson_inline buf_block_reader(const uint8_t *_buf, size_t _len);
+  simdjson_inline size_t block_index();
+  simdjson_inline bool has_full_block() const;
+  simdjson_inline const uint8_t *full_block() const;
+  /**
+   * Get the last block, padded with spaces.
+   *
+   * There will always be a last block, with at least 1 byte, unless len == 0 (in which case this
+   * function fills the buffer with spaces and returns 0. In particular, if len == STEP_SIZE there
+   * will be 0 full_blocks and 1 remainder block with STEP_SIZE bytes and no spaces for padding.
+   *
+   * @return the number of effective characters in the last block.
+   */
+  simdjson_inline size_t get_remainder(uint8_t *dst) const;
+  simdjson_inline void advance();
+private:
+  const uint8_t *buf;
+  const size_t len;
+  const size_t lenminusstep;
+  size_t idx;
+};
+
+// Routines to print masks and text for debugging bitmask operations
+simdjson_unused static char * format_input_text_64(const uint8_t *text) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+// Routines to print masks and text for debugging bitmask operations
+simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  in.store(reinterpret_cast<uint8_t*>(buf));
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] < ' ') { buf[i] = '_'; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in, uint64_t mask) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  in.store(reinterpret_cast<uint8_t*>(buf));
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] <= ' ') { buf[i] = '_'; }
+    if (!(mask & (size_t(1) << i))) { buf[i] = ' '; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+simdjson_unused static char * format_mask(uint64_t mask) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  for (size_t i=0; i<64; i++) {
+    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
+  }
+  buf[64] = '\0';
+  return buf;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline buf_block_reader<STEP_SIZE>::buf_block_reader(const uint8_t *_buf, size_t _len) : buf{_buf}, len{_len}, lenminusstep{len < STEP_SIZE ? 0 : len - STEP_SIZE}, idx{0} {}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::block_index() { return idx; }
+
+template<size_t STEP_SIZE>
+simdjson_inline bool buf_block_reader<STEP_SIZE>::has_full_block() const {
+  return idx < lenminusstep;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline const uint8_t *buf_block_reader<STEP_SIZE>::full_block() const {
+  return &buf[idx];
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) const {
+  if(len == idx) { return 0; } // memcpy(dst, null, 0) will trigger an error with some sanitizers
+  std::memset(dst, 0x20, STEP_SIZE); // std::memset STEP_SIZE because it's more efficient to write out 8 or 16 bytes at once.
+  std::memcpy(dst, buf + idx, len - idx);
+  return len - idx;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
+  idx += STEP_SIZE;
+}
+
+} // namespace stage1
+} // unnamed namespace
+} // namespace haswell
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
+/* end file generic/stage1/buf_block_reader.h for haswell */
+/* including generic/stage1/json_escape_scanner.h for haswell: #include <generic/stage1/json_escape_scanner.h> */
+/* begin file generic/stage1/json_escape_scanner.h for haswell */
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_ESCAPE_SCANNER_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_ESCAPE_SCANNER_H */
+/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #include <generic/stage1/buf_block_reader.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+namespace simdjson {
+namespace haswell {
+namespace {
+namespace stage1 {
+
+/**
+ * Scans for escape characters in JSON, taking care with multiple backslashes (\\n vs. \n).
+ */
+struct json_escape_scanner {
+  /** The actual escape characters (the backslashes themselves). */
+  uint64_t next_is_escaped = 0ULL;
+
+  struct escaped_and_escape {
+    /**
+     * Mask of escaped characters.
+     *
+     * ```
+     * \n \\n \\\n \\\\n \
+     * 0100100010100101000
+     *  n  \   \ n  \ \
+     * ```
+     */
+    uint64_t escaped;
+    /**
+     * Mask of escape characters.
+     *
+     * ```
+     * \n \\n \\\n \\\\n \
+     * 1001000101001010001
+     * \  \   \ \  \ \   \
+     * ```
+     */
+    uint64_t escape;
+  };
+
+  /**
+   * Get a mask of both escape and escaped characters (the characters following a backslash).
+   *
+   * @param potential_escape A mask of the character that can escape others (but could be
+   *        escaped itself). e.g. block.eq('\\')
+   */
+  simdjson_really_inline escaped_and_escape next(uint64_t backslash) noexcept {
+
+#if !SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT
+    if (!backslash) { return {next_escaped_without_backslashes(), 0}; }
+#endif
+
+    // |                                | Mask (shows characters instead of 1's) | Depth | Instructions        |
+    // |--------------------------------|----------------------------------------|-------|---------------------|
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |       |                     |
+    // |                                | `    even   odd    even   odd   odd`   |       |                     |
+    // | potential_escape               | ` \  \\\    \\\    \\\\   \\\\  \\\`   | 1     | 1 (backslash & ~first_is_escaped)
+    // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 5     | 5 (next_escape_and_terminal_code())
+    // | escaped                        | `\    \ n    \ n    \ \    \ \   \ ` X | 6     | 7 (escape_and_terminal_code ^ (potential_escape | first_is_escaped))
+    // | escape                         | `    \ \    \ \    \ \    \ \   \ \`   | 6     | 8 (escape_and_terminal_code & backslash)
+    // | first_is_escaped               | `\                                 `   | 7 (*) | 9 (escape >> 63) ()
+    //                                                                               (*) this is not needed until the next iteration
+    uint64_t escape_and_terminal_code = next_escape_and_terminal_code(backslash & ~this->next_is_escaped);
+    uint64_t escaped = escape_and_terminal_code ^ (backslash | this->next_is_escaped);
+    uint64_t escape = escape_and_terminal_code & backslash;
+    this->next_is_escaped = escape >> 63;
+    return {escaped, escape};
+  }
+
+private:
+  static constexpr const uint64_t ODD_BITS = 0xAAAAAAAAAAAAAAAAULL;
+
+  simdjson_really_inline uint64_t next_escaped_without_backslashes() noexcept {
+    uint64_t escaped = this->next_is_escaped;
+    this->next_is_escaped = 0;
+    return escaped;
+  }
+
+  /**
+   * Returns a mask of the next escape characters (masking out escaped backslashes), along with
+   * any non-backslash escape codes.
+   *
+   * \n \\n \\\n \\\\n returns:
+   * \n \   \ \n \ \
+   * 11 100 1011 10100
+   *
+   * You are expected to mask out the first bit yourself if the previous block had a trailing
+   * escape.
+   *
+   * & the result with potential_escape to get just the escape characters.
+   * ^ the result with (potential_escape | first_is_escaped) to get escaped characters.
+   */
+  static simdjson_really_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
+    // If we were to just shift and mask out any odd bits, we'd actually get a *half* right answer:
+    // any even-aligned backslash runs would be correct! Odd-aligned backslash runs would be
+    // inverted (\\\ would be 010 instead of 101).
+    //
+    // ```
+    // string:              | ____\\\\_\\\\_____ |
+    // maybe_escaped | ODD  |     \ \   \ \      |
+    //               even-aligned ^^^  ^^^^ odd-aligned
+    // ```
+    //
+    // Taking that into account, our basic strategy is:
+    //
+    // 1. Use subtraction to produce a mask with 1's for even-aligned runs and 0's for
+    //    odd-aligned runs.
+    // 2. XOR all odd bits, which masks out the odd bits in even-aligned runs, and brings IN the
+    //    odd bits in odd-aligned runs.
+    // 3. & with backslash to clean up any stray bits.
+    // runs are set to 0, and then XORing with "odd":
+    //
+    // |                                | Mask (shows characters instead of 1's) | Instructions        |
+    // |--------------------------------|----------------------------------------|---------------------|
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |
+    // |                                | `    even   odd    even   odd   odd`   |
+    // | maybe_escaped                  | `  n  \\n    \\n    \\\_   \\\_  \\` X | 1 (potential_escape << 1)
+    // | maybe_escaped_and_odd          | ` \n_ \\n _ \\\n_ _ \\\__ _\\\_ \\\`   | 1 (maybe_escaped | odd)
+    // | even_series_codes_and_odd      | `  n_\\\  _    n_ _\\\\ _     _    `   | 1 (maybe_escaped_and_odd - potential_escape)
+    // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 1 (^ odd)
+    //
+
+    // Escaped characters are characters following an escape.
+    uint64_t maybe_escaped = potential_escape << 1;
+
+    // To distinguish odd from even escape sequences, therefore, we turn on any *starting*
+    // escapes that are on an odd byte. (We actually bring in all odd bits, for speed.)
+    // - Odd runs of backslashes are 0000, and the code at the end ("n" in \n or \\n) is 1.
+    // - Odd runs of backslashes are 1111, and the code at the end ("n" in \n or \\n) is 0.
+    // - All other odd bytes are 1, and even bytes are 0.
+    uint64_t maybe_escaped_and_odd_bits     = maybe_escaped | ODD_BITS;
+    uint64_t even_series_codes_and_odd_bits = maybe_escaped_and_odd_bits - potential_escape;
+
+    // Now we flip all odd bytes back with xor. This:
+    // - Makes odd runs of backslashes go from 0000 to 1010
+    // - Makes even runs of backslashes go from 1111 to 1010
+    // - Sets actually-escaped codes to 1 (the n in \n and \\n: \n = 11, \\n = 100)
+    // - Resets all other bytes to 0
+    return even_series_codes_and_odd_bits ^ ODD_BITS;
+  }
+};
+
+} // namespace stage1
+} // unnamed namespace
+} // namespace haswell
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
+/* end file generic/stage1/json_escape_scanner.h for haswell */
 /* including generic/stage1/json_string_scanner.h for haswell: #include <generic/stage1/json_string_scanner.h> */
 /* begin file generic/stage1/json_string_scanner.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
@@ -21016,6 +21383,7 @@ using utf8_validation::utf8_checker;
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H */
 /* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #include <generic/stage1/json_escape_scanner.h> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -21025,33 +21393,25 @@ namespace stage1 {
 
 struct json_string_block {
   // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
-  simdjson_inline json_string_block(uint64_t backslash, uint64_t escaped, uint64_t quote, uint64_t in_string) :
-  _backslash(backslash), _escaped(escaped), _quote(quote), _in_string(in_string) {}
+  simdjson_really_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  _escaped(escaped), _quote(quote), _in_string(in_string) {}
 
   // Escaped characters (characters following an escape() character)
-  simdjson_inline uint64_t escaped() const { return _escaped; }
-  // Escape characters (backslashes that are not escaped--i.e. in \\, includes only the first \)
-  simdjson_inline uint64_t escape() const { return _backslash & ~_escaped; }
+  simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Real (non-backslashed) quotes
-  simdjson_inline uint64_t quote() const { return _quote; }
-  // Start quotes of strings
-  simdjson_inline uint64_t string_start() const { return _quote & _in_string; }
-  // End quotes of strings
-  simdjson_inline uint64_t string_end() const { return _quote & ~_in_string; }
+  simdjson_really_inline uint64_t quote() const { return _quote; }
   // Only characters inside the string (not including the quotes)
-  simdjson_inline uint64_t string_content() const { return _in_string & ~_quote; }
+  simdjson_really_inline uint64_t string_content() const { return _in_string & ~_quote; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
   // Tail of string (everything except the start quote)
-  simdjson_inline uint64_t string_tail() const { return _in_string ^ _quote; }
+  simdjson_really_inline uint64_t string_tail() const { return _in_string ^ _quote; }
 
-  // backslash characters
-  uint64_t _backslash;
   // escaped characters (backslashed--does not include the hex characters after \u)
   uint64_t _escaped;
-  // real quotes (non-backslashed ones)
+  // real quotes (non-escaped ones)
   uint64_t _quote;
   // string characters (includes start quote but not end quote)
   uint64_t _in_string;
@@ -21060,64 +21420,16 @@ struct json_string_block {
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  simdjson_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
+  simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_really_inline error_code finish();
 
 private:
-  // Intended to be defined by the implementation
-  simdjson_inline uint64_t find_escaped(uint64_t escape);
-  simdjson_inline uint64_t find_escaped_branchless(uint64_t escape);
-
+  // Scans for escape characters
+  json_escape_scanner escape_scanner{};
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
   uint64_t prev_in_string = 0ULL;
-  // Whether the first character of the next iteration is escaped.
-  uint64_t prev_escaped = 0ULL;
 };
-
-//
-// Finds escaped characters (characters following \).
-//
-// Handles runs of backslashes like \\\" and \\\\" correctly (yielding 0101 and 01010, respectively).
-//
-// Does this by:
-// - Shift the escape mask to get potentially escaped characters (characters after backslashes).
-// - Mask escaped sequences that start on *even* bits with 1010101010 (odd bits are escaped, even bits are not)
-// - Mask escaped sequences that start on *odd* bits with 0101010101 (even bits are escaped, odd bits are not)
-//
-// To distinguish between escaped sequences starting on even/odd bits, it finds the start of all
-// escape sequences, filters out the ones that start on even bits, and adds that to the mask of
-// escape sequences. This causes the addition to clear out the sequences starting on odd bits (since
-// the start bit causes a carry), and leaves even-bit sequences alone.
-//
-// Example:
-//
-// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
-// escape         |  xxx |  xx xxx  xxx  xx xx  | Removed overflow backslash; will | it into follows_escape
-// odd_starts     |  x   |  x       x       x   | escape & ~even_bits & ~follows_escape
-// even_seq       |     c|    cxxx     c xx   c | c = carry bit -- will be masked out later
-// invert_mask    |      |     cxxx     c xx   c| even_seq << 1
-// follows_escape |   xx | x xx xxx  xxx  xx xx | Includes overflow bit
-// escaped        |   x  | x x  x x  x x  x  x  |
-// desired        |   x  | x x  x x  x x  x  x  |
-// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
-//
-simdjson_inline uint64_t json_string_scanner::find_escaped_branchless(uint64_t backslash) {
-  // If there was overflow, pretend the first character isn't a backslash
-  backslash &= ~prev_escaped;
-  uint64_t follows_escape = backslash << 1 | prev_escaped;
-
-  // Get sequences starting on even bits by clearing out the odd series using +
-  const uint64_t even_bits = 0x5555555555555555ULL;
-  uint64_t odd_sequence_starts = backslash & ~even_bits & ~follows_escape;
-  uint64_t sequences_starting_on_even_bits;
-  prev_escaped = add_overflow(odd_sequence_starts, backslash, &sequences_starting_on_even_bits);
-  uint64_t invert_mask = sequences_starting_on_even_bits << 1; // The mask we want to return is the *escaped* bits, not escapes.
-
-  // Mask every other backslashed character as an escaped character
-  // Flip the mask for sequences that start on even bits, to correct them
-  return (even_bits ^ invert_mask) & follows_escape;
-}
 
 //
 // Return a mask of all string characters plus end quotes.
@@ -21127,9 +21439,9 @@ simdjson_inline uint64_t json_string_scanner::find_escaped_branchless(uint64_t b
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
+simdjson_really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
   const uint64_t backslash = in.eq('\\');
-  const uint64_t escaped = find_escaped(backslash);
+  const uint64_t escaped = escape_scanner.next(backslash).escaped;
   const uint64_t quote = in.eq('"') & ~escaped;
 
   //
@@ -21143,24 +21455,16 @@ simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64
   //
   // Check if we're still in a string at the end of the box so the next block will know
   //
-  // right shift of a signed value expected to be well-defined and standard
-  // compliant as of C++20, John Regher from Utah U. says this is fine code
-  //
   prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
 
   // Use ^ to turn the beginning quote off, and the end quote on.
 
   // We are returning a function-local object so either we get a move constructor
   // or we get copy elision.
-  return json_string_block(
-    backslash,
-    escaped,
-    quote,
-    in_string
-  );
+  return json_string_block(escaped, quote, in_string);
 }
 
-simdjson_inline error_code json_string_scanner::finish() {
+simdjson_really_inline error_code json_string_scanner::finish() {
   if (prev_in_string) {
     return UNCLOSED_STRING;
   }
@@ -21567,114 +21871,6 @@ simdjson_inline error_code json_scanner::finish() {
 /* end file generic/stage1/json_scanner.h for haswell */
 
 // All other declarations
-/* including generic/stage1/buf_block_reader.h for haswell: #include <generic/stage1/buf_block_reader.h> */
-/* begin file generic/stage1/buf_block_reader.h for haswell */
-#ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
-/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
-/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
-
-#include <cstring>
-
-namespace simdjson {
-namespace haswell {
-namespace {
-namespace stage1 {
-
-// Walks through a buffer in block-sized increments, loading the last part with spaces
-template<size_t STEP_SIZE>
-struct buf_block_reader {
-public:
-  simdjson_inline buf_block_reader(const uint8_t *_buf, size_t _len);
-  simdjson_inline size_t block_index();
-  simdjson_inline bool has_full_block() const;
-  simdjson_inline const uint8_t *full_block() const;
-  /**
-   * Get the last block, padded with spaces.
-   *
-   * There will always be a last block, with at least 1 byte, unless len == 0 (in which case this
-   * function fills the buffer with spaces and returns 0. In particular, if len == STEP_SIZE there
-   * will be 0 full_blocks and 1 remainder block with STEP_SIZE bytes and no spaces for padding.
-   *
-   * @return the number of effective characters in the last block.
-   */
-  simdjson_inline size_t get_remainder(uint8_t *dst) const;
-  simdjson_inline void advance();
-private:
-  const uint8_t *buf;
-  const size_t len;
-  const size_t lenminusstep;
-  size_t idx;
-};
-
-// Routines to print masks and text for debugging bitmask operations
-simdjson_unused static char * format_input_text_64(const uint8_t *text) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
-    buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
-  }
-  buf[sizeof(simd8x64<uint8_t>)] = '\0';
-  return buf;
-}
-
-// Routines to print masks and text for debugging bitmask operations
-simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  in.store(reinterpret_cast<uint8_t*>(buf));
-  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
-    if (buf[i] < ' ') { buf[i] = '_'; }
-  }
-  buf[sizeof(simd8x64<uint8_t>)] = '\0';
-  return buf;
-}
-
-simdjson_unused static char * format_mask(uint64_t mask) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  for (size_t i=0; i<64; i++) {
-    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
-  }
-  buf[64] = '\0';
-  return buf;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline buf_block_reader<STEP_SIZE>::buf_block_reader(const uint8_t *_buf, size_t _len) : buf{_buf}, len{_len}, lenminusstep{len < STEP_SIZE ? 0 : len - STEP_SIZE}, idx{0} {}
-
-template<size_t STEP_SIZE>
-simdjson_inline size_t buf_block_reader<STEP_SIZE>::block_index() { return idx; }
-
-template<size_t STEP_SIZE>
-simdjson_inline bool buf_block_reader<STEP_SIZE>::has_full_block() const {
-  return idx < lenminusstep;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline const uint8_t *buf_block_reader<STEP_SIZE>::full_block() const {
-  return &buf[idx];
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) const {
-  if(len == idx) { return 0; } // memcpy(dst, null, 0) will trigger an error with some sanitizers
-  std::memset(dst, 0x20, STEP_SIZE); // std::memset STEP_SIZE because it's more efficient to write out 8 or 16 bytes at once.
-  std::memcpy(dst, buf + idx, len - idx);
-  return len - idx;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
-  idx += STEP_SIZE;
-}
-
-} // namespace stage1
-} // unnamed namespace
-} // namespace haswell
-} // namespace simdjson
-
-#endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
-/* end file generic/stage1/buf_block_reader.h for haswell */
 /* including generic/stage1/find_next_document_index.h for haswell: #include <generic/stage1/find_next_document_index.h> */
 /* begin file generic/stage1/find_next_document_index.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
@@ -23625,16 +23821,6 @@ simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2,
 //
 namespace simdjson {
 namespace haswell {
-namespace {
-namespace stage1 {
-
-simdjson_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
-  if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
-  return find_escaped_branchless(backslash);
-}
-
-} // namespace stage1
-} // unnamed namespace
 
 simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
   return haswell::stage1::json_minifier::minify<128>(buf, len, dst, dst_len);
@@ -27103,6 +27289,279 @@ using utf8_validation::utf8_checker;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 /* end file generic/stage1/base.h for icelake */
+/* including generic/stage1/buf_block_reader.h for icelake: #include <generic/stage1/buf_block_reader.h> */
+/* begin file generic/stage1/buf_block_reader.h for icelake */
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
+/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+#include <cstring>
+
+namespace simdjson {
+namespace icelake {
+namespace {
+namespace stage1 {
+
+// Walks through a buffer in block-sized increments, loading the last part with spaces
+template<size_t STEP_SIZE>
+struct buf_block_reader {
+public:
+  simdjson_inline buf_block_reader(const uint8_t *_buf, size_t _len);
+  simdjson_inline size_t block_index();
+  simdjson_inline bool has_full_block() const;
+  simdjson_inline const uint8_t *full_block() const;
+  /**
+   * Get the last block, padded with spaces.
+   *
+   * There will always be a last block, with at least 1 byte, unless len == 0 (in which case this
+   * function fills the buffer with spaces and returns 0. In particular, if len == STEP_SIZE there
+   * will be 0 full_blocks and 1 remainder block with STEP_SIZE bytes and no spaces for padding.
+   *
+   * @return the number of effective characters in the last block.
+   */
+  simdjson_inline size_t get_remainder(uint8_t *dst) const;
+  simdjson_inline void advance();
+private:
+  const uint8_t *buf;
+  const size_t len;
+  const size_t lenminusstep;
+  size_t idx;
+};
+
+// Routines to print masks and text for debugging bitmask operations
+simdjson_unused static char * format_input_text_64(const uint8_t *text) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+// Routines to print masks and text for debugging bitmask operations
+simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  in.store(reinterpret_cast<uint8_t*>(buf));
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] < ' ') { buf[i] = '_'; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in, uint64_t mask) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  in.store(reinterpret_cast<uint8_t*>(buf));
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] <= ' ') { buf[i] = '_'; }
+    if (!(mask & (size_t(1) << i))) { buf[i] = ' '; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+simdjson_unused static char * format_mask(uint64_t mask) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  for (size_t i=0; i<64; i++) {
+    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
+  }
+  buf[64] = '\0';
+  return buf;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline buf_block_reader<STEP_SIZE>::buf_block_reader(const uint8_t *_buf, size_t _len) : buf{_buf}, len{_len}, lenminusstep{len < STEP_SIZE ? 0 : len - STEP_SIZE}, idx{0} {}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::block_index() { return idx; }
+
+template<size_t STEP_SIZE>
+simdjson_inline bool buf_block_reader<STEP_SIZE>::has_full_block() const {
+  return idx < lenminusstep;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline const uint8_t *buf_block_reader<STEP_SIZE>::full_block() const {
+  return &buf[idx];
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) const {
+  if(len == idx) { return 0; } // memcpy(dst, null, 0) will trigger an error with some sanitizers
+  std::memset(dst, 0x20, STEP_SIZE); // std::memset STEP_SIZE because it's more efficient to write out 8 or 16 bytes at once.
+  std::memcpy(dst, buf + idx, len - idx);
+  return len - idx;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
+  idx += STEP_SIZE;
+}
+
+} // namespace stage1
+} // unnamed namespace
+} // namespace icelake
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
+/* end file generic/stage1/buf_block_reader.h for icelake */
+/* including generic/stage1/json_escape_scanner.h for icelake: #include <generic/stage1/json_escape_scanner.h> */
+/* begin file generic/stage1/json_escape_scanner.h for icelake */
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_ESCAPE_SCANNER_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_ESCAPE_SCANNER_H */
+/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #include <generic/stage1/buf_block_reader.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+namespace simdjson {
+namespace icelake {
+namespace {
+namespace stage1 {
+
+/**
+ * Scans for escape characters in JSON, taking care with multiple backslashes (\\n vs. \n).
+ */
+struct json_escape_scanner {
+  /** The actual escape characters (the backslashes themselves). */
+  uint64_t next_is_escaped = 0ULL;
+
+  struct escaped_and_escape {
+    /**
+     * Mask of escaped characters.
+     *
+     * ```
+     * \n \\n \\\n \\\\n \
+     * 0100100010100101000
+     *  n  \   \ n  \ \
+     * ```
+     */
+    uint64_t escaped;
+    /**
+     * Mask of escape characters.
+     *
+     * ```
+     * \n \\n \\\n \\\\n \
+     * 1001000101001010001
+     * \  \   \ \  \ \   \
+     * ```
+     */
+    uint64_t escape;
+  };
+
+  /**
+   * Get a mask of both escape and escaped characters (the characters following a backslash).
+   *
+   * @param potential_escape A mask of the character that can escape others (but could be
+   *        escaped itself). e.g. block.eq('\\')
+   */
+  simdjson_really_inline escaped_and_escape next(uint64_t backslash) noexcept {
+
+#if !SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT
+    if (!backslash) { return {next_escaped_without_backslashes(), 0}; }
+#endif
+
+    // |                                | Mask (shows characters instead of 1's) | Depth | Instructions        |
+    // |--------------------------------|----------------------------------------|-------|---------------------|
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |       |                     |
+    // |                                | `    even   odd    even   odd   odd`   |       |                     |
+    // | potential_escape               | ` \  \\\    \\\    \\\\   \\\\  \\\`   | 1     | 1 (backslash & ~first_is_escaped)
+    // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 5     | 5 (next_escape_and_terminal_code())
+    // | escaped                        | `\    \ n    \ n    \ \    \ \   \ ` X | 6     | 7 (escape_and_terminal_code ^ (potential_escape | first_is_escaped))
+    // | escape                         | `    \ \    \ \    \ \    \ \   \ \`   | 6     | 8 (escape_and_terminal_code & backslash)
+    // | first_is_escaped               | `\                                 `   | 7 (*) | 9 (escape >> 63) ()
+    //                                                                               (*) this is not needed until the next iteration
+    uint64_t escape_and_terminal_code = next_escape_and_terminal_code(backslash & ~this->next_is_escaped);
+    uint64_t escaped = escape_and_terminal_code ^ (backslash | this->next_is_escaped);
+    uint64_t escape = escape_and_terminal_code & backslash;
+    this->next_is_escaped = escape >> 63;
+    return {escaped, escape};
+  }
+
+private:
+  static constexpr const uint64_t ODD_BITS = 0xAAAAAAAAAAAAAAAAULL;
+
+  simdjson_really_inline uint64_t next_escaped_without_backslashes() noexcept {
+    uint64_t escaped = this->next_is_escaped;
+    this->next_is_escaped = 0;
+    return escaped;
+  }
+
+  /**
+   * Returns a mask of the next escape characters (masking out escaped backslashes), along with
+   * any non-backslash escape codes.
+   *
+   * \n \\n \\\n \\\\n returns:
+   * \n \   \ \n \ \
+   * 11 100 1011 10100
+   *
+   * You are expected to mask out the first bit yourself if the previous block had a trailing
+   * escape.
+   *
+   * & the result with potential_escape to get just the escape characters.
+   * ^ the result with (potential_escape | first_is_escaped) to get escaped characters.
+   */
+  static simdjson_really_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
+    // If we were to just shift and mask out any odd bits, we'd actually get a *half* right answer:
+    // any even-aligned backslash runs would be correct! Odd-aligned backslash runs would be
+    // inverted (\\\ would be 010 instead of 101).
+    //
+    // ```
+    // string:              | ____\\\\_\\\\_____ |
+    // maybe_escaped | ODD  |     \ \   \ \      |
+    //               even-aligned ^^^  ^^^^ odd-aligned
+    // ```
+    //
+    // Taking that into account, our basic strategy is:
+    //
+    // 1. Use subtraction to produce a mask with 1's for even-aligned runs and 0's for
+    //    odd-aligned runs.
+    // 2. XOR all odd bits, which masks out the odd bits in even-aligned runs, and brings IN the
+    //    odd bits in odd-aligned runs.
+    // 3. & with backslash to clean up any stray bits.
+    // runs are set to 0, and then XORing with "odd":
+    //
+    // |                                | Mask (shows characters instead of 1's) | Instructions        |
+    // |--------------------------------|----------------------------------------|---------------------|
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |
+    // |                                | `    even   odd    even   odd   odd`   |
+    // | maybe_escaped                  | `  n  \\n    \\n    \\\_   \\\_  \\` X | 1 (potential_escape << 1)
+    // | maybe_escaped_and_odd          | ` \n_ \\n _ \\\n_ _ \\\__ _\\\_ \\\`   | 1 (maybe_escaped | odd)
+    // | even_series_codes_and_odd      | `  n_\\\  _    n_ _\\\\ _     _    `   | 1 (maybe_escaped_and_odd - potential_escape)
+    // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 1 (^ odd)
+    //
+
+    // Escaped characters are characters following an escape.
+    uint64_t maybe_escaped = potential_escape << 1;
+
+    // To distinguish odd from even escape sequences, therefore, we turn on any *starting*
+    // escapes that are on an odd byte. (We actually bring in all odd bits, for speed.)
+    // - Odd runs of backslashes are 0000, and the code at the end ("n" in \n or \\n) is 1.
+    // - Odd runs of backslashes are 1111, and the code at the end ("n" in \n or \\n) is 0.
+    // - All other odd bytes are 1, and even bytes are 0.
+    uint64_t maybe_escaped_and_odd_bits     = maybe_escaped | ODD_BITS;
+    uint64_t even_series_codes_and_odd_bits = maybe_escaped_and_odd_bits - potential_escape;
+
+    // Now we flip all odd bytes back with xor. This:
+    // - Makes odd runs of backslashes go from 0000 to 1010
+    // - Makes even runs of backslashes go from 1111 to 1010
+    // - Sets actually-escaped codes to 1 (the n in \n and \\n: \n = 11, \\n = 100)
+    // - Resets all other bytes to 0
+    return even_series_codes_and_odd_bits ^ ODD_BITS;
+  }
+};
+
+} // namespace stage1
+} // unnamed namespace
+} // namespace icelake
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
+/* end file generic/stage1/json_escape_scanner.h for icelake */
 /* including generic/stage1/json_string_scanner.h for icelake: #include <generic/stage1/json_string_scanner.h> */
 /* begin file generic/stage1/json_string_scanner.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
@@ -27110,6 +27569,7 @@ using utf8_validation::utf8_checker;
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H */
 /* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #include <generic/stage1/json_escape_scanner.h> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -27119,33 +27579,25 @@ namespace stage1 {
 
 struct json_string_block {
   // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
-  simdjson_inline json_string_block(uint64_t backslash, uint64_t escaped, uint64_t quote, uint64_t in_string) :
-  _backslash(backslash), _escaped(escaped), _quote(quote), _in_string(in_string) {}
+  simdjson_really_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  _escaped(escaped), _quote(quote), _in_string(in_string) {}
 
   // Escaped characters (characters following an escape() character)
-  simdjson_inline uint64_t escaped() const { return _escaped; }
-  // Escape characters (backslashes that are not escaped--i.e. in \\, includes only the first \)
-  simdjson_inline uint64_t escape() const { return _backslash & ~_escaped; }
+  simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Real (non-backslashed) quotes
-  simdjson_inline uint64_t quote() const { return _quote; }
-  // Start quotes of strings
-  simdjson_inline uint64_t string_start() const { return _quote & _in_string; }
-  // End quotes of strings
-  simdjson_inline uint64_t string_end() const { return _quote & ~_in_string; }
+  simdjson_really_inline uint64_t quote() const { return _quote; }
   // Only characters inside the string (not including the quotes)
-  simdjson_inline uint64_t string_content() const { return _in_string & ~_quote; }
+  simdjson_really_inline uint64_t string_content() const { return _in_string & ~_quote; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
   // Tail of string (everything except the start quote)
-  simdjson_inline uint64_t string_tail() const { return _in_string ^ _quote; }
+  simdjson_really_inline uint64_t string_tail() const { return _in_string ^ _quote; }
 
-  // backslash characters
-  uint64_t _backslash;
   // escaped characters (backslashed--does not include the hex characters after \u)
   uint64_t _escaped;
-  // real quotes (non-backslashed ones)
+  // real quotes (non-escaped ones)
   uint64_t _quote;
   // string characters (includes start quote but not end quote)
   uint64_t _in_string;
@@ -27154,64 +27606,16 @@ struct json_string_block {
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  simdjson_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
+  simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_really_inline error_code finish();
 
 private:
-  // Intended to be defined by the implementation
-  simdjson_inline uint64_t find_escaped(uint64_t escape);
-  simdjson_inline uint64_t find_escaped_branchless(uint64_t escape);
-
+  // Scans for escape characters
+  json_escape_scanner escape_scanner{};
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
   uint64_t prev_in_string = 0ULL;
-  // Whether the first character of the next iteration is escaped.
-  uint64_t prev_escaped = 0ULL;
 };
-
-//
-// Finds escaped characters (characters following \).
-//
-// Handles runs of backslashes like \\\" and \\\\" correctly (yielding 0101 and 01010, respectively).
-//
-// Does this by:
-// - Shift the escape mask to get potentially escaped characters (characters after backslashes).
-// - Mask escaped sequences that start on *even* bits with 1010101010 (odd bits are escaped, even bits are not)
-// - Mask escaped sequences that start on *odd* bits with 0101010101 (even bits are escaped, odd bits are not)
-//
-// To distinguish between escaped sequences starting on even/odd bits, it finds the start of all
-// escape sequences, filters out the ones that start on even bits, and adds that to the mask of
-// escape sequences. This causes the addition to clear out the sequences starting on odd bits (since
-// the start bit causes a carry), and leaves even-bit sequences alone.
-//
-// Example:
-//
-// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
-// escape         |  xxx |  xx xxx  xxx  xx xx  | Removed overflow backslash; will | it into follows_escape
-// odd_starts     |  x   |  x       x       x   | escape & ~even_bits & ~follows_escape
-// even_seq       |     c|    cxxx     c xx   c | c = carry bit -- will be masked out later
-// invert_mask    |      |     cxxx     c xx   c| even_seq << 1
-// follows_escape |   xx | x xx xxx  xxx  xx xx | Includes overflow bit
-// escaped        |   x  | x x  x x  x x  x  x  |
-// desired        |   x  | x x  x x  x x  x  x  |
-// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
-//
-simdjson_inline uint64_t json_string_scanner::find_escaped_branchless(uint64_t backslash) {
-  // If there was overflow, pretend the first character isn't a backslash
-  backslash &= ~prev_escaped;
-  uint64_t follows_escape = backslash << 1 | prev_escaped;
-
-  // Get sequences starting on even bits by clearing out the odd series using +
-  const uint64_t even_bits = 0x5555555555555555ULL;
-  uint64_t odd_sequence_starts = backslash & ~even_bits & ~follows_escape;
-  uint64_t sequences_starting_on_even_bits;
-  prev_escaped = add_overflow(odd_sequence_starts, backslash, &sequences_starting_on_even_bits);
-  uint64_t invert_mask = sequences_starting_on_even_bits << 1; // The mask we want to return is the *escaped* bits, not escapes.
-
-  // Mask every other backslashed character as an escaped character
-  // Flip the mask for sequences that start on even bits, to correct them
-  return (even_bits ^ invert_mask) & follows_escape;
-}
 
 //
 // Return a mask of all string characters plus end quotes.
@@ -27221,9 +27625,9 @@ simdjson_inline uint64_t json_string_scanner::find_escaped_branchless(uint64_t b
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
+simdjson_really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
   const uint64_t backslash = in.eq('\\');
-  const uint64_t escaped = find_escaped(backslash);
+  const uint64_t escaped = escape_scanner.next(backslash).escaped;
   const uint64_t quote = in.eq('"') & ~escaped;
 
   //
@@ -27237,24 +27641,16 @@ simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64
   //
   // Check if we're still in a string at the end of the box so the next block will know
   //
-  // right shift of a signed value expected to be well-defined and standard
-  // compliant as of C++20, John Regher from Utah U. says this is fine code
-  //
   prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
 
   // Use ^ to turn the beginning quote off, and the end quote on.
 
   // We are returning a function-local object so either we get a move constructor
   // or we get copy elision.
-  return json_string_block(
-    backslash,
-    escaped,
-    quote,
-    in_string
-  );
+  return json_string_block(escaped, quote, in_string);
 }
 
-simdjson_inline error_code json_string_scanner::finish() {
+simdjson_really_inline error_code json_string_scanner::finish() {
   if (prev_in_string) {
     return UNCLOSED_STRING;
   }
@@ -27661,114 +28057,6 @@ simdjson_inline error_code json_scanner::finish() {
 /* end file generic/stage1/json_scanner.h for icelake */
 
 // All other declarations
-/* including generic/stage1/buf_block_reader.h for icelake: #include <generic/stage1/buf_block_reader.h> */
-/* begin file generic/stage1/buf_block_reader.h for icelake */
-#ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
-/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
-/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
-
-#include <cstring>
-
-namespace simdjson {
-namespace icelake {
-namespace {
-namespace stage1 {
-
-// Walks through a buffer in block-sized increments, loading the last part with spaces
-template<size_t STEP_SIZE>
-struct buf_block_reader {
-public:
-  simdjson_inline buf_block_reader(const uint8_t *_buf, size_t _len);
-  simdjson_inline size_t block_index();
-  simdjson_inline bool has_full_block() const;
-  simdjson_inline const uint8_t *full_block() const;
-  /**
-   * Get the last block, padded with spaces.
-   *
-   * There will always be a last block, with at least 1 byte, unless len == 0 (in which case this
-   * function fills the buffer with spaces and returns 0. In particular, if len == STEP_SIZE there
-   * will be 0 full_blocks and 1 remainder block with STEP_SIZE bytes and no spaces for padding.
-   *
-   * @return the number of effective characters in the last block.
-   */
-  simdjson_inline size_t get_remainder(uint8_t *dst) const;
-  simdjson_inline void advance();
-private:
-  const uint8_t *buf;
-  const size_t len;
-  const size_t lenminusstep;
-  size_t idx;
-};
-
-// Routines to print masks and text for debugging bitmask operations
-simdjson_unused static char * format_input_text_64(const uint8_t *text) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
-    buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
-  }
-  buf[sizeof(simd8x64<uint8_t>)] = '\0';
-  return buf;
-}
-
-// Routines to print masks and text for debugging bitmask operations
-simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  in.store(reinterpret_cast<uint8_t*>(buf));
-  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
-    if (buf[i] < ' ') { buf[i] = '_'; }
-  }
-  buf[sizeof(simd8x64<uint8_t>)] = '\0';
-  return buf;
-}
-
-simdjson_unused static char * format_mask(uint64_t mask) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  for (size_t i=0; i<64; i++) {
-    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
-  }
-  buf[64] = '\0';
-  return buf;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline buf_block_reader<STEP_SIZE>::buf_block_reader(const uint8_t *_buf, size_t _len) : buf{_buf}, len{_len}, lenminusstep{len < STEP_SIZE ? 0 : len - STEP_SIZE}, idx{0} {}
-
-template<size_t STEP_SIZE>
-simdjson_inline size_t buf_block_reader<STEP_SIZE>::block_index() { return idx; }
-
-template<size_t STEP_SIZE>
-simdjson_inline bool buf_block_reader<STEP_SIZE>::has_full_block() const {
-  return idx < lenminusstep;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline const uint8_t *buf_block_reader<STEP_SIZE>::full_block() const {
-  return &buf[idx];
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) const {
-  if(len == idx) { return 0; } // memcpy(dst, null, 0) will trigger an error with some sanitizers
-  std::memset(dst, 0x20, STEP_SIZE); // std::memset STEP_SIZE because it's more efficient to write out 8 or 16 bytes at once.
-  std::memcpy(dst, buf + idx, len - idx);
-  return len - idx;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
-  idx += STEP_SIZE;
-}
-
-} // namespace stage1
-} // unnamed namespace
-} // namespace icelake
-} // namespace simdjson
-
-#endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
-/* end file generic/stage1/buf_block_reader.h for icelake */
 /* including generic/stage1/find_next_document_index.h for icelake: #include <generic/stage1/find_next_document_index.h> */
 /* begin file generic/stage1/find_next_document_index.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
@@ -29762,16 +30050,6 @@ SIMDJSON_POP_DISABLE_WARNINGS
 //
 namespace simdjson {
 namespace icelake {
-namespace {
-namespace stage1 {
-
-simdjson_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
-  if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
-  return find_escaped_branchless(backslash);
-}
-
-} // namespace stage1
-} // unnamed namespace
 
 simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
   return icelake::stage1::json_minifier::minify<128>(buf, len, dst, dst_len);
@@ -29958,7 +30236,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline int count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num); // Visual Studio wants two underscores
 }
 #else
@@ -30644,6 +30922,8 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 
 #endif // SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 /* end file simdjson/ppc64/stringparsing_defs.h */
+
+#define SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT 1
 /* end file simdjson/ppc64/begin.h */
 /* including simdjson/generic/amalgamated.h for ppc64: #include "simdjson/generic/amalgamated.h" */
 /* begin file simdjson/generic/amalgamated.h for ppc64 */
@@ -32488,6 +32768,7 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
+#undef SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT
 /* undefining SIMDJSON_IMPLEMENTATION from "ppc64" */
 #undef SIMDJSON_IMPLEMENTATION
 /* end file simdjson/ppc64/end.h */
@@ -32652,7 +32933,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline int count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num); // Visual Studio wants two underscores
 }
 #else
@@ -33338,6 +33619,8 @@ backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
 
 #endif // SIMDJSON_PPC64_STRINGPARSING_DEFS_H
 /* end file simdjson/ppc64/stringparsing_defs.h */
+
+#define SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT 1
 /* end file simdjson/ppc64/begin.h */
 /* including generic/amalgamated.h for ppc64: #include <generic/amalgamated.h> */
 /* begin file generic/amalgamated.h for ppc64 */
@@ -33463,6 +33746,279 @@ using utf8_validation::utf8_checker;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 /* end file generic/stage1/base.h for ppc64 */
+/* including generic/stage1/buf_block_reader.h for ppc64: #include <generic/stage1/buf_block_reader.h> */
+/* begin file generic/stage1/buf_block_reader.h for ppc64 */
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
+/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+#include <cstring>
+
+namespace simdjson {
+namespace ppc64 {
+namespace {
+namespace stage1 {
+
+// Walks through a buffer in block-sized increments, loading the last part with spaces
+template<size_t STEP_SIZE>
+struct buf_block_reader {
+public:
+  simdjson_inline buf_block_reader(const uint8_t *_buf, size_t _len);
+  simdjson_inline size_t block_index();
+  simdjson_inline bool has_full_block() const;
+  simdjson_inline const uint8_t *full_block() const;
+  /**
+   * Get the last block, padded with spaces.
+   *
+   * There will always be a last block, with at least 1 byte, unless len == 0 (in which case this
+   * function fills the buffer with spaces and returns 0. In particular, if len == STEP_SIZE there
+   * will be 0 full_blocks and 1 remainder block with STEP_SIZE bytes and no spaces for padding.
+   *
+   * @return the number of effective characters in the last block.
+   */
+  simdjson_inline size_t get_remainder(uint8_t *dst) const;
+  simdjson_inline void advance();
+private:
+  const uint8_t *buf;
+  const size_t len;
+  const size_t lenminusstep;
+  size_t idx;
+};
+
+// Routines to print masks and text for debugging bitmask operations
+simdjson_unused static char * format_input_text_64(const uint8_t *text) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+// Routines to print masks and text for debugging bitmask operations
+simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  in.store(reinterpret_cast<uint8_t*>(buf));
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] < ' ') { buf[i] = '_'; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in, uint64_t mask) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  in.store(reinterpret_cast<uint8_t*>(buf));
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] <= ' ') { buf[i] = '_'; }
+    if (!(mask & (size_t(1) << i))) { buf[i] = ' '; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+simdjson_unused static char * format_mask(uint64_t mask) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  for (size_t i=0; i<64; i++) {
+    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
+  }
+  buf[64] = '\0';
+  return buf;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline buf_block_reader<STEP_SIZE>::buf_block_reader(const uint8_t *_buf, size_t _len) : buf{_buf}, len{_len}, lenminusstep{len < STEP_SIZE ? 0 : len - STEP_SIZE}, idx{0} {}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::block_index() { return idx; }
+
+template<size_t STEP_SIZE>
+simdjson_inline bool buf_block_reader<STEP_SIZE>::has_full_block() const {
+  return idx < lenminusstep;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline const uint8_t *buf_block_reader<STEP_SIZE>::full_block() const {
+  return &buf[idx];
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) const {
+  if(len == idx) { return 0; } // memcpy(dst, null, 0) will trigger an error with some sanitizers
+  std::memset(dst, 0x20, STEP_SIZE); // std::memset STEP_SIZE because it's more efficient to write out 8 or 16 bytes at once.
+  std::memcpy(dst, buf + idx, len - idx);
+  return len - idx;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
+  idx += STEP_SIZE;
+}
+
+} // namespace stage1
+} // unnamed namespace
+} // namespace ppc64
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
+/* end file generic/stage1/buf_block_reader.h for ppc64 */
+/* including generic/stage1/json_escape_scanner.h for ppc64: #include <generic/stage1/json_escape_scanner.h> */
+/* begin file generic/stage1/json_escape_scanner.h for ppc64 */
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_ESCAPE_SCANNER_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_ESCAPE_SCANNER_H */
+/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #include <generic/stage1/buf_block_reader.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+namespace simdjson {
+namespace ppc64 {
+namespace {
+namespace stage1 {
+
+/**
+ * Scans for escape characters in JSON, taking care with multiple backslashes (\\n vs. \n).
+ */
+struct json_escape_scanner {
+  /** The actual escape characters (the backslashes themselves). */
+  uint64_t next_is_escaped = 0ULL;
+
+  struct escaped_and_escape {
+    /**
+     * Mask of escaped characters.
+     *
+     * ```
+     * \n \\n \\\n \\\\n \
+     * 0100100010100101000
+     *  n  \   \ n  \ \
+     * ```
+     */
+    uint64_t escaped;
+    /**
+     * Mask of escape characters.
+     *
+     * ```
+     * \n \\n \\\n \\\\n \
+     * 1001000101001010001
+     * \  \   \ \  \ \   \
+     * ```
+     */
+    uint64_t escape;
+  };
+
+  /**
+   * Get a mask of both escape and escaped characters (the characters following a backslash).
+   *
+   * @param potential_escape A mask of the character that can escape others (but could be
+   *        escaped itself). e.g. block.eq('\\')
+   */
+  simdjson_really_inline escaped_and_escape next(uint64_t backslash) noexcept {
+
+#if !SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT
+    if (!backslash) { return {next_escaped_without_backslashes(), 0}; }
+#endif
+
+    // |                                | Mask (shows characters instead of 1's) | Depth | Instructions        |
+    // |--------------------------------|----------------------------------------|-------|---------------------|
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |       |                     |
+    // |                                | `    even   odd    even   odd   odd`   |       |                     |
+    // | potential_escape               | ` \  \\\    \\\    \\\\   \\\\  \\\`   | 1     | 1 (backslash & ~first_is_escaped)
+    // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 5     | 5 (next_escape_and_terminal_code())
+    // | escaped                        | `\    \ n    \ n    \ \    \ \   \ ` X | 6     | 7 (escape_and_terminal_code ^ (potential_escape | first_is_escaped))
+    // | escape                         | `    \ \    \ \    \ \    \ \   \ \`   | 6     | 8 (escape_and_terminal_code & backslash)
+    // | first_is_escaped               | `\                                 `   | 7 (*) | 9 (escape >> 63) ()
+    //                                                                               (*) this is not needed until the next iteration
+    uint64_t escape_and_terminal_code = next_escape_and_terminal_code(backslash & ~this->next_is_escaped);
+    uint64_t escaped = escape_and_terminal_code ^ (backslash | this->next_is_escaped);
+    uint64_t escape = escape_and_terminal_code & backslash;
+    this->next_is_escaped = escape >> 63;
+    return {escaped, escape};
+  }
+
+private:
+  static constexpr const uint64_t ODD_BITS = 0xAAAAAAAAAAAAAAAAULL;
+
+  simdjson_really_inline uint64_t next_escaped_without_backslashes() noexcept {
+    uint64_t escaped = this->next_is_escaped;
+    this->next_is_escaped = 0;
+    return escaped;
+  }
+
+  /**
+   * Returns a mask of the next escape characters (masking out escaped backslashes), along with
+   * any non-backslash escape codes.
+   *
+   * \n \\n \\\n \\\\n returns:
+   * \n \   \ \n \ \
+   * 11 100 1011 10100
+   *
+   * You are expected to mask out the first bit yourself if the previous block had a trailing
+   * escape.
+   *
+   * & the result with potential_escape to get just the escape characters.
+   * ^ the result with (potential_escape | first_is_escaped) to get escaped characters.
+   */
+  static simdjson_really_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
+    // If we were to just shift and mask out any odd bits, we'd actually get a *half* right answer:
+    // any even-aligned backslash runs would be correct! Odd-aligned backslash runs would be
+    // inverted (\\\ would be 010 instead of 101).
+    //
+    // ```
+    // string:              | ____\\\\_\\\\_____ |
+    // maybe_escaped | ODD  |     \ \   \ \      |
+    //               even-aligned ^^^  ^^^^ odd-aligned
+    // ```
+    //
+    // Taking that into account, our basic strategy is:
+    //
+    // 1. Use subtraction to produce a mask with 1's for even-aligned runs and 0's for
+    //    odd-aligned runs.
+    // 2. XOR all odd bits, which masks out the odd bits in even-aligned runs, and brings IN the
+    //    odd bits in odd-aligned runs.
+    // 3. & with backslash to clean up any stray bits.
+    // runs are set to 0, and then XORing with "odd":
+    //
+    // |                                | Mask (shows characters instead of 1's) | Instructions        |
+    // |--------------------------------|----------------------------------------|---------------------|
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |
+    // |                                | `    even   odd    even   odd   odd`   |
+    // | maybe_escaped                  | `  n  \\n    \\n    \\\_   \\\_  \\` X | 1 (potential_escape << 1)
+    // | maybe_escaped_and_odd          | ` \n_ \\n _ \\\n_ _ \\\__ _\\\_ \\\`   | 1 (maybe_escaped | odd)
+    // | even_series_codes_and_odd      | `  n_\\\  _    n_ _\\\\ _     _    `   | 1 (maybe_escaped_and_odd - potential_escape)
+    // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 1 (^ odd)
+    //
+
+    // Escaped characters are characters following an escape.
+    uint64_t maybe_escaped = potential_escape << 1;
+
+    // To distinguish odd from even escape sequences, therefore, we turn on any *starting*
+    // escapes that are on an odd byte. (We actually bring in all odd bits, for speed.)
+    // - Odd runs of backslashes are 0000, and the code at the end ("n" in \n or \\n) is 1.
+    // - Odd runs of backslashes are 1111, and the code at the end ("n" in \n or \\n) is 0.
+    // - All other odd bytes are 1, and even bytes are 0.
+    uint64_t maybe_escaped_and_odd_bits     = maybe_escaped | ODD_BITS;
+    uint64_t even_series_codes_and_odd_bits = maybe_escaped_and_odd_bits - potential_escape;
+
+    // Now we flip all odd bytes back with xor. This:
+    // - Makes odd runs of backslashes go from 0000 to 1010
+    // - Makes even runs of backslashes go from 1111 to 1010
+    // - Sets actually-escaped codes to 1 (the n in \n and \\n: \n = 11, \\n = 100)
+    // - Resets all other bytes to 0
+    return even_series_codes_and_odd_bits ^ ODD_BITS;
+  }
+};
+
+} // namespace stage1
+} // unnamed namespace
+} // namespace ppc64
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
+/* end file generic/stage1/json_escape_scanner.h for ppc64 */
 /* including generic/stage1/json_string_scanner.h for ppc64: #include <generic/stage1/json_string_scanner.h> */
 /* begin file generic/stage1/json_string_scanner.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
@@ -33470,6 +34026,7 @@ using utf8_validation::utf8_checker;
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H */
 /* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #include <generic/stage1/json_escape_scanner.h> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -33479,33 +34036,25 @@ namespace stage1 {
 
 struct json_string_block {
   // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
-  simdjson_inline json_string_block(uint64_t backslash, uint64_t escaped, uint64_t quote, uint64_t in_string) :
-  _backslash(backslash), _escaped(escaped), _quote(quote), _in_string(in_string) {}
+  simdjson_really_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  _escaped(escaped), _quote(quote), _in_string(in_string) {}
 
   // Escaped characters (characters following an escape() character)
-  simdjson_inline uint64_t escaped() const { return _escaped; }
-  // Escape characters (backslashes that are not escaped--i.e. in \\, includes only the first \)
-  simdjson_inline uint64_t escape() const { return _backslash & ~_escaped; }
+  simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Real (non-backslashed) quotes
-  simdjson_inline uint64_t quote() const { return _quote; }
-  // Start quotes of strings
-  simdjson_inline uint64_t string_start() const { return _quote & _in_string; }
-  // End quotes of strings
-  simdjson_inline uint64_t string_end() const { return _quote & ~_in_string; }
+  simdjson_really_inline uint64_t quote() const { return _quote; }
   // Only characters inside the string (not including the quotes)
-  simdjson_inline uint64_t string_content() const { return _in_string & ~_quote; }
+  simdjson_really_inline uint64_t string_content() const { return _in_string & ~_quote; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
   // Tail of string (everything except the start quote)
-  simdjson_inline uint64_t string_tail() const { return _in_string ^ _quote; }
+  simdjson_really_inline uint64_t string_tail() const { return _in_string ^ _quote; }
 
-  // backslash characters
-  uint64_t _backslash;
   // escaped characters (backslashed--does not include the hex characters after \u)
   uint64_t _escaped;
-  // real quotes (non-backslashed ones)
+  // real quotes (non-escaped ones)
   uint64_t _quote;
   // string characters (includes start quote but not end quote)
   uint64_t _in_string;
@@ -33514,64 +34063,16 @@ struct json_string_block {
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  simdjson_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
+  simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_really_inline error_code finish();
 
 private:
-  // Intended to be defined by the implementation
-  simdjson_inline uint64_t find_escaped(uint64_t escape);
-  simdjson_inline uint64_t find_escaped_branchless(uint64_t escape);
-
+  // Scans for escape characters
+  json_escape_scanner escape_scanner{};
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
   uint64_t prev_in_string = 0ULL;
-  // Whether the first character of the next iteration is escaped.
-  uint64_t prev_escaped = 0ULL;
 };
-
-//
-// Finds escaped characters (characters following \).
-//
-// Handles runs of backslashes like \\\" and \\\\" correctly (yielding 0101 and 01010, respectively).
-//
-// Does this by:
-// - Shift the escape mask to get potentially escaped characters (characters after backslashes).
-// - Mask escaped sequences that start on *even* bits with 1010101010 (odd bits are escaped, even bits are not)
-// - Mask escaped sequences that start on *odd* bits with 0101010101 (even bits are escaped, odd bits are not)
-//
-// To distinguish between escaped sequences starting on even/odd bits, it finds the start of all
-// escape sequences, filters out the ones that start on even bits, and adds that to the mask of
-// escape sequences. This causes the addition to clear out the sequences starting on odd bits (since
-// the start bit causes a carry), and leaves even-bit sequences alone.
-//
-// Example:
-//
-// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
-// escape         |  xxx |  xx xxx  xxx  xx xx  | Removed overflow backslash; will | it into follows_escape
-// odd_starts     |  x   |  x       x       x   | escape & ~even_bits & ~follows_escape
-// even_seq       |     c|    cxxx     c xx   c | c = carry bit -- will be masked out later
-// invert_mask    |      |     cxxx     c xx   c| even_seq << 1
-// follows_escape |   xx | x xx xxx  xxx  xx xx | Includes overflow bit
-// escaped        |   x  | x x  x x  x x  x  x  |
-// desired        |   x  | x x  x x  x x  x  x  |
-// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
-//
-simdjson_inline uint64_t json_string_scanner::find_escaped_branchless(uint64_t backslash) {
-  // If there was overflow, pretend the first character isn't a backslash
-  backslash &= ~prev_escaped;
-  uint64_t follows_escape = backslash << 1 | prev_escaped;
-
-  // Get sequences starting on even bits by clearing out the odd series using +
-  const uint64_t even_bits = 0x5555555555555555ULL;
-  uint64_t odd_sequence_starts = backslash & ~even_bits & ~follows_escape;
-  uint64_t sequences_starting_on_even_bits;
-  prev_escaped = add_overflow(odd_sequence_starts, backslash, &sequences_starting_on_even_bits);
-  uint64_t invert_mask = sequences_starting_on_even_bits << 1; // The mask we want to return is the *escaped* bits, not escapes.
-
-  // Mask every other backslashed character as an escaped character
-  // Flip the mask for sequences that start on even bits, to correct them
-  return (even_bits ^ invert_mask) & follows_escape;
-}
 
 //
 // Return a mask of all string characters plus end quotes.
@@ -33581,9 +34082,9 @@ simdjson_inline uint64_t json_string_scanner::find_escaped_branchless(uint64_t b
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
+simdjson_really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
   const uint64_t backslash = in.eq('\\');
-  const uint64_t escaped = find_escaped(backslash);
+  const uint64_t escaped = escape_scanner.next(backslash).escaped;
   const uint64_t quote = in.eq('"') & ~escaped;
 
   //
@@ -33597,24 +34098,16 @@ simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64
   //
   // Check if we're still in a string at the end of the box so the next block will know
   //
-  // right shift of a signed value expected to be well-defined and standard
-  // compliant as of C++20, John Regher from Utah U. says this is fine code
-  //
   prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
 
   // Use ^ to turn the beginning quote off, and the end quote on.
 
   // We are returning a function-local object so either we get a move constructor
   // or we get copy elision.
-  return json_string_block(
-    backslash,
-    escaped,
-    quote,
-    in_string
-  );
+  return json_string_block(escaped, quote, in_string);
 }
 
-simdjson_inline error_code json_string_scanner::finish() {
+simdjson_really_inline error_code json_string_scanner::finish() {
   if (prev_in_string) {
     return UNCLOSED_STRING;
   }
@@ -34021,114 +34514,6 @@ simdjson_inline error_code json_scanner::finish() {
 /* end file generic/stage1/json_scanner.h for ppc64 */
 
 // All other declarations
-/* including generic/stage1/buf_block_reader.h for ppc64: #include <generic/stage1/buf_block_reader.h> */
-/* begin file generic/stage1/buf_block_reader.h for ppc64 */
-#ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
-/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
-/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
-
-#include <cstring>
-
-namespace simdjson {
-namespace ppc64 {
-namespace {
-namespace stage1 {
-
-// Walks through a buffer in block-sized increments, loading the last part with spaces
-template<size_t STEP_SIZE>
-struct buf_block_reader {
-public:
-  simdjson_inline buf_block_reader(const uint8_t *_buf, size_t _len);
-  simdjson_inline size_t block_index();
-  simdjson_inline bool has_full_block() const;
-  simdjson_inline const uint8_t *full_block() const;
-  /**
-   * Get the last block, padded with spaces.
-   *
-   * There will always be a last block, with at least 1 byte, unless len == 0 (in which case this
-   * function fills the buffer with spaces and returns 0. In particular, if len == STEP_SIZE there
-   * will be 0 full_blocks and 1 remainder block with STEP_SIZE bytes and no spaces for padding.
-   *
-   * @return the number of effective characters in the last block.
-   */
-  simdjson_inline size_t get_remainder(uint8_t *dst) const;
-  simdjson_inline void advance();
-private:
-  const uint8_t *buf;
-  const size_t len;
-  const size_t lenminusstep;
-  size_t idx;
-};
-
-// Routines to print masks and text for debugging bitmask operations
-simdjson_unused static char * format_input_text_64(const uint8_t *text) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
-    buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
-  }
-  buf[sizeof(simd8x64<uint8_t>)] = '\0';
-  return buf;
-}
-
-// Routines to print masks and text for debugging bitmask operations
-simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  in.store(reinterpret_cast<uint8_t*>(buf));
-  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
-    if (buf[i] < ' ') { buf[i] = '_'; }
-  }
-  buf[sizeof(simd8x64<uint8_t>)] = '\0';
-  return buf;
-}
-
-simdjson_unused static char * format_mask(uint64_t mask) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  for (size_t i=0; i<64; i++) {
-    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
-  }
-  buf[64] = '\0';
-  return buf;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline buf_block_reader<STEP_SIZE>::buf_block_reader(const uint8_t *_buf, size_t _len) : buf{_buf}, len{_len}, lenminusstep{len < STEP_SIZE ? 0 : len - STEP_SIZE}, idx{0} {}
-
-template<size_t STEP_SIZE>
-simdjson_inline size_t buf_block_reader<STEP_SIZE>::block_index() { return idx; }
-
-template<size_t STEP_SIZE>
-simdjson_inline bool buf_block_reader<STEP_SIZE>::has_full_block() const {
-  return idx < lenminusstep;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline const uint8_t *buf_block_reader<STEP_SIZE>::full_block() const {
-  return &buf[idx];
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) const {
-  if(len == idx) { return 0; } // memcpy(dst, null, 0) will trigger an error with some sanitizers
-  std::memset(dst, 0x20, STEP_SIZE); // std::memset STEP_SIZE because it's more efficient to write out 8 or 16 bytes at once.
-  std::memcpy(dst, buf + idx, len - idx);
-  return len - idx;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
-  idx += STEP_SIZE;
-}
-
-} // namespace stage1
-} // unnamed namespace
-} // namespace ppc64
-} // namespace simdjson
-
-#endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
-/* end file generic/stage1/buf_block_reader.h for ppc64 */
 /* including generic/stage1/find_next_document_index.h for ppc64: #include <generic/stage1/find_next_document_index.h> */
 /* begin file generic/stage1/find_next_document_index.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
@@ -36052,18 +36437,6 @@ simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2,
 //
 namespace simdjson {
 namespace ppc64 {
-namespace {
-namespace stage1 {
-
-simdjson_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
-  // On PPC, we don't short-circuit this if there are no backslashes, because the branch gives us no
-  // benefit and therefore makes things worse.
-  // if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
-  return find_escaped_branchless(backslash);
-}
-
-} // namespace stage1
-} // unnamed namespace
 
 simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
   return ppc64::stage1::json_minifier::minify<64>(buf, len, dst, dst_len);
@@ -36110,6 +36483,7 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 /* amalgamation skipped (editor-only): #include "simdjson/ppc64/base.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
+#undef SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT
 /* undefining SIMDJSON_IMPLEMENTATION from "ppc64" */
 #undef SIMDJSON_IMPLEMENTATION
 /* end file simdjson/ppc64/end.h */
@@ -36263,7 +36637,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num);// Visual Studio wants two underscores
 }
 #else
@@ -36850,7 +37224,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num);// Visual Studio wants two underscores
 }
 #else
@@ -39281,7 +39655,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num);// Visual Studio wants two underscores
 }
 #else
@@ -39868,7 +40242,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
 simdjson_inline unsigned __int64 count_ones(uint64_t input_num) {
-  // note: we do not support legacy 32-bit Windows
+  // note: we do not support legacy 32-bit Windows in this kernel
   return __popcnt64(input_num);// Visual Studio wants two underscores
 }
 #else
@@ -40403,6 +40777,279 @@ using utf8_validation::utf8_checker;
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE1_BASE_H
 /* end file generic/stage1/base.h for westmere */
+/* including generic/stage1/buf_block_reader.h for westmere: #include <generic/stage1/buf_block_reader.h> */
+/* begin file generic/stage1/buf_block_reader.h for westmere */
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
+/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+#include <cstring>
+
+namespace simdjson {
+namespace westmere {
+namespace {
+namespace stage1 {
+
+// Walks through a buffer in block-sized increments, loading the last part with spaces
+template<size_t STEP_SIZE>
+struct buf_block_reader {
+public:
+  simdjson_inline buf_block_reader(const uint8_t *_buf, size_t _len);
+  simdjson_inline size_t block_index();
+  simdjson_inline bool has_full_block() const;
+  simdjson_inline const uint8_t *full_block() const;
+  /**
+   * Get the last block, padded with spaces.
+   *
+   * There will always be a last block, with at least 1 byte, unless len == 0 (in which case this
+   * function fills the buffer with spaces and returns 0. In particular, if len == STEP_SIZE there
+   * will be 0 full_blocks and 1 remainder block with STEP_SIZE bytes and no spaces for padding.
+   *
+   * @return the number of effective characters in the last block.
+   */
+  simdjson_inline size_t get_remainder(uint8_t *dst) const;
+  simdjson_inline void advance();
+private:
+  const uint8_t *buf;
+  const size_t len;
+  const size_t lenminusstep;
+  size_t idx;
+};
+
+// Routines to print masks and text for debugging bitmask operations
+simdjson_unused static char * format_input_text_64(const uint8_t *text) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+// Routines to print masks and text for debugging bitmask operations
+simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  in.store(reinterpret_cast<uint8_t*>(buf));
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] < ' ') { buf[i] = '_'; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in, uint64_t mask) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  in.store(reinterpret_cast<uint8_t*>(buf));
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] <= ' ') { buf[i] = '_'; }
+    if (!(mask & (size_t(1) << i))) { buf[i] = ' '; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+simdjson_unused static char * format_mask(uint64_t mask) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  for (size_t i=0; i<64; i++) {
+    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
+  }
+  buf[64] = '\0';
+  return buf;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline buf_block_reader<STEP_SIZE>::buf_block_reader(const uint8_t *_buf, size_t _len) : buf{_buf}, len{_len}, lenminusstep{len < STEP_SIZE ? 0 : len - STEP_SIZE}, idx{0} {}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::block_index() { return idx; }
+
+template<size_t STEP_SIZE>
+simdjson_inline bool buf_block_reader<STEP_SIZE>::has_full_block() const {
+  return idx < lenminusstep;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline const uint8_t *buf_block_reader<STEP_SIZE>::full_block() const {
+  return &buf[idx];
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) const {
+  if(len == idx) { return 0; } // memcpy(dst, null, 0) will trigger an error with some sanitizers
+  std::memset(dst, 0x20, STEP_SIZE); // std::memset STEP_SIZE because it's more efficient to write out 8 or 16 bytes at once.
+  std::memcpy(dst, buf + idx, len - idx);
+  return len - idx;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
+  idx += STEP_SIZE;
+}
+
+} // namespace stage1
+} // unnamed namespace
+} // namespace westmere
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
+/* end file generic/stage1/buf_block_reader.h for westmere */
+/* including generic/stage1/json_escape_scanner.h for westmere: #include <generic/stage1/json_escape_scanner.h> */
+/* begin file generic/stage1/json_escape_scanner.h for westmere */
+#ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_ESCAPE_SCANNER_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_ESCAPE_SCANNER_H */
+/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #include <generic/stage1/buf_block_reader.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+namespace simdjson {
+namespace westmere {
+namespace {
+namespace stage1 {
+
+/**
+ * Scans for escape characters in JSON, taking care with multiple backslashes (\\n vs. \n).
+ */
+struct json_escape_scanner {
+  /** The actual escape characters (the backslashes themselves). */
+  uint64_t next_is_escaped = 0ULL;
+
+  struct escaped_and_escape {
+    /**
+     * Mask of escaped characters.
+     *
+     * ```
+     * \n \\n \\\n \\\\n \
+     * 0100100010100101000
+     *  n  \   \ n  \ \
+     * ```
+     */
+    uint64_t escaped;
+    /**
+     * Mask of escape characters.
+     *
+     * ```
+     * \n \\n \\\n \\\\n \
+     * 1001000101001010001
+     * \  \   \ \  \ \   \
+     * ```
+     */
+    uint64_t escape;
+  };
+
+  /**
+   * Get a mask of both escape and escaped characters (the characters following a backslash).
+   *
+   * @param potential_escape A mask of the character that can escape others (but could be
+   *        escaped itself). e.g. block.eq('\\')
+   */
+  simdjson_really_inline escaped_and_escape next(uint64_t backslash) noexcept {
+
+#if !SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT
+    if (!backslash) { return {next_escaped_without_backslashes(), 0}; }
+#endif
+
+    // |                                | Mask (shows characters instead of 1's) | Depth | Instructions        |
+    // |--------------------------------|----------------------------------------|-------|---------------------|
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |       |                     |
+    // |                                | `    even   odd    even   odd   odd`   |       |                     |
+    // | potential_escape               | ` \  \\\    \\\    \\\\   \\\\  \\\`   | 1     | 1 (backslash & ~first_is_escaped)
+    // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 5     | 5 (next_escape_and_terminal_code())
+    // | escaped                        | `\    \ n    \ n    \ \    \ \   \ ` X | 6     | 7 (escape_and_terminal_code ^ (potential_escape | first_is_escaped))
+    // | escape                         | `    \ \    \ \    \ \    \ \   \ \`   | 6     | 8 (escape_and_terminal_code & backslash)
+    // | first_is_escaped               | `\                                 `   | 7 (*) | 9 (escape >> 63) ()
+    //                                                                               (*) this is not needed until the next iteration
+    uint64_t escape_and_terminal_code = next_escape_and_terminal_code(backslash & ~this->next_is_escaped);
+    uint64_t escaped = escape_and_terminal_code ^ (backslash | this->next_is_escaped);
+    uint64_t escape = escape_and_terminal_code & backslash;
+    this->next_is_escaped = escape >> 63;
+    return {escaped, escape};
+  }
+
+private:
+  static constexpr const uint64_t ODD_BITS = 0xAAAAAAAAAAAAAAAAULL;
+
+  simdjson_really_inline uint64_t next_escaped_without_backslashes() noexcept {
+    uint64_t escaped = this->next_is_escaped;
+    this->next_is_escaped = 0;
+    return escaped;
+  }
+
+  /**
+   * Returns a mask of the next escape characters (masking out escaped backslashes), along with
+   * any non-backslash escape codes.
+   *
+   * \n \\n \\\n \\\\n returns:
+   * \n \   \ \n \ \
+   * 11 100 1011 10100
+   *
+   * You are expected to mask out the first bit yourself if the previous block had a trailing
+   * escape.
+   *
+   * & the result with potential_escape to get just the escape characters.
+   * ^ the result with (potential_escape | first_is_escaped) to get escaped characters.
+   */
+  static simdjson_really_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
+    // If we were to just shift and mask out any odd bits, we'd actually get a *half* right answer:
+    // any even-aligned backslash runs would be correct! Odd-aligned backslash runs would be
+    // inverted (\\\ would be 010 instead of 101).
+    //
+    // ```
+    // string:              | ____\\\\_\\\\_____ |
+    // maybe_escaped | ODD  |     \ \   \ \      |
+    //               even-aligned ^^^  ^^^^ odd-aligned
+    // ```
+    //
+    // Taking that into account, our basic strategy is:
+    //
+    // 1. Use subtraction to produce a mask with 1's for even-aligned runs and 0's for
+    //    odd-aligned runs.
+    // 2. XOR all odd bits, which masks out the odd bits in even-aligned runs, and brings IN the
+    //    odd bits in odd-aligned runs.
+    // 3. & with backslash to clean up any stray bits.
+    // runs are set to 0, and then XORing with "odd":
+    //
+    // |                                | Mask (shows characters instead of 1's) | Instructions        |
+    // |--------------------------------|----------------------------------------|---------------------|
+    // | string                         | `\\n_\\\n___\\\n___\\\\___\\\\__\\\`   |
+    // |                                | `    even   odd    even   odd   odd`   |
+    // | maybe_escaped                  | `  n  \\n    \\n    \\\_   \\\_  \\` X | 1 (potential_escape << 1)
+    // | maybe_escaped_and_odd          | ` \n_ \\n _ \\\n_ _ \\\__ _\\\_ \\\`   | 1 (maybe_escaped | odd)
+    // | even_series_codes_and_odd      | `  n_\\\  _    n_ _\\\\ _     _    `   | 1 (maybe_escaped_and_odd - potential_escape)
+    // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 1 (^ odd)
+    //
+
+    // Escaped characters are characters following an escape.
+    uint64_t maybe_escaped = potential_escape << 1;
+
+    // To distinguish odd from even escape sequences, therefore, we turn on any *starting*
+    // escapes that are on an odd byte. (We actually bring in all odd bits, for speed.)
+    // - Odd runs of backslashes are 0000, and the code at the end ("n" in \n or \\n) is 1.
+    // - Odd runs of backslashes are 1111, and the code at the end ("n" in \n or \\n) is 0.
+    // - All other odd bytes are 1, and even bytes are 0.
+    uint64_t maybe_escaped_and_odd_bits     = maybe_escaped | ODD_BITS;
+    uint64_t even_series_codes_and_odd_bits = maybe_escaped_and_odd_bits - potential_escape;
+
+    // Now we flip all odd bytes back with xor. This:
+    // - Makes odd runs of backslashes go from 0000 to 1010
+    // - Makes even runs of backslashes go from 1111 to 1010
+    // - Sets actually-escaped codes to 1 (the n in \n and \\n: \n = 11, \\n = 100)
+    // - Resets all other bytes to 0
+    return even_series_codes_and_odd_bits ^ ODD_BITS;
+  }
+};
+
+} // namespace stage1
+} // unnamed namespace
+} // namespace westmere
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
+/* end file generic/stage1/json_escape_scanner.h for westmere */
 /* including generic/stage1/json_string_scanner.h for westmere: #include <generic/stage1/json_string_scanner.h> */
 /* begin file generic/stage1/json_string_scanner.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H
@@ -40410,6 +41057,7 @@ using utf8_validation::utf8_checker;
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_STRING_SCANNER_H */
 /* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
+/* amalgamation skipped (editor-only): #include <generic/stage1/json_escape_scanner.h> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -40419,33 +41067,25 @@ namespace stage1 {
 
 struct json_string_block {
   // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
-  simdjson_inline json_string_block(uint64_t backslash, uint64_t escaped, uint64_t quote, uint64_t in_string) :
-  _backslash(backslash), _escaped(escaped), _quote(quote), _in_string(in_string) {}
+  simdjson_really_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  _escaped(escaped), _quote(quote), _in_string(in_string) {}
 
   // Escaped characters (characters following an escape() character)
-  simdjson_inline uint64_t escaped() const { return _escaped; }
-  // Escape characters (backslashes that are not escaped--i.e. in \\, includes only the first \)
-  simdjson_inline uint64_t escape() const { return _backslash & ~_escaped; }
+  simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Real (non-backslashed) quotes
-  simdjson_inline uint64_t quote() const { return _quote; }
-  // Start quotes of strings
-  simdjson_inline uint64_t string_start() const { return _quote & _in_string; }
-  // End quotes of strings
-  simdjson_inline uint64_t string_end() const { return _quote & ~_in_string; }
+  simdjson_really_inline uint64_t quote() const { return _quote; }
   // Only characters inside the string (not including the quotes)
-  simdjson_inline uint64_t string_content() const { return _in_string & ~_quote; }
+  simdjson_really_inline uint64_t string_content() const { return _in_string & ~_quote; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
   // Tail of string (everything except the start quote)
-  simdjson_inline uint64_t string_tail() const { return _in_string ^ _quote; }
+  simdjson_really_inline uint64_t string_tail() const { return _in_string ^ _quote; }
 
-  // backslash characters
-  uint64_t _backslash;
   // escaped characters (backslashed--does not include the hex characters after \u)
   uint64_t _escaped;
-  // real quotes (non-backslashed ones)
+  // real quotes (non-escaped ones)
   uint64_t _quote;
   // string characters (includes start quote but not end quote)
   uint64_t _in_string;
@@ -40454,64 +41094,16 @@ struct json_string_block {
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  simdjson_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
+  simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_really_inline error_code finish();
 
 private:
-  // Intended to be defined by the implementation
-  simdjson_inline uint64_t find_escaped(uint64_t escape);
-  simdjson_inline uint64_t find_escaped_branchless(uint64_t escape);
-
+  // Scans for escape characters
+  json_escape_scanner escape_scanner{};
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
   uint64_t prev_in_string = 0ULL;
-  // Whether the first character of the next iteration is escaped.
-  uint64_t prev_escaped = 0ULL;
 };
-
-//
-// Finds escaped characters (characters following \).
-//
-// Handles runs of backslashes like \\\" and \\\\" correctly (yielding 0101 and 01010, respectively).
-//
-// Does this by:
-// - Shift the escape mask to get potentially escaped characters (characters after backslashes).
-// - Mask escaped sequences that start on *even* bits with 1010101010 (odd bits are escaped, even bits are not)
-// - Mask escaped sequences that start on *odd* bits with 0101010101 (even bits are escaped, odd bits are not)
-//
-// To distinguish between escaped sequences starting on even/odd bits, it finds the start of all
-// escape sequences, filters out the ones that start on even bits, and adds that to the mask of
-// escape sequences. This causes the addition to clear out the sequences starting on odd bits (since
-// the start bit causes a carry), and leaves even-bit sequences alone.
-//
-// Example:
-//
-// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
-// escape         |  xxx |  xx xxx  xxx  xx xx  | Removed overflow backslash; will | it into follows_escape
-// odd_starts     |  x   |  x       x       x   | escape & ~even_bits & ~follows_escape
-// even_seq       |     c|    cxxx     c xx   c | c = carry bit -- will be masked out later
-// invert_mask    |      |     cxxx     c xx   c| even_seq << 1
-// follows_escape |   xx | x xx xxx  xxx  xx xx | Includes overflow bit
-// escaped        |   x  | x x  x x  x x  x  x  |
-// desired        |   x  | x x  x x  x x  x  x  |
-// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
-//
-simdjson_inline uint64_t json_string_scanner::find_escaped_branchless(uint64_t backslash) {
-  // If there was overflow, pretend the first character isn't a backslash
-  backslash &= ~prev_escaped;
-  uint64_t follows_escape = backslash << 1 | prev_escaped;
-
-  // Get sequences starting on even bits by clearing out the odd series using +
-  const uint64_t even_bits = 0x5555555555555555ULL;
-  uint64_t odd_sequence_starts = backslash & ~even_bits & ~follows_escape;
-  uint64_t sequences_starting_on_even_bits;
-  prev_escaped = add_overflow(odd_sequence_starts, backslash, &sequences_starting_on_even_bits);
-  uint64_t invert_mask = sequences_starting_on_even_bits << 1; // The mask we want to return is the *escaped* bits, not escapes.
-
-  // Mask every other backslashed character as an escaped character
-  // Flip the mask for sequences that start on even bits, to correct them
-  return (even_bits ^ invert_mask) & follows_escape;
-}
 
 //
 // Return a mask of all string characters plus end quotes.
@@ -40521,9 +41113,9 @@ simdjson_inline uint64_t json_string_scanner::find_escaped_branchless(uint64_t b
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
+simdjson_really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
   const uint64_t backslash = in.eq('\\');
-  const uint64_t escaped = find_escaped(backslash);
+  const uint64_t escaped = escape_scanner.next(backslash).escaped;
   const uint64_t quote = in.eq('"') & ~escaped;
 
   //
@@ -40537,24 +41129,16 @@ simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64
   //
   // Check if we're still in a string at the end of the box so the next block will know
   //
-  // right shift of a signed value expected to be well-defined and standard
-  // compliant as of C++20, John Regher from Utah U. says this is fine code
-  //
   prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
 
   // Use ^ to turn the beginning quote off, and the end quote on.
 
   // We are returning a function-local object so either we get a move constructor
   // or we get copy elision.
-  return json_string_block(
-    backslash,
-    escaped,
-    quote,
-    in_string
-  );
+  return json_string_block(escaped, quote, in_string);
 }
 
-simdjson_inline error_code json_string_scanner::finish() {
+simdjson_really_inline error_code json_string_scanner::finish() {
   if (prev_in_string) {
     return UNCLOSED_STRING;
   }
@@ -40961,114 +41545,6 @@ simdjson_inline error_code json_scanner::finish() {
 /* end file generic/stage1/json_scanner.h for westmere */
 
 // All other declarations
-/* including generic/stage1/buf_block_reader.h for westmere: #include <generic/stage1/buf_block_reader.h> */
-/* begin file generic/stage1/buf_block_reader.h for westmere */
-#ifndef SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
-/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H */
-/* amalgamation skipped (editor-only): #include <generic/stage1/base.h> */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
-
-#include <cstring>
-
-namespace simdjson {
-namespace westmere {
-namespace {
-namespace stage1 {
-
-// Walks through a buffer in block-sized increments, loading the last part with spaces
-template<size_t STEP_SIZE>
-struct buf_block_reader {
-public:
-  simdjson_inline buf_block_reader(const uint8_t *_buf, size_t _len);
-  simdjson_inline size_t block_index();
-  simdjson_inline bool has_full_block() const;
-  simdjson_inline const uint8_t *full_block() const;
-  /**
-   * Get the last block, padded with spaces.
-   *
-   * There will always be a last block, with at least 1 byte, unless len == 0 (in which case this
-   * function fills the buffer with spaces and returns 0. In particular, if len == STEP_SIZE there
-   * will be 0 full_blocks and 1 remainder block with STEP_SIZE bytes and no spaces for padding.
-   *
-   * @return the number of effective characters in the last block.
-   */
-  simdjson_inline size_t get_remainder(uint8_t *dst) const;
-  simdjson_inline void advance();
-private:
-  const uint8_t *buf;
-  const size_t len;
-  const size_t lenminusstep;
-  size_t idx;
-};
-
-// Routines to print masks and text for debugging bitmask operations
-simdjson_unused static char * format_input_text_64(const uint8_t *text) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
-    buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
-  }
-  buf[sizeof(simd8x64<uint8_t>)] = '\0';
-  return buf;
-}
-
-// Routines to print masks and text for debugging bitmask operations
-simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  in.store(reinterpret_cast<uint8_t*>(buf));
-  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
-    if (buf[i] < ' ') { buf[i] = '_'; }
-  }
-  buf[sizeof(simd8x64<uint8_t>)] = '\0';
-  return buf;
-}
-
-simdjson_unused static char * format_mask(uint64_t mask) {
-  static char buf[sizeof(simd8x64<uint8_t>) + 1];
-  for (size_t i=0; i<64; i++) {
-    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
-  }
-  buf[64] = '\0';
-  return buf;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline buf_block_reader<STEP_SIZE>::buf_block_reader(const uint8_t *_buf, size_t _len) : buf{_buf}, len{_len}, lenminusstep{len < STEP_SIZE ? 0 : len - STEP_SIZE}, idx{0} {}
-
-template<size_t STEP_SIZE>
-simdjson_inline size_t buf_block_reader<STEP_SIZE>::block_index() { return idx; }
-
-template<size_t STEP_SIZE>
-simdjson_inline bool buf_block_reader<STEP_SIZE>::has_full_block() const {
-  return idx < lenminusstep;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline const uint8_t *buf_block_reader<STEP_SIZE>::full_block() const {
-  return &buf[idx];
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) const {
-  if(len == idx) { return 0; } // memcpy(dst, null, 0) will trigger an error with some sanitizers
-  std::memset(dst, 0x20, STEP_SIZE); // std::memset STEP_SIZE because it's more efficient to write out 8 or 16 bytes at once.
-  std::memcpy(dst, buf + idx, len - idx);
-  return len - idx;
-}
-
-template<size_t STEP_SIZE>
-simdjson_inline void buf_block_reader<STEP_SIZE>::advance() {
-  idx += STEP_SIZE;
-}
-
-} // namespace stage1
-} // unnamed namespace
-} // namespace westmere
-} // namespace simdjson
-
-#endif // SIMDJSON_SRC_GENERIC_STAGE1_BUF_BLOCK_READER_H
-/* end file generic/stage1/buf_block_reader.h for westmere */
 /* including generic/stage1/find_next_document_index.h for westmere: #include <generic/stage1/find_next_document_index.h> */
 /* begin file generic/stage1/find_next_document_index.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_FIND_NEXT_DOCUMENT_INDEX_H
@@ -43024,16 +43500,6 @@ simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2,
 
 namespace simdjson {
 namespace westmere {
-namespace {
-namespace stage1 {
-
-simdjson_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
-  if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
-  return find_escaped_branchless(backslash);
-}
-
-} // namespace stage1
-} // unnamed namespace
 
 simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
   return westmere::stage1::json_minifier::minify<64>(buf, len, dst, dst_len);

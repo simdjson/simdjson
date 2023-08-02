@@ -59,6 +59,17 @@ simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in) {
   return buf;
 }
 
+simdjson_unused static char * format_input_text(const simd8x64<uint8_t>& in, uint64_t mask) {
+  static char buf[sizeof(simd8x64<uint8_t>) + 1];
+  in.store(reinterpret_cast<uint8_t*>(buf));
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] <= ' ') { buf[i] = '_'; }
+    if (!(mask & (size_t(1) << i))) { buf[i] = ' '; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
 simdjson_unused static char * format_mask(uint64_t mask) {
   static char buf[sizeof(simd8x64<uint8_t>) + 1];
   for (size_t i=0; i<64; i++) {
