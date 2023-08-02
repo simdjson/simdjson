@@ -73,7 +73,7 @@ struct json_escape_scanner {
 private:
   static constexpr const uint64_t ODD_BITS = 0xAAAAAAAAAAAAAAAAULL;
 
-  uint64_t next_escaped_without_backslashes() noexcept {
+  simdjson_inline uint64_t next_escaped_without_backslashes() noexcept {
     uint64_t escaped = this->next_is_escaped;
     this->next_is_escaped = 0;
     return escaped;
