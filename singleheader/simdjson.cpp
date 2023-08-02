@@ -1,4 +1,4 @@
-/* auto-generated on 2023-08-01 01:24:06 -0700. Do not edit! */
+/* auto-generated on 2023-08-02 08:28:05 -0700. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -11191,7 +11191,7 @@ struct json_escape_scanner {
 private:
   static constexpr const uint64_t ODD_BITS = 0xAAAAAAAAAAAAAAAAULL;
 
-  uint64_t next_escaped_without_backslashes() noexcept {
+  simdjson_really_inline uint64_t next_escaped_without_backslashes() noexcept {
     uint64_t escaped = this->next_is_escaped;
     this->next_is_escaped = 0;
     return escaped;
@@ -11211,7 +11211,7 @@ private:
    * & the result with potential_escape to get just the escape characters.
    * ^ the result with (potential_escape | first_is_escaped) to get escaped characters.
    */
-  static simdjson_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
+  static simdjson_really_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
     // If we were to just shift and mask out any odd bits, we'd actually get a *half* right answer:
     // any even-aligned backslash runs would be correct! Odd-aligned backslash runs would be
     // inverted (\\\ would be 010 instead of 101).
@@ -11285,21 +11285,21 @@ namespace stage1 {
 
 struct json_string_block {
   // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
-  simdjson_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  simdjson_really_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
   _escaped(escaped), _quote(quote), _in_string(in_string) {}
 
   // Escaped characters (characters following an escape() character)
-  simdjson_inline uint64_t escaped() const { return _escaped; }
+  simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Real (non-backslashed) quotes
-  simdjson_inline uint64_t quote() const { return _quote; }
+  simdjson_really_inline uint64_t quote() const { return _quote; }
   // Only characters inside the string (not including the quotes)
-  simdjson_inline uint64_t string_content() const { return _in_string & ~_quote; }
+  simdjson_really_inline uint64_t string_content() const { return _in_string & ~_quote; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
   // Tail of string (everything except the start quote)
-  simdjson_inline uint64_t string_tail() const { return _in_string ^ _quote; }
+  simdjson_really_inline uint64_t string_tail() const { return _in_string ^ _quote; }
 
   // escaped characters (backslashed--does not include the hex characters after \u)
   uint64_t _escaped;
@@ -11312,9 +11312,9 @@ struct json_string_block {
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  simdjson_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
+  simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_really_inline error_code finish();
 
 private:
   // Scans for escape characters
@@ -11331,7 +11331,7 @@ private:
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
+simdjson_really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
   const uint64_t backslash = in.eq('\\');
   const uint64_t escaped = escape_scanner.next(backslash).escaped;
   const uint64_t quote = in.eq('"') & ~escaped;
@@ -11356,7 +11356,7 @@ simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64
   return json_string_block(escaped, quote, in_string);
 }
 
-simdjson_inline error_code json_string_scanner::finish() {
+simdjson_really_inline error_code json_string_scanner::finish() {
   if (prev_in_string) {
     return UNCLOSED_STRING;
   }
@@ -21299,7 +21299,7 @@ struct json_escape_scanner {
 private:
   static constexpr const uint64_t ODD_BITS = 0xAAAAAAAAAAAAAAAAULL;
 
-  uint64_t next_escaped_without_backslashes() noexcept {
+  simdjson_really_inline uint64_t next_escaped_without_backslashes() noexcept {
     uint64_t escaped = this->next_is_escaped;
     this->next_is_escaped = 0;
     return escaped;
@@ -21319,7 +21319,7 @@ private:
    * & the result with potential_escape to get just the escape characters.
    * ^ the result with (potential_escape | first_is_escaped) to get escaped characters.
    */
-  static simdjson_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
+  static simdjson_really_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
     // If we were to just shift and mask out any odd bits, we'd actually get a *half* right answer:
     // any even-aligned backslash runs would be correct! Odd-aligned backslash runs would be
     // inverted (\\\ would be 010 instead of 101).
@@ -21393,21 +21393,21 @@ namespace stage1 {
 
 struct json_string_block {
   // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
-  simdjson_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  simdjson_really_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
   _escaped(escaped), _quote(quote), _in_string(in_string) {}
 
   // Escaped characters (characters following an escape() character)
-  simdjson_inline uint64_t escaped() const { return _escaped; }
+  simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Real (non-backslashed) quotes
-  simdjson_inline uint64_t quote() const { return _quote; }
+  simdjson_really_inline uint64_t quote() const { return _quote; }
   // Only characters inside the string (not including the quotes)
-  simdjson_inline uint64_t string_content() const { return _in_string & ~_quote; }
+  simdjson_really_inline uint64_t string_content() const { return _in_string & ~_quote; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
   // Tail of string (everything except the start quote)
-  simdjson_inline uint64_t string_tail() const { return _in_string ^ _quote; }
+  simdjson_really_inline uint64_t string_tail() const { return _in_string ^ _quote; }
 
   // escaped characters (backslashed--does not include the hex characters after \u)
   uint64_t _escaped;
@@ -21420,9 +21420,9 @@ struct json_string_block {
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  simdjson_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
+  simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_really_inline error_code finish();
 
 private:
   // Scans for escape characters
@@ -21439,7 +21439,7 @@ private:
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
+simdjson_really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
   const uint64_t backslash = in.eq('\\');
   const uint64_t escaped = escape_scanner.next(backslash).escaped;
   const uint64_t quote = in.eq('"') & ~escaped;
@@ -21464,7 +21464,7 @@ simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64
   return json_string_block(escaped, quote, in_string);
 }
 
-simdjson_inline error_code json_string_scanner::finish() {
+simdjson_really_inline error_code json_string_scanner::finish() {
   if (prev_in_string) {
     return UNCLOSED_STRING;
   }
@@ -27485,7 +27485,7 @@ struct json_escape_scanner {
 private:
   static constexpr const uint64_t ODD_BITS = 0xAAAAAAAAAAAAAAAAULL;
 
-  uint64_t next_escaped_without_backslashes() noexcept {
+  simdjson_really_inline uint64_t next_escaped_without_backslashes() noexcept {
     uint64_t escaped = this->next_is_escaped;
     this->next_is_escaped = 0;
     return escaped;
@@ -27505,7 +27505,7 @@ private:
    * & the result with potential_escape to get just the escape characters.
    * ^ the result with (potential_escape | first_is_escaped) to get escaped characters.
    */
-  static simdjson_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
+  static simdjson_really_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
     // If we were to just shift and mask out any odd bits, we'd actually get a *half* right answer:
     // any even-aligned backslash runs would be correct! Odd-aligned backslash runs would be
     // inverted (\\\ would be 010 instead of 101).
@@ -27579,21 +27579,21 @@ namespace stage1 {
 
 struct json_string_block {
   // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
-  simdjson_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  simdjson_really_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
   _escaped(escaped), _quote(quote), _in_string(in_string) {}
 
   // Escaped characters (characters following an escape() character)
-  simdjson_inline uint64_t escaped() const { return _escaped; }
+  simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Real (non-backslashed) quotes
-  simdjson_inline uint64_t quote() const { return _quote; }
+  simdjson_really_inline uint64_t quote() const { return _quote; }
   // Only characters inside the string (not including the quotes)
-  simdjson_inline uint64_t string_content() const { return _in_string & ~_quote; }
+  simdjson_really_inline uint64_t string_content() const { return _in_string & ~_quote; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
   // Tail of string (everything except the start quote)
-  simdjson_inline uint64_t string_tail() const { return _in_string ^ _quote; }
+  simdjson_really_inline uint64_t string_tail() const { return _in_string ^ _quote; }
 
   // escaped characters (backslashed--does not include the hex characters after \u)
   uint64_t _escaped;
@@ -27606,9 +27606,9 @@ struct json_string_block {
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  simdjson_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
+  simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_really_inline error_code finish();
 
 private:
   // Scans for escape characters
@@ -27625,7 +27625,7 @@ private:
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
+simdjson_really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
   const uint64_t backslash = in.eq('\\');
   const uint64_t escaped = escape_scanner.next(backslash).escaped;
   const uint64_t quote = in.eq('"') & ~escaped;
@@ -27650,7 +27650,7 @@ simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64
   return json_string_block(escaped, quote, in_string);
 }
 
-simdjson_inline error_code json_string_scanner::finish() {
+simdjson_really_inline error_code json_string_scanner::finish() {
   if (prev_in_string) {
     return UNCLOSED_STRING;
   }
@@ -33942,7 +33942,7 @@ struct json_escape_scanner {
 private:
   static constexpr const uint64_t ODD_BITS = 0xAAAAAAAAAAAAAAAAULL;
 
-  uint64_t next_escaped_without_backslashes() noexcept {
+  simdjson_really_inline uint64_t next_escaped_without_backslashes() noexcept {
     uint64_t escaped = this->next_is_escaped;
     this->next_is_escaped = 0;
     return escaped;
@@ -33962,7 +33962,7 @@ private:
    * & the result with potential_escape to get just the escape characters.
    * ^ the result with (potential_escape | first_is_escaped) to get escaped characters.
    */
-  static simdjson_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
+  static simdjson_really_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
     // If we were to just shift and mask out any odd bits, we'd actually get a *half* right answer:
     // any even-aligned backslash runs would be correct! Odd-aligned backslash runs would be
     // inverted (\\\ would be 010 instead of 101).
@@ -34036,21 +34036,21 @@ namespace stage1 {
 
 struct json_string_block {
   // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
-  simdjson_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  simdjson_really_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
   _escaped(escaped), _quote(quote), _in_string(in_string) {}
 
   // Escaped characters (characters following an escape() character)
-  simdjson_inline uint64_t escaped() const { return _escaped; }
+  simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Real (non-backslashed) quotes
-  simdjson_inline uint64_t quote() const { return _quote; }
+  simdjson_really_inline uint64_t quote() const { return _quote; }
   // Only characters inside the string (not including the quotes)
-  simdjson_inline uint64_t string_content() const { return _in_string & ~_quote; }
+  simdjson_really_inline uint64_t string_content() const { return _in_string & ~_quote; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
   // Tail of string (everything except the start quote)
-  simdjson_inline uint64_t string_tail() const { return _in_string ^ _quote; }
+  simdjson_really_inline uint64_t string_tail() const { return _in_string ^ _quote; }
 
   // escaped characters (backslashed--does not include the hex characters after \u)
   uint64_t _escaped;
@@ -34063,9 +34063,9 @@ struct json_string_block {
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  simdjson_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
+  simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_really_inline error_code finish();
 
 private:
   // Scans for escape characters
@@ -34082,7 +34082,7 @@ private:
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
+simdjson_really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
   const uint64_t backslash = in.eq('\\');
   const uint64_t escaped = escape_scanner.next(backslash).escaped;
   const uint64_t quote = in.eq('"') & ~escaped;
@@ -34107,7 +34107,7 @@ simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64
   return json_string_block(escaped, quote, in_string);
 }
 
-simdjson_inline error_code json_string_scanner::finish() {
+simdjson_really_inline error_code json_string_scanner::finish() {
   if (prev_in_string) {
     return UNCLOSED_STRING;
   }
@@ -40973,7 +40973,7 @@ struct json_escape_scanner {
 private:
   static constexpr const uint64_t ODD_BITS = 0xAAAAAAAAAAAAAAAAULL;
 
-  uint64_t next_escaped_without_backslashes() noexcept {
+  simdjson_really_inline uint64_t next_escaped_without_backslashes() noexcept {
     uint64_t escaped = this->next_is_escaped;
     this->next_is_escaped = 0;
     return escaped;
@@ -40993,7 +40993,7 @@ private:
    * & the result with potential_escape to get just the escape characters.
    * ^ the result with (potential_escape | first_is_escaped) to get escaped characters.
    */
-  static simdjson_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
+  static simdjson_really_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
     // If we were to just shift and mask out any odd bits, we'd actually get a *half* right answer:
     // any even-aligned backslash runs would be correct! Odd-aligned backslash runs would be
     // inverted (\\\ would be 010 instead of 101).
@@ -41067,21 +41067,21 @@ namespace stage1 {
 
 struct json_string_block {
   // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
-  simdjson_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
+  simdjson_really_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
   _escaped(escaped), _quote(quote), _in_string(in_string) {}
 
   // Escaped characters (characters following an escape() character)
-  simdjson_inline uint64_t escaped() const { return _escaped; }
+  simdjson_really_inline uint64_t escaped() const { return _escaped; }
   // Real (non-backslashed) quotes
-  simdjson_inline uint64_t quote() const { return _quote; }
+  simdjson_really_inline uint64_t quote() const { return _quote; }
   // Only characters inside the string (not including the quotes)
-  simdjson_inline uint64_t string_content() const { return _in_string & ~_quote; }
+  simdjson_really_inline uint64_t string_content() const { return _in_string & ~_quote; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
   // Tail of string (everything except the start quote)
-  simdjson_inline uint64_t string_tail() const { return _in_string ^ _quote; }
+  simdjson_really_inline uint64_t string_tail() const { return _in_string ^ _quote; }
 
   // escaped characters (backslashed--does not include the hex characters after \u)
   uint64_t _escaped;
@@ -41094,9 +41094,9 @@ struct json_string_block {
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  simdjson_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
+  simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_really_inline error_code finish();
 
 private:
   // Scans for escape characters
@@ -41113,7 +41113,7 @@ private:
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
+simdjson_really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
   const uint64_t backslash = in.eq('\\');
   const uint64_t escaped = escape_scanner.next(backslash).escaped;
   const uint64_t quote = in.eq('"') & ~escaped;
@@ -41138,7 +41138,7 @@ simdjson_inline json_string_block json_string_scanner::next(const simd::simd8x64
   return json_string_block(escaped, quote, in_string);
 }
 
-simdjson_inline error_code json_string_scanner::finish() {
+simdjson_really_inline error_code json_string_scanner::finish() {
   if (prev_in_string) {
     return UNCLOSED_STRING;
   }
