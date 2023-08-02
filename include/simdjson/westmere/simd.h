@@ -14,17 +14,18 @@ namespace simd {
 
   template<typename Child>
   struct base {
-    __m128i value;
+    using simd_t = __m128i;
+    simd_t value;
 
     // Zero constructor
-    simdjson_constexpr base() : value{__m128i()} {}
+    simdjson_constexpr base() : value{simd_t()} {}
 
     // Conversion from SIMD register
-    simdjson_constexpr base(const __m128i _value) : value(_value) {}
+    simdjson_constexpr base(const simd_t _value) : value(_value) {}
 
     // Conversion to SIMD register
-    simdjson_constexpr operator const __m128i&() const { return this->value; }
-    simdjson_constexpr operator __m128i&() { return this->value; }
+    simdjson_constexpr operator const simd_t&() const { return this->value; }
+    simdjson_constexpr operator simd_t&() { return this->value; }
 
     // Bit operations
     simdjson_constexpr Child operator|(const Child other) const { return _mm_or_si128(*this, other); }
@@ -38,15 +39,15 @@ namespace simd {
 
   template<typename T, typename Mask=simd8<bool>>
   struct base8: base<simd8<T>> {
-    typedef uint16_t bitmask_t;
-    typedef uint32_t bitmask2_t;
+    using simd_t = typename base<simd8<T>>::simd_t;
+    static constexpr const int LANES = sizeof(simd_t);
+    using bitmask_t = uint16_t;
+    static_assert(sizeof(bitmask_t)*8 == LANES);
 
     simdjson_constexpr base8() : base<simd8<T>>() {}
-    simdjson_constexpr base8(const __m128i _value) : base<simd8<T>>(_value) {}
+    simdjson_constexpr base8(const simd_t _value) : base<simd8<T>>(_value) {}
 
     friend simdjson_constexpr Mask operator==(const simd8<T> lhs, const simd8<T> rhs) { return _mm_cmpeq_epi8(lhs, rhs); }
-
-    static const int SIZE = sizeof(base<simd8<T>>::value);
 
     template<int N=1>
     simdjson_constexpr simd8<T> prev(const simd8<T> prev_chunk) const {
@@ -60,21 +61,22 @@ namespace simd {
     static simdjson_constexpr simd8<bool> splat(bool _value) { return _mm_set1_epi8(uint8_t(-(!!_value))); }
 
     simdjson_constexpr simd8<bool>() : base8() {}
-    simdjson_constexpr simd8<bool>(const __m128i _value) : base8<bool>(_value) {}
+    simdjson_constexpr simd8<bool>(const simd_t _value) : base8<bool>(_value) {}
     // Splat constructor
     simdjson_constexpr simd8<bool>(bool _value) : base8<bool>(splat(_value)) {}
 
-    simdjson_constexpr int to_bitmask() const { return _mm_movemask_epi8(*this); }
+    simdjson_constexpr auto to_bitmask() const { return _mm_movemask_epi8(*this); }
     simdjson_constexpr bool any() const { return !_mm_testz_si128(*this, *this); }
     simdjson_constexpr simd8<bool> operator~() const { return *this ^ true; }
   };
 
   template<typename T>
   struct base8_numeric: base8<T> {
+    using simd_t = typename base8<T>::simd_t;
     static simdjson_constexpr simd8<T> splat(T _value) { return _mm_set1_epi8(_value); }
     static simdjson_constexpr simd8<T> zero() { return _mm_setzero_si128(); }
     static simdjson_constexpr simd8<T> load(const T values[16]) {
-      return _mm_loadu_si128(reinterpret_cast<const __m128i *>(values));
+      return _mm_loadu_si128(reinterpret_cast<const simd_t *>(values));
     }
     // Repeat 16 values as many times as necessary (usually for lookup tables)
     static simdjson_constexpr simd8<T> repeat_16(
@@ -88,10 +90,10 @@ namespace simd {
     }
 
     simdjson_constexpr base8_numeric() : base8<T>() {}
-    simdjson_constexpr base8_numeric(const __m128i _value) : base8<T>(_value) {}
+    simdjson_constexpr base8_numeric(const simd_t _value) : base8<T>(_value) {}
 
     // Store to array
-    simdjson_constexpr void store(T dst[16]) const { return _mm_storeu_si128(reinterpret_cast<__m128i *>(dst), *this); }
+    simdjson_constexpr void store(T dst[16]) const { return _mm_storeu_si128(reinterpret_cast<simd_t *>(dst), *this); }
 
     // Override to distinguish from bool version
     simdjson_constexpr simd8<T> operator~() const { return *this ^ 0xFFu; }
@@ -127,12 +129,12 @@ namespace simd {
       // next line just loads the 64-bit values thintable_epi8[mask1] and
       // thintable_epi8[mask2] into a 128-bit register, using only
       // two instructions on most compilers.
-      __m128i shufmask =  _mm_set_epi64x(thintable_epi8[mask2], thintable_epi8[mask1]);
+      simd_t shufmask =  _mm_set_epi64x(thintable_epi8[mask2], thintable_epi8[mask1]);
       // we increment by 0x08 the second half of the mask
       shufmask =
       _mm_add_epi8(shufmask, _mm_set_epi32(0x08080808, 0x08080808, 0, 0));
       // this is the version "nearly pruned"
-      __m128i pruned = _mm_shuffle_epi8(*this, shufmask);
+      simd_t pruned = _mm_shuffle_epi8(*this, shufmask);
       // we still need to put the two halves together.
       // we compute the popcount of the first half:
       int pop1 = BitsSetTable256mul2[mask1];
@@ -140,10 +142,10 @@ namespace simd {
       // only the first pop1 bytes from the first 8 bytes, and then
       // it fills in with the bytes from the second 8 bytes + some filling
       // at the end.
-      __m128i compactmask =
-      _mm_loadu_si128(reinterpret_cast<const __m128i *>(pshufb_combine_table + pop1 * 8));
-      __m128i answer = _mm_shuffle_epi8(pruned, compactmask);
-      _mm_storeu_si128(reinterpret_cast<__m128i *>(output), answer);
+      simd_t compactmask =
+      _mm_loadu_si128(reinterpret_cast<const simd_t *>(pshufb_combine_table + pop1 * 8));
+      simd_t answer = _mm_shuffle_epi8(pruned, compactmask);
+      _mm_storeu_si128(reinterpret_cast<simd_t *>(output), answer);
     }
 
     template<typename L>
@@ -165,7 +167,7 @@ namespace simd {
   template<>
   struct simd8<int8_t> : base8_numeric<int8_t> {
     simdjson_constexpr simd8() : base8_numeric<int8_t>() {}
-    simdjson_constexpr simd8(const __m128i _value) : base8_numeric<int8_t>(_value) {}
+    simdjson_constexpr simd8(const simd_t _value) : base8_numeric<int8_t>(_value) {}
     // Splat constructor
     simdjson_constexpr simd8(int8_t _value) : simd8(splat(_value)) {}
     // Array constructor
@@ -200,7 +202,7 @@ namespace simd {
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
     simdjson_constexpr simd8() : base8_numeric<uint8_t>() {}
-    simdjson_constexpr simd8(const __m128i _value) : base8_numeric<uint8_t>(_value) {}
+    simdjson_constexpr simd8(const simd_t _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor
     simdjson_constexpr simd8(uint8_t _value) : simd8(splat(_value)) {}
     // Array constructor

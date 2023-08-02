@@ -18,7 +18,7 @@
 /**
  * GCC 8 fails to provide _mm512_set_epi8. We roll our own.
  */
-inline __m512i _mm512_set_epi8(uint8_t a0, uint8_t a1, uint8_t a2, uint8_t a3, uint8_t a4, uint8_t a5, uint8_t a6, uint8_t a7, uint8_t a8, uint8_t a9, uint8_t a10, uint8_t a11, uint8_t a12, uint8_t a13, uint8_t a14, uint8_t a15, uint8_t a16, uint8_t a17, uint8_t a18, uint8_t a19, uint8_t a20, uint8_t a21, uint8_t a22, uint8_t a23, uint8_t a24, uint8_t a25, uint8_t a26, uint8_t a27, uint8_t a28, uint8_t a29, uint8_t a30, uint8_t a31, uint8_t a32, uint8_t a33, uint8_t a34, uint8_t a35, uint8_t a36, uint8_t a37, uint8_t a38, uint8_t a39, uint8_t a40, uint8_t a41, uint8_t a42, uint8_t a43, uint8_t a44, uint8_t a45, uint8_t a46, uint8_t a47, uint8_t a48, uint8_t a49, uint8_t a50, uint8_t a51, uint8_t a52, uint8_t a53, uint8_t a54, uint8_t a55, uint8_t a56, uint8_t a57, uint8_t a58, uint8_t a59, uint8_t a60, uint8_t a61, uint8_t a62, uint8_t a63) {
+inline simd_t _mm512_set_epi8(uint8_t a0, uint8_t a1, uint8_t a2, uint8_t a3, uint8_t a4, uint8_t a5, uint8_t a6, uint8_t a7, uint8_t a8, uint8_t a9, uint8_t a10, uint8_t a11, uint8_t a12, uint8_t a13, uint8_t a14, uint8_t a15, uint8_t a16, uint8_t a17, uint8_t a18, uint8_t a19, uint8_t a20, uint8_t a21, uint8_t a22, uint8_t a23, uint8_t a24, uint8_t a25, uint8_t a26, uint8_t a27, uint8_t a28, uint8_t a29, uint8_t a30, uint8_t a31, uint8_t a32, uint8_t a33, uint8_t a34, uint8_t a35, uint8_t a36, uint8_t a37, uint8_t a38, uint8_t a39, uint8_t a40, uint8_t a41, uint8_t a42, uint8_t a43, uint8_t a44, uint8_t a45, uint8_t a46, uint8_t a47, uint8_t a48, uint8_t a49, uint8_t a50, uint8_t a51, uint8_t a52, uint8_t a53, uint8_t a54, uint8_t a55, uint8_t a56, uint8_t a57, uint8_t a58, uint8_t a59, uint8_t a60, uint8_t a61, uint8_t a62, uint8_t a63) {
   return _mm512_set_epi64(uint64_t(a7) + (uint64_t(a6) << 8) + (uint64_t(a5) << 16) + (uint64_t(a4) << 24) + (uint64_t(a3) << 32) + (uint64_t(a2) << 40) + (uint64_t(a1) << 48) + (uint64_t(a0) << 56),
                           uint64_t(a15) + (uint64_t(a14) << 8) + (uint64_t(a13) << 16) + (uint64_t(a12) << 24) + (uint64_t(a11) << 32) + (uint64_t(a10) << 40) + (uint64_t(a9) << 48) + (uint64_t(a8) << 56),
                           uint64_t(a23) + (uint64_t(a22) << 8) + (uint64_t(a21) << 16) + (uint64_t(a20) << 24) + (uint64_t(a19) << 32) + (uint64_t(a18) << 40) + (uint64_t(a17) << 48) + (uint64_t(a16) << 56),
@@ -40,17 +40,18 @@ namespace simd {
   // Forward-declared so they can be used by splat and friends.
   template<typename Child>
   struct base {
-    __m512i value;
+    using simd_t = __m512i;
+    simd_t value;
 
     // Zero constructor
-    simdjson_constexpr base() : value{__m512i()} {}
+    simdjson_constexpr base() : value{simd_t()} {}
 
     // Conversion from SIMD register
-    simdjson_constexpr base(const __m512i _value) : value(_value) {}
+    simdjson_constexpr base(const simd_t _value) : value(_value) {}
 
     // Conversion to SIMD register
-    simdjson_constexpr operator const __m512i&() const { return this->value; }
-    simdjson_constexpr operator __m512i&() { return this->value; }
+    simdjson_constexpr operator const simd_t&() const { return this->value; }
+    simdjson_constexpr operator simd_t&() { return this->value; }
 
     // Bit operations
     simdjson_constexpr Child operator|(const Child other) const { return _mm512_or_si512(*this, other); }
@@ -68,17 +69,17 @@ namespace simd {
 
   template<typename T, typename Mask=simd8<bool>>
   struct base8: base<simd8<T>> {
-    typedef uint32_t bitmask_t;
-    typedef uint64_t bitmask2_t;
+    using simd_t = typename base<simd8<T>>::simd_t;
+    static constexpr const int LANES = sizeof(simd_t);
+    using bitmask_t = uint64_t;
+    static_assert(sizeof(bitmask_t)*8 == LANES);
 
     simdjson_constexpr base8() : base<simd8<T>>() {}
-    simdjson_constexpr base8(const __m512i _value) : base<simd8<T>>(_value) {}
+    simdjson_constexpr base8(const simd_t _value) : base<simd8<T>>(_value) {}
 
     friend simdjson_really_inline uint64_t operator==(const simd8<T> lhs, const simd8<T> rhs) {
       return _mm512_cmpeq_epi8_mask(lhs, rhs);
     }
-
-    static const int SIZE = sizeof(base<T>::value);
 
     template<int N=1>
     simdjson_constexpr simd8<T> prev(const simd8<T> prev_chunk) const {
@@ -94,7 +95,7 @@ namespace simd {
     static simdjson_constexpr simd8<bool> splat(bool _value) { return _mm512_set1_epi8(uint8_t(-(!!_value))); }
 
     simdjson_constexpr simd8<bool>() : base8() {}
-    simdjson_constexpr simd8<bool>(const __m512i _value) : base8<bool>(_value) {}
+    simdjson_constexpr simd8<bool>(const simd_t _value) : base8<bool>(_value) {}
     // Splat constructor
     simdjson_constexpr simd8<bool>(bool _value) : base8<bool>(splat(_value)) {}
     simdjson_constexpr bool any() const { return !!_mm512_test_epi8_mask (*this, *this); }
@@ -103,10 +104,11 @@ namespace simd {
 
   template<typename T>
   struct base8_numeric: base8<T> {
+    using simd_t = typename base8<T>::simd_t;
     static simdjson_constexpr simd8<T> splat(T _value) { return _mm512_set1_epi8(_value); }
     static simdjson_constexpr simd8<T> zero() { return _mm512_setzero_si512(); }
     static simdjson_constexpr simd8<T> load(const T values[64]) {
-      return _mm512_loadu_si512(reinterpret_cast<const __m512i *>(values));
+      return _mm512_loadu_si512(reinterpret_cast<const simd_t *>(values));
     }
     // Repeat 16 values as many times as necessary (usually for lookup tables)
     static simdjson_constexpr simd8<T> repeat_16(
@@ -126,10 +128,10 @@ namespace simd {
     }
 
     simdjson_constexpr base8_numeric() : base8<T>() {}
-    simdjson_constexpr base8_numeric(const __m512i _value) : base8<T>(_value) {}
+    simdjson_constexpr base8_numeric(const simd_t _value) : base8<T>(_value) {}
 
     // Store to array
-    simdjson_constexpr void store(T dst[64]) const { return _mm512_storeu_si512(reinterpret_cast<__m512i *>(dst), *this); }
+    simdjson_constexpr void store(T dst[64]) const { return _mm512_storeu_si512(reinterpret_cast<simd_t *>(dst), *this); }
 
     // Addition/subtraction are the same for signed and unsigned
     simdjson_constexpr simd8<T> operator+(const simd8<T> other) const { return _mm512_add_epi8(*this, other); }
@@ -177,7 +179,7 @@ namespace simd {
   template<>
   struct simd8<int8_t> : base8_numeric<int8_t> {
     simdjson_constexpr simd8() : base8_numeric<int8_t>() {}
-    simdjson_constexpr simd8(const __m512i _value) : base8_numeric<int8_t>(_value) {}
+    simdjson_constexpr simd8(const simd_t _value) : base8_numeric<int8_t>(_value) {}
     // Splat constructor
     simdjson_constexpr simd8(int8_t _value) : simd8(splat(_value)) {}
     // Array constructor
@@ -232,7 +234,7 @@ namespace simd {
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
     simdjson_constexpr simd8() : base8_numeric<uint8_t>() {}
-    simdjson_constexpr simd8(const __m512i _value) : base8_numeric<uint8_t>(_value) {}
+    simdjson_constexpr simd8(const simd_t _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor
     simdjson_constexpr simd8(uint8_t _value) : simd8(splat(_value)) {}
     // Array constructor
