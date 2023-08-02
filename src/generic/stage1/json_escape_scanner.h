@@ -73,7 +73,7 @@ struct json_escape_scanner {
 private:
   static constexpr const uint64_t ODD_BITS = 0xAAAAAAAAAAAAAAAAULL;
 
-  simdjson_inline uint64_t next_escaped_without_backslashes() noexcept {
+  simdjson_really_inline uint64_t next_escaped_without_backslashes() noexcept {
     uint64_t escaped = this->next_is_escaped;
     this->next_is_escaped = 0;
     return escaped;
@@ -93,7 +93,7 @@ private:
    * & the result with potential_escape to get just the escape characters.
    * ^ the result with (potential_escape | first_is_escaped) to get escaped characters.
    */
-  static simdjson_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
+  static simdjson_really_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
     // If we were to just shift and mask out any odd bits, we'd actually get a *half* right answer:
     // any even-aligned backslash runs would be correct! Odd-aligned backslash runs would be
     // inverted (\\\ would be 010 instead of 101).
