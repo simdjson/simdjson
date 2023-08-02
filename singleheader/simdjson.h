@@ -35845,6 +35845,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 }
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
+  printf("max_len %d\n", max_len);
   auto json = peek_root_scalar("int64");
   uint8_t tmpbuf[20+1]; // -<19 digits> is the longest possible integer
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {

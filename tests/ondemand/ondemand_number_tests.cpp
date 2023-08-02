@@ -391,6 +391,7 @@ namespace number_tests {
 
     TEST_SUCCEED();
   }
+
   bool issue2017() {
     TEST_START();
     ondemand::parser parser;
@@ -403,8 +404,20 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  bool issue2045() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    padded_string docdata = R"(-18446744073709551615)"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    int64_t bigint;
+    ASSERT_ERROR(doc.get_int64().get(bigint), INCORRECT_TYPE);
+    TEST_SUCCEED();
+  }
+
   bool run() {
-    return issue2017() &&
+    return issue2045() &&
+           issue2017() &&
            issue_1898() &&
            issue1878() &&
            get_root_number_tests() &&
