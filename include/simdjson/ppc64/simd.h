@@ -11,51 +11,57 @@
 
 namespace simdjson {
 namespace ppc64 {
-namespace {
 namespace simd {
 
-using __m128i = __vector unsigned char;
+#if !(SIMDJSON_IS_PPC64 && SIMDJSON_IS_PPC64_VMX) && !defined(SIMDJSON_CONDITIONAL_INCLUDE)
+  // Make errors a bit more manageable when editing on non-ARM
+  struct __m128u { uint8_t buf[16]; };
+  using __m128i = __m128u;
+#else
+using __m128u = __vector unsigned char;
+using __m128i = __vector signed char;
+#endif
 
 template <typename Child> struct base {
-  using simd_t = __m128i;
+  using simd_t = __m128u;
   simd_t value;
 
   // Zero constructor
-  simdjson_constexpr base() : value{simd_t()} {}
+  simdjson_inline base() : value{simd_t()} {}
 
   // Conversion from SIMD register
-  simdjson_constexpr base(const simd_t _value) : value(_value) {}
+  simdjson_inline base(const simd_t _value) : value(_value) {}
 
   // Conversion to SIMD register
-  simdjson_constexpr operator const simd_t &() const {
+  simdjson_inline operator const simd_t &() const {
     return this->value;
   }
-  simdjson_constexpr operator simd_t &() { return this->value; }
+  simdjson_inline operator simd_t &() { return this->value; }
 
   // Bit operations
-  simdjson_constexpr Child operator|(const Child other) const {
+  simdjson_inline Child operator|(const Child other) const {
     return vec_or(this->value, (simd_t)other);
   }
-  simdjson_constexpr Child operator&(const Child other) const {
+  simdjson_inline Child operator&(const Child other) const {
     return vec_and(this->value, (simd_t)other);
   }
-  simdjson_constexpr Child operator^(const Child other) const {
+  simdjson_inline Child operator^(const Child other) const {
     return vec_xor(this->value, (simd_t)other);
   }
-  simdjson_constexpr Child bit_andnot(const Child other) const {
+  simdjson_inline Child bit_andnot(const Child other) const {
     return vec_andc(this->value, (simd_t)other);
   }
-  simdjson_constexpr Child &operator|=(const Child other) {
+  simdjson_inline Child &operator|=(const Child other) {
     auto this_cast = static_cast<Child*>(this);
     *this_cast = *this_cast | other;
     return *this_cast;
   }
-  simdjson_constexpr Child &operator&=(const Child other) {
+  simdjson_inline Child &operator&=(const Child other) {
     auto this_cast = static_cast<Child*>(this);
     *this_cast = *this_cast & other;
     return *this_cast;
   }
-  simdjson_constexpr Child &operator^=(const Child other) {
+  simdjson_inline Child &operator^=(const Child other) {
     auto this_cast = static_cast<Child*>(this);
     *this_cast = *this_cast ^ other;
     return *this_cast;
@@ -67,16 +73,16 @@ struct base8 : base<simd8<T>> {
   using typename base<simd8<T>>::simd_t;
   static constexpr const int LANES = sizeof(simd_t);
   using bitmask_t = uint16_t;
-  static_assert(sizeof(bitmask_t)*8 == LANES);
+  static_assert(sizeof(bitmask_t)*8 == LANES, "Bitmask type's bits must equal the simd type's bytes");
 
-  simdjson_constexpr base8() : base<simd8<T>>() {}
-  simdjson_constexpr base8(const simd_t _value) : base<simd8<T>>(_value) {}
+  simdjson_inline base8() : base<simd8<T>>() {}
+  simdjson_inline base8(const simd_t _value) : base<simd8<T>>(_value) {}
 
-  simdjson_constexpr Mask eq(const simd8<T> rhs) const { return (simd_t)vec_cmpeq(this->value, (simd_t)rhs); }
-  friend simdjson_constexpr Mask operator==(const simd8<T> lhs, const simd8<T> rhs) { return lhs.eq(rhs); }
+  simdjson_inline Mask eq(const simd8<T> rhs) const { return (simd_t)vec_cmpeq(this->value, (simd_t)rhs); }
+  friend simdjson_inline Mask operator==(const simd8<T> lhs, const simd8<T> rhs) { return lhs.eq(rhs); }
 
   template <int N = 1>
-  simdjson_constexpr simd8<T> prev(simd8<T> prev_chunk) const {
+  simdjson_inline simd8<T> prev(const simd8<T>& prev_chunk) const {
     simd_t chunk = this->value;
 #ifdef __LITTLE_ENDIAN__
     chunk = (simd_t)vec_reve(this->value);
@@ -94,18 +100,18 @@ struct base8 : base<simd8<T>> {
 template <> struct simd8<bool> : base8<bool> {
   using typename base8<bool>::simd_t;
 
-  static simdjson_constexpr simd8<bool> splat(bool _value) {
+  static simdjson_inline simd8<bool> splat(bool _value) {
     return (simd_t)vec_splats((unsigned char)(-(!!_value)));
   }
 
-  simdjson_constexpr simd8<bool>() : base8<bool>() {}
-  simdjson_constexpr simd8<bool>(const simd_t _value)
+  simdjson_inline simd8<bool>() : base8<bool>() {}
+  simdjson_inline simd8<bool>(const simd_t _value)
       : base8<bool>(_value) {}
   // Splat constructor
-  simdjson_constexpr simd8<bool>(bool _value)
+  simdjson_inline simd8<bool>(bool _value)
       : base8<bool>(splat(_value)) {}
 
-  simdjson_constexpr int to_bitmask() const {
+  simdjson_inline int to_bitmask() const {
     __vector unsigned long long result;
     const simd_t perm_mask = {0x78, 0x70, 0x68, 0x60, 0x58, 0x50, 0x48, 0x40,
                                0x38, 0x30, 0x28, 0x20, 0x18, 0x10, 0x08, 0x00};
@@ -118,10 +124,10 @@ template <> struct simd8<bool> : base8<bool> {
     return static_cast<int>(result[0]);
 #endif
   }
-  simdjson_constexpr bool any() const {
+  simdjson_inline bool any() const {
     return !vec_all_eq(this->value, (simd_t)vec_splats(0));
   }
-  simdjson_constexpr simd8<bool> operator~() const {
+  simdjson_inline simd8<bool> operator~() const {
     return this->value ^ (simd_t)splat(true);
   }
 };
@@ -130,16 +136,16 @@ template <typename T> struct base8_numeric : base8<T> {
   using typename base8<T>::simd_t;
   using base8<T>::LANES;
 
-  static simdjson_constexpr simd8<T> splat(T value) {
+  static simdjson_inline simd8<T> splat(T value) {
     (void)value;
     return (simd_t)vec_splats(value);
   }
-  static simdjson_constexpr simd8<T> zero() { return splat(0); }
-  static simdjson_constexpr simd8<T> load(const T values[16]) {
+  static simdjson_inline simd8<T> zero() { return splat(0); }
+  static simdjson_inline simd8<T> load(const T values[16]) {
     return (simd_t)(vec_vsx_ld(0, reinterpret_cast<const uint8_t *>(values)));
   }
   // Repeat 16 values as many times as necessary (usually for lookup tables)
-  static simdjson_constexpr simd8<T> repeat_16(T v0, T v1, T v2, T v3, T v4,
+  static simdjson_inline simd8<T> repeat_16(T v0, T v1, T v2, T v3, T v4,
                                                    T v5, T v6, T v7, T v8, T v9,
                                                    T v10, T v11, T v12, T v13,
                                                    T v14, T v15) {
@@ -147,84 +153,37 @@ template <typename T> struct base8_numeric : base8<T> {
                     v14, v15);
   }
 
-  simdjson_constexpr base8_numeric() : base8<T>() {}
-  simdjson_constexpr base8_numeric(const simd_t _value)
+  simdjson_inline base8_numeric() : base8<T>() {}
+  simdjson_inline base8_numeric(const simd_t _value)
       : base8<T>(_value) {}
 
   // Store to array
-  simdjson_constexpr void store(T dst[16]) const {
+  simdjson_inline void store(T dst[16]) const {
     vec_vsx_st(this->value, 0, reinterpret_cast<simd_t *>(dst));
   }
 
   // Override to distinguish from bool version
-  simdjson_constexpr simd8<T> operator~() const { return *this ^ 0xFFu; }
+  simdjson_inline simd8<T> operator~() const { return *this ^ 0xFFu; }
 
   // Addition/subtraction are the same for signed and unsigned
-  simdjson_constexpr simd8<T> operator+(const simd8<T> other) const {
+  simdjson_inline simd8<T> operator+(const simd8<T> other) const {
     return (simd_t)((simd_t)this->value + (simd_t)other);
   }
-  simdjson_constexpr simd8<T> operator-(const simd8<T> other) const {
+  simdjson_inline simd8<T> operator-(const simd8<T> other) const {
     return (simd_t)((simd_t)this->value - (simd_t)other);
   }
-  simdjson_constexpr simd8<T> &operator+=(const simd8<T> other) {
+  simdjson_inline simd8<T> &operator+=(const simd8<T> other) {
     *this = *this + other;
     return *static_cast<simd8<T> *>(this);
   }
-  simdjson_constexpr simd8<T> &operator-=(const simd8<T> other) {
+  simdjson_inline simd8<T> &operator-=(const simd8<T> other) {
     *this = *this - other;
     return *static_cast<simd8<T> *>(this);
   }
 
-  struct lane_with_value { int lane; T value; };
-
-  /**
-    * Initialize a simd8 by filling in only specific lanes.
-    *
-    * @param entries A set of index/value pairs, like {{1, 'a'}, {2, 'b'}, ...}
-    * @param default_value The value to use for other lanes.
-    */
-  static simdjson_constexpr simd8<T> create_sparse(
-    std::initializer_list<lane_with_value> entries,
-    T default_value = {}
-  ) noexcept {
-    bool filled[LANES] = {0};
-    uint8_t table[LANES] = {default_value};
-    for (auto [lane, value] : entries) {
-      assert(lane < LANES);
-      assert(!filled[lane]);
-      filled[lane] = true;
-      table[lane] = value;
-    }
-    return table;
-  }
-
-  static simdjson_constexpr simd8<T> create_eq_lookup_16_table(std::initializer_list<T> values) {
-    bool filled[16] = {0};
-
-    // Set the defaults to 0, except at 0 itself (which we set to 1 so it won't accidentally match 0).
-    uint8_t table[LANES] = {0};
-    for (int lane = 0; lane < 16; lane += 16) { table[lane] = 1; }
-
-    for (T value : values) {
-      int lane = value & 0x0F;
-      assert(!filled[lane]);
-      filled[lane] = true;
-      // Repeat the value at the same position in each 16-byte section of lanes.
-      for (; lane < LANES; lane += 16) { table[lane] = value; }
-    }
-    return table;
-  }
-
-  template <typename ...V>
-  simdjson_inline simd8<T> eq_any(V ...values) const {
-    static constexpr const simd8<T> LOOKUP_TABLE = create_eq_lookup_16_table({values...});
-    return eq(lookup_16(LOOKUP_TABLE));
-  }
-
   // Perform a lookup assuming the value is between 0 and 16 (undefined behavior
   // for out of range values)
-  template <typename L>
-  simdjson_constexpr simd8<L> lookup_16(simd8<L> lookup_table) const {
+  simdjson_inline simd8<T> lookup_16(const simd8<T>& lookup_table) const {
     return (simd_t)vec_perm((simd_t)lookup_table, (simd_t)lookup_table, this->value);
   }
 
@@ -235,7 +194,7 @@ template <typename T> struct base8_numeric : base8<T> {
   // seems like a function with the signature simd8<L> compress(uint32_t mask)
   // would be sensible, but the AVX ISA makes this kind of approach difficult.
   template <typename L>
-  simdjson_constexpr void compress(uint16_t mask, L *output) const {
+  simdjson_inline void compress(uint16_t mask, L *output) const {
     using internal::BitsSetTable256mul2;
     using internal::pshufb_combine_table;
     using internal::thintable_epi8;
@@ -272,39 +231,27 @@ template <typename T> struct base8_numeric : base8<T> {
     simd_t answer = vec_perm(pruned, (simd_t)vec_splats(0), compactmask);
     vec_vsx_st(answer, 0, reinterpret_cast<simd_t *>(output));
   }
-
-  template <typename L>
-  simdjson_constexpr simd8<L>
-  lookup_16(L replace0, L replace1, L replace2, L replace3, L replace4,
-            L replace5, L replace6, L replace7, L replace8, L replace9,
-            L replace10, L replace11, L replace12, L replace13, L replace14,
-            L replace15) const {
-    return lookup_16(simd8<L>::repeat_16(
-        replace0, replace1, replace2, replace3, replace4, replace5, replace6,
-        replace7, replace8, replace9, replace10, replace11, replace12,
-        replace13, replace14, replace15));
-  }
 };
 
 // Signed bytes
 template <> struct simd8<int8_t> : base8_numeric<int8_t> {
-  simdjson_constexpr simd8() : base8_numeric<int8_t>() {}
-  simdjson_constexpr simd8(const simd_t _value)
+  simdjson_inline simd8() : base8_numeric<int8_t>() {}
+  simdjson_inline simd8(const simd_t _value)
       : base8_numeric<int8_t>(_value) {}
   // Splat constructor
-  simdjson_constexpr simd8(int8_t _value) : simd8(splat(_value)) {}
+  simdjson_inline simd8(int8_t _value) : simd8(splat(_value)) {}
   // Array constructor
-  simdjson_constexpr simd8(const int8_t *values) : simd8(load(values)) {}
+  simdjson_inline simd8(const int8_t *values) : simd8(load(values)) {}
   // Member-by-member initialization
-  simdjson_constexpr simd8(int8_t v0, int8_t v1, int8_t v2, int8_t v3,
+  simdjson_inline simd8(int8_t v0, int8_t v1, int8_t v2, int8_t v3,
                                int8_t v4, int8_t v5, int8_t v6, int8_t v7,
                                int8_t v8, int8_t v9, int8_t v10, int8_t v11,
                                int8_t v12, int8_t v13, int8_t v14, int8_t v15)
-      : simd8((simd_t)(__vector signed char){v0, v1, v2, v3, v4, v5, v6, v7,
+      : simd8((simd_t)(__m128i){v0, v1, v2, v3, v4, v5, v6, v7,
                                               v8, v9, v10, v11, v12, v13, v14,
                                               v15}) {}
   // Repeat 16 values as many times as necessary (usually for lookup tables)
-  simdjson_constexpr static simd8<int8_t>
+  simdjson_inline static simd8<int8_t>
   repeat_16(int8_t v0, int8_t v1, int8_t v2, int8_t v3, int8_t v4, int8_t v5,
             int8_t v6, int8_t v7, int8_t v8, int8_t v9, int8_t v10, int8_t v11,
             int8_t v12, int8_t v13, int8_t v14, int8_t v15) {
@@ -313,46 +260,46 @@ template <> struct simd8<int8_t> : base8_numeric<int8_t> {
   }
 
   // Order-sensitive comparisons
-  simdjson_constexpr simd8<int8_t>
+  simdjson_inline simd8<int8_t>
   max_val(const simd8<int8_t> other) const {
-    return (simd_t)vec_max((__vector signed char)this->value,
-                            (__vector signed char)(simd_t)other);
+    return (simd_t)vec_max((__m128i)this->value,
+                            (__m128i)(simd_t)other);
   }
-  simdjson_constexpr simd8<int8_t>
+  simdjson_inline simd8<int8_t>
   min_val(const simd8<int8_t> other) const {
-    return (simd_t)vec_min((__vector signed char)this->value,
-                            (__vector signed char)(simd_t)other);
+    return (simd_t)vec_min((__m128i)this->value,
+                            (__m128i)(simd_t)other);
   }
-  simdjson_constexpr simd8<bool>
+  simdjson_inline simd8<bool>
   operator>(const simd8<int8_t> other) const {
-    return (simd_t)vec_cmpgt((__vector signed char)this->value,
-                              (__vector signed char)(simd_t)other);
+    return (simd_t)vec_cmpgt((__m128i)this->value,
+                              (__m128i)(simd_t)other);
   }
-  simdjson_constexpr simd8<bool>
+  simdjson_inline simd8<bool>
   operator<(const simd8<int8_t> other) const {
-    return (simd_t)vec_cmplt((__vector signed char)this->value,
-                              (__vector signed char)(simd_t)other);
+    return (simd_t)vec_cmplt((__m128i)this->value,
+                              (__m128i)(simd_t)other);
   }
 };
 
 // Unsigned bytes
 template <> struct simd8<uint8_t> : base8_numeric<uint8_t> {
-  simdjson_constexpr simd8() : base8_numeric<uint8_t>() {}
-  simdjson_constexpr simd8(const simd_t _value)
+  simdjson_inline simd8() : base8_numeric<uint8_t>() {}
+  simdjson_inline simd8(const simd_t _value)
       : base8_numeric<uint8_t>(_value) {}
   // Splat constructor
-  simdjson_constexpr simd8(uint8_t _value) : simd8(splat(_value)) {}
+  simdjson_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
   // Array constructor
-  simdjson_constexpr simd8(const uint8_t *values) : simd8(load(values)) {}
+  simdjson_inline simd8(const uint8_t *values) : simd8(load(values)) {}
   // Member-by-member initialization
-  simdjson_constexpr
+  simdjson_inline
   simd8(uint8_t v0, uint8_t v1, uint8_t v2, uint8_t v3, uint8_t v4, uint8_t v5,
         uint8_t v6, uint8_t v7, uint8_t v8, uint8_t v9, uint8_t v10,
         uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15)
       : simd8((simd_t){v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12,
                         v13, v14, v15}) {}
   // Repeat 16 values as many times as necessary (usually for lookup tables)
-  simdjson_constexpr static simd8<uint8_t>
+  simdjson_inline static simd8<uint8_t>
   repeat_16(uint8_t v0, uint8_t v1, uint8_t v2, uint8_t v3, uint8_t v4,
             uint8_t v5, uint8_t v6, uint8_t v7, uint8_t v8, uint8_t v9,
             uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14,
@@ -362,82 +309,82 @@ template <> struct simd8<uint8_t> : base8_numeric<uint8_t> {
   }
 
   // Saturated math
-  simdjson_constexpr simd8<uint8_t>
+  simdjson_inline simd8<uint8_t>
   saturating_add(const simd8<uint8_t> other) const {
     return (simd_t)vec_adds(this->value, (simd_t)other);
   }
-  simdjson_constexpr simd8<uint8_t>
+  simdjson_inline simd8<uint8_t>
   saturating_sub(const simd8<uint8_t> other) const {
     return (simd_t)vec_subs(this->value, (simd_t)other);
   }
 
   // Order-specific operations
-  simdjson_constexpr simd8<uint8_t>
+  simdjson_inline simd8<uint8_t>
   max_val(const simd8<uint8_t> other) const {
     return (simd_t)vec_max(this->value, (simd_t)other);
   }
-  simdjson_constexpr simd8<uint8_t>
+  simdjson_inline simd8<uint8_t>
   min_val(const simd8<uint8_t> other) const {
     return (simd_t)vec_min(this->value, (simd_t)other);
   }
   // Same as >, but only guarantees true is nonzero (< guarantees true = -1)
-  simdjson_constexpr simd8<uint8_t>
+  simdjson_inline simd8<uint8_t>
   gt_bits(const simd8<uint8_t> other) const {
     return this->saturating_sub(other);
   }
   // Same as <, but only guarantees true is nonzero (< guarantees true = -1)
-  simdjson_constexpr simd8<uint8_t>
+  simdjson_inline simd8<uint8_t>
   lt_bits(const simd8<uint8_t> other) const {
     return other.saturating_sub(*this);
   }
-  simdjson_constexpr simd8<bool>
+  simdjson_inline simd8<bool>
   operator<=(const simd8<uint8_t> other) const {
     return other.max_val(*this) == other;
   }
-  simdjson_constexpr simd8<bool>
+  simdjson_inline simd8<bool>
   operator>=(const simd8<uint8_t> other) const {
     return other.min_val(*this) == other;
   }
-  simdjson_constexpr simd8<bool>
+  simdjson_inline simd8<bool>
   operator>(const simd8<uint8_t> other) const {
     return this->gt_bits(other).any_bits_set();
   }
-  simdjson_constexpr simd8<bool>
+  simdjson_inline simd8<bool>
   operator<(const simd8<uint8_t> other) const {
     return this->gt_bits(other).any_bits_set();
   }
 
   // Bit-specific operations
-  simdjson_constexpr simd8<bool> bits_not_set() const {
+  simdjson_inline simd8<bool> bits_not_set() const {
     return (simd_t)vec_cmpeq(this->value, (simd_t)vec_splats(uint8_t(0)));
   }
-  simdjson_constexpr simd8<bool> bits_not_set(simd8<uint8_t> bits) const {
+  simdjson_inline simd8<bool> bits_not_set(simd8<uint8_t> bits) const {
     return (*this & bits).bits_not_set();
   }
-  simdjson_constexpr simd8<bool> any_bits_set() const {
+  simdjson_inline simd8<bool> any_bits_set() const {
     return ~this->bits_not_set();
   }
-  simdjson_constexpr simd8<bool> any_bits_set(simd8<uint8_t> bits) const {
+  simdjson_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const {
     return ~this->bits_not_set(bits);
   }
-  simdjson_constexpr bool bits_not_set_anywhere() const {
+  simdjson_inline bool bits_not_set_anywhere() const {
     return vec_all_eq(this->value, (simd_t)vec_splats(0));
   }
-  simdjson_constexpr bool any_bits_set_anywhere() const {
+  simdjson_inline bool any_bits_set_anywhere() const {
     return !bits_not_set_anywhere();
   }
-  simdjson_constexpr bool bits_not_set_anywhere(simd8<uint8_t> bits) const {
+  simdjson_inline bool bits_not_set_anywhere(simd8<uint8_t> bits) const {
     return vec_all_eq(vec_and(this->value, (simd_t)bits),
                       (simd_t)vec_splats(0));
   }
-  simdjson_constexpr bool any_bits_set_anywhere(simd8<uint8_t> bits) const {
+  simdjson_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const {
     return !bits_not_set_anywhere(bits);
   }
-  template <int N> simdjson_constexpr simd8<uint8_t> shr() const {
+  template <int N> simdjson_inline simd8<uint8_t> shr() const {
     return simd8<uint8_t>(
         (simd_t)vec_sr(this->value, (simd_t)vec_splat_u8(N)));
   }
-  template <int N> simdjson_constexpr simd8<uint8_t> shl() const {
+  template <int N> simdjson_inline simd8<uint8_t> shl() const {
     return simd8<uint8_t>(
         (simd_t)vec_sl(this->value, (simd_t)vec_splat_u8(N)));
   }
@@ -454,26 +401,28 @@ template <typename T> struct simd8x64 {
   operator=(const simd8<T>& other) = delete; // no assignment allowed
   simd8x64() = delete;                      // no default constructor allowed
 
-  simdjson_constexpr simd8x64(const simd8<T> chunk0, const simd8<T> chunk1,
+  simdjson_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1,
                                   const simd8<T> chunk2, const simd8<T> chunk3)
       : chunks{chunk0, chunk1, chunk2, chunk3} {}
-  simdjson_constexpr simd8x64(const T ptr[64])
+  simdjson_inline simd8x64(const T ptr[64])
       : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr + 16),
                simd8<T>::load(ptr + 32), simd8<T>::load(ptr + 48)} {}
+  simdjson_inline simd8x64(simd8x64<T>&& o) noexcept = default;
+  simdjson_inline simd8x64<T>& operator=(simd8x64<T>&& other) noexcept = default;
 
-  simdjson_constexpr void store(T ptr[64]) const {
+  simdjson_inline void store(T ptr[64]) const {
     this->chunks[0].store(ptr + sizeof(simd8<T>) * 0);
     this->chunks[1].store(ptr + sizeof(simd8<T>) * 1);
     this->chunks[2].store(ptr + sizeof(simd8<T>) * 2);
     this->chunks[3].store(ptr + sizeof(simd8<T>) * 3);
   }
 
-  simdjson_constexpr simd8<T> reduce_or() const {
+  simdjson_inline simd8<T> reduce_or() const {
     return (this->chunks[0] | this->chunks[1]) |
            (this->chunks[2] | this->chunks[3]);
   }
 
-  simdjson_constexpr uint64_t compress(uint64_t mask, T *output) const {
+  simdjson_inline uint64_t compress(uint64_t mask, T *output) const {
     this->chunks[0].compress(uint16_t(mask), output);
     this->chunks[1].compress(uint16_t(mask >> 16),
                              output + 16 - count_ones(mask & 0xFFFF));
@@ -484,7 +433,7 @@ template <typename T> struct simd8x64 {
     return 64 - count_ones(mask);
   }
 
-  simdjson_constexpr uint64_t to_bitmask() const {
+  simdjson_inline uint64_t to_bitmask() const {
     uint64_t r0 = uint32_t(this->chunks[0].to_bitmask());
     uint64_t r1 = this->chunks[1].to_bitmask();
     uint64_t r2 = this->chunks[2].to_bitmask();
@@ -492,14 +441,14 @@ template <typename T> struct simd8x64 {
     return r0 | (r1 << 16) | (r2 << 32) | (r3 << 48);
   }
 
-  simdjson_constexpr uint64_t eq(const T m) const {
+  simdjson_inline uint64_t eq(const T m) const {
     const simd8<T> mask = simd8<T>::splat(m);
     return simd8x64<bool>(this->chunks[0] == mask, this->chunks[1] == mask,
                           this->chunks[2] == mask, this->chunks[3] == mask)
         .to_bitmask();
   }
 
-  simdjson_constexpr uint64_t eq(const simd8x64<T> &other) const {
+  simdjson_inline uint64_t eq(const simd8x64<T> &other) const {
     return simd8x64<bool>(this->chunks[0] == other.chunks[0],
                           this->chunks[1] == other.chunks[1],
                           this->chunks[2] == other.chunks[2],
@@ -507,7 +456,7 @@ template <typename T> struct simd8x64 {
         .to_bitmask();
   }
 
-  simdjson_inline simd8x64<T> lookup_16(simd8<T> lookup_table) const {
+  simdjson_inline simd8x64<T> lookup_16(const simd8<T>& lookup_table) const {
     return {
       this->chunks[0].lookup_16(lookup_table),
       this->chunks[1].lookup_16(lookup_table),
@@ -516,32 +465,125 @@ template <typename T> struct simd8x64 {
     };
   }
 
-  template <typename ...V>
-  simdjson_inline uint64_t eq_any(V ...values) const {
-    static constexpr const simd8<T> LOOKUP_TABLE = simd8<T>::create_eq_lookup_16_table({values...});
-    return eq(lookup_16(LOOKUP_TABLE));
-  }
-
-  template <typename ...V>
-  simdjson_inline uint64_t eq_any(V ...values) const {
-    return simd8x64<bool>(
-      this->chunks[0].eq_any(values...),
-      this->chunks[1].eq_any(values...),
-      this->chunks[2].eq_any(values...),
-      this->chunks[3].eq_any(values...)
-    ).to_bitmask();
-  }
-
-  simdjson_constexpr uint64_t lteq(const T m) const {
+  simdjson_inline uint64_t lteq(const T m) const {
     const simd8<T> mask = simd8<T>::splat(m);
     return simd8x64<bool>(this->chunks[0] <= mask, this->chunks[1] <= mask,
                           this->chunks[2] <= mask, this->chunks[3] <= mask)
         .to_bitmask();
   }
+
+  simdjson_inline simd8x64<T> operator&(const simd8x64<T>& other) const {
+    return {
+      this->chunks[0] & other.chunks[0],
+      this->chunks[1] & other.chunks[1],
+      this->chunks[2] & other.chunks[2],
+      this->chunks[3] & other.chunks[3]
+    };
+  }
+
+  simdjson_inline simd8x64<T> operator&(const simd8<T>& other) const {
+    return {
+      this->chunks[0] & other,
+      this->chunks[1] & other,
+      this->chunks[2] & other,
+      this->chunks[3] & other
+    };
+  }
+
+  simdjson_inline simd8x64<T> operator|(const simd8x64<T>& other) const {
+    return  {
+      this->chunks[0] | other.chunks[0],
+      this->chunks[1] | other.chunks[1],
+      this->chunks[2] | other.chunks[2],
+      this->chunks[3] | other.chunks[3]
+    };
+  }
+
+  simdjson_inline simd8x64<T> operator|(const simd8<T>& other) const {
+    return  {
+      this->chunks[0] | other,
+      this->chunks[1] | other,
+      this->chunks[2] | other,
+      this->chunks[3] | other
+    };
+  }
+
+  simdjson_inline simd8x64<T> operator^(const simd8x64<T>& other) const {
+    return {
+      this->chunks[0] ^ other.chunks[0],
+      this->chunks[1] ^ other.chunks[1],
+      this->chunks[2] ^ other.chunks[2],
+      this->chunks[3] ^ other.chunks[3]
+    };
+  }
+
+  simdjson_inline simd8x64<T> operator^(const simd8<T>& other) const {
+    return {
+      this->chunks[0] ^ other,
+      this->chunks[1] ^ other,
+      this->chunks[2] ^ other,
+      this->chunks[3] ^ other
+    };
+  }
+
+  simdjson_inline simd8x64<T> bit_andnot(const simd8x64<T>& other) const {
+    return  {
+      this->chunks[0].bit_andnot(other.chunks[0]),
+      this->chunks[1].bit_andnot(other.chunks[1]),
+      this->chunks[2].bit_andnot(other.chunks[2]),
+      this->chunks[3].bit_andnot(other.chunks[3])
+    };
+  }
+
+  simdjson_inline simd8x64<T> bit_andnot(const simd8<T>& other) const {
+    return  {
+      this->chunks[0].bit_andnot(other),
+      this->chunks[1].bit_andnot(other),
+      this->chunks[2].bit_andnot(other),
+      this->chunks[3].bit_andnot(other)
+    };
+  }
+
+  template <int N>
+  simdjson_inline simd8x64<T> shr() const noexcept {
+    return {
+      this->chunks[0].template shr<N>(),
+      this->chunks[1].template shr<N>(),
+      this->chunks[2].template shr<N>(),
+      this->chunks[3].template shr<N>()
+    };
+  }
+
+  template <int N>
+  simdjson_inline simd8x64<T> shl() const noexcept {
+    return {
+      this->chunks[0].template shl<N>(),
+      this->chunks[1].template shl<N>(),
+      this->chunks[2].template shl<N>(),
+      this->chunks[3].template shl<N>()
+    };
+  }
+
+  simdjson_inline simd8x64<bool> any_bits_set(const simd8<T>& bits) const {
+    return {
+      this->chunks[0].any_bits_set(bits),
+      this->chunks[1].any_bits_set(bits),
+      this->chunks[2].any_bits_set(bits),
+      this->chunks[3].any_bits_set(bits)
+    };
+  }
+
+  simdjson_inline simd8x64<bool> any_bits_set(const simd8x64<T>& bits) const {
+    return {
+      this->chunks[0].any_bits_set(bits.chunks[0]),
+      this->chunks[1].any_bits_set(bits.chunks[1]),
+      this->chunks[2].any_bits_set(bits.chunks[2]),
+      this->chunks[3].any_bits_set(bits.chunks[3])
+    };
+  }
 }; // struct simd8x64<T>
 
 } // namespace simd
-} // unnamed namespace
 } // namespace ppc64
 } // namespace simdjson
 

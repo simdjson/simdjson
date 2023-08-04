@@ -38,16 +38,27 @@ namespace {
 
 using namespace simd;
 
-simdjson_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
-  const uint64_t whitespace = in.eq_any(' ', '\t', '\n', '\r');
-  // Turn [ and ] into { and }
-  const simd8x64<uint8_t> curlified{
-    in.chunks[0] | 0x20,
-    in.chunks[1] | 0x20
-  };
-  const uint64_t op = curlified.eq_any(',', ':', '{', '}');
+static simdjson_constinit low_nibble_lookup WS_MATCH{
+  {' ', ' '},
+  {'\t', '\t'},
+  {'\n', '\n'},
+  {'\r', '\r'},
+};
+static simdjson_constinit low_nibble_lookup OP_MATCH{
+  {':', ':'},
+  {',', ','},
+  {'{', '{'},
+  {'}', '}'},
+  {'[', '{'},
+  {']', '}'},
+};
 
-  return { whitespace, op };
+// This identifies structural characters (comma, colon, braces, brackets),
+// and ASCII white-space ('\r','\n','\t',' ').
+simdjson_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
+  // Turn [ and ] into { and }
+  const simd8x64<uint8_t> curlified = in | 0x20;
+  return { in.eq(WS_MATCH[in]), curlified.eq(OP_MATCH[in]) };
 }
 
 simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input) {

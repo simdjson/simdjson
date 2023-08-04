@@ -168,9 +168,31 @@ double from_chars(const char *first, const char* end) noexcept;
 #endif
 
 #ifndef simdjson_constexpr
-// Force inlinine for most simdjson functions.
-#define simdjson_constexpr constexpr simdjson_really_inline
+#if __cpp_constexpr
+#define simdjson_constexpr constexpr simdjson_inline
+#else
+#define simdjson_constexpr simdjson_inline
 #endif
+#endif
+// simdjson_constexpr
+
+#ifndef simdjson_consteval
+#if __cpp_consteval
+#define simdjson_consteval consteval simdjson_inline
+#else
+#define simdjson_consteval simdjson_constexpr
+#endif
+#endif // simdjson_consteval
+
+#ifndef simdjson_constinit
+#if __cpp_constinit
+#define simdjson_constinit constinit
+#elif __cpp_consteval
+#define simdjson_constinit consteval
+#else
+#define simdjson_constinit constexpr
+#endif
+#endif // simdjson_constinit
 
 #if SIMDJSON_VISUAL_STUDIO
     /**

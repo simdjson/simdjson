@@ -3,6 +3,7 @@
 
 #include "simdjson/arm64/begin.h"
 #include "simdjson/generic/amalgamated.h"
+#include "simdjson/generic/lookup_table.h"
 #include "simdjson/arm64/end.h"
 
 #endif // SIMDJSON_ARM64_H

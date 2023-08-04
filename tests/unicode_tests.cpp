@@ -237,7 +237,11 @@ void test() {
   for (size_t i = 0; i < sizeof(badsequences)/sizeof(badsequences[0]); i++) {
     size_t len = std::strlen(badsequences[i]);
     if (simdjson::validate_utf8(badsequences[i], len)) {
-      printf("bug lookup2 badsequences[%zu]\n", i);
+      printf("bug lookup2 badsequences[%zu] ", i);
+      for (size_t j = 0; j < len; j++) {
+        printf("%02x ", (unsigned char)badsequences[i][j]);
+      }
+      printf("\n");
       abort();
     }
   }
