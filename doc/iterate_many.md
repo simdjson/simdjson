@@ -17,6 +17,9 @@ Contents
 
 - [Motivations](#motivations)
 - [How it works](#how-it-works)
+  - [Context](#context)
+  - [Design](#design)
+  - [Threads](#threads)
 - [Support](#support)
 - [API](#api)
 - [Use cases](#use-cases)
