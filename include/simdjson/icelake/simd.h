@@ -98,6 +98,8 @@ namespace simd {
     simdjson_inline simd8<bool>(bool _value) : base8<bool>(splat(_value)) {}
     simdjson_inline bool any() const { return !!_mm512_test_epi8_mask (*this, *this); }
     simdjson_inline simd8<bool> operator~() const { return *this ^ true; }
+
+    simdjson_inline uint64_t to_bitmask() const noexcept { return _mm512_movepi8_mask(*this); }
   };
 
   template<typename T>
@@ -316,6 +318,10 @@ namespace simd {
     simdjson_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr)} {}
     simdjson_inline simd8x64(simd8x64<T>&& o) noexcept = default;
     simdjson_inline simd8x64<T>& operator=(simd8x64<T>&& other) noexcept = default;
+
+    simdjson_inline uint64_t to_bitmask() const noexcept {
+      return this->chunks[0].to_bitmask();
+    }
 
     simdjson_inline uint64_t compress(uint64_t mask, T * output) const {
       this->chunks[0].compress(mask, output);

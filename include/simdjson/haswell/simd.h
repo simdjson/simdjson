@@ -313,7 +313,7 @@ namespace simd {
 
     simdjson_inline uint64_t to_bitmask() const {
       uint64_t r_lo = uint32_t(this->chunks[0].to_bitmask());
-      uint64_t r_hi =                       this->chunks[1].to_bitmask();
+      uint64_t r_hi =          this->chunks[1].to_bitmask();
       return r_lo | (r_hi << 32);
     }
 

@@ -38,31 +38,55 @@ namespace {
 
 using namespace simd;
 
-static simdjson_constinit low_nibble_lookup WS_MATCH{
-  {' ', ' '},
-  {'\t', '\t'},
-  {'\n', '\n'},
-  {'\r', '\r'},
+enum class ws_op_t {
+  COMMA     = 1 << 0,
+  COLON     = 1 << 1,
+  OPEN      = 1 << 2,
+  CLOSE     = 1 << 3,
+  QUOTE     = 1 << 4,
+  BACKSLASH = 1 << 5,
+  SPACE     = 1 << 6,
+  TAB_CR_LF = 1 << 7,
+  OP = COMMA | COLON | OPEN | CLOSE,
+  SEPARATOR = COMMA | COLON,
+  WHITESPACE = SPACE | TAB_CR_LF,
 };
-static simdjson_constinit low_nibble_lookup OP_MATCH{
-  {':', ':'},
-  {',', ','},
-  {'{', '{'},
-  {'}', '}'},
-  {'[', '{'},
-  {']', '}'},
+
+struct json_character_block {
+  simd8x64<uint8_t> classified;
+
+  static simdjson_constinit byte_classifier WS_MATCH {
+    { ',',  ws_op_t::COMMA },
+    { ':',  ws_op_t::COLON },
+    { '[',  ws_op_t::OPEN },
+    { '{',  ws_op_t::OPEN },
+    { ']',  ws_op_t::CLOSE },
+    { '}',  ws_op_t::CLOSE },
+    { '\"', ws_op_t::QUOTE },
+    { ' ',  ws_op_t::SPACE },
+    { '\t', ws_op_t::TAB_CR_LF },
+    { '\r', ws_op_t::TAB_CR_LF },
+    { '\n', ws_op_t::TAB_CR_LF },
+    { '\\', ws_op_t::BACKSLASH },
+  };
+
+  // These are all mutually exclusive, so we can use > to
+  simdjson_inline uint64_t separators_or_open() const noexcept { return ; }
+  simdjson_inline uint64_t separators_or_open() const noexcept { return classified.any_bits_set(ws_op_t::OP); }
+  simdjson_inline uint64_t operators() const noexcept { return classified.any_bits_set(ws_op_t::OP); }
+  simdjson_inline uint64_t whitespace() const noexcept { return classified.any_bits_set(ws_op_t::WHITESPACE); }
 };
 
 // This identifies structural characters (comma, colon, braces, brackets),
 // and ASCII white-space ('\r','\n','\t',' ').
 simdjson_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
   // Turn [ and ] into { and }
-  const simd8x64<uint8_t> curlified = in | 0x20;
+  uint64_t sep_and_open = in.
   return { in.eq(WS_MATCH[in]), curlified.eq(OP_MATCH[in]) };
 }
 
-simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input) {
-  return input.reduce_or().is_ascii();
+simdjson_inline bool is_ascii(const simd8x64<uint8_t>& in) {
+  return in.reduce_or().is_ascii();
 }
 
 simdjson_unused simdjson_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
