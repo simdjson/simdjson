@@ -1,3 +1,4 @@
+#include "simdjson/icelake/bitmask.h"
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
@@ -70,9 +71,9 @@ private:
   // Whether the last character of the previous iteration is part of a scalar token
   // (anything except whitespace or a structural character/'operator').
   json_escape_scanner escape_scanner{};
-  bitmask_stream::subtract split_values_by_separator{};
-  bitmask_stream::subtract::overflow_t still_in_string{};
-  bitmask_stream::shift_forward<1> shift_in_scalar{}; // for error calculation
+  uint64_t still_in_scalar{};
+  bool still_in_string{};
+  bool still_in_value{};
   uint64_t error{};
 };
 
@@ -122,7 +123,8 @@ simdjson_inline void json_scanner::check_errors(uint64_t sep_open, uint64_t scal
   // ERROR: missing separator between scalars or close brackets (scalar preceded by anything other than separator, open, or beginning of document)
   uint64_t scalar = scalar_close & open_close;                         // [7] 1
   uint64_t next_in_scalar = scalar & ~quote;                           // [6]  (ternary &)
-  uint64_t in_scalar = shift_in_scalar.next(next_in_scalar);           //       1 (+1)
+  uint64_t in_scalar = next_in_scalar << 1 | still_in_scalar;          //       1 (+1)
+  still_in_scalar = next_in_scalar >> 63;
   uint64_t first_scalar = scalar & ~in_scalar;                         //         1
   // Take away lead scalar characters, which are allowed to be the first scalar character
   uint64_t missing_separator_error = first_scalar & ~separated_values; //     (ternary)
@@ -162,7 +164,7 @@ simdjson_inline uint64_t json_scanner::next_separated_values(uint64_t sep_open, 
   // OPEN|WS* CLOSE|SCALAR (CLOSE|SCALAR|WS)* SEP OPEN|WS*
   //    1|0 *      1                   0|1  *  1     1|0 *
   // (We include open brackets with separators because we can easily detect some errors from that.)
-  return split_values_by_separator.next(sep_open, scalar_close); // [7] 1 (+1)
+  return bitmask::subtract_borrow_out(sep_open, scalar_close + this->still_in_value, this->still_in_value);
 }
 
 simdjson_inline uint64_t json_scanner::next_in_string(
@@ -180,7 +182,7 @@ simdjson_inline uint64_t json_scanner::next_in_string(
   // LEAD-QUOTE=1 NON-QUOTE=1|LEAD-QUOTE=0* TRAIL-QUOTE=0 NON-QUOTE=0|TRAIL-QUOTE=1* ...
   //                                                                            1 (+1)
   auto was_still_in_string = this->still_in_string;
-  uint64_t in_string = bitmask_stream::subtract::next(trailing_quote, lead_quote, this->still_in_string);
+  uint64_t in_string = bitmask::subtract_borrow_out(trailing_quote, lead_quote + this->still_in_string, this->still_in_string);
   // Assumption check! LEAD-QUOTE=0 means a lead quote was inside a string--meaning the second
   // quote was preceded by a separator/open.
   uint64_t lead_quote_in_string = lead_quote & ~in_string;             //         1
@@ -189,7 +191,8 @@ simdjson_inline uint64_t json_scanner::next_in_string(
     // high-latency prefix_xor.
     //                                                                 // [6] 12 (+1)
     this->still_in_string = was_still_in_string;
-    in_string = bitmask_stream::alternating_regions::next(quote, still_in_string);
+    in_string = bitmask::prefix_xor(quote ^ this->still_in_string);
+    this->still_in_string = in_string >> 63;
   }
   return in_string;
   // shortest path = [8] 2 or [6] 12 (5 or 18 total)
@@ -197,7 +200,9 @@ simdjson_inline uint64_t json_scanner::next_in_string(
 
 
 simdjson_inline error_code json_scanner::finish() const noexcept {
-  return this->error | this->still_in_string;
+  if (this->error | this->still_in_string) {
+    return TAPE_ERROR;
+  }
 }
 
 } // namespace stage1
