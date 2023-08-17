@@ -3,7 +3,7 @@
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/westmere/base.h"
-#include "simdjson/westmere/bitmanipulation.h"
+#include "simdjson/westmere/bitmask.h"
 #include "simdjson/internal/simdprune_tables.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
@@ -114,7 +114,7 @@ namespace simd {
 
     // Copies to 'output" all bytes corresponding to a 0 in the mask (interpreted as a bitset).
     // Passing a 0 value for mask would be equivalent to writing out every byte to output.
-    // Only the first 16 - count_ones(mask) bytes of the result are significant but 16 bytes
+    // Only the first 16 - bitmask::count_ones(mask) bytes of the result are significant but 16 bytes
     // get written.
     // Design consideration: it seems like a function with the
     // signature simd8<L> compress(uint32_t mask) would be
@@ -278,10 +278,10 @@ namespace simd {
 
     simdjson_inline uint64_t compress(uint64_t mask, T * output) const {
       this->chunks[0].compress(uint16_t(mask), output);
-      this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - count_ones(mask & 0xFFFF));
-      this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - count_ones(mask & 0xFFFFFFFF));
-      this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
-      return 64 - count_ones(mask);
+      this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - bitmask::bitmask::count_ones(mask & 0xFFFF));
+      this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - bitmask::bitmask::count_ones(mask & 0xFFFFFFFF));
+      this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - bitmask::bitmask::count_ones(mask & 0xFFFFFFFFFFFF));
+      return 64 - bitmask::bitmask::count_ones(mask);
     }
 
     simdjson_inline uint64_t to_bitmask() const {

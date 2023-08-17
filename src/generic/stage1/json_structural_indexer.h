@@ -42,9 +42,9 @@ public:
     * beneficial.
     */
   simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
-    int lz = leading_zeroes(rev_bits);
+    int lz = bitmask::leading_zeroes(rev_bits);
     this->tail[i] = static_cast<uint32_t>(idx) + lz;
-    rev_bits = zero_leading_bit(rev_bits, lz);
+    rev_bits = bitmask::zero_leading_bit(rev_bits, lz);
   }
 #else
   /**
@@ -54,8 +54,8 @@ public:
     */
 
   simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    this->tail[i] = idx + trailing_zeroes(bits);
-    bits = clear_lowest_bit(bits);
+    this->tail[i] = idx + bitmask::trailing_zeroes(bits);
+    bits = bitmask::clear_lowest_bit(bits);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
@@ -97,10 +97,10 @@ public:
     if (bits == 0)
         return;
 
-    int cnt = static_cast<int>(count_ones(bits));
+    int cnt = static_cast<int>(bitmask::count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
-    bits = reverse_bits(bits);
+    bits = bitmask::reverse_bits(bits);
 #endif
 #ifdef SIMDJSON_STRUCTURAL_INDEXER_STEP
     static constexpr const int STEP = SIMDJSON_STRUCTURAL_INDEXER_STEP;

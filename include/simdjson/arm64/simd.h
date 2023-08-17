@@ -3,7 +3,7 @@
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/arm64/base.h"
-#include "simdjson/arm64/bitmanipulation.h"
+#include "simdjson/arm64/bitmask.h"
 #include "simdjson/internal/simdprune_tables.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
@@ -274,7 +274,7 @@ simdjson_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int
 
     // Copies to 'output" all bytes corresponding to a 0 in the mask (interpreted as a bitset).
     // Passing a 0 value for mask would be equivalent to writing out every byte to output.
-    // Only the first 16 - count_ones(mask) bytes of the result are significant but 16 bytes
+    // Only the first 16 - bitmask::count_ones(mask) bytes of the result are significant but 16 bytes
     // get written.
     // Design consideration: it seems like a function with the
     // signature simd8<L> compress(uint16_t mask) would be

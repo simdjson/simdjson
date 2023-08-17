@@ -194,6 +194,14 @@ double from_chars(const char *first, const char* end) noexcept;
 #endif
 #endif // simdjson_constinit
 
+#ifndef simdjson_if_constexpr
+#if SIMDJSON_CPLUSPLUS17
+#define simdjson_if_constexpr constexpr
+#else
+#define simdjson_if_constexpr
+#endif
+#endif
+
 #if SIMDJSON_VISUAL_STUDIO
     /**
      * Windows users need to do some extra work when building

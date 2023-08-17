@@ -112,7 +112,7 @@ simdjson_inline void bit_indexer::write(uint32_t idx, uint64_t bits) {
     ));
     const __m512i start_index = _mm512_set1_epi32(idx);
 
-    const auto count = count_ones(bits);
+    const auto count = bitmask::count_ones(bits);
     __m512i t0 = _mm512_cvtepu8_epi32(_mm512_castsi512_si128(indexes));
     _mm512_storeu_si512(this->tail, _mm512_add_epi32(t0, start_index));
 

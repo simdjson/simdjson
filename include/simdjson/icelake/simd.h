@@ -4,7 +4,7 @@
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/icelake/base.h"
 #include "simdjson/icelake/intrinsics.h"
-#include "simdjson/icelake/bitmanipulation.h"
+#include "simdjson/icelake/bitmask.h"
 #include "simdjson/internal/simdprune_tables.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
@@ -151,7 +151,7 @@ namespace simd {
 
     // Copies to 'output" all bytes corresponding to a 0 in the mask (interpreted as a bitset).
     // Passing a 0 value for mask would be equivalent to writing out every byte to output.
-    // Only the first 32 - count_ones(mask) bytes of the result are significant but 32 bytes
+    // Only the first 32 - bitmask::count_ones(mask) bytes of the result are significant but 32 bytes
     // get written.
     // Design consideration: it seems like a function with the
     // signature simd8<L> compress(uint32_t mask) would be
@@ -325,7 +325,7 @@ namespace simd {
 
     simdjson_inline uint64_t compress(uint64_t mask, T * output) const {
       this->chunks[0].compress(mask, output);
-      return 64 - count_ones(mask);
+      return 64 - bitmask::bitmask::count_ones(mask);
     }
 
     simdjson_inline void store(T ptr[64]) const {

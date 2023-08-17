@@ -7,7 +7,7 @@
 SIMDJSON_TARGET_REGION("avx2,bmi,pclmul,lzcnt,popcnt")
 #endif
 
-#include "simdjson/haswell/bitmanipulation.h"
+#include "simdjson/haswell/bitmask.h"
 #include "simdjson/haswell/bitmask.h"
 #include "simdjson/haswell/numberparsing_defs.h"
 #include "simdjson/haswell/simd.h"

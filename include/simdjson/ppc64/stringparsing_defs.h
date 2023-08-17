@@ -3,7 +3,7 @@
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/ppc64/base.h"
-#include "simdjson/ppc64/bitmanipulation.h"
+#include "simdjson/ppc64/bitmask.h"
 #include "simdjson/ppc64/simd.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
@@ -25,10 +25,10 @@ public:
   }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
   simdjson_inline int quote_index() {
-    return trailing_zeroes(quote_bits);
+    return bitmask::trailing_zeroes(quote_bits);
   }
   simdjson_inline int backslash_index() {
-    return trailing_zeroes(bs_bits);
+    return bitmask::trailing_zeroes(bs_bits);
   }
 
   uint32_t bs_bits;

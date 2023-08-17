@@ -4,7 +4,7 @@
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/haswell/base.h"
 #include "simdjson/haswell/simd.h"
-#include "simdjson/haswell/bitmanipulation.h"
+#include "simdjson/haswell/bitmask.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -21,8 +21,8 @@ public:
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return ((quote_bits - 1) & bs_bits) != 0; }
-  simdjson_inline int quote_index() { return trailing_zeroes(quote_bits); }
-  simdjson_inline int backslash_index() { return trailing_zeroes(bs_bits); }
+  simdjson_inline int quote_index() { return bitmask::trailing_zeroes(quote_bits); }
+  simdjson_inline int backslash_index() { return bitmask::trailing_zeroes(bs_bits); }
 
   uint32_t bs_bits;
   uint32_t quote_bits;

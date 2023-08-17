@@ -3,7 +3,7 @@
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/ppc64/base.h"
-#include "simdjson/ppc64/bitmanipulation.h"
+#include "simdjson/ppc64/bitmask.h"
 #include "simdjson/internal/simdprune_tables.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
@@ -189,7 +189,7 @@ template <typename T> struct base8_numeric : base8<T> {
 
   // Copies to 'output" all bytes corresponding to a 0 in the mask (interpreted
   // as a bitset). Passing a 0 value for mask would be equivalent to writing out
-  // every byte to output. Only the first 16 - count_ones(mask) bytes of the
+  // every byte to output. Only the first 16 - bitmask::count_ones(mask) bytes of the
   // result are significant but 16 bytes get written. Design consideration: it
   // seems like a function with the signature simd8<L> compress(uint32_t mask)
   // would be sensible, but the AVX ISA makes this kind of approach difficult.
@@ -425,12 +425,12 @@ template <typename T> struct simd8x64 {
   simdjson_inline uint64_t compress(uint64_t mask, T *output) const {
     this->chunks[0].compress(uint16_t(mask), output);
     this->chunks[1].compress(uint16_t(mask >> 16),
-                             output + 16 - count_ones(mask & 0xFFFF));
+                             output + 16 - bitmask::count_ones(mask & 0xFFFF));
     this->chunks[2].compress(uint16_t(mask >> 32),
-                             output + 32 - count_ones(mask & 0xFFFFFFFF));
+                             output + 32 - bitmask::count_ones(mask & 0xFFFFFFFF));
     this->chunks[3].compress(uint16_t(mask >> 48),
-                             output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
-    return 64 - count_ones(mask);
+                             output + 48 - bitmask::count_ones(mask & 0xFFFFFFFFFFFF));
+    return 64 - bitmask::count_ones(mask);
   }
 
   simdjson_inline uint64_t to_bitmask() const {

@@ -70,7 +70,7 @@ simdjson_really_inline json_string_block json_string_scanner::next(const simd::s
   // Then we xor with prev_in_string: if we were in a string already, its effect is flipped
   // (characters inside strings are outside, and characters outside strings are inside).
   //
-  const uint64_t in_string = prefix_xor(quote) ^ prev_in_string;
+  const uint64_t in_string = bitmask::prefix_xor(quote) ^ prev_in_string;
 
   //
   // Check if we're still in a string at the end of the box so the next block will know
