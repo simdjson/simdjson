@@ -581,6 +581,24 @@ template <typename T> struct simd8x64 {
       this->chunks[3].any_bits_set(bits.chunks[3])
     };
   }
+
+  simdjson_inline simd8x64<bool> no_bits_set(const simd8<T>& bits) const {
+    return {
+      this->chunks[0].no_bits_set(bits),
+      this->chunks[1].no_bits_set(bits),
+      this->chunks[2].no_bits_set(bits),
+      this->chunks[3].no_bits_set(bits)
+    };
+  }
+
+  simdjson_inline simd8x64<bool> no_bits_set(const simd8x64<T>& bits) const {
+    return {
+      this->chunks[0].no_bits_set(bits.chunks[0]),
+      this->chunks[1].no_bits_set(bits.chunks[1]),
+      this->chunks[2].no_bits_set(bits.chunks[2]),
+      this->chunks[3].no_bits_set(bits.chunks[3])
+    };
+  }
 }; // struct simd8x64<T>
 
 } // namespace simd

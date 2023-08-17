@@ -168,7 +168,7 @@ namespace simd {
       __m128i v128 = _mm256_castsi256_si128(almostthere);
       _mm_storeu_si128( reinterpret_cast<__m128i *>(output), v128);
       v128 = _mm256_extractf128_si256(almostthere, 1);
-      _mm_storeu_si128( reinterpret_cast<__m128i *>(output + 16 - bitmask::bitmask::count_ones(mask & 0xFFFF)), v128);
+      _mm_storeu_si128( reinterpret_cast<__m128i *>(output + 16 - bitmask::count_ones(mask & 0xFFFF)), v128);
     }
   };
 
@@ -302,8 +302,8 @@ namespace simd {
       uint32_t mask1 = uint32_t(mask);
       uint32_t mask2 = uint32_t(mask >> 32);
       this->chunks[0].compress(mask1, output);
-      this->chunks[1].compress(mask2, output + 32 - bitmask::bitmask::count_ones(mask1));
-      return 64 - bitmask::bitmask::count_ones(mask);
+      this->chunks[1].compress(mask2, output + 32 - bitmask::count_ones(mask1));
+      return 64 - bitmask::count_ones(mask);
     }
 
     simdjson_inline void store(T ptr[64]) const {
@@ -434,6 +434,20 @@ namespace simd {
       return {
         this->chunks[0].any_bits_set(bits.chunks[0]),
         this->chunks[1].any_bits_set(bits.chunks[1])
+      };
+    }
+
+    simdjson_inline simd8x64<bool> no_bits_set(const simd8<T>& bits) const {
+      return {
+        this->chunks[0].no_bits_set(bits),
+        this->chunks[1].no_bits_set(bits)
+      };
+    }
+
+    simdjson_inline simd8x64<bool> no_bits_set(const simd8x64<T>& bits) const {
+      return {
+        this->chunks[0].no_bits_set(bits.chunks[0]),
+        this->chunks[1].no_bits_set(bits.chunks[1])
       };
     }
   }; // struct simd8x64<T>

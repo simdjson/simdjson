@@ -278,10 +278,10 @@ namespace simd {
 
     simdjson_inline uint64_t compress(uint64_t mask, T * output) const {
       this->chunks[0].compress(uint16_t(mask), output);
-      this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - bitmask::bitmask::count_ones(mask & 0xFFFF));
-      this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - bitmask::bitmask::count_ones(mask & 0xFFFFFFFF));
-      this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - bitmask::bitmask::count_ones(mask & 0xFFFFFFFFFFFF));
-      return 64 - bitmask::bitmask::count_ones(mask);
+      this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - bitmask::count_ones(mask & 0xFFFF));
+      this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - bitmask::count_ones(mask & 0xFFFFFFFF));
+      this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - bitmask::count_ones(mask & 0xFFFFFFFFFFFF));
+      return 64 - bitmask::count_ones(mask);
     }
 
     simdjson_inline uint64_t to_bitmask() const {
@@ -437,6 +437,24 @@ namespace simd {
         this->chunks[1].any_bits_set(bits.chunks[1]),
         this->chunks[2].any_bits_set(bits.chunks[2]),
         this->chunks[3].any_bits_set(bits.chunks[3])
+      };
+    }
+
+    simdjson_inline simd8x64<bool> no_bits_set(const simd8<T>& bits) const {
+      return {
+        this->chunks[0].no_bits_set(bits),
+        this->chunks[1].no_bits_set(bits),
+        this->chunks[2].no_bits_set(bits),
+        this->chunks[3].no_bits_set(bits)
+      };
+    }
+
+    simdjson_inline simd8x64<bool> no_bits_set(const simd8x64<T>& bits) const {
+      return {
+        this->chunks[0].no_bits_set(bits.chunks[0]),
+        this->chunks[1].no_bits_set(bits.chunks[1]),
+        this->chunks[2].no_bits_set(bits.chunks[2]),
+        this->chunks[3].no_bits_set(bits.chunks[3])
       };
     }
   }; // struct simd8x64<T>
