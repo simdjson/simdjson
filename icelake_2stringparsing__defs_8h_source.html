@@ -109,7 +109,7 @@ $(document).ready(function(){initNavTree('icelake_2stringparsing__defs_8h_source
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment">// Holds backslashes and quotes locations.</span></div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">struct </span>backslash_and_quote {</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;  <span class="keyword">static</span> constexpr uint32_t BYTES_PROCESSED = 32;</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;  <span class="keyword">static</span> constexpr uint32_t BYTES_PROCESSED = 64;</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;  simdjson_inline <span class="keyword">static</span> backslash_and_quote copy_and_find(<span class="keyword">const</span> uint8_t *src, uint8_t *dst);</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;  simdjson_inline <span class="keywordtype">bool</span> has_quote_first() { <span class="keywordflow">return</span> ((bs_bits - 1) &amp; quote_bits) != 0; }</div>
