@@ -1,4 +1,4 @@
-name: Ubuntu 20.04 CI (GCC 9) with Thread Sanitizer
+name: Ubuntu 22.04 CI (GCC 11) with Thread Sanitizer
 
 on: [push, pull_request]
 
@@ -7,7 +7,7 @@ jobs:
     if: >-
       ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
       ! contains(toJSON(github.event.commits.*.message), '[skip github]')
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/cache@v3
