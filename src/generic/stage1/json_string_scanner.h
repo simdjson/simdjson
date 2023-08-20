@@ -11,44 +11,21 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 namespace stage1 {
 
-struct json_string_block {
-  // We spell out the constructors in the hope of resolving inlining issues with Visual Studio 2017
-  simdjson_really_inline json_string_block(uint64_t escaped, uint64_t quote, uint64_t in_string) :
-  _escaped(escaped), _quote(quote), _in_string(in_string) {}
-
-  // Escaped characters (characters following an escape() character)
-  simdjson_really_inline uint64_t escaped() const { return _escaped; }
-  // Real (non-backslashed) quotes
-  simdjson_really_inline uint64_t quote() const { return _quote; }
-  // Only characters inside the string (not including the quotes)
-  simdjson_really_inline uint64_t string_content() const { return _in_string & ~_quote; }
-  // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
-  // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
-  // Tail of string (everything except the start quote)
-  simdjson_really_inline uint64_t string_tail() const { return _in_string ^ _quote; }
-
-  // escaped characters (backslashed--does not include the hex characters after \u)
-  uint64_t _escaped;
-  // real quotes (non-escaped ones)
-  uint64_t _quote;
-  // string characters (includes start quote but not end quote)
-  uint64_t _in_string;
-};
-
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
+  simdjson_inline uint64_t next(uint64_t backslash, uint64_t raw_quote, uint64_t separated_values) noexcept;
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_really_inline error_code finish();
+  simdjson_inline error_code finish() const noexcept;
 
 private:
+  simdjson_inline uint64_t next_unescaped_quotes(uint64_t backslash, uint64_t raw_quote) noexcept;
+  simdjson_inline uint64_t next_in_string(uint64_t in_string, uint64_t separated_values) noexcept;
+
   // Scans for escape characters
   json_escape_scanner escape_scanner{};
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
-  uint64_t prev_in_string = 0ULL;
+  bitmask::borrow_t still_in_string = 0ULL;
 };
 
 //
@@ -59,33 +36,59 @@ private:
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-simdjson_really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
-  const uint64_t backslash = in.eq('\\');
-  const uint64_t escaped = escape_scanner.next(backslash).escaped;
-  const uint64_t quote = in.eq('"') & ~escaped;
-
-  //
-  // prefix_xor flips on bits inside the string (and flips off the end quote).
-  //
-  // Then we xor with prev_in_string: if we were in a string already, its effect is flipped
-  // (characters inside strings are outside, and characters outside strings are inside).
-  //
-  const uint64_t in_string = bitmask::prefix_xor(quote) ^ prev_in_string;
-
-  //
-  // Check if we're still in a string at the end of the box so the next block will know
-  //
-  prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
-
-  // Use ^ to turn the beginning quote off, and the end quote on.
-
-  // We are returning a function-local object so either we get a move constructor
-  // or we get copy elision.
-  return json_string_block(escaped, quote, in_string);
+simdjson_inline uint64_t json_string_scanner::next(
+  uint64_t backslash,                // 2+N
+  uint64_t raw_quote,                // 2+N
+  uint64_t separated_values          // 13
+) noexcept {
+  uint64_t quote = next_unescaped_quotes(backslash, raw_quote); // 3+N (2N+1+simd:2N total) or 7+N (2N+7+simd:2N total)
+  uint64_t in_string = next_in_string(quote, separated_values); // 15 (+6) or (13+N or 17+N (+8+simd:3)).
+  return in_string;
 }
 
-simdjson_really_inline error_code json_string_scanner::finish() {
-  if (prev_in_string) {
+simdjson_inline uint64_t json_string_scanner::next_unescaped_quotes(
+  uint64_t backslash, // 2+N
+  uint64_t raw_quote  // 2+N
+) noexcept {
+  uint64_t escaped = escape_scanner.next(backslash).escaped; // 2+N (2 total) or 6+N (8 total)
+  return raw_quote & ~escaped;                               // 3+N (3 total) or 7+N (9 total)
+  // critical path: 3+N (3 total) or 7+N (9 total)
+}
+
+simdjson_inline uint64_t json_string_scanner::next_in_string(
+  uint64_t quote,           // 3+N or 7+N
+  uint64_t separated_values // 13
+) noexcept {
+  // Find values that are in the string. ASSUME that strings do not have separators/openers just
+  // before the end of the string (i.e. "blah," or "blah,["). These are pretty rare.
+  // TODO: we can also assume the carry in is 1 if the first quote is a trailing quote.
+  uint64_t lead_quote     = quote &  separated_values;                 // 14 (+1)
+  uint64_t trailing_quote = quote & ~separated_values;                 // 14 (+1)
+  // If we were correct, the subtraction will leave us with:
+  // LEAD-QUOTE=1 NON-QUOTE=1* TRAIL-QUOTE=0 NON-QUOTE=0* ...
+  // The general form is this:
+  // LEAD-QUOTE=1 NON-QUOTE=1|LEAD-QUOTE=0* TRAIL-QUOTE=0 NON-QUOTE=0|TRAIL-QUOTE=1* ...
+  //                                                                   // 15 (+2)
+  auto was_still_in_string = this->still_in_string;
+  uint64_t in_string = bitmask::subtract_borrow(trailing_quote, lead_quote, this->still_in_string);
+  // Assumption check! LEAD-QUOTE=0 means a lead quote was inside a string--meaning the second
+  // quote was preceded by a separator/open.
+  uint64_t lead_quote_in_string = lead_quote & ~in_string;             // 16 (+2)
+  if (!lead_quote_in_string) {
+    // This shouldn't happen often, so we take the heavy branch penalty for it and use the
+    // high-latency prefix_xor.
+    this->still_in_string = was_still_in_string;
+    in_string = bitmask::prefix_xor(quote ^ this->still_in_string); // 13+N (+1+simd:3)
+    this->still_in_string = in_string >> 63;                        // 14+N (+1)
+  }
+  return in_string;
+  // critical path = 15 (+6) or (13+N or 17+N (+8+simd:3)).
+  // would be 13+N or 17+N (+2+simd:3) by itself
+}
+
+
+simdjson_inline error_code json_string_scanner::finish() const noexcept {
+  if (still_in_string) {
     return UNCLOSED_STRING;
   }
   return SUCCESS;

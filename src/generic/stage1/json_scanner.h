@@ -31,6 +31,7 @@ class json_scanner {
 public:
   json_scanner() = default;
   simdjson_inline uint64_t next(const simd::simd8x64<uint8_t>& in) noexcept;
+
   // Returns either UNCLOSED_STRING or SUCCESS
   simdjson_inline error_code finish() const noexcept;
 
@@ -48,7 +49,7 @@ private:
     SEP = COMMA | COLON,
     WS = SPACE | TAB_CR_LF,
   };
-  static simdjson_constinit byte_classifier classifier = {
+  static simdjson_constinit byte_classifier CLASSIFIER = {
     { ',',  COMMA },
     { ':',  COLON },
     { '[',  OPEN },
@@ -62,79 +63,116 @@ private:
     { '\n', TAB_CR_LF },
     { '\\', BACKSLASH },
   };
+  static simdjson_constinit low_nibble_lookup WHITESPACE_MATCH = {
+    { ' '-1, 0xFF },
+    { '\t'-1, 0xFF },
+    { '\r'-1, 0xFF },
+    { '\n'-1, 0xFF },
+  };
 
-  simdjson_inline uint64_t next_unescaped_quotes(const simd::simd8x64<uint8_t>& in) noexcept;
   simdjson_inline uint64_t next_separated_values(uint64_t sep_open, uint64_t scalar_close) noexcept;
-  simdjson_inline uint64_t next_in_string(uint64_t quote, uint64_t separated_values) noexcept;
-  simdjson_inline void check_errors(uint64_t sep_open, uint64_t scalar_close, uint64_t open_close, uint64_t quote, uint64_t separated_values, uint64_t in_string) noexcept;
+  simdjson_inline void check_errors(uint64_t scalar, uint64_t sep, uint64_t open, uint64_t raw_quote, uint64_t separated_values, uint64_t in_string) noexcept;
 
   // Whether the last character of the previous iteration is part of a scalar token
   // (anything except whitespace or a structural character/'operator').
-  json_escape_scanner escape_scanner{};
+  json_string_scanner string_scanner{};
   uint64_t still_in_scalar{};
-  bool still_in_string{};
-  bool still_in_value{};
+  bitmask::borrow_t still_in_value{};
   uint64_t error{};
 };
 
-simdjson_inline uint64_t json_scanner::next(const simd::simd8x64<uint8_t>& in) noexcept {
-  uint64_t quote = next_unescaped_quotes(in);
-  // shortest path =     6 (6N+5) or 12 (6N+12)
+simdjson_inline uint64_t json_scanner::next(
+  const simd::simd8x64<uint8_t>& in
+) noexcept {
+  // TODO this looks like the same number of SIMD instructions as classifier, but much lower latency
+  // uint64_t open_curly    = in.eq('{');   // 2+N (N-1+simd:N)
+  // uint64_t open_bracket  = in.eq('[');   // 2+N (N-1+simd:N)
+  // uint64_t open          = open_curly | open_bracket;
+
+  // uint64_t close_curly   = in.eq('}');   // 2+N (N-1+simd:N)
+  // uint64_t close_bracket = in.eq(']');   // 2+N (N-1+simd:N)
+  // uint64_t close         = close_curly | close_bracket;
+
+  // uint64_t comma         = in.eq(',');   // 2+N (N-1+simd:N)
+  // uint64_t colon         = in.eq(':');   // 2+N (N-1+simd:N)
+  // uint64_t sep           = comma | colon;
+  // uint64_t op_without_comma = open | close | colon;
+
+  // uint64_t ws_ctrl       = in.lteq(' '); // 2+N (N-1+simd:N) We will rule out control characters later
+
+  // TODO see if we can use the properties of open/close curly/brackets to reduce these:
+  // 0101 1011 [
+  // 0101 1101 ]
+  // 0111 1011 {
+  // 0111 1101 }
 
   // Classify bytes into comma, open, close, sep, and whitespace.
-  simd8x64<uint8_t> classified = classifier.classify(in);                           // 2N+1
-  uint64_t sep_open         = classified.any_bits_set(SEP | OPEN).to_bitmask();     //      3N+1
-  uint64_t scalar_close     = classified.no_bits_set(SEP | OPEN | WS).to_bitmask(); //      3N+1
-  uint64_t open_close       = classified.any_bits_set(OPEN | CLOSE).to_bitmask();   //      3N+1
-  // shortest path =     7 (11N+4 total)
+  simd8x64<uint8_t> classified = CLASSIFIER.classify(in);                           // 9 (+simd:4N)
+  uint64_t sep_open         = classified.any_bits_set(SEP | OPEN).to_bitmask();     //   2+N (N-1+simd:N)
+  uint64_t scalar_close     = classified.no_bits_set(SEP | OPEN | WS).to_bitmask(); //   2+N (N-1+simd:N)
+  uint64_t open_close       = classified.any_bits_set(OPEN | CLOSE).to_bitmask();   //   2+N (N-1+simd:N)
+  // critical path = 11+N (3N-3+simd:7N total)
 
-  uint64_t separated_values = next_separated_values(sep_open, scalar_close);
-  // shortest path = [7] 1 (2 total)
+  uint64_t separated_values = next_separated_values(sep_open, scalar_close); // 13 (+2)
 
-  uint64_t in_string = next_in_string(quote, separated_values);
-  // shortest path = [8] 3 or 12 (7 or 20 total)
+  uint64_t backslash = in.eq('\\'); // 2+N (N-1+simd:N)
+  uint64_t raw_quote = in.eq('"');  // 2+N (N-1+simd:N)
+  uint64_t in_string = string_scanner.next(backslash, raw_quote, separated_values); // 15 (+6) or (13+N or 17+N (+8+simd:3))
 
-  uint64_t comma = in.eq(',');                           // 3N+1
-  uint64_t op = sep_open | open_close;                   // [7] 1
-  uint64_t op_without_comma = op & ~comma;               //     (ternary)
-  uint64_t lead_value = scalar_close & separated_values; // [8]   1
+  uint64_t comma = in.eq(',');                              // 2+N (N-1+simd:N)
+  uint64_t op = sep_open | open_close;                      // 13 (+1)
+  uint64_t op_without_comma = op & ~comma;                  //     (ternary)
+  uint64_t lead_value = scalar_close & separated_values;    // 16 or 14+N or 18+N (+1)
   uint64_t all_structurals = op_without_comma | lead_value; //    (ternary)
-  uint64_t structurals = all_structurals & ~in_string;   // [11]    1
-  // shortest path = [11] 1 (3N+4 total)
+  uint64_t structurals = all_structurals & ~in_string;      // 17 or 15+N or 18+N (+1)
+  // critical path = // 17 or 15+N or 18+N (N+3+simd:N)
 
-  check_errors(sep_open, scalar_close, open_close, quote, separated_values, in_string);
-  // shortest path = [11] 2 (8 total)
+  uint64_t scalar = scalar_close & open_close;                  // 13 (+1)
+  uint64_t sep = sep_open & ~open_close;                        // 13 (+1)
+  uint64_t open = sep_open & open_close;                        // 13 (+1)
+  check_errors(scalar, sep, open, raw_quote, separated_values, in_string);
+  // critical path = [11] 2 (8 total)
 
   return structurals;
-  // structurals: shortest path = 12 (+1) (20N+30)
+  // structurals: critical path = 17 or 15+N or 18+N (4N+16+simd:8N)
 }
 
-simdjson_inline uint64_t json_scanner::next_unescaped_quotes(const simd::simd8x64<uint8_t>& in) noexcept {
-  // Figure out which quotes are real (unescaped)
-  uint64_t backslash = in.eq('\\');                          // 3N+1
-  uint64_t raw_quote = in.eq('"');                           // 3N+1
-  uint64_t escaped = escape_scanner.next(backslash).escaped; //      1 (+1) or 7 (+2)
-  return raw_quote & ~escaped;                               //        1
-  // shortest path = 6 (6N+5 total) or 12 (6N+12 total)
+simdjson_inline uint64_t json_scanner::next_separated_values(
+  uint64_t sep_open,    // 12
+  uint64_t scalar_close // 12
+) noexcept {
+  // Split the JSON by separators. After this, we know:
+  // - the lead character of every valid scalar.
+  // - there is least one scalar/close bracket between each separator
+  // - open bracket is always after separator or at beginning of the document
+  // OPEN|WS* CLOSE|SCALAR (CLOSE|SCALAR|WS)* SEP OPEN|WS*
+  //    1|0 *      1                   0|1  *  1     1|0 *
+  // (We include open brackets with separators because we can easily detect some errors from that.)
+  return bitmask::subtract_borrow(sep_open, scalar_close, this->still_in_value);
+  // critical path: 13 (+2)
 }
 
-simdjson_inline void json_scanner::check_errors(uint64_t sep_open, uint64_t scalar_close, uint64_t open_close, uint64_t quote, uint64_t separated_values, uint64_t in_string) noexcept {
+simdjson_inline void json_scanner::check_errors(
+  uint64_t scalar,           // 13
+  uint64_t sep,              // 13
+  uint64_t open,             // 13
+  uint64_t quote,            //
+  uint64_t separated_values,
+  uint64_t in_string
+) noexcept {
   // Detect separator errors
   // ERROR: missing separator between scalars or close brackets (scalar preceded by anything other than separator, open, or beginning of document)
-  uint64_t scalar = scalar_close & open_close;                         // [7] 1
   uint64_t next_in_scalar = scalar & ~quote;                           // [6]  (ternary &)
   uint64_t in_scalar = next_in_scalar << 1 | still_in_scalar;          //       1 (+1)
   still_in_scalar = next_in_scalar >> 63;
   uint64_t first_scalar = scalar & ~in_scalar;                         //         1
   // Take away lead scalar characters, which are allowed to be the first scalar character
   uint64_t missing_separator_error = first_scalar & ~separated_values; //     (ternary)
-  // shortest path = [7] 3 (4 total)
+  // critical path = [7] 3 (4 total)
 
   // ERROR: separator with another separator or open bracket ahead of it (or at beginning of document)
-  uint64_t sep = sep_open & ~open_close;                    // [7] 1
   uint64_t extra_separator_error = sep & ~separated_values; // [8] (ternary &)
   // ERROR: open bracket without separator ahead of it (except at beginning of document)
-  uint64_t open = sep_open & open_close;                                  // [7] 1
   uint64_t missing_separator_before_open_error = open & separated_values; // [8] (ternary &)
   // Total: [8] 1 (2 total)
 
@@ -156,51 +194,8 @@ simdjson_inline void json_scanner::check_errors(uint64_t sep_open, uint64_t scal
   // Total: [11] 2 (8 total)
 }
 
-simdjson_inline uint64_t json_scanner::next_separated_values(uint64_t sep_open, uint64_t scalar_close) noexcept {
-  // Split the JSON by separators. After this, we know:
-  // - the lead character of every valid scalar.
-  // - there is least one scalar/close bracket between each separator
-  // - open bracket is always after separator or at beginning of the document
-  // OPEN|WS* CLOSE|SCALAR (CLOSE|SCALAR|WS)* SEP OPEN|WS*
-  //    1|0 *      1                   0|1  *  1     1|0 *
-  // (We include open brackets with separators because we can easily detect some errors from that.)
-  return bitmask::subtract_borrow_out(sep_open, scalar_close + this->still_in_value, this->still_in_value);
-}
-
-simdjson_inline uint64_t json_scanner::next_in_string(
-  uint64_t quote,           // [6]
-  uint64_t separated_values // [8]
-) noexcept {
-  // Find values that are in the string. ASSUME that strings do not have separators/openers just
-  // before the end of the string (i.e. "blah," or "blah,["). These are pretty rare.
-  // TODO: we can also assume the carry in is 1 if the first quote is a trailing quote.
-  uint64_t lead_quote     = quote &  separated_values;                 // [8] 1
-  uint64_t trailing_quote = quote & ~separated_values;                 // [8] 1
-  // If we were correct, the subtraction will leave us with:
-  // LEAD-QUOTE=1 NON-QUOTE=1* TRAIL-QUOTE=0 NON-QUOTE=0* ...
-  // The general form is this:
-  // LEAD-QUOTE=1 NON-QUOTE=1|LEAD-QUOTE=0* TRAIL-QUOTE=0 NON-QUOTE=0|TRAIL-QUOTE=1* ...
-  //                                                                            1 (+1)
-  auto was_still_in_string = this->still_in_string;
-  uint64_t in_string = bitmask::subtract_borrow_out(trailing_quote, lead_quote + this->still_in_string, this->still_in_string);
-  // Assumption check! LEAD-QUOTE=0 means a lead quote was inside a string--meaning the second
-  // quote was preceded by a separator/open.
-  uint64_t lead_quote_in_string = lead_quote & ~in_string;             //         1
-  if (!lead_quote_in_string) {
-    // This shouldn't happen often, so we take the heavy branch penalty for it and use the
-    // high-latency prefix_xor.
-    //                                                                 // [6] 12 (+1)
-    this->still_in_string = was_still_in_string;
-    in_string = bitmask::prefix_xor(quote ^ this->still_in_string);
-    this->still_in_string = in_string >> 63;
-  }
-  return in_string;
-  // shortest path = [8] 2 or [6] 12 (5 or 18 total)
-}
-
-
 simdjson_inline error_code json_scanner::finish() const noexcept {
-  if (this->error | this->still_in_string) {
+  if (this->error | this->string_scanner.finish()) {
     return TAPE_ERROR;
   }
 }
