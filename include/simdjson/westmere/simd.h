@@ -111,6 +111,11 @@ namespace simd {
     simdjson_inline simd8<T> lookup_16(const simd8<T>& lookup_table) const {
       return _mm_shuffle_epi8(lookup_table, *this);
     }
+    // Perform a lookup based on the lower 4 bits of each lane. (Platform-dependent behavior for
+    // non-ASCII values--may look up the lower 4 bits on some platforms, and return 0 on others.)
+    simdjson_inline simd8<T> lookup_low_nibble_ascii(const simd8<T>& lookup_table) const {
+      return lookup_16(lookup_table);
+    }
 
     // Copies to 'output" all bytes corresponding to a 0 in the mask (interpreted as a bitset).
     // Passing a 0 value for mask would be equivalent to writing out every byte to output.
@@ -327,6 +332,15 @@ namespace simd {
         this->chunks[1].lookup_16(lookup_table),
         this->chunks[2].lookup_16(lookup_table),
         this->chunks[3].lookup_16(lookup_table),
+      };
+    }
+
+    simdjson_inline simd8x64<T> lookup_low_nibble_ascii(const simd8<T>& lookup_table) const {
+      return {
+        this->chunks[0].lookup_low_nibble_ascii(lookup_table),
+        this->chunks[1].lookup_low_nibble_ascii(lookup_table),
+        this->chunks[2].lookup_low_nibble_ascii(lookup_table),
+        this->chunks[3].lookup_low_nibble_ascii(lookup_table)
       };
     }
 

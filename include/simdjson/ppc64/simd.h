@@ -186,6 +186,11 @@ template <typename T> struct base8_numeric : base8<T> {
   simdjson_inline simd8<T> lookup_16(const simd8<T>& lookup_table) const {
     return (simd_t)vec_perm((simd_t)lookup_table, (simd_t)lookup_table, this->value);
   }
+  // Perform a lookup based on the lower 4 bits of each lane. (Platform-dependent behavior for
+  // non-ASCII values--may look up the lower 4 bits on some platforms, and return 0 on others.)
+  simdjson_inline simd8<T> lookup_low_nibble_ascii(const simd8<T>& lookup_table) const {
+    return lookup_16(lookup_table);
+  }
 
   // Copies to 'output" all bytes corresponding to a 0 in the mask (interpreted
   // as a bitset). Passing a 0 value for mask would be equivalent to writing out
@@ -462,6 +467,15 @@ template <typename T> struct simd8x64 {
       this->chunks[1].lookup_16(lookup_table),
       this->chunks[2].lookup_16(lookup_table),
       this->chunks[3].lookup_16(lookup_table),
+    };
+  }
+
+  simdjson_inline simd8x64<T> lookup_low_nibble_ascii(const simd8<T>& lookup_table) const {
+    return {
+      this->chunks[0].lookup_low_nibble_ascii(lookup_table),
+      this->chunks[1].lookup_low_nibble_ascii(lookup_table),
+      this->chunks[2].lookup_low_nibble_ascii(lookup_table),
+      this->chunks[3].lookup_low_nibble_ascii(lookup_table)
     };
   }
 

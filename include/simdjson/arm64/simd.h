@@ -271,6 +271,12 @@ simdjson_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int
       return lookup_table.apply_lookup_16_to(*this);
     }
 
+    // Perform a lookup based on the lower 4 bits of each lane. (Platform-dependent behavior for
+    // non-ASCII values--may look up the lower 4 bits on some platforms, and return 0 on others.)
+    simdjson_inline simd8<uint8_t> lookup_low_nibble_ascii(simd8<uint8_t> lookup_table) const {
+      return lookup_table.apply_lookup_16_to(*this & 0b10001111);
+    }
+
 
     // Copies to 'output" all bytes corresponding to a 0 in the mask (interpreted as a bitset).
     // Passing a 0 value for mask would be equivalent to writing out every byte to output.
@@ -425,6 +431,10 @@ simdjson_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int
     simdjson_inline simd8<int8_t> lookup_16(simd8<int8_t> lookup_table) const {
       return lookup_table.apply_lookup_16_to(*this);
     }
+    // Perform a lookup based on the lower 4 bits of each lane, returning 0 for values with a high bit of 1.
+    simdjson_inline simd8<int8_t> lookup_low_nibble_ascii(simd8<int8_t> lookup_table) const {
+      return lookup_table.apply_lookup_16_to(*this & 0b10001111);
+    }
     template<typename L>
     simdjson_inline simd8<L> lookup_16(
         L replace0,  L replace1,  L replace2,  L replace3,
@@ -519,6 +529,15 @@ simdjson_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int
         this->chunks[1].lookup_16(lookup_table),
         this->chunks[2].lookup_16(lookup_table),
         this->chunks[3].lookup_16(lookup_table)
+      };
+    }
+
+    simdjson_inline simd8x64<T> lookup_low_nibble_ascii(const simd8<T>& lookup_table) const {
+      return {
+        this->chunks[0].lookup_low_nibble_ascii(lookup_table),
+        this->chunks[1].lookup_low_nibble_ascii(lookup_table),
+        this->chunks[2].lookup_low_nibble_ascii(lookup_table),
+        this->chunks[3].lookup_low_nibble_ascii(lookup_table)
       };
     }
 

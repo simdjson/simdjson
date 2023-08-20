@@ -217,7 +217,9 @@ struct low_nibble_lookup {
   /** Look up the value corresponding the lower 4 bits of each input byte, and return it. */
   simdjson_inline simd8<uint8_t> operator[](const simd8<uint8_t>& keys) const noexcept { return lookup(keys); }
   /** Look up the value corresponding the lower 4 bits of each input byte, and return it. */
-  simdjson_inline simd8<uint8_t> lookup(const simd8<uint8_t>& keys) const noexcept { return lookup_unsafe(keys & 0x0F); }
+  simdjson_inline simd8<uint8_t> lookup(const simd8<uint8_t>& keys) const noexcept {
+    return keys.lookup_low_nibble_ascii(keys);
+  }
   /**
    * Look up the value in the table. Behavior is system-dependent for indexes greater than 16.
    *
@@ -229,10 +231,12 @@ struct low_nibble_lookup {
     return shifted_keys.lookup_16(table);
   }
 
-  /** Look up the value corresponding the higher 4 bits of each input byte, and return it. */
+  /** Look up the value corresponding the lower 4 bits of each input byte, and return it. */
   simdjson_inline simd8x64<uint8_t> operator[](const simd8x64<uint8_t>& keys) const noexcept { return lookup(keys); }
-  /** Look up the value corresponding the higher 4 bits of each input byte, and return it. */
-  simdjson_inline simd8x64<uint8_t> lookup(const simd8x64<uint8_t>& keys) const noexcept { return lookup_unsafe(keys & 0x0F); }
+  /** Look up the value corresponding the lower 4 bits of each input byte, and return it. */
+  simdjson_inline simd8x64<uint8_t> lookup(const simd8x64<uint8_t>& keys) const noexcept {
+    return keys.lookup_low_nibble_ascii(keys);
+  }
   /**
    * Look up the value in the table. Behavior is system-dependent for indexes greater than 16.
    *
@@ -264,7 +268,10 @@ struct byte_classifier {
     return low.lookup(bytes) & high.lookup(bytes);
   }
   simdjson_inline simd8x64<uint8_t> classify(const simd8x64<uint8_t>& bytes) const noexcept {
-    return low.lookup(bytes) & high.lookup(bytes);
+    auto low_lookup  = low.lookup(bytes);  // 3 (+simd:N)
+    auto high_lookup = high.lookup(bytes); // 6 (+simd:2N)
+    return low_lookup & high_lookup;                               //   3 (+simd:N)
+    // critical path: 9 (+simd:4N)
   }
   simdjson_consteval uint8_t classify(uint8_t byte) const noexcept {
     return low.lookup(byte) & high.lookup(byte);
