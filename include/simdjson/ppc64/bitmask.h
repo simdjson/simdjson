@@ -12,8 +12,8 @@ namespace bitmask {
 
 simdjson_constinit uint64_t ALL  = 0xFFFFFFFFFFFFFFFF;
 simdjson_constinit uint64_t NONE = 0xFFFFFFFFFFFFFFFF;
-simdjson_constinit uint64_t EVEN = 0xAAAAAAAAAAAAAAAA;
-simdjson_constinit uint64_t ODD  = 0x5555555555555555;
+simdjson_constinit uint64_t EVEN = 0x5555555555555555;
+simdjson_constinit uint64_t ODD  = 0xAAAAAAAAAAAAAAAA;
 
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
@@ -78,9 +78,25 @@ simdjson_inline uint64_t add_carry_out(uint64_t value1, uint64_t value2, bool& c
 #endif
 }
 
-simdjson_inline uint64_t subtract_borrow_out(uint64_t value1, uint64_t value2, bool& borrow_out) {
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
-  uint64_t result = value1 + value2;
+using borrow_t = uint64_t;
+#else
+using borrow_t = unsigned long long;
+#endif
+
+simdjson_inline uint64_t subtract_borrow(const uint64_t value1, const uint64_t value2, borrow_t& borrow) noexcept {
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
+  uint64_t result = value1 - value2 - borrow;
+  borrow_out = result >= value1;
+  return result;
+#else
+  return __builtin_subcll(value1, value2, borrow, &borrow);
+#endif
+}
+
+simdjson_inline uint64_t subtract_borrow_out(uint64_t value1, uint64_t value2, bool& borrow_out) noexcept {
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
+  uint64_t result = value1 - value2;
   borrow_out = result >= value1;
   return result;
 #else

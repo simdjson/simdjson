@@ -74,6 +74,22 @@ simdjson_inline uint64_t add_carry_out(const uint64_t value1, const uint64_t val
 #endif
 }
 
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
+using borrow_t = unsigned char;
+#else
+using borrow_t = unsigned long long;
+#endif
+
+simdjson_inline uint64_t subtract_borrow(const uint64_t value1, const uint64_t value2, borrow_t& borrow) noexcept {
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
+  unsigned __int64 result;
+  borrow = _subborrow_u64(borrow, value1, value2, &result);
+  return result;
+#else
+  return __builtin_subcll(value1, value2, borrow, &borrow);
+#endif
+}
+
 simdjson_inline uint64_t subtract_borrow_out(const uint64_t value1, const int64_t value2, bool& borrow_out) noexcept {
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned __int64 result;
