@@ -1,4 +1,4 @@
-/* auto-generated on 2023-08-02 16:00:45 -0400. Do not edit! */
+/* auto-generated on 2023-08-18 14:37:10 -0400. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -24489,7 +24489,7 @@ using namespace simd;
 // Holds backslashes and quotes locations.
 struct backslash_and_quote {
 public:
-  static constexpr uint32_t BYTES_PROCESSED = 32;
+  static constexpr uint32_t BYTES_PROCESSED = 64;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
@@ -27073,7 +27073,7 @@ using namespace simd;
 // Holds backslashes and quotes locations.
 struct backslash_and_quote {
 public:
-  static constexpr uint32_t BYTES_PROCESSED = 32;
+  static constexpr uint32_t BYTES_PROCESSED = 64;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
