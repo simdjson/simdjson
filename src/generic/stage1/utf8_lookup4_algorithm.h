@@ -4,7 +4,6 @@
 #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 #include <generic/stage1/base.h>
 #include <generic/dom_parser_implementation.h>
-#include <simdjson/generic/lookup_table.h>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -14,95 +13,96 @@ namespace utf8_validation {
 
 using namespace simd;
 
+  simdjson_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t> input, const simd8<uint8_t> prev1) {
 // Bit 0 = Too Short (lead byte/ASCII followed by lead byte/ASCII)
 // Bit 1 = Too Long (ASCII followed by continuation)
 // Bit 2 = Overlong 3-byte
 // Bit 4 = Surrogate
 // Bit 5 = Overlong 2-byte
 // Bit 7 = Two Continuations
-static constexpr const uint8_t TOO_SHORT   = 1<<0; // 11______ 0_______
-                                                   // 11______ 11______
-static constexpr const uint8_t TOO_LONG    = 1<<1; // 0_______ 10______
-static constexpr const uint8_t OVERLONG_3  = 1<<2; // 11100000 100_____
-static constexpr const uint8_t SURROGATE   = 1<<4; // 11101101 101_____
-static constexpr const uint8_t OVERLONG_2  = 1<<5; // 1100000_ 10______
-static constexpr const uint8_t TWO_CONTS   = 1<<7; // 10______ 10______
-// TOO_LARGE is any 4-byte bigger than 11110100 1001____, and any 5+-byte
-// We split it into two parts, recognizing 11110101 1000____ and up in TOO_LARGE_1000
-static constexpr const uint8_t TOO_LARGE   = 1<<3; // 11110100 1001____ = 4-byte 100-111 01-11...
-                                                   // 11110100 101_____
-                                                   // 11110101 1001____
-                                                   // 11110101 101_____
-                                                   // 1111011_ 1001____
-                                                   // 1111011_ 101_____
-                                                   // 11111___ 1001____ = 5-byte * 01-11...
-                                                   // 11111___ 101_____
-static constexpr const uint8_t TOO_LARGE_1000 = 1<<6;
-                                                   // 11110101 1000____ = 4-byte 101-111 00...
-                                                   // 1111011_ 1000____
-                                                   // 11111___ 1000____ = 5-byte * 00 ...
-simdjson_constinit uint8_t OVERLONG_4  = 1<<6; // 11110000 1000____
+    constexpr const uint8_t TOO_SHORT   = 1<<0; // 11______ 0_______
+                                                // 11______ 11______
+    constexpr const uint8_t TOO_LONG    = 1<<1; // 0_______ 10______
+    constexpr const uint8_t OVERLONG_3  = 1<<2; // 11100000 100_____
+    constexpr const uint8_t SURROGATE   = 1<<4; // 11101101 101_____
+    constexpr const uint8_t OVERLONG_2  = 1<<5; // 1100000_ 10______
+    constexpr const uint8_t TWO_CONTS   = 1<<7; // 10______ 10______
+    constexpr const uint8_t TOO_LARGE   = 1<<3; // 11110100 1001____
+                                                // 11110100 101_____
+                                                // 11110101 1001____
+                                                // 11110101 101_____
+                                                // 1111011_ 1001____
+                                                // 1111011_ 101_____
+                                                // 11111___ 1001____
+                                                // 11111___ 101_____
+    constexpr const uint8_t TOO_LARGE_1000 = 1<<6;
+                                                // 11110101 1000____
+                                                // 1111011_ 1000____
+                                                // 11111___ 1000____
+    constexpr const uint8_t OVERLONG_4  = 1<<6; // 11110000 1000____
 
-simdjson_constinit byte_range ASCII       = { 0b00000000,   0b01111111 };
-simdjson_constinit byte_range CONT        = { 0b10000000,   0b10111111 };
-simdjson_constinit byte_range LEAD_2      = { 0b11000000,   0b11011111 };
-simdjson_constinit byte_range LEAD_3      = { 0b11100000,   0b11101111 };
-simdjson_constinit byte_range LEAD_4      = { 0b11110000,   0b11110111 };
-simdjson_constinit byte_range LEAD_5_PLUS = { 0b11111000,   0b11111111 };
-simdjson_constinit byte_range LEAD        = LEAD_2 | LEAD_3 | LEAD_4 | LEAD_5_PLUS;
+    const simd8<uint8_t> byte_1_high = prev1.shr<4>().lookup_16(simd8<uint8_t>::repeat_16(
+      // 0_______ ________ <ASCII in byte 1>
+      TOO_LONG, TOO_LONG, TOO_LONG, TOO_LONG,
+      TOO_LONG, TOO_LONG, TOO_LONG, TOO_LONG,
+      // 10______ ________ <continuation in byte 1>
+      TWO_CONTS, TWO_CONTS, TWO_CONTS, TWO_CONTS,
+      // 1100____ ________ <two byte lead in byte 1>
+      TOO_SHORT | OVERLONG_2,
+      // 1101____ ________ <two byte lead in byte 1>
+      TOO_SHORT,
+      // 1110____ ________ <three byte lead in byte 1>
+      TOO_SHORT | OVERLONG_3 | SURROGATE,
+      // 1111____ ________ <four+ byte lead in byte 1>
+      TOO_SHORT | TOO_LARGE | TOO_LARGE_1000 | OVERLONG_4
+    ));
+    constexpr const uint8_t CARRY = TOO_SHORT | TOO_LONG | TWO_CONTS; // These all have ____ in byte 1 .
+    // TODO use lookup_low_nibble_ascii to avoid & for Intel
+    const simd8<uint8_t> byte_1_low = (prev1 & 0x0F).lookup_16(simd8<uint8_t>::repeat_16(
+      // ____0000 ________
+      CARRY | OVERLONG_3 | OVERLONG_2 | OVERLONG_4,
+      // ____0001 ________
+      CARRY | OVERLONG_2,
+      // ____001_ ________
+      CARRY,
+      CARRY,
 
-simdjson_constinit const byte_classifier BYTE_1{
-  {   ASCII,                    TOO_LONG },       // 0_______ 10______
-  {   CONT,                     TWO_CONTS },      // 10______ 10______
-  {   LEAD,                     TOO_SHORT },      // 11______ 0_______
-                                              // 11______ 11______
-  {   0b11101101,               SURROGATE },      // 11101101 101_____
+      // ____0100 ________
+      CARRY | TOO_LARGE,
+      // ____0101 ________
+      CARRY | TOO_LARGE | TOO_LARGE_1000,
+      // ____011_ ________
+      CARRY | TOO_LARGE | TOO_LARGE_1000,
+      CARRY | TOO_LARGE | TOO_LARGE_1000,
 
-  { { 0b11000000, 0b11000001 }, OVERLONG_2 },     // 1100000_ 10______
-  {   0b11100000,               OVERLONG_3 },     // 11100000 100_____
-  {   0b11110000,               OVERLONG_4 },     // 11110000 1000____
-  { { 0b11110100, 0b11111111 }, TOO_LARGE },      // 11110100-1111____ 1001____-101_____
-  { { 0b11110101, 0b11111111 }, TOO_LARGE_1000 } // 11110101-1111____ 1000____
-};
-simdjson_consteval bool bytes_match(byte_range range, uint8_t value) noexcept {
-  for (uint8_t i : range) {
-    if (BYTE_1[i] != value) { return false; }
-  }
-  return true;
-}
-// static_assert(bytes_match(ASCII, TOO_LONG));
-// static_assert(bytes_match(CONT, TWO_CONTS));
+      // ____1___ ________
+      CARRY | TOO_LARGE | TOO_LARGE_1000,
+      CARRY | TOO_LARGE | TOO_LARGE_1000,
+      CARRY | TOO_LARGE | TOO_LARGE_1000,
+      CARRY | TOO_LARGE | TOO_LARGE_1000,
+      CARRY | TOO_LARGE | TOO_LARGE_1000,
+      // ____1101 ________
+      CARRY | TOO_LARGE | TOO_LARGE_1000 | SURROGATE,
+      CARRY | TOO_LARGE | TOO_LARGE_1000,
+      CARRY | TOO_LARGE | TOO_LARGE_1000
+    ));
+    const simd8<uint8_t> byte_2_high = input.shr<4>().lookup_16(simd8<uint8_t>::repeat_16(
+      // ________ 0_______ <ASCII in byte 2>
+      TOO_SHORT, TOO_SHORT, TOO_SHORT, TOO_SHORT,
+      TOO_SHORT, TOO_SHORT, TOO_SHORT, TOO_SHORT,
 
-// static_assert(bytes_match({ 0b11000000, 0b11000001 }, OVERLONG_2 | TOO_SHORT));
-// static_assert(bytes_match({ 0b11000010, 0b11011111 }, TOO_SHORT ));
+      // ________ 1000____
+      TOO_LONG | OVERLONG_2 | TWO_CONTS | OVERLONG_3 | TOO_LARGE_1000 | OVERLONG_4,
+      // ________ 1001____
+      TOO_LONG | OVERLONG_2 | TWO_CONTS | OVERLONG_3 | TOO_LARGE,
+      // ________ 101_____
+      TOO_LONG | OVERLONG_2 | TWO_CONTS | SURROGATE  | TOO_LARGE,
+      TOO_LONG | OVERLONG_2 | TWO_CONTS | SURROGATE  | TOO_LARGE,
 
-// static_assert(int(BYTE_1[0b11100000]) == int(OVERLONG_3 | TOO_SHORT));
-// static_assert(bytes_match({ 0b11100001, 0b11101100 }, TOO_SHORT));
-// static_assert(int(BYTE_1[0b11101101]) == int(SURROGATE | TOO_SHORT));
-// static_assert(bytes_match({ 0b11101110, 0b11101111 }, TOO_SHORT));
-
-// static_assert(int(BYTE_1[0b11110000]) == int(OVERLONG_4 | TOO_SHORT));
-// static_assert(bytes_match({ 0b11110001, 0b11110011 }, TOO_SHORT));
-// static_assert(int(BYTE_1[0b11110100]) == int(TOO_SHORT | TOO_LARGE));
-// static_assert(bytes_match({ 0b11110101, 0b11111111 }, TOO_SHORT | TOO_LARGE | TOO_LARGE_1000));
-// static_assert(int(BYTE_1[0xf8]) & TOO_LARGE);
-
-static constexpr const high_nibble_lookup BYTE_2_HIGH{
-  { CONT,                       TOO_LONG },       // 0_______ 10______
-  { CONT,                       TWO_CONTS },      // 10______ 10______
-  { ASCII,                      TOO_SHORT },      // 11______ 0_______
-  { LEAD,                       TOO_SHORT },      // 11______ 11______
-  { { 0b10100000, 0b10111111 }, SURROGATE },      // 11101101 101_____
-
-  { CONT,                       OVERLONG_2 },     // 1100000_ 10______
-  { { 0b10000000, 0b10011111 }, OVERLONG_3 },     // 11100000 100_____
-  { { 0b10000000, 0b10001111 }, OVERLONG_4 },     // 11110000 1000____
-  { { 0b10010000, 0b10111111 }, TOO_LARGE },      // 11110100-1111____ 1001____-101_____
-  { { 0b10000000, 0b10001111 }, TOO_LARGE_1000 }, // 11110101-1111____ 1000____
-};
-
-  simdjson_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t> input, const simd8<uint8_t> prev1) {
-    return BYTE_1[prev1] & BYTE_2_HIGH[input];
+      // ________ 11______
+      TOO_SHORT, TOO_SHORT, TOO_SHORT, TOO_SHORT
+    ));
+    return (byte_1_high & byte_1_low & byte_2_high);
   }
   simdjson_inline simd8<uint8_t> check_multibyte_lengths(const simd8<uint8_t> input,
       const simd8<uint8_t> prev_input, const simd8<uint8_t> sc) {
@@ -171,6 +171,14 @@ static constexpr const high_nibble_lookup BYTE_2_HIGH{
       this->error |= this->prev_incomplete;
     }
 
+#ifndef SIMDJSON_IF_CONSTEXPR
+#if SIMDJSON_CPLUSPLUS17
+#define SIMDJSON_IF_CONSTEXPR if constexpr
+#else
+#define SIMDJSON_IF_CONSTEXPR if
+#endif
+#endif
+
     simdjson_inline void check_next_input(const simd8x64<uint8_t>& input) {
       if(simdjson_likely(is_ascii(input))) {
         this->error |= this->prev_incomplete;
@@ -180,12 +188,12 @@ static constexpr const high_nibble_lookup BYTE_2_HIGH{
                 ||(simd8x64<uint8_t>::NUM_CHUNKS == 2)
                 || (simd8x64<uint8_t>::NUM_CHUNKS == 4),
                 "We support one, two or four chunks per 64-byte block.");
-        if simdjson_if_constexpr (simd8x64<uint8_t>::NUM_CHUNKS == 1) {
+        SIMDJSON_IF_CONSTEXPR (simd8x64<uint8_t>::NUM_CHUNKS == 1) {
           this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
-        } else if simdjson_if_constexpr (simd8x64<uint8_t>::NUM_CHUNKS == 2) {
+        } else SIMDJSON_IF_CONSTEXPR (simd8x64<uint8_t>::NUM_CHUNKS == 2) {
           this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
           this->check_utf8_bytes(input.chunks[1], input.chunks[0]);
-        } else if simdjson_if_constexpr (simd8x64<uint8_t>::NUM_CHUNKS == 4) {
+        } else SIMDJSON_IF_CONSTEXPR (simd8x64<uint8_t>::NUM_CHUNKS == 4) {
           this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
           this->check_utf8_bytes(input.chunks[1], input.chunks[0]);
           this->check_utf8_bytes(input.chunks[2], input.chunks[1]);
