@@ -47,43 +47,43 @@ simdjson_inline uint64_t json_string_scanner::next(
 }
 
 simdjson_inline uint64_t json_string_scanner::next_unescaped_quotes(
-  uint64_t backslash, // 2+N
-  uint64_t raw_quote  // 2+N
+  uint64_t backslash, // 3+LN
+  uint64_t raw_quote  // 3+LN
 ) noexcept {
-  uint64_t escaped = escape_scanner.next(backslash).escaped; // 2+N (2 total) or 6+N (8 total)
-  return raw_quote & ~escaped;                               // 3+N (3 total) or 7+N (9 total)
-  // critical path: 3+N (3 total) or 7+N (9 total)
+  uint64_t escaped = escape_scanner.next(backslash).escaped; // 3+LN (2 total) or 7+LN (8 total)
+  return raw_quote & ~escaped;                               // 4+LN (3 total) or 8+LN (9 total)
+  // critical path: 4+LN (3 total) or 8+LN (9 total)
 }
 
 simdjson_inline uint64_t json_string_scanner::next_in_string(
-  uint64_t quote,           // 3+N or 7+N
-  uint64_t separated_values // 13
+  uint64_t quote,           // 4+LN or 8+LN
+  uint64_t separated_values // 8+LN
 ) noexcept {
   // Find values that are in the string. ASSUME that strings do not have separators/openers just
   // before the end of the string (i.e. "blah," or "blah,["). These are pretty rare.
   // TODO: we can also assume the carry in is 1 if the first quote is a trailing quote.
-  uint64_t lead_quote     = quote &  separated_values;                 // 14 (+1)
-  uint64_t trailing_quote = quote & ~separated_values;                 // 14 (+1)
+  uint64_t lead_quote     = quote &  separated_values;                 // 9+LN (+1)
+  uint64_t trailing_quote = quote & ~separated_values;                 // 9+LN (+1)
   // If we were correct, the subtraction will leave us with:
   // LEAD-QUOTE=1 NON-QUOTE=1* TRAIL-QUOTE=0 NON-QUOTE=0* ...
   // The general form is this:
   // LEAD-QUOTE=1 NON-QUOTE=1|LEAD-QUOTE=0* TRAIL-QUOTE=0 NON-QUOTE=0|TRAIL-QUOTE=1* ...
-  //                                                                   // 15 (+2)
+  //                                                                   // 10+LN (+2)
   auto was_still_in_string = this->still_in_string;
   uint64_t in_string = bitmask::subtract_borrow(trailing_quote, lead_quote, this->still_in_string);
   // Assumption check! LEAD-QUOTE=0 means a lead quote was inside a string--meaning the second
   // quote was preceded by a separator/open.
-  uint64_t lead_quote_in_string = lead_quote & ~in_string;             // 16 (+2)
+  uint64_t lead_quote_in_string = lead_quote & ~in_string;             // 11+LN (+2)
   if (!lead_quote_in_string) {
     // This shouldn't happen often, so we take the heavy branch penalty for it and use the
     // high-latency prefix_xor.
     this->still_in_string = was_still_in_string;
-    in_string = bitmask::prefix_xor(quote ^ this->still_in_string); // 13+N (+1+simd:3)
-    this->still_in_string = in_string >> 63;                        // 14+N (+1)
+    in_string = bitmask::prefix_xor(quote ^ this->still_in_string); // 14+LN (+1+simd:3)
+    this->still_in_string = in_string >> 63;                        // 15+LN (+1)
   }
   return in_string;
-  // critical path = 15 (+6) or (13+N or 17+N (+8+simd:3)).
-  // would be 13+N or 17+N (+2+simd:3) by itself
+  // critical path = 10+LN (+6) or (14+LN or 18+LN (+8+simd:3)).
+  // would be 14+LN or 18+LN (+2+simd:3) by itself
 }
 
 
