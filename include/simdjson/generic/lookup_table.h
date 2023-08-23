@@ -218,7 +218,7 @@ struct low_nibble_lookup {
   simdjson_inline simd8<uint8_t> operator[](const simd8<uint8_t>& keys) const noexcept { return lookup(keys); }
   /** Look up the value corresponding the lower 4 bits of each input byte, and return it. */
   simdjson_inline simd8<uint8_t> lookup(const simd8<uint8_t>& keys) const noexcept {
-    return keys.lookup_low_nibble_ascii(keys);
+    return keys.lookup_low_nibble_ascii(table);
   }
   /**
    * Look up the value in the table. Behavior is system-dependent for indexes greater than 16.
@@ -227,15 +227,15 @@ struct low_nibble_lookup {
    * - On platforms like Intel, index bits 4-6 will be ignored, but if the high bit is set, it
    *   will not match anything in the table. greater than 16 will be ignored, *except* if the high bit is 1,
    */
-  simdjson_inline simd8<uint8_t> lookup_unsafe(const simd8<uint8_t>& shifted_keys) const noexcept {
-    return shifted_keys.lookup_16(table);
+  simdjson_inline simd8<uint8_t> lookup_unsafe(const simd8<uint8_t>& keys) const noexcept {
+    return keys.lookup_16(table);
   }
 
   /** Look up the value corresponding the lower 4 bits of each input byte, and return it. */
   simdjson_inline simd8x64<uint8_t> operator[](const simd8x64<uint8_t>& keys) const noexcept { return lookup(keys); }
   /** Look up the value corresponding the lower 4 bits of each input byte, and return it. */
   simdjson_inline simd8x64<uint8_t> lookup(const simd8x64<uint8_t>& keys) const noexcept {
-    return keys.lookup_low_nibble_ascii(keys);
+    return keys.lookup_low_nibble_ascii(table);
   }
   /**
    * Look up the value in the table. Behavior is system-dependent for indexes greater than 16.

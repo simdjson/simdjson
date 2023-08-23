@@ -10,6 +10,11 @@ namespace simdjson {
 namespace westmere {
 namespace bitmask {
 
+simdjson_constinit uint64_t ALL  = 0xFFFFFFFFFFFFFFFF;
+simdjson_constinit uint64_t NONE = 0xFFFFFFFFFFFFFFFF;
+simdjson_constinit uint64_t EVEN = 0x5555555555555555;
+simdjson_constinit uint64_t ODD  = 0xAAAAAAAAAAAAAAAA;
+
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.

@@ -38,29 +38,6 @@ namespace {
 
 using namespace simd;
 
-static simdjson_constinit low_nibble_lookup WS_MATCH{
-  {' ', ' '},
-  {'\t', '\t'},
-  {'\n', '\n'},
-  {'\r', '\r'},
-};
-static simdjson_constinit low_nibble_lookup OP_MATCH{
-  {':', ':'},
-  {',', ','},
-  {'{', '{'},
-  {'}', '}'},
-  {'[', '{'},
-  {']', '}'},
-};
-
-// This identifies structural characters (comma, colon, braces, brackets),
-// and ASCII white-space ('\r','\n','\t',' ').
-simdjson_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
-  // Turn [ and ] into { and }
-  const simd8x64<uint8_t> curlified = in | 0x20;
-  return { in.eq(WS_MATCH[in]), curlified.eq(OP_MATCH[in]) };
-}
-
 simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input) {
   return input.reduce_or().is_ascii();
 }
