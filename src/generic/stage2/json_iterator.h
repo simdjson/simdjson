@@ -177,19 +177,18 @@ object_field:
     }
   }
 
-object_continue:
-  switch (*advance()) {
-    case ',':
-      SIMDJSON_TRY( visitor.increment_count(*this) );
-      {
-        auto key = advance();
-        if (simdjson_unlikely( *key != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
-        SIMDJSON_TRY( visitor.visit_key(*this, key) );
-      }
-      goto object_field;
+object_continue: {
+  auto key = advance();
+  switch (*key) {
     case '}': log_end_value("object"); SIMDJSON_TRY( visitor.visit_object_end(*this) ); goto scope_end;
-    default: log_error("No comma between object fields"); return TAPE_ERROR;
+    case '"':
+      SIMDJSON_TRY( visitor.increment_count(*this) );
+      SIMDJSON_TRY( visitor.visit_key(*this, key) );
+      goto object_field;
+    default:
+      log_error("Key string missing at beginning of field in object"); return TAPE_ERROR;
   }
+}
 
 scope_end:
   depth--;
@@ -219,11 +218,15 @@ array_value:
   }
 
 array_continue:
-  switch (*advance()) {
-    case ',': SIMDJSON_TRY( visitor.increment_count(*this) ); goto array_value;
-    case ']': log_end_value("array"); SIMDJSON_TRY( visitor.visit_array_end(*this) ); goto scope_end;
-    default: log_error("Missing comma between array values"); return TAPE_ERROR;
+  if (*peek() == ']') {
+    advance();
+    log_end_value("array");
+    SIMDJSON_TRY( visitor.visit_array_end(*this) );
+    goto scope_end;
   }
+
+  SIMDJSON_TRY( visitor.increment_count(*this) );
+  goto array_value;
 
 document_end:
   log_end_value("document");

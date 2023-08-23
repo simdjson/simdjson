@@ -110,10 +110,10 @@ simdjson_inline uint64_t json_scanner::next(
   // total: 11+LN (+10+2LN+simd:2N) ... 19+LN (+18+2LN+simd:2N+3)
 
   uint64_t lead_value = scalar_close & separated_values;    // 8+LN (+1)
-  // uint64_t op_without_comma = colon | open | close;         // 8+LN (+1) (ternary)
-  // uint64_t all_structurals = op_without_comma | lead_value; // 20+LN ... 20+LN (+1)
-  uint64_t op = sep | open | close;                         // 8+LN (+1) (ternary)
-  uint64_t all_structurals = op | lead_value;               // 12+LN ... 20+LN (+1)
+  uint64_t op_without_comma = colon | open | close;         // 8+LN (+1) (ternary)
+  uint64_t all_structurals = op_without_comma | lead_value; // 20+LN ... 20+LN (+1)
+  // uint64_t op = sep | open | close;                         // 8+LN (+1) (ternary)
+  // uint64_t all_structurals = op | lead_value;               // 12+LN ... 20+LN (+1)
   //printf("%30.30s: %s\n", "all_structurals", format_input_text(in, all_structurals));
   uint64_t structurals = all_structurals & ~in_string;      //           (ternary)
   //printf("%30.30s: %s\n", "structurals", format_input_text(in, structurals));
