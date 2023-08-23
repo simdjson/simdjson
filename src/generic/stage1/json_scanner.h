@@ -103,8 +103,10 @@ simdjson_inline uint64_t json_scanner::next(
   // critical path = 10+LN (+6+2LN+simd:2N) or (14+LN or 18+LN (+8+2LN+simd:2N+3))
 
   uint64_t lead_value = scalar_close & separated_values;    // 8+LN (+1)
-  uint64_t op_without_comma = colon | open | close;         // 8+LN (+1) (ternary)
-  uint64_t all_structurals = op_without_comma | lead_value; // 11+LN or (15+LN or 19+LN) (+1)
+  // uint64_t op_without_comma = colon | open | close;         // 8+LN (+1) (ternary)
+  // uint64_t all_structurals = op_without_comma | lead_value; // 11+LN or (15+LN or 19+LN) (+1)
+  uint64_t op = sep | open | close;                         // 8+LN (+1) (ternary)
+  uint64_t all_structurals = op | lead_value;               // 11+LN or (15+LN or 19+LN) (+1)
   uint64_t structurals = all_structurals & ~in_string;      //           (ternary)
   // critical path = 11+LN or (15+LN or 19+LN) (+3)
 
