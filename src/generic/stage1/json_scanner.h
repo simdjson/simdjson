@@ -5,6 +5,7 @@
 #define SIMDJSON_SRC_GENERIC_STAGE1_JSON_SCANNER_H
 #include <generic/stage1/base.h>
 #include <generic/stage1/json_string_scanner.h>
+#include <generic/stage1/buf_block_reader.h>
 #include <simdjson/generic/lookup_table.h>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
@@ -71,7 +72,7 @@ private:
   };
 
   simdjson_inline uint64_t next_separated_values(uint64_t sep_open, uint64_t scalar_close) noexcept;
-  simdjson_inline void check_errors(uint64_t scalar, uint64_t ctrl, uint64_t sep, uint64_t open, uint64_t raw_quote, uint64_t separated_values, uint64_t in_string) noexcept;
+  simdjson_inline void check_errors(const simd8x64<uint8_t>& in, uint64_t scalar, uint64_t ctrl, uint64_t sep, uint64_t open, uint64_t raw_quote, uint64_t separated_values, uint64_t in_string) noexcept;
 
   // Whether the last character of the previous iteration is part of a scalar token
   // (anything except whitespace or a structural character/'operator').
@@ -84,6 +85,8 @@ private:
 simdjson_inline uint64_t json_scanner::next(
   const simd::simd8x64<uint8_t>& in
 ) noexcept {
+  //printf("\n");
+  //printf("%30.30s: %s\n", "next", format_input_text(in));
   simd8x64<uint8_t> curlified = in | ('{' - '[');   // 3 (+simd:N)
   uint64_t open   = curlified.eq('{');              // 6+LN (+LN+simd:N)
   uint64_t close  = curlified.eq('}');              // 6+LN (+LN+simd:N)
@@ -95,32 +98,38 @@ simdjson_inline uint64_t json_scanner::next(
   uint64_t scalar_close = ~sep & ~open & ~ws_ctrl;  // 7+LN (+1) (ternary)
   // total 7+LN (+3+5LN+simd:6N)
 
+  //printf("%30.30s: %s\n", "sep_open", format_input_text(in, sep_open));
+  //printf("%30.30s: %s\n", "scalar_close", format_input_text(in, scalar_close));
   uint64_t separated_values = next_separated_values(sep_open, scalar_close); // 8+LN (+2)
+  //printf("%30.30s: %s\n", "separated_values", format_input_text(in, separated_values));
 
   uint64_t backslash = in.eq('\\'); // 3+LN (LN+simd:N)
   uint64_t raw_quote = in.eq('"');  // 3+LN (LN+simd:N)
-  uint64_t in_string = string_scanner.next(backslash, raw_quote, separated_values); // 10+LN (+6) or (14+LN or 18+LN (+8+simd:3))
-  // critical path = 10+LN (+6+2LN+simd:2N) or (14+LN or 18+LN) (+8+2LN+simd:2N+3)
+  uint64_t in_string = string_scanner.next(backslash, raw_quote, separated_values);    // 10+LN (+9) ... 18+LN (+11+simd:3)
+  //printf("%30.30s: %s\n", "in_string", format_input_text(in, in_string));
+  // total: 11+LN (+10+2LN+simd:2N) ... 19+LN (+18+2LN+simd:2N+3)
 
   uint64_t lead_value = scalar_close & separated_values;    // 8+LN (+1)
   // uint64_t op_without_comma = colon | open | close;         // 8+LN (+1) (ternary)
-  // uint64_t all_structurals = op_without_comma | lead_value; // 11+LN or (15+LN or 19+LN) (+1)
+  // uint64_t all_structurals = op_without_comma | lead_value; // 20+LN ... 20+LN (+1)
   uint64_t op = sep | open | close;                         // 8+LN (+1) (ternary)
-  uint64_t all_structurals = op | lead_value;               // 11+LN or (15+LN or 19+LN) (+1)
+  uint64_t all_structurals = op | lead_value;               // 12+LN ... 20+LN (+1)
+  //printf("%30.30s: %s\n", "all_structurals", format_input_text(in, all_structurals));
   uint64_t structurals = all_structurals & ~in_string;      //           (ternary)
-  // critical path = 11+LN or (15+LN or 19+LN) (+3)
+  //printf("%30.30s: %s\n", "structurals", format_input_text(in, structurals));
+  // critical path = 12+LN ... 20+LN (+3)
 
   uint64_t scalar = scalar_close & ~close;                  // 8+LN (+1)
   uint64_t ws = in.eq(WHITESPACE_MATCH.lookup(in));         // 6+LN (+LN+simd:2N)
   uint64_t ctrl = ws_ctrl & ~ws;                            // 7+LN (+1)
-  check_errors(scalar, ctrl, sep, open, raw_quote, separated_values, in_string); // 14+LN (+9)
+  check_errors(in, scalar, ctrl, sep, open, raw_quote, separated_values, in_string); // 14+LN (+9)
   // critical path = 14+LN (+11+LN+simd:2N)
 
   return structurals;
-  // structurals: critical path = 11+LN (+25+8LN+simd:10N) or (15+LN or 19+LN) (+27+8LN+simd:10N+3)
-  // = icelake:  11 (24+simd:10) or (15 or 19) (27+simd:13)
-  // = haswell:  12 (31+simd:20) or (16 or 21) (35+simd:23)
-  // = westmere: 13 (38+simd:40) or (17 or 22) (43+simd:43)
+  // structurals: critical path = 12+LN (+25+8LN+simd:10N) ... 20+LN) (+27+8LN+simd:10N+3)
+  // = icelake:  12 (24+simd:10) ... 20 (27+simd:13)
+  // = haswell:  13 (31+simd:20) ... 21 (35+simd:23)
+  // = westmere: 14 (38+simd:40) ... 22 (43+simd:43)
 }
 
 simdjson_inline uint64_t json_scanner::next_separated_values(
@@ -139,13 +148,14 @@ simdjson_inline uint64_t json_scanner::next_separated_values(
 }
 
 simdjson_inline void json_scanner::check_errors(
+  const simd8x64<uint8_t>& ,
   uint64_t scalar,           // 8+LN
   uint64_t ctrl,             // 7+LN
   uint64_t sep,              // 4+LN
   uint64_t open,             // 6+LN
   uint64_t raw_quote,        // 3+LN
   uint64_t separated_values, // 8+LN
-  uint64_t in_string         // 10+LN or (14+LN or 18+LN)
+  uint64_t in_string         // 12+LN ... 20+LN)
 ) noexcept {
   // Detect separator errors
   // ERROR: missing separator between scalars or close brackets (scalar preceded by anything other than separator, open, or beginning of document)
@@ -156,18 +166,24 @@ simdjson_inline void json_scanner::check_errors(
   // Take away lead scalar characters, which are allowed to be the first scalar character
   uint64_t missing_separator_error = first_scalar & ~separated_values;      //       (ternary)
   // critical path = 11+LN (+4)
+  //printf("%30.30s: %s\n", "missing_separator_error", format_input_text(in, missing_separator_error));
 
   // ERROR: separator with another separator or open bracket ahead of it (or at beginning of document)
-  uint64_t extra_separator_error = sep & ~separated_values;                 // 8+LN  (+1)
+  uint64_t extra_separator_error = sep & separated_values;                  // 8+LN  (+1)
+  //printf("%30.30s: %s\n", "extra_separator_error", format_input_text(in, extra_separator_error));
 
   // ERROR: open bracket without separator ahead of it (except at beginning of document)
-  uint64_t missing_separator_before_open_error = open & separated_values;   // 8+LN  (+1)
+  uint64_t missing_separator_before_open_error = open & ~separated_values;  // 8+LN  (+1)
+  //printf("%30.30s: %s\n", "missing_separator_before_open_error", format_input_text(in, missing_separator_before_open_error));
 
   //                                                                        // 12+LN (+1) (ternary)
   uint64_t raw_separator_error = missing_separator_error | extra_separator_error | missing_separator_before_open_error;
+  //printf("%30.30s: %s\n", "raw_separator_error", format_input_text(in, raw_separator_error));
   // flip lead quote off and trail quote on: lead quote errors
-  uint64_t separator_error = raw_separator_error & (in_string ^ raw_quote); // 13+LN (+1) (ternary)
-  this->error |= separator_error | ctrl;                                    // 14+LN (+1) (ternary)
+  uint64_t separator_error = raw_separator_error & ~in_string; // 13+LN ... 21+LN (+1) (ternary)
+  //printf("%30.30s: %s\n", "separator_error", format_input_text(in, separator_error));
+  this->error |= separator_error | ctrl;                                    // 14+LN ... 22+LN (+1) (ternary)
+  //printf("%30.30s: %s\n", "error", format_input_text(in, this->error));
   // critical path = 14+LN (+3)
 
   // NOT validated:
@@ -199,11 +215,11 @@ simdjson_inline uint64_t json_scanner::next_whitespace(
 
   uint64_t backslash = in.eq('\\'); // 3+LN (LN+simd:N)
   uint64_t raw_quote = in.eq('"');  // 3+LN (LN+simd:N)
-  uint64_t in_string = string_scanner.next(backslash, raw_quote, separated_values); // 10+LN (+6) or (14+LN or 18+LN (+8+simd:3))
-  // total 10+LN (+6+2LN+simd:2N) or (14+LN or 18+LN) (+8+2LN+simd:2N+3)
+  uint64_t in_string = string_scanner.next(backslash, raw_quote, separated_values); // 12+LN (+6) ... 20+LN (+8+simd:3))
+  // total 12+LN (+6+2LN+simd:2N) ... 20+LN (+8+2LN+simd:2N+3)
 
   return ws & ~in_string;
-  // critical path = 10+LN (+11+7LN+simd:9N) or (14+LN or 18+LN) (+13+7LN+simd:9N+3)
+  // critical path = 12+LN (+11+7LN+simd:9N) ... 20+LN (+13+7LN+simd:9N+3)
 }
 
 

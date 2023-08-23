@@ -15,12 +15,12 @@ namespace stage1 {
 class json_string_scanner {
 public:
   simdjson_inline uint64_t next(uint64_t backslash, uint64_t raw_quote, uint64_t separated_values) noexcept;
+  simdjson_inline uint64_t next_unescaped_quotes(uint64_t backslash, uint64_t raw_quote) noexcept;
+  simdjson_inline uint64_t next_in_string(uint64_t in_string, uint64_t separated_values) noexcept;
   // Returns either UNCLOSED_STRING or SUCCESS
   simdjson_inline error_code finish() const noexcept;
 
 private:
-  simdjson_inline uint64_t next_unescaped_quotes(uint64_t backslash, uint64_t raw_quote) noexcept;
-  simdjson_inline uint64_t next_in_string(uint64_t in_string, uint64_t separated_values) noexcept;
 
   // Scans for escape characters
   json_escape_scanner escape_scanner{};
@@ -37,22 +37,22 @@ private:
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
 simdjson_inline uint64_t json_string_scanner::next(
-  uint64_t backslash,                // 2+N
-  uint64_t raw_quote,                // 2+N
-  uint64_t separated_values          // 13
+  uint64_t backslash,                // 3+LN
+  uint64_t raw_quote,                // 3+LN
+  uint64_t separated_values          // 8+LN
 ) noexcept {
-  uint64_t quote = next_unescaped_quotes(backslash, raw_quote); // 3+N (2N+1+simd:2N total) or 7+N (2N+7+simd:2N total)
-  uint64_t in_string = next_in_string(quote, separated_values); // 15 (+6) or (13+N or 17+N (+8+simd:3)).
-  return in_string;
+  uint64_t quote = next_unescaped_quotes(backslash, raw_quote); // 4+LN (+3) or 8+LN (+9)
+  return next_in_string(quote, separated_values); // 10+LN (+6) or (14+LN or 18+LN (+8+simd:3)).
+  // critical path = 10+LN (+9) or (14+LN or 18+LN (+17+simd:3))
 }
 
 simdjson_inline uint64_t json_string_scanner::next_unescaped_quotes(
   uint64_t backslash, // 3+LN
   uint64_t raw_quote  // 3+LN
 ) noexcept {
-  uint64_t escaped = escape_scanner.next(backslash).escaped; // 3+LN (2 total) or 7+LN (8 total)
-  return raw_quote & ~escaped;                               // 4+LN (3 total) or 8+LN (9 total)
-  // critical path: 4+LN (3 total) or 8+LN (9 total)
+  uint64_t escaped = escape_scanner.next(backslash).escaped; // 3+LN (+2) or 7+LN (+8)
+  return raw_quote & ~escaped;                               // 4+LN or 8+LN (+1)
+  // critical path: 4+LN (+3) or 8+LN (+9)
 }
 
 simdjson_inline uint64_t json_string_scanner::next_in_string(
@@ -81,7 +81,7 @@ simdjson_inline uint64_t json_string_scanner::next_in_string(
     in_string = bitmask::prefix_xor(quote ^ this->still_in_string); // 14+LN (+1+simd:3)
     this->still_in_string = in_string >> 63;                        // 15+LN (+1)
   }
-  return in_string;
+  return in_string ^ quote;                                         // flip start and end quotes
   // critical path = 10+LN (+6) or (14+LN or 18+LN (+8+simd:3)).
   // would be 14+LN or 18+LN (+2+simd:3) by itself
 }
