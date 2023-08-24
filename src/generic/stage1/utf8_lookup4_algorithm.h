@@ -170,14 +170,6 @@ using namespace simd;
       this->error |= this->prev_incomplete;
     }
 
-#ifndef SIMDJSON_IF_CONSTEXPR
-#if SIMDJSON_CPLUSPLUS17
-#define SIMDJSON_IF_CONSTEXPR if constexpr
-#else
-#define SIMDJSON_IF_CONSTEXPR if
-#endif
-#endif
-
     simdjson_inline void check_next_input(const simd8x64<uint8_t>& input) {
       if(simdjson_likely(is_ascii(input))) {
         this->error |= this->prev_incomplete;
