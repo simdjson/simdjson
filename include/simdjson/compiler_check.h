@@ -32,4 +32,12 @@
 #error simdjson requires a compiler compliant with the C++11 standard
 #endif
 
+#ifndef SIMDJSON_IF_CONSTEXPR
+#if SIMDJSON_CPLUSPLUS17
+#define SIMDJSON_IF_CONSTEXPR if constexpr
+#else
+#define SIMDJSON_IF_CONSTEXPR if
+#endif
+#endif
+
 #endif // SIMDJSON_COMPILER_CHECK_H
