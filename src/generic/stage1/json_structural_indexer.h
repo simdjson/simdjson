@@ -73,7 +73,7 @@ public:
     write_indexes<START, STEP>(idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<START+STEP, END, STEP>(idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
