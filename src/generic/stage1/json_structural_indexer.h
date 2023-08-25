@@ -62,8 +62,8 @@ public:
   template <int START, int N>
   simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
     write_index(idx, bits, START);
-    if constexpr (N > 1) {
-      write_indexes<START+1, N-1>(idx, bits);
+    SIMDJSON_IF_CONSTEXPR (N > 1) {
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
     }
     return START+N;
   }
@@ -71,9 +71,9 @@ public:
   template <int START, int END, int STEP>
   simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
     write_indexes<START, STEP>(idx, bits);
-    if constexpr ((START+STEP)  < END) {
+    SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<START+STEP, END, STEP>(idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
@@ -107,7 +107,7 @@ public:
     static constexpr const int STEP_UNTIL = 24;
 
     write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
-    if constexpr (STEP_UNTIL < 64) {
+    SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
           write_index(idx, bits, i);
