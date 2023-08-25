@@ -19,7 +19,7 @@ void maybe_display_implementation() {
 template<typename B, typename R> static void run_json_benchmark(benchmark::State &state) {
   maybe_display_implementation();
 
-  event_collector collector(true);
+  event_collector collector;
   event_aggregate events;
 
   // Warmup and equality check (make sure the data is right!)

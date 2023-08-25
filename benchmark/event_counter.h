@@ -34,9 +34,13 @@
 #include <string>
 #include <vector>
 
-#include "linux-perf-events.h"
 #ifdef __linux__
+#include "linux-perf-events.h"
 #include <libgen.h>
+#endif
+
+#if __APPLE__ &&  __aarch64__
+#include "apple/apple_arm_events.h"
 #endif
 
 #include "simdjson.h"
@@ -134,7 +138,7 @@ struct event_collector {
 
 #if defined(__linux__)
   LinuxEvents<PERF_TYPE_HARDWARE> linux_events;
-  event_collector(simdjson_unused bool quiet = false) : linux_events(vector<int>{
+  event_collector() : linux_events(vector<int>{
   #if SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
     PERF_COUNT_HW_CPU_CYCLES,
     PERF_COUNT_HW_INSTRUCTIONS,
@@ -149,8 +153,17 @@ struct event_collector {
   bool has_events() {
     return linux_events.is_working();
   }
+#elif __APPLE__ &&  __aarch64__
+  AppleEvents apple_events;
+  performance_counters diff;
+  event_collector() : diff(0) {
+    apple_events.setup_performance_counters();
+  }
+  bool has_events() {
+    return apple_events.setup_performance_counters();
+  }
 #else
-  event_collector(simdjson_unused bool _quiet = false) {}
+  event_collector() {}
   bool has_events() {
     return false;
   }
@@ -159,6 +172,8 @@ struct event_collector {
   simdjson_inline void start() {
 #if defined(__linux)
     linux_events.start();
+#elif __APPLE__ &&  __aarch64__
+    if(has_events()) { diff = apple_events.get_counters(); }
 #endif
     start_clock = steady_clock::now();
   }
@@ -166,6 +181,16 @@ struct event_collector {
     time_point<steady_clock> end_clock = steady_clock::now();
 #if defined(__linux)
     linux_events.end(count.event_counts);
+#elif __APPLE__ &&  __aarch64__
+    if(has_events()) {
+      performance_counters end = apple_events.get_counters();
+      diff = end - diff;
+    }
+    count.event_counts[0] = diff.cycles;
+    count.event_counts[1] = diff.instructions;
+    count.event_counts[2] = diff.missed_branches;
+    count.event_counts[3] = 0;
+    count.event_counts[4] = 0;
 #endif
     count.elapsed = end_clock - start_clock;
     return count;
