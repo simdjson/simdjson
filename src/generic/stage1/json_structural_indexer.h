@@ -102,8 +102,11 @@ public:
 #if SIMDJSON_PREFER_REVERSE_BITS
     bits = reverse_bits(bits);
 #endif
-
+#ifdef SIMDJSON_STRUCTURAL_INDEXER_STEP
+    static constexpr const int STEP = SIMDJSON_STRUCTURAL_INDEXER_STEP;
+#else
     static constexpr const int STEP = 2;
+#endif
     static constexpr const int STEP_UNTIL = 24;
 
     write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
