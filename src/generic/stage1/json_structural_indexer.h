@@ -63,7 +63,7 @@ public:
   simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
     write_index(idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>=0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
     }
     return START+N;
   }
