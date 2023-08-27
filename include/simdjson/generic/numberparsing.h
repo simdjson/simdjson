@@ -186,8 +186,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // power_of_five_128[index]. Usually, that's good enough to approximate i * 5^q
     // to the desired approximation using one multiplication. Sometimes it does not suffice.
     // Then we store the next most significant 64 bits in power_of_five_128[index + 1], and
-    // then we get a better approximation to i * 5^q. In very rare cases, even that
-    // will not suffice, though it is seemingly very hard to find such a scenario.
+    // then we get a better approximation to i * 5^q.
     //
     // That's for when q>=0. The logic for q<0 is somewhat similar but it is somewhat
     // more complicated.
@@ -202,12 +201,9 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
-    // At this point, we might need to add at most one to firstproduct, but this
-    // can only change the value of firstproduct.high if firstproduct.low is maximal.
-    if(simdjson_unlikely(firstproduct.low  == 0xFFFFFFFFFFFFFFFF)) {
-      // This is very unlikely, but if so, we need to do much more work!
-      return false;
-    }
+    // As it has been proven by Noble Mushtak and Daniel Lemire in "Fast Number Parsing Without
+    // Fallback" (https://arxiv.org/abs/2212.06644), at this point we are sure that the product
+    // is sufficiently accurate, and more computation is not needed.
   }
   uint64_t lower = firstproduct.low;
   uint64_t upper = firstproduct.high;
