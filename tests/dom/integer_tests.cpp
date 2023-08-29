@@ -32,7 +32,7 @@ static bool parse_and_validate(const std::string src, T expected) {
   const padded_string pstr{src};
   simdjson::dom::parser parser;
 
-  if constexpr (std::is_same<int64_t, T>::value) {
+  SIMDJSON_IF_CONSTEXPR (std::is_same<int64_t, T>::value) {
     int64_t actual{};
     ASSERT_SUCCESS( parser.parse(pstr)["key"].get(actual) );
     std::cout << std::boolalpha << "test: " << (expected == actual) << std::endl;

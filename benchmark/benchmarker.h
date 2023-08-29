@@ -445,7 +445,7 @@ struct benchmarker {
     return 100.0 * a / b;
   }
 
-  void print(bool tabbed_output) const {
+  void print(bool tabbed_output, bool stage1_only) const {
     if (tabbed_output) {
       char* filename_copy = reinterpret_cast<char*>(malloc(strlen(filename)+1));
       SIMDJSON_PUSH_DISABLE_WARNINGS
@@ -503,17 +503,21 @@ struct benchmarker {
           stats->blocks_with_16_structurals_flipped, percent(stats->blocks_with_16_structurals_flipped, stats->blocks));
       }
       printf("\n");
-      printf("All Stages (excluding allocation)\n");
-      print_aggregate("|    "   , all_stages_without_allocation.best);
-      // frequently, allocation is a tiny fraction of the running time so we omit it
-      if(allocate_stage.best.elapsed_sec() > 0.01 * all_stages_without_allocation.best.elapsed_sec()) {
-        printf("|- Allocation\n");
-        print_aggregate("|    ", allocate_stage.best);
+      if(!stage1_only) {
+        printf("All Stages (excluding allocation)\n");
+        print_aggregate("|    "   , all_stages_without_allocation.best);
+        // frequently, allocation is a tiny fraction of the running time so we omit it
+        if(allocate_stage.best.elapsed_sec() > 0.01 * all_stages_without_allocation.best.elapsed_sec()) {
+          printf("|- Allocation\n");
+          print_aggregate("|    ", allocate_stage.best);
+        }
       }
       printf("|- Stage 1\n");
       print_aggregate("|    ", stage1.best);
-      printf("|- Stage 2\n");
-      print_aggregate("|    ", stage2.best);
+      if(!stage1_only) {
+        printf("|- Stage 2\n");
+        print_aggregate("|    ", stage2.best);
+      }
       if (collector.has_events()) {
         double freq1 = (stage1.best.cycles() / stage1.best.elapsed_sec()) / 1000000000.0;
         double freq2 = (stage2.best.cycles() / stage2.best.elapsed_sec()) / 1000000000.0;
