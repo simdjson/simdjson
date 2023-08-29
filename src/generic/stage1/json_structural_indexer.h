@@ -105,7 +105,7 @@ public:
 #ifdef SIMDJSON_STRUCTURAL_INDEXER_STEP
     static constexpr const int STEP = SIMDJSON_STRUCTURAL_INDEXER_STEP;
 #else
-    static constexpr const int STEP = 2;
+    static constexpr const int STEP = 4;
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
