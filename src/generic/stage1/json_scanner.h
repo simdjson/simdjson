@@ -106,7 +106,8 @@ simdjson_inline uint64_t json_scanner::next(
   uint64_t separated_values = next_separated_values(sep_open, scalar_close); // 8+LN (+2)
   //printf("%30.30s: %s\n", "separated_values", format_input_text(in, separated_values));
 
-  uint64_t in_string = string_scanner.next(backslash, raw_quote, separated_values);    // 10+LN (+9) ... 18+LN (+11+simd:3)
+  uint64_t quote = string_scanner.next_unescaped_quotes(backslash, raw_quote);
+  uint64_t in_string = string_scanner.next_in_string(quote, separated_values);    // 10+LN (+9) ... 18+LN (+11+simd:3)
   //printf("%30.30s: %s\n", "in_string", format_input_text(in, in_string));
   // total: 11+LN (+10+2LN+simd:2N) ... 19+LN (+18+2LN+simd:2N+3)
 
@@ -123,7 +124,7 @@ simdjson_inline uint64_t json_scanner::next(
   uint64_t scalar = scalar_close & ~close;                  // 8+LN (+1)
   uint64_t ws = in.eq(WHITESPACE_MATCH.lookup(in));         // 6+LN (+LN+simd:2N)
   uint64_t ctrl = ws_ctrl & ~ws;                            // 7+LN (+1)
-  check_errors(in, scalar, ctrl, sep, open, raw_quote, separated_values, in_string); // 14+LN (+9)
+  check_errors(in, scalar, ctrl, sep, open, quote, separated_values, in_string); // 14+LN (+9)
   // critical path = 14+LN (+11+LN+simd:2N)
 
   return structurals;
