@@ -25,7 +25,7 @@ private:
   // Scans for escape characters
   json_escape_scanner escape_scanner{};
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
-  bitmask::borrow_t still_in_string = 0ULL;
+  bool still_in_string{};
 };
 
 //

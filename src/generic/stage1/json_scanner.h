@@ -78,7 +78,7 @@ private:
   // (anything except whitespace or a structural character/'operator').
   json_string_scanner string_scanner{};
   uint64_t still_in_scalar{};
-  bitmask::borrow_t still_in_value{};
+  bool still_in_value{};
   uint64_t error{};
 };
 

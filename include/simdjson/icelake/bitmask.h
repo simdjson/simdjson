@@ -69,20 +69,18 @@ simdjson_inline uint64_t add_carry_out(const uint64_t value1, const uint64_t val
 #endif
 }
 
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-using borrow_t = unsigned char;
-#else
-using borrow_t = unsigned long long;
-#endif
-
-simdjson_inline uint64_t subtract_borrow(const uint64_t value1, const uint64_t value2, borrow_t& borrow) noexcept {
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-  unsigned __int64 result;
-  borrow = _subborrow_u64(borrow, value1, value2, &result);
+simdjson_inline uint64_t subtract_borrow(const uint64_t value1, const uint64_t value2, bool& borrow) noexcept {
+// TODO only do this on GCC, not clang
+// #if SIMDJSON_REGULAR_VISUAL_STUDIO
+//   unsigned __int64 result;
+//   borrow = _subborrow_u64(borrow, value1, value2, &result);
+//   return result;
+// #else
+// NOTE __builtin_subll_overflow produces the same or worse results than manual subtraction on both GCC and clang.
+  uint64_t result = value1 - value2 - borrow;
+  borrow = result >= value1;
   return result;
-#else
-  return __builtin_subcll(value1, value2, borrow, &borrow);
-#endif
+// #endif
 }
 
 simdjson_inline uint64_t subtract_borrow_out(const uint64_t value1, const int64_t value2, bool& borrow_out) noexcept {
