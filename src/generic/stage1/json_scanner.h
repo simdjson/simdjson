@@ -85,6 +85,9 @@ private:
 simdjson_inline uint64_t json_scanner::next(
   const simd::simd8x64<uint8_t>& in
 ) noexcept {
+  uint64_t backslash = in.eq('\\'); // 3+LN (LN+simd:N)
+  uint64_t raw_quote = in.eq('"');  // 3+LN (LN+simd:N)
+
   //printf("\n");
   //printf("%30.30s: %s\n", "next", format_input_text(in));
   simd8x64<uint8_t> curlified = in | ('{' - '[');   // 3 (+simd:N)
@@ -103,8 +106,6 @@ simdjson_inline uint64_t json_scanner::next(
   uint64_t separated_values = next_separated_values(sep_open, scalar_close); // 8+LN (+2)
   //printf("%30.30s: %s\n", "separated_values", format_input_text(in, separated_values));
 
-  uint64_t backslash = in.eq('\\'); // 3+LN (LN+simd:N)
-  uint64_t raw_quote = in.eq('"');  // 3+LN (LN+simd:N)
   uint64_t in_string = string_scanner.next(backslash, raw_quote, separated_values);    // 10+LN (+9) ... 18+LN (+11+simd:3)
   //printf("%30.30s: %s\n", "in_string", format_input_text(in, in_string));
   // total: 11+LN (+10+2LN+simd:2N) ... 19+LN (+18+2LN+simd:2N+3)
