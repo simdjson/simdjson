@@ -35,6 +35,13 @@ struct basic_block_classification {
 
   simdjson_inline basic_block_classification(const simd8x64<uint8_t>& in) : basic_block_classification(in, in | ('{' - '[')) {}
 
+  simdjson_inline uint64_t sep() const noexcept { return comma | colon; }
+  simdjson_inline uint64_t sep_open() const noexcept { return sep() | open; }
+  simdjson_inline uint64_t scalar_close() const noexcept { return ~sep_open() & ~ws_ctrl; }
+  simdjson_inline uint64_t scalar() const noexcept { return scalar_close() & ~close; }
+  simdjson_inline uint64_t op_without_comma() const noexcept { return colon | open | close; }
+  simdjson_inline uint64_t ctrl() const noexcept { return ws_ctrl & ~ws; }
+
 private:
   enum ws_op {
     COMMA     = 1 << 0,
@@ -103,24 +110,27 @@ public:
     uint64_t backslash;
     uint64_t raw_quote;
     uint64_t open;
-    uint64_t sep;
-    uint64_t sep_open;
+    uint64_t close;
+    uint64_t comma;
+    uint64_t colon;
     uint64_t scalar_close;
-    uint64_t scalar;
-    uint64_t op_without_comma;
     uint64_t ctrl;
 
     simdjson_inline input_block(const basic_block_classification& block) :
       backslash{block.backslash},
       raw_quote{block.raw_quote},
       open{block.open},
-      sep{block.comma | block.colon},
-      sep_open{sep | open},
-      scalar_close{~sep_open & ~block.ws_ctrl},
-      scalar{scalar_close & ~block.close},
-      op_without_comma{block.colon | open | block.close},
-      ctrl{block.ws_ctrl & ~block.ws}
+      close{block.close},
+      comma{block.comma},
+      colon{block.colon},
+      scalar_close{block.scalar_close()},
+      ctrl{block.ctrl()}
     {}
+
+    simdjson_inline uint64_t scalar() const noexcept { return scalar_close & ~close; }
+    simdjson_inline uint64_t sep() const noexcept { return comma | colon; }
+    simdjson_inline uint64_t sep_open() const noexcept { return sep() | open; }
+    simdjson_inline uint64_t op_without_comma() const noexcept { return colon | open | close; }
   };
 
   struct whitespace_input_block {
@@ -134,8 +144,8 @@ public:
       backslash{block.backslash},
       raw_quote{block.raw_quote},
       ws{block.ws},
-      sep_open{block.comma | block.colon | block.open},
-      scalar_close(~sep_open & ~block.ws_ctrl)
+      sep_open{block.sep_open()},
+      scalar_close{block.scalar_close()}
     {}
   };
 
@@ -159,38 +169,27 @@ simdjson_inline uint64_t json_scanner::next(const simd::simd8x64<uint8_t>& in) n
 }
 
 simdjson_inline uint64_t json_scanner::next(const simd::simd8x64<uint8_t>& in, const input_block& block) noexcept {
-  //printf("%30.30s: %s\n", "sep_open", format_input_text(in, sep_open));
-  //printf("%30.30s: %s\n", "scalar_close", format_input_text(in, scalar_close));
-  uint64_t separated_values = next_separated_values(block.sep_open, block.scalar_close); // 8+LN (+2)
-  //printf("%30.30s: %s\n", "separated_values", format_input_text(in, separated_values));
+  // Get a mask showing alternating VALUE SEP VALUE SEP ....
+  uint64_t separated_values = next_separated_values(block.sep_open(), block.scalar_close);
 
+  // Figure out what's in a string
   uint64_t quote = string_scanner.next_unescaped_quotes(block.backslash, block.raw_quote);
-  uint64_t in_string = string_scanner.next_in_string(quote, separated_values);    // 10+LN (+9) ... 18+LN (+11+simd:3)
-  //printf("%30.30s: %s\n", "in_string", format_input_text(in, in_string));
-  // total: 11+LN (+10+2LN+simd:2N) ... 19+LN (+18+2LN+simd:2N+3)
+  uint64_t in_string = string_scanner.next_in_string(quote, separated_values);
 
-  uint64_t lead_value = block.scalar_close & separated_values;    // 8+LN (+1)
-  uint64_t all_structurals = block.op_without_comma | lead_value; // 20+LN ... 20+LN (+1)
-  // uint64_t op = sep | open | close;                         // 8+LN (+1) (ternary)
-  // uint64_t all_structurals = op | lead_value;               // 12+LN ... 20+LN (+1)
-  //printf("%30.30s: %s\n", "all_structurals", format_input_text(in, all_structurals));
-  uint64_t structurals = all_structurals & ~in_string;      //           (ternary)
-  //printf("%30.30s: %s\n", "structurals", format_input_text(in, structurals));
-  // critical path = 12+LN ... 20+LN (+3)
+  // Get structurals (except commas)
+  uint64_t lead_value = block.scalar_close & separated_values;
+  uint64_t all_structurals = block.op_without_comma() | lead_value;
+  uint64_t structurals = all_structurals & ~in_string;
 
-  check_errors(in, block.scalar, block.ctrl, block.sep, block.open, quote, separated_values, in_string); // 14+LN (+9)
-  // critical path = 14+LN (+11+LN+simd:2N)
+  // Check for errors
+  check_errors(in, block.scalar(), block.ctrl, block.sep(), block.open, quote, separated_values, in_string);
 
   return structurals;
-  // structurals: critical path = 12+LN (+25+8LN+simd:10N) ... 20+LN) (+27+8LN+simd:10N+3)
-  // = icelake:  12 (24+simd:10) ... 20 (27+simd:13)
-  // = haswell:  13 (31+simd:20) ... 21 (35+simd:23)
-  // = westmere: 14 (38+simd:40) ... 22 (43+simd:43)
 }
 
 simdjson_inline uint64_t json_scanner::next_separated_values(
-  uint64_t sep_open,    // 7+LN
-  uint64_t scalar_close // 7+LN
+  uint64_t sep_open,
+  uint64_t scalar_close
 ) noexcept {
   // Split the JSON by separators. After this, we know:
   // - the lead character of every valid scalar.
@@ -200,47 +199,37 @@ simdjson_inline uint64_t json_scanner::next_separated_values(
   //    1|0 *      1                   0|1  *  1     1|0 *
   // (We include open brackets with separators because we can easily detect some errors from that.)
   return bitmask::subtract_borrow(sep_open, scalar_close, this->still_in_value);
-  // critical path: 8+LN (+2)
 }
 
 simdjson_inline void json_scanner::check_errors(
   const simd8x64<uint8_t>& ,
-  uint64_t scalar,           // 8+LN
-  uint64_t ctrl,             // 7+LN
-  uint64_t sep,              // 4+LN
-  uint64_t open,             // 6+LN
-  uint64_t raw_quote,        // 3+LN
-  uint64_t separated_values, // 8+LN
-  uint64_t in_string         // 12+LN ... 20+LN)
+  uint64_t scalar,
+  uint64_t ctrl,
+  uint64_t sep,
+  uint64_t open,
+  uint64_t raw_quote,
+  uint64_t separated_values,
+  uint64_t in_string
 ) noexcept {
   // Detect separator errors
   // ERROR: missing separator between scalars or close brackets (scalar preceded by anything other than separator, open, or beginning of document)
-  uint64_t next_in_scalar = scalar & ~raw_quote;                            // 8+LN  (ternary)
-  uint64_t in_scalar = next_in_scalar << 1 | this->still_in_scalar;         // 10+LN (+2)
-  this->still_in_scalar = next_in_scalar >> 63;                             // 9+LN  (+1)
-  uint64_t first_scalar = scalar & ~in_scalar;                              // 11+LN (+1)
+  uint64_t next_in_scalar = scalar & ~raw_quote;
+  uint64_t in_scalar = next_in_scalar << 1 | this->still_in_scalar;
+  this->still_in_scalar = next_in_scalar >> 63;
+  uint64_t first_scalar = scalar & ~in_scalar;
   // Take away lead scalar characters, which are allowed to be the first scalar character
-  uint64_t missing_separator_error = first_scalar & ~separated_values;      //       (ternary)
-  // critical path = 11+LN (+4)
-  //printf("%30.30s: %s\n", "missing_separator_error", format_input_text(in, missing_separator_error));
+  uint64_t missing_separator_error = first_scalar & ~separated_values;
 
   // ERROR: separator with another separator or open bracket ahead of it (or at beginning of document)
-  uint64_t extra_separator_error = sep & separated_values;                  // 8+LN  (+1)
-  //printf("%30.30s: %s\n", "extra_separator_error", format_input_text(in, extra_separator_error));
+  uint64_t extra_separator_error = sep & separated_values;
 
   // ERROR: open bracket without separator ahead of it (except at beginning of document)
-  uint64_t missing_separator_before_open_error = open & ~separated_values;  // 8+LN  (+1)
-  //printf("%30.30s: %s\n", "missing_separator_before_open_error", format_input_text(in, missing_separator_before_open_error));
+  uint64_t missing_separator_before_open_error = open & ~separated_values;
 
-  //                                                                        // 12+LN (+1) (ternary)
+  // Put it all together
   uint64_t raw_separator_error = missing_separator_error | extra_separator_error | missing_separator_before_open_error;
-  //printf("%30.30s: %s\n", "raw_separator_error", format_input_text(in, raw_separator_error));
-  // flip lead quote off and trail quote on: lead quote errors
-  uint64_t separator_error = raw_separator_error & ~in_string; // 13+LN ... 21+LN (+1) (ternary)
-  //printf("%30.30s: %s\n", "separator_error", format_input_text(in, separator_error));
-  this->error |= separator_error | ctrl;                                    // 14+LN ... 22+LN (+1) (ternary)
-  //printf("%30.30s: %s\n", "error", format_input_text(in, this->error));
-  // critical path = 14+LN (+3)
+  uint64_t separator_error = raw_separator_error & ~in_string;
+  this->error |= separator_error | ctrl;
 
   // NOT validated:
   // - Object/array: Brace balance / type
@@ -249,8 +238,6 @@ simdjson_inline void json_scanner::check_errors(
   // - Empty object/array: close bracket before separator preceded by open bracket
   // - UTF-8 in strings
   // - scalar format
-
-  // critical path = 14+LN (+9)
 }
 
 simdjson_inline uint64_t json_scanner::next_whitespace(
