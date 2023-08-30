@@ -14,27 +14,26 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 namespace stage1 {
 
-/**
- * Scans JSON for important bits: structural characters or 'operators', strings, and scalars.
- *
- * The scanner starts by calculating two distinct things:
- * - string characters (taking \" into account)
- * - structural characters or 'operators' ([]{},:, comma)
- *   and scalars (runs of non-operators like 123, true and "abc")
- *
- * To minimize data dependency (a key component of the scanner's speed), it finds these in parallel:
- * in particular, the operator/scalar bit will find plenty of things that are actually part of
- * strings. When we're done, json_block will fuse the two together by masking out tokens that are
- * part of a string.
- */
-class json_scanner {
-public:
-  json_scanner() = default;
-  simdjson_inline uint64_t next(const simd::simd8x64<uint8_t>& in) noexcept;
-  simdjson_inline uint64_t next_whitespace(const simd::simd8x64<uint8_t>& in) noexcept;
+  static simdjson_constinit low_nibble_lookup WHITESPACE_MATCH = {
+    { ' ', ' ' },
+    { '\t', '\t' },
+    { '\r', '\r' },
+    { '\n', '\n' },
+  };
 
-  // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish() const noexcept;
+struct basic_block_classification {
+  //printf("\n");
+  //printf("%30.30s: %s\n", "next", format_input_text(in));
+  uint64_t open;
+  uint64_t close;
+  uint64_t comma;
+  uint64_t colon;
+  uint64_t ws_ctrl;
+  uint64_t backslash;
+  uint64_t raw_quote;
+  uint64_t ws;
+
+  simdjson_inline basic_block_classification(const simd8x64<uint8_t>& in) : basic_block_classification(in, in | ('{' - '[')) {}
 
 private:
   enum ws_op {
@@ -50,6 +49,7 @@ private:
     SEP = COMMA | COLON,
     WS = SPACE | TAB_CR_LF,
   };
+
   static simdjson_constinit byte_classifier CLASSIFIER = {
     { ',',  COMMA },
     { ':',  COLON },
@@ -64,13 +64,85 @@ private:
     { '\n', TAB_CR_LF },
     { '\\', BACKSLASH },
   };
-  static simdjson_constinit low_nibble_lookup WHITESPACE_MATCH = {
-    { ' ', ' ' },
-    { '\t', '\t' },
-    { '\r', '\r' },
-    { '\n', '\n' },
+
+  simdjson_inline basic_block_classification(const simd8x64<uint8_t>& in, const simd8x64<uint8_t>& curlified) :
+    open{curlified.eq('{')},
+    close{curlified.eq('}')},
+    comma{in.eq(',')},
+    colon{in.eq(':')},
+    ws_ctrl{in.lteq(' ')},
+    backslash{in.eq('\\')},
+    raw_quote{in.eq('"')},
+    ws{in.eq(WHITESPACE_MATCH.lookup(in))}
+  {}
+};
+
+/**
+ * Scans JSON for important bits: structural characters or 'operators', strings, and scalars.
+ *
+ * The scanner starts by calculating two distinct things:
+ * - string characters (taking \" into account)
+ * - structural characters or 'operators' ([]{},:, comma)
+ *   and scalars (runs of non-operators like 123, true and "abc")
+ *
+ * To minimize data dependency (a key component of the scanner's speed), it finds these in parallel:
+ * in particular, the operator/scalar bit will find plenty of things that are actually part of
+ * strings. When we're done, json_block will fuse the two together by masking out tokens that are
+ * part of a string.
+ */
+class json_scanner {
+public:
+  simdjson_inline json_scanner() = default;
+  simdjson_inline uint64_t next(const simd::simd8x64<uint8_t>& in) noexcept;
+  simdjson_inline uint64_t next_whitespace(const simd::simd8x64<uint8_t>& in) noexcept;
+
+  // Returns either UNCLOSED_STRING or SUCCESS
+  simdjson_inline error_code finish() const noexcept;
+
+  struct input_block {
+    uint64_t backslash;
+    uint64_t raw_quote;
+    uint64_t open;
+    uint64_t sep;
+    uint64_t sep_open;
+    uint64_t scalar_close;
+    uint64_t scalar;
+    uint64_t op_without_comma;
+    uint64_t ctrl;
+
+    simdjson_inline input_block(const basic_block_classification& block) :
+      backslash{block.backslash},
+      raw_quote{block.raw_quote},
+      open{block.open},
+      sep{block.comma | block.colon},
+      sep_open{sep | open},
+      scalar_close{~sep_open & ~block.ws_ctrl},
+      scalar{scalar_close & ~block.close},
+      op_without_comma{block.colon | open | block.close},
+      ctrl{block.ws_ctrl & ~block.ws}
+    {}
   };
 
+  struct whitespace_input_block {
+    uint64_t backslash;
+    uint64_t raw_quote;
+    uint64_t ws;
+    uint64_t sep_open;
+    uint64_t scalar_close;
+
+    simdjson_inline whitespace_input_block(const basic_block_classification& block) :
+      backslash{block.backslash},
+      raw_quote{block.raw_quote},
+      ws{block.ws},
+      sep_open{block.comma | block.colon | block.open},
+      scalar_close(~sep_open & ~block.ws_ctrl)
+    {}
+  };
+
+  simdjson_inline uint64_t next(const simd::simd8x64<uint8_t>& in, const input_block& block) noexcept;
+  simdjson_inline uint64_t next_whitespace(const simd::simd8x64<uint8_t>& in, const whitespace_input_block& block) noexcept;
+
+private:
   simdjson_inline uint64_t next_separated_values(uint64_t sep_open, uint64_t scalar_close) noexcept;
   simdjson_inline void check_errors(const simd8x64<uint8_t>& in, uint64_t scalar, uint64_t ctrl, uint64_t sep, uint64_t open, uint64_t raw_quote, uint64_t separated_values, uint64_t in_string) noexcept;
 
@@ -82,41 +154,23 @@ private:
   uint64_t error{};
 };
 
-simdjson_inline uint64_t json_scanner::next(
-  const simd::simd8x64<uint8_t>& in
-) noexcept {
-  //printf("\n");
-  //printf("%30.30s: %s\n", "next", format_input_text(in));
-  simd8x64<uint8_t> curlified = in | ('{' - '[');   // 3 (+simd:N)
-  uint64_t open   = curlified.eq('{');              // 6+LN (+LN+simd:N)
-  uint64_t close  = curlified.eq('}');              // 6+LN (+LN+simd:N)
-  uint64_t comma = in.eq(',');                      // 3+LN (+LN+simd:N)
-  uint64_t colon = in.eq(':');                      // 3+LN (+LN+simd:N)
-  uint64_t ws_ctrl = in.lteq(' ');                  // 3+LN (+LN+simd:N)
-  uint64_t backslash = in.eq('\\'); // 3+LN (LN+simd:N)
-  uint64_t raw_quote = in.eq('"');  // 3+LN (LN+simd:N)
-  uint64_t ws = in.eq(WHITESPACE_MATCH.lookup(in));         // 6+LN (+LN+simd:2N)
+simdjson_inline uint64_t json_scanner::next(const simd::simd8x64<uint8_t>& in) noexcept {
+  return next(in, input_block(in));
+}
 
-  uint64_t sep   = comma | colon;                   // 4+LN (+1)
-  uint64_t sep_open = sep | open;                   // 7+LN (+1)
-  uint64_t scalar_close = ~sep_open & ~ws_ctrl;  // 7+LN (+1) (ternary)
-  uint64_t scalar = scalar_close & ~close;                  // 8+LN (+1)
-  uint64_t op_without_comma = colon | open | close;         // 8+LN (+1) (ternary)
-  uint64_t ctrl = ws_ctrl & ~ws;                            // 7+LN (+1)
-  // total 7+LN (+3+5LN+simd:6N)
-
+simdjson_inline uint64_t json_scanner::next(const simd::simd8x64<uint8_t>& in, const input_block& block) noexcept {
   //printf("%30.30s: %s\n", "sep_open", format_input_text(in, sep_open));
   //printf("%30.30s: %s\n", "scalar_close", format_input_text(in, scalar_close));
-  uint64_t separated_values = next_separated_values(sep_open, scalar_close); // 8+LN (+2)
+  uint64_t separated_values = next_separated_values(block.sep_open, block.scalar_close); // 8+LN (+2)
   //printf("%30.30s: %s\n", "separated_values", format_input_text(in, separated_values));
 
-  uint64_t quote = string_scanner.next_unescaped_quotes(backslash, raw_quote);
+  uint64_t quote = string_scanner.next_unescaped_quotes(block.backslash, block.raw_quote);
   uint64_t in_string = string_scanner.next_in_string(quote, separated_values);    // 10+LN (+9) ... 18+LN (+11+simd:3)
   //printf("%30.30s: %s\n", "in_string", format_input_text(in, in_string));
   // total: 11+LN (+10+2LN+simd:2N) ... 19+LN (+18+2LN+simd:2N+3)
 
-  uint64_t lead_value = scalar_close & separated_values;    // 8+LN (+1)
-  uint64_t all_structurals = op_without_comma | lead_value; // 20+LN ... 20+LN (+1)
+  uint64_t lead_value = block.scalar_close & separated_values;    // 8+LN (+1)
+  uint64_t all_structurals = block.op_without_comma | lead_value; // 20+LN ... 20+LN (+1)
   // uint64_t op = sep | open | close;                         // 8+LN (+1) (ternary)
   // uint64_t all_structurals = op | lead_value;               // 12+LN ... 20+LN (+1)
   //printf("%30.30s: %s\n", "all_structurals", format_input_text(in, all_structurals));
@@ -124,7 +178,7 @@ simdjson_inline uint64_t json_scanner::next(
   //printf("%30.30s: %s\n", "structurals", format_input_text(in, structurals));
   // critical path = 12+LN ... 20+LN (+3)
 
-  check_errors(in, scalar, ctrl, sep, open, quote, separated_values, in_string); // 14+LN (+9)
+  check_errors(in, block.scalar, block.ctrl, block.sep, block.open, quote, separated_values, in_string); // 14+LN (+9)
   // critical path = 14+LN (+11+LN+simd:2N)
 
   return structurals;
@@ -202,28 +256,17 @@ simdjson_inline void json_scanner::check_errors(
 simdjson_inline uint64_t json_scanner::next_whitespace(
   const simd::simd8x64<uint8_t>& in
 ) noexcept {
-  simd8x64<uint8_t> curlified = in | ('{' - '[');   // 3    (+simd:N)
-  uint64_t open   = curlified.eq('{');              // 6+LN (+LN+simd:N)
-  uint64_t close  = curlified.eq('}');              // 6+LN (+LN+simd:N)
-  uint64_t comma = in.eq(',');                      // 3+LN (+LN+simd:N)
-  uint64_t colon = in.eq(':');                      // 3+LN (+LN+simd:N)
-  uint64_t sep   = comma | colon;                   // 4+LN (+1)
-  uint64_t ws = in.eq(WHITESPACE_MATCH.lookup(in)); // 6+LN (+LN+simd:2N)
-  uint64_t sep_open = sep | open;                   // 7+LN (+1)
-  uint64_t scalar_close = ~sep & ~open & ~ws;       // 7+LN (+1) (ternary)
-  // total 7+LN (+3+5LN+simd:7N)
-
-  uint64_t separated_values = next_separated_values(sep_open, scalar_close); // 8+LN (+2)
-
-  uint64_t backslash = in.eq('\\'); // 3+LN (LN+simd:N)
-  uint64_t raw_quote = in.eq('"');  // 3+LN (LN+simd:N)
-  uint64_t in_string = string_scanner.next(backslash, raw_quote, separated_values); // 12+LN (+6) ... 20+LN (+8+simd:3))
-  // total 12+LN (+6+2LN+simd:2N) ... 20+LN (+8+2LN+simd:2N+3)
-
-  return ws & ~in_string;
-  // critical path = 12+LN (+11+7LN+simd:9N) ... 20+LN (+13+7LN+simd:9N+3)
+  return next_whitespace(in, basic_block_classification(in));
 }
 
+simdjson_inline uint64_t json_scanner::next_whitespace(
+  const simd::simd8x64<uint8_t>& in,
+  const whitespace_input_block& block
+) noexcept {
+  uint64_t separated_values = next_separated_values(block.sep_open, block.scalar_close);
+  uint64_t in_string = string_scanner.next(block.backslash, block.raw_quote, separated_values);
+  return block.ws & ~in_string;
+}
 
 simdjson_inline error_code json_scanner::finish() const noexcept {
   if (this->error | this->string_scanner.finish()) {
