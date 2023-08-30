@@ -85,9 +85,6 @@ private:
 simdjson_inline uint64_t json_scanner::next(
   const simd::simd8x64<uint8_t>& in
 ) noexcept {
-  uint64_t backslash = in.eq('\\'); // 3+LN (LN+simd:N)
-  uint64_t raw_quote = in.eq('"');  // 3+LN (LN+simd:N)
-
   //printf("\n");
   //printf("%30.30s: %s\n", "next", format_input_text(in));
   simd8x64<uint8_t> curlified = in | ('{' - '[');   // 3 (+simd:N)
@@ -95,10 +92,17 @@ simdjson_inline uint64_t json_scanner::next(
   uint64_t close  = curlified.eq('}');              // 6+LN (+LN+simd:N)
   uint64_t comma = in.eq(',');                      // 3+LN (+LN+simd:N)
   uint64_t colon = in.eq(':');                      // 3+LN (+LN+simd:N)
-  uint64_t sep   = comma | colon;                   // 4+LN (+1)
   uint64_t ws_ctrl = in.lteq(' ');                  // 3+LN (+LN+simd:N)
+  uint64_t backslash = in.eq('\\'); // 3+LN (LN+simd:N)
+  uint64_t raw_quote = in.eq('"');  // 3+LN (LN+simd:N)
+  uint64_t ws = in.eq(WHITESPACE_MATCH.lookup(in));         // 6+LN (+LN+simd:2N)
+
+  uint64_t sep   = comma | colon;                   // 4+LN (+1)
   uint64_t sep_open = sep | open;                   // 7+LN (+1)
-  uint64_t scalar_close = ~sep & ~open & ~ws_ctrl;  // 7+LN (+1) (ternary)
+  uint64_t scalar_close = ~sep_open & ~ws_ctrl;  // 7+LN (+1) (ternary)
+  uint64_t scalar = scalar_close & ~close;                  // 8+LN (+1)
+  uint64_t op_without_comma = colon | open | close;         // 8+LN (+1) (ternary)
+  uint64_t ctrl = ws_ctrl & ~ws;                            // 7+LN (+1)
   // total 7+LN (+3+5LN+simd:6N)
 
   //printf("%30.30s: %s\n", "sep_open", format_input_text(in, sep_open));
@@ -112,7 +116,6 @@ simdjson_inline uint64_t json_scanner::next(
   // total: 11+LN (+10+2LN+simd:2N) ... 19+LN (+18+2LN+simd:2N+3)
 
   uint64_t lead_value = scalar_close & separated_values;    // 8+LN (+1)
-  uint64_t op_without_comma = colon | open | close;         // 8+LN (+1) (ternary)
   uint64_t all_structurals = op_without_comma | lead_value; // 20+LN ... 20+LN (+1)
   // uint64_t op = sep | open | close;                         // 8+LN (+1) (ternary)
   // uint64_t all_structurals = op | lead_value;               // 12+LN ... 20+LN (+1)
@@ -121,9 +124,6 @@ simdjson_inline uint64_t json_scanner::next(
   //printf("%30.30s: %s\n", "structurals", format_input_text(in, structurals));
   // critical path = 12+LN ... 20+LN (+3)
 
-  uint64_t scalar = scalar_close & ~close;                  // 8+LN (+1)
-  uint64_t ws = in.eq(WHITESPACE_MATCH.lookup(in));         // 6+LN (+LN+simd:2N)
-  uint64_t ctrl = ws_ctrl & ~ws;                            // 7+LN (+1)
   check_errors(in, scalar, ctrl, sep, open, quote, separated_values, in_string); // 14+LN (+9)
   // critical path = 14+LN (+11+LN+simd:2N)
 
