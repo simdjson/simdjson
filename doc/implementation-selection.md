@@ -101,8 +101,8 @@ by comparing it with the null pointer.
 
 ```c++
 auto my_implementation = simdjson::get_available_implementations()["haswell"];
-if(! my_implementation) { exit(1); }
-if(! my_implementation->supported_by_runtime_system()) { exit(1); }
+if (! my_implementation) { exit(1); }
+if (! my_implementation->supported_by_runtime_system()) { exit(1); }
 simdjson::get_active_implementation() = my_implementation;
 ```
 
@@ -113,7 +113,7 @@ You should call `supported_by_runtime_system()` to compare the processor's featu
 
 ```c++
 for (auto implementation : simdjson::get_available_implementations()) {
-  if(implementation->supported_by_runtime_system()) {
+  if (implementation->supported_by_runtime_system()) {
     cout << implementation->name() << ": " << implementation->description() << endl;
   }
 }

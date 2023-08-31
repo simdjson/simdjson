@@ -196,12 +196,12 @@ Let us illustrate the idea with code:
     simdjson::ondemand::parser parser;
     simdjson::ondemand::document_stream stream;
     auto error = parser.iterate_many(json).get(stream);
-    if( error ) { /* do something */ }
+    if (error) { /* do something */ }
     auto i = stream.begin();
 	 size_t count{0};
     for(; i != stream.end(); ++i) {
         auto doc = *i;
-        if(!i.error()) {
+        if (!i.error()) {
           std::cout << "got full document at " << i.current_index() << std::endl;
           std::cout << i.source() << std::endl;
           count++;
@@ -237,7 +237,7 @@ Consider the following example where a truncated document (`{"key":"intentionall
     simdjson::ondemand::parser parser;
     simdjson::ondemand::document_stream stream;
     auto error = parser.iterate_many(json,json.size()).get(stream);
-    if(error) { std::cerr << error << std::endl; return; }
+    if (error) { std::cerr << error << std::endl; return; }
     for(auto i = stream.begin(); i != stream.end(); ++i) {
        std::cout << i.source() << std::endl;
     }
@@ -269,7 +269,7 @@ Example:
     // we pass 'true' to the allow_comma parameter, the batch size will be set to at least
     // the document size.
     auto error = parser.iterate_many(json, 32, true).get(doc_stream);
-    if(error) { std::cerr << error << std::endl; return; }
+    if (error) { std::cerr << error << std::endl; return; }
     for (auto doc : doc_stream) {
         std::cout << doc.type() << std::endl;
     }
