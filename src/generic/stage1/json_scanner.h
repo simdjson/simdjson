@@ -28,19 +28,18 @@ struct basic_block_classification {
   uint64_t close;
   uint64_t comma;
   uint64_t colon;
-  uint64_t ws_ctrl;
   uint64_t backslash;
   uint64_t raw_quote;
   uint64_t ws;
+  uint64_t ctrl;
 
   simdjson_inline basic_block_classification(const simd8x64<uint8_t>& in) : basic_block_classification(in, in | ('{' - '[')) {}
 
   simdjson_inline uint64_t sep() const noexcept { return comma | colon; }
   simdjson_inline uint64_t sep_open() const noexcept { return sep() | open; }
-  simdjson_inline uint64_t scalar_close() const noexcept { return ~sep_open() & ~ws_ctrl; }
+  simdjson_inline uint64_t scalar_close() const noexcept { return ~sep_open() & ~ws; }
   simdjson_inline uint64_t scalar() const noexcept { return scalar_close() & ~close; }
   simdjson_inline uint64_t op_without_comma() const noexcept { return colon | open | close; }
-  simdjson_inline uint64_t ctrl() const noexcept { return ws_ctrl & ~ws; }
 
 private:
   enum ws_op {
@@ -77,10 +76,10 @@ private:
     close{curlified.eq('}')},
     comma{in.eq(',')},
     colon{in.eq(':')},
-    ws_ctrl{in.lteq(' ')},
     backslash{in.eq('\\')},
     raw_quote{in.eq('"')},
-    ws{in.eq(WHITESPACE_MATCH.lookup(in))}
+    ws{in.eq(WHITESPACE_MATCH.lookup(in))},
+    ctrl{in.lteq(0x1F)}
   {}
 };
 
@@ -126,10 +125,8 @@ simdjson_inline uint64_t json_scanner::next(const simd::simd8x64<uint8_t>& in) n
 }
 
 simdjson_inline uint64_t json_scanner::next(const simd::simd8x64<uint8_t>& in, const basic_block_classification& block) noexcept {
+  // Get structurals
   uint64_t scalar_close = block.scalar_close();
-  uint64_t ctrl = block.ctrl();
-
-  // Get a mask showing alternating VALUE SEP VALUE SEP ....
   uint64_t separated_values = next_separated_values(block.sep_open(), scalar_close);
   uint64_t scalar = scalar_close & ~block.close;
 
@@ -143,7 +140,8 @@ simdjson_inline uint64_t json_scanner::next(const simd::simd8x64<uint8_t>& in, c
   uint64_t structurals = all_structurals & ~in_string;
 
   // Check for errors
-  check_errors(in, scalar, ctrl, block.sep(), block.open, quote, separated_values, in_string);
+  // this->error |= block.ctrl & in_string;
+  check_errors(in, scalar, block.ctrl, block.sep(), block.open, quote, separated_values, in_string);
 
   return structurals;
 }
@@ -189,8 +187,7 @@ simdjson_inline void json_scanner::check_errors(
 
   // Put it all together
   uint64_t raw_separator_error = missing_separator_error | extra_separator_error | missing_separator_before_open_error;
-  uint64_t separator_error = raw_separator_error & ~in_string;
-  this->error |= separator_error | ctrl;
+  this->error |= (raw_separator_error & ~in_string) | (ctrl & in_string);
 
   // NOT validated:
   // - Object/array: Brace balance / type
