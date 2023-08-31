@@ -176,12 +176,12 @@ Tracking your position</h1>
 <div class="line">   simdjson::dom::parser parser;</div>
 <div class="line">   simdjson::dom::document_stream stream;</div>
 <div class="line">   auto error = parser.parse_many(json).get(stream);</div>
-<div class="line">   if( error ) { /* do something */ }</div>
+<div class="line">   if (error) { /* do something */ }</div>
 <div class="line">   auto i = stream.begin();</div>
 <div class="line">   size_t count{0};</div>
 <div class="line">   for(; i != stream.end(); ++i) {</div>
 <div class="line">       auto doc = *i;</div>
-<div class="line">       if(!doc.error()) {</div>
+<div class="line">       if (!doc.error()) {</div>
 <div class="line">         std::cout &lt;&lt; &quot;got full document at &quot; &lt;&lt; i.current_index() &lt;&lt; std::endl;</div>
 <div class="line">         std::cout &lt;&lt; i.source() &lt;&lt; std::endl;</div>
 <div class="line">         count++;</div>
@@ -205,7 +205,7 @@ Incomplete streams</h1>
 <div class="line">   simdjson::dom::parser parser;</div>
 <div class="line">   simdjson::dom::document_stream stream;</div>
 <div class="line">   auto error = parser.parse_many(json,json.size()).get(stream);</div>
-<div class="line">   if(error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; return; }</div>
+<div class="line">   if (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; return; }</div>
 <div class="line">   for(auto doc : stream) {</div>
 <div class="line">      std::cout &lt;&lt; doc &lt;&lt; std::endl;</div>
 <div class="line">   }</div>

@@ -326,10 +326,10 @@ Error Handling</h1>
 <div class="line">  simdjson::dom::parser parser;</div>
 <div class="line">  simdjson::dom::element tweets; // invalid until the get() succeeds</div>
 <div class="line">  auto error = parser.load(&quot;twitter.json&quot;).get(tweets);</div>
-<div class="line">  if(error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; return EXIT_FAILURE; }</div>
+<div class="line">  if (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; return EXIT_FAILURE; }</div>
 <div class="line">  uint64_t identifier;</div>
 <div class="line">  error = tweets[&quot;statuses&quot;].at(0)[&quot;id&quot;].get(identifier);</div>
-<div class="line">  if(error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; return EXIT_FAILURE; }</div>
+<div class="line">  if (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; return EXIT_FAILURE; }</div>
 <div class="line">  std::cout &lt;&lt; identifier &lt;&lt; std::endl;</div>
 <div class="line">  return EXIT_SUCCESS;</div>
 <div class="line">}</div>

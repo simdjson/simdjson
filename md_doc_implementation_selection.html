@@ -145,15 +145,15 @@ Manually Selecting the Implementation</h1>
 </div><!-- fragment --><p>You are responsible for ensuring that the requirements of the selected implementation match your current system. Furthermore, you should check that the implementation is available before setting it to <code><a class="el" href="namespacesimdjson.html#abd8b8fd009878125822fca9a2624f6a6" title="The active implementation.">simdjson::get_active_implementation()</a></code> by comparing it with the null pointer.</p>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">auto my_implementation = simdjson::get_available_implementations()[&quot;haswell&quot;];</div>
-<div class="line">if(! my_implementation) { exit(1); }</div>
-<div class="line">if(! my_implementation-&gt;supported_by_runtime_system()) { exit(1); }</div>
+<div class="line">if (! my_implementation) { exit(1); }</div>
+<div class="line">if (! my_implementation-&gt;supported_by_runtime_system()) { exit(1); }</div>
 <div class="line">simdjson::get_active_implementation() = my_implementation;</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md51"></a>
 Checking that an Implementation can Run on your System</h1>
 <p>You should call <code>supported_by_runtime_system()</code> to compare the processor's features with the need of the implementation.</p>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">for (auto implementation : simdjson::get_available_implementations()) {</div>
-<div class="line">  if(implementation-&gt;supported_by_runtime_system()) {</div>
+<div class="line">  if (implementation-&gt;supported_by_runtime_system()) {</div>
 <div class="line">    cout &lt;&lt; implementation-&gt;name() &lt;&lt; &quot;: &quot; &lt;&lt; implementation-&gt;description() &lt;&lt; endl;</div>
 <div class="line">  }</div>
 <div class="line">}</div>

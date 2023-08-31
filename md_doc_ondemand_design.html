@@ -507,11 +507,11 @@ Iteration Safety</h2>
 <div class="line">   ondemand::object c1 = parent[&quot;child1&quot;];</div>
 <div class="line">   // c1 owns the focus</div>
 <div class="line">   //</div>
-<div class="line">   if(std::string_view(c1[&quot;name&quot;]) != &quot;John&quot;) { ... }</div>
+<div class="line">   if (std::string_view(c1[&quot;name&quot;]) != &quot;John&quot;) { ... }</div>
 <div class="line">   // c2 attempts to grab the focus from parent but fails</div>
 <div class="line">   ondemand::object c2 = parent[&quot;child2&quot;];</div>
 <div class="line">   // c2 is now in an unsafe state and the following line would be unsafe</div>
-<div class="line">   // if(std::string_view(c2[&quot;name&quot;]) != &quot;Daniel&quot;) { return false; }</div>
+<div class="line">   // if (std::string_view(c2[&quot;name&quot;]) != &quot;Daniel&quot;) { return false; }</div>
 </div><!-- fragment --> <pre class="fragment">A correct usage is given by the following example:
 </pre> <div class="fragment"><div class="line">{C++}</div>
 <div class="line">   ondemand::parser parser;</div>
@@ -522,7 +522,7 @@ Iteration Safety</h2>
 <div class="line">   {</div>
 <div class="line">     ondemand::object c1 = parent[&quot;child1&quot;];</div>
 <div class="line">     // c1 grabbed the focus from parent</div>
-<div class="line">     if(std::string_view(c1[&quot;name&quot;]) != &quot;John&quot;) { return false; }</div>
+<div class="line">     if (std::string_view(c1[&quot;name&quot;]) != &quot;John&quot;) { return false; }</div>
 <div class="line">   }</div>
 <div class="line">   // c1 went out of scope, so its destructor was called and the focus</div>
 <div class="line">   // was handed back to parent.</div>
@@ -530,7 +530,7 @@ Iteration Safety</h2>
 <div class="line">     ondemand::object c2 = parent[&quot;child2&quot;];</div>
 <div class="line">     // c2 grabbed the focus from parent</div>
 <div class="line">     // the following is safe:</div>
-<div class="line">     if(std::string_view(c2[&quot;name&quot;]) != &quot;Daniel&quot;) { return false; }</div>
+<div class="line">     if (std::string_view(c2[&quot;name&quot;]) != &quot;Daniel&quot;) { return false; }</div>
 <div class="line">   }</div>
 </div><!-- fragment --><h2><a class="anchor" id="autotoc_md73"></a>
 Benefits of the On Demand Approach</h2>
