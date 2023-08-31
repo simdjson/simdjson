@@ -106,51 +106,8 @@ public:
   // Returns either UNCLOSED_STRING or SUCCESS
   simdjson_inline error_code finish() const noexcept;
 
-  struct input_block {
-    uint64_t backslash;
-    uint64_t raw_quote;
-    uint64_t open;
-    uint64_t close;
-    uint64_t comma;
-    uint64_t colon;
-    uint64_t scalar_close;
-    uint64_t ctrl;
-
-    simdjson_inline input_block(const basic_block_classification& block) :
-      backslash{block.backslash},
-      raw_quote{block.raw_quote},
-      open{block.open},
-      close{block.close},
-      comma{block.comma},
-      colon{block.colon},
-      scalar_close{block.scalar_close()},
-      ctrl{block.ctrl()}
-    {}
-
-    simdjson_inline uint64_t scalar() const noexcept { return scalar_close & ~close; }
-    simdjson_inline uint64_t sep() const noexcept { return comma | colon; }
-    simdjson_inline uint64_t sep_open() const noexcept { return sep() | open; }
-    simdjson_inline uint64_t op_without_comma() const noexcept { return colon | open | close; }
-  };
-
-  struct whitespace_input_block {
-    uint64_t backslash;
-    uint64_t raw_quote;
-    uint64_t ws;
-    uint64_t sep_open;
-    uint64_t scalar_close;
-
-    simdjson_inline whitespace_input_block(const basic_block_classification& block) :
-      backslash{block.backslash},
-      raw_quote{block.raw_quote},
-      ws{block.ws},
-      sep_open{block.sep_open()},
-      scalar_close{block.scalar_close()}
-    {}
-  };
-
-  simdjson_inline uint64_t next(const simd::simd8x64<uint8_t>& in, const input_block& block) noexcept;
-  simdjson_inline uint64_t next_whitespace(const simd::simd8x64<uint8_t>& in, const whitespace_input_block& block) noexcept;
+  simdjson_inline uint64_t next(const simd::simd8x64<uint8_t>& in, const basic_block_classification& block) noexcept;
+  simdjson_inline uint64_t next_whitespace(const simd::simd8x64<uint8_t>& in, const basic_block_classification& block) noexcept;
 
 private:
   simdjson_inline uint64_t next_separated_values(uint64_t sep_open, uint64_t scalar_close) noexcept;
@@ -165,24 +122,28 @@ private:
 };
 
 simdjson_inline uint64_t json_scanner::next(const simd::simd8x64<uint8_t>& in) noexcept {
-  return next(in, input_block(in));
+  return next(in, in);
 }
 
-simdjson_inline uint64_t json_scanner::next(const simd::simd8x64<uint8_t>& in, const input_block& block) noexcept {
+simdjson_inline uint64_t json_scanner::next(const simd::simd8x64<uint8_t>& in, const basic_block_classification& block) noexcept {
+  uint64_t scalar_close = block.scalar_close();
+  uint64_t ctrl = block.ctrl();
+
   // Get a mask showing alternating VALUE SEP VALUE SEP ....
-  uint64_t separated_values = next_separated_values(block.sep_open(), block.scalar_close);
+  uint64_t separated_values = next_separated_values(block.sep_open(), scalar_close);
+  uint64_t scalar = scalar_close & ~block.close;
 
   // Figure out what's in a string
   uint64_t quote = string_scanner.next_unescaped_quotes(block.backslash, block.raw_quote);
   uint64_t in_string = string_scanner.next_in_string(quote, separated_values);
 
-  // Get structurals (except commas)
-  uint64_t lead_value = block.scalar_close & separated_values;
+  // Join up structurals and strings
+  uint64_t lead_value = scalar & separated_values;
   uint64_t all_structurals = block.op_without_comma() | lead_value;
   uint64_t structurals = all_structurals & ~in_string;
 
   // Check for errors
-  check_errors(in, block.scalar(), block.ctrl, block.sep(), block.open, quote, separated_values, in_string);
+  check_errors(in, scalar, ctrl, block.sep(), block.open, quote, separated_values, in_string);
 
   return structurals;
 }
@@ -243,14 +204,14 @@ simdjson_inline void json_scanner::check_errors(
 simdjson_inline uint64_t json_scanner::next_whitespace(
   const simd::simd8x64<uint8_t>& in
 ) noexcept {
-  return next_whitespace(in, basic_block_classification(in));
+  return next_whitespace(in, in);
 }
 
 simdjson_inline uint64_t json_scanner::next_whitespace(
   const simd::simd8x64<uint8_t>& in,
-  const whitespace_input_block& block
+  const basic_block_classification& block
 ) noexcept {
-  uint64_t separated_values = next_separated_values(block.sep_open, block.scalar_close);
+  uint64_t separated_values = next_separated_values(block.sep_open(), block.scalar_close());
   uint64_t in_string = string_scanner.next(block.backslash, block.raw_quote, separated_values);
   return block.ws & ~in_string;
 }
