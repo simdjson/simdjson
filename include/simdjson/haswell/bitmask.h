@@ -76,9 +76,9 @@ simdjson_inline uint64_t subtract_borrow(const uint64_t value1, const uint64_t v
 //   borrow = _subborrow_u64(borrow, value1, value2, &result);
 //   return result;
 // #else
-// NOTE __builtin_subll_overflow produces the same or worse results than manual subtraction on both GCC and clang.
-  uint64_t result = value1 - value2 - borrow;
-  borrow = result >= value1;
+  unsigned long long result;
+  bool borrow1 = __builtin_usubll_overflow(value1, value2, &result);
+  borrow = borrow1 | __builtin_usubll_overflow(result, borrow, &result);
   return result;
 // #endif
 }

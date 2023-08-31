@@ -26,6 +26,7 @@ private:
   json_escape_scanner escape_scanner{};
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
   bool still_in_string{};
+  unsigned penalty_box = 0;
 };
 
 //
@@ -73,12 +74,10 @@ simdjson_inline uint64_t json_string_scanner::next_in_string(
   uint64_t in_string = bitmask::subtract_borrow(trailing_quote, lead_quote, this->still_in_string);
   // Assumption check! LEAD-QUOTE=0 means a lead quote was inside a string--meaning the second
   // quote was preceded by a separator/open.
-  uint64_t lead_quote_in_string = lead_quote & ~in_string;             // 11+LN (+2)
-  if (!lead_quote_in_string) {
+  if (simdjson_unlikely(lead_quote & ~in_string)) {
     // This shouldn't happen often, so we take the heavy branch penalty for it and use the
     // high-latency prefix_xor.
-    this->still_in_string = was_still_in_string;
-    in_string = bitmask::prefix_xor(quote ^ this->still_in_string); // 14+LN (+1+simd:3)
+    in_string = bitmask::prefix_xor(quote ^ was_still_in_string); // 14+LN (+1+simd:3)
     this->still_in_string = in_string >> 63;                        // 15+LN (+1)
   }
   return in_string ^ quote;                                         // flip start and end quotes

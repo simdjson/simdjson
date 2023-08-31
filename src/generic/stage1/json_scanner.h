@@ -22,8 +22,6 @@ namespace stage1 {
   };
 
 struct basic_block_classification {
-  //printf("\n");
-  //printf("%30.30s: %s\n", "next", format_input_text(in));
   uint64_t open;
   uint64_t close;
   uint64_t comma;
@@ -125,6 +123,9 @@ simdjson_inline uint64_t json_scanner::next(const simd::simd8x64<uint8_t>& in) n
 }
 
 simdjson_inline uint64_t json_scanner::next(const simd::simd8x64<uint8_t>& in, const basic_block_classification& block) noexcept {
+  // printf("\n");
+  // printf("%30.30s: %s\n", "next", format_input_text(in));
+
   // Get structurals
   uint64_t scalar_close = block.scalar_close();
   uint64_t separated_values = next_separated_values(block.sep_open(), scalar_close);
@@ -161,7 +162,7 @@ simdjson_inline uint64_t json_scanner::next_separated_values(
 }
 
 simdjson_inline void json_scanner::check_errors(
-  const simd8x64<uint8_t>& ,
+  const simd8x64<uint8_t>& in,
   uint64_t scalar,
   uint64_t ctrl,
   uint64_t sep,
