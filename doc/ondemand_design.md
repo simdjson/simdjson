@@ -679,11 +679,11 @@ in production systems:
     ondemand::object c1 = parent["child1"];
     // c1 owns the focus
     //
-    if(std::string_view(c1["name"]) != "John") { ... }
+    if (std::string_view(c1["name"]) != "John") { ... }
     // c2 attempts to grab the focus from parent but fails
     ondemand::object c2 = parent["child2"];
     // c2 is now in an unsafe state and the following line would be unsafe
-    // if(std::string_view(c2["name"]) != "Daniel") { return false; }
+    // if (std::string_view(c2["name"]) != "Daniel") { return false; }
 ```
 
     A correct usage is given by the following example:
@@ -697,7 +697,7 @@ in production systems:
     {
       ondemand::object c1 = parent["child1"];
       // c1 grabbed the focus from parent
-      if(std::string_view(c1["name"]) != "John") { return false; }
+      if (std::string_view(c1["name"]) != "John") { return false; }
     }
     // c1 went out of scope, so its destructor was called and the focus
     // was handed back to parent.
@@ -705,7 +705,7 @@ in production systems:
       ondemand::object c2 = parent["child2"];
       // c2 grabbed the focus from parent
       // the following is safe:
-      if(std::string_view(c2["name"]) != "Daniel") { return false; }
+      if (std::string_view(c2["name"]) != "Daniel") { return false; }
     }
 ```
 

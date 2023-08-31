@@ -184,12 +184,12 @@ Let us illustrate the idea with code:
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     auto error = parser.parse_many(json).get(stream);
-    if( error ) { /* do something */ }
+    if (error) { /* do something */ }
     auto i = stream.begin();
     size_t count{0};
     for(; i != stream.end(); ++i) {
         auto doc = *i;
-        if(!doc.error()) {
+        if (!doc.error()) {
           std::cout << "got full document at " << i.current_index() << std::endl;
           std::cout << i.source() << std::endl;
           count++;
@@ -225,7 +225,7 @@ Consider the following example where a truncated document (`{"key":"intentionall
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
     auto error = parser.parse_many(json,json.size()).get(stream);
-    if(error) { std::cerr << error << std::endl; return; }
+    if (error) { std::cerr << error << std::endl; return; }
     for(auto doc : stream) {
        std::cout << doc << std::endl;
     }

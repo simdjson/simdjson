@@ -355,7 +355,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
   scan through the object looking for the field with the matching string, doing a character-by-character
   comparison. It may generate the error `simdjson::NO_SUCH_FIELD` if there is no such key in the object, it may throw an exception (see [Error Handling](#error-handling)). For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do
-  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. Keep in mind that On Demand does not buffer or save the result of the parsing: if you repeatedly access `object["foo"]`, then it must repeatedly seek the key and parse the content. The library does not provide a distinct function to check if a key is present, instead we recommend you attempt to access the key: e.g., by doing `ondemand::value val{}; if(!object["foo"].get(val)) {...}`, you have that `val` contains the requested value inside the if clause.  It is your responsibility as a user to temporarily keep a reference to the value (`auto v = object["foo"]`), or to consume the content and store it in your own data structures. If you consume an
+  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. Keep in mind that On Demand does not buffer or save the result of the parsing: if you repeatedly access `object["foo"]`, then it must repeatedly seek the key and parse the content. The library does not provide a distinct function to check if a key is present, instead we recommend you attempt to access the key: e.g., by doing `ondemand::value val{}; if (!object["foo"].get(val)) {...}`, you have that `val` contains the requested value inside the if clause.  It is your responsibility as a user to temporarily keep a reference to the value (`auto v = object["foo"]`), or to consume the content and store it in your own data structures. If you consume an
   object twice: `std::string_view(object["foo"]` followed by `std::string_view(object["foo"]` then your code
   is in error. Furthermore, you can only consume one field at a time, on the same object. The
   value instance you get from  `content["bids"]` becomes invalid when you call `content["asks"]`.
@@ -381,7 +381,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   >    // parses and writes out the key, after unescaping it,
   >    // to a string buffer. It causes a performance penalty.
   >    std::string_view keyv = field.unescaped_key();
-  >    if(keyv == "key") { std::cout << uint64_t(field.value()); }
+  >    if (keyv == "key") { std::cout << uint64_t(field.value()); }
   >  }
   > ```
   >
@@ -445,7 +445,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > {
   >   ondemand::parser parser;
   >   for (ondemand::object car : parser.iterate(cars_json)) {
-  >     if(uint64_t(car["year"]) > 2000) {
+  >     if (uint64_t(car["year"]) > 2000) {
   >       arrays.push_back(simdjson::to_json_string(car["tire_pressure"]));
   >     }
   >   }
@@ -454,7 +454,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > std::ostringstream oss;
   > oss << "[";
   > for(size_t i = 0; i < arrays.size(); i++) {
-  >   if(i>0) { oss << ","; }
+  >   if (i>0) { oss << ","; }
   >   oss << arrays[i];
   > }
   > oss << "]";
@@ -597,7 +597,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
     case ondemand::json_type::null:
       // We check that the value is indeed null
       // otherwise: an error is thrown.
-      if(element.is_null()) {
+      if (element.is_null()) {
         cout << "null";
       }
       break;
@@ -910,11 +910,11 @@ bool simple_error_example() {
     ondemand::parser parser;
     auto json = R"({"bad number":3.14.1 })"_padded;
     ondemand::document doc;
-    if( parser.iterate(json).get(doc) != SUCCESS ) { return false; }
+    if (parser.iterate(json).get(doc) != SUCCESS) { return false; }
     double x;
     auto error = doc["bad number"].get_double().get(x);
     // returns "simdjson::NUMBER_ERROR"
-    if(error != SUCCESS) {
+    if (error != SUCCESS) {
       std::cout << error << std::endl;
       return false;
     }
@@ -976,10 +976,10 @@ it selects the key `"count"` within that object.
 int main(void) {
   simdjson::ondemand::parser parser;
   auto error = padded_string::load("twitter.json").get(json);
-  if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   simdjson::ondemand::document tweets;
   error = parser.iterate(json).get(tweets);
-  if( error ) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   simdjson::ondemand::value res;
   error = tweets["search_metadata"]["count"].get(res);
   if (error != SUCCESS) {
@@ -1010,12 +1010,12 @@ int main(void) {
   simdjson::ondemand::document tweets;
   padded_string json;
   auto error = padded_string::load("twitter.json").get(json);
-  if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   error = parser.iterate(json).get(tweets);
-  if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   uint64_t identifier;
   error = tweets["statuses"].at(0)["id"].get(identifier);
-  if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   std::cout << identifier << std::endl;
 }
 ```
@@ -1039,40 +1039,40 @@ bool parse() {
 
   // Iterating through an array of objects
   auto error = parser.iterate(cars_json).get(doc);
-  if(error) { std::cerr << error << std::endl; return false; }
+  if (error) { std::cerr << error << std::endl; return false; }
   ondemand::array cars; // invalid until the get() succeeds
   error = doc.get_array().get(cars);
 
   for (auto car_value : cars) {
     ondemand::object car; // invalid until the get() succeeds
     error = car_value.get_object().get(car);
-    if(error) { std::cerr << error << std::endl; return false; }
+    if (error) { std::cerr << error << std::endl; return false; }
 
     // Accessing a field by name
     std::string_view make;
     std::string_view model;
     error = car["make"].get(make);
-    if(error) { std::cerr << error << std::endl; return false; }
+    if (error) { std::cerr << error << std::endl; return false; }
     error = car["model"].get(model);
-    if(error) { std::cerr << error << std::endl; return false; }
+    if (error) { std::cerr << error << std::endl; return false; }
 
     cout << "Make/Model: " << make << "/" << model << endl;
 
     // Casting a JSON element to an integer
     uint64_t year{};
     error = car["year"].get(year);
-    if(error) { std::cerr << error << std::endl; return false; }
+    if (error) { std::cerr << error << std::endl; return false; }
     cout << "- This car is " << 2020 - year << " years old." << endl;
 
     // Iterating through an array of floats
     double total_tire_pressure = 0;
     ondemand::array pressures;
     error = car["tire_pressure"].get_array().get(pressures);
-    if(error) { std::cerr << error << std::endl; return false; }
+    if (error) { std::cerr << error << std::endl; return false; }
     for (auto tire_pressure_value : pressures) {
       double tire_pressure;
       error = tire_pressure_value.get_double().get(tire_pressure);
-      if(error) { std::cerr << error << std::endl; return false; }
+      if (error) { std::cerr << error << std::endl; return false; }
       total_tire_pressure += tire_pressure;
     }
     cout << "- Average tire pressure: " << (total_tire_pressure / 4) << endl;
@@ -1088,7 +1088,7 @@ after you have initialized them and checked that there is no error:
     ondemand::object car; // invalid until the get() succeeds
     // the `car` instance should not use used before it is initialized
     error = car_value.get_object().get(car);
-    if(error) {
+    if (error) {
       // the `car` instance should not use used
     } else {
       // the `car` instance can be safely used
@@ -1102,20 +1102,20 @@ having to handle exceptions.
   ondemand::parser parser;
   ondemand::document doc;
   auto error = parser.iterate(json).get(doc);
-  if(error) { return false; }
+  if (error) { return false; }
   ondemand::object object; // invalid until the get() succeeds
   error = doc.get_object().get(object);
-  if(error) { return false; }
+  if (error) { return false; }
   for(auto field : object) {
     // We could replace 'field.key() with field.unescaped_key(),
     // and ondemand::raw_json_string by std::string_view.
     ondemand::raw_json_string keyv;
     error = field.key().get(keyv);
-    if(error) { return false; }
-    if(keyv == "key") {
+    if (error) { return false; }
+    if (keyv == "key") {
       uint64_t intvalue;
       error = field.value().get(intvalue);
-      if(error) { return false; }
+      if (error) { return false; }
       std::cout << intvalue;
     }
   }
@@ -1294,7 +1294,7 @@ content.
   for (uint64_t values : array) {
     std::cout << values << std::endl;
   }
-  if(!doc.at_end()) {
+  if (!doc.at_end()) {
     // In this instance, we will be left pointing at 'foo' since we have consumed the array [1,2].
     std::cerr << "trailing content at byte index " << doc.current_location() - json.data() << std::endl;
   }
@@ -1324,7 +1324,7 @@ before printout the data.
 
   auto doc = parser.iterate(cars_json);
   for (simdjson_unused ondemand::object car : doc) {
-    if(car["make"] == "Toyota") { count++; }
+    if (car["make"] == "Toyota") { count++; }
   }
   std::cout << "We have " << count << " Toyota cars.\n";
   doc.rewind(); // requires simdjson 1.0 or better
@@ -1392,18 +1392,18 @@ ondemand::parser parser;
 ondemand::document_stream stream;
 size_t counter{0};
 auto error = parser.iterate_many(json, 50).get(stream);
-if( error ) { /* handle the error */ }
+if (error) { /* handle the error */ }
 for (auto doc: stream) {
-  if(counter < 6) {
+  if (counter < 6) {
     int64_t val;
     error = doc.at_pointer("/4").get(val);
-    if( error ) { /* handle the error */ }
+    if (error) { /* handle the error */ }
     std::cout << "5 = " << val << std::endl;
   } else {
     ondemand::value val;
     error = doc.at_pointer("/4").get(val);
     // error == simdjson::CAPACITY
-    if(error) {
+    if (error) {
       std::cerr << error << std::endl;
       // We left 293 bytes unprocessed at the tail end of the input.
       std::cout << " unprocessed bytes at the end: " << stream.truncated_bytes() << std::endl;
