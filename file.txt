@@ -1,0 +1,277 @@
+number of iterations 3000 
+
+| Original (jsonexamples/twitter-padded-numbers.json) 773
+|- 18-digit numbers (jsonexamples/twitter18.json) 757
+|- 8-digit numbers (jsonexamples/twitter8.json) 766
+|- 1-digit numbers (jsonexamples/twitter1.json) 544
+|  |- strings -> no backslashes (jsonexamples/twitter1-nobackslash.json) 499
+|     |- strings -> no utf8 (jsonexamples/twitter1-nobackslash-noutf8.json) 489
+|        |- strings -> empty strings (jsonexamples/twitter1-emptystring.json) 351
+|           |- no number/bool/null -> all strings (jsonexamples/twitter-allstrings.json) 216
+|              |- no objects -> all arrays (jsonexamples/twitter-allstrings-arrays.json) 427
+|                 |- arrays -> no nested arrays (jsonexamples/twitter-allstrings-flatarray.json) 3
+
+jsonexamples/twitter-padded-numbers.json
+========================================
+    10306 blocks -     659626 bytes - 55262 structurals (  8.4 %)
+special blocks with: utf8      2289 ( 22.2 %) - escape       604 (  5.9 %) - 0 structurals      1270 ( 12.3 %) - 1+ structurals      9037 ( 87.7 %) - 8+ structurals      2576 ( 25.0 %) - 16+ structurals         0 (  0.0 %)
+special block flips: utf8      1096 ( 10.6 %) - escape       646 (  6.3 %) - 0 structurals       932 (  9.0 %) - 1+ structurals       932 (  9.0 %) - 8+ structurals      2843 ( 27.6 %) - 16+ structurals         0 (  0.0 %)
+
+All Stages (excluding allocation)
+|    Speed        :  20.7212 ns per block ( 97.66%) -   0.3238 ns per byte -   3.8647 ns per structural -   3.0885 GB/s
+|    Cycles       :  64.1524 per block    ( 97.86%) -   1.0024 per byte    -  11.9652 per structural    -    3.096 GHz est. frequency
+|    Instructions : 200.2565 per block    (100.00%) -   3.1291 per byte    -  37.3502 per structural    -    3.122 per cycle
+|    Misses       :     873 branch misses ( 93.08%) - 0 cache misses (  0.00%) - 28032.00 cache references
+|- Stage 1
+|    Speed        :   6.0073 ns per block ( 28.31%) -   0.0939 ns per byte -   1.1204 ns per structural -  10.6534 GB/s
+|    Cycles       :  18.6130 per block    ( 28.39%) -   0.2908 per byte    -   3.4715 per structural    -    3.098 GHz est. frequency
+|    Instructions :  61.8107 per block    ( 30.87%) -   0.9658 per byte    -  11.5284 per structural    -    3.321 per cycle
+|    Misses       :      93 branch misses (  9.92%) - 0 cache misses (  0.00%) - 12229.00 cache references
+|- Stage 2
+|    Speed        :  14.6555 ns per block ( 69.07%) -   0.2290 ns per byte -   2.7334 ns per structural -   4.3668 GB/s
+|    Cycles       :  45.3587 per block    ( 69.19%) -   0.7088 per byte    -   8.4599 per structural    -    3.095 GHz est. frequency
+|    Instructions : 138.4458 per block    ( 69.13%) -   2.1633 per byte    -  25.8217 per structural    -    3.052 per cycle
+|    Misses       :     773 branch misses ( 82.42%) - 0 cache misses (  0.00%) - 15925.00 cache references
+
+4682.2 documents parsed per second (best)
+
+jsonexamples/twitter18.json
+===========================
+    10306 blocks -     659626 bytes - 55262 structurals (  8.4 %)
+special blocks with: utf8      2289 ( 22.2 %) - escape       604 (  5.9 %) - 0 structurals      1270 ( 12.3 %) - 1+ structurals      9037 ( 87.7 %) - 8+ structurals      2585 ( 25.1 %) - 16+ structurals         0 (  0.0 %)
+special block flips: utf8      1096 ( 10.6 %) - escape       646 (  6.3 %) - 0 structurals       932 (  9.0 %) - 1+ structurals       932 (  9.0 %) - 8+ structurals      2847 ( 27.6 %) - 16+ structurals         0 (  0.0 %)
+
+All Stages (excluding allocation)
+|    Speed        :  21.1739 ns per block ( 93.63%) -   0.3309 ns per byte -   3.9492 ns per structural -   3.0225 GB/s
+|    Cycles       :  65.5570 per block    ( 97.40%) -   1.0244 per byte    -  12.2271 per structural    -    3.096 GHz est. frequency
+|    Instructions : 205.6160 per block    (100.00%) -   3.2129 per byte    -  38.3498 per structural    -    3.136 per cycle
+|    Misses       :     856 branch misses ( 97.20%) - 0 cache misses (  0.00%) - 28297.00 cache references
+|- Stage 1
+|    Speed        :   5.9968 ns per block ( 26.52%) -   0.0937 ns per byte -   1.1185 ns per structural -  10.6720 GB/s
+|    Cycles       :  18.5808 per block    ( 27.61%) -   0.2903 per byte    -   3.4655 per structural    -    3.098 GHz est. frequency
+|    Instructions :  61.8107 per block    ( 30.06%) -   0.9658 per byte    -  11.5284 per structural    -    3.327 per cycle
+|    Misses       :     103 branch misses ( 11.70%) - 0 cache misses (  0.00%) - 12271.00 cache references
+|- Stage 2
+|    Speed        :  15.0964 ns per block ( 66.75%) -   0.2359 ns per byte -   2.8157 ns per structural -   4.2393 GB/s
+|    Cycles       :  46.7271 per block    ( 69.43%) -   0.7301 per byte    -   8.7151 per structural    -    3.095 GHz est. frequency
+|    Instructions : 143.8053 per block    ( 69.94%) -   2.2470 per byte    -  26.8213 per structural    -    3.078 per cycle
+|    Misses       :     757 branch misses ( 85.96%) - 0 cache misses (  0.00%) - 16107.00 cache references
+
+4582.1 documents parsed per second (best)
+
+jsonexamples/twitter8.json
+==========================
+    10306 blocks -     659626 bytes - 55262 structurals (  8.4 %)
+special blocks with: utf8      2289 ( 22.2 %) - escape       604 (  5.9 %) - 0 structurals      1270 ( 12.3 %) - 1+ structurals      9037 ( 87.7 %) - 8+ structurals      2576 ( 25.0 %) - 16+ structurals         0 (  0.0 %)
+special block flips: utf8      1096 ( 10.6 %) - escape       646 (  6.3 %) - 0 structurals       932 (  9.0 %) - 1+ structurals       932 (  9.0 %) - 8+ structurals      2843 ( 27.6 %) - 16+ structurals         0 (  0.0 %)
+
+All Stages (excluding allocation)
+|    Speed        :  20.6976 ns per block ( 97.48%) -   0.3234 ns per byte -   3.8603 ns per structural -   3.0920 GB/s
+|    Cycles       :  64.0733 per block    ( 97.72%) -   1.0012 per byte    -  11.9504 per structural    -    3.096 GHz est. frequency
+|    Instructions : 200.2565 per block    (100.00%) -   3.1291 per byte    -  37.3502 per structural    -    3.125 per cycle
+|    Misses       :     860 branch misses ( 91.48%) - 0 cache misses (  0.00%) - 28700.00 cache references
+|- Stage 1
+|    Speed        :   6.0103 ns per block ( 28.31%) -   0.0939 ns per byte -   1.1210 ns per structural -  10.6481 GB/s
+|    Cycles       :  18.6231 per block    ( 28.40%) -   0.2910 per byte    -   3.4734 per structural    -    3.099 GHz est. frequency
+|    Instructions :  61.8107 per block    ( 30.87%) -   0.9658 per byte    -  11.5284 per structural    -    3.319 per cycle
+|    Misses       :     102 branch misses ( 10.85%) - 0 cache misses (  0.00%) - 11933.00 cache references
+|- Stage 2
+|    Speed        :  14.6407 ns per block ( 68.95%) -   0.2288 ns per byte -   2.7307 ns per structural -   4.3712 GB/s
+|    Cycles       :  45.3059 per block    ( 69.10%) -   0.7079 per byte    -   8.4501 per structural    -    3.095 GHz est. frequency
+|    Instructions : 138.4458 per block    ( 69.13%) -   2.1633 per byte    -  25.8217 per structural    -    3.056 per cycle
+|    Misses       :     766 branch misses ( 81.48%) - 0 cache misses (  0.00%) - 16566.00 cache references
+
+4687.6 documents parsed per second (best)
+
+jsonexamples/twitter1.json
+==========================
+    10306 blocks -     659626 bytes - 55262 structurals (  8.4 %)
+special blocks with: utf8      2289 ( 22.2 %) - escape       604 (  5.9 %) - 0 structurals      1270 ( 12.3 %) - 1+ structurals      9037 ( 87.7 %) - 8+ structurals      2584 ( 25.1 %) - 16+ structurals         0 (  0.0 %)
+special block flips: utf8      1096 ( 10.6 %) - escape       646 (  6.3 %) - 0 structurals       932 (  9.0 %) - 1+ structurals       932 (  9.0 %) - 8+ structurals      2859 ( 27.7 %) - 16+ structurals         0 (  0.0 %)
+
+All Stages (excluding allocation)
+|    Speed        :  20.1200 ns per block ( 93.76%) -   0.3144 ns per byte -   3.7526 ns per structural -   3.1808 GB/s
+|    Cycles       :  62.2865 per block    ( 97.52%) -   0.9733 per byte    -  11.6172 per structural    -    3.096 GHz est. frequency
+|    Instructions : 194.5666 per block    (100.00%) -   3.0402 per byte    -  36.2889 per structural    -    3.124 per cycle
+|    Misses       :     673 branch misses ( 97.88%) - 0 cache misses (  0.00%) - 28320.00 cache references
+|- Stage 1
+|    Speed        :   6.0046 ns per block ( 27.98%) -   0.0938 ns per byte -   1.1199 ns per structural -  10.6582 GB/s
+|    Cycles       :  18.6140 per block    ( 29.14%) -   0.2909 per byte    -   3.4717 per structural    -    3.100 GHz est. frequency
+|    Instructions :  61.8107 per block    ( 31.77%) -   0.9658 per byte    -  11.5284 per structural    -    3.321 per cycle
+|    Misses       :     113 branch misses ( 16.43%) - 0 cache misses (  0.00%) - 12175.00 cache references
+|- Stage 2
+|    Speed        :  14.0716 ns per block ( 65.57%) -   0.2199 ns per byte -   2.6245 ns per structural -   4.5480 GB/s
+|    Cycles       :  43.5464 per block    ( 68.18%) -   0.6804 per byte    -   8.1219 per structural    -    3.095 GHz est. frequency
+|    Instructions : 132.7559 per block    ( 68.23%) -   2.0744 per byte    -  24.7605 per structural    -    3.049 per cycle
+|    Misses       :     544 branch misses ( 79.11%) - 0 cache misses (  0.00%) - 16212.00 cache references
+
+4822.1 documents parsed per second (best)
+
+jsonexamples/twitter1-nobackslash.json
+======================================
+    10306 blocks -     659626 bytes - 55262 structurals (  8.4 %)
+special blocks with: utf8      2289 ( 22.2 %) - escape         0 (  0.0 %) - 0 structurals      1270 ( 12.3 %) - 1+ structurals      9037 ( 87.7 %) - 8+ structurals      2584 ( 25.1 %) - 16+ structurals         0 (  0.0 %)
+special block flips: utf8      1096 ( 10.6 %) - escape         0 (  0.0 %) - 0 structurals       932 (  9.0 %) - 1+ structurals       932 (  9.0 %) - 8+ structurals      2859 ( 27.7 %) - 16+ structurals         0 (  0.0 %)
+
+All Stages (excluding allocation)
+|    Speed        :  19.3473 ns per block ( 94.75%) -   0.3023 ns per byte -   3.6085 ns per structural -   3.3078 GB/s
+|    Cycles       :  59.8930 per block    ( 97.21%) -   0.9359 per byte    -  11.1707 per structural    -    3.096 GHz est. frequency
+|    Instructions : 191.2882 per block    (100.00%) -   2.9890 per byte    -  35.6774 per structural    -    3.194 per cycle
+|    Misses       :     624 branch misses ( 99.02%) - 2 cache misses ( 30.96%) - 28632.00 cache references
+|- Stage 1
+|    Speed        :   5.9519 ns per block ( 29.15%) -   0.0930 ns per byte -   1.1101 ns per structural -  10.7526 GB/s
+|    Cycles       :  18.4460 per block    ( 29.94%) -   0.2882 per byte    -   3.4404 per structural    -    3.099 GHz est. frequency
+|    Instructions :  61.1661 per block    ( 31.98%) -   0.9558 per byte    -  11.4082 per structural    -    3.316 per cycle
+|    Misses       :      92 branch misses ( 14.60%) - 1 cache misses ( 15.48%) - 12277.00 cache references
+|- Stage 2
+|    Speed        :  13.3283 ns per block ( 65.28%) -   0.2083 ns per byte -   2.4859 ns per structural -   4.8016 GB/s
+|    Cycles       :  41.2453 per block    ( 66.95%) -   0.6445 per byte    -   7.6927 per structural    -    3.095 GHz est. frequency
+|    Instructions : 130.1221 per block    ( 68.02%) -   2.0332 per byte    -  24.2693 per structural    -    3.155 per cycle
+|    Misses       :     499 branch misses ( 79.19%) - 1 cache misses ( 15.48%) - 16358.00 cache references
+
+5014.7 documents parsed per second (best)
+
+jsonexamples/twitter1-nobackslash-noutf8.json
+=============================================
+    10306 blocks -     659626 bytes - 55262 structurals (  8.4 %)
+special blocks with: utf8         0 (  0.0 %) - escape         0 (  0.0 %) - 0 structurals      1270 ( 12.3 %) - 1+ structurals      9037 ( 87.7 %) - 8+ structurals      2584 ( 25.1 %) - 16+ structurals         0 (  0.0 %)
+special block flips: utf8         0 (  0.0 %) - escape         0 (  0.0 %) - 0 structurals       932 (  9.0 %) - 1+ structurals       932 (  9.0 %) - 8+ structurals      2859 ( 27.7 %) - 16+ structurals         0 (  0.0 %)
+
+All Stages (excluding allocation)
+|    Speed        :  18.9506 ns per block ( 97.78%) -   0.2961 ns per byte -   3.5345 ns per structural -   3.3771 GB/s
+|    Cycles       :  58.6756 per block    ( 97.97%) -   0.9168 per byte    -  10.9437 per structural    -    3.096 GHz est. frequency
+|    Instructions : 186.6244 per block    (100.00%) -   2.9161 per byte    -  34.8076 per structural    -    3.181 per cycle
+|    Misses       :     634 branch misses ( 99.08%) - 0 cache misses (  0.00%) - 28596.00 cache references
+|- Stage 1
+|    Speed        :   5.4613 ns per block ( 28.18%) -   0.0853 ns per byte -   1.0186 ns per structural -  11.7184 GB/s
+|    Cycles       :  16.9236 per block    ( 28.26%) -   0.2644 per byte    -   3.1565 per structural    -    3.099 GHz est. frequency
+|    Instructions :  56.5024 per block    ( 30.28%) -   0.8829 per byte    -  10.5383 per structural    -    3.339 per cycle
+|    Misses       :     130 branch misses ( 20.32%) - 0 cache misses (  0.00%) - 12365.00 cache references
+|- Stage 2
+|    Speed        :  13.4108 ns per block ( 69.19%) -   0.2096 ns per byte -   2.5013 ns per structural -   4.7721 GB/s
+|    Cycles       :  41.5073 per block    ( 69.31%) -   0.6486 per byte    -   7.7416 per structural    -    3.095 GHz est. frequency
+|    Instructions : 130.1221 per block    ( 69.72%) -   2.0332 per byte    -  24.2693 per structural    -    3.135 per cycle
+|    Misses       :     489 branch misses ( 76.42%) - 0 cache misses (  0.00%) - 16279.00 cache references
+
+5119.7 documents parsed per second (best)
+
+jsonexamples/twitter1-emptystring.json
+======================================
+    10306 blocks -     659626 bytes - 55262 structurals (  8.4 %)
+special blocks with: utf8         0 (  0.0 %) - escape         0 (  0.0 %) - 0 structurals      1269 ( 12.3 %) - 1+ structurals      9038 ( 87.7 %) - 8+ structurals      2856 ( 27.7 %) - 16+ structurals         0 (  0.0 %)
+special block flips: utf8         0 (  0.0 %) - escape         0 (  0.0 %) - 0 structurals       928 (  9.0 %) - 1+ structurals       928 (  9.0 %) - 8+ structurals      3123 ( 30.3 %) - 16+ structurals         0 (  0.0 %)
+
+All Stages (excluding allocation)
+|    Speed        :  18.0587 ns per block ( 93.58%) -   0.2822 ns per byte -   3.3682 ns per structural -   3.5439 GB/s
+|    Cycles       :  55.9116 per block    ( 97.35%) -   0.8736 per byte    -  10.4282 per structural    -    3.096 GHz est. frequency
+|    Instructions : 183.3181 per block    (100.00%) -   2.8644 per byte    -  34.1909 per structural    -    3.279 per cycle
+|    Misses       :     473 branch misses (101.19%) - 1 cache misses ( 15.11%) - 18833.00 cache references
+|- Stage 1
+|    Speed        :   5.4026 ns per block ( 28.00%) -   0.0844 ns per byte -   1.0077 ns per structural -  11.8457 GB/s
+|    Cycles       :  16.7461 per block    ( 29.16%) -   0.2617 per byte    -   3.1233 per structural    -    3.100 GHz est. frequency
+|    Instructions :  56.5028 per block    ( 30.82%) -   0.8829 per byte    -  10.5384 per structural    -    3.374 per cycle
+|    Misses       :     112 branch misses ( 23.96%) - 0 cache misses (  0.00%) - 10717.00 cache references
+|- Stage 2
+|    Speed        :  12.6022 ns per block ( 65.30%) -   0.1969 ns per byte -   2.3505 ns per structural -   5.0783 GB/s
+|    Cycles       :  39.0031 per block    ( 67.91%) -   0.6094 per byte    -   7.2745 per structural    -    3.095 GHz est. frequency
+|    Instructions : 126.8154 per block    ( 69.18%) -   1.9816 per byte    -  23.6525 per structural    -    3.251 per cycle
+|    Misses       :     351 branch misses ( 75.09%) - 1 cache misses ( 15.11%) - 8120.00 cache references
+
+5372.6 documents parsed per second (best)
+
+jsonexamples/twitter-allstrings.json
+====================================
+    10306 blocks -     659626 bytes - 55262 structurals (  8.4 %)
+special blocks with: utf8         0 (  0.0 %) - escape         0 (  0.0 %) - 0 structurals      1269 ( 12.3 %) - 1+ structurals      9038 ( 87.7 %) - 8+ structurals      2853 ( 27.7 %) - 16+ structurals         0 (  0.0 %)
+special block flips: utf8         0 (  0.0 %) - escape         0 (  0.0 %) - 0 structurals       928 (  9.0 %) - 1+ structurals       928 (  9.0 %) - 8+ structurals      3107 ( 30.1 %) - 16+ structurals         0 (  0.0 %)
+
+All Stages (excluding allocation)
+|    Speed        :  19.6482 ns per block ( 97.20%) -   0.3070 ns per byte -   3.6646 ns per structural -   3.2572 GB/s
+|    Cycles       :  60.8255 per block    ( 97.62%) -   0.9504 per byte    -  11.3446 per structural    -    3.096 GHz est. frequency
+|    Instructions : 183.8463 per block    (100.00%) -   2.8727 per byte    -  34.2895 per structural    -    3.023 per cycle
+|    Misses       :     300 branch misses ( 96.97%) - 0 cache misses (  0.00%) - 18361.00 cache references
+|- Stage 1
+|    Speed        :   5.4053 ns per block ( 26.74%) -   0.0845 ns per byte -   1.0081 ns per structural -  11.8399 GB/s
+|    Cycles       :  16.7545 per block    ( 26.89%) -   0.2618 per byte    -   3.1249 per structural    -    3.100 GHz est. frequency
+|    Instructions :  56.5028 per block    ( 30.73%) -   0.8829 per byte    -  10.5384 per structural    -    3.372 per cycle
+|    Misses       :      98 branch misses ( 31.68%) - 1 cache misses ( 18.41%) - 10786.00 cache references
+|- Stage 2
+|    Speed        :  14.0367 ns per block ( 69.44%) -   0.2193 ns per byte -   2.6180 ns per structural -   4.5593 GB/s
+|    Cycles       :  43.4371 per block    ( 69.71%) -   0.6787 per byte    -   8.1015 per structural    -    3.095 GHz est. frequency
+|    Instructions : 127.3447 per block    ( 69.27%) -   1.9898 per byte    -  23.7513 per structural    -    2.932 per cycle
+|    Misses       :     216 branch misses ( 69.82%) - 0 cache misses (  0.00%) - 7835.00 cache references
+
+4937.9 documents parsed per second (best)
+
+jsonexamples/twitter-allstrings-arrays.json
+===========================================
+    10306 blocks -     659626 bytes - 55262 structurals (  8.4 %)
+special blocks with: utf8         0 (  0.0 %) - escape         0 (  0.0 %) - 0 structurals      1269 ( 12.3 %) - 1+ structurals      9038 ( 87.7 %) - 8+ structurals      2853 ( 27.7 %) - 16+ structurals         0 (  0.0 %)
+special block flips: utf8         0 (  0.0 %) - escape         0 (  0.0 %) - 0 structurals       928 (  9.0 %) - 1+ structurals       928 (  9.0 %) - 8+ structurals      3107 ( 30.1 %) - 16+ structurals         0 (  0.0 %)
+
+All Stages (excluding allocation)
+|    Speed        :  23.6768 ns per block ( 96.29%) -   0.3700 ns per byte -   4.4160 ns per structural -   2.7030 GB/s
+|    Cycles       :  72.7530 per block    ( 95.79%) -   1.1368 per byte    -  13.5693 per structural    -    3.073 GHz est. frequency
+|    Instructions : 225.0789 per block    (100.00%) -   3.5170 per byte    -  41.9798 per structural    -    3.094 per cycle
+|    Misses       :     547 branch misses (104.38%) - 0 cache misses (  0.00%) - 17259.00 cache references
+|- Stage 1
+|    Speed        :   5.4063 ns per block ( 21.99%) -   0.0845 ns per byte -   1.0083 ns per structural -  11.8376 GB/s
+|    Cycles       :  16.7598 per block    ( 22.07%) -   0.2619 per byte    -   3.1259 per structural    -    3.100 GHz est. frequency
+|    Instructions :  56.5028 per block    ( 25.10%) -   0.8829 per byte    -  10.5384 per structural    -    3.371 per cycle
+|    Misses       :     101 branch misses ( 19.27%) - 0 cache misses (  0.00%) - 10570.00 cache references
+|- Stage 2
+|    Speed        :  18.2062 ns per block ( 74.04%) -   0.2845 ns per byte -   3.3957 ns per structural -   3.5152 GB/s
+|    Cycles       :  55.7937 per block    ( 73.46%) -   0.8718 per byte    -  10.4062 per structural    -    3.065 GHz est. frequency
+|    Instructions : 168.5761 per block    ( 74.90%) -   2.6341 per byte    -  31.4414 per structural    -    3.021 per cycle
+|    Misses       :     427 branch misses ( 81.48%) - 0 cache misses (  0.00%) - 6797.00 cache references
+
+4097.7 documents parsed per second (best)
+
+jsonexamples/twitter-allstrings-flatarray.json
+==============================================
+    10306 blocks -     659626 bytes - 49890 structurals (  7.6 %)
+special blocks with: utf8         0 (  0.0 %) - escape         0 (  0.0 %) - 0 structurals      1279 ( 12.4 %) - 1+ structurals      9028 ( 87.6 %) - 8+ structurals      2100 ( 20.4 %) - 16+ structurals         0 (  0.0 %)
+special block flips: utf8         0 (  0.0 %) - escape         0 (  0.0 %) - 0 structurals       946 (  9.2 %) - 1+ structurals       946 (  9.2 %) - 8+ structurals      2668 ( 25.9 %) - 16+ structurals         0 (  0.0 %)
+
+All Stages (excluding allocation)
+|    Speed        :  20.5314 ns per block ( 98.77%) -   0.3208 ns per byte -   4.2417 ns per structural -   3.1171 GB/s
+|    Cycles       :  63.5535 per block    ( 98.95%) -   0.9931 per byte    -  13.1298 per structural    -    3.095 GHz est. frequency
+|    Instructions : 208.9967 per block    (100.00%) -   3.2657 per byte    -  43.1776 per structural    -    3.289 per cycle
+|    Misses       :      94 branch misses ( 99.52%) - 0 cache misses (  0.00%) - 15420.00 cache references
+|- Stage 1
+|    Speed        :   5.3985 ns per block ( 25.97%) -   0.0844 ns per byte -   1.1153 ns per structural -  11.8548 GB/s
+|    Cycles       :  16.7318 per block    ( 26.05%) -   0.2614 per byte    -   3.4567 per structural    -    3.099 GHz est. frequency
+|    Instructions :  56.4917 per block    ( 27.03%) -   0.8827 per byte    -  11.6709 per structural    -    3.376 per cycle
+|    Misses       :      87 branch misses ( 92.11%) - 0 cache misses (  0.00%) - 9889.00 cache references
+|- Stage 2
+|    Speed        :  15.0691 ns per block ( 72.49%) -   0.2355 ns per byte -   3.1132 ns per structural -   4.2470 GB/s
+|    Cycles       :  46.6318 per block    ( 72.61%) -   0.7286 per byte    -   9.6339 per structural    -    3.095 GHz est. frequency
+|    Instructions : 152.5050 per block    ( 72.97%) -   2.3830 per byte    -  31.5067 per structural    -    3.270 per cycle
+|    Misses       :       3 branch misses (  3.18%) - 0 cache misses (  0.00%) - 5610.00 cache references
+
+4725.5 documents parsed per second (best)
+
+jsonexamples/twitter-allstrings-flatobjects.json
+================================================
+    10306 blocks -     659626 bytes - 56091 structurals (  8.5 %)
+special blocks with: utf8         0 (  0.0 %) - escape         0 (  0.0 %) - 0 structurals      1269 ( 12.3 %) - 1+ structurals      9038 ( 87.7 %) - 8+ structurals      2973 ( 28.8 %) - 16+ structurals         0 (  0.0 %)
+special block flips: utf8         0 (  0.0 %) - escape         0 (  0.0 %) - 0 structurals       928 (  9.0 %) - 1+ structurals       928 (  9.0 %) - 8+ structurals      3093 ( 30.0 %) - 16+ structurals         0 (  0.0 %)
+
+All Stages (excluding allocation)
+|    Speed        :  19.4292 ns per block ( 97.71%) -   0.3036 ns per byte -   3.5702 ns per structural -   3.2939 GB/s
+|    Cycles       :  60.1577 per block    ( 97.90%) -   0.9400 per byte    -  11.0543 per structural    -    3.096 GHz est. frequency
+|    Instructions : 181.6747 per block    (100.00%) -   2.8388 per byte    -  33.3836 per structural    -    3.020 per cycle
+|    Misses       :     508 branch misses (100.57%) - 0 cache misses (  0.00%) - 17421.00 cache references
+|- Stage 1
+|    Speed        :   5.4138 ns per block ( 27.22%) -   0.0846 ns per byte -   0.9948 ns per structural -  11.8213 GB/s
+|    Cycles       :  16.7833 per block    ( 27.31%) -   0.2622 per byte    -   3.0840 per structural    -    3.100 GHz est. frequency
+|    Instructions :  56.5028 per block    ( 31.10%) -   0.8829 per byte    -  10.3827 per structural    -    3.367 per cycle
+|    Misses       :      99 branch misses ( 19.60%) - 0 cache misses (  0.00%) - 10517.00 cache references
+|- Stage 2
+|    Speed        :  13.9445 ns per block ( 70.12%) -   0.2179 ns per byte -   2.5624 ns per structural -   4.5895 GB/s
+|    Cycles       :  43.1562 per block    ( 70.23%) -   0.6743 per byte    -   7.9302 per structural    -    3.095 GHz est. frequency
+|    Instructions : 125.1719 per block    ( 68.90%) -   1.9559 per byte    -  23.0010 per structural    -    2.900 per cycle
+|    Misses       :     402 branch misses ( 79.59%) - 0 cache misses (  0.00%) - 6973.00 cache references
+
+4993.6 documents parsed per second (best)
+

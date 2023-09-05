@@ -3,7 +3,7 @@
         {"column": 95 },
         {"column": 120 }
     ],
-    "files.trimTrailingWhitespace": true,
+    "files.trimTrailingWhitespace": false,
     "files.associations": {
         ".clangd": "yaml",
         "array": "cpp",
@@ -99,5 +99,6 @@
         "shared_mutex": "cpp",
         "ranges": "cpp",
         "span": "cpp"
-    }
+    },
+    "editor.trimAutoWhitespace": true
 }
