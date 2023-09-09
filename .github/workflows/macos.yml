@@ -31,3 +31,14 @@ jobs:
           echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json &&
           cd ../tests/installation_tests/find &&
           mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../build/destination .. &&  cmake --build .
+      - name: Use cmake (shared)
+        run: |
+          mkdir buildshared &&
+          cd buildshared &&
+          cmake  -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
+          cmake --build .   &&
+          ctest --output-on-failure -LE explicitonly -j   &&
+          cmake --install . &&
+          echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json &&
+          cd ../tests/installation_tests/find &&
+          mkdir buildshared && cd buildshared && cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../buildshared/destination .. &&  cmake --build .
