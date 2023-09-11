@@ -371,7 +371,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > to support escaped keys, the method `unescaped_key()` provides the desired unescaped keys by
   > parsing and writing out the unescaped keys to a string buffer and returning a `std::string_view`
   > instance. The `unescaped_key` takes an optional Boolean value: passing it true will decode invalid
-  > Unicode sequence with replacement, meaning that the decoding always succeeds but bogus Unicode
+  > Unicode sequences with replacement, meaning that the decoding always succeeds but bogus Unicode
   > replacement characters are inserted. In general, you should expect a performance penalty
   > when using `unescaped_key()` compared to `key()` because of the string processing: the `key()`
   > function just points inside the source JSON document.
