@@ -370,7 +370,11 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > as a key, it will not be recognized. This is not generally a problem.  Nevertheless, if you do need
   > to support escaped keys, the method `unescaped_key()` provides the desired unescaped keys by
   > parsing and writing out the unescaped keys to a string buffer and returning a `std::string_view`
-  > instance. You should expect a performance penalty when using `unescaped_key()`.
+  > instance. The `unescaped_key` takes an optional Boolean value: passing it true will decode invalid
+  > Unicode sequences with replacement, meaning that the decoding always succeeds but bogus Unicode
+  > replacement characters are inserted. In general, you should expect a performance penalty
+  > when using `unescaped_key()` compared to `key()` because of the string processing: the `key()`
+  > function just points inside the source JSON document.
   >
   > ```c++
   > auto json = R"({"k\u0065y": 1})"_padded;
@@ -414,8 +418,10 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   step through each value in the JSON array.
 
   If you know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`.
-* **Object Iteration:** You can iterate through an object's fields, as well: `for (auto field : object) { ... }`
-  - `field.unescaped_key()` will get you the unescaped key string.
+
+  You may also use explicit iterators: `for(auto i = array.begin(); i != array.end(); i++) {}`. You can check that an array is empty with the condition `auto i = array.begin(); if(i == array.end()) {...}`.
+* **Object Iteration:** You can iterate through an object's fields, as well: `for (auto field : object) { ... }`. You may also use explicit iterators : `for(auto i = object.begin(); i != object.end(); i++) { auto field = *i; .... }`. You can check that an object is empty with the condition `auto i = object.begin(); if(i == object.end()) {...}`.
+  - `field.unescaped_key()` will get you the unescaped key string. E.g., the JSON string `"\u00e1"` becomes the Unicode string `á`. Optionally,  you pass `true` as a parameter to the `unescaped_key` method if you want invalid escape sequences to be replaced by a default replacement character (e.g., `\ud800\ud801\ud811`): otherwise bad escape sequences lead to an immediate error.
   - `field.value()` will get you the value, which you can then use all these other methods on.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index by index. Instead,
   you should iterate through the array and keep an index yourself.
@@ -1943,6 +1949,79 @@ bool example() {
   return true;
 }
 ```
+
+* Example 3: CRT
+
+```C++
+
+bool example() {
+  padded_string padded_input_json = R"([
+	{ "monitor": [
+		{ "id": "monitor",		"type": "toggle",		"label": "monitor"			},
+		{ "id": "profile",		"type": "selector",		"label": "collection"		},
+		{ "id": "overlay",		"type": "selector",		"label": "overlay"			},
+		{ "id": "zoom",			"type": "toggleSlider",	"label": "zoom"				}
+	] },
+
+	{ "crt": [
+		{ "id": "system",		"type": "multi",		"label": "system",		"choices": "PAL, NTSC"	},
+		{ "type": "spacer" },
+		{ "id": "brightness",	"type": "slider",		"icon": "brightness"		},
+		{ "id": "contrast",		"type": "slider",		"icon": "contrast"			},
+		{ "id": "saturation",	"type": "slider",		"icon": "saturation"		},
+		{ "type": "spacer" },
+		{ "id": "overscan",		"type": "toggleSlider",	"label": "overscan"			},
+		{ "type": "spacer" },
+		{ "id": "emulation",	"type": "toggle",		"label": "CRT emulation"	},
+		{ "type": "spacer" },
+		{ "id": "curve",		"type": "toggleSlider",	"label": "curve"			},
+		{ "id": "bleed",		"type": "toggleSlider",	"label": "bleed"			},
+		{ "id": "vignette",		"type": "toggleSlider",	"label": "vignette"			},
+		{ "id": "scanlines",	"type": "toggleSlider",	"label": "scanlines"		},
+		{ "id": "gridlines",	"type": "toggleSlider",	"label": "gridlines"		},
+		{ "id": "glow",			"type": "toggleSlider",	"label": "glow"				},
+		{ "id": "flicker",		"type": "toggleSlider",	"label": "flicker"			},
+		{ "id": "noise",		"type": "toggleSlider",	"label": "noise"			},
+    {}
+	] }
+])"_padded;
+  auto parser = ondemand::parser{};
+  auto doc = parser.iterate(padded_input_json);
+  auto root_array = doc.get_array();
+  // the root should be an object, not an array, but that's the JSON we are
+  // given.
+  for (ondemand::object node : root_array) {
+    // We know that we are going to have just one element in the object.
+    for (auto field : node) {
+      std::cout << "\n\ntop level:" << field.key() << std::endl;
+      // You can get a proper std::string_view for the key with:
+      // std::string_view key = field.unescaped_key();
+      // and second for-range loop to get child-elements here
+      for (ondemand::object inner_object : field.value()) {
+        auto i = inner_object.begin();
+        if (i == inner_object.end()) {
+          std::cout << "empty object" << std::endl;
+          continue;
+        } else {
+          for (; i != inner_object.end(); ++i) {
+            auto inner_field = *i;
+            std::cout << '"' << inner_field.key()
+                      << "\" : " << inner_field.value() << ", ";
+            // You can get proper std::string_view for the key and value with:
+            // std::string_view inner_key = field.unescaped_key();
+            // std::string_view value_str = field.value();
+          }
+        }
+        std::cout << std::endl;
+      }
+      // You can break here if you only want just the first element.
+      // break;
+    }
+  }
+  return true;
+}
+```
+
 
 
 Performance Tips
