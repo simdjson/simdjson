@@ -266,7 +266,7 @@ Using the Parsed JSON</h1>
 </blockquote>
 <p>* <b>Field Access:</b> To get the value of the "foo" field in an object, use <code>object["foo"]</code>. This will scan through the object looking for the field with the matching string, doing a character-by-character comparison. It may generate the error <code><a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a4a2c71f8eca438b3f0553a2811bdab9a" title="JSON field not found in object.">simdjson::NO_SUCH_FIELD</a></code> if there is no such key in the object, it may throw an exception (see <a href="#error-handling">Error Handling</a>). For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do not do <code>object["foo"]</code> followed by <code>object["foo"]</code> with the same <code>object</code> instance. Keep in mind that On Demand does not buffer or save the result of the parsing: if you repeatedly access <code>object["foo"]</code>, then it must repeatedly seek the key and parse the content. The library does not provide a distinct function to check if a key is present, instead we recommend you attempt to access the key: e.g., by doing <code>ondemand::value val{}; if (!object["foo"].get(val)) {...}</code>, you have that <code>val</code> contains the requested value inside the if clause. It is your responsibility as a user to temporarily keep a reference to the value (<code>auto v = object["foo"]</code>), or to consume the content and store it in your own data structures. If you consume an object twice: <code>std::string_view(object["foo"]</code> followed by <code>std::string_view(object["foo"]</code> then your code is in error. Furthermore, you can only consume one field at a time, on the same object. The value instance you get from <code>content["bids"]</code> becomes invalid when you call <code>content["asks"]</code>. If you have retrieved <code>content["bids"].get_array()</code> and you later call <code>content["asks"].get_array()</code>, then the first array should no longer be accessed: it would be unsafe to do so. You can detect such mistakes by first compiling and running the code in Debug mode: an OUT_OF_ORDER_ITERATION error is generated.</p>
 <blockquote class="doxtable">
-<p>NOTE: JSON allows you to escape characters in keys. E.g., the key <code>"date"</code> may be written as <code>"\u0064\u0061\u0074\u0065"</code>. By default, simdjson does <em>not</em> unescape keys when matching by default. Thus if you search for the key <code>"date"</code> and the JSON document uses <code>"\u0064\u0061\u0074\u0065"</code> as a key, it will not be recognized. This is not generally a problem. Nevertheless, if you do need to support escaped keys, the method <code>unescaped_key()</code> provides the desired unescaped keys by parsing and writing out the unescaped keys to a string buffer and returning a <code>std::string_view</code> instance. You should expect a performance penalty when using <code>unescaped_key()</code>.</p>
+<p>NOTE: JSON allows you to escape characters in keys. E.g., the key <code>"date"</code> may be written as <code>"\u0064\u0061\u0074\u0065"</code>. By default, simdjson does <em>not</em> unescape keys when matching by default. Thus if you search for the key <code>"date"</code> and the JSON document uses <code>"\u0064\u0061\u0074\u0065"</code> as a key, it will not be recognized. This is not generally a problem. Nevertheless, if you do need to support escaped keys, the method <code>unescaped_key()</code> provides the desired unescaped keys by parsing and writing out the unescaped keys to a string buffer and returning a <code>std::string_view</code> instance. The <code>unescaped_key</code> takes an optional Boolean value: passing it true will decode invalid Unicode sequences with replacement, meaning that the decoding always succeeds but bogus Unicode replacement characters are inserted. In general, you should expect a performance penalty when using <code>unescaped_key()</code> compared to <code>key()</code> because of the string processing: the <code>key()</code> function just points inside the source JSON document.</p>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">auto json = R&quot;({&quot;k\u0065y&quot;: 1})&quot;_padded;</div>
 <div class="line">ondemand::parser parser;</div>
@@ -295,9 +295,10 @@ Using the Parsed JSON</h1>
 <div class="line">double x = doc[&quot;x&quot;]; // Success: [] loops back around to find &quot;x&quot;</div>
 </div><!-- fragment --> </blockquote>
 <p>* <b>Array Iteration:</b> To iterate through an array, use <code>for (auto value : array) { ... }</code>. This will step through each value in the JSON array.</p>
-<p>If you know the type of the value, you can cast it right there, too! <code>for (double value : array) { ... }</code>.</p><ul>
-<li><b>Object Iteration:</b> You can iterate through an object's fields, as well: <code>for (auto field : object) { ... }</code><ul>
-<li><code>field.unescaped_key()</code> will get you the unescaped key string.</li>
+<p>If you know the type of the value, you can cast it right there, too! <code>for (double value : array) { ... }</code>.</p>
+<p>You may also use explicit iterators: <code>for(auto i = array.begin(); i != array.end(); i++) {}</code>. You can check that an array is empty with the condition <code>auto i = array.begin(); if(i == array.end()) {...}</code>.</p><ul>
+<li><b>Object Iteration:</b> You can iterate through an object's fields, as well: <code>for (auto field : object) { ... }</code>. You may also use explicit iterators : <code>for(auto i = object.begin(); i != object.end(); i++) { auto field = *i; .... }</code>. You can check that an object is empty with the condition <code>auto i = object.begin(); if(i == object.end()) {...}</code>.<ul>
+<li><code>field.unescaped_key()</code> will get you the unescaped key string. E.g., the JSON string <code>"\u00e1"</code> becomes the Unicode string <code>á</code>. Optionally, you pass <code>true</code> as a parameter to the <code>unescaped_key</code> method if you want invalid escape sequences to be replaced by a default replacement character (e.g., <code>\ud800\ud801\ud811</code>): otherwise bad escape sequences lead to an immediate error.</li>
 <li><code>field.value()</code> will get you the value, which you can then use all these other methods on.</li>
 </ul>
 </li>
@@ -1428,6 +1429,77 @@ Examples</h1>
 <div class="line">    std::cout &lt;&lt; &quot;author: &quot; &lt;&lt; std::string_view(obj[&quot;author&quot;]) &lt;&lt; std::endl;</div>
 <div class="line">    std::cout &lt;&lt; &quot;release: &quot; &lt;&lt; std::string_view(obj[&quot;release&quot;]) &lt;&lt; std::endl;</div>
 <div class="line">    std::cout &lt;&lt; &quot;bits: &quot; &lt;&lt; uint64_t(obj[&quot;bits&quot;]) &lt;&lt; std::endl;</div>
+<div class="line">  }</div>
+<div class="line">  return true;</div>
+<div class="line">}</div>
+</div><!-- fragment --><ul>
+<li>Example 3: CRT</li>
+</ul>
+<div class="fragment"><div class="line"> {C++}</div>
+<div class="line"> </div>
+<div class="line">bool example() {</div>
+<div class="line">  padded_string padded_input_json = R&quot;([</div>
+<div class="line">    { &quot;monitor&quot;: [</div>
+<div class="line">        { &quot;id&quot;: &quot;monitor&quot;,      &quot;type&quot;: &quot;toggle&quot;,       &quot;label&quot;: &quot;monitor&quot;          },</div>
+<div class="line">        { &quot;id&quot;: &quot;profile&quot;,      &quot;type&quot;: &quot;selector&quot;,     &quot;label&quot;: &quot;collection&quot;       },</div>
+<div class="line">        { &quot;id&quot;: &quot;overlay&quot;,      &quot;type&quot;: &quot;selector&quot;,     &quot;label&quot;: &quot;overlay&quot;          },</div>
+<div class="line">        { &quot;id&quot;: &quot;zoom&quot;,         &quot;type&quot;: &quot;toggleSlider&quot;, &quot;label&quot;: &quot;zoom&quot;             }</div>
+<div class="line">    ] },</div>
+<div class="line"> </div>
+<div class="line">    { &quot;crt&quot;: [</div>
+<div class="line">        { &quot;id&quot;: &quot;system&quot;,       &quot;type&quot;: &quot;multi&quot;,        &quot;label&quot;: &quot;system&quot;,      &quot;choices&quot;: &quot;PAL, NTSC&quot;  },</div>
+<div class="line">        { &quot;type&quot;: &quot;spacer&quot; },</div>
+<div class="line">        { &quot;id&quot;: &quot;brightness&quot;,   &quot;type&quot;: &quot;slider&quot;,       &quot;icon&quot;: &quot;brightness&quot;        },</div>
+<div class="line">        { &quot;id&quot;: &quot;contrast&quot;,     &quot;type&quot;: &quot;slider&quot;,       &quot;icon&quot;: &quot;contrast&quot;          },</div>
+<div class="line">        { &quot;id&quot;: &quot;saturation&quot;,   &quot;type&quot;: &quot;slider&quot;,       &quot;icon&quot;: &quot;saturation&quot;        },</div>
+<div class="line">        { &quot;type&quot;: &quot;spacer&quot; },</div>
+<div class="line">        { &quot;id&quot;: &quot;overscan&quot;,     &quot;type&quot;: &quot;toggleSlider&quot;, &quot;label&quot;: &quot;overscan&quot;         },</div>
+<div class="line">        { &quot;type&quot;: &quot;spacer&quot; },</div>
+<div class="line">        { &quot;id&quot;: &quot;emulation&quot;,    &quot;type&quot;: &quot;toggle&quot;,       &quot;label&quot;: &quot;CRT emulation&quot;    },</div>
+<div class="line">        { &quot;type&quot;: &quot;spacer&quot; },</div>
+<div class="line">        { &quot;id&quot;: &quot;curve&quot;,        &quot;type&quot;: &quot;toggleSlider&quot;, &quot;label&quot;: &quot;curve&quot;            },</div>
+<div class="line">        { &quot;id&quot;: &quot;bleed&quot;,        &quot;type&quot;: &quot;toggleSlider&quot;, &quot;label&quot;: &quot;bleed&quot;            },</div>
+<div class="line">        { &quot;id&quot;: &quot;vignette&quot;,     &quot;type&quot;: &quot;toggleSlider&quot;, &quot;label&quot;: &quot;vignette&quot;         },</div>
+<div class="line">        { &quot;id&quot;: &quot;scanlines&quot;,    &quot;type&quot;: &quot;toggleSlider&quot;, &quot;label&quot;: &quot;scanlines&quot;        },</div>
+<div class="line">        { &quot;id&quot;: &quot;gridlines&quot;,    &quot;type&quot;: &quot;toggleSlider&quot;, &quot;label&quot;: &quot;gridlines&quot;        },</div>
+<div class="line">        { &quot;id&quot;: &quot;glow&quot;,         &quot;type&quot;: &quot;toggleSlider&quot;, &quot;label&quot;: &quot;glow&quot;             },</div>
+<div class="line">        { &quot;id&quot;: &quot;flicker&quot;,      &quot;type&quot;: &quot;toggleSlider&quot;, &quot;label&quot;: &quot;flicker&quot;          },</div>
+<div class="line">        { &quot;id&quot;: &quot;noise&quot;,        &quot;type&quot;: &quot;toggleSlider&quot;, &quot;label&quot;: &quot;noise&quot;            },</div>
+<div class="line">    {}</div>
+<div class="line">    ] }</div>
+<div class="line">])&quot;_padded;</div>
+<div class="line">  auto parser = ondemand::parser{};</div>
+<div class="line">  auto doc = parser.iterate(padded_input_json);</div>
+<div class="line">  auto root_array = doc.get_array();</div>
+<div class="line">  // the root should be an object, not an array, but that&#39;s the JSON we are</div>
+<div class="line">  // given.</div>
+<div class="line">  for (ondemand::object node : root_array) {</div>
+<div class="line">    // We know that we are going to have just one element in the object.</div>
+<div class="line">    for (auto field : node) {</div>
+<div class="line">      std::cout &lt;&lt; &quot;\n\ntop level:&quot; &lt;&lt; field.key() &lt;&lt; std::endl;</div>
+<div class="line">      // You can get a proper std::string_view for the key with:</div>
+<div class="line">      // std::string_view key = field.unescaped_key();</div>
+<div class="line">      // and second for-range loop to get child-elements here</div>
+<div class="line">      for (ondemand::object inner_object : field.value()) {</div>
+<div class="line">        auto i = inner_object.begin();</div>
+<div class="line">        if (i == inner_object.end()) {</div>
+<div class="line">          std::cout &lt;&lt; &quot;empty object&quot; &lt;&lt; std::endl;</div>
+<div class="line">          continue;</div>
+<div class="line">        } else {</div>
+<div class="line">          for (; i != inner_object.end(); ++i) {</div>
+<div class="line">            auto inner_field = *i;</div>
+<div class="line">            std::cout &lt;&lt; &#39;&quot;&#39; &lt;&lt; inner_field.key()</div>
+<div class="line">                      &lt;&lt; &quot;\&quot; : &quot; &lt;&lt; inner_field.value() &lt;&lt; &quot;, &quot;;</div>
+<div class="line">            // You can get proper std::string_view for the key and value with:</div>
+<div class="line">            // std::string_view inner_key = field.unescaped_key();</div>
+<div class="line">            // std::string_view value_str = field.value();</div>
+<div class="line">          }</div>
+<div class="line">        }</div>
+<div class="line">        std::cout &lt;&lt; std::endl;</div>
+<div class="line">      }</div>
+<div class="line">      // You can break here if you only want just the first element.</div>
+<div class="line">      // break;</div>
+<div class="line">    }</div>
 <div class="line">  }</div>
 <div class="line">  return true;</div>
 <div class="line">}</div>
