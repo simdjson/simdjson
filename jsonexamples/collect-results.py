@@ -210,18 +210,18 @@ for (file, results) in groupby(sorted(all_results.values()), lambda r: r.base_js
     rows = list[OrderedDict[str, object]]()
     PRINT_STRING_STATES: list[StringState] = [s for s in STRING_STATES if s != 'unescaped']
     for (i,from_state) in enumerate(CONTAINER_STATES[0:-1]):
-        to_state = CONTAINER_STATES[i+1]
-        rows.append(OrderedDict([
-            ('Contain', f"{from_state} -> {to_state}"),
-            *[
-                (
-                    f"{scalar_state} {string_state}",
-                    misses[(from_state, scalar_state, string_state)] - misses[(to_state, scalar_state, string_state)]
-                )
-                for scalar_state in SCALAR_STATES
-                for string_state in PRINT_STRING_STATES
-            ]
-        ]))
+        for to_state in CONTAINER_STATES[i+1:]:
+            rows.append(OrderedDict([
+                ('Contain', f"{from_state} -> {to_state}"),
+                *[
+                    (
+                        f"{scalar_state} {string_state}",
+                        misses[(from_state, scalar_state, string_state)] - misses[(to_state, scalar_state, string_state)]
+                    )
+                    for scalar_state in SCALAR_STATES
+                    for string_state in PRINT_STRING_STATES
+                ]
+            ]))
     print_table(rows, rjust = [*rows[0].keys()][1:])
 
     print()
@@ -229,35 +229,35 @@ for (file, results) in groupby(sorted(all_results.values()), lambda r: r.base_js
     print()
     rows = list[OrderedDict[str, object]]()
     for (i,from_state) in enumerate(SCALAR_STATES[0:-1]):
-        to_state = SCALAR_STATES[i+1]
-        rows.append(OrderedDict([
-            ('Scalars', f"{from_state} -> {to_state}"),
-            *[
-                (
-                    f"{container_state} {string_state}",
-                    misses[(container_state, from_state, string_state)] - misses[(container_state, to_state, string_state)]
-                )
-                for container_state in CONTAINER_STATES
-                for string_state in PRINT_STRING_STATES
-            ]
-        ]))
+        for to_state in SCALAR_STATES[i+1:]:
+            rows.append(OrderedDict([
+                ('Scalars', f"{from_state} -> {to_state}"),
+                *[
+                    (
+                        f"{container_state} {string_state}",
+                        misses[(container_state, from_state, string_state)] - misses[(container_state, to_state, string_state)]
+                    )
+                    for container_state in CONTAINER_STATES
+                    for string_state in PRINT_STRING_STATES
+                ]
+            ]))
     print_table(rows, rjust = [*rows[0].keys()][1:])
 
     print()
     print('## String State Transition Miss Reduction')
     print()
     rows = list[OrderedDict[str, object]]()
-    for (i,from_state) in enumerate(PRINT_STRING_STATES[0:-1]):
-        to_state = PRINT_STRING_STATES[i+1]
-        rows.append(OrderedDict([
-            ('Strings', f"{from_state} -> {to_state}"),
-            *[
-                (
-                    f"{container_state} {scalar_state}",
-                    misses[(container_state, scalar_state, from_state)] - misses[(container_state, scalar_state, to_state)]
-                )
-                for container_state in CONTAINER_STATES
-                for scalar_state in SCALAR_STATES
-            ]
-        ]))
+    for (i,from_state) in enumerate(STRING_STATES[0:-1]):
+        for to_state in STRING_STATES[i+1:]:
+            rows.append(OrderedDict([
+                ('Strings', f"{from_state} -> {to_state}"),
+                *[
+                    (
+                        f"{container_state} {scalar_state}",
+                        misses[(container_state, scalar_state, from_state)] - misses[(container_state, scalar_state, to_state)]
+                    )
+                    for container_state in CONTAINER_STATES
+                    for scalar_state in SCALAR_STATES
+                ]
+            ]))
     print_table(rows, rjust = [*rows[0].keys()][1:])
