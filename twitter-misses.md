@@ -3,7 +3,7 @@
 
 | Contain | Scalars | Strings   |  Cycles |   Instrs | Misses | Docs/sec |
 |---------|---------|-----------|--------:|---------:|-------:|---------:|
-| orig    | orig    | orig      | 43.1557 | 140.4823 |    262 |   5047.0 |
+| orig    | orig    | orig      | 43.1557 | 140.4823 |    262 |   5051.3 |
 | orig    | orig    | unescaped | 40.9559 | 137.7313 |    210 |   5251.4 |
 | orig    | orig    | ascii     | 40.8708 | 137.7313 |    219 |   5420.6 |
 | orig    | orig    | empty     | 38.6624 | 134.2775 |    193 |   5634.1 |
@@ -27,11 +27,11 @@
 | array   | str     | unescaped | 49.3208 | 157.9072 |    272 |   4604.5 |
 | array   | str     | ascii     | 49.2947 | 157.9072 |    271 |   4728.9 |
 | array   | str     | empty     | 46.3058 | 154.4534 |    179 |   4967.3 |
-| flat    | orig    | orig      | 43.3339 | 159.8664 |    407 |   5042.3 |
+| flat    | orig    | orig      | 43.3339 | 159.8664 |    407 |   5049.4 |
 | flat    | orig    | unescaped | 41.7361 | 157.1154 |    384 |   5188.4 |
-| flat    | orig    | ascii     | 41.6981 | 157.1154 |    394 |   5330.9 |
-| flat    | orig    | empty     | 39.4102 | 153.6616 |    386 |   5568.4 |
-| flat    | 1digit  | orig      | 41.7770 | 153.9234 |    364 |   5180.8 |
+| flat    | orig    | ascii     | 41.6981 | 157.1154 |    393 |   5330.9 |
+| flat    | orig    | empty     | 39.4102 | 153.6616 |    386 |   5570.0 |
+| flat    | 1digit  | orig      | 41.7734 | 153.9234 |    364 |   5180.8 |
 | flat    | 1digit  | unescaped | 40.0340 | 151.1724 |    308 |   5343.7 |
 | flat    | 1digit  | ascii     | 39.8567 | 151.1724 |    313 |   5507.9 |
 | flat    | 1digit  | empty     | 37.3433 | 147.7186 |    251 |   5781.1 |
@@ -45,15 +45,15 @@
 | Contain       | orig orig | orig ascii | orig empty | 1digit orig | 1digit ascii | 1digit empty | str orig | str ascii | str empty |
 |---------------|----------:|-----------:|-----------:|------------:|-------------:|-------------:|---------:|----------:|----------:|
 | orig -> array |      -207 |       -207 |       -213 |         -87 |          -93 |          -58 |     -138 |       -94 |       -69 |
-| orig -> flat  |      -145 |       -175 |       -193 |         -65 |          -71 |          -47 |     -278 |      -237 |       107 |
-| array -> flat |        62 |         32 |         20 |          22 |           22 |           11 |     -140 |      -143 |       176 |
+| orig -> flat  |      -145 |       -174 |       -193 |         -65 |          -71 |          -47 |     -278 |      -237 |       107 |
+| array -> flat |        62 |         33 |         20 |          22 |           22 |           11 |     -140 |      -143 |       176 |
 
 ## Scalar State Transition Miss Reduction
 
 | Scalars        | orig orig | orig ascii | orig empty | array orig | array ascii | array empty | flat orig | flat ascii | flat empty |
 |----------------|----------:|-----------:|-----------:|-----------:|------------:|------------:|----------:|-----------:|-----------:|
-| orig -> 1digit |       -37 |        -23 |        -11 |         83 |          91 |         144 |        43 |         81 |        135 |
-| orig -> str    |        69 |         42 |         83 |        138 |         155 |         227 |       -64 |        -20 |        383 |
+| orig -> 1digit |       -37 |        -23 |        -11 |         83 |          91 |         144 |        43 |         80 |        135 |
+| orig -> str    |        69 |         42 |         83 |        138 |         155 |         227 |       -64 |        -21 |        383 |
 | 1digit -> str  |       106 |         65 |         94 |         55 |          64 |          83 |      -107 |       -101 |        248 |
 
 ## String State Transition Miss Reduction
@@ -61,8 +61,8 @@
 | Strings            | orig orig | orig 1digit | orig str | array orig | array 1digit | array str | flat orig | flat 1digit | flat str |
 |--------------------|----------:|------------:|---------:|-----------:|-------------:|----------:|----------:|------------:|---------:|
 | orig -> unescaped  |        52 |          55 |        7 |         40 |           44 |        59 |        23 |          56 |       58 |
-| orig -> ascii      |        43 |          57 |       16 |         43 |           51 |        60 |        13 |          51 |       57 |
+| orig -> ascii      |        43 |          57 |       16 |         43 |           51 |        60 |        14 |          51 |       57 |
 | orig -> empty      |        69 |          95 |       83 |         63 |          124 |       152 |        21 |         113 |      468 |
-| unescaped -> ascii |        -9 |           2 |        9 |          3 |            7 |         1 |       -10 |          -5 |       -1 |
+| unescaped -> ascii |        -9 |           2 |        9 |          3 |            7 |         1 |        -9 |          -5 |       -1 |
 | unescaped -> empty |        17 |          40 |       76 |         23 |           80 |        93 |        -2 |          57 |      410 |
-| ascii -> empty     |        26 |          38 |       67 |         20 |           73 |        92 |         8 |          62 |      411 |
+| ascii -> empty     |        26 |          38 |       67 |         20 |           73 |        92 |         7 |          62 |      411 |
