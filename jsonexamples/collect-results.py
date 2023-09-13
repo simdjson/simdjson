@@ -174,7 +174,7 @@ def print_table(rows: list[OrderedDict], key_lengths: Optional[OrderedDict[str, 
                 key_lengths[key] = max(key_lengths[key], len(str(value)))
 
     print_row(list(key_lengths.keys()), key_lengths, rjust)
-    print("|", *[ f"{''.ljust(len+2, '-')}|" for len in key_lengths.values() ], sep='')
+    print("|", *[ f"{(':' if key in rjust else '').rjust(len+2, '-')}|" for (key, len) in key_lengths.items() ], sep='')
 
     for row in rows:
         print_row(row.values(), key_lengths, rjust)
