@@ -1,9 +1,5 @@
 var NAVTREEINDEX2 =
 {
-"classsimdjson_1_1dom_1_1object_1_1iterator.html#a2049ae539dca6999cc33300d212a5014":[11,0,0,0,4,0,19],
-"classsimdjson_1_1dom_1_1object_1_1iterator.html#a238b57daf0b007591b767b268639473e":[11,0,0,0,4,0,15],
-"classsimdjson_1_1dom_1_1object_1_1iterator.html#a3d4dcacb8171b99f783396bb6a337c65":[11,0,0,0,4,0,20],
-"classsimdjson_1_1dom_1_1object_1_1iterator.html#a4807eeb1ed5f596b587d0b61dfb550e7":[11,0,0,0,4,0,6],
 "classsimdjson_1_1dom_1_1object_1_1iterator.html#a498ffa7fca4164634f87ff2ef0905f8b":[11,0,0,0,4,0,14],
 "classsimdjson_1_1dom_1_1object_1_1iterator.html#a54a99dcf9c422d5c24f3c570b6d9b6e4":[11,0,0,0,4,0,5],
 "classsimdjson_1_1dom_1_1object_1_1iterator.html#a5ad1b60fd5df56d9fdb8bce1e08de88f":[11,0,0,0,4,0,8],
@@ -249,5 +245,9 @@ var NAVTREEINDEX2 =
 "jsonparser_8h_source.html":[12,0,0,0,2,9],
 "logger-inl_8h.html#a0176c136680aa97eb8bd8f57033f41be":[10,0,0,6,1,0,9],
 "logger-inl_8h.html#a12f4fdff59099b28730ba4288877437f":[10,0,0,6,1,0,16],
-"logger-inl_8h.html#a1b9952154ae0172530a16854ff005d92":[10,0,0,6,1,0,15]
+"logger-inl_8h.html#a1b9952154ae0172530a16854ff005d92":[10,0,0,6,1,0,15],
+"logger-inl_8h.html#a273e5f25cfdef1064a5225a47d85eb4f":[10,0,0,6,1,0,3],
+"logger-inl_8h.html#a4427c475cf7d49b372c768201b4d92cb":[10,0,0,6,1,0,7],
+"logger-inl_8h.html#a66e3122a7ae01bfe5f81ecb1bf1814cc":[10,0,0,6,1,0,5],
+"logger-inl_8h.html#a6ca1434e6fe03e97dbc88360cc6ea5db":[10,0,0,6,1,0,2]
 };
