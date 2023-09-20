@@ -1,4 +1,4 @@
-/* auto-generated on 2023-08-18 14:37:10 -0400. Do not edit! */
+/* auto-generated on . Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -57,6 +57,14 @@
 
 #ifndef SIMDJSON_CPLUSPLUS11
 #error simdjson requires a compiler compliant with the C++11 standard
+#endif
+
+#ifndef SIMDJSON_IF_CONSTEXPR
+#if SIMDJSON_CPLUSPLUS17
+#define SIMDJSON_IF_CONSTEXPR if constexpr
+#else
+#define SIMDJSON_IF_CONSTEXPR if
+#endif
 #endif
 
 #endif // SIMDJSON_COMPILER_CHECK_H
@@ -8787,8 +8795,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // power_of_five_128[index]. Usually, that's good enough to approximate i * 5^q
     // to the desired approximation using one multiplication. Sometimes it does not suffice.
     // Then we store the next most significant 64 bits in power_of_five_128[index + 1], and
-    // then we get a better approximation to i * 5^q. In very rare cases, even that
-    // will not suffice, though it is seemingly very hard to find such a scenario.
+    // then we get a better approximation to i * 5^q.
     //
     // That's for when q>=0. The logic for q<0 is somewhat similar but it is somewhat
     // more complicated.
@@ -8803,12 +8810,9 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
-    // At this point, we might need to add at most one to firstproduct, but this
-    // can only change the value of firstproduct.high if firstproduct.low is maximal.
-    if(simdjson_unlikely(firstproduct.low  == 0xFFFFFFFFFFFFFFFF)) {
-      // This is very unlikely, but if so, we need to do much more work!
-      return false;
-    }
+    // As it has been proven by Noble Mushtak and Daniel Lemire in "Fast Number Parsing Without
+    // Fallback" (https://arxiv.org/abs/2212.06644), at this point we are sure that the product
+    // is sufficiently accurate, and more computation is not needed.
   }
   uint64_t lower = firstproduct.low;
   uint64_t upper = firstproduct.high;
@@ -11544,14 +11548,6 @@ using namespace simd;
       this->error |= this->prev_incomplete;
     }
 
-#ifndef SIMDJSON_IF_CONSTEXPR
-#if SIMDJSON_CPLUSPLUS17
-#define SIMDJSON_IF_CONSTEXPR if constexpr
-#else
-#define SIMDJSON_IF_CONSTEXPR if
-#endif
-#endif
-
     simdjson_inline void check_next_input(const simd8x64<uint8_t>& input) {
       if(simdjson_likely(is_ascii(input))) {
         this->error |= this->prev_incomplete;
@@ -12009,6 +12005,58 @@ public:
 
   simdjson_inline bit_indexer(uint32_t *index_buf) : tail(index_buf) {}
 
+#if SIMDJSON_PREFER_REVERSE_BITS
+  /**
+    * ARM lacks a fast trailing zero instruction, but it has a fast
+    * bit reversal instruction and a fast leading zero instruction.
+    * Thus it may be profitable to reverse the bits (once) and then
+    * to rely on a sequence of instructions that call the leading
+    * zero instruction.
+    *
+    * Performance notes:
+    * The chosen routine is not optimal in terms of data dependency
+    * since zero_leading_bit might require two instructions. However,
+    * it tends to minimize the total number of instructions which is
+    * beneficial.
+    */
+  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+    int lz = leading_zeroes(rev_bits);
+    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    rev_bits = zero_leading_bit(rev_bits, lz);
+  }
+#else
+  /**
+    * Under recent x64 systems, we often have both a fast trailing zero
+    * instruction and a fast 'clear-lower-bit' instruction so the following
+    * algorithm can be competitive.
+    */
+
+  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
+    this->tail[i] = idx + trailing_zeroes(bits);
+    bits = clear_lowest_bit(bits);
+  }
+#endif // SIMDJSON_PREFER_REVERSE_BITS
+
+  template <int START, int N>
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    write_index(idx, bits, START);
+    SIMDJSON_IF_CONSTEXPR (N > 1) {
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
+    }
+    return START+N;
+  }
+
+  template <int START, int END, int STEP>
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(idx, bits);
+    SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
+      if (simdjson_unlikely((START+STEP) < cnt)) {
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
+      }
+    }
+    return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
+  }
+
   // flatten out values in 'bits' assuming that they are are to have values of idx
   // plus their position in the bitvector, and store these indexes at
   // base_ptr[base] incrementing base as we go
@@ -12026,91 +12074,29 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-#if SIMDJSON_PREFER_REVERSE_BITS
-    /**
-     * ARM lacks a fast trailing zero instruction, but it has a fast
-     * bit reversal instruction and a fast leading zero instruction.
-     * Thus it may be profitable to reverse the bits (once) and then
-     * to rely on a sequence of instructions that call the leading
-     * zero instruction.
-     *
-     * Performance notes:
-     * The chosen routine is not optimal in terms of data dependency
-     * since zero_leading_bit might require two instructions. However,
-     * it tends to minimize the total number of instructions which is
-     * beneficial.
-     */
 
-    uint64_t rev_bits = reverse_bits(bits);
     int cnt = static_cast<int>(count_ones(bits));
-    int i = 0;
-    // Do the first 8 all together
-    for (; i<8; i++) {
-      int lz = leading_zeroes(rev_bits);
-      this->tail[i] = static_cast<uint32_t>(idx) + lz;
-      rev_bits = zero_leading_bit(rev_bits, lz);
-    }
-    // Do the next 8 all together (we hope in most cases it won't happen at all
-    // and the branch is easily predicted).
-    if (simdjson_unlikely(cnt > 8)) {
-      i = 8;
-      for (; i<16; i++) {
-        int lz = leading_zeroes(rev_bits);
-        this->tail[i] = static_cast<uint32_t>(idx) + lz;
-        rev_bits = zero_leading_bit(rev_bits, lz);
-      }
 
+#if SIMDJSON_PREFER_REVERSE_BITS
+    bits = reverse_bits(bits);
+#endif
+#ifdef SIMDJSON_STRUCTURAL_INDEXER_STEP
+    static constexpr const int STEP = SIMDJSON_STRUCTURAL_INDEXER_STEP;
+#else
+    static constexpr const int STEP = 4;
+#endif
+    static constexpr const int STEP_UNTIL = 24;
 
-      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-      // or the start of a value ("abc" true 123) every four characters.
-      if (simdjson_unlikely(cnt > 16)) {
-        i = 16;
-        while (rev_bits != 0) {
-          int lz = leading_zeroes(rev_bits);
-          this->tail[i++] = static_cast<uint32_t>(idx) + lz;
-          rev_bits = zero_leading_bit(rev_bits, lz);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
+    SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
+      if (simdjson_unlikely(STEP_UNTIL < cnt)) {
+        for (int i=STEP_UNTIL; i<cnt; i++) {
+          write_index(idx, bits, i);
         }
       }
     }
-    this->tail += cnt;
-#else // SIMDJSON_PREFER_REVERSE_BITS
-    /**
-     * Under recent x64 systems, we often have both a fast trailing zero
-     * instruction and a fast 'clear-lower-bit' instruction so the following
-     * algorithm can be competitive.
-     */
-
-    int cnt = static_cast<int>(count_ones(bits));
-    // Do the first 8 all together
-    for (int i=0; i<8; i++) {
-      this->tail[i] = idx + trailing_zeroes(bits);
-      bits = clear_lowest_bit(bits);
-    }
-
-    // Do the next 8 all together (we hope in most cases it won't happen at all
-    // and the branch is easily predicted).
-    if (simdjson_unlikely(cnt > 8)) {
-      for (int i=8; i<16; i++) {
-        this->tail[i] = idx + trailing_zeroes(bits);
-        bits = clear_lowest_bit(bits);
-      }
-
-      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-      // or the start of a value ("abc" true 123) every four characters.
-      if (simdjson_unlikely(cnt > 16)) {
-        int i = 16;
-        do {
-          this->tail[i] = idx + trailing_zeroes(bits);
-          bits = clear_lowest_bit(bits);
-          i++;
-        } while (i < cnt);
-      }
-    }
 
     this->tail += cnt;
-#endif
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -12959,15 +12945,17 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_root_primit
 }
 template<typename V>
 simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V &visitor, const uint8_t *value) noexcept {
+  // Use the fact that most scalars are going to be either strings or numbers.
+  if(*value == '"') {
+    return visitor.visit_string(*this, value);
+  } else if (((*value - '0')  < 10) || (*value == '-')) {
+    return visitor.visit_number(*this, value);
+  }
+  // true, false, null are uncommon.
   switch (*value) {
-    case '"': return visitor.visit_string(*this, value);
     case 't': return visitor.visit_true_atom(*this, value);
     case 'f': return visitor.visit_false_atom(*this, value);
     case 'n': return visitor.visit_null_atom(*this, value);
-    case '-':
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-      return visitor.visit_number(*this, value);
     default:
       log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
@@ -14645,8 +14633,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // power_of_five_128[index]. Usually, that's good enough to approximate i * 5^q
     // to the desired approximation using one multiplication. Sometimes it does not suffice.
     // Then we store the next most significant 64 bits in power_of_five_128[index + 1], and
-    // then we get a better approximation to i * 5^q. In very rare cases, even that
-    // will not suffice, though it is seemingly very hard to find such a scenario.
+    // then we get a better approximation to i * 5^q.
     //
     // That's for when q>=0. The logic for q<0 is somewhat similar but it is somewhat
     // more complicated.
@@ -14661,12 +14648,9 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
-    // At this point, we might need to add at most one to firstproduct, but this
-    // can only change the value of firstproduct.high if firstproduct.low is maximal.
-    if(simdjson_unlikely(firstproduct.low  == 0xFFFFFFFFFFFFFFFF)) {
-      // This is very unlikely, but if so, we need to do much more work!
-      return false;
-    }
+    // As it has been proven by Noble Mushtak and Daniel Lemire in "Fast Number Parsing Without
+    // Fallback" (https://arxiv.org/abs/2212.06644), at this point we are sure that the product
+    // is sufficiently accurate, and more computation is not needed.
   }
   uint64_t lower = firstproduct.low;
   uint64_t upper = firstproduct.high;
@@ -16840,15 +16824,17 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_root_primit
 }
 template<typename V>
 simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V &visitor, const uint8_t *value) noexcept {
+  // Use the fact that most scalars are going to be either strings or numbers.
+  if(*value == '"') {
+    return visitor.visit_string(*this, value);
+  } else if (((*value - '0')  < 10) || (*value == '-')) {
+    return visitor.visit_number(*this, value);
+  }
+  // true, false, null are uncommon.
   switch (*value) {
-    case '"': return visitor.visit_string(*this, value);
     case 't': return visitor.visit_true_atom(*this, value);
     case 'f': return visitor.visit_false_atom(*this, value);
     case 'n': return visitor.visit_null_atom(*this, value);
-    case '-':
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-      return visitor.visit_number(*this, value);
     default:
       log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
@@ -19054,8 +19040,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // power_of_five_128[index]. Usually, that's good enough to approximate i * 5^q
     // to the desired approximation using one multiplication. Sometimes it does not suffice.
     // Then we store the next most significant 64 bits in power_of_five_128[index + 1], and
-    // then we get a better approximation to i * 5^q. In very rare cases, even that
-    // will not suffice, though it is seemingly very hard to find such a scenario.
+    // then we get a better approximation to i * 5^q.
     //
     // That's for when q>=0. The logic for q<0 is somewhat similar but it is somewhat
     // more complicated.
@@ -19070,12 +19055,9 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
-    // At this point, we might need to add at most one to firstproduct, but this
-    // can only change the value of firstproduct.high if firstproduct.low is maximal.
-    if(simdjson_unlikely(firstproduct.low  == 0xFFFFFFFFFFFFFFFF)) {
-      // This is very unlikely, but if so, we need to do much more work!
-      return false;
-    }
+    // As it has been proven by Noble Mushtak and Daniel Lemire in "Fast Number Parsing Without
+    // Fallback" (https://arxiv.org/abs/2212.06644), at this point we are sure that the product
+    // is sufficiently accurate, and more computation is not needed.
   }
   uint64_t lower = firstproduct.low;
   uint64_t upper = firstproduct.high;
@@ -21652,14 +21634,6 @@ using namespace simd;
       this->error |= this->prev_incomplete;
     }
 
-#ifndef SIMDJSON_IF_CONSTEXPR
-#if SIMDJSON_CPLUSPLUS17
-#define SIMDJSON_IF_CONSTEXPR if constexpr
-#else
-#define SIMDJSON_IF_CONSTEXPR if
-#endif
-#endif
-
     simdjson_inline void check_next_input(const simd8x64<uint8_t>& input) {
       if(simdjson_likely(is_ascii(input))) {
         this->error |= this->prev_incomplete;
@@ -22117,6 +22091,58 @@ public:
 
   simdjson_inline bit_indexer(uint32_t *index_buf) : tail(index_buf) {}
 
+#if SIMDJSON_PREFER_REVERSE_BITS
+  /**
+    * ARM lacks a fast trailing zero instruction, but it has a fast
+    * bit reversal instruction and a fast leading zero instruction.
+    * Thus it may be profitable to reverse the bits (once) and then
+    * to rely on a sequence of instructions that call the leading
+    * zero instruction.
+    *
+    * Performance notes:
+    * The chosen routine is not optimal in terms of data dependency
+    * since zero_leading_bit might require two instructions. However,
+    * it tends to minimize the total number of instructions which is
+    * beneficial.
+    */
+  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+    int lz = leading_zeroes(rev_bits);
+    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    rev_bits = zero_leading_bit(rev_bits, lz);
+  }
+#else
+  /**
+    * Under recent x64 systems, we often have both a fast trailing zero
+    * instruction and a fast 'clear-lower-bit' instruction so the following
+    * algorithm can be competitive.
+    */
+
+  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
+    this->tail[i] = idx + trailing_zeroes(bits);
+    bits = clear_lowest_bit(bits);
+  }
+#endif // SIMDJSON_PREFER_REVERSE_BITS
+
+  template <int START, int N>
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    write_index(idx, bits, START);
+    SIMDJSON_IF_CONSTEXPR (N > 1) {
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
+    }
+    return START+N;
+  }
+
+  template <int START, int END, int STEP>
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(idx, bits);
+    SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
+      if (simdjson_unlikely((START+STEP) < cnt)) {
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
+      }
+    }
+    return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
+  }
+
   // flatten out values in 'bits' assuming that they are are to have values of idx
   // plus their position in the bitvector, and store these indexes at
   // base_ptr[base] incrementing base as we go
@@ -22134,91 +22160,29 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-#if SIMDJSON_PREFER_REVERSE_BITS
-    /**
-     * ARM lacks a fast trailing zero instruction, but it has a fast
-     * bit reversal instruction and a fast leading zero instruction.
-     * Thus it may be profitable to reverse the bits (once) and then
-     * to rely on a sequence of instructions that call the leading
-     * zero instruction.
-     *
-     * Performance notes:
-     * The chosen routine is not optimal in terms of data dependency
-     * since zero_leading_bit might require two instructions. However,
-     * it tends to minimize the total number of instructions which is
-     * beneficial.
-     */
 
-    uint64_t rev_bits = reverse_bits(bits);
     int cnt = static_cast<int>(count_ones(bits));
-    int i = 0;
-    // Do the first 8 all together
-    for (; i<8; i++) {
-      int lz = leading_zeroes(rev_bits);
-      this->tail[i] = static_cast<uint32_t>(idx) + lz;
-      rev_bits = zero_leading_bit(rev_bits, lz);
-    }
-    // Do the next 8 all together (we hope in most cases it won't happen at all
-    // and the branch is easily predicted).
-    if (simdjson_unlikely(cnt > 8)) {
-      i = 8;
-      for (; i<16; i++) {
-        int lz = leading_zeroes(rev_bits);
-        this->tail[i] = static_cast<uint32_t>(idx) + lz;
-        rev_bits = zero_leading_bit(rev_bits, lz);
-      }
 
+#if SIMDJSON_PREFER_REVERSE_BITS
+    bits = reverse_bits(bits);
+#endif
+#ifdef SIMDJSON_STRUCTURAL_INDEXER_STEP
+    static constexpr const int STEP = SIMDJSON_STRUCTURAL_INDEXER_STEP;
+#else
+    static constexpr const int STEP = 4;
+#endif
+    static constexpr const int STEP_UNTIL = 24;
 
-      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-      // or the start of a value ("abc" true 123) every four characters.
-      if (simdjson_unlikely(cnt > 16)) {
-        i = 16;
-        while (rev_bits != 0) {
-          int lz = leading_zeroes(rev_bits);
-          this->tail[i++] = static_cast<uint32_t>(idx) + lz;
-          rev_bits = zero_leading_bit(rev_bits, lz);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
+    SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
+      if (simdjson_unlikely(STEP_UNTIL < cnt)) {
+        for (int i=STEP_UNTIL; i<cnt; i++) {
+          write_index(idx, bits, i);
         }
       }
     }
-    this->tail += cnt;
-#else // SIMDJSON_PREFER_REVERSE_BITS
-    /**
-     * Under recent x64 systems, we often have both a fast trailing zero
-     * instruction and a fast 'clear-lower-bit' instruction so the following
-     * algorithm can be competitive.
-     */
-
-    int cnt = static_cast<int>(count_ones(bits));
-    // Do the first 8 all together
-    for (int i=0; i<8; i++) {
-      this->tail[i] = idx + trailing_zeroes(bits);
-      bits = clear_lowest_bit(bits);
-    }
-
-    // Do the next 8 all together (we hope in most cases it won't happen at all
-    // and the branch is easily predicted).
-    if (simdjson_unlikely(cnt > 8)) {
-      for (int i=8; i<16; i++) {
-        this->tail[i] = idx + trailing_zeroes(bits);
-        bits = clear_lowest_bit(bits);
-      }
-
-      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-      // or the start of a value ("abc" true 123) every four characters.
-      if (simdjson_unlikely(cnt > 16)) {
-        int i = 16;
-        do {
-          this->tail[i] = idx + trailing_zeroes(bits);
-          bits = clear_lowest_bit(bits);
-          i++;
-        } while (i < cnt);
-      }
-    }
 
     this->tail += cnt;
-#endif
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -23067,15 +23031,17 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_root_primit
 }
 template<typename V>
 simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V &visitor, const uint8_t *value) noexcept {
+  // Use the fact that most scalars are going to be either strings or numbers.
+  if(*value == '"') {
+    return visitor.visit_string(*this, value);
+  } else if (((*value - '0')  < 10) || (*value == '-')) {
+    return visitor.visit_number(*this, value);
+  }
+  // true, false, null are uncommon.
   switch (*value) {
-    case '"': return visitor.visit_string(*this, value);
     case 't': return visitor.visit_true_atom(*this, value);
     case 'f': return visitor.visit_false_atom(*this, value);
     case 'n': return visitor.visit_null_atom(*this, value);
-    case '-':
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-      return visitor.visit_number(*this, value);
     default:
       log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
@@ -25242,8 +25208,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // power_of_five_128[index]. Usually, that's good enough to approximate i * 5^q
     // to the desired approximation using one multiplication. Sometimes it does not suffice.
     // Then we store the next most significant 64 bits in power_of_five_128[index + 1], and
-    // then we get a better approximation to i * 5^q. In very rare cases, even that
-    // will not suffice, though it is seemingly very hard to find such a scenario.
+    // then we get a better approximation to i * 5^q.
     //
     // That's for when q>=0. The logic for q<0 is somewhat similar but it is somewhat
     // more complicated.
@@ -25258,12 +25223,9 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
-    // At this point, we might need to add at most one to firstproduct, but this
-    // can only change the value of firstproduct.high if firstproduct.low is maximal.
-    if(simdjson_unlikely(firstproduct.low  == 0xFFFFFFFFFFFFFFFF)) {
-      // This is very unlikely, but if so, we need to do much more work!
-      return false;
-    }
+    // As it has been proven by Noble Mushtak and Daniel Lemire in "Fast Number Parsing Without
+    // Fallback" (https://arxiv.org/abs/2212.06644), at this point we are sure that the product
+    // is sufficiently accurate, and more computation is not needed.
   }
   uint64_t lower = firstproduct.low;
   uint64_t upper = firstproduct.high;
@@ -27838,14 +27800,6 @@ using namespace simd;
       this->error |= this->prev_incomplete;
     }
 
-#ifndef SIMDJSON_IF_CONSTEXPR
-#if SIMDJSON_CPLUSPLUS17
-#define SIMDJSON_IF_CONSTEXPR if constexpr
-#else
-#define SIMDJSON_IF_CONSTEXPR if
-#endif
-#endif
-
     simdjson_inline void check_next_input(const simd8x64<uint8_t>& input) {
       if(simdjson_likely(is_ascii(input))) {
         this->error |= this->prev_incomplete;
@@ -28303,6 +28257,58 @@ public:
 
   simdjson_inline bit_indexer(uint32_t *index_buf) : tail(index_buf) {}
 
+#if SIMDJSON_PREFER_REVERSE_BITS
+  /**
+    * ARM lacks a fast trailing zero instruction, but it has a fast
+    * bit reversal instruction and a fast leading zero instruction.
+    * Thus it may be profitable to reverse the bits (once) and then
+    * to rely on a sequence of instructions that call the leading
+    * zero instruction.
+    *
+    * Performance notes:
+    * The chosen routine is not optimal in terms of data dependency
+    * since zero_leading_bit might require two instructions. However,
+    * it tends to minimize the total number of instructions which is
+    * beneficial.
+    */
+  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+    int lz = leading_zeroes(rev_bits);
+    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    rev_bits = zero_leading_bit(rev_bits, lz);
+  }
+#else
+  /**
+    * Under recent x64 systems, we often have both a fast trailing zero
+    * instruction and a fast 'clear-lower-bit' instruction so the following
+    * algorithm can be competitive.
+    */
+
+  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
+    this->tail[i] = idx + trailing_zeroes(bits);
+    bits = clear_lowest_bit(bits);
+  }
+#endif // SIMDJSON_PREFER_REVERSE_BITS
+
+  template <int START, int N>
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    write_index(idx, bits, START);
+    SIMDJSON_IF_CONSTEXPR (N > 1) {
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
+    }
+    return START+N;
+  }
+
+  template <int START, int END, int STEP>
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(idx, bits);
+    SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
+      if (simdjson_unlikely((START+STEP) < cnt)) {
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
+      }
+    }
+    return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
+  }
+
   // flatten out values in 'bits' assuming that they are are to have values of idx
   // plus their position in the bitvector, and store these indexes at
   // base_ptr[base] incrementing base as we go
@@ -28320,91 +28326,29 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-#if SIMDJSON_PREFER_REVERSE_BITS
-    /**
-     * ARM lacks a fast trailing zero instruction, but it has a fast
-     * bit reversal instruction and a fast leading zero instruction.
-     * Thus it may be profitable to reverse the bits (once) and then
-     * to rely on a sequence of instructions that call the leading
-     * zero instruction.
-     *
-     * Performance notes:
-     * The chosen routine is not optimal in terms of data dependency
-     * since zero_leading_bit might require two instructions. However,
-     * it tends to minimize the total number of instructions which is
-     * beneficial.
-     */
 
-    uint64_t rev_bits = reverse_bits(bits);
     int cnt = static_cast<int>(count_ones(bits));
-    int i = 0;
-    // Do the first 8 all together
-    for (; i<8; i++) {
-      int lz = leading_zeroes(rev_bits);
-      this->tail[i] = static_cast<uint32_t>(idx) + lz;
-      rev_bits = zero_leading_bit(rev_bits, lz);
-    }
-    // Do the next 8 all together (we hope in most cases it won't happen at all
-    // and the branch is easily predicted).
-    if (simdjson_unlikely(cnt > 8)) {
-      i = 8;
-      for (; i<16; i++) {
-        int lz = leading_zeroes(rev_bits);
-        this->tail[i] = static_cast<uint32_t>(idx) + lz;
-        rev_bits = zero_leading_bit(rev_bits, lz);
-      }
 
+#if SIMDJSON_PREFER_REVERSE_BITS
+    bits = reverse_bits(bits);
+#endif
+#ifdef SIMDJSON_STRUCTURAL_INDEXER_STEP
+    static constexpr const int STEP = SIMDJSON_STRUCTURAL_INDEXER_STEP;
+#else
+    static constexpr const int STEP = 4;
+#endif
+    static constexpr const int STEP_UNTIL = 24;
 
-      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-      // or the start of a value ("abc" true 123) every four characters.
-      if (simdjson_unlikely(cnt > 16)) {
-        i = 16;
-        while (rev_bits != 0) {
-          int lz = leading_zeroes(rev_bits);
-          this->tail[i++] = static_cast<uint32_t>(idx) + lz;
-          rev_bits = zero_leading_bit(rev_bits, lz);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
+    SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
+      if (simdjson_unlikely(STEP_UNTIL < cnt)) {
+        for (int i=STEP_UNTIL; i<cnt; i++) {
+          write_index(idx, bits, i);
         }
       }
     }
-    this->tail += cnt;
-#else // SIMDJSON_PREFER_REVERSE_BITS
-    /**
-     * Under recent x64 systems, we often have both a fast trailing zero
-     * instruction and a fast 'clear-lower-bit' instruction so the following
-     * algorithm can be competitive.
-     */
-
-    int cnt = static_cast<int>(count_ones(bits));
-    // Do the first 8 all together
-    for (int i=0; i<8; i++) {
-      this->tail[i] = idx + trailing_zeroes(bits);
-      bits = clear_lowest_bit(bits);
-    }
-
-    // Do the next 8 all together (we hope in most cases it won't happen at all
-    // and the branch is easily predicted).
-    if (simdjson_unlikely(cnt > 8)) {
-      for (int i=8; i<16; i++) {
-        this->tail[i] = idx + trailing_zeroes(bits);
-        bits = clear_lowest_bit(bits);
-      }
-
-      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-      // or the start of a value ("abc" true 123) every four characters.
-      if (simdjson_unlikely(cnt > 16)) {
-        int i = 16;
-        do {
-          this->tail[i] = idx + trailing_zeroes(bits);
-          bits = clear_lowest_bit(bits);
-          i++;
-        } while (i < cnt);
-      }
-    }
 
     this->tail += cnt;
-#endif
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -29253,15 +29197,17 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_root_primit
 }
 template<typename V>
 simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V &visitor, const uint8_t *value) noexcept {
+  // Use the fact that most scalars are going to be either strings or numbers.
+  if(*value == '"') {
+    return visitor.visit_string(*this, value);
+  } else if (((*value - '0')  < 10) || (*value == '-')) {
+    return visitor.visit_number(*this, value);
+  }
+  // true, false, null are uncommon.
   switch (*value) {
-    case '"': return visitor.visit_string(*this, value);
     case 't': return visitor.visit_true_atom(*this, value);
     case 'f': return visitor.visit_false_atom(*this, value);
     case 'n': return visitor.visit_null_atom(*this, value);
-    case '-':
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-      return visitor.visit_number(*this, value);
     default:
       log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
@@ -31586,8 +31532,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // power_of_five_128[index]. Usually, that's good enough to approximate i * 5^q
     // to the desired approximation using one multiplication. Sometimes it does not suffice.
     // Then we store the next most significant 64 bits in power_of_five_128[index + 1], and
-    // then we get a better approximation to i * 5^q. In very rare cases, even that
-    // will not suffice, though it is seemingly very hard to find such a scenario.
+    // then we get a better approximation to i * 5^q.
     //
     // That's for when q>=0. The logic for q<0 is somewhat similar but it is somewhat
     // more complicated.
@@ -31602,12 +31547,9 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
-    // At this point, we might need to add at most one to firstproduct, but this
-    // can only change the value of firstproduct.high if firstproduct.low is maximal.
-    if(simdjson_unlikely(firstproduct.low  == 0xFFFFFFFFFFFFFFFF)) {
-      // This is very unlikely, but if so, we need to do much more work!
-      return false;
-    }
+    // As it has been proven by Noble Mushtak and Daniel Lemire in "Fast Number Parsing Without
+    // Fallback" (https://arxiv.org/abs/2212.06644), at this point we are sure that the product
+    // is sufficiently accurate, and more computation is not needed.
   }
   uint64_t lower = firstproduct.low;
   uint64_t upper = firstproduct.high;
@@ -34295,14 +34237,6 @@ using namespace simd;
       this->error |= this->prev_incomplete;
     }
 
-#ifndef SIMDJSON_IF_CONSTEXPR
-#if SIMDJSON_CPLUSPLUS17
-#define SIMDJSON_IF_CONSTEXPR if constexpr
-#else
-#define SIMDJSON_IF_CONSTEXPR if
-#endif
-#endif
-
     simdjson_inline void check_next_input(const simd8x64<uint8_t>& input) {
       if(simdjson_likely(is_ascii(input))) {
         this->error |= this->prev_incomplete;
@@ -34760,6 +34694,58 @@ public:
 
   simdjson_inline bit_indexer(uint32_t *index_buf) : tail(index_buf) {}
 
+#if SIMDJSON_PREFER_REVERSE_BITS
+  /**
+    * ARM lacks a fast trailing zero instruction, but it has a fast
+    * bit reversal instruction and a fast leading zero instruction.
+    * Thus it may be profitable to reverse the bits (once) and then
+    * to rely on a sequence of instructions that call the leading
+    * zero instruction.
+    *
+    * Performance notes:
+    * The chosen routine is not optimal in terms of data dependency
+    * since zero_leading_bit might require two instructions. However,
+    * it tends to minimize the total number of instructions which is
+    * beneficial.
+    */
+  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+    int lz = leading_zeroes(rev_bits);
+    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    rev_bits = zero_leading_bit(rev_bits, lz);
+  }
+#else
+  /**
+    * Under recent x64 systems, we often have both a fast trailing zero
+    * instruction and a fast 'clear-lower-bit' instruction so the following
+    * algorithm can be competitive.
+    */
+
+  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
+    this->tail[i] = idx + trailing_zeroes(bits);
+    bits = clear_lowest_bit(bits);
+  }
+#endif // SIMDJSON_PREFER_REVERSE_BITS
+
+  template <int START, int N>
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    write_index(idx, bits, START);
+    SIMDJSON_IF_CONSTEXPR (N > 1) {
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
+    }
+    return START+N;
+  }
+
+  template <int START, int END, int STEP>
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(idx, bits);
+    SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
+      if (simdjson_unlikely((START+STEP) < cnt)) {
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
+      }
+    }
+    return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
+  }
+
   // flatten out values in 'bits' assuming that they are are to have values of idx
   // plus their position in the bitvector, and store these indexes at
   // base_ptr[base] incrementing base as we go
@@ -34777,91 +34763,29 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-#if SIMDJSON_PREFER_REVERSE_BITS
-    /**
-     * ARM lacks a fast trailing zero instruction, but it has a fast
-     * bit reversal instruction and a fast leading zero instruction.
-     * Thus it may be profitable to reverse the bits (once) and then
-     * to rely on a sequence of instructions that call the leading
-     * zero instruction.
-     *
-     * Performance notes:
-     * The chosen routine is not optimal in terms of data dependency
-     * since zero_leading_bit might require two instructions. However,
-     * it tends to minimize the total number of instructions which is
-     * beneficial.
-     */
 
-    uint64_t rev_bits = reverse_bits(bits);
     int cnt = static_cast<int>(count_ones(bits));
-    int i = 0;
-    // Do the first 8 all together
-    for (; i<8; i++) {
-      int lz = leading_zeroes(rev_bits);
-      this->tail[i] = static_cast<uint32_t>(idx) + lz;
-      rev_bits = zero_leading_bit(rev_bits, lz);
-    }
-    // Do the next 8 all together (we hope in most cases it won't happen at all
-    // and the branch is easily predicted).
-    if (simdjson_unlikely(cnt > 8)) {
-      i = 8;
-      for (; i<16; i++) {
-        int lz = leading_zeroes(rev_bits);
-        this->tail[i] = static_cast<uint32_t>(idx) + lz;
-        rev_bits = zero_leading_bit(rev_bits, lz);
-      }
 
+#if SIMDJSON_PREFER_REVERSE_BITS
+    bits = reverse_bits(bits);
+#endif
+#ifdef SIMDJSON_STRUCTURAL_INDEXER_STEP
+    static constexpr const int STEP = SIMDJSON_STRUCTURAL_INDEXER_STEP;
+#else
+    static constexpr const int STEP = 4;
+#endif
+    static constexpr const int STEP_UNTIL = 24;
 
-      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-      // or the start of a value ("abc" true 123) every four characters.
-      if (simdjson_unlikely(cnt > 16)) {
-        i = 16;
-        while (rev_bits != 0) {
-          int lz = leading_zeroes(rev_bits);
-          this->tail[i++] = static_cast<uint32_t>(idx) + lz;
-          rev_bits = zero_leading_bit(rev_bits, lz);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
+    SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
+      if (simdjson_unlikely(STEP_UNTIL < cnt)) {
+        for (int i=STEP_UNTIL; i<cnt; i++) {
+          write_index(idx, bits, i);
         }
       }
     }
-    this->tail += cnt;
-#else // SIMDJSON_PREFER_REVERSE_BITS
-    /**
-     * Under recent x64 systems, we often have both a fast trailing zero
-     * instruction and a fast 'clear-lower-bit' instruction so the following
-     * algorithm can be competitive.
-     */
-
-    int cnt = static_cast<int>(count_ones(bits));
-    // Do the first 8 all together
-    for (int i=0; i<8; i++) {
-      this->tail[i] = idx + trailing_zeroes(bits);
-      bits = clear_lowest_bit(bits);
-    }
-
-    // Do the next 8 all together (we hope in most cases it won't happen at all
-    // and the branch is easily predicted).
-    if (simdjson_unlikely(cnt > 8)) {
-      for (int i=8; i<16; i++) {
-        this->tail[i] = idx + trailing_zeroes(bits);
-        bits = clear_lowest_bit(bits);
-      }
-
-      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-      // or the start of a value ("abc" true 123) every four characters.
-      if (simdjson_unlikely(cnt > 16)) {
-        int i = 16;
-        do {
-          this->tail[i] = idx + trailing_zeroes(bits);
-          bits = clear_lowest_bit(bits);
-          i++;
-        } while (i < cnt);
-      }
-    }
 
     this->tail += cnt;
-#endif
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -35710,15 +35634,17 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_root_primit
 }
 template<typename V>
 simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V &visitor, const uint8_t *value) noexcept {
+  // Use the fact that most scalars are going to be either strings or numbers.
+  if(*value == '"') {
+    return visitor.visit_string(*this, value);
+  } else if (((*value - '0')  < 10) || (*value == '-')) {
+    return visitor.visit_number(*this, value);
+  }
+  // true, false, null are uncommon.
   switch (*value) {
-    case '"': return visitor.visit_string(*this, value);
     case 't': return visitor.visit_true_atom(*this, value);
     case 'f': return visitor.visit_false_atom(*this, value);
     case 'n': return visitor.visit_null_atom(*this, value);
-    case '-':
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-      return visitor.visit_number(*this, value);
     default:
       log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
@@ -38296,8 +38222,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // power_of_five_128[index]. Usually, that's good enough to approximate i * 5^q
     // to the desired approximation using one multiplication. Sometimes it does not suffice.
     // Then we store the next most significant 64 bits in power_of_five_128[index + 1], and
-    // then we get a better approximation to i * 5^q. In very rare cases, even that
-    // will not suffice, though it is seemingly very hard to find such a scenario.
+    // then we get a better approximation to i * 5^q.
     //
     // That's for when q>=0. The logic for q<0 is somewhat similar but it is somewhat
     // more complicated.
@@ -38312,12 +38237,9 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
-    // At this point, we might need to add at most one to firstproduct, but this
-    // can only change the value of firstproduct.high if firstproduct.low is maximal.
-    if(simdjson_unlikely(firstproduct.low  == 0xFFFFFFFFFFFFFFFF)) {
-      // This is very unlikely, but if so, we need to do much more work!
-      return false;
-    }
+    // As it has been proven by Noble Mushtak and Daniel Lemire in "Fast Number Parsing Without
+    // Fallback" (https://arxiv.org/abs/2212.06644), at this point we are sure that the product
+    // is sufficiently accurate, and more computation is not needed.
   }
   uint64_t lower = firstproduct.low;
   uint64_t upper = firstproduct.high;
@@ -41326,14 +41248,6 @@ using namespace simd;
       this->error |= this->prev_incomplete;
     }
 
-#ifndef SIMDJSON_IF_CONSTEXPR
-#if SIMDJSON_CPLUSPLUS17
-#define SIMDJSON_IF_CONSTEXPR if constexpr
-#else
-#define SIMDJSON_IF_CONSTEXPR if
-#endif
-#endif
-
     simdjson_inline void check_next_input(const simd8x64<uint8_t>& input) {
       if(simdjson_likely(is_ascii(input))) {
         this->error |= this->prev_incomplete;
@@ -41791,6 +41705,58 @@ public:
 
   simdjson_inline bit_indexer(uint32_t *index_buf) : tail(index_buf) {}
 
+#if SIMDJSON_PREFER_REVERSE_BITS
+  /**
+    * ARM lacks a fast trailing zero instruction, but it has a fast
+    * bit reversal instruction and a fast leading zero instruction.
+    * Thus it may be profitable to reverse the bits (once) and then
+    * to rely on a sequence of instructions that call the leading
+    * zero instruction.
+    *
+    * Performance notes:
+    * The chosen routine is not optimal in terms of data dependency
+    * since zero_leading_bit might require two instructions. However,
+    * it tends to minimize the total number of instructions which is
+    * beneficial.
+    */
+  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+    int lz = leading_zeroes(rev_bits);
+    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    rev_bits = zero_leading_bit(rev_bits, lz);
+  }
+#else
+  /**
+    * Under recent x64 systems, we often have both a fast trailing zero
+    * instruction and a fast 'clear-lower-bit' instruction so the following
+    * algorithm can be competitive.
+    */
+
+  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
+    this->tail[i] = idx + trailing_zeroes(bits);
+    bits = clear_lowest_bit(bits);
+  }
+#endif // SIMDJSON_PREFER_REVERSE_BITS
+
+  template <int START, int N>
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    write_index(idx, bits, START);
+    SIMDJSON_IF_CONSTEXPR (N > 1) {
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
+    }
+    return START+N;
+  }
+
+  template <int START, int END, int STEP>
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(idx, bits);
+    SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
+      if (simdjson_unlikely((START+STEP) < cnt)) {
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
+      }
+    }
+    return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
+  }
+
   // flatten out values in 'bits' assuming that they are are to have values of idx
   // plus their position in the bitvector, and store these indexes at
   // base_ptr[base] incrementing base as we go
@@ -41808,91 +41774,29 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-#if SIMDJSON_PREFER_REVERSE_BITS
-    /**
-     * ARM lacks a fast trailing zero instruction, but it has a fast
-     * bit reversal instruction and a fast leading zero instruction.
-     * Thus it may be profitable to reverse the bits (once) and then
-     * to rely on a sequence of instructions that call the leading
-     * zero instruction.
-     *
-     * Performance notes:
-     * The chosen routine is not optimal in terms of data dependency
-     * since zero_leading_bit might require two instructions. However,
-     * it tends to minimize the total number of instructions which is
-     * beneficial.
-     */
 
-    uint64_t rev_bits = reverse_bits(bits);
     int cnt = static_cast<int>(count_ones(bits));
-    int i = 0;
-    // Do the first 8 all together
-    for (; i<8; i++) {
-      int lz = leading_zeroes(rev_bits);
-      this->tail[i] = static_cast<uint32_t>(idx) + lz;
-      rev_bits = zero_leading_bit(rev_bits, lz);
-    }
-    // Do the next 8 all together (we hope in most cases it won't happen at all
-    // and the branch is easily predicted).
-    if (simdjson_unlikely(cnt > 8)) {
-      i = 8;
-      for (; i<16; i++) {
-        int lz = leading_zeroes(rev_bits);
-        this->tail[i] = static_cast<uint32_t>(idx) + lz;
-        rev_bits = zero_leading_bit(rev_bits, lz);
-      }
 
+#if SIMDJSON_PREFER_REVERSE_BITS
+    bits = reverse_bits(bits);
+#endif
+#ifdef SIMDJSON_STRUCTURAL_INDEXER_STEP
+    static constexpr const int STEP = SIMDJSON_STRUCTURAL_INDEXER_STEP;
+#else
+    static constexpr const int STEP = 4;
+#endif
+    static constexpr const int STEP_UNTIL = 24;
 
-      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-      // or the start of a value ("abc" true 123) every four characters.
-      if (simdjson_unlikely(cnt > 16)) {
-        i = 16;
-        while (rev_bits != 0) {
-          int lz = leading_zeroes(rev_bits);
-          this->tail[i++] = static_cast<uint32_t>(idx) + lz;
-          rev_bits = zero_leading_bit(rev_bits, lz);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
+    SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
+      if (simdjson_unlikely(STEP_UNTIL < cnt)) {
+        for (int i=STEP_UNTIL; i<cnt; i++) {
+          write_index(idx, bits, i);
         }
       }
     }
-    this->tail += cnt;
-#else // SIMDJSON_PREFER_REVERSE_BITS
-    /**
-     * Under recent x64 systems, we often have both a fast trailing zero
-     * instruction and a fast 'clear-lower-bit' instruction so the following
-     * algorithm can be competitive.
-     */
-
-    int cnt = static_cast<int>(count_ones(bits));
-    // Do the first 8 all together
-    for (int i=0; i<8; i++) {
-      this->tail[i] = idx + trailing_zeroes(bits);
-      bits = clear_lowest_bit(bits);
-    }
-
-    // Do the next 8 all together (we hope in most cases it won't happen at all
-    // and the branch is easily predicted).
-    if (simdjson_unlikely(cnt > 8)) {
-      for (int i=8; i<16; i++) {
-        this->tail[i] = idx + trailing_zeroes(bits);
-        bits = clear_lowest_bit(bits);
-      }
-
-      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-      // or the start of a value ("abc" true 123) every four characters.
-      if (simdjson_unlikely(cnt > 16)) {
-        int i = 16;
-        do {
-          this->tail[i] = idx + trailing_zeroes(bits);
-          bits = clear_lowest_bit(bits);
-          i++;
-        } while (i < cnt);
-      }
-    }
 
     this->tail += cnt;
-#endif
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -42741,15 +42645,17 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_root_primit
 }
 template<typename V>
 simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V &visitor, const uint8_t *value) noexcept {
+  // Use the fact that most scalars are going to be either strings or numbers.
+  if(*value == '"') {
+    return visitor.visit_string(*this, value);
+  } else if (((*value - '0')  < 10) || (*value == '-')) {
+    return visitor.visit_number(*this, value);
+  }
+  // true, false, null are uncommon.
   switch (*value) {
-    case '"': return visitor.visit_string(*this, value);
     case 't': return visitor.visit_true_atom(*this, value);
     case 'f': return visitor.visit_false_atom(*this, value);
     case 'n': return visitor.visit_null_atom(*this, value);
-    case '-':
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-      return visitor.visit_number(*this, value);
     default:
       log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
