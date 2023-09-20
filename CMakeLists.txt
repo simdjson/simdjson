@@ -23,6 +23,8 @@ string(
 set(SIMDJSON_LIB_VERSION "16.0.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "16" CACHE STRING "simdjson library soversion")
 
+option(SIMDJSON_BUILD_STATIC_LIB "Build simdjson_static library along with simdjson" OFF)
+
 option(SIMDJSON_ENABLE_THREADS "Link with thread support" ON)
 
 include(cmake/simdjson-props.cmake)
@@ -56,8 +58,17 @@ include(cmake/developer-options.cmake)
 
 # ---- simdjson library ----
 
-add_library(simdjson src/simdjson.cpp)
+set(SIMDJSON_SOURCES src/simdjson.cpp)
+
+add_library(simdjson ${SIMDJSON_SOURCES})
 add_library(simdjson::simdjson ALIAS simdjson)
+set(SIMDJSON_LIBRARIES simdjson)
+
+if(SIMDJSON_BUILD_STATIC_LIB)
+  add_library(simdjson_static STATIC ${SIMDJSON_SOURCES})
+  add_library(simdjson::simdjson_static ALIAS simdjson_static)
+  list(APPEND SIMDJSON_LIBRARIES simdjson_static)
+endif()
 
 set_target_properties(
     simdjson PROPERTIES
@@ -117,6 +128,9 @@ if(SIMDJSON_ENABLE_THREADS)
 endif()
 
 simdjson_apply_props(simdjson)
+if(SIMDJSON_BUILD_STATIC_LIB)
+  simdjson_apply_props(simdjson_static)
+endif()
 
 # ---- Install rules ----
 
@@ -138,7 +152,6 @@ install(
     ARCHIVE COMPONENT simdjson_Development
     INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
 )
-
 configure_file(cmake/simdjson-config.cmake.in simdjson-config.cmake @ONLY)
 
 write_basic_package_version_file(
@@ -166,6 +179,20 @@ install(
     DESTINATION "${SIMDJSON_INSTALL_CMAKEDIR}"
     COMPONENT simdjson_Development
 )
+
+if(SIMDJSON_BUILD_STATIC_LIB)
+  install(
+      TARGETS simdjson_static
+      EXPORT simdjson_staticTargets
+      ARCHIVE COMPONENT simdjson_Development
+  )
+  install(
+      EXPORT simdjson_staticTargets
+      NAMESPACE simdjson::
+      DESTINATION "${SIMDJSON_INSTALL_CMAKEDIR}"
+      COMPONENT simdjson_Development
+  )
+endif()
 
 # pkg-config
 include(cmake/JoinPaths.cmake)
