@@ -152,14 +152,6 @@ install(
     ARCHIVE COMPONENT simdjson_Development
     INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
 )
-if(SIMDJSON_BUILD_STATIC_LIB)
-  install(
-      TARGETS simdjson_static
-      EXPORT simdjsonTargets
-      ARCHIVE COMPONENT simdjson_Development
-  )
-endif()
-
 configure_file(cmake/simdjson-config.cmake.in simdjson-config.cmake @ONLY)
 
 write_basic_package_version_file(
@@ -187,6 +179,20 @@ install(
     DESTINATION "${SIMDJSON_INSTALL_CMAKEDIR}"
     COMPONENT simdjson_Development
 )
+
+if(SIMDJSON_BUILD_STATIC_LIB)
+  install(
+      TARGETS simdjson_static
+      EXPORT simdjson_staticTargets
+      ARCHIVE COMPONENT simdjson_Development
+  )
+  install(
+      EXPORT simdjson_staticTargets
+      NAMESPACE simdjson::
+      DESTINATION "${SIMDJSON_INSTALL_CMAKEDIR}"
+      COMPONENT simdjson_Development
+  )
+endif()
 
 # pkg-config
 include(cmake/JoinPaths.cmake)
