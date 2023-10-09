@@ -410,6 +410,12 @@ inline simdjson_result<element> element::at_key(std::string_view key) const noex
 inline simdjson_result<element> element::at_key_case_insensitive(std::string_view key) const noexcept {
   return get<object>().at_key_case_insensitive(key);
 }
+inline bool element::operator<(const element &other) const noexcept {
+  return tape.json_index < other.tape.json_index;
+}
+inline bool element::operator==(const element &other) const noexcept {
+  return tape.json_index == other.tape.json_index;
+}
 
 inline bool element::dump_raw_tape(std::ostream &out) const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
