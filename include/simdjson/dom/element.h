@@ -451,6 +451,22 @@ public:
    */
   inline simdjson_result<element> at_key_case_insensitive(std::string_view key) const noexcept;
 
+  /**
+   * operator< defines a total order for element allowing to use them in
+   * ordered C++ STL containers
+   *
+   * @return TRUE if the key appears before the other one in the tape
+   */
+  inline bool operator<(const element &other) const noexcept;
+
+  /**
+   * operator== allows to verify if two element values reference the
+   * same JSON item
+   *
+   * @return TRUE if the two values references the same JSON element
+   */
+  inline bool operator==(const element &other) const noexcept;
+
   /** @private for debugging. Prints out the root element. */
   inline bool dump_raw_tape(std::ostream &out) const noexcept;
 

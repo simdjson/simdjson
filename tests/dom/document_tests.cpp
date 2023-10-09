@@ -51,6 +51,10 @@ namespace document_tests {
     simdjson::dom::array array;
     ASSERT_SUCCESS( parser.parse(smalljson).get(array) );
     ASSERT_EQUAL( array.size(), 3 );
+    ASSERT_EQUAL( *array.begin() < *array.end(), true );
+    ASSERT_EQUAL( *array.end() < *array.begin(), false );
+    ASSERT_EQUAL( *array.begin() == *array.begin(), true );
+    ASSERT_EQUAL( *array.begin() == *array.end(), false );
     return true;
   }
   bool count_object_example() {
@@ -60,6 +64,10 @@ namespace document_tests {
     simdjson::dom::object object;
     ASSERT_SUCCESS( parser.parse(smalljson).get(object) );
     ASSERT_EQUAL( object.size(), 3 );
+    ASSERT_EQUAL( (*object.begin()).value < (*object.end()).value, true );
+    ASSERT_EQUAL( (*object.end()).value < (*object.begin()).value, false );
+    ASSERT_EQUAL( (*object.begin()).value == (*object.begin()).value, true );
+    ASSERT_EQUAL( (*object.begin()).value == (*object.end()).value, false );
     return true;
   }
   bool padded_with_open_bracket() {
