@@ -39,9 +39,9 @@ public:
     // Unless the simdjson library provides an inline implementation, calling this method should
     // immediately fail.
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
-      + "The supported types are ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
-      + "int64_t, double, and bool. We recommend you use get_double(), get_bool(), get_uint64(), get_int64(), "
-      + " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template.");
+      "The supported types are ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
+      "int64_t, double, and bool. We recommend you use get_double(), get_bool(), get_uint64(), get_int64(), "
+      " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template.");
   }
 
   /**
