@@ -211,7 +211,11 @@ public:
   inline simdjson_result<T> get() const noexcept {
     // Unless the simdjson library provides an inline implementation, calling this method should
     // immediately fail.
-    static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library.");
+    static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
+      + "The supported types are Boolean (bool), numbers (double, uint64_t, int64_t), "
+      + "strings (std::string_view, const char *), arrays (dom::array) and objects (dom::object). "
+      + "We recommand you use get_double(), get_bool(), get_uint64(), get_int64(), "
+      + "get_object(), get_array() or get_string() instead of the get template.");
   }
 
   /**
@@ -450,6 +454,22 @@ public:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
   inline simdjson_result<element> at_key_case_insensitive(std::string_view key) const noexcept;
+
+  /**
+   * operator< defines a total order for element allowing to use them in
+   * ordered C++ STL containers
+   *
+   * @return TRUE if the key appears before the other one in the tape
+   */
+  inline bool operator<(const element &other) const noexcept;
+
+  /**
+   * operator== allows to verify if two element values reference the
+   * same JSON item
+   *
+   * @return TRUE if the two values references the same JSON element
+   */
+  inline bool operator==(const element &other) const noexcept;
 
   /** @private for debugging. Prints out the root element. */
   inline bool dump_raw_tape(std::ostream &out) const noexcept;
