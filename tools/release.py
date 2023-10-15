@@ -167,8 +167,6 @@ print("the commandline is {}".format(cp.args))
 if(cp.returncode != 0):
     print("Failed to run doxygen")
 
-#ipe = subprocess.Popen(["doxygen"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=maindir)
-#doxygenresult = pipe.communicate()[0].decode().strip()
 
 pattern = re.compile("https://simdjson.org/api/(\d+\.\d+\.\d+)/index.html")
 readmefile = maindir + os.sep + "README.md"
