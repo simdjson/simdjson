@@ -70,7 +70,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(s
 
 simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(std::string &json) & noexcept {
   if(json.capacity() - json.size() < SIMDJSON_PADDING) {
-    json.reserve(json.capacity() + SIMDJSON_PADDING);
+    json.reserve(json.size() + SIMDJSON_PADDING);
   }
   return iterate(padded_string_view(json));
 }
