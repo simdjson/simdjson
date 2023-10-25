@@ -179,8 +179,8 @@ strcpy(json, "[1]");
 ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
 ```
 
-The simdjson library will also accept `std::string` instances, as long as the `capacity()` of
-the string exceeds the `size()` by at least `SIMDJSON_PADDING`. You can increase the `capacity()` with the `reserve()` function of your strings.
+The simdjson library will also accept `std::string` instances. If the provided
+reference is non-const, it will allocate padding as needed.
 
 You can copy your data directly on a `simdjson::padded_string` as follows:
 
