@@ -1,4 +1,4 @@
-/* auto-generated on . Do not edit! */
+/* auto-generated on 2023-10-25 19:34:52 -0400. Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -2319,7 +2319,7 @@ namespace std {
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "3.3.0"
+#define SIMDJSON_VERSION "3.4.0"
 
 namespace simdjson {
 enum {
@@ -2330,7 +2330,7 @@ enum {
   /**
    * The minor version (major.MINOR.revision) of simdjson being used.
    */
-  SIMDJSON_VERSION_MINOR = 3,
+  SIMDJSON_VERSION_MINOR = 4,
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
@@ -27403,6 +27403,9 @@ public:
    *
    * The string is guaranteed to be valid UTF-8.
    *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
+   *
    * Performance: This method may be slower than get_string() or get_string(bool) because it may need to allocate memory.
    * We recommend you avoid allocating an std::string unless you need to.
    *
@@ -28457,10 +28460,6 @@ public:
    */
   simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, bool allow_replacement) noexcept;
   simdjson_inline simdjson_result<std::string_view> unescape_wobbly(raw_json_string in) noexcept;
-  /**
-   * This version of unescape writes directly to a specified buffer.
-   */
-  simdjson_inline simdjson_result<std::string_view> unescape_to_buffer(raw_json_string in, bool allow_replacement, uint8_t* destination) noexcept;
 
   simdjson_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
 
@@ -28854,20 +28853,6 @@ private:
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(json_iterator &iter, bool allow_replacement) const noexcept;
 
   /**
-   * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a provided
-   * buffer. The buffer must be large enough to hold the unescaped string with a margin of
-   * SIMDJSON_PADDING bytes.
-   *
-   * The result will be a valid UTF-8.
-   *
-   *
-   * @param iter A json_iterator.
-   * @param allow_replacement Whether we allow replacement of invalid surrogate pairs.
-   * @param iter A destination buffer.
-   */
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_to_buffer(json_iterator &iter, bool allow_replacement, char* destination) const noexcept;
-
-  /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
    * The result may not be a valid UTF-8. https://simonsapin.github.io/wtf-8/
    *
@@ -28913,7 +28898,6 @@ public:
 
   simdjson_inline simdjson_result<const char *> raw() const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(arm64::ondemand::json_iterator &iter, bool allow_replacement) const noexcept;
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_to_buffer(arm64::ondemand::json_iterator &iter, bool allow_replacement, char* destination) const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_wobbly(arm64::ondemand::json_iterator &iter) const noexcept;
 };
 
@@ -29031,6 +29015,8 @@ public:
   simdjson_warn_unused simdjson_result<document> iterate(std::string_view json, size_t capacity) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const std::string &json) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate(std::string &json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string> &json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
@@ -29690,6 +29676,9 @@ public:
    * Attempts to fill the provided std::string reference with the parsed value of the current string.
    *
    * The string is guaranteed to be valid UTF-8.
+   *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
    *
    * Performance: This method may be slower than get_string() or get_string(bool) because it may need to allocate memory.
    * We recommend you avoid allocating an std::string unless you need to.
@@ -33278,10 +33267,6 @@ simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_js
   return parser->unescape(in, _string_buf_loc, allow_replacement);
 }
 
-simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_to_buffer(raw_json_string in, bool allow_replacement, uint8_t* destination) noexcept {
-  return parser->unescape(in, destination, allow_replacement);
-}
-
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_wobbly(raw_json_string in) noexcept {
   return parser->unescape_wobbly(in, _string_buf_loc);
 }
@@ -34181,6 +34166,13 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(s
   return iterate(padded_string_view(json, allocated));
 }
 
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(std::string &json) & noexcept {
+  if(json.capacity() - json.size() < SIMDJSON_PADDING) {
+    json.reserve(json.size() + SIMDJSON_PADDING);
+  }
+  return iterate(padded_string_view(json));
+}
+
 simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const std::string &json) & noexcept {
   return iterate(padded_string_view(json));
 }
@@ -34437,10 +34429,6 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_
   return iter.unescape(*this, allow_replacement);
 }
 
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_to_buffer(json_iterator &iter, bool allow_replacement, char* destination) const noexcept {
-  return iter.unescape_to_buffer(*this, allow_replacement, (uint8_t*)destination);
-}
-
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_wobbly(json_iterator &iter) const noexcept {
   return iter.unescape_wobbly(*this);
 }
@@ -34477,10 +34465,6 @@ simdjson_inline simdjson_result<const char *> simdjson_result<arm64::ondemand::r
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<arm64::ondemand::raw_json_string>::unescape(arm64::ondemand::json_iterator &iter, bool allow_replacement) const noexcept {
   if (error()) { return error(); }
   return first.unescape(iter, allow_replacement);
-}
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<arm64::ondemand::raw_json_string>::unescape_to_buffer(arm64::ondemand::json_iterator &iter, bool allow_replacement, char* destination) const noexcept {
-  if (error()) { return error(); }
-  return first.unescape_to_buffer(iter, allow_replacement, destination);
 }
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<arm64::ondemand::raw_json_string>::unescape_wobbly(arm64::ondemand::json_iterator &iter) const noexcept {
   if (error()) { return error(); }
@@ -35785,17 +35769,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
   return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(std::string& receiver, bool allow_replacement) noexcept {
-  size_t max_str_length = _json_iter->peek_length() - 2; // -2 for the quotes
-  // allocate a string that is as long as it could possibly be + some padding
-  receiver.resize(max_str_length + SIMDJSON_PADDING);
-  std::string_view result;
-  error_code code = get_raw_json_string().unescape_to_buffer(json_iter(), allow_replacement, receiver.data()).get(result);
-  if (code) {
-    receiver.clear();
-    return code;
-  }
-  // resize the string to its actual size.
-  receiver.resize(result.size());
+  std::string_view content;
+  auto err = get_string(allow_replacement).get(content);
+  if (err) { return err; }
+  receiver = std::string(content);
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
@@ -35922,17 +35899,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
   return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept {
-  size_t max_str_length = _json_iter->peek_length() - 2; // -2 for the quotes
-  // allocate a string that is as long as it could possibly be + some padding
-  receiver.resize(max_str_length + SIMDJSON_PADDING);
-  std::string_view result;
-  error_code code = get_root_raw_json_string(check_trailing).unescape_to_buffer(json_iter(), allow_replacement, receiver.data()).get(result);
-  if (code) {
-    receiver.clear();
-    return code;
-  }
-  // resize the string to its actual size.
-  receiver.resize(result.size());
+  std::string_view content;
+  auto err = get_root_string(check_trailing, allow_replacement).get(content);
+  if (err) { return err; }
+  receiver = std::string(content);
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
@@ -37271,6 +37241,9 @@ public:
    *
    * The string is guaranteed to be valid UTF-8.
    *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
+   *
    * Performance: This method may be slower than get_string() or get_string(bool) because it may need to allocate memory.
    * We recommend you avoid allocating an std::string unless you need to.
    *
@@ -38325,10 +38298,6 @@ public:
    */
   simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, bool allow_replacement) noexcept;
   simdjson_inline simdjson_result<std::string_view> unescape_wobbly(raw_json_string in) noexcept;
-  /**
-   * This version of unescape writes directly to a specified buffer.
-   */
-  simdjson_inline simdjson_result<std::string_view> unescape_to_buffer(raw_json_string in, bool allow_replacement, uint8_t* destination) noexcept;
 
   simdjson_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
 
@@ -38722,20 +38691,6 @@ private:
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(json_iterator &iter, bool allow_replacement) const noexcept;
 
   /**
-   * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a provided
-   * buffer. The buffer must be large enough to hold the unescaped string with a margin of
-   * SIMDJSON_PADDING bytes.
-   *
-   * The result will be a valid UTF-8.
-   *
-   *
-   * @param iter A json_iterator.
-   * @param allow_replacement Whether we allow replacement of invalid surrogate pairs.
-   * @param iter A destination buffer.
-   */
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_to_buffer(json_iterator &iter, bool allow_replacement, char* destination) const noexcept;
-
-  /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
    * The result may not be a valid UTF-8. https://simonsapin.github.io/wtf-8/
    *
@@ -38781,7 +38736,6 @@ public:
 
   simdjson_inline simdjson_result<const char *> raw() const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(fallback::ondemand::json_iterator &iter, bool allow_replacement) const noexcept;
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_to_buffer(fallback::ondemand::json_iterator &iter, bool allow_replacement, char* destination) const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_wobbly(fallback::ondemand::json_iterator &iter) const noexcept;
 };
 
@@ -38899,6 +38853,8 @@ public:
   simdjson_warn_unused simdjson_result<document> iterate(std::string_view json, size_t capacity) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const std::string &json) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate(std::string &json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string> &json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
@@ -39558,6 +39514,9 @@ public:
    * Attempts to fill the provided std::string reference with the parsed value of the current string.
    *
    * The string is guaranteed to be valid UTF-8.
+   *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
    *
    * Performance: This method may be slower than get_string() or get_string(bool) because it may need to allocate memory.
    * We recommend you avoid allocating an std::string unless you need to.
@@ -43146,10 +43105,6 @@ simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_js
   return parser->unescape(in, _string_buf_loc, allow_replacement);
 }
 
-simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_to_buffer(raw_json_string in, bool allow_replacement, uint8_t* destination) noexcept {
-  return parser->unescape(in, destination, allow_replacement);
-}
-
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_wobbly(raw_json_string in) noexcept {
   return parser->unescape_wobbly(in, _string_buf_loc);
 }
@@ -44049,6 +44004,13 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(s
   return iterate(padded_string_view(json, allocated));
 }
 
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(std::string &json) & noexcept {
+  if(json.capacity() - json.size() < SIMDJSON_PADDING) {
+    json.reserve(json.size() + SIMDJSON_PADDING);
+  }
+  return iterate(padded_string_view(json));
+}
+
 simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const std::string &json) & noexcept {
   return iterate(padded_string_view(json));
 }
@@ -44305,10 +44267,6 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_
   return iter.unescape(*this, allow_replacement);
 }
 
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_to_buffer(json_iterator &iter, bool allow_replacement, char* destination) const noexcept {
-  return iter.unescape_to_buffer(*this, allow_replacement, (uint8_t*)destination);
-}
-
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_wobbly(json_iterator &iter) const noexcept {
   return iter.unescape_wobbly(*this);
 }
@@ -44345,10 +44303,6 @@ simdjson_inline simdjson_result<const char *> simdjson_result<fallback::ondemand
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<fallback::ondemand::raw_json_string>::unescape(fallback::ondemand::json_iterator &iter, bool allow_replacement) const noexcept {
   if (error()) { return error(); }
   return first.unescape(iter, allow_replacement);
-}
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<fallback::ondemand::raw_json_string>::unescape_to_buffer(fallback::ondemand::json_iterator &iter, bool allow_replacement, char* destination) const noexcept {
-  if (error()) { return error(); }
-  return first.unescape_to_buffer(iter, allow_replacement, destination);
 }
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<fallback::ondemand::raw_json_string>::unescape_wobbly(fallback::ondemand::json_iterator &iter) const noexcept {
   if (error()) { return error(); }
@@ -45653,17 +45607,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
   return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(std::string& receiver, bool allow_replacement) noexcept {
-  size_t max_str_length = _json_iter->peek_length() - 2; // -2 for the quotes
-  // allocate a string that is as long as it could possibly be + some padding
-  receiver.resize(max_str_length + SIMDJSON_PADDING);
-  std::string_view result;
-  error_code code = get_raw_json_string().unescape_to_buffer(json_iter(), allow_replacement, receiver.data()).get(result);
-  if (code) {
-    receiver.clear();
-    return code;
-  }
-  // resize the string to its actual size.
-  receiver.resize(result.size());
+  std::string_view content;
+  auto err = get_string(allow_replacement).get(content);
+  if (err) { return err; }
+  receiver = std::string(content);
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
@@ -45790,17 +45737,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
   return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept {
-  size_t max_str_length = _json_iter->peek_length() - 2; // -2 for the quotes
-  // allocate a string that is as long as it could possibly be + some padding
-  receiver.resize(max_str_length + SIMDJSON_PADDING);
-  std::string_view result;
-  error_code code = get_root_raw_json_string(check_trailing).unescape_to_buffer(json_iter(), allow_replacement, receiver.data()).get(result);
-  if (code) {
-    receiver.clear();
-    return code;
-  }
-  // resize the string to its actual size.
-  receiver.resize(result.size());
+  std::string_view content;
+  auto err = get_root_string(check_trailing, allow_replacement).get(content);
+  if (err) { return err; }
+  receiver = std::string(content);
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
@@ -47631,6 +47571,9 @@ public:
    *
    * The string is guaranteed to be valid UTF-8.
    *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
+   *
    * Performance: This method may be slower than get_string() or get_string(bool) because it may need to allocate memory.
    * We recommend you avoid allocating an std::string unless you need to.
    *
@@ -48685,10 +48628,6 @@ public:
    */
   simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, bool allow_replacement) noexcept;
   simdjson_inline simdjson_result<std::string_view> unescape_wobbly(raw_json_string in) noexcept;
-  /**
-   * This version of unescape writes directly to a specified buffer.
-   */
-  simdjson_inline simdjson_result<std::string_view> unescape_to_buffer(raw_json_string in, bool allow_replacement, uint8_t* destination) noexcept;
 
   simdjson_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
 
@@ -49082,20 +49021,6 @@ private:
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(json_iterator &iter, bool allow_replacement) const noexcept;
 
   /**
-   * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a provided
-   * buffer. The buffer must be large enough to hold the unescaped string with a margin of
-   * SIMDJSON_PADDING bytes.
-   *
-   * The result will be a valid UTF-8.
-   *
-   *
-   * @param iter A json_iterator.
-   * @param allow_replacement Whether we allow replacement of invalid surrogate pairs.
-   * @param iter A destination buffer.
-   */
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_to_buffer(json_iterator &iter, bool allow_replacement, char* destination) const noexcept;
-
-  /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
    * The result may not be a valid UTF-8. https://simonsapin.github.io/wtf-8/
    *
@@ -49141,7 +49066,6 @@ public:
 
   simdjson_inline simdjson_result<const char *> raw() const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(haswell::ondemand::json_iterator &iter, bool allow_replacement) const noexcept;
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_to_buffer(haswell::ondemand::json_iterator &iter, bool allow_replacement, char* destination) const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_wobbly(haswell::ondemand::json_iterator &iter) const noexcept;
 };
 
@@ -49259,6 +49183,8 @@ public:
   simdjson_warn_unused simdjson_result<document> iterate(std::string_view json, size_t capacity) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const std::string &json) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate(std::string &json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string> &json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
@@ -49918,6 +49844,9 @@ public:
    * Attempts to fill the provided std::string reference with the parsed value of the current string.
    *
    * The string is guaranteed to be valid UTF-8.
+   *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
    *
    * Performance: This method may be slower than get_string() or get_string(bool) because it may need to allocate memory.
    * We recommend you avoid allocating an std::string unless you need to.
@@ -53506,10 +53435,6 @@ simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_js
   return parser->unescape(in, _string_buf_loc, allow_replacement);
 }
 
-simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_to_buffer(raw_json_string in, bool allow_replacement, uint8_t* destination) noexcept {
-  return parser->unescape(in, destination, allow_replacement);
-}
-
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_wobbly(raw_json_string in) noexcept {
   return parser->unescape_wobbly(in, _string_buf_loc);
 }
@@ -54409,6 +54334,13 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(s
   return iterate(padded_string_view(json, allocated));
 }
 
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(std::string &json) & noexcept {
+  if(json.capacity() - json.size() < SIMDJSON_PADDING) {
+    json.reserve(json.size() + SIMDJSON_PADDING);
+  }
+  return iterate(padded_string_view(json));
+}
+
 simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const std::string &json) & noexcept {
   return iterate(padded_string_view(json));
 }
@@ -54665,10 +54597,6 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_
   return iter.unescape(*this, allow_replacement);
 }
 
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_to_buffer(json_iterator &iter, bool allow_replacement, char* destination) const noexcept {
-  return iter.unescape_to_buffer(*this, allow_replacement, (uint8_t*)destination);
-}
-
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_wobbly(json_iterator &iter) const noexcept {
   return iter.unescape_wobbly(*this);
 }
@@ -54705,10 +54633,6 @@ simdjson_inline simdjson_result<const char *> simdjson_result<haswell::ondemand:
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<haswell::ondemand::raw_json_string>::unescape(haswell::ondemand::json_iterator &iter, bool allow_replacement) const noexcept {
   if (error()) { return error(); }
   return first.unescape(iter, allow_replacement);
-}
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<haswell::ondemand::raw_json_string>::unescape_to_buffer(haswell::ondemand::json_iterator &iter, bool allow_replacement, char* destination) const noexcept {
-  if (error()) { return error(); }
-  return first.unescape_to_buffer(iter, allow_replacement, destination);
 }
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<haswell::ondemand::raw_json_string>::unescape_wobbly(haswell::ondemand::json_iterator &iter) const noexcept {
   if (error()) { return error(); }
@@ -56013,17 +55937,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
   return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(std::string& receiver, bool allow_replacement) noexcept {
-  size_t max_str_length = _json_iter->peek_length() - 2; // -2 for the quotes
-  // allocate a string that is as long as it could possibly be + some padding
-  receiver.resize(max_str_length + SIMDJSON_PADDING);
-  std::string_view result;
-  error_code code = get_raw_json_string().unescape_to_buffer(json_iter(), allow_replacement, receiver.data()).get(result);
-  if (code) {
-    receiver.clear();
-    return code;
-  }
-  // resize the string to its actual size.
-  receiver.resize(result.size());
+  std::string_view content;
+  auto err = get_string(allow_replacement).get(content);
+  if (err) { return err; }
+  receiver = std::string(content);
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
@@ -56150,17 +56067,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
   return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept {
-  size_t max_str_length = _json_iter->peek_length() - 2; // -2 for the quotes
-  // allocate a string that is as long as it could possibly be + some padding
-  receiver.resize(max_str_length + SIMDJSON_PADDING);
-  std::string_view result;
-  error_code code = get_root_raw_json_string(check_trailing).unescape_to_buffer(json_iter(), allow_replacement, receiver.data()).get(result);
-  if (code) {
-    receiver.clear();
-    return code;
-  }
-  // resize the string to its actual size.
-  receiver.resize(result.size());
+  std::string_view content;
+  auto err = get_root_string(check_trailing, allow_replacement).get(content);
+  if (err) { return err; }
+  receiver = std::string(content);
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
@@ -57990,6 +57900,9 @@ public:
    *
    * The string is guaranteed to be valid UTF-8.
    *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
+   *
    * Performance: This method may be slower than get_string() or get_string(bool) because it may need to allocate memory.
    * We recommend you avoid allocating an std::string unless you need to.
    *
@@ -59044,10 +58957,6 @@ public:
    */
   simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, bool allow_replacement) noexcept;
   simdjson_inline simdjson_result<std::string_view> unescape_wobbly(raw_json_string in) noexcept;
-  /**
-   * This version of unescape writes directly to a specified buffer.
-   */
-  simdjson_inline simdjson_result<std::string_view> unescape_to_buffer(raw_json_string in, bool allow_replacement, uint8_t* destination) noexcept;
 
   simdjson_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
 
@@ -59441,20 +59350,6 @@ private:
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(json_iterator &iter, bool allow_replacement) const noexcept;
 
   /**
-   * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a provided
-   * buffer. The buffer must be large enough to hold the unescaped string with a margin of
-   * SIMDJSON_PADDING bytes.
-   *
-   * The result will be a valid UTF-8.
-   *
-   *
-   * @param iter A json_iterator.
-   * @param allow_replacement Whether we allow replacement of invalid surrogate pairs.
-   * @param iter A destination buffer.
-   */
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_to_buffer(json_iterator &iter, bool allow_replacement, char* destination) const noexcept;
-
-  /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
    * The result may not be a valid UTF-8. https://simonsapin.github.io/wtf-8/
    *
@@ -59500,7 +59395,6 @@ public:
 
   simdjson_inline simdjson_result<const char *> raw() const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(icelake::ondemand::json_iterator &iter, bool allow_replacement) const noexcept;
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_to_buffer(icelake::ondemand::json_iterator &iter, bool allow_replacement, char* destination) const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_wobbly(icelake::ondemand::json_iterator &iter) const noexcept;
 };
 
@@ -59618,6 +59512,8 @@ public:
   simdjson_warn_unused simdjson_result<document> iterate(std::string_view json, size_t capacity) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const std::string &json) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate(std::string &json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string> &json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
@@ -60277,6 +60173,9 @@ public:
    * Attempts to fill the provided std::string reference with the parsed value of the current string.
    *
    * The string is guaranteed to be valid UTF-8.
+   *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
    *
    * Performance: This method may be slower than get_string() or get_string(bool) because it may need to allocate memory.
    * We recommend you avoid allocating an std::string unless you need to.
@@ -63865,10 +63764,6 @@ simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_js
   return parser->unescape(in, _string_buf_loc, allow_replacement);
 }
 
-simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_to_buffer(raw_json_string in, bool allow_replacement, uint8_t* destination) noexcept {
-  return parser->unescape(in, destination, allow_replacement);
-}
-
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_wobbly(raw_json_string in) noexcept {
   return parser->unescape_wobbly(in, _string_buf_loc);
 }
@@ -64768,6 +64663,13 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(s
   return iterate(padded_string_view(json, allocated));
 }
 
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(std::string &json) & noexcept {
+  if(json.capacity() - json.size() < SIMDJSON_PADDING) {
+    json.reserve(json.size() + SIMDJSON_PADDING);
+  }
+  return iterate(padded_string_view(json));
+}
+
 simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const std::string &json) & noexcept {
   return iterate(padded_string_view(json));
 }
@@ -65024,10 +64926,6 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_
   return iter.unescape(*this, allow_replacement);
 }
 
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_to_buffer(json_iterator &iter, bool allow_replacement, char* destination) const noexcept {
-  return iter.unescape_to_buffer(*this, allow_replacement, (uint8_t*)destination);
-}
-
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_wobbly(json_iterator &iter) const noexcept {
   return iter.unescape_wobbly(*this);
 }
@@ -65064,10 +64962,6 @@ simdjson_inline simdjson_result<const char *> simdjson_result<icelake::ondemand:
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<icelake::ondemand::raw_json_string>::unescape(icelake::ondemand::json_iterator &iter, bool allow_replacement) const noexcept {
   if (error()) { return error(); }
   return first.unescape(iter, allow_replacement);
-}
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<icelake::ondemand::raw_json_string>::unescape_to_buffer(icelake::ondemand::json_iterator &iter, bool allow_replacement, char* destination) const noexcept {
-  if (error()) { return error(); }
-  return first.unescape_to_buffer(iter, allow_replacement, destination);
 }
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<icelake::ondemand::raw_json_string>::unescape_wobbly(icelake::ondemand::json_iterator &iter) const noexcept {
   if (error()) { return error(); }
@@ -66372,17 +66266,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
   return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(std::string& receiver, bool allow_replacement) noexcept {
-  size_t max_str_length = _json_iter->peek_length() - 2; // -2 for the quotes
-  // allocate a string that is as long as it could possibly be + some padding
-  receiver.resize(max_str_length + SIMDJSON_PADDING);
-  std::string_view result;
-  error_code code = get_raw_json_string().unescape_to_buffer(json_iter(), allow_replacement, receiver.data()).get(result);
-  if (code) {
-    receiver.clear();
-    return code;
-  }
-  // resize the string to its actual size.
-  receiver.resize(result.size());
+  std::string_view content;
+  auto err = get_string(allow_replacement).get(content);
+  if (err) { return err; }
+  receiver = std::string(content);
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
@@ -66509,17 +66396,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
   return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept {
-  size_t max_str_length = _json_iter->peek_length() - 2; // -2 for the quotes
-  // allocate a string that is as long as it could possibly be + some padding
-  receiver.resize(max_str_length + SIMDJSON_PADDING);
-  std::string_view result;
-  error_code code = get_root_raw_json_string(check_trailing).unescape_to_buffer(json_iter(), allow_replacement, receiver.data()).get(result);
-  if (code) {
-    receiver.clear();
-    return code;
-  }
-  // resize the string to its actual size.
-  receiver.resize(result.size());
+  std::string_view content;
+  auto err = get_root_string(check_trailing, allow_replacement).get(content);
+  if (err) { return err; }
+  receiver = std::string(content);
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
@@ -68464,6 +68344,9 @@ public:
    *
    * The string is guaranteed to be valid UTF-8.
    *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
+   *
    * Performance: This method may be slower than get_string() or get_string(bool) because it may need to allocate memory.
    * We recommend you avoid allocating an std::string unless you need to.
    *
@@ -69518,10 +69401,6 @@ public:
    */
   simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, bool allow_replacement) noexcept;
   simdjson_inline simdjson_result<std::string_view> unescape_wobbly(raw_json_string in) noexcept;
-  /**
-   * This version of unescape writes directly to a specified buffer.
-   */
-  simdjson_inline simdjson_result<std::string_view> unescape_to_buffer(raw_json_string in, bool allow_replacement, uint8_t* destination) noexcept;
 
   simdjson_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
 
@@ -69915,20 +69794,6 @@ private:
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(json_iterator &iter, bool allow_replacement) const noexcept;
 
   /**
-   * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a provided
-   * buffer. The buffer must be large enough to hold the unescaped string with a margin of
-   * SIMDJSON_PADDING bytes.
-   *
-   * The result will be a valid UTF-8.
-   *
-   *
-   * @param iter A json_iterator.
-   * @param allow_replacement Whether we allow replacement of invalid surrogate pairs.
-   * @param iter A destination buffer.
-   */
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_to_buffer(json_iterator &iter, bool allow_replacement, char* destination) const noexcept;
-
-  /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
    * The result may not be a valid UTF-8. https://simonsapin.github.io/wtf-8/
    *
@@ -69974,7 +69839,6 @@ public:
 
   simdjson_inline simdjson_result<const char *> raw() const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(ppc64::ondemand::json_iterator &iter, bool allow_replacement) const noexcept;
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_to_buffer(ppc64::ondemand::json_iterator &iter, bool allow_replacement, char* destination) const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_wobbly(ppc64::ondemand::json_iterator &iter) const noexcept;
 };
 
@@ -70092,6 +69956,8 @@ public:
   simdjson_warn_unused simdjson_result<document> iterate(std::string_view json, size_t capacity) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const std::string &json) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate(std::string &json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string> &json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
@@ -70751,6 +70617,9 @@ public:
    * Attempts to fill the provided std::string reference with the parsed value of the current string.
    *
    * The string is guaranteed to be valid UTF-8.
+   *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
    *
    * Performance: This method may be slower than get_string() or get_string(bool) because it may need to allocate memory.
    * We recommend you avoid allocating an std::string unless you need to.
@@ -74339,10 +74208,6 @@ simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_js
   return parser->unescape(in, _string_buf_loc, allow_replacement);
 }
 
-simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_to_buffer(raw_json_string in, bool allow_replacement, uint8_t* destination) noexcept {
-  return parser->unescape(in, destination, allow_replacement);
-}
-
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_wobbly(raw_json_string in) noexcept {
   return parser->unescape_wobbly(in, _string_buf_loc);
 }
@@ -75242,6 +75107,13 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(s
   return iterate(padded_string_view(json, allocated));
 }
 
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(std::string &json) & noexcept {
+  if(json.capacity() - json.size() < SIMDJSON_PADDING) {
+    json.reserve(json.size() + SIMDJSON_PADDING);
+  }
+  return iterate(padded_string_view(json));
+}
+
 simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const std::string &json) & noexcept {
   return iterate(padded_string_view(json));
 }
@@ -75498,10 +75370,6 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_
   return iter.unescape(*this, allow_replacement);
 }
 
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_to_buffer(json_iterator &iter, bool allow_replacement, char* destination) const noexcept {
-  return iter.unescape_to_buffer(*this, allow_replacement, (uint8_t*)destination);
-}
-
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_wobbly(json_iterator &iter) const noexcept {
   return iter.unescape_wobbly(*this);
 }
@@ -75538,10 +75406,6 @@ simdjson_inline simdjson_result<const char *> simdjson_result<ppc64::ondemand::r
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<ppc64::ondemand::raw_json_string>::unescape(ppc64::ondemand::json_iterator &iter, bool allow_replacement) const noexcept {
   if (error()) { return error(); }
   return first.unescape(iter, allow_replacement);
-}
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<ppc64::ondemand::raw_json_string>::unescape_to_buffer(ppc64::ondemand::json_iterator &iter, bool allow_replacement, char* destination) const noexcept {
-  if (error()) { return error(); }
-  return first.unescape_to_buffer(iter, allow_replacement, destination);
 }
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<ppc64::ondemand::raw_json_string>::unescape_wobbly(ppc64::ondemand::json_iterator &iter) const noexcept {
   if (error()) { return error(); }
@@ -76846,17 +76710,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
   return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(std::string& receiver, bool allow_replacement) noexcept {
-  size_t max_str_length = _json_iter->peek_length() - 2; // -2 for the quotes
-  // allocate a string that is as long as it could possibly be + some padding
-  receiver.resize(max_str_length + SIMDJSON_PADDING);
-  std::string_view result;
-  error_code code = get_raw_json_string().unescape_to_buffer(json_iter(), allow_replacement, receiver.data()).get(result);
-  if (code) {
-    receiver.clear();
-    return code;
-  }
-  // resize the string to its actual size.
-  receiver.resize(result.size());
+  std::string_view content;
+  auto err = get_string(allow_replacement).get(content);
+  if (err) { return err; }
+  receiver = std::string(content);
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
@@ -76983,17 +76840,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
   return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept {
-  size_t max_str_length = _json_iter->peek_length() - 2; // -2 for the quotes
-  // allocate a string that is as long as it could possibly be + some padding
-  receiver.resize(max_str_length + SIMDJSON_PADDING);
-  std::string_view result;
-  error_code code = get_root_raw_json_string(check_trailing).unescape_to_buffer(json_iter(), allow_replacement, receiver.data()).get(result);
-  if (code) {
-    receiver.clear();
-    return code;
-  }
-  // resize the string to its actual size.
-  receiver.resize(result.size());
+  std::string_view content;
+  auto err = get_root_string(check_trailing, allow_replacement).get(content);
+  if (err) { return err; }
+  receiver = std::string(content);
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
@@ -79261,6 +79111,9 @@ public:
    *
    * The string is guaranteed to be valid UTF-8.
    *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
+   *
    * Performance: This method may be slower than get_string() or get_string(bool) because it may need to allocate memory.
    * We recommend you avoid allocating an std::string unless you need to.
    *
@@ -80315,10 +80168,6 @@ public:
    */
   simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, bool allow_replacement) noexcept;
   simdjson_inline simdjson_result<std::string_view> unescape_wobbly(raw_json_string in) noexcept;
-  /**
-   * This version of unescape writes directly to a specified buffer.
-   */
-  simdjson_inline simdjson_result<std::string_view> unescape_to_buffer(raw_json_string in, bool allow_replacement, uint8_t* destination) noexcept;
 
   simdjson_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
 
@@ -80712,20 +80561,6 @@ private:
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(json_iterator &iter, bool allow_replacement) const noexcept;
 
   /**
-   * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a provided
-   * buffer. The buffer must be large enough to hold the unescaped string with a margin of
-   * SIMDJSON_PADDING bytes.
-   *
-   * The result will be a valid UTF-8.
-   *
-   *
-   * @param iter A json_iterator.
-   * @param allow_replacement Whether we allow replacement of invalid surrogate pairs.
-   * @param iter A destination buffer.
-   */
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_to_buffer(json_iterator &iter, bool allow_replacement, char* destination) const noexcept;
-
-  /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
    * The result may not be a valid UTF-8. https://simonsapin.github.io/wtf-8/
    *
@@ -80771,7 +80606,6 @@ public:
 
   simdjson_inline simdjson_result<const char *> raw() const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(westmere::ondemand::json_iterator &iter, bool allow_replacement) const noexcept;
-  simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_to_buffer(westmere::ondemand::json_iterator &iter, bool allow_replacement, char* destination) const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_wobbly(westmere::ondemand::json_iterator &iter) const noexcept;
 };
 
@@ -80889,6 +80723,8 @@ public:
   simdjson_warn_unused simdjson_result<document> iterate(std::string_view json, size_t capacity) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const std::string &json) & noexcept;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate(std::string &json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string> &json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
@@ -81548,6 +81384,9 @@ public:
    * Attempts to fill the provided std::string reference with the parsed value of the current string.
    *
    * The string is guaranteed to be valid UTF-8.
+   *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
    *
    * Performance: This method may be slower than get_string() or get_string(bool) because it may need to allocate memory.
    * We recommend you avoid allocating an std::string unless you need to.
@@ -85136,10 +84975,6 @@ simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_js
   return parser->unescape(in, _string_buf_loc, allow_replacement);
 }
 
-simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_to_buffer(raw_json_string in, bool allow_replacement, uint8_t* destination) noexcept {
-  return parser->unescape(in, destination, allow_replacement);
-}
-
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_wobbly(raw_json_string in) noexcept {
   return parser->unescape_wobbly(in, _string_buf_loc);
 }
@@ -86039,6 +85874,13 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(s
   return iterate(padded_string_view(json, allocated));
 }
 
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(std::string &json) & noexcept {
+  if(json.capacity() - json.size() < SIMDJSON_PADDING) {
+    json.reserve(json.size() + SIMDJSON_PADDING);
+  }
+  return iterate(padded_string_view(json));
+}
+
 simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const std::string &json) & noexcept {
   return iterate(padded_string_view(json));
 }
@@ -86295,10 +86137,6 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_
   return iter.unescape(*this, allow_replacement);
 }
 
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_to_buffer(json_iterator &iter, bool allow_replacement, char* destination) const noexcept {
-  return iter.unescape_to_buffer(*this, allow_replacement, (uint8_t*)destination);
-}
-
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_wobbly(json_iterator &iter) const noexcept {
   return iter.unescape_wobbly(*this);
 }
@@ -86335,10 +86173,6 @@ simdjson_inline simdjson_result<const char *> simdjson_result<westmere::ondemand
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<westmere::ondemand::raw_json_string>::unescape(westmere::ondemand::json_iterator &iter, bool allow_replacement) const noexcept {
   if (error()) { return error(); }
   return first.unescape(iter, allow_replacement);
-}
-simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<westmere::ondemand::raw_json_string>::unescape_to_buffer(westmere::ondemand::json_iterator &iter, bool allow_replacement, char* destination) const noexcept {
-  if (error()) { return error(); }
-  return first.unescape_to_buffer(iter, allow_replacement, destination);
 }
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<westmere::ondemand::raw_json_string>::unescape_wobbly(westmere::ondemand::json_iterator &iter) const noexcept {
   if (error()) { return error(); }
@@ -87643,17 +87477,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
   return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(std::string& receiver, bool allow_replacement) noexcept {
-  size_t max_str_length = _json_iter->peek_length() - 2; // -2 for the quotes
-  // allocate a string that is as long as it could possibly be + some padding
-  receiver.resize(max_str_length + SIMDJSON_PADDING);
-  std::string_view result;
-  error_code code = get_raw_json_string().unescape_to_buffer(json_iter(), allow_replacement, receiver.data()).get(result);
-  if (code) {
-    receiver.clear();
-    return code;
-  }
-  // resize the string to its actual size.
-  receiver.resize(result.size());
+  std::string_view content;
+  auto err = get_string(allow_replacement).get(content);
+  if (err) { return err; }
+  receiver = std::string(content);
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
@@ -87780,17 +87607,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
   return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept {
-  size_t max_str_length = _json_iter->peek_length() - 2; // -2 for the quotes
-  // allocate a string that is as long as it could possibly be + some padding
-  receiver.resize(max_str_length + SIMDJSON_PADDING);
-  std::string_view result;
-  error_code code = get_root_raw_json_string(check_trailing).unescape_to_buffer(json_iter(), allow_replacement, receiver.data()).get(result);
-  if (code) {
-    receiver.clear();
-    return code;
-  }
-  // resize the string to its actual size.
-  receiver.resize(result.size());
+  std::string_view content;
+  auto err = get_root_string(check_trailing, allow_replacement).get(content);
+  if (err) { return err; }
+  receiver = std::string(content);
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
