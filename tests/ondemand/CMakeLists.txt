@@ -23,6 +23,7 @@ add_cpp_test(ondemand_ordering_tests         LABELS ondemand acceptance per_impl
 add_cpp_test(ondemand_parse_api_tests        LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_readme_examples        LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_scalar_tests           LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_to_string              LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_twitter_tests          LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_wrong_type_error_tests LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_iterate_many_csv       LABELS ondemand acceptance per_implementation)

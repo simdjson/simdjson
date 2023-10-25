@@ -135,6 +135,20 @@ public:
    */
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
 
+  /**
+   * Attempts to fill the provided std::string reference with the parsed value of the current string.
+   *
+   * The string is guaranteed to be valid UTF-8.
+   *
+   * Important: a value should be consumed once. Calling get_string() twice on the same value
+   * is an error.
+   *
+   * Performance: This method may be slower than get_string() or get_string(bool) because it may need to allocate memory.
+   * We recommend you avoid allocating an std::string unless you need to.
+   *
+   * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
+   */
+  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
 
   /**
    * Cast this JSON value to a "wobbly" string.
@@ -605,6 +619,7 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
+  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
