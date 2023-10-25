@@ -20,7 +20,38 @@ bool string2() {
 }
 
 
+bool to_string_example_no_except() {
+    TEST_START();
+  auto json = R"({
+  "name": "Daniel",
+  "age": 42
+})"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  auto err = parser.iterate(json).get(doc);
+  if(err) { return false; }
+  std::string name;
+  err = doc["name"].get_string(name);
+  if(err) { return false; }
+  TEST_SUCCEED();
+}
+
 #if SIMDJSON_EXCEPTIONS
+
+
+bool to_string_example() {
+    TEST_START();
+  auto json = R"({
+  "name": "Daniel",
+  "age": 42
+})"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  std::string name;
+  doc["name"].get_string(name);
+  ASSERT_EQUAL(name, "Daniel");
+  TEST_SUCCEED();
+}
 
 bool gen_raw1() {
   TEST_START();
@@ -1491,7 +1522,9 @@ bool run() {
     && current_location_user_error()
     && current_location_out_of_bounds()
     && current_location_no_error()
+    && to_string_example_no_except()
   #if SIMDJSON_EXCEPTIONS
+    && to_string_example()
     && raw_string()
     && number_tests()
     && current_location_tape_error_with_except()
