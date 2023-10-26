@@ -1225,13 +1225,32 @@ General Direct Access to the Raw JSON String</h1>
 <div class="line">obj.reset(); // revise the object</div>
 <div class="line">uint64_t x = obj[&quot;value&quot;]; // gives me 123</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md26"></a>
+Storing Directly into an Existing std::string Instance</h1>
+<p>The simdjson library favours the use of <code>std::string_view</code> instances because it tends to lead to better performance due to causing fewer memory allocations. However, they are cases where you need to store a string result in an <code>std::string</code><code> instance. You can do so with a version of the</code>to_string()<code>method which takes as a parameter a reference to an</code>std::string`.</p>
+<div class="fragment"><div class="line"> {C++}</div>
+<div class="line">  auto json = R&quot;({</div>
+<div class="line">  &quot;name&quot;: &quot;Daniel&quot;,</div>
+<div class="line">  &quot;age&quot;: 42</div>
+<div class="line">})&quot;_padded;</div>
+<div class="line">  ondemand::parser parser;</div>
+<div class="line">  ondemand::document doc = parser.iterate(json);</div>
+<div class="line">  std::string name;</div>
+<div class="line">  doc[&quot;name&quot;].get_string(name);</div>
+</div><!-- fragment --><p>The same routine can be written without exceptions handling:</p>
+<div class="fragment"><div class="line">{C++}</div>
+<div class="line"> std::string name;</div>
+<div class="line"> auto err = doc[&quot;name&quot;].get_string(name);</div>
+<div class="line"> if(err) { /* handle error */ }</div>
+</div><!-- fragment --><p>The <code>std::string</code> instance, once created, is independent. Unlike our <code>std::string_view</code> instances, it does not point at data that is within our <code>parser</code> instance. The same caveat applies: you should only consume a JSON string once.</p>
+<p>You should be mindful of the trade-off: allocating multiple <code>std::string</code> instances can become expensive.</p>
+<h1><a class="anchor" id="autotoc_md27"></a>
 Thread Safety</h1>
 <p>We built simdjson with thread safety in mind.</p>
 <p>The simdjson library is single-threaded except for <a class="el" href="md_doc_iterate_many.html">`iterate_many`</a> and <a class="el" href="md_doc_parse_many.html">`parse_many`</a> which may use secondary threads under their control when the library is compiled with thread support.</p>
 <p>We recommend using one <code>parser</code> object per thread. When using the On Demand front-end (our default), you should access the <code>document</code> instances in a single-threaded manner since it acts as an iterator (and is therefore not thread safe).</p>
 <p>The CPU detection, which runs the first time parsing is attempted and switches to the fastest parser for your CPU, is transparent and thread-safe.</p>
 <p>In a threaded environment, stack space is often limited. Running code like simdjson in debug mode may require hundreds of kilobytes of stack memory. Thus stack overflows are a possibility. We recommend you turn on optimization when working in an environment where stack space is limited. If you must run your code in debug mode, we recommend you configure your system to have more stack space. We discourage you from running production code based on a debug build.</p>
-<h1><a class="anchor" id="autotoc_md27"></a>
+<h1><a class="anchor" id="autotoc_md28"></a>
 Standard Compliance</h1>
 <p>The simdjson library is fully compliant with the <a href="https://www.tbray.org/ongoing/When/201x/2017/12/14/rfc8259.html">RFC 8259</a> JSON specification.</p>
 <ul>
@@ -1249,10 +1268,10 @@ Standard Compliance</h1>
 <li>The specification states that an implementation may set limits on the size of texts that it accepts. The simdjson library limits single JSON documents to 4 GiB. It will refuse to parse a JSON document larger than 4294967295 bytes. (This limitation does not apply to streams of JSON documents, only to single JSON documents.)</li>
 <li>The specification states that an implementation may set limits on the maximum depth of nesting. By default, the simdjson will refuse to parse documents with a depth exceeding 1024.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md28"></a>
+<h1><a class="anchor" id="autotoc_md29"></a>
 Backwards Compatibility</h1>
 <p>The only header file supported by simdjson is <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code>. Older versions of simdjson published a number of other include files such as <code>document.h</code> or <code><a class="el" href="parsedjson_8h_source.html">ParsedJson.h</a></code> alongside <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code>; these headers may be moved or removed in future versions.</p>
-<h1><a class="anchor" id="autotoc_md29"></a>
+<h1><a class="anchor" id="autotoc_md30"></a>
 Examples</h1>
 <p>Some users like to have example. The following code samples illustrate how to process specific JSON inputs. For simplicity, we do not include full error support: this code would throw exceptions on error.</p>
 <ul>
@@ -1503,7 +1522,7 @@ Examples</h1>
 <div class="line">  }</div>
 <div class="line">  return true;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md30"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md31"></a>
 Performance Tips</h1>
 <ul>
 <li>The On Demand front-end works best when doing a single pass over the input: avoid calling <code>count_elements</code>, <code>rewind</code> and similar methods.</li>
