@@ -207,7 +207,7 @@ The Basics: Loading and Parsing JSON Documents</h1>
 <div class="line">char json[3+SIMDJSON_PADDING];</div>
 <div class="line">strcpy(json, &quot;[1]&quot;);</div>
 <div class="line">ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));</div>
-</div><!-- fragment --><p>The simdjson library will also accept <code>std::string</code> instances, as long as the <code>capacity()</code> of the string exceeds the <code>size()</code> by at least <code>SIMDJSON_PADDING</code>. You can increase the <code>capacity()</code> with the <code>reserve()</code> function of your strings.</p>
+</div><!-- fragment --><p>The simdjson library will also accept <code>std::string</code> instances. If the provided reference is non-const, it will allocate padding as needed.</p>
 <p>You can copy your data directly on a <code><a class="el" href="structsimdjson_1_1padded__string.html" title="String with extra allocation for ease of use with parser::parse()">simdjson::padded_string</a></code> as follows:</p>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">const char * data = &quot;my data&quot;; // 7 bytes</div>
