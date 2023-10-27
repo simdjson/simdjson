@@ -1,6 +1,8 @@
 #include "simdjson.h"
 #include "test_ondemand.h"
-
+#if __cpp_lib_optional >= 201606L
+#include <optional>
+#endif
 using namespace std;
 using namespace simdjson;
 using error_code=simdjson::error_code;
