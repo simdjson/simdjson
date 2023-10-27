@@ -196,6 +196,26 @@ simdjson_inline std::string_view value::raw_json_token() noexcept {
   return std::string_view(reinterpret_cast<const char*>(iter.peek_start()), iter.peek_start_length());
 }
 
+simdjson_inline simdjson_result<std::string_view> value::raw_json() noexcept {
+  json_type t;
+  SIMDJSON_TRY(type().get(t));
+  switch (t)
+  {
+    case json_type::array: {
+      ondemand::array array;
+      SIMDJSON_TRY(get_array().get(array));
+      return array.raw_json();
+    }
+    case json_type::object: {
+      ondemand::object object;
+      SIMDJSON_TRY(get_object().get(object));
+      return object.raw_json();
+    }
+    default:
+      return raw_json_token();
+  }
+}
+
 simdjson_inline simdjson_result<const char *> value::current_location() noexcept {
   return iter.json_iter().current_location();
 }
@@ -424,6 +444,11 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::opera
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::raw_json_token() noexcept {
   if (error()) { return error(); }
   return first.raw_json_token();
+}
+
+simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::raw_json() noexcept {
+  if (error()) { return error(); }
+  return first.raw_json();
 }
 
 simdjson_inline simdjson_result<const char *> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::current_location() noexcept {
