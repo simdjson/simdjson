@@ -1722,6 +1722,35 @@ obj.reset(); // revise the object
 uint64_t x = obj["value"]; // gives me 123
 ```
 
+You can use `raw_json()` with the values inside an array and object. When
+calling `raw_json()` on an untyped value, it acts as `raw_json()` when the
+value is an array or an object. Otherwise, it acts as `raw_json_token()`.
+It is useful if you do not care for the type of the value and just wants a
+string representation.
+
+```C++
+  auto json = R"( [1,2,"fds", {"a":1}, [1,344]] )"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  size_t counter = 0;
+  for(auto array: doc) {
+    std::string_view raw = array.raw_json();
+    // will capture "1", "2", "\"fds\"", "{\"a\":1}", "[1,344]"
+  }
+```
+
+```C++
+  auto json = R"( {"key1":1,"key2":2,"key3":"fds", "key4":{"a":1}, "key5":[1,344]} )"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  size_t counter = 0;
+  for(auto key_value: doc.get_object()) {
+    std::string_view raw = key_value.value().raw_json();
+    // will capture "1", "2", "\"fds\"", "{\"a\":1}", "[1,344]"
+  }
+```
+
+
 Storing Directly into an Existing std::string Instance
 -----------------------------------------------------
 

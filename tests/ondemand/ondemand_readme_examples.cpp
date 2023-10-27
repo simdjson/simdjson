@@ -1479,10 +1479,42 @@ bool example1958() {
   }
   return true;
 }
+
+
+bool value_raw_json_array() {
+  TEST_START();
+  auto json = R"( [1,2,"fds", {"a":1}, [1,344]] )"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  std::string_view expected[] = {"1", "2", "\"fds\"", "{\"a\":1}", "[1,344]"};
+  size_t counter = 0;
+  for(auto array: doc) {
+    std::string_view raw = array.raw_json();
+    ASSERT_EQUAL(raw, expected[counter++]);
+  }
+  TEST_SUCCEED();
+}
+
+
+bool value_raw_json_object() {
+  TEST_START();
+  auto json = R"( {"key1":1,"key2":2,"key3":"fds", "key4":{"a":1}, "key5":[1,344]} )"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  std::string_view expected[] = {"1", "2", "\"fds\"", "{\"a\":1}", "[1,344]"};
+  size_t counter = 0;
+  for(auto key_value: doc.get_object()) {
+    std::string_view raw = key_value.value().raw_json();
+    ASSERT_EQUAL(raw, expected[counter++]);
+  }
+  TEST_SUCCEED();
+}
+
 #endif
 bool run() {
   return true
 #if SIMDJSON_EXCEPTIONS
+    && value_raw_json_array() && value_raw_json_object()
     && gen_raw1() && gen_raw2() && gen_raw3()
     && at_end()
     && example1956() && example1958()
