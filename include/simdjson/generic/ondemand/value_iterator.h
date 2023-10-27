@@ -296,7 +296,8 @@ public:
    */
 
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement) noexcept;
-  simdjson_warn_unused simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement) noexcept;
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
@@ -313,7 +314,8 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
 
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_string(bool check_trailing, bool allow_replacement) noexcept;
-  simdjson_warn_unused simdjson_inline error_code get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept;
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_wobbly_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_root_raw_json_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64(bool check_trailing) noexcept;

@@ -1479,10 +1479,28 @@ bool example1958() {
   }
   return true;
 }
+
+
+bool to_optional() {
+  TEST_START();
+  auto json = R"({ "foo1": "3.1416" } )"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+#if __cpp_lib_optional >= 201606L
+  std::optional<std::string> value;
+#else
+  std::string value;
+#endif
+  ASSERT_SUCCESS(doc["foo1"].get_string(value));
+  std::cout << value.value() << std::endl;
+  abort();
+  TEST_SUCCEED();
+}
 #endif
 bool run() {
   return true
 #if SIMDJSON_EXCEPTIONS
+    && to_optional()
     && gen_raw1() && gen_raw2() && gen_raw3()
     && at_end()
     && example1956() && example1958()
