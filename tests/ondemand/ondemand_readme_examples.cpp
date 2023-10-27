@@ -1488,11 +1488,13 @@ bool to_optional() {
   ondemand::document doc = parser.iterate(json);
 #if __cpp_lib_optional >= 201606L
   std::optional<std::string> value;
-#else
-  std::string value;
-#endif
   ASSERT_SUCCESS(doc["foo1"].get_string(value));
   std::cout << value.value() << std::endl;
+#else
+  std::string value;
+  ASSERT_SUCCESS(doc["foo1"].get_string(value));
+  std::cout << value << std::endl;
+#endif
   abort();
   TEST_SUCCEED();
 }
