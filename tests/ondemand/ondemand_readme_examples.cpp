@@ -1497,7 +1497,6 @@ bool to_optional() {
   ASSERT_SUCCESS(doc["foo1"].get_string(value));
   std::cout << value << std::endl;
 #endif
-  abort();
   TEST_SUCCEED();
 }
 #endif
