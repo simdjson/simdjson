@@ -32,7 +32,6 @@ jobs:
         with:
           path: dependencies/.cache
           key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
-          ctest --output-on-failure -LE explicitonly -j
       - name: Use cmake with undefined sanitizer
         run: |
           mkdir builddebugundefsani &&
