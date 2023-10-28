@@ -30,6 +30,7 @@ An overview of what you need to know to use simdjson, with examples.
   - [Dynamic Number Types](#dynamic-number-types)
   - [Raw Strings](#raw-strings)
   - [General Direct Access to the Raw JSON String](#general-direct-access-to-the-raw-json-string)
+  - [Storing Directly into an Existing String Instance](#storing-directly-into-an-existing-string-instance)
   - [Thread Safety](#thread-safety)
   - [Standard Compliance](#standard-compliance)
   - [Backwards Compatibility](#backwards-compatibility)
@@ -1751,13 +1752,13 @@ string representation.
 ```
 
 
-Storing Directly into an Existing std::string Instance
+Storing Directly into an Existing String Instance
 -----------------------------------------------------
 
 The simdjson library favours  the use of `std::string_view` instances because
 it tends to lead to better performance due to causing fewer memory allocations.
 However, they are cases where you need to store a string result in an `std::string``
-instance. You can do so with a version of the `to_string()` method which takes as
+instance. You can do so with a templated version of the `to_string()` method which takes as
 a parameter a reference to an `std::string`.
 
 ```C++
@@ -1779,9 +1780,21 @@ The same routine can be written without exceptions handling:
   if(err) { /* handle error */ }
 ```
 
-The `std::string` instance, once created, is independent. Unlike our `std::string_view` instances, it does not point at data that is
-within our `parser` instance. The same caveat applies: you should
+The `std::string` instance, once created, is independent. Unlike our `std::string_view` instances,
+it does not point at data that is within our `parser` instance. The same caveat applies: you should
 only consume a JSON string once.
+
+Because `get_string()` is a template that requires a type that can be assigned an `std::string`, you
+can use it with features such as `std::optional`:
+
+```C++
+  auto json = R"({ "foo1": "3.1416" } )"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  std::optional<std::string> value;
+  if(doc["foo1"].get_string(value)) { /* error */ }
+  // value was populated with "3.1416"
+```
 
 You should be mindful of the trade-off: allocating multiple
 `std::string` instances can become expensive.

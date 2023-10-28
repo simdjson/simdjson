@@ -1,6 +1,8 @@
 #include "simdjson.h"
 #include "test_ondemand.h"
-
+#if __cpp_lib_optional >= 201606L
+#include <optional>
+#endif
 using namespace std;
 using namespace simdjson;
 using error_code=simdjson::error_code;
@@ -1481,6 +1483,23 @@ bool example1958() {
 }
 
 
+bool to_optional() {
+  TEST_START();
+  auto json = R"({ "foo1": "3.1416" } )"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+#if __cpp_lib_optional >= 201606L
+  std::optional<std::string> value;
+  ASSERT_SUCCESS(doc["foo1"].get_string(value));
+  std::cout << value.value() << std::endl;
+#else
+  std::string value;
+  ASSERT_SUCCESS(doc["foo1"].get_string(value));
+  std::cout << value << std::endl;
+#endif
+  TEST_SUCCEED();
+}
+
 bool value_raw_json_array() {
   TEST_START();
   auto json = R"( [1,2,"fds", {"a":1}, [1,344]] )"_padded;
@@ -1514,6 +1533,7 @@ bool value_raw_json_object() {
 bool run() {
   return true
 #if SIMDJSON_EXCEPTIONS
+    && to_optional()
     && value_raw_json_array() && value_raw_json_object()
     && gen_raw1() && gen_raw2() && gen_raw3()
     && at_end()

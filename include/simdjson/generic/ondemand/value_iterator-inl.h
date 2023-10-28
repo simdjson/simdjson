@@ -513,11 +513,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string(bool allow_replacement) noexcept {
   return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
-simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(string_type& receiver, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_string(allow_replacement).get(content);
   if (err) { return err; }
-  receiver = std::string(content);
+  receiver = content;
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
@@ -643,11 +644,12 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string(bool check_trailing, bool allow_replacement) noexcept {
   return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
-simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_root_string(check_trailing, allow_replacement).get(content);
   if (err) { return err; }
-  receiver = std::string(content);
+  receiver = content;
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {

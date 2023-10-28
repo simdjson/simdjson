@@ -47,7 +47,8 @@ simdjson_inline simdjson_result<raw_json_string> value::get_raw_json_string() no
 simdjson_inline simdjson_result<std::string_view> value::get_string(bool allow_replacement) noexcept {
   return iter.get_string(allow_replacement);
 }
-simdjson_inline error_code value::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code value::get_string(string_type& receiver, bool allow_replacement) noexcept {
   return iter.get_string(receiver, allow_replacement);
 }
 simdjson_inline simdjson_result<std::string_view> value::get_wobbly_string() noexcept {
@@ -342,7 +343,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLE
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
