@@ -234,6 +234,9 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <tr class="memitem:a37427e768435aafef5af097b8cc3cfec"><td class="memItemLeft" align="right" valign="top">simdjson_inline std::string_view&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a37427e768435aafef5af097b8cc3cfec">raw_json_token</a> () noexcept</td></tr>
 <tr class="memdesc:a37427e768435aafef5af097b8cc3cfec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the raw JSON for this token.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a37427e768435aafef5af097b8cc3cfec">More...</a><br /></td></tr>
 <tr class="separator:a37427e768435aafef5af097b8cc3cfec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9271a0be9a741a34c3a63f77363963a6"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::string_view &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a9271a0be9a741a34c3a63f77363963a6">raw_json</a> () noexcept</td></tr>
+<tr class="memdesc:a9271a0be9a741a34c3a63f77363963a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a string_view pointing at this value in the JSON document.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a9271a0be9a741a34c3a63f77363963a6">More...</a><br /></td></tr>
+<tr class="separator:a9271a0be9a741a34c3a63f77363963a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a06258e49f2dbb910beeaf6814ff7e071"><td class="memItemLeft" align="right" valign="top"><a id="a06258e49f2dbb910beeaf6814ff7e071"></a>
 simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; const char * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a06258e49f2dbb910beeaf6814ff7e071">current_location</a> () noexcept</td></tr>
 <tr class="memdesc:a06258e49f2dbb910beeaf6814ff7e071"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the current location in the document if in bounds. <br /></td></tr>
@@ -392,7 +395,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00207">207</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00227">227</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -516,7 +519,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 <p>Returns the current depth in the document if in bounds. </p>
 <p>E.g., 0 = finished with document 1 = document root value (could be [ or {, not yet known) 2 = , or } inside root array/object 3 = key or value inside root array/object. </p>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00203">203</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00223">223</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1640,6 +1643,36 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
 
 </div>
 </div>
+<a id="a9271a0be9a741a34c3a63f77363963a6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9271a0be9a741a34c3a63f77363963a6">&#9670;&nbsp;</a></span>raw_json()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::string_view &gt; simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value::raw_json </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get a string_view pointing at this value in the JSON document. </p>
+<p>If this element is an array or an object, it consumes the array or the object and returns a string_view instance corresponding to the array as represented in JSON. It points inside the original document. If this element is a scalar (string, number, Boolean, null), it returns what <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a37427e768435aafef5af097b8cc3cfec" title="Get the raw JSON for this token.">raw_json_token()</a> would return. </p>
+
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00199">199</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+
+</div>
+</div>
 <a id="a37427e768435aafef5af097b8cc3cfec"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a37427e768435aafef5af097b8cc3cfec">&#9670;&nbsp;</a></span>raw_json_token()</h2>
 
@@ -1674,8 +1707,9 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
 <li>-1.2e-100</li>
 <li>true</li>
 <li>false</li>
-<li>null </li>
+<li>null</li>
 </ul>
+<p>See also <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a9271a0be9a741a34c3a63f77363963a6" title="Get a string_view pointing at this value in the JSON document.">value::raw_json()</a>. </p>
 
 <p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00195">195</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 

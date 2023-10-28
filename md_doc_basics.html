@@ -1224,6 +1224,25 @@ General Direct Access to the Raw JSON String</h1>
 <div class="line">string_view token = obj.raw_json(); // gives you `{&quot;value&quot;:123}`</div>
 <div class="line">obj.reset(); // revise the object</div>
 <div class="line">uint64_t x = obj[&quot;value&quot;]; // gives me 123</div>
+</div><!-- fragment --><p>You can use <code>raw_json()</code> with the values inside an array and object. When calling <code>raw_json()</code> on an untyped value, it acts as <code>raw_json()</code> when the value is an array or an object. Otherwise, it acts as <code>raw_json_token()</code>. It is useful if you do not care for the type of the value and just wants a string representation.</p>
+<div class="fragment"><div class="line">{C++}</div>
+<div class="line"> auto json = R&quot;( [1,2,&quot;fds&quot;, {&quot;a&quot;:1}, [1,344]] )&quot;_padded;</div>
+<div class="line"> ondemand::parser parser;</div>
+<div class="line"> ondemand::document doc = parser.iterate(json);</div>
+<div class="line"> size_t counter = 0;</div>
+<div class="line"> for(auto array: doc) {</div>
+<div class="line">   std::string_view raw = array.raw_json();</div>
+<div class="line">   // will capture &quot;1&quot;, &quot;2&quot;, &quot;\&quot;fds\&quot;&quot;, &quot;{\&quot;a\&quot;:1}&quot;, &quot;[1,344]&quot;</div>
+<div class="line"> }</div>
+</div><!-- fragment --><div class="fragment"><div class="line">{C++}</div>
+<div class="line"> auto json = R&quot;( {&quot;key1&quot;:1,&quot;key2&quot;:2,&quot;key3&quot;:&quot;fds&quot;, &quot;key4&quot;:{&quot;a&quot;:1}, &quot;key5&quot;:[1,344]} )&quot;_padded;</div>
+<div class="line"> ondemand::parser parser;</div>
+<div class="line"> ondemand::document doc = parser.iterate(json);</div>
+<div class="line"> size_t counter = 0;</div>
+<div class="line"> for(auto key_value: doc.get_object()) {</div>
+<div class="line">   std::string_view raw = key_value.value().raw_json();</div>
+<div class="line">   // will capture &quot;1&quot;, &quot;2&quot;, &quot;\&quot;fds\&quot;&quot;, &quot;{\&quot;a\&quot;:1}&quot;, &quot;[1,344]&quot;</div>
+<div class="line"> }</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md26"></a>
 Storing Directly into an Existing std::string Instance</h1>
 <p>The simdjson library favours the use of <code>std::string_view</code> instances because it tends to lead to better performance due to causing fewer memory allocations. However, they are cases where you need to store a string result in an <code>std::string</code><code> instance. You can do so with a version of the</code>to_string()<code>method which takes as a parameter a reference to an</code>std::string`.</p>
