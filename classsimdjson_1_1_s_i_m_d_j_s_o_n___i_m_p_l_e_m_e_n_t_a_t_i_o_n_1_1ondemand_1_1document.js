@@ -38,7 +38,7 @@ var classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_
     [ "get_raw_json_string", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#afa3370b930da937911cf61ec9b047c56", null ],
     [ "get_root_value_iterator", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#ac8cfa8a237aa1297ecdff4bd1b02a7c1", null ],
     [ "get_string", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a2ae4c160def21463b0ab214a36c0a78e", null ],
-    [ "get_string", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a955ed22189aa03438d9de3ac59a504af", null ],
+    [ "get_string", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a07a3c9b2b4e0cd8aa1524efb72a46775", null ],
     [ "get_uint64", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a4d221850d045f1e7ada4dfaaee0e145c", null ],
     [ "get_uint64_in_string", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a5cb63d14a99509d751f4be45063fec95", null ],
     [ "get_value", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#ab89eda435b4a68be578fcb5c3da73980", null ],

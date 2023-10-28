@@ -55,7 +55,7 @@ var NAVTREE =
       [ "Dynamic Number Types", "md_doc_basics.html#autotoc_md23", null ],
       [ "Raw Strings", "md_doc_basics.html#autotoc_md24", null ],
       [ "General Direct Access to the Raw JSON String", "md_doc_basics.html#autotoc_md25", null ],
-      [ "Storing Directly into an Existing std::string Instance", "md_doc_basics.html#autotoc_md26", null ],
+      [ "Storing Directly into an Existing String Instance", "md_doc_basics.html#autotoc_md26", null ],
       [ "Thread Safety", "md_doc_basics.html#autotoc_md27", null ],
       [ "Standard Compliance", "md_doc_basics.html#autotoc_md28", null ],
       [ "Backwards Compatibility", "md_doc_basics.html#autotoc_md29", null ],

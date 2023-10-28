@@ -25,7 +25,7 @@ var structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_
     [ "get_object", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference_01_4.html#a6cdc33399794644363a720d6f271dd8d", null ],
     [ "get_raw_json_string", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference_01_4.html#a90ecb32d9f0c497568d4de9b9affcb04", null ],
     [ "get_string", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference_01_4.html#a67dfd1cb54a3a739aeac8571f8a5d1b5", null ],
-    [ "get_string", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference_01_4.html#a10396894785111bbd2b95b78f12fe9fc", null ],
+    [ "get_string", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference_01_4.html#a6c9dc17807098fba9f964e792c7daf2e", null ],
     [ "get_uint64", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference_01_4.html#ad65311d0d524203aeb76a4ecb25e8a71", null ],
     [ "get_uint64_in_string", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference_01_4.html#ace8e77df3989649fdeb84110a37521db", null ],
     [ "get_value", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference_01_4.html#ac2d22c558afdcbac2d66e2d333526202", null ],

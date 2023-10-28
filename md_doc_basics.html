@@ -126,6 +126,7 @@ $(document).ready(function(){initNavTree('md_doc_basics.html',''); initResizable
 <li><a href="#dynamic-number-types">Dynamic Number Types</a></li>
 <li><a href="#raw-strings">Raw Strings</a></li>
 <li><a href="#general-direct-access-to-the-raw-json-string">General Direct Access to the Raw JSON String</a></li>
+<li><a href="#storing-directly-into-an-existing-string-instance">Storing Directly into an Existing String Instance</a></li>
 <li><a href="#thread-safety">Thread Safety</a></li>
 <li><a href="#standard-compliance">Standard Compliance</a></li>
 <li><a href="#backwards-compatibility">Backwards Compatibility</a></li>
@@ -1244,8 +1245,8 @@ General Direct Access to the Raw JSON String</h1>
 <div class="line">   // will capture &quot;1&quot;, &quot;2&quot;, &quot;\&quot;fds\&quot;&quot;, &quot;{\&quot;a\&quot;:1}&quot;, &quot;[1,344]&quot;</div>
 <div class="line"> }</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md26"></a>
-Storing Directly into an Existing std::string Instance</h1>
-<p>The simdjson library favours the use of <code>std::string_view</code> instances because it tends to lead to better performance due to causing fewer memory allocations. However, they are cases where you need to store a string result in an <code>std::string</code><code> instance. You can do so with a version of the</code>to_string()<code>method which takes as a parameter a reference to an</code>std::string`.</p>
+Storing Directly into an Existing String Instance</h1>
+<p>The simdjson library favours the use of <code>std::string_view</code> instances because it tends to lead to better performance due to causing fewer memory allocations. However, they are cases where you need to store a string result in an <code>std::string</code><code> instance. You can do so with a templated version of the</code>to_string()<code>method which takes as a parameter a reference to an</code>std::string`.</p>
 <div class="fragment"><div class="line"> {C++}</div>
 <div class="line">  auto json = R&quot;({</div>
 <div class="line">  &quot;name&quot;: &quot;Daniel&quot;,</div>
@@ -1261,7 +1262,15 @@ Storing Directly into an Existing std::string Instance</h1>
 <div class="line"> auto err = doc[&quot;name&quot;].get_string(name);</div>
 <div class="line"> if(err) { /* handle error */ }</div>
 </div><!-- fragment --><p>The <code>std::string</code> instance, once created, is independent. Unlike our <code>std::string_view</code> instances, it does not point at data that is within our <code>parser</code> instance. The same caveat applies: you should only consume a JSON string once.</p>
-<p>You should be mindful of the trade-off: allocating multiple <code>std::string</code> instances can become expensive.</p>
+<p>Because <code>get_string()</code> is a template that requires a type that can be assigned an <code>std::string</code>, you can use it with features such as <code>std::optional</code>:</p>
+<div class="fragment"><div class="line">{C++}</div>
+<div class="line"> auto json = R&quot;({ &quot;foo1&quot;: &quot;3.1416&quot; } )&quot;_padded;</div>
+<div class="line"> ondemand::parser parser;</div>
+<div class="line"> ondemand::document doc = parser.iterate(json);</div>
+<div class="line"> std::optional&lt;std::string&gt; value;</div>
+<div class="line"> if(doc[&quot;foo1&quot;].get_string(value)) { /* error */ }</div>
+<div class="line"> // value was populated with &quot;3.1416&quot;</div>
+</div><!-- fragment --><p>You should be mindful of the trade-off: allocating multiple <code>std::string</code> instances can become expensive.</p>
 <h1><a class="anchor" id="autotoc_md27"></a>
 Thread Safety</h1>
 <p>We built simdjson with thread safety in mind.</p>
