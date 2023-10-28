@@ -1,4 +1,4 @@
-/* auto-generated on 2023-10-25 19:34:52 -0400. Do not edit! */
+/* auto-generated on 2023-10-27 20:56:12 -0400. Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -2319,7 +2319,7 @@ namespace std {
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "3.4.0"
+#define SIMDJSON_VERSION "3.5.0"
 
 namespace simdjson {
 enum {
@@ -2330,7 +2330,7 @@ enum {
   /**
    * The minor version (major.MINOR.revision) of simdjson being used.
    */
-  SIMDJSON_VERSION_MINOR = 4,
+  SIMDJSON_VERSION_MINOR = 5,
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
@@ -27068,7 +27068,8 @@ public:
    */
 
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement) noexcept;
-  simdjson_warn_unused simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement) noexcept;
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
@@ -27085,7 +27086,8 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
 
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_string(bool check_trailing, bool allow_replacement) noexcept;
-  simdjson_warn_unused simdjson_inline error_code get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept;
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_wobbly_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_root_raw_json_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64(bool check_trailing) noexcept;
@@ -27411,7 +27413,8 @@ public:
    *
    * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
    */
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
 
   /**
    * Cast this JSON value to a "wobbly" string.
@@ -27755,8 +27758,20 @@ public:
    * - true
    * - false
    * - null
+   *
+   * See also value::raw_json().
    */
   simdjson_inline std::string_view raw_json_token() noexcept;
+
+  /**
+   * Get a string_view pointing at this value in the JSON document.
+   * If this element is an array or an object, it consumes the array or the object
+   * and returns a string_view instance corresponding to the
+   * array as represented in JSON. It points inside the original document.
+   * If this element is a scalar (string, number, Boolean, null), it returns what
+   * raw_json_token() would return.
+   */
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   /**
    * Returns the current location in the document if in bounds.
@@ -27882,7 +27897,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<arm64::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -27975,6 +27991,7 @@ public:
 
   /** @copydoc simdjson_inline std::string_view value::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   /** @copydoc simdjson_inline simdjson_result<const char *> current_location() noexcept */
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
@@ -29685,7 +29702,8 @@ public:
    *
    * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
    */
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   /**
    * Cast this JSON value to a string.
    *
@@ -30210,7 +30228,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -30280,7 +30299,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<arm64::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -30353,7 +30373,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<arm64::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -31703,7 +31724,8 @@ simdjson_inline simdjson_result<double> document::get_double_in_string() noexcep
 simdjson_inline simdjson_result<std::string_view> document::get_string(bool allow_replacement) noexcept {
   return get_root_value_iterator().get_root_string(true, allow_replacement);
 }
-simdjson_inline error_code document::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code document::get_string(string_type& receiver, bool allow_replacement) noexcept {
   return get_root_value_iterator().get_root_string(receiver, true, allow_replacement);
 }
 simdjson_inline simdjson_result<std::string_view> document::get_wobbly_string() noexcept {
@@ -31975,7 +31997,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<arm64::ondeman
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<arm64::ondemand::document>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<arm64::ondemand::document>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -32165,7 +32188,8 @@ simdjson_inline simdjson_result<int64_t> document_reference::get_int64_in_string
 simdjson_inline simdjson_result<double> document_reference::get_double() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
 simdjson_inline simdjson_result<double> document_reference::get_double_in_string() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
 simdjson_inline simdjson_result<std::string_view> document_reference::get_string(bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(false, allow_replacement); }
-simdjson_inline error_code document_reference::get_string(std::string& receiver, bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(receiver, false, allow_replacement); }
+template <typename string_type>
+simdjson_inline error_code document_reference::get_string(string_type& receiver, bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(receiver, false, allow_replacement); }
 simdjson_inline simdjson_result<std::string_view> document_reference::get_wobbly_string() noexcept { return doc->get_root_value_iterator().get_root_wobbly_string(false); }
 simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_json_string() noexcept { return doc->get_root_value_iterator().get_root_raw_json_string(false); }
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
@@ -32302,7 +32326,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<arm64::ondeman
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<arm64::ondemand::document_reference>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<arm64::ondemand::document_reference>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -34853,7 +34878,8 @@ simdjson_inline simdjson_result<raw_json_string> value::get_raw_json_string() no
 simdjson_inline simdjson_result<std::string_view> value::get_string(bool allow_replacement) noexcept {
   return iter.get_string(allow_replacement);
 }
-simdjson_inline error_code value::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code value::get_string(string_type& receiver, bool allow_replacement) noexcept {
   return iter.get_string(receiver, allow_replacement);
 }
 simdjson_inline simdjson_result<std::string_view> value::get_wobbly_string() noexcept {
@@ -35002,6 +35028,26 @@ simdjson_inline std::string_view value::raw_json_token() noexcept {
   return std::string_view(reinterpret_cast<const char*>(iter.peek_start()), iter.peek_start_length());
 }
 
+simdjson_inline simdjson_result<std::string_view> value::raw_json() noexcept {
+  json_type t;
+  SIMDJSON_TRY(type().get(t));
+  switch (t)
+  {
+    case json_type::array: {
+      ondemand::array array;
+      SIMDJSON_TRY(get_array().get(array));
+      return array.raw_json();
+    }
+    case json_type::object: {
+      ondemand::object object;
+      SIMDJSON_TRY(get_object().get(object));
+      return object.raw_json();
+    }
+    default:
+      return raw_json_token();
+  }
+}
+
 simdjson_inline simdjson_result<const char *> value::current_location() noexcept {
   return iter.json_iter().current_location();
 }
@@ -35128,7 +35174,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<arm64::ondeman
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<arm64::ondemand::value>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<arm64::ondemand::value>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -35230,6 +35277,11 @@ simdjson_inline simdjson_result<arm64::ondemand::value>::operator bool() noexcep
 simdjson_inline simdjson_result<std::string_view> simdjson_result<arm64::ondemand::value>::raw_json_token() noexcept {
   if (error()) { return error(); }
   return first.raw_json_token();
+}
+
+simdjson_inline simdjson_result<std::string_view> simdjson_result<arm64::ondemand::value>::raw_json() noexcept {
+  if (error()) { return error(); }
+  return first.raw_json();
 }
 
 simdjson_inline simdjson_result<const char *> simdjson_result<arm64::ondemand::value>::current_location() noexcept {
@@ -35768,11 +35820,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string(bool allow_replacement) noexcept {
   return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
-simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(string_type& receiver, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_string(allow_replacement).get(content);
   if (err) { return err; }
-  receiver = std::string(content);
+  receiver = content;
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
@@ -35898,11 +35951,12 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string(bool check_trailing, bool allow_replacement) noexcept {
   return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
-simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_root_string(check_trailing, allow_replacement).get(content);
   if (err) { return err; }
-  receiver = std::string(content);
+  receiver = content;
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
@@ -36906,7 +36960,8 @@ public:
    */
 
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement) noexcept;
-  simdjson_warn_unused simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement) noexcept;
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
@@ -36923,7 +36978,8 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
 
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_string(bool check_trailing, bool allow_replacement) noexcept;
-  simdjson_warn_unused simdjson_inline error_code get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept;
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_wobbly_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_root_raw_json_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64(bool check_trailing) noexcept;
@@ -37249,7 +37305,8 @@ public:
    *
    * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
    */
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
 
   /**
    * Cast this JSON value to a "wobbly" string.
@@ -37593,8 +37650,20 @@ public:
    * - true
    * - false
    * - null
+   *
+   * See also value::raw_json().
    */
   simdjson_inline std::string_view raw_json_token() noexcept;
+
+  /**
+   * Get a string_view pointing at this value in the JSON document.
+   * If this element is an array or an object, it consumes the array or the object
+   * and returns a string_view instance corresponding to the
+   * array as represented in JSON. It points inside the original document.
+   * If this element is a scalar (string, number, Boolean, null), it returns what
+   * raw_json_token() would return.
+   */
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   /**
    * Returns the current location in the document if in bounds.
@@ -37720,7 +37789,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<fallback::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -37813,6 +37883,7 @@ public:
 
   /** @copydoc simdjson_inline std::string_view value::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   /** @copydoc simdjson_inline simdjson_result<const char *> current_location() noexcept */
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
@@ -39523,7 +39594,8 @@ public:
    *
    * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
    */
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   /**
    * Cast this JSON value to a string.
    *
@@ -40048,7 +40120,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -40118,7 +40191,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<fallback::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -40191,7 +40265,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<fallback::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -41541,7 +41616,8 @@ simdjson_inline simdjson_result<double> document::get_double_in_string() noexcep
 simdjson_inline simdjson_result<std::string_view> document::get_string(bool allow_replacement) noexcept {
   return get_root_value_iterator().get_root_string(true, allow_replacement);
 }
-simdjson_inline error_code document::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code document::get_string(string_type& receiver, bool allow_replacement) noexcept {
   return get_root_value_iterator().get_root_string(receiver, true, allow_replacement);
 }
 simdjson_inline simdjson_result<std::string_view> document::get_wobbly_string() noexcept {
@@ -41813,7 +41889,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<fallback::onde
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<fallback::ondemand::document>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<fallback::ondemand::document>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -42003,7 +42080,8 @@ simdjson_inline simdjson_result<int64_t> document_reference::get_int64_in_string
 simdjson_inline simdjson_result<double> document_reference::get_double() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
 simdjson_inline simdjson_result<double> document_reference::get_double_in_string() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
 simdjson_inline simdjson_result<std::string_view> document_reference::get_string(bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(false, allow_replacement); }
-simdjson_inline error_code document_reference::get_string(std::string& receiver, bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(receiver, false, allow_replacement); }
+template <typename string_type>
+simdjson_inline error_code document_reference::get_string(string_type& receiver, bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(receiver, false, allow_replacement); }
 simdjson_inline simdjson_result<std::string_view> document_reference::get_wobbly_string() noexcept { return doc->get_root_value_iterator().get_root_wobbly_string(false); }
 simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_json_string() noexcept { return doc->get_root_value_iterator().get_root_raw_json_string(false); }
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
@@ -42140,7 +42218,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<fallback::onde
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<fallback::ondemand::document_reference>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<fallback::ondemand::document_reference>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -44691,7 +44770,8 @@ simdjson_inline simdjson_result<raw_json_string> value::get_raw_json_string() no
 simdjson_inline simdjson_result<std::string_view> value::get_string(bool allow_replacement) noexcept {
   return iter.get_string(allow_replacement);
 }
-simdjson_inline error_code value::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code value::get_string(string_type& receiver, bool allow_replacement) noexcept {
   return iter.get_string(receiver, allow_replacement);
 }
 simdjson_inline simdjson_result<std::string_view> value::get_wobbly_string() noexcept {
@@ -44840,6 +44920,26 @@ simdjson_inline std::string_view value::raw_json_token() noexcept {
   return std::string_view(reinterpret_cast<const char*>(iter.peek_start()), iter.peek_start_length());
 }
 
+simdjson_inline simdjson_result<std::string_view> value::raw_json() noexcept {
+  json_type t;
+  SIMDJSON_TRY(type().get(t));
+  switch (t)
+  {
+    case json_type::array: {
+      ondemand::array array;
+      SIMDJSON_TRY(get_array().get(array));
+      return array.raw_json();
+    }
+    case json_type::object: {
+      ondemand::object object;
+      SIMDJSON_TRY(get_object().get(object));
+      return object.raw_json();
+    }
+    default:
+      return raw_json_token();
+  }
+}
+
 simdjson_inline simdjson_result<const char *> value::current_location() noexcept {
   return iter.json_iter().current_location();
 }
@@ -44966,7 +45066,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<fallback::onde
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<fallback::ondemand::value>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<fallback::ondemand::value>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -45068,6 +45169,11 @@ simdjson_inline simdjson_result<fallback::ondemand::value>::operator bool() noex
 simdjson_inline simdjson_result<std::string_view> simdjson_result<fallback::ondemand::value>::raw_json_token() noexcept {
   if (error()) { return error(); }
   return first.raw_json_token();
+}
+
+simdjson_inline simdjson_result<std::string_view> simdjson_result<fallback::ondemand::value>::raw_json() noexcept {
+  if (error()) { return error(); }
+  return first.raw_json();
 }
 
 simdjson_inline simdjson_result<const char *> simdjson_result<fallback::ondemand::value>::current_location() noexcept {
@@ -45606,11 +45712,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string(bool allow_replacement) noexcept {
   return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
-simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(string_type& receiver, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_string(allow_replacement).get(content);
   if (err) { return err; }
-  receiver = std::string(content);
+  receiver = content;
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
@@ -45736,11 +45843,12 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string(bool check_trailing, bool allow_replacement) noexcept {
   return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
-simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_root_string(check_trailing, allow_replacement).get(content);
   if (err) { return err; }
-  receiver = std::string(content);
+  receiver = content;
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
@@ -47236,7 +47344,8 @@ public:
    */
 
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement) noexcept;
-  simdjson_warn_unused simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement) noexcept;
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
@@ -47253,7 +47362,8 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
 
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_string(bool check_trailing, bool allow_replacement) noexcept;
-  simdjson_warn_unused simdjson_inline error_code get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept;
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_wobbly_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_root_raw_json_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64(bool check_trailing) noexcept;
@@ -47579,7 +47689,8 @@ public:
    *
    * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
    */
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
 
   /**
    * Cast this JSON value to a "wobbly" string.
@@ -47923,8 +48034,20 @@ public:
    * - true
    * - false
    * - null
+   *
+   * See also value::raw_json().
    */
   simdjson_inline std::string_view raw_json_token() noexcept;
+
+  /**
+   * Get a string_view pointing at this value in the JSON document.
+   * If this element is an array or an object, it consumes the array or the object
+   * and returns a string_view instance corresponding to the
+   * array as represented in JSON. It points inside the original document.
+   * If this element is a scalar (string, number, Boolean, null), it returns what
+   * raw_json_token() would return.
+   */
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   /**
    * Returns the current location in the document if in bounds.
@@ -48050,7 +48173,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<haswell::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -48143,6 +48267,7 @@ public:
 
   /** @copydoc simdjson_inline std::string_view value::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   /** @copydoc simdjson_inline simdjson_result<const char *> current_location() noexcept */
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
@@ -49853,7 +49978,8 @@ public:
    *
    * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
    */
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   /**
    * Cast this JSON value to a string.
    *
@@ -50378,7 +50504,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -50448,7 +50575,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<haswell::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -50521,7 +50649,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<haswell::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -51871,7 +52000,8 @@ simdjson_inline simdjson_result<double> document::get_double_in_string() noexcep
 simdjson_inline simdjson_result<std::string_view> document::get_string(bool allow_replacement) noexcept {
   return get_root_value_iterator().get_root_string(true, allow_replacement);
 }
-simdjson_inline error_code document::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code document::get_string(string_type& receiver, bool allow_replacement) noexcept {
   return get_root_value_iterator().get_root_string(receiver, true, allow_replacement);
 }
 simdjson_inline simdjson_result<std::string_view> document::get_wobbly_string() noexcept {
@@ -52143,7 +52273,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<haswell::ondem
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<haswell::ondemand::document>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<haswell::ondemand::document>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -52333,7 +52464,8 @@ simdjson_inline simdjson_result<int64_t> document_reference::get_int64_in_string
 simdjson_inline simdjson_result<double> document_reference::get_double() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
 simdjson_inline simdjson_result<double> document_reference::get_double_in_string() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
 simdjson_inline simdjson_result<std::string_view> document_reference::get_string(bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(false, allow_replacement); }
-simdjson_inline error_code document_reference::get_string(std::string& receiver, bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(receiver, false, allow_replacement); }
+template <typename string_type>
+simdjson_inline error_code document_reference::get_string(string_type& receiver, bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(receiver, false, allow_replacement); }
 simdjson_inline simdjson_result<std::string_view> document_reference::get_wobbly_string() noexcept { return doc->get_root_value_iterator().get_root_wobbly_string(false); }
 simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_json_string() noexcept { return doc->get_root_value_iterator().get_root_raw_json_string(false); }
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
@@ -52470,7 +52602,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<haswell::ondem
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<haswell::ondemand::document_reference>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<haswell::ondemand::document_reference>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -55021,7 +55154,8 @@ simdjson_inline simdjson_result<raw_json_string> value::get_raw_json_string() no
 simdjson_inline simdjson_result<std::string_view> value::get_string(bool allow_replacement) noexcept {
   return iter.get_string(allow_replacement);
 }
-simdjson_inline error_code value::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code value::get_string(string_type& receiver, bool allow_replacement) noexcept {
   return iter.get_string(receiver, allow_replacement);
 }
 simdjson_inline simdjson_result<std::string_view> value::get_wobbly_string() noexcept {
@@ -55170,6 +55304,26 @@ simdjson_inline std::string_view value::raw_json_token() noexcept {
   return std::string_view(reinterpret_cast<const char*>(iter.peek_start()), iter.peek_start_length());
 }
 
+simdjson_inline simdjson_result<std::string_view> value::raw_json() noexcept {
+  json_type t;
+  SIMDJSON_TRY(type().get(t));
+  switch (t)
+  {
+    case json_type::array: {
+      ondemand::array array;
+      SIMDJSON_TRY(get_array().get(array));
+      return array.raw_json();
+    }
+    case json_type::object: {
+      ondemand::object object;
+      SIMDJSON_TRY(get_object().get(object));
+      return object.raw_json();
+    }
+    default:
+      return raw_json_token();
+  }
+}
+
 simdjson_inline simdjson_result<const char *> value::current_location() noexcept {
   return iter.json_iter().current_location();
 }
@@ -55296,7 +55450,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<haswell::ondem
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<haswell::ondemand::value>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<haswell::ondemand::value>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -55398,6 +55553,11 @@ simdjson_inline simdjson_result<haswell::ondemand::value>::operator bool() noexc
 simdjson_inline simdjson_result<std::string_view> simdjson_result<haswell::ondemand::value>::raw_json_token() noexcept {
   if (error()) { return error(); }
   return first.raw_json_token();
+}
+
+simdjson_inline simdjson_result<std::string_view> simdjson_result<haswell::ondemand::value>::raw_json() noexcept {
+  if (error()) { return error(); }
+  return first.raw_json();
 }
 
 simdjson_inline simdjson_result<const char *> simdjson_result<haswell::ondemand::value>::current_location() noexcept {
@@ -55936,11 +56096,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string(bool allow_replacement) noexcept {
   return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
-simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(string_type& receiver, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_string(allow_replacement).get(content);
   if (err) { return err; }
-  receiver = std::string(content);
+  receiver = content;
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
@@ -56066,11 +56227,12 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string(bool check_trailing, bool allow_replacement) noexcept {
   return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
-simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_root_string(check_trailing, allow_replacement).get(content);
   if (err) { return err; }
-  receiver = std::string(content);
+  receiver = content;
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
@@ -57565,7 +57727,8 @@ public:
    */
 
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement) noexcept;
-  simdjson_warn_unused simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement) noexcept;
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
@@ -57582,7 +57745,8 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
 
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_string(bool check_trailing, bool allow_replacement) noexcept;
-  simdjson_warn_unused simdjson_inline error_code get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept;
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_wobbly_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_root_raw_json_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64(bool check_trailing) noexcept;
@@ -57908,7 +58072,8 @@ public:
    *
    * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
    */
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
 
   /**
    * Cast this JSON value to a "wobbly" string.
@@ -58252,8 +58417,20 @@ public:
    * - true
    * - false
    * - null
+   *
+   * See also value::raw_json().
    */
   simdjson_inline std::string_view raw_json_token() noexcept;
+
+  /**
+   * Get a string_view pointing at this value in the JSON document.
+   * If this element is an array or an object, it consumes the array or the object
+   * and returns a string_view instance corresponding to the
+   * array as represented in JSON. It points inside the original document.
+   * If this element is a scalar (string, number, Boolean, null), it returns what
+   * raw_json_token() would return.
+   */
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   /**
    * Returns the current location in the document if in bounds.
@@ -58379,7 +58556,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<icelake::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -58472,6 +58650,7 @@ public:
 
   /** @copydoc simdjson_inline std::string_view value::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   /** @copydoc simdjson_inline simdjson_result<const char *> current_location() noexcept */
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
@@ -60182,7 +60361,8 @@ public:
    *
    * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
    */
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   /**
    * Cast this JSON value to a string.
    *
@@ -60707,7 +60887,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -60777,7 +60958,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<icelake::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -60850,7 +61032,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<icelake::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -62200,7 +62383,8 @@ simdjson_inline simdjson_result<double> document::get_double_in_string() noexcep
 simdjson_inline simdjson_result<std::string_view> document::get_string(bool allow_replacement) noexcept {
   return get_root_value_iterator().get_root_string(true, allow_replacement);
 }
-simdjson_inline error_code document::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code document::get_string(string_type& receiver, bool allow_replacement) noexcept {
   return get_root_value_iterator().get_root_string(receiver, true, allow_replacement);
 }
 simdjson_inline simdjson_result<std::string_view> document::get_wobbly_string() noexcept {
@@ -62472,7 +62656,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<icelake::ondem
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<icelake::ondemand::document>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<icelake::ondemand::document>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -62662,7 +62847,8 @@ simdjson_inline simdjson_result<int64_t> document_reference::get_int64_in_string
 simdjson_inline simdjson_result<double> document_reference::get_double() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
 simdjson_inline simdjson_result<double> document_reference::get_double_in_string() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
 simdjson_inline simdjson_result<std::string_view> document_reference::get_string(bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(false, allow_replacement); }
-simdjson_inline error_code document_reference::get_string(std::string& receiver, bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(receiver, false, allow_replacement); }
+template <typename string_type>
+simdjson_inline error_code document_reference::get_string(string_type& receiver, bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(receiver, false, allow_replacement); }
 simdjson_inline simdjson_result<std::string_view> document_reference::get_wobbly_string() noexcept { return doc->get_root_value_iterator().get_root_wobbly_string(false); }
 simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_json_string() noexcept { return doc->get_root_value_iterator().get_root_raw_json_string(false); }
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
@@ -62799,7 +62985,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<icelake::ondem
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<icelake::ondemand::document_reference>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<icelake::ondemand::document_reference>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -65350,7 +65537,8 @@ simdjson_inline simdjson_result<raw_json_string> value::get_raw_json_string() no
 simdjson_inline simdjson_result<std::string_view> value::get_string(bool allow_replacement) noexcept {
   return iter.get_string(allow_replacement);
 }
-simdjson_inline error_code value::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code value::get_string(string_type& receiver, bool allow_replacement) noexcept {
   return iter.get_string(receiver, allow_replacement);
 }
 simdjson_inline simdjson_result<std::string_view> value::get_wobbly_string() noexcept {
@@ -65499,6 +65687,26 @@ simdjson_inline std::string_view value::raw_json_token() noexcept {
   return std::string_view(reinterpret_cast<const char*>(iter.peek_start()), iter.peek_start_length());
 }
 
+simdjson_inline simdjson_result<std::string_view> value::raw_json() noexcept {
+  json_type t;
+  SIMDJSON_TRY(type().get(t));
+  switch (t)
+  {
+    case json_type::array: {
+      ondemand::array array;
+      SIMDJSON_TRY(get_array().get(array));
+      return array.raw_json();
+    }
+    case json_type::object: {
+      ondemand::object object;
+      SIMDJSON_TRY(get_object().get(object));
+      return object.raw_json();
+    }
+    default:
+      return raw_json_token();
+  }
+}
+
 simdjson_inline simdjson_result<const char *> value::current_location() noexcept {
   return iter.json_iter().current_location();
 }
@@ -65625,7 +65833,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<icelake::ondem
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<icelake::ondemand::value>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<icelake::ondemand::value>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -65727,6 +65936,11 @@ simdjson_inline simdjson_result<icelake::ondemand::value>::operator bool() noexc
 simdjson_inline simdjson_result<std::string_view> simdjson_result<icelake::ondemand::value>::raw_json_token() noexcept {
   if (error()) { return error(); }
   return first.raw_json_token();
+}
+
+simdjson_inline simdjson_result<std::string_view> simdjson_result<icelake::ondemand::value>::raw_json() noexcept {
+  if (error()) { return error(); }
+  return first.raw_json();
 }
 
 simdjson_inline simdjson_result<const char *> simdjson_result<icelake::ondemand::value>::current_location() noexcept {
@@ -66265,11 +66479,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string(bool allow_replacement) noexcept {
   return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
-simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(string_type& receiver, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_string(allow_replacement).get(content);
   if (err) { return err; }
-  receiver = std::string(content);
+  receiver = content;
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
@@ -66395,11 +66610,12 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string(bool check_trailing, bool allow_replacement) noexcept {
   return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
-simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_root_string(check_trailing, allow_replacement).get(content);
   if (err) { return err; }
-  receiver = std::string(content);
+  receiver = content;
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
@@ -68009,7 +68225,8 @@ public:
    */
 
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement) noexcept;
-  simdjson_warn_unused simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement) noexcept;
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
@@ -68026,7 +68243,8 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
 
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_string(bool check_trailing, bool allow_replacement) noexcept;
-  simdjson_warn_unused simdjson_inline error_code get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept;
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_wobbly_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_root_raw_json_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64(bool check_trailing) noexcept;
@@ -68352,7 +68570,8 @@ public:
    *
    * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
    */
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
 
   /**
    * Cast this JSON value to a "wobbly" string.
@@ -68696,8 +68915,20 @@ public:
    * - true
    * - false
    * - null
+   *
+   * See also value::raw_json().
    */
   simdjson_inline std::string_view raw_json_token() noexcept;
+
+  /**
+   * Get a string_view pointing at this value in the JSON document.
+   * If this element is an array or an object, it consumes the array or the object
+   * and returns a string_view instance corresponding to the
+   * array as represented in JSON. It points inside the original document.
+   * If this element is a scalar (string, number, Boolean, null), it returns what
+   * raw_json_token() would return.
+   */
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   /**
    * Returns the current location in the document if in bounds.
@@ -68823,7 +69054,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<ppc64::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -68916,6 +69148,7 @@ public:
 
   /** @copydoc simdjson_inline std::string_view value::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   /** @copydoc simdjson_inline simdjson_result<const char *> current_location() noexcept */
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
@@ -70626,7 +70859,8 @@ public:
    *
    * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
    */
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   /**
    * Cast this JSON value to a string.
    *
@@ -71151,7 +71385,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -71221,7 +71456,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<ppc64::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -71294,7 +71530,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<ppc64::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -72644,7 +72881,8 @@ simdjson_inline simdjson_result<double> document::get_double_in_string() noexcep
 simdjson_inline simdjson_result<std::string_view> document::get_string(bool allow_replacement) noexcept {
   return get_root_value_iterator().get_root_string(true, allow_replacement);
 }
-simdjson_inline error_code document::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code document::get_string(string_type& receiver, bool allow_replacement) noexcept {
   return get_root_value_iterator().get_root_string(receiver, true, allow_replacement);
 }
 simdjson_inline simdjson_result<std::string_view> document::get_wobbly_string() noexcept {
@@ -72916,7 +73154,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<ppc64::ondeman
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<ppc64::ondemand::document>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<ppc64::ondemand::document>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -73106,7 +73345,8 @@ simdjson_inline simdjson_result<int64_t> document_reference::get_int64_in_string
 simdjson_inline simdjson_result<double> document_reference::get_double() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
 simdjson_inline simdjson_result<double> document_reference::get_double_in_string() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
 simdjson_inline simdjson_result<std::string_view> document_reference::get_string(bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(false, allow_replacement); }
-simdjson_inline error_code document_reference::get_string(std::string& receiver, bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(receiver, false, allow_replacement); }
+template <typename string_type>
+simdjson_inline error_code document_reference::get_string(string_type& receiver, bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(receiver, false, allow_replacement); }
 simdjson_inline simdjson_result<std::string_view> document_reference::get_wobbly_string() noexcept { return doc->get_root_value_iterator().get_root_wobbly_string(false); }
 simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_json_string() noexcept { return doc->get_root_value_iterator().get_root_raw_json_string(false); }
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
@@ -73243,7 +73483,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<ppc64::ondeman
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<ppc64::ondemand::document_reference>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<ppc64::ondemand::document_reference>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -75794,7 +76035,8 @@ simdjson_inline simdjson_result<raw_json_string> value::get_raw_json_string() no
 simdjson_inline simdjson_result<std::string_view> value::get_string(bool allow_replacement) noexcept {
   return iter.get_string(allow_replacement);
 }
-simdjson_inline error_code value::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code value::get_string(string_type& receiver, bool allow_replacement) noexcept {
   return iter.get_string(receiver, allow_replacement);
 }
 simdjson_inline simdjson_result<std::string_view> value::get_wobbly_string() noexcept {
@@ -75943,6 +76185,26 @@ simdjson_inline std::string_view value::raw_json_token() noexcept {
   return std::string_view(reinterpret_cast<const char*>(iter.peek_start()), iter.peek_start_length());
 }
 
+simdjson_inline simdjson_result<std::string_view> value::raw_json() noexcept {
+  json_type t;
+  SIMDJSON_TRY(type().get(t));
+  switch (t)
+  {
+    case json_type::array: {
+      ondemand::array array;
+      SIMDJSON_TRY(get_array().get(array));
+      return array.raw_json();
+    }
+    case json_type::object: {
+      ondemand::object object;
+      SIMDJSON_TRY(get_object().get(object));
+      return object.raw_json();
+    }
+    default:
+      return raw_json_token();
+  }
+}
+
 simdjson_inline simdjson_result<const char *> value::current_location() noexcept {
   return iter.json_iter().current_location();
 }
@@ -76069,7 +76331,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<ppc64::ondeman
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<ppc64::ondemand::value>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<ppc64::ondemand::value>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -76171,6 +76434,11 @@ simdjson_inline simdjson_result<ppc64::ondemand::value>::operator bool() noexcep
 simdjson_inline simdjson_result<std::string_view> simdjson_result<ppc64::ondemand::value>::raw_json_token() noexcept {
   if (error()) { return error(); }
   return first.raw_json_token();
+}
+
+simdjson_inline simdjson_result<std::string_view> simdjson_result<ppc64::ondemand::value>::raw_json() noexcept {
+  if (error()) { return error(); }
+  return first.raw_json();
 }
 
 simdjson_inline simdjson_result<const char *> simdjson_result<ppc64::ondemand::value>::current_location() noexcept {
@@ -76709,11 +76977,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string(bool allow_replacement) noexcept {
   return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
-simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(string_type& receiver, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_string(allow_replacement).get(content);
   if (err) { return err; }
-  receiver = std::string(content);
+  receiver = content;
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
@@ -76839,11 +77108,12 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string(bool check_trailing, bool allow_replacement) noexcept {
   return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
-simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_root_string(check_trailing, allow_replacement).get(content);
   if (err) { return err; }
-  receiver = std::string(content);
+  receiver = content;
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
@@ -78776,7 +79046,8 @@ public:
    */
 
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement) noexcept;
-  simdjson_warn_unused simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement) noexcept;
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
@@ -78793,7 +79064,8 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
 
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_string(bool check_trailing, bool allow_replacement) noexcept;
-  simdjson_warn_unused simdjson_inline error_code get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept;
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> get_root_wobbly_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> get_root_raw_json_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> get_root_uint64(bool check_trailing) noexcept;
@@ -79119,7 +79391,8 @@ public:
    *
    * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
    */
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
 
   /**
    * Cast this JSON value to a "wobbly" string.
@@ -79463,8 +79736,20 @@ public:
    * - true
    * - false
    * - null
+   *
+   * See also value::raw_json().
    */
   simdjson_inline std::string_view raw_json_token() noexcept;
+
+  /**
+   * Get a string_view pointing at this value in the JSON document.
+   * If this element is an array or an object, it consumes the array or the object
+   * and returns a string_view instance corresponding to the
+   * array as represented in JSON. It points inside the original document.
+   * If this element is a scalar (string, number, Boolean, null), it returns what
+   * raw_json_token() would return.
+   */
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   /**
    * Returns the current location in the document if in bounds.
@@ -79590,7 +79875,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<westmere::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -79683,6 +79969,7 @@ public:
 
   /** @copydoc simdjson_inline std::string_view value::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   /** @copydoc simdjson_inline simdjson_result<const char *> current_location() noexcept */
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
@@ -81393,7 +81680,8 @@ public:
    *
    * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
    */
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   /**
    * Cast this JSON value to a string.
    *
@@ -81918,7 +82206,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -81988,7 +82277,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<westmere::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -82061,7 +82351,8 @@ public:
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
-  simdjson_inline error_code get_string(std::string& receiver, bool allow_replacement = false) noexcept;
+  template <typename string_type>
+  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<westmere::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -83411,7 +83702,8 @@ simdjson_inline simdjson_result<double> document::get_double_in_string() noexcep
 simdjson_inline simdjson_result<std::string_view> document::get_string(bool allow_replacement) noexcept {
   return get_root_value_iterator().get_root_string(true, allow_replacement);
 }
-simdjson_inline error_code document::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code document::get_string(string_type& receiver, bool allow_replacement) noexcept {
   return get_root_value_iterator().get_root_string(receiver, true, allow_replacement);
 }
 simdjson_inline simdjson_result<std::string_view> document::get_wobbly_string() noexcept {
@@ -83683,7 +83975,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<westmere::onde
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<westmere::ondemand::document>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<westmere::ondemand::document>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -83873,7 +84166,8 @@ simdjson_inline simdjson_result<int64_t> document_reference::get_int64_in_string
 simdjson_inline simdjson_result<double> document_reference::get_double() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
 simdjson_inline simdjson_result<double> document_reference::get_double_in_string() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
 simdjson_inline simdjson_result<std::string_view> document_reference::get_string(bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(false, allow_replacement); }
-simdjson_inline error_code document_reference::get_string(std::string& receiver, bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(receiver, false, allow_replacement); }
+template <typename string_type>
+simdjson_inline error_code document_reference::get_string(string_type& receiver, bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(receiver, false, allow_replacement); }
 simdjson_inline simdjson_result<std::string_view> document_reference::get_wobbly_string() noexcept { return doc->get_root_value_iterator().get_root_wobbly_string(false); }
 simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_json_string() noexcept { return doc->get_root_value_iterator().get_root_raw_json_string(false); }
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
@@ -84010,7 +84304,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<westmere::onde
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<westmere::ondemand::document_reference>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<westmere::ondemand::document_reference>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -86561,7 +86856,8 @@ simdjson_inline simdjson_result<raw_json_string> value::get_raw_json_string() no
 simdjson_inline simdjson_result<std::string_view> value::get_string(bool allow_replacement) noexcept {
   return iter.get_string(allow_replacement);
 }
-simdjson_inline error_code value::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code value::get_string(string_type& receiver, bool allow_replacement) noexcept {
   return iter.get_string(receiver, allow_replacement);
 }
 simdjson_inline simdjson_result<std::string_view> value::get_wobbly_string() noexcept {
@@ -86710,6 +87006,26 @@ simdjson_inline std::string_view value::raw_json_token() noexcept {
   return std::string_view(reinterpret_cast<const char*>(iter.peek_start()), iter.peek_start_length());
 }
 
+simdjson_inline simdjson_result<std::string_view> value::raw_json() noexcept {
+  json_type t;
+  SIMDJSON_TRY(type().get(t));
+  switch (t)
+  {
+    case json_type::array: {
+      ondemand::array array;
+      SIMDJSON_TRY(get_array().get(array));
+      return array.raw_json();
+    }
+    case json_type::object: {
+      ondemand::object object;
+      SIMDJSON_TRY(get_object().get(object));
+      return object.raw_json();
+    }
+    default:
+      return raw_json_token();
+  }
+}
+
 simdjson_inline simdjson_result<const char *> value::current_location() noexcept {
   return iter.json_iter().current_location();
 }
@@ -86836,7 +87152,8 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<westmere::onde
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
-simdjson_inline error_code simdjson_result<westmere::ondemand::value>::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_inline error_code simdjson_result<westmere::ondemand::value>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(receiver, allow_replacement);
 }
@@ -86938,6 +87255,11 @@ simdjson_inline simdjson_result<westmere::ondemand::value>::operator bool() noex
 simdjson_inline simdjson_result<std::string_view> simdjson_result<westmere::ondemand::value>::raw_json_token() noexcept {
   if (error()) { return error(); }
   return first.raw_json_token();
+}
+
+simdjson_inline simdjson_result<std::string_view> simdjson_result<westmere::ondemand::value>::raw_json() noexcept {
+  if (error()) { return error(); }
+  return first.raw_json();
 }
 
 simdjson_inline simdjson_result<const char *> simdjson_result<westmere::ondemand::value>::current_location() noexcept {
@@ -87476,11 +87798,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string(bool allow_replacement) noexcept {
   return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
-simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(std::string& receiver, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(string_type& receiver, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_string(allow_replacement).get(content);
   if (err) { return err; }
-  receiver = std::string(content);
+  receiver = content;
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
@@ -87606,11 +87929,12 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string(bool check_trailing, bool allow_replacement) noexcept {
   return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
-simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(std::string& receiver, bool check_trailing, bool allow_replacement) noexcept {
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_root_string(check_trailing, allow_replacement).get(content);
   if (err) { return err; }
-  receiver = std::string(content);
+  receiver = content;
   return SUCCESS;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
