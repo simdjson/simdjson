@@ -127,6 +127,9 @@ Public Member Functions</h2></td></tr>
 size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1padded__string__view.html#a9d98e1984b893116d8bb7123d84d75b8">capacity</a> () const noexcept</td></tr>
 <tr class="memdesc:a9d98e1984b893116d8bb7123d84d75b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">The number of allocated bytes. <br /></td></tr>
 <tr class="separator:a9d98e1984b893116d8bb7123d84d75b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a572beea549bf5a58d62ffe4e768c1e82"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1padded__string__view.html#a572beea549bf5a58d62ffe4e768c1e82">remove_utf8_bom</a> () noexcept</td></tr>
+<tr class="memdesc:a572beea549bf5a58d62ffe4e768c1e82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove the UTF-8 Byte Order Mark (BOM) if it exists.  <a href="classsimdjson_1_1padded__string__view.html#a572beea549bf5a58d62ffe4e768c1e82">More...</a><br /></td></tr>
+<tr class="separator:a572beea549bf5a58d62ffe4e768c1e82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a934e7272d22d6024383eafe07b06773c"><td class="memItemLeft" align="right" valign="top"><a id="a934e7272d22d6024383eafe07b06773c"></a>
 size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1padded__string__view.html#a934e7272d22d6024383eafe07b06773c">padding</a> () const noexcept</td></tr>
 <tr class="memdesc:a934e7272d22d6024383eafe07b06773c"><td class="mdescLeft">&#160;</td><td class="mdescRight">The amount of padding on the string (<a class="el" href="classsimdjson_1_1padded__string__view.html#a9d98e1984b893116d8bb7123d84d75b8" title="The number of allocated bytes.">capacity()</a> - length()) <br /></td></tr>
@@ -187,7 +190,7 @@ size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cl
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00010">10</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00011">11</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
 
 </div>
 </div>
@@ -224,7 +227,7 @@ size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cl
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00020">20</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00021">21</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
 
 </div>
 </div>
@@ -271,7 +274,38 @@ size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cl
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00025">25</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00026">26</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a572beea549bf5a58d62ffe4e768c1e82"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a572beea549bf5a58d62ffe4e768c1e82">&#9670;&nbsp;</a></span>remove_utf8_bom()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool simdjson::padded_string_view::remove_utf8_bom </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Remove the UTF-8 Byte Order Mark (BOM) if it exists. </p>
+<dl class="section return"><dt>Returns</dt><dd>whether a BOM was found and removed </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00035">35</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
 
 </div>
 </div>

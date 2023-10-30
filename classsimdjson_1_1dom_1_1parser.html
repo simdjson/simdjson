@@ -255,7 +255,7 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00022">22</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00023">23</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
 
 </div>
 </div>
@@ -338,7 +338,7 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The error, if there is one. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00184">184</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00195">195</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
 
 </div>
 </div>
@@ -368,7 +368,7 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <p>The largest document this parser can support without reallocating. </p>
 <dl class="section return"><dt>Returns</dt><dd>Current capacity, in bytes. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00173">173</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00184">184</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
 
 </div>
 </div>
@@ -420,7 +420,7 @@ Parser Capacity</h3>
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00093">93</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00094">94</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
 
 </div>
 </div>
@@ -462,6 +462,7 @@ Parser Capacity</h3>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; for (const element doc : parser.load_many(path)) { cout &lt;&lt; std::string(doc["title"]) &lt;&lt; endl; }</p>
 <p>The file is loaded in memory and can be safely deleted after the <code>parser.load_many(path)</code> function has returned. The memory is held by the <code>parser</code> instance.</p>
 <p>The function is lazy: it may be that no more than one JSON document at a time is parsed. And, possibly, no document many have been parsed when the <code>parser.load_many(path)</code> function returned.</p>
+<p>If there is a UTF-8 BOM, the parser skips it.</p>
 <h3><a class="anchor" id="autotoc_md114"></a>
 Format</h3>
 <p>The file must contain a series of one or more JSON documents, concatenated into a single buffer, separated by whitespace. It effectively parses until it has a fully valid document, then starts parsing the next document at that point. (It does this with more parallelism and lookahead than you might think, though.)</p>
@@ -493,7 +494,7 @@ Parser Capacity</h3>
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00100">100</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00101">101</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
 
 </div>
 </div>
@@ -524,7 +525,7 @@ Parser Capacity</h3>
 <p>The parser may reallocate internal buffers as needed up to this amount.</p>
 <dl class="section return"><dt>Returns</dt><dd>Maximum capacity, in bytes. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00176">176</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00187">187</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
 
 </div>
 </div>
@@ -554,7 +555,7 @@ Parser Capacity</h3>
 <p>The maximum level of nested object and arrays supported by this parser. </p>
 <dl class="section return"><dt>Returns</dt><dd>Maximum depth, in bytes. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00179">179</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00190">190</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
 
 </div>
 </div>
@@ -665,7 +666,7 @@ Parser Capacity</h3>
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00142">142</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00149">149</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
 
 </div>
 </div>
@@ -741,7 +742,7 @@ IMPORTANT: Document Lifetime</h3>
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00108">108</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00109">109</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
 
 </div>
 </div>
@@ -794,6 +795,7 @@ IMPORTANT: Document Lifetime</h3>
   // here the string "["temporary data"]" may no longer exist in memory // the parser instance may not have even accessed the input yet for (element doc : docs) { cout &lt;&lt; std::string(doc["title"]) &lt;&lt; endl; }</p>
 <p>The following is safe:</p>
 <p>auto json = "[\"temporary data"]"_padded; auto docs = parser.parse_many(json); for (element doc : docs) { cout &lt;&lt; std::string(doc["title"]) &lt;&lt; endl; }</p>
+<p>If there is a UTF-8 BOM, the parser skips it.</p>
 <h3><a class="anchor" id="autotoc_md118"></a>
 Format</h3>
 <p>The buffer must contain a series of one or more JSON documents, concatenated into a single buffer, separated by whitespace. It effectively parses until it has a fully valid document, then starts parsing the next document at that point. (It does this with more parallelism and lookahead than you might think, though.)</p>
@@ -829,7 +831,7 @@ Parser Capacity</h3>
 </dd></dl>
 <p>This is an overloaded member function, provided for convenience. It differs from the above function only in what argument(s) it accepts. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00159">159</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00166">166</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
 
 </div>
 </div>
@@ -869,7 +871,7 @@ Parser Capacity</h3>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00232">232</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2parser-inl_8h_source.html#l00243">243</a> of file <a class="el" href="dom_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
 
 </div>
 </div>

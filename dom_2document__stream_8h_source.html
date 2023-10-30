@@ -182,67 +182,67 @@ $(document).ready(function(){initNavTree('dom_2document__stream_8h_source.html',
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160; </div>
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;  inline <span class="keywordtype">void</span> start() noexcept;</div>
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160; </div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;  inline <span class="keywordtype">void</span> next() noexcept;</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160; </div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;  inline <span class="keywordtype">void</span> load_batch() noexcept;</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160; </div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;  inline <span class="keywordtype">size_t</span> next_batch_start() const noexcept;</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160; </div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;  inline <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> run_stage1(dom::<a class="code" href="classsimdjson_1_1dom_1_1parser.html">parser</a> &amp;p, <span class="keywordtype">size_t</span> batch_start) noexcept;</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160; </div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;  dom::<a class="code" href="classsimdjson_1_1dom_1_1parser.html">parser</a> *<a class="code" href="classsimdjson_1_1dom_1_1parser.html">parser</a>;</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;  const uint8_t *buf;</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;  <span class="keywordtype">size_t</span> len;</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;  <span class="keywordtype">size_t</span> batch_size;</div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;  <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error;</div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;  <span class="keywordtype">size_t</span> batch_start{0};</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;  <span class="keywordtype">size_t</span> doc_index{};</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_THREADS_ENABLED</span></div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;  <span class="keywordtype">bool</span> use_thread;</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160; </div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;  <span class="keyword">inline</span> <span class="keywordtype">void</span> load_from_stage1_thread() noexcept;</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160; </div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;  inline <span class="keywordtype">void</span> start_stage1_thread() noexcept;</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160; </div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;  inline <span class="keywordtype">void</span> finish_stage1_thread() noexcept;</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160; </div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;  <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> stage1_thread_error{<a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9ac2aef8f0fc33187cc118c95fade925d2">UNINITIALIZED</a>};</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;  <span class="keyword">friend</span> <span class="keyword">struct </span>stage1_worker;</div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;  std::unique_ptr&lt;stage1_worker&gt; worker{<span class="keyword">new</span>(std::nothrow) stage1_worker()};</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;  dom::parser stage1_thread_parser{};</div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_THREADS_ENABLED</span></div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160; </div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span>dom::parser;</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;  <span class="keyword">friend</span> <span class="keyword">struct </span>simdjson_result&lt;dom::<a class="code" href="classsimdjson_1_1dom_1_1document__stream.html#ae6ee894790448145e11a456f12253364">document_stream</a>&gt;;</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;  friend struct internal::simdjson_result_base&lt;dom::document_stream&gt;;</div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160; </div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;}; <span class="comment">// class document_stream</span></div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160; </div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;} <span class="comment">// namespace dom</span></div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160; </div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;template&lt;&gt;</div>
-<div class="line"><a name="l00302"></a><span class="lineno"><a class="line" href="structsimdjson_1_1simdjson__result_3_01dom_1_1document__stream_01_4.html">  302</a></span>&#160;struct <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt;dom::document_stream&gt; : <span class="keyword">public</span> internal::simdjson_result_base&lt;dom::document_stream&gt; {</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;  simdjson_inline <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>() noexcept; </div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;  simdjson_inline <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>(<a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error) noexcept; </div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;  simdjson_inline <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>(<a class="code" href="classsimdjson_1_1dom_1_1document__stream.html">dom::document_stream</a> &amp;&amp;value) noexcept; </div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160; </div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;<span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;  simdjson_inline <a class="code" href="classsimdjson_1_1dom_1_1document__stream_1_1iterator.html">dom::document_stream::iterator</a> <a class="code" href="classsimdjson_1_1dom_1_1document__stream.html#a9a51df3d81c9b7849bbbc8ae42096b76">begin</a>() noexcept(<span class="keyword">false</span>);</div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;  simdjson_inline <a class="code" href="classsimdjson_1_1dom_1_1document__stream_1_1iterator.html">dom::document_stream::iterator</a> <a class="code" href="classsimdjson_1_1dom_1_1document__stream.html#adec1e168e4188bf9c90ee87adbd72850">end</a>() noexcept(<span class="keyword">false</span>);</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;<span class="preprocessor">#else </span><span class="comment">// SIMDJSON_EXCEPTIONS</span></div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_DISABLE_DEPRECATED_API</span></div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;  [[deprecated(<span class="stringliteral">&quot;parse_many() and load_many() may return errors. Use document_stream stream; error = parser.parse_many().get(doc); instead.&quot;</span>)]]</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;  simdjson_inline <a class="code" href="classsimdjson_1_1dom_1_1document__stream_1_1iterator.html">dom::document_stream::iterator</a> <a class="code" href="classsimdjson_1_1dom_1_1document__stream.html#a9a51df3d81c9b7849bbbc8ae42096b76">begin</a>() noexcept;</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;  [[deprecated(<span class="stringliteral">&quot;parse_many() and load_many() may return errors. Use document_stream stream; error = parser.parse_many().get(doc); instead.&quot;</span>)]]</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;  simdjson_inline <a class="code" href="classsimdjson_1_1dom_1_1document__stream_1_1iterator.html">dom::document_stream::iterator</a> <a class="code" href="classsimdjson_1_1dom_1_1document__stream.html#adec1e168e4188bf9c90ee87adbd72850">end</a>() noexcept;</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_DISABLE_DEPRECATED_API</span></div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_EXCEPTIONS</span></div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;}; <span class="comment">// struct simdjson_result&lt;dom::document_stream&gt;</span></div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160; </div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160; </div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_DOCUMENT_STREAM_H</span></div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;  inline <span class="keywordtype">void</span> next() noexcept;</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160; </div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;  inline <span class="keywordtype">void</span> load_batch() noexcept;</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160; </div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;  inline <span class="keywordtype">size_t</span> next_batch_start() const noexcept;</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160; </div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;  inline <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> run_stage1(dom::<a class="code" href="classsimdjson_1_1dom_1_1parser.html">parser</a> &amp;p, <span class="keywordtype">size_t</span> batch_start) noexcept;</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160; </div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;  dom::<a class="code" href="classsimdjson_1_1dom_1_1parser.html">parser</a> *<a class="code" href="classsimdjson_1_1dom_1_1parser.html">parser</a>;</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;  const uint8_t *buf;</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;  <span class="keywordtype">size_t</span> len;</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;  <span class="keywordtype">size_t</span> batch_size;</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;  <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error;</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;  <span class="keywordtype">size_t</span> batch_start{0};</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;  <span class="keywordtype">size_t</span> doc_index{};</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_THREADS_ENABLED</span></div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;  <span class="keywordtype">bool</span> use_thread;</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160; </div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;  <span class="keyword">inline</span> <span class="keywordtype">void</span> load_from_stage1_thread() noexcept;</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160; </div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;  inline <span class="keywordtype">void</span> start_stage1_thread() noexcept;</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160; </div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;  inline <span class="keywordtype">void</span> finish_stage1_thread() noexcept;</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160; </div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;  <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> stage1_thread_error{<a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9ac2aef8f0fc33187cc118c95fade925d2">UNINITIALIZED</a>};</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;  <span class="keyword">friend</span> <span class="keyword">struct </span>stage1_worker;</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;  std::unique_ptr&lt;stage1_worker&gt; worker{<span class="keyword">new</span>(std::nothrow) stage1_worker()};</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;  dom::parser stage1_thread_parser{};</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_THREADS_ENABLED</span></div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160; </div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span>dom::parser;</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;  <span class="keyword">friend</span> <span class="keyword">struct </span>simdjson_result&lt;dom::<a class="code" href="classsimdjson_1_1dom_1_1document__stream.html#ae6ee894790448145e11a456f12253364">document_stream</a>&gt;;</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;  friend struct internal::simdjson_result_base&lt;dom::document_stream&gt;;</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160; </div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;}; <span class="comment">// class document_stream</span></div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160; </div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;} <span class="comment">// namespace dom</span></div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160; </div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;template&lt;&gt;</div>
+<div class="line"><a name="l00301"></a><span class="lineno"><a class="line" href="structsimdjson_1_1simdjson__result_3_01dom_1_1document__stream_01_4.html">  301</a></span>&#160;struct <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt;dom::document_stream&gt; : <span class="keyword">public</span> internal::simdjson_result_base&lt;dom::document_stream&gt; {</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;  simdjson_inline <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>() noexcept; </div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;  simdjson_inline <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>(<a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error) noexcept; </div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;  simdjson_inline <a class="code" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>(<a class="code" href="classsimdjson_1_1dom_1_1document__stream.html">dom::document_stream</a> &amp;&amp;value) noexcept; </div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160; </div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;<span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;  simdjson_inline <a class="code" href="classsimdjson_1_1dom_1_1document__stream_1_1iterator.html">dom::document_stream::iterator</a> <a class="code" href="classsimdjson_1_1dom_1_1document__stream.html#a9a51df3d81c9b7849bbbc8ae42096b76">begin</a>() noexcept(<span class="keyword">false</span>);</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;  simdjson_inline <a class="code" href="classsimdjson_1_1dom_1_1document__stream_1_1iterator.html">dom::document_stream::iterator</a> <a class="code" href="classsimdjson_1_1dom_1_1document__stream.html#adec1e168e4188bf9c90ee87adbd72850">end</a>() noexcept(<span class="keyword">false</span>);</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;<span class="preprocessor">#else </span><span class="comment">// SIMDJSON_EXCEPTIONS</span></div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;<span class="preprocessor">#ifndef SIMDJSON_DISABLE_DEPRECATED_API</span></div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;  [[deprecated(<span class="stringliteral">&quot;parse_many() and load_many() may return errors. Use document_stream stream; error = parser.parse_many().get(doc); instead.&quot;</span>)]]</div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;  simdjson_inline <a class="code" href="classsimdjson_1_1dom_1_1document__stream_1_1iterator.html">dom::document_stream::iterator</a> <a class="code" href="classsimdjson_1_1dom_1_1document__stream.html#a9a51df3d81c9b7849bbbc8ae42096b76">begin</a>() noexcept;</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;  [[deprecated(<span class="stringliteral">&quot;parse_many() and load_many() may return errors. Use document_stream stream; error = parser.parse_many().get(doc); instead.&quot;</span>)]]</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;  simdjson_inline <a class="code" href="classsimdjson_1_1dom_1_1document__stream_1_1iterator.html">dom::document_stream::iterator</a> <a class="code" href="classsimdjson_1_1dom_1_1document__stream.html#adec1e168e4188bf9c90ee87adbd72850">end</a>() noexcept;</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_DISABLE_DEPRECATED_API</span></div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_EXCEPTIONS</span></div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;}; <span class="comment">// struct simdjson_result&lt;dom::document_stream&gt;</span></div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160; </div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160; </div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_DOCUMENT_STREAM_H</span></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1document__stream_1_1iterator_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1document__stream_1_1iterator.html">simdjson::dom::document_stream::iterator</a></div><div class="ttdoc">An iterator through a forward-only stream of documents.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2document__stream_8h_source.html#l00115">document_stream.h:115</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1document__stream_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1document__stream.html">simdjson::dom::document_stream</a></div><div class="ttdoc">A forward-only stream of documents.</div><div class="ttdef"><b>Definition:</b> <a href="dom_2document__stream_8h_source.html#l00072">document_stream.h:72</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1document__stream_html_a162d002972b41bbb7d8e4021341e15ba"><div class="ttname"><a href="classsimdjson_1_1dom_1_1document__stream.html#a162d002972b41bbb7d8e4021341e15ba">simdjson::dom::document_stream::operator=</a></div><div class="ttdeci">simdjson_inline document_stream &amp; operator=(document_stream &amp;&amp;other) noexcept=default</div><div class="ttdoc">Move one document_stream to another.</div></div>

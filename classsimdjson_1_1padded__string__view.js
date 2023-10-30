@@ -6,5 +6,6 @@ var classsimdjson_1_1padded__string__view =
     [ "padded_string_view", "classsimdjson_1_1padded__string__view.html#aae57856a217294ac218b6372a5e37d9a", null ],
     [ "padded_string_view", "classsimdjson_1_1padded__string__view.html#a12b33830793e7ab1953b961088a83c3d", null ],
     [ "capacity", "classsimdjson_1_1padded__string__view.html#a9d98e1984b893116d8bb7123d84d75b8", null ],
-    [ "padding", "classsimdjson_1_1padded__string__view.html#a934e7272d22d6024383eafe07b06773c", null ]
+    [ "padding", "classsimdjson_1_1padded__string__view.html#a934e7272d22d6024383eafe07b06773c", null ],
+    [ "remove_utf8_bom", "classsimdjson_1_1padded__string__view.html#a572beea549bf5a58d62ffe4e768c1e82", null ]
 ];
