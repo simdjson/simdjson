@@ -397,6 +397,33 @@ namespace document_stream_tests {
     std::cout << "number of documents " << count << std::endl;
     return count == 1;
   }
+
+  bool skipbom() {
+    std::cout << "Running " << __func__ << std::endl;
+    simdjson::dom::parser parser;
+    auto json = "\xEF\xBB\xBF{\"hello\": \"world\"}"_padded;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS(parser.parse_many(json).get(stream));
+    size_t count = 0;
+    for (auto doc : stream) {
+        if(doc.error()) {
+          std::cerr << "Unexpected error: " << doc.error() << std::endl;
+          return false;
+        }
+        std::string expected = R"({"hello":"world"})";
+        simdjson::dom::element this_document;
+        ASSERT_SUCCESS(doc.get(this_document));
+
+        std::string answer = simdjson::minify(this_document);
+        if(answer != expected) {
+          std::cout << this_document << std::endl;
+          return false;
+        }
+        count += 1;
+    }
+    std::cout << "number of documents " << count << std::endl;
+    return count == 1;
+  }
 #if SIMDJSON_EXCEPTIONS
   bool single_document_exceptions() {
     std::cout << "Running " << __func__ << std::endl;
@@ -913,7 +940,8 @@ namespace document_stream_tests {
   }
 
   bool run() {
-    return fuzzaccess() &&
+    return skipbom() &&
+           fuzzaccess() &&
            baby_fuzzer() &&
            issue1649() &&
            adversarial_single_document_array() &&

@@ -54,6 +54,13 @@ public:
   /** The number of allocated bytes. */
   inline size_t capacity() const noexcept;
 
+  /**
+   * Remove the UTF-8 Byte Order Mark (BOM) if it exists.
+   *
+   * @return whether a BOM was found and removed
+   */
+  inline bool remove_utf8_bom() noexcept;
+
   /** The amount of padding on the string (capacity() - length()) */
   inline size_t padding() const noexcept;
 

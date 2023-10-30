@@ -66,6 +66,16 @@ namespace number_tests {
     return true;
   }
 
+  bool bomskip() {
+    TEST_START();
+    simdjson::dom::parser parser;
+    simdjson::padded_string docdata = "\xEF\xBB\xBF{\"score\":0.8825149536132812}"_padded;
+    double score;
+    ASSERT_SUCCESS(parser.parse(docdata)["score"].get_double().get(score));
+    ASSERT_EQUAL(score, 0.8825149536132812);
+    TEST_SUCCEED();
+  }
+
   bool issue2017() {
     TEST_START();
     simdjson::dom::parser parser;
@@ -386,7 +396,8 @@ namespace number_tests {
   }
 
   bool run() {
-    return issue2017() &&
+    return bomskip() &&
+           issue2017() &&
            truncated_borderline() &&
            specific_tests() &&
            ground_truth() &&
@@ -1658,6 +1669,7 @@ namespace validate_tests {
     }
     return true;
   }
+
   bool test_validate() {
     std::cout << "Running " << __func__ << std::endl;
     const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })";
@@ -1666,6 +1678,7 @@ namespace validate_tests {
     }
     return true;
   }
+
   bool test_range() {
     std::cout << "Running " << __func__ << std::endl;
     for(size_t len = 0; len <= 128; len++) {
@@ -1683,6 +1696,7 @@ namespace validate_tests {
     }
     return true;
   }
+
   bool test_issue1169() {
     std::cout << "Running " << __func__ << std::endl;
     std::vector<uint8_t> source(64,' ');
@@ -1693,6 +1707,7 @@ namespace validate_tests {
     }
     return true;
   }
+
   bool test_issue1169_long() {
     std::cout << "Running " << __func__ << std::endl;
     for(size_t len = 1; len <= 128; len++) {
@@ -1702,6 +1717,7 @@ namespace validate_tests {
     }
     return true;
   }
+
   bool test_random() {
     std::cout << "Running " << __func__ << std::endl;
     std::vector<uint8_t> source(64,' ');
@@ -1763,6 +1779,7 @@ namespace minify_tests {
     }
     return true;
   }
+
   // this is meant to test buffer overflows.
   bool test_various_lengths2() {
     std::cout << "Running " << __func__ << std::endl;
@@ -1781,6 +1798,7 @@ namespace minify_tests {
     }
     return true;
   }
+
   bool test_single_quote() {
     std::cout << "Running " << __func__ << std::endl;
     const std::string test = "\"";
@@ -1801,12 +1819,14 @@ namespace minify_tests {
     const std::string minified(R"({"foo":1,"bar":[1,2,0.11111111111111113],"baz":{"a":3.1415926535897936,"b":2,"c":3.141592653589794}})");
     return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
   }
+
   bool test_minify_array() {
     std::cout << "Running " << __func__ << std::endl;
     std::string test("[ 1,    2,    3]");
     std::string minified("[1,2,3]");
     return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
   }
+
   bool test_minify_object() {
     std::cout << "Running " << __func__ << std::endl;
     std::string test(R"({ "foo   " : 1, "b  ar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })");
@@ -1849,6 +1869,7 @@ namespace format_tests {
     s << doc;
     return assert_minified(s);
   }
+
   bool print_minify_parser_parse() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
@@ -1868,6 +1889,7 @@ namespace format_tests {
     s << value;
     return assert_minified(s, "1");
   }
+
   bool print_minify_element() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
@@ -1887,6 +1909,7 @@ namespace format_tests {
     s << array;
     return assert_minified(s, "[1,2,0.11111111111111113]");
   }
+
   bool print_minify_array() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
@@ -1906,6 +1929,7 @@ namespace format_tests {
     s << object;
     return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
   }
+
   bool print_minify_object() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
@@ -1925,6 +1949,7 @@ namespace format_tests {
     s << parser.parse(DOCUMENT);
     return assert_minified(s);
   }
+
   bool print_minify_parser_parse_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
@@ -1940,6 +1965,7 @@ namespace format_tests {
     s << parser.parse(DOCUMENT)["foo"];
     return assert_minified(s, "1");
   }
+
   bool print_minify_element_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
@@ -1956,6 +1982,7 @@ namespace format_tests {
     s << value;
     return assert_minified(s, "1");
   }
+
   bool print_minify_element_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
@@ -1972,6 +1999,7 @@ namespace format_tests {
     s << parser.parse(DOCUMENT)["bar"].get_array();
     return assert_minified(s, "[1,2,0.11111111111111113]");
   }
+
   bool print_minify_array_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;

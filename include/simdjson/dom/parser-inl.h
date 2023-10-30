@@ -12,6 +12,7 @@
 #include "simdjson/dom/element-inl.h"
 
 #include <climits>
+#include <cstring> /* memcmp */
 
 namespace simdjson {
 namespace dom {
@@ -120,8 +121,14 @@ inline simdjson_result<element> parser::parse_into_document(document& provided_d
       _loaded_bytes_capacity = len;
     }
     std::memcpy(static_cast<void *>(loaded_bytes.get()), buf, len);
+    buf = reinterpret_cast<const uint8_t*>(loaded_bytes.get());
   }
-  _error = implementation->parse(realloc_if_needed ? reinterpret_cast<const uint8_t*>(loaded_bytes.get()): buf, len, provided_doc);
+
+  if((len >= 3) && (std::memcmp(buf, "\xEF\xBB\xBF", 3) == 0)) {
+    buf += 3;
+    len -= 3;
+  }
+  _error = implementation->parse(buf, len, provided_doc);
 
   if (_error) { return _error; }
 
@@ -158,6 +165,10 @@ simdjson_inline simdjson_result<element> parser::parse(const padded_string_view 
 
 inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
   if(batch_size < MINIMAL_BATCH_SIZE) { batch_size = MINIMAL_BATCH_SIZE; }
+  if((len >= 3) && (std::memcmp(buf, "\xEF\xBB\xBF", 3) == 0)) {
+    buf += 3;
+    len -= 3;
+  }
   return document_stream(*this, buf, len, batch_size);
 }
 inline simdjson_result<document_stream> parser::parse_many(const char *buf, size_t len, size_t batch_size) noexcept {

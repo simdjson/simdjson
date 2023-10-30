@@ -16,6 +16,18 @@ namespace misc_tests {
     ASSERT_FALSE(b);
     TEST_SUCCEED();
   }
+  bool skipbom() {
+    auto error_phrase = "\xEF\xBB\xBF false"_padded;
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(error_phrase).get(doc));
+    bool b;
+    ASSERT_SUCCESS( doc.get_bool().get(b));
+    ASSERT_FALSE(b);
+    TEST_SUCCEED();
+  }
+
 
   bool issue1981_failure() {
     auto error_phrase = R"(falseA)"_padded;
@@ -593,6 +605,7 @@ namespace misc_tests {
 
   bool run() {
     return
+           skipbom() &&
            issue1981_success() &&
            issue1981_failure() &&
            replacement_char() &&

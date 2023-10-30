@@ -254,6 +254,8 @@ public:
    * And, possibly, no document many have been parsed when the `parser.load_many(path)` function
    * returned.
    *
+   * If there is a UTF-8 BOM, the parser skips it.
+   *
    * ### Format
    *
    * The file must contain a series of one or more JSON documents, concatenated into a single
@@ -345,6 +347,8 @@ public:
    *   for (element doc : docs) {
    *     cout << std::string(doc["title"]) << endl;
    *   }
+   *
+   * If there is a UTF-8 BOM, the parser skips it.
    *
    * ### Format
    *
