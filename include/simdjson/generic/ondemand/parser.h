@@ -59,7 +59,7 @@ public:
    * It is expected that the content is a valid UTF-8 file, containing a valid JSON document.
    * Otherwise the iterate method may return an error. In particular, the whole input should be
    * valid: we do not attempt to tolerate incorrect content either before or after a JSON
-   * document.
+   * document. If there is a UTF-8 BOM, the parser skips it.
    *
    * ### IMPORTANT: Validate what you use
    *
@@ -188,6 +188,7 @@ public:
    * arrays or objects) MUST be separated with ASCII whitespace.
    *
    * The characters inside a JSON document, and between JSON documents, must be valid Unicode (UTF-8).
+   * If there is a UTF-8 BOM, the parser skips it.
    *
    * The documents must not exceed batch_size bytes (by default 1MB) or they will fail to parse.
    * Setting batch_size to excessively large or excessively small values may impact negatively the

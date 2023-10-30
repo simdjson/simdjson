@@ -241,8 +241,7 @@ private:
    * Parse the next document found in the buffer previously given to document_stream.
    *
    * The content should be a valid JSON document encoded as UTF-8. If there is a
-   * UTF-8 BOM, the caller is responsible for omitting it, UTF-8 BOM are
-   * discouraged.
+   * UTF-8 BOM, the parser skips it.
    *
    * You do NOT need to pre-allocate a parser.  This function takes care of
    * pre-allocating a capacity defined by the batch_size defined when creating the

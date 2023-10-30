@@ -322,6 +322,43 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool skipbom() {
+        TEST_START();
+        auto json = "\xEF\xBB\xBF[1,[1,2]] {\"a\":1,\"b\":2} {\"o\":{\"1\":1,\"2\":2}} [1,2,3]"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+        std::string_view expected[4] = {"[1,[1,2]]", "{\"a\":1,\"b\":2}", "{\"o\":{\"1\":1,\"2\":2}}", "[1,2,3]"};
+        size_t counter{0};
+        auto i = stream.begin();
+        int64_t x;
+
+        ASSERT_EQUAL(i.source(),expected[counter++]);
+        ASSERT_SUCCESS( (*i).at_pointer("/1/1").get(x) );
+        ASSERT_EQUAL(x,2);
+        ++i;
+
+        ASSERT_EQUAL(i.source(),expected[counter++]);
+        simdjson_result<ondemand::document_reference> xxx = *i;
+        ASSERT_SUCCESS( xxx.find_field("a").get(x) );
+        ASSERT_EQUAL(x,1);
+        ++i;
+
+        ASSERT_EQUAL(i.source(),expected[counter++]);
+        ASSERT_SUCCESS( (*i).at_pointer("/o/2").get(x) );
+        ASSERT_EQUAL(x,2);
+        ++i;
+
+        ASSERT_EQUAL(i.source(),expected[counter++]);
+        ASSERT_SUCCESS( (*i).at_pointer("/2").get(x) );
+        ASSERT_EQUAL(x,3);
+        ++i;
+
+        if (i != stream.end()) { return false; }
+
+        TEST_SUCCEED();
+    }
+
     bool atoms_json() {
         TEST_START();
         auto json = R"(5 true 20.3 "string" )"_padded;
@@ -803,6 +840,7 @@ namespace document_stream_tests {
 
     bool run() {
         return
+            skipbom() &&
             issue1977() &&
             string_with_trailing() &&
             uint64_with_trailing() &&
