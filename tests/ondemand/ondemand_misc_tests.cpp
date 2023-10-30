@@ -12,7 +12,7 @@ namespace misc_tests {
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(error_phrase).get(doc));
     bool b;
-    ASSERT_SUCCESS( doc.get_bool().get(b));
+    ASSERT_SUCCESS(doc.get_bool().get(b));
     ASSERT_FALSE(b);
     TEST_SUCCEED();
   }
@@ -23,7 +23,7 @@ namespace misc_tests {
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(error_phrase).get(doc));
     bool b;
-    ASSERT_SUCCESS( doc.get_bool().get(b));
+    ASSERT_SUCCESS(doc.get_bool().get(b));
     ASSERT_FALSE(b);
     TEST_SUCCEED();
   }
