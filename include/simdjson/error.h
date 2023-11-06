@@ -210,11 +210,11 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    */
   simdjson_inline simdjson_result() noexcept;
   /**
-   * @private Create a new error result.
+   * @private Create a new successful result.
    */
   simdjson_inline simdjson_result(T &&value) noexcept;
   /**
-   * @private Create a new successful result.
+   * @private Create a new error result.
    */
   simdjson_inline simdjson_result(error_code error_code) noexcept;
   /**
