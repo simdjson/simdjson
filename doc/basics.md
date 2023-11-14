@@ -1689,9 +1689,9 @@ string_view token = obj["value"].raw_json_token();
 
 The `raw_json_token()` should be fast and free of allocation.
 
-If you value is an array or an object, `raw_json_token()` returns effectively a single
+If your value is an array or an object, `raw_json_token()` returns effectively a single
 character (`[`) or (`}`) which is not very useful. For arrays and objects, we have another
-method called `raw_json()` which consumes (traverse) the array or the object.
+method called `raw_json()` which consumes (traverses) the array or the object.
 
 ```C++
 simdjson::ondemand::parser parser;
