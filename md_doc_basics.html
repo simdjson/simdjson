@@ -1203,7 +1203,7 @@ General Direct Access to the Raw JSON String</h1>
 <div class="line">string_view token = obj[&quot;value&quot;].raw_json_token();</div>
 <div class="line">// token has value &quot;12321323213213213213213213213211223&quot;, it points inside the input string</div>
 </div><!-- fragment --><p>The <code>raw_json_token()</code> should be fast and free of allocation.</p>
-<p>If you value is an array or an object, <code>raw_json_token()</code> returns effectively a single character (<code>[</code>) or (<code>}</code>) which is not very useful. For arrays and objects, we have another method called <code>raw_json()</code> which consumes (traverse) the array or the object.</p>
+<p>If your value is an array or an object, <code>raw_json_token()</code> returns effectively a single character (<code>[</code>) or (<code>}</code>) which is not very useful. For arrays and objects, we have another method called <code>raw_json()</code> which consumes (traverses) the array or the object.</p>
 <div class="fragment"><div class="line"> {C++}</div>
 <div class="line">simdjson::ondemand::parser parser;</div>
 <div class="line">simdjson::padded_string docdata =  R&quot;({&quot;value&quot;:123})&quot;_padded;</div>
