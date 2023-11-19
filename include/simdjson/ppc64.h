@@ -3,6 +3,7 @@
 
 #include "simdjson/ppc64/begin.h"
 #include "simdjson/generic/amalgamated.h"
+#include "simdjson/generic/lookup_table.h"
 #include "simdjson/ppc64/end.h"
 
 #endif // SIMDJSON_PPC64_H

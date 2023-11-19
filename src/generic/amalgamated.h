@@ -4,4 +4,3 @@
 
 #include <generic/base.h>
 #include <generic/dom_parser_implementation.h>
-#include <generic/json_character_block.h>

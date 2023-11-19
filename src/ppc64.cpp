@@ -37,29 +37,61 @@ namespace {
 
 using namespace simd;
 
+enum op_whitespace_t : uint8_t {
+  OPEN_OR_CLOSE = 1u << 0,
+  COLON         = 1u << 1,
+  COMMA         = 1u << 2,
+  TAB_CR_LF     = 1u << 3,
+  SPACE         = 1u << 4,
+};
+
+simdjson_constinit byte_classifier OP_WHITESPACE_CLASSIFIER({
+  _lookup_entry{ ' ',  op_whitespace_t::SPACE },
+  { '\t', op_whitespace_t::TAB_CR_LF },
+  { '\r', op_whitespace_t::TAB_CR_LF },
+  { '\n', op_whitespace_t::TAB_CR_LF },
+  { ':',  op_whitespace_t::COLON },
+  { ',',  op_whitespace_t::COMMA },
+  { '{',  op_whitespace_t::OPEN_OR_CLOSE },
+  { '[',  op_whitespace_t::OPEN_OR_CLOSE },
+  { '}',  op_whitespace_t::OPEN_OR_CLOSE },
+  { ']',  op_whitespace_t::OPEN_OR_CLOSE },
+});
+
 simdjson_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
-  const simd8<uint8_t> table1(16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
-  const simd8<uint8_t> table2(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
+  // Functional programming causes trouble with Visual Studio.
+  // Keeping this version in comments since it is much nicer:
+  // auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
+  //  auto nib_lo = chunk & 0xf;
+  //  auto nib_hi = chunk.shr<4>();
+  //  auto shuf_lo = nib_lo.lookup_16<uint8_t>(16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
+  //  auto shuf_hi = nib_hi.lookup_16<uint8_t>(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
+  //  return shuf_lo & shuf_hi;
+  // });
+  simd8x64<uint8_t> op_whitespace = OP_WHITESPACE_CLASSIFIER[in];
 
-  simd8x64<uint8_t> v(
-     (in.chunks[0] & 0xf).lookup_16(table1) & (in.chunks[0].shr<4>()).lookup_16(table2),
-     (in.chunks[1] & 0xf).lookup_16(table1) & (in.chunks[1].shr<4>()).lookup_16(table2),
-     (in.chunks[2] & 0xf).lookup_16(table1) & (in.chunks[2].shr<4>()).lookup_16(table2),
-     (in.chunks[3] & 0xf).lookup_16(table1) & (in.chunks[3].shr<4>()).lookup_16(table2)
-  );
+  // We compute whitespace and op separately. If the code later only use one or the
+  // other, given the fact that all functions are aggressively inlined, we can
+  // hope that useless computations will be omitted. This is namely case when
+  // minifying (we only need whitespace). *However* if we only need spaces,
+  // it is likely that we will still compute 'v' above with two lookup_16: one
+  // could do it a bit cheaper. This is in contrast with the x64 implementations
+  // where we can, efficiently, do the white space and structural matching
+  // separately. One reason for this difference is that on ARM NEON, the table
+  // lookups either zero or leave unchanged the characters exceeding 0xF whereas
+  // on x64, the equivalent instruction (pshufb) automatically applies a mask,
+  // ignoring the 4 most significant bits. Thus the x64 implementation is
+  // optimized differently. This being said, if you use this code strictly
+  // just for minification (or just to identify the structural characters),
+  // there is a small untaken optimization opportunity here. We deliberately
+  // do not pick it up.
 
-  uint64_t op = simd8x64<bool>(
-        v.chunks[0].any_bits_set(0x7),
-        v.chunks[1].any_bits_set(0x7),
-        v.chunks[2].any_bits_set(0x7),
-        v.chunks[3].any_bits_set(0x7)
+  uint64_t op = op_whitespace.any_bits_set(
+    op_whitespace_t::SPACE | op_whitespace_t::TAB_CR_LF
   ).to_bitmask();
 
-  uint64_t whitespace = simd8x64<bool>(
-        v.chunks[0].any_bits_set(0x18),
-        v.chunks[1].any_bits_set(0x18),
-        v.chunks[2].any_bits_set(0x18),
-        v.chunks[3].any_bits_set(0x18)
+  uint64_t whitespace = op_whitespace.any_bits_set(
+    op_whitespace_t::COLON | op_whitespace_t::COMMA | op_whitespace_t::OPEN_OR_CLOSE
   ).to_bitmask();
 
   return { whitespace, op };

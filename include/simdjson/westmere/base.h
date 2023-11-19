@@ -14,14 +14,14 @@ namespace westmere {
 
 class implementation;
 
-namespace {
 namespace simd {
 
 template <typename T> struct simd8;
+template <> struct simd8<bool>;
+template <> struct simd8<uint8_t>;
 template <typename T> struct simd8x64;
 
 } // namespace simd
-} // unnamed namespace
 
 } // namespace westmere
 } // namespace simdjson

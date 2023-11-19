@@ -13,10 +13,8 @@ namespace stage1 {
 class bit_indexer;
 template<size_t STEP_SIZE>
 struct buf_block_reader;
-struct json_block;
 class json_minifier;
 class json_scanner;
-struct json_string_block;
 class json_string_scanner;
 class json_structural_indexer;
 

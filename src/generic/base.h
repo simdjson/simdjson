@@ -10,8 +10,6 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 
-struct json_character_block;
-
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

@@ -101,10 +101,6 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
     case '[': case '{': case ':':
       logger::log_start_value(*this, "skip");
       break;
-    // If there is a comma, we have just finished a value in an array/object, and need to get back in
-    case ',':
-      logger::log_value(*this, "skip");
-      break;
     // ] or } means we just finished a value and need to jump out of the array/object
     case ']': case '}':
       logger::log_end_value(*this, "skip");

@@ -167,6 +167,41 @@ double from_chars(const char *first, const char* end) noexcept;
   #define simdjson_inline simdjson_really_inline
 #endif
 
+#ifndef simdjson_constexpr
+#if __cpp_constexpr
+#define simdjson_constexpr constexpr simdjson_inline
+#else
+#define simdjson_constexpr simdjson_inline
+#endif
+#endif
+// simdjson_constexpr
+
+#ifndef simdjson_consteval
+#if __cpp_consteval
+#define simdjson_consteval consteval simdjson_inline
+#else
+#define simdjson_consteval simdjson_constexpr
+#endif
+#endif // simdjson_consteval
+
+#ifndef simdjson_constinit
+#if __cpp_constinit
+#define simdjson_constinit constinit
+#elif __cpp_consteval
+#define simdjson_constinit consteval
+#else
+#define simdjson_constinit constexpr
+#endif
+#endif // simdjson_constinit
+
+#ifndef simdjson_if_constexpr
+#if SIMDJSON_CPLUSPLUS17
+#define simdjson_if_constexpr constexpr
+#else
+#define simdjson_if_constexpr
+#endif
+#endif
+
 #if SIMDJSON_VISUAL_STUDIO
     /**
      * Windows users need to do some extra work when building

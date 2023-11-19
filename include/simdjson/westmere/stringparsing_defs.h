@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H
 #define SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H
 
-#include "simdjson/westmere/bitmanipulation.h"
+#include "simdjson/westmere/bitmask.h"
 #include "simdjson/westmere/simd.h"
 
 namespace simdjson {
@@ -18,8 +18,8 @@ public:
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
-  simdjson_inline int quote_index() { return trailing_zeroes(quote_bits); }
-  simdjson_inline int backslash_index() { return trailing_zeroes(bs_bits); }
+  simdjson_inline int quote_index() { return bitmask::trailing_zeroes(quote_bits); }
+  simdjson_inline int backslash_index() { return bitmask::trailing_zeroes(bs_bits); }
 
   uint32_t bs_bits;
   uint32_t quote_bits;

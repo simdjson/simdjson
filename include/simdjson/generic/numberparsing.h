@@ -143,7 +143,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
 
 
   // We want the most significant bit of i to be 1. Shift if needed.
-  int lz = leading_zeroes(i);
+  int lz = bitmask::leading_zeroes(i);
   i <<= lz;
 
 

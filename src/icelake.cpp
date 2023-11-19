@@ -43,58 +43,6 @@ namespace {
 
 using namespace simd;
 
-// This identifies structural characters (comma, colon, braces, brackets),
-// and ASCII white-space ('\r','\n','\t',' ').
-simdjson_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
-  // These lookups rely on the fact that anything < 127 will match the lower 4 bits, which is why
-  // we can't use the generic lookup_16.
-  const auto whitespace_table = simd8<uint8_t>::repeat_16(' ', 100, 100, 100, 17, 100, 113, 2, 100, '\t', '\n', 112, 100, '\r', 100, 100);
-
-  // The 6 operators (:,[]{}) have these values:
-  //
-  // , 2C
-  // : 3A
-  // [ 5B
-  // { 7B
-  // ] 5D
-  // } 7D
-  //
-  // If you use | 0x20 to turn [ and ] into { and }, the lower 4 bits of each character is unique.
-  // We exploit this, using a simd 4-bit lookup to tell us which character match against, and then
-  // match it (against | 0x20).
-  //
-  // To prevent recognizing other characters, everything else gets compared with 0, which cannot
-  // match due to the | 0x20.
-  //
-  // NOTE: Due to the | 0x20, this ALSO treats <FF> and <SUB> (control characters 0C and 1A) like ,
-  // and :. This gets caught in stage 2, which checks the actual character to ensure the right
-  // operators are in the right places.
-  const auto op_table = simd8<uint8_t>::repeat_16(
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, 0, ':', '{', // : = 3A, [ = 5B, { = 7B
-    ',', '}', 0, 0  // , = 2C, ] = 5D, } = 7D
-  );
-
-  // We compute whitespace and op separately. If later code only uses one or the
-  // other, given the fact that all functions are aggressively inlined, we can
-  // hope that useless computations will be omitted. This is namely case when
-  // minifying (we only need whitespace).
-
-  const uint64_t whitespace = in.eq({
-    _mm512_shuffle_epi8(whitespace_table, in.chunks[0])
-  });
-  // Turn [ and ] into { and }
-  const simd8x64<uint8_t> curlified{
-    in.chunks[0] | 0x20
-  };
-  const uint64_t op = curlified.eq({
-    _mm512_shuffle_epi8(op_table, in.chunks[0])
-  });
-
-  return { whitespace, op };
-}
-
 simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input) {
   return input.reduce_or().is_ascii();
 }
@@ -141,7 +89,7 @@ simdjson_inline void bit_indexer::write(uint32_t idx, uint64_t bits) {
     ));
     const __m512i start_index = _mm512_set1_epi32(idx);
 
-    const auto count = count_ones(bits);
+    const auto count = bitmask::count_ones(bits);
     __m512i t0 = _mm512_cvtepu8_epi32(_mm512_castsi512_si128(indexes));
     _mm512_storeu_si512(this->tail, _mm512_add_epi32(t0, start_index));
 

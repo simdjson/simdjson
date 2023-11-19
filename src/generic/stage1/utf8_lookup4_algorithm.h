@@ -41,7 +41,7 @@ using namespace simd;
                                                 // 11111___ 1000____
     constexpr const uint8_t OVERLONG_4  = 1<<6; // 11110000 1000____
 
-    const simd8<uint8_t> byte_1_high = prev1.shr<4>().lookup_16<uint8_t>(
+    const simd8<uint8_t> byte_1_high = prev1.shr<4>().lookup_16(simd8<uint8_t>::repeat_16(
       // 0_______ ________ <ASCII in byte 1>
       TOO_LONG, TOO_LONG, TOO_LONG, TOO_LONG,
       TOO_LONG, TOO_LONG, TOO_LONG, TOO_LONG,
@@ -55,9 +55,10 @@ using namespace simd;
       TOO_SHORT | OVERLONG_3 | SURROGATE,
       // 1111____ ________ <four+ byte lead in byte 1>
       TOO_SHORT | TOO_LARGE | TOO_LARGE_1000 | OVERLONG_4
-    );
+    ));
     constexpr const uint8_t CARRY = TOO_SHORT | TOO_LONG | TWO_CONTS; // These all have ____ in byte 1 .
-    const simd8<uint8_t> byte_1_low = (prev1 & 0x0F).lookup_16<uint8_t>(
+    // TODO use lookup_low_nibble_ascii to avoid & for Intel
+    const simd8<uint8_t> byte_1_low = (prev1 & 0x0F).lookup_16(simd8<uint8_t>::repeat_16(
       // ____0000 ________
       CARRY | OVERLONG_3 | OVERLONG_2 | OVERLONG_4,
       // ____0001 ________
@@ -84,8 +85,8 @@ using namespace simd;
       CARRY | TOO_LARGE | TOO_LARGE_1000 | SURROGATE,
       CARRY | TOO_LARGE | TOO_LARGE_1000,
       CARRY | TOO_LARGE | TOO_LARGE_1000
-    );
-    const simd8<uint8_t> byte_2_high = input.shr<4>().lookup_16<uint8_t>(
+    ));
+    const simd8<uint8_t> byte_2_high = input.shr<4>().lookup_16(simd8<uint8_t>::repeat_16(
       // ________ 0_______ <ASCII in byte 2>
       TOO_SHORT, TOO_SHORT, TOO_SHORT, TOO_SHORT,
       TOO_SHORT, TOO_SHORT, TOO_SHORT, TOO_SHORT,
@@ -100,7 +101,7 @@ using namespace simd;
 
       // ________ 11______
       TOO_SHORT, TOO_SHORT, TOO_SHORT, TOO_SHORT
-    );
+    ));
     return (byte_1_high & byte_1_low & byte_2_high);
   }
   simdjson_inline simd8<uint8_t> check_multibyte_lengths(const simd8<uint8_t> input,
@@ -169,6 +170,14 @@ using namespace simd;
       // possibly finish them.
       this->error |= this->prev_incomplete;
     }
+
+#ifndef SIMDJSON_IF_CONSTEXPR
+#if SIMDJSON_CPLUSPLUS17
+#define SIMDJSON_IF_CONSTEXPR if constexpr
+#else
+#define SIMDJSON_IF_CONSTEXPR if
+#endif
+#endif
 
     simdjson_inline void check_next_input(const simd8x64<uint8_t>& input) {
       if(simdjson_likely(is_ascii(input))) {

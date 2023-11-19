@@ -97,16 +97,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::has_n
 
   // It's illegal to call this unless there are more tokens: anything that ends in } or ] is
   // obligated to verify there are more tokens if they are not the top level.
-  switch (*_json_iter->return_current_and_advance()) {
-    case '}':
-      logger::log_end_value(*_json_iter, "object");
-      SIMDJSON_TRY( end_container() );
-      return false;
-    case ',':
-      return true;
-    default:
-      return report_error(TAPE_ERROR, "Missing comma between object fields");
+  if (_json_iter->consume_character('}')) {
+    logger::log_end_value(*_json_iter, "object");
+    SIMDJSON_TRY( end_container() );
+    return false;
   }
+  return true;
 }
 
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_field_raw(const std::string_view key) noexcept {
@@ -483,16 +479,13 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::has_n
   assert_at_next();
 
   logger::log_event(*this, "has_next_element");
-  switch (*_json_iter->return_current_and_advance()) {
-    case ']':
+  if (_json_iter->consume_character(']')) {
       logger::log_end_value(*_json_iter, "array");
       SIMDJSON_TRY( end_container() );
       return false;
-    case ',':
-      _json_iter->descend_to(depth()+1);
-      return true;
-    default:
-      return report_error(TAPE_ERROR, "Missing comma between array elements");
+  } else {
+    _json_iter->descend_to(depth()+1);
+    return true;
   }
 }
 

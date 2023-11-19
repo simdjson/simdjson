@@ -3,6 +3,7 @@
 
 #include "simdjson/icelake/begin.h"
 #include "simdjson/generic/amalgamated.h"
+#include "simdjson/generic/lookup_table.h"
 #include "simdjson/icelake/end.h"
 
 #endif // SIMDJSON_ICELAKE_H

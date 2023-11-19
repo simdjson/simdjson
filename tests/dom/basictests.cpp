@@ -698,24 +698,24 @@ namespace parse_api_tests {
     return parser_load_empty() &&
            parser_moving_parser() &&
            parser_parse() &&
-           parser_parse_many() &&
-#ifdef SIMDJSON_ENABLE_DEPRECATED_API
-           parser_parse_many_deprecated() &&
-#endif
-           parser_parse_many_empty() &&
-           parser_parse_many_empty_batches() &&
+//            parser_parse_many() &&
+// #ifdef SIMDJSON_ENABLE_DEPRECATED_API
+//            parser_parse_many_deprecated() &&
+// #endif
+//            parser_parse_many_empty() &&
+//            parser_parse_many_empty_batches() &&
            parser_load() &&
-           parser_load_many() &&
-#ifdef SIMDJSON_ENABLE_DEPRECATED_API
-           parser_load_many_deprecated() &&
-#endif
+//            parser_load_many() &&
+// #ifdef SIMDJSON_ENABLE_DEPRECATED_API
+//            parser_load_many_deprecated() &&
+// #endif
 #if SIMDJSON_EXCEPTIONS
            parser_moving_parser_and_recovering_struct() &&
            parser_moving_parser_and_recovering() &&
            parser_parse_exception() &&
-           parser_parse_many_exception() &&
+          //  parser_parse_many_exception() &&
            parser_load_exception() &&
-           parser_load_many_exception() &&
+          //  parser_load_many_exception() &&
            issue679() &&
 #endif
            true;

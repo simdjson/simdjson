@@ -47,10 +47,12 @@ struct json_escape_scanner {
    * @param potential_escape A mask of the character that can escape others (but could be
    *        escaped itself). e.g. block.eq('\\')
    */
-  simdjson_really_inline escaped_and_escape next(uint64_t backslash) noexcept {
+  simdjson_really_inline escaped_and_escape next(
+    uint64_t backslash // [2+N]
+  ) noexcept {
 
 #if !SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT
-    if (!backslash) { return {next_escaped_without_backslashes(), 0}; }
+    if (!backslash) { return {next_escaped_without_backslashes(), 0}; } // 0 (+2)
 #endif
 
     // |                                | Mask (shows characters instead of 1's) | Depth | Instructions        |
@@ -59,23 +61,22 @@ struct json_escape_scanner {
     // |                                | `    even   odd    even   odd   odd`   |       |                     |
     // | potential_escape               | ` \  \\\    \\\    \\\\   \\\\  \\\`   | 1     | 1 (backslash & ~first_is_escaped)
     // | escape_and_terminal_code       | ` \n \ \n   \ \n   \ \    \ \   \ \`   | 5     | 5 (next_escape_and_terminal_code())
-    // | escaped                        | `\    \ n    \ n    \ \    \ \   \ ` X | 6     | 7 (escape_and_terminal_code ^ (potential_escape | first_is_escaped))
-    // | escape                         | `    \ \    \ \    \ \    \ \   \ \`   | 6     | 8 (escape_and_terminal_code & backslash)
-    // | first_is_escaped               | `\                                 `   | 7 (*) | 9 (escape >> 63) ()
+    // | escaped                        | `\    \ n    \ n    \ \    \ \   \ ` X | 6     | 6 (escape_and_terminal_code ^ (potential_escape | first_is_escaped))
+    // | escape                         | `    \ \    \ \    \ \    \ \   \ \`   | 6     | 7 (escape_and_terminal_code & backslash)
+    // | first_is_escaped               | `\                                 `   | 7 (*) | 8 (escape >> 63) ()
     //                                                                               (*) this is not needed until the next iteration
-    uint64_t escape_and_terminal_code = next_escape_and_terminal_code(backslash & ~this->next_is_escaped);
-    uint64_t escaped = escape_and_terminal_code ^ (backslash | this->next_is_escaped);
-    uint64_t escape = escape_and_terminal_code & backslash;
-    this->next_is_escaped = escape >> 63;
+    uint64_t escape_and_terminal_code = next_escape_and_terminal_code(backslash & ~this->next_is_escaped); // 5+N (4 total)
+    uint64_t escaped = escape_and_terminal_code ^ (backslash | this->next_is_escaped); // [5+N] 1
+    uint64_t escape = escape_and_terminal_code & backslash;                            // [5+N] 1
+    this->next_is_escaped = escape >> 63;                                              //         1
     return {escaped, escape};
+    // shortest path to escaped: 2+N (2 total) or 6+N (8 total)
   }
 
 private:
-  static constexpr const uint64_t ODD_BITS = 0xAAAAAAAAAAAAAAAAULL;
-
   simdjson_really_inline uint64_t next_escaped_without_backslashes() noexcept {
-    uint64_t escaped = this->next_is_escaped;
-    this->next_is_escaped = 0;
+    uint64_t escaped = this->next_is_escaped; // (register swap, probably 0 latency ultimately)
+    this->next_is_escaped = 0;                // 1
     return escaped;
   }
 
@@ -93,7 +94,9 @@ private:
    * & the result with potential_escape to get just the escape characters.
    * ^ the result with (potential_escape | first_is_escaped) to get escaped characters.
    */
-  static simdjson_really_inline uint64_t next_escape_and_terminal_code(uint64_t potential_escape) noexcept {
+  static simdjson_really_inline uint64_t next_escape_and_terminal_code(
+    uint64_t potential_escape // [2+N]
+  ) noexcept {
     // If we were to just shift and mask out any odd bits, we'd actually get a *half* right answer:
     // any even-aligned backslash runs would be correct! Odd-aligned backslash runs would be
     // inverted (\\\ would be 010 instead of 101).
@@ -124,22 +127,23 @@ private:
     //
 
     // Escaped characters are characters following an escape.
-    uint64_t maybe_escaped = potential_escape << 1;
+    uint64_t maybe_escaped = potential_escape << 1;                                          // [2+N] 1
 
     // To distinguish odd from even escape sequences, therefore, we turn on any *starting*
     // escapes that are on an odd byte. (We actually bring in all odd bits, for speed.)
     // - Odd runs of backslashes are 0000, and the code at the end ("n" in \n or \\n) is 1.
     // - Odd runs of backslashes are 1111, and the code at the end ("n" in \n or \\n) is 0.
     // - All other odd bytes are 1, and even bytes are 0.
-    uint64_t maybe_escaped_and_odd_bits     = maybe_escaped | ODD_BITS;
-    uint64_t even_series_codes_and_odd_bits = maybe_escaped_and_odd_bits - potential_escape;
+    uint64_t maybe_escaped_and_odd_bits     = maybe_escaped | bitmask::ODD;                  // [3+N] 1
+    uint64_t even_series_codes_and_odd_bits = maybe_escaped_and_odd_bits - potential_escape; //         1
 
     // Now we flip all odd bytes back with xor. This:
     // - Makes odd runs of backslashes go from 0000 to 1010
     // - Makes even runs of backslashes go from 1111 to 1010
     // - Sets actually-escaped codes to 1 (the n in \n and \\n: \n = 11, \\n = 100)
     // - Resets all other bytes to 0
-    return even_series_codes_and_odd_bits ^ ODD_BITS;
+    return even_series_codes_and_odd_bits ^ bitmask::ODD; // 1
+    // shortest path: 5+N (+4)
   }
 };
 

@@ -37,6 +37,27 @@ namespace {
 
 using namespace simd;
 
+enum op_whitespace_t : uint8_t {
+  OPEN_OR_CLOSE = 1u << 0,
+  COLON         = 1u << 1,
+  COMMA         = 1u << 2,
+  TAB_CR_LF     = 1u << 3,
+  SPACE         = 1u << 4,
+};
+
+simdjson_constinit byte_classifier OP_WHITESPACE_CLASSIFIER({
+  _lookup_entry{ ' ',  op_whitespace_t::SPACE },
+  { '\t', op_whitespace_t::TAB_CR_LF },
+  { '\r', op_whitespace_t::TAB_CR_LF },
+  { '\n', op_whitespace_t::TAB_CR_LF },
+  { ':',  op_whitespace_t::COLON },
+  { ',',  op_whitespace_t::COMMA },
+  { '{',  op_whitespace_t::OPEN_OR_CLOSE },
+  { '[',  op_whitespace_t::OPEN_OR_CLOSE },
+  { '}',  op_whitespace_t::OPEN_OR_CLOSE },
+  { ']',  op_whitespace_t::OPEN_OR_CLOSE },
+});
+
 simdjson_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
   // Functional programming causes trouble with Visual Studio.
   // Keeping this version in comments since it is much nicer:
@@ -47,16 +68,7 @@ simdjson_inline json_character_block json_character_block::classify(const simd::
   //  auto shuf_hi = nib_hi.lookup_16<uint8_t>(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
   //  return shuf_lo & shuf_hi;
   // });
-  const simd8<uint8_t> table1(16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
-  const simd8<uint8_t> table2(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
-
-  simd8x64<uint8_t> v(
-     (in.chunks[0] & 0xf).lookup_16(table1) & (in.chunks[0].shr<4>()).lookup_16(table2),
-     (in.chunks[1] & 0xf).lookup_16(table1) & (in.chunks[1].shr<4>()).lookup_16(table2),
-     (in.chunks[2] & 0xf).lookup_16(table1) & (in.chunks[2].shr<4>()).lookup_16(table2),
-     (in.chunks[3] & 0xf).lookup_16(table1) & (in.chunks[3].shr<4>()).lookup_16(table2)
-  );
-
+  simd8x64<uint8_t> op_whitespace = OP_WHITESPACE_CLASSIFIER[in];
 
   // We compute whitespace and op separately. If the code later only use one or the
   // other, given the fact that all functions are aggressively inlined, we can
@@ -74,18 +86,12 @@ simdjson_inline json_character_block json_character_block::classify(const simd::
   // there is a small untaken optimization opportunity here. We deliberately
   // do not pick it up.
 
-  uint64_t op = simd8x64<bool>(
-        v.chunks[0].any_bits_set(0x7),
-        v.chunks[1].any_bits_set(0x7),
-        v.chunks[2].any_bits_set(0x7),
-        v.chunks[3].any_bits_set(0x7)
+  uint64_t op = op_whitespace.any_bits_set(
+    op_whitespace_t::SPACE | op_whitespace_t::TAB_CR_LF
   ).to_bitmask();
 
-  uint64_t whitespace = simd8x64<bool>(
-        v.chunks[0].any_bits_set(0x18),
-        v.chunks[1].any_bits_set(0x18),
-        v.chunks[2].any_bits_set(0x18),
-        v.chunks[3].any_bits_set(0x18)
+  uint64_t whitespace = op_whitespace.any_bits_set(
+    op_whitespace_t::COLON | op_whitespace_t::COMMA | op_whitespace_t::OPEN_OR_CLOSE
   ).to_bitmask();
 
   return { whitespace, op };

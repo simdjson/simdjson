@@ -38,63 +38,8 @@ namespace {
 
 using namespace simd;
 
-// This identifies structural characters (comma, colon, braces, brackets),
-// and ASCII white-space ('\r','\n','\t',' ').
-simdjson_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
-  // These lookups rely on the fact that anything < 127 will match the lower 4 bits, which is why
-  // we can't use the generic lookup_16.
-  const auto whitespace_table = simd8<uint8_t>::repeat_16(' ', 100, 100, 100, 17, 100, 113, 2, 100, '\t', '\n', 112, 100, '\r', 100, 100);
-
-  // The 6 operators (:,[]{}) have these values:
-  //
-  // , 2C
-  // : 3A
-  // [ 5B
-  // { 7B
-  // ] 5D
-  // } 7D
-  //
-  // If you use | 0x20 to turn [ and ] into { and }, the lower 4 bits of each character is unique.
-  // We exploit this, using a simd 4-bit lookup to tell us which character match against, and then
-  // match it (against | 0x20).
-  //
-  // To prevent recognizing other characters, everything else gets compared with 0, which cannot
-  // match due to the | 0x20.
-  //
-  // NOTE: Due to the | 0x20, this ALSO treats <FF> and <SUB> (control characters 0C and 1A) like ,
-  // and :. This gets caught in stage 2, which checks the actual character to ensure the right
-  // operators are in the right places.
-  const auto op_table = simd8<uint8_t>::repeat_16(
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, 0, ':', '{', // : = 3A, [ = 5B, { = 7B
-    ',', '}', 0, 0  // , = 2C, ] = 5D, } = 7D
-  );
-
-  // We compute whitespace and op separately. If later code only uses one or the
-  // other, given the fact that all functions are aggressively inlined, we can
-  // hope that useless computations will be omitted. This is namely case when
-  // minifying (we only need whitespace).
-
-  const uint64_t whitespace = in.eq({
-    _mm256_shuffle_epi8(whitespace_table, in.chunks[0]),
-    _mm256_shuffle_epi8(whitespace_table, in.chunks[1])
-  });
-  // Turn [ and ] into { and }
-  const simd8x64<uint8_t> curlified{
-    in.chunks[0] | 0x20,
-    in.chunks[1] | 0x20
-  };
-  const uint64_t op = curlified.eq({
-    _mm256_shuffle_epi8(op_table, in.chunks[0]),
-    _mm256_shuffle_epi8(op_table, in.chunks[1])
-  });
-
-  return { whitespace, op };
-}
-
-simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input) {
-  return input.reduce_or().is_ascii();
+simdjson_inline bool is_ascii(const simd8x64<uint8_t>& in) {
+  return in.reduce_or().is_ascii();
 }
 
 simdjson_unused simdjson_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {

@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_FALLBACK_BITMANIPULATION_H
-#define SIMDJSON_FALLBACK_BITMANIPULATION_H
+#ifndef SIMDJSON_FALLBACK_BITMASK_H
+#define SIMDJSON_FALLBACK_BITMASK_H
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/fallback/base.h"
@@ -7,7 +7,7 @@
 
 namespace simdjson {
 namespace fallback {
-namespace {
+namespace bitmask {
 
 #if defined(_MSC_VER) && !defined(_M_ARM64) && !defined(_M_X64)
 static inline unsigned char _BitScanForward64(unsigned long* ret, uint64_t x) {
