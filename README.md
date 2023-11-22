@@ -41,7 +41,8 @@ Real-world usage
 ----------------
 
 - [ClickHouse](https://github.com/ClickHouse/ClickHouse)
-- [Facebook/Meta Velox](https://velox-lib.io)
+- [Meta Velox](https://velox-lib.io)
+- [Google Pax](https://github.com/google/paxml)
 - [milvus](https://github.com/milvus-io/milvus)
 - [Clang Build Analyzer](https://github.com/aras-p/ClangBuildAnalyzer)
 - [Shopify HeapProfiler](https://github.com/Shopify/heap-profiler)
