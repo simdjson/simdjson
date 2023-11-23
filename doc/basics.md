@@ -542,9 +542,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 * **Tree Walking and JSON Element Types:** Sometimes you don't necessarily have a document
   with a known type, and are trying to generically inspect or walk over JSON elements.
   You can also represent arbitrary JSON values with
-  `ondemand::value` instances: it can represent anything except a scalar document (lone number, string, null or Boolean). You can check for scalar documents with the method `scalar()`.
-  You can query the type of a document or a value with the `type()` method.
-  The `type()` method does not consume or validate documents and values, but it tells you whether they are
+  `ondemand::value` instances: it can represent anything except a scalar document (lone number, string, null or Boolean). You can check for scalar documents with the method `scalar()`. You can cast a document that is either an array or an object to an `ondemand::value` instance immediately after you create the document instance: you cannot create a `ondemand::value` instance from a document that has already been accessed as it would mean that you would have two instances of the object or arary simultaneously. You can query the type of a document or a value with the `type()` method. The `type()` method does not consume or validate documents and values, but it tells you whether they are
   - arrays (`json_type::array`),
   - objects (`json_type::object`)
   - numbers (`json_type::number`),

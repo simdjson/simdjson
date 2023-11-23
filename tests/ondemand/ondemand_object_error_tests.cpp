@@ -137,6 +137,19 @@ namespace object_error_tests {
   }
 
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
+  bool issue2084() {
+    TEST_START();
+    auto json = R"([ {"foo": "bar"} ])"_padded;
+    SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
+      std::string_view foo;
+      ASSERT_SUCCESS(doc["foo"].get(foo));
+      ondemand::value value;
+      ASSERT_ERROR(doc.get_value().get(value), OUT_OF_ORDER_ITERATION);
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
   bool out_of_order_object_iteration_error() {
     TEST_START();
     auto json = R"([ { "x": 1, "y": 2 } ])"_padded;
@@ -555,6 +568,7 @@ namespace object_error_tests {
            object_lookup_miss_wrong_key_type_error() &&
            object_lookup_miss_next_error() &&
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
+           issue2084() &&
            out_of_order_object_iteration_error() &&
            out_of_order_top_level_object_iteration_error() &&
            out_of_order_object_index_child_error() &&

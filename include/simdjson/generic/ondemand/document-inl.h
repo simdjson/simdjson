@@ -68,7 +68,10 @@ simdjson_inline simdjson_result<object> document::start_or_resume_object() noexc
 simdjson_inline simdjson_result<value> document::get_value() noexcept {
   // Make sure we start any arrays or objects before returning, so that start_root_<object/array>()
   // gets called.
-  iter.assert_at_document_depth();
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (!iter.at_root()) { return OUT_OF_ORDER_ITERATION; }
+#endif
+  iter.assert_at_root();
   switch (*iter.peek()) {
     case '[': {
       // The following lines check that the document ends with ].
