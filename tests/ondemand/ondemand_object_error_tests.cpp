@@ -139,7 +139,7 @@ namespace object_error_tests {
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
   bool issue2084() {
     TEST_START();
-    auto json = R"([ {"foo": "bar"} ])"_padded;
+    auto json = R"( {"foo": "bar"} )"_padded;
     SUBTEST("document->value after access", test_ondemand_doc(json, [&](auto doc) {
       std::string_view foo;
       ASSERT_SUCCESS(doc["foo"].get(foo));
