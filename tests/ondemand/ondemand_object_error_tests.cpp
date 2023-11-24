@@ -140,11 +140,19 @@ namespace object_error_tests {
   bool issue2084() {
     TEST_START();
     auto json = R"([ {"foo": "bar"} ])"_padded;
-    SUBTEST("simdjson_result<object>", test_ondemand_doc(json, [&](auto doc) {
+    SUBTEST("document->value after access", test_ondemand_doc(json, [&](auto doc) {
       std::string_view foo;
       ASSERT_SUCCESS(doc["foo"].get(foo));
       ondemand::value value;
       ASSERT_ERROR(doc.get_value().get(value), OUT_OF_ORDER_ITERATION);
+      return true;
+    }));
+    SUBTEST("document->value after access and rewind", test_ondemand_doc(json, [&](auto doc) {
+      std::string_view foo;
+      ASSERT_SUCCESS(doc["foo"].get(foo));
+      doc.rewind();
+      ondemand::value value;
+      ASSERT_SUCCESS(doc.get_value().get(value));
       return true;
     }));
     TEST_SUCCEED();

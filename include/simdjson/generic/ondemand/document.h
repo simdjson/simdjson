@@ -147,8 +147,10 @@ public:
    * Cast this JSON value to a value when the document is an object or an array.
    *
    * You must not have begun iterating through the object or array. When
-   * SIMDJSON_DEVELOPMENT_CHECKS is defined, and you have already begun iterating,
-   * you will get an OUT_OF_ORDER_ITERATION error.
+   * SIMDJSON_DEVELOPMENT_CHECKS is set to 1 (which is the case when building in Debug mode
+   * by default), and you have already begun iterating,
+   * you will get an OUT_OF_ORDER_ITERATION error. If you have begun iterating, you can use
+   * rewind() to reset the document to its initial state before calling this method.
    *
    * @returns A value if a JSON array or object cannot be found.
    * @returns SCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
@@ -276,10 +278,11 @@ public:
    *
    * You must not have begun iterating through the object or array. When
    * SIMDJSON_DEVELOPMENT_CHECKS is defined, and you have already begun iterating,
-   * you will get an OUT_OF_ORDER_ITERATION error.
+   * you will get an OUT_OF_ORDER_ITERATION error. If you have begun iterating, you can use
+   * rewind() to reset the document to its initial state before calling this method.
    *
    * @returns A value value if a JSON array or object cannot be found.
-   * @exception iSCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
+   * @exception SCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
    */
   simdjson_inline operator value() noexcept(false);
 #endif
