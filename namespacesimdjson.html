@@ -304,7 +304,7 @@ template&lt;class T &gt; </td></tr>
 <tr class="memitem:adf3293e0e757f2db0f279347c3b57914"><td class="memTemplItemLeft" align="right" valign="top">std::string&#160;</td><td class="memTemplItemRight" valign="bottom"><b>prettify</b> (<a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; T &gt; x)</td></tr>
 <tr class="separator:adf3293e0e757f2db0f279347c3b57914"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a65b00a7a7a9c8fafe9eb3b9b413a36fa"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa">error_message</a> (<a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error) noexcept</td></tr>
-<tr class="memdesc:a65b00a7a7a9c8fafe9eb3b9b413a36fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the error message for the given error code.  <a href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa">More...</a><br /></td></tr>
+<tr class="memdesc:a65b00a7a7a9c8fafe9eb3b9b413a36fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">It is the convention throughout the code that the macro SIMDJSON_DEVELOPMENT_CHECKS determines whether we check for OUT_OF_ORDER_ITERATION.  <a href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa">More...</a><br /></td></tr>
 <tr class="separator:a65b00a7a7a9c8fafe9eb3b9b413a36fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a56e8e2fa6798b9e0da80bc51ae4a5f29"><td class="memItemLeft" align="right" valign="top">const std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a56e8e2fa6798b9e0da80bc51ae4a5f29">error_message</a> (int error) noexcept</td></tr>
 <tr class="separator:a56e8e2fa6798b9e0da80bc51ae4a5f29"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -416,7 +416,7 @@ constexpr SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS size_t&#160;</td><td class="memI
 </div><div class="memdoc">
 <dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000002">Deprecated:</a></b></dt><dd>This is an alias and will be removed, use error_code instead </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="error_8h_source.html#l00300">300</a> of file <a class="el" href="error_8h_source.html">error.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="error_8h_source.html#l00307">307</a> of file <a class="el" href="error_8h_source.html">error.h</a>.</p>
 
 </div>
 </div>
@@ -528,7 +528,7 @@ constexpr SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS size_t&#160;</td><td class="memI
 </td></tr>
 <tr><td class="fieldname"><a id="a7b735a3a50ba79e3f7f14df5f77d8da9ae9067bb5cb6283141b1c66466005ac0d"></a>PARSER_IN_USE&#160;</td><td class="fielddoc"><p>parser is already in use. </p>
 </td></tr>
-<tr><td class="fieldname"><a id="a7b735a3a50ba79e3f7f14df5f77d8da9a351bcafefbbc80a6dadc1ea6c27a35e6"></a>OUT_OF_ORDER_ITERATION&#160;</td><td class="fielddoc"><p>tried to iterate an array or object out of order </p>
+<tr><td class="fieldname"><a id="a7b735a3a50ba79e3f7f14df5f77d8da9a351bcafefbbc80a6dadc1ea6c27a35e6"></a>OUT_OF_ORDER_ITERATION&#160;</td><td class="fielddoc"><p>tried to iterate an array or object out of order (checked when SIMDJSON_DEVELOPMENT_CHECKS=1) </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a7b735a3a50ba79e3f7f14df5f77d8da9aee3335b961f2d0f732e95b359c16a69a"></a>INSUFFICIENT_PADDING&#160;</td><td class="fielddoc"><p>The JSON doesn't have enough padding for simdjson to safely parse it. </p>
 </td></tr>
@@ -618,7 +618,8 @@ constexpr SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS size_t&#160;</td><td class="memI
 </table>
 </div><div class="memdoc">
 
-<p>Get the error message for the given error code. </p>
+<p>It is the convention throughout the code that the macro SIMDJSON_DEVELOPMENT_CHECKS determines whether we check for OUT_OF_ORDER_ITERATION. </p>
+<p>The logic behind it is that these errors only occurs when the code that was written while breaking some simdjson::ondemand requirement. They should not occur in released code after these issues were fixed. Get the error message for the given error code.</p>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; <a class="el" href="classsimdjson_1_1dom_1_1element.html" title="A JSON element.">dom::element</a> doc; auto error = parser.parse("foo",3).get(doc); if (error) { printf("Error: %s\n", error_message(error)); }</p>
 <dl class="section return"><dt>Returns</dt><dd>The error message. </dd></dl>
 
@@ -649,7 +650,7 @@ constexpr SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS size_t&#160;</td><td class="memI
   </tr>
 </table>
 </div><div class="memdoc">
-<dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000003">Deprecated:</a></b></dt><dd>Error codes should be stored and returned as <code>error_code</code>, use <code><a class="el" href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa" title="Get the error message for the given error code.">error_message()</a></code> instead.</dd></dl>
+<dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000003">Deprecated:</a></b></dt><dd>Error codes should be stored and returned as <code>error_code</code>, use <code><a class="el" href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa" title="It is the convention throughout the code that the macro SIMDJSON_DEVELOPMENT_CHECKS determines whethe...">error_message()</a></code> instead.</dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="error-inl_8h_source.html#l00027">27</a> of file <a class="el" href="error-inl_8h_source.html">error-inl.h</a>.</p>
 
