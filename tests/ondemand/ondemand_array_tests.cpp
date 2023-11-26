@@ -6,6 +6,17 @@ using namespace simdjson;
 namespace array_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
+
+  bool document_is_array_treated_as_object() {
+    TEST_START();
+    auto json = R"(   [  {"key" : "value"}  ]  )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    std::string_view v;
+    ASSERT_ERROR(doc["key"].get_string().get(v), INCORRECT_TYPE);
+    TEST_SUCCEED();
+  }
   bool issue1977() {
     TEST_START();
     auto json = R"([1, 2] foo ])"_padded;
@@ -844,6 +855,7 @@ namespace array_tests {
 
   bool run() {
     return
+           document_is_array_treated_as_object() &&
            issue1977() &&
            issue1876() &&
            issue1742() &&

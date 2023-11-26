@@ -42,7 +42,7 @@ enum error_code {
   INVALID_URI_FRAGMENT,       ///< Invalid URI fragment
   UNEXPECTED_ERROR,           ///< indicative of a bug in simdjson
   PARSER_IN_USE,              ///< parser is already in use.
-  OUT_OF_ORDER_ITERATION,     ///< tried to iterate an array or object out of order
+  OUT_OF_ORDER_ITERATION,     ///< tried to iterate an array or object out of order (checked when SIMDJSON_DEVELOPMENT_CHECKS=1)
   INSUFFICIENT_PADDING,       ///< The JSON doesn't have enough padding for simdjson to safely parse it.
   INCOMPLETE_ARRAY_OR_OBJECT, ///< The document ends early.
   SCALAR_DOCUMENT_AS_VALUE,   ///< A scalar document is treated as a value.
@@ -50,6 +50,13 @@ enum error_code {
   TRAILING_CONTENT,           ///< Unexpected trailing content in the JSON input
   NUM_ERROR_CODES
 };
+
+/**
+ * It is the convention throughout the code that  the macro SIMDJSON_DEVELOPMENT_CHECKS determines whether
+ * we check for OUT_OF_ORDER_ITERATION. The logic behind it is that these errors only occurs when the code
+ * that was written while breaking some simdjson::ondemand requirement. They should not occur in released
+ * code after these issues were fixed.
+ */
 
 /**
  * Get the error message for the given error code.
