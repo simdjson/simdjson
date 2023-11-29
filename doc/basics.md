@@ -254,7 +254,7 @@ copy the data into their own favorite class instances (e.g., alternatives to `st
 
 A `std::string_view` instance is effectively just a pointer to a region in memory representing
 a string. In simdjson, we return `std::string_view` instances that either point within the
-input string you parsed (when using [raw Strings](#raw-strings)), or to a temporary string buffer inside 
+input string you parsed (when using [raw Strings](#raw-strings)), or to a temporary string buffer inside
 our parser class instances that is valid until the parser object is destroyed or you use it to parse another document.
 When using `std::string_view` instances, it is your responsibility to ensure that
 `std::string_view` instance does not outlive the pointed-to memory (e.g., either the input
