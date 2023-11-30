@@ -40,6 +40,7 @@ Table of Contents
 Real-world usage
 ----------------
 
+- [Node.js](https://nodejs.org/)
 - [ClickHouse](https://github.com/ClickHouse/ClickHouse)
 - [Meta Velox](https://velox-lib.io)
 - [Google Pax](https://github.com/google/paxml)
