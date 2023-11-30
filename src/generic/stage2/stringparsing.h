@@ -189,8 +189,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, u
       dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
-  /* can't be reached */
-  return nullptr;
 }
 
 simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
@@ -236,8 +234,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
       dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
-  /* can't be reached */
-  return nullptr;
 }
 
 } // namespace stringparsing

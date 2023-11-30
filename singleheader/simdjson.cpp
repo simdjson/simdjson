@@ -1,4 +1,4 @@
-/* auto-generated on 2023-11-22 11:36:33 -0500. Do not edit! */
+/* auto-generated on 2023-11-30 11:06:43 -0800. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -109,6 +109,8 @@
 #define SIMDJSON_IS_X86_64 1
 #elif defined(__aarch64__) || defined(_M_ARM64)
 #define SIMDJSON_IS_ARM64 1
+#elif defined(__riscv) && __riscv_xlen == 64
+#define SIMDJSON_IS_RISCV64 1
 #elif defined(__PPC64__) || defined(_M_PPC64)
 #if defined(__ALTIVEC__)
 #define SIMDJSON_IS_PPC64_VMX 1
@@ -2335,7 +2337,7 @@ enum error_code {
   INVALID_URI_FRAGMENT,       ///< Invalid URI fragment
   UNEXPECTED_ERROR,           ///< indicative of a bug in simdjson
   PARSER_IN_USE,              ///< parser is already in use.
-  OUT_OF_ORDER_ITERATION,     ///< tried to iterate an array or object out of order
+  OUT_OF_ORDER_ITERATION,     ///< tried to iterate an array or object out of order (checked when SIMDJSON_DEVELOPMENT_CHECKS=1)
   INSUFFICIENT_PADDING,       ///< The JSON doesn't have enough padding for simdjson to safely parse it.
   INCOMPLETE_ARRAY_OR_OBJECT, ///< The document ends early.
   SCALAR_DOCUMENT_AS_VALUE,   ///< A scalar document is treated as a value.
@@ -2343,6 +2345,13 @@ enum error_code {
   TRAILING_CONTENT,           ///< Unexpected trailing content in the JSON input
   NUM_ERROR_CODES
 };
+
+/**
+ * It is the convention throughout the code that  the macro SIMDJSON_DEVELOPMENT_CHECKS determines whether
+ * we check for OUT_OF_ORDER_ITERATION. The logic behind it is that these errors only occurs when the code
+ * that was written while breaking some simdjson::ondemand requirement. They should not occur in released
+ * code after these issues were fixed.
+ */
 
 /**
  * Get the error message for the given error code.
@@ -13087,8 +13096,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, u
       dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
-  /* can't be reached */
-  return nullptr;
 }
 
 simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
@@ -13134,8 +13141,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
       dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
-  /* can't be reached */
-  return nullptr;
 }
 
 } // namespace stringparsing
@@ -16281,8 +16286,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, u
       dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
-  /* can't be reached */
-  return nullptr;
 }
 
 simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
@@ -16328,8 +16331,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
       dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
-  /* can't be reached */
-  return nullptr;
 }
 
 } // namespace stringparsing
@@ -23173,8 +23174,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, u
       dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
-  /* can't be reached */
-  return nullptr;
 }
 
 simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
@@ -23220,8 +23219,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
       dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
-  /* can't be reached */
-  return nullptr;
 }
 
 } // namespace stringparsing
@@ -29339,8 +29336,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, u
       dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
-  /* can't be reached */
-  return nullptr;
 }
 
 simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
@@ -29386,8 +29381,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
       dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
-  /* can't be reached */
-  return nullptr;
 }
 
 } // namespace stringparsing
@@ -35776,8 +35769,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, u
       dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
-  /* can't be reached */
-  return nullptr;
 }
 
 simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
@@ -35823,8 +35814,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
       dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
-  /* can't be reached */
-  return nullptr;
 }
 
 } // namespace stringparsing
@@ -42787,8 +42776,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, u
       dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
-  /* can't be reached */
-  return nullptr;
 }
 
 simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
@@ -42834,8 +42821,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
       dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
-  /* can't be reached */
-  return nullptr;
 }
 
 } // namespace stringparsing
