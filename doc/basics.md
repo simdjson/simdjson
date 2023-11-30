@@ -220,7 +220,7 @@ walking through the original JSON text, merrily reading commas and colons and br
 you get where you are going. This is the key to On Demand's performance: since it's just an iterator,
 it lets you parse values as you use them. And particularly, it lets you *skip* values you do not want
 to use. On Demand is also ideally suited when you want to capture part of the document without parsing it
-immediately (e.g., see [Raw Strings](#raw-strings)). 
+immediately (e.g., see [Raw Strings](#raw-strings)).
 
 We refer to "On Demand" as a front-end component since it is an interface between the
 low-level parsing functions and the user. It hides much of the complexity of parsing JSON
