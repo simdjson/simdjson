@@ -1,4 +1,4 @@
-/* auto-generated on 2023-11-22 11:36:33 -0500. Do not edit! */
+/* auto-generated on 2023-11-30 11:06:43 -0800. Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -129,6 +129,8 @@
 #define SIMDJSON_IS_X86_64 1
 #elif defined(__aarch64__) || defined(_M_ARM64)
 #define SIMDJSON_IS_ARM64 1
+#elif defined(__riscv) && __riscv_xlen == 64
+#define SIMDJSON_IS_RISCV64 1
 #elif defined(__PPC64__) || defined(_M_PPC64)
 #if defined(__ALTIVEC__)
 #define SIMDJSON_IS_PPC64_VMX 1
@@ -2398,7 +2400,7 @@ enum error_code {
   INVALID_URI_FRAGMENT,       ///< Invalid URI fragment
   UNEXPECTED_ERROR,           ///< indicative of a bug in simdjson
   PARSER_IN_USE,              ///< parser is already in use.
-  OUT_OF_ORDER_ITERATION,     ///< tried to iterate an array or object out of order
+  OUT_OF_ORDER_ITERATION,     ///< tried to iterate an array or object out of order (checked when SIMDJSON_DEVELOPMENT_CHECKS=1)
   INSUFFICIENT_PADDING,       ///< The JSON doesn't have enough padding for simdjson to safely parse it.
   INCOMPLETE_ARRAY_OR_OBJECT, ///< The document ends early.
   SCALAR_DOCUMENT_AS_VALUE,   ///< A scalar document is treated as a value.
@@ -2406,6 +2408,13 @@ enum error_code {
   TRAILING_CONTENT,           ///< Unexpected trailing content in the JSON input
   NUM_ERROR_CODES
 };
+
+/**
+ * It is the convention throughout the code that  the macro SIMDJSON_DEVELOPMENT_CHECKS determines whether
+ * we check for OUT_OF_ORDER_ITERATION. The logic behind it is that these errors only occurs when the code
+ * that was written while breaking some simdjson::ondemand requirement. They should not occur in released
+ * code after these issues were fixed.
+ */
 
 /**
  * Get the error message for the given error code.
@@ -29697,8 +29706,10 @@ public:
    * Cast this JSON value to a value when the document is an object or an array.
    *
    * You must not have begun iterating through the object or array. When
-   * SIMDJSON_DEVELOPMENT_CHECKS is defined, and you have already begun iterating,
-   * you will get an OUT_OF_ORDER_ITERATION error.
+   * SIMDJSON_DEVELOPMENT_CHECKS is set to 1 (which is the case when building in Debug mode
+   * by default), and you have already begun iterating,
+   * you will get an OUT_OF_ORDER_ITERATION error. If you have begun iterating, you can use
+   * rewind() to reset the document to its initial state before calling this method.
    *
    * @returns A value if a JSON array or object cannot be found.
    * @returns SCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
@@ -29826,10 +29837,11 @@ public:
    *
    * You must not have begun iterating through the object or array. When
    * SIMDJSON_DEVELOPMENT_CHECKS is defined, and you have already begun iterating,
-   * you will get an OUT_OF_ORDER_ITERATION error.
+   * you will get an OUT_OF_ORDER_ITERATION error. If you have begun iterating, you can use
+   * rewind() to reset the document to its initial state before calling this method.
    *
    * @returns A value value if a JSON array or object cannot be found.
-   * @exception iSCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
+   * @exception SCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
    */
   simdjson_inline operator value() noexcept(false);
 #endif
@@ -31632,9 +31644,16 @@ simdjson_inline simdjson_result<object> document::start_or_resume_object() noexc
 simdjson_inline simdjson_result<value> document::get_value() noexcept {
   // Make sure we start any arrays or objects before returning, so that start_root_<object/array>()
   // gets called.
+
+  // It is the convention throughout the code that  the macro `SIMDJSON_DEVELOPMENT_CHECKS` determines whether
+  // we check for OUT_OF_ORDER_ITERATION. Proper on::demand code should never trigger this error.
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.at_root()) { return OUT_OF_ORDER_ITERATION; }
 #endif
+  // assert_at_root() serves two purposes: in Debug mode, whether or not
+  // SIMDJSON_DEVELOPMENT_CHECKS is set or not, it checks that we are at the root of
+  // the document (this will typically be redundant). In release mode, it generates
+  // SIMDJSON_ASSUME statements to allow the compiler to make assumptions.
   iter.assert_at_root();
   switch (*iter.peek()) {
     case '[': {
@@ -39608,8 +39627,10 @@ public:
    * Cast this JSON value to a value when the document is an object or an array.
    *
    * You must not have begun iterating through the object or array. When
-   * SIMDJSON_DEVELOPMENT_CHECKS is defined, and you have already begun iterating,
-   * you will get an OUT_OF_ORDER_ITERATION error.
+   * SIMDJSON_DEVELOPMENT_CHECKS is set to 1 (which is the case when building in Debug mode
+   * by default), and you have already begun iterating,
+   * you will get an OUT_OF_ORDER_ITERATION error. If you have begun iterating, you can use
+   * rewind() to reset the document to its initial state before calling this method.
    *
    * @returns A value if a JSON array or object cannot be found.
    * @returns SCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
@@ -39737,10 +39758,11 @@ public:
    *
    * You must not have begun iterating through the object or array. When
    * SIMDJSON_DEVELOPMENT_CHECKS is defined, and you have already begun iterating,
-   * you will get an OUT_OF_ORDER_ITERATION error.
+   * you will get an OUT_OF_ORDER_ITERATION error. If you have begun iterating, you can use
+   * rewind() to reset the document to its initial state before calling this method.
    *
    * @returns A value value if a JSON array or object cannot be found.
-   * @exception iSCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
+   * @exception SCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
    */
   simdjson_inline operator value() noexcept(false);
 #endif
@@ -41543,9 +41565,16 @@ simdjson_inline simdjson_result<object> document::start_or_resume_object() noexc
 simdjson_inline simdjson_result<value> document::get_value() noexcept {
   // Make sure we start any arrays or objects before returning, so that start_root_<object/array>()
   // gets called.
+
+  // It is the convention throughout the code that  the macro `SIMDJSON_DEVELOPMENT_CHECKS` determines whether
+  // we check for OUT_OF_ORDER_ITERATION. Proper on::demand code should never trigger this error.
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.at_root()) { return OUT_OF_ORDER_ITERATION; }
 #endif
+  // assert_at_root() serves two purposes: in Debug mode, whether or not
+  // SIMDJSON_DEVELOPMENT_CHECKS is set or not, it checks that we are at the root of
+  // the document (this will typically be redundant). In release mode, it generates
+  // SIMDJSON_ASSUME statements to allow the compiler to make assumptions.
   iter.assert_at_root();
   switch (*iter.peek()) {
     case '[': {
@@ -50011,8 +50040,10 @@ public:
    * Cast this JSON value to a value when the document is an object or an array.
    *
    * You must not have begun iterating through the object or array. When
-   * SIMDJSON_DEVELOPMENT_CHECKS is defined, and you have already begun iterating,
-   * you will get an OUT_OF_ORDER_ITERATION error.
+   * SIMDJSON_DEVELOPMENT_CHECKS is set to 1 (which is the case when building in Debug mode
+   * by default), and you have already begun iterating,
+   * you will get an OUT_OF_ORDER_ITERATION error. If you have begun iterating, you can use
+   * rewind() to reset the document to its initial state before calling this method.
    *
    * @returns A value if a JSON array or object cannot be found.
    * @returns SCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
@@ -50140,10 +50171,11 @@ public:
    *
    * You must not have begun iterating through the object or array. When
    * SIMDJSON_DEVELOPMENT_CHECKS is defined, and you have already begun iterating,
-   * you will get an OUT_OF_ORDER_ITERATION error.
+   * you will get an OUT_OF_ORDER_ITERATION error. If you have begun iterating, you can use
+   * rewind() to reset the document to its initial state before calling this method.
    *
    * @returns A value value if a JSON array or object cannot be found.
-   * @exception iSCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
+   * @exception SCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
    */
   simdjson_inline operator value() noexcept(false);
 #endif
@@ -51946,9 +51978,16 @@ simdjson_inline simdjson_result<object> document::start_or_resume_object() noexc
 simdjson_inline simdjson_result<value> document::get_value() noexcept {
   // Make sure we start any arrays or objects before returning, so that start_root_<object/array>()
   // gets called.
+
+  // It is the convention throughout the code that  the macro `SIMDJSON_DEVELOPMENT_CHECKS` determines whether
+  // we check for OUT_OF_ORDER_ITERATION. Proper on::demand code should never trigger this error.
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.at_root()) { return OUT_OF_ORDER_ITERATION; }
 #endif
+  // assert_at_root() serves two purposes: in Debug mode, whether or not
+  // SIMDJSON_DEVELOPMENT_CHECKS is set or not, it checks that we are at the root of
+  // the document (this will typically be redundant). In release mode, it generates
+  // SIMDJSON_ASSUME statements to allow the compiler to make assumptions.
   iter.assert_at_root();
   switch (*iter.peek()) {
     case '[': {
@@ -60413,8 +60452,10 @@ public:
    * Cast this JSON value to a value when the document is an object or an array.
    *
    * You must not have begun iterating through the object or array. When
-   * SIMDJSON_DEVELOPMENT_CHECKS is defined, and you have already begun iterating,
-   * you will get an OUT_OF_ORDER_ITERATION error.
+   * SIMDJSON_DEVELOPMENT_CHECKS is set to 1 (which is the case when building in Debug mode
+   * by default), and you have already begun iterating,
+   * you will get an OUT_OF_ORDER_ITERATION error. If you have begun iterating, you can use
+   * rewind() to reset the document to its initial state before calling this method.
    *
    * @returns A value if a JSON array or object cannot be found.
    * @returns SCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
@@ -60542,10 +60583,11 @@ public:
    *
    * You must not have begun iterating through the object or array. When
    * SIMDJSON_DEVELOPMENT_CHECKS is defined, and you have already begun iterating,
-   * you will get an OUT_OF_ORDER_ITERATION error.
+   * you will get an OUT_OF_ORDER_ITERATION error. If you have begun iterating, you can use
+   * rewind() to reset the document to its initial state before calling this method.
    *
    * @returns A value value if a JSON array or object cannot be found.
-   * @exception iSCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
+   * @exception SCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
    */
   simdjson_inline operator value() noexcept(false);
 #endif
@@ -62348,9 +62390,16 @@ simdjson_inline simdjson_result<object> document::start_or_resume_object() noexc
 simdjson_inline simdjson_result<value> document::get_value() noexcept {
   // Make sure we start any arrays or objects before returning, so that start_root_<object/array>()
   // gets called.
+
+  // It is the convention throughout the code that  the macro `SIMDJSON_DEVELOPMENT_CHECKS` determines whether
+  // we check for OUT_OF_ORDER_ITERATION. Proper on::demand code should never trigger this error.
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.at_root()) { return OUT_OF_ORDER_ITERATION; }
 #endif
+  // assert_at_root() serves two purposes: in Debug mode, whether or not
+  // SIMDJSON_DEVELOPMENT_CHECKS is set or not, it checks that we are at the root of
+  // the document (this will typically be redundant). In release mode, it generates
+  // SIMDJSON_ASSUME statements to allow the compiler to make assumptions.
   iter.assert_at_root();
   switch (*iter.peek()) {
     case '[': {
@@ -70930,8 +70979,10 @@ public:
    * Cast this JSON value to a value when the document is an object or an array.
    *
    * You must not have begun iterating through the object or array. When
-   * SIMDJSON_DEVELOPMENT_CHECKS is defined, and you have already begun iterating,
-   * you will get an OUT_OF_ORDER_ITERATION error.
+   * SIMDJSON_DEVELOPMENT_CHECKS is set to 1 (which is the case when building in Debug mode
+   * by default), and you have already begun iterating,
+   * you will get an OUT_OF_ORDER_ITERATION error. If you have begun iterating, you can use
+   * rewind() to reset the document to its initial state before calling this method.
    *
    * @returns A value if a JSON array or object cannot be found.
    * @returns SCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
@@ -71059,10 +71110,11 @@ public:
    *
    * You must not have begun iterating through the object or array. When
    * SIMDJSON_DEVELOPMENT_CHECKS is defined, and you have already begun iterating,
-   * you will get an OUT_OF_ORDER_ITERATION error.
+   * you will get an OUT_OF_ORDER_ITERATION error. If you have begun iterating, you can use
+   * rewind() to reset the document to its initial state before calling this method.
    *
    * @returns A value value if a JSON array or object cannot be found.
-   * @exception iSCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
+   * @exception SCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
    */
   simdjson_inline operator value() noexcept(false);
 #endif
@@ -72865,9 +72917,16 @@ simdjson_inline simdjson_result<object> document::start_or_resume_object() noexc
 simdjson_inline simdjson_result<value> document::get_value() noexcept {
   // Make sure we start any arrays or objects before returning, so that start_root_<object/array>()
   // gets called.
+
+  // It is the convention throughout the code that  the macro `SIMDJSON_DEVELOPMENT_CHECKS` determines whether
+  // we check for OUT_OF_ORDER_ITERATION. Proper on::demand code should never trigger this error.
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.at_root()) { return OUT_OF_ORDER_ITERATION; }
 #endif
+  // assert_at_root() serves two purposes: in Debug mode, whether or not
+  // SIMDJSON_DEVELOPMENT_CHECKS is set or not, it checks that we are at the root of
+  // the document (this will typically be redundant). In release mode, it generates
+  // SIMDJSON_ASSUME statements to allow the compiler to make assumptions.
   iter.assert_at_root();
   switch (*iter.peek()) {
     case '[': {
@@ -81770,8 +81829,10 @@ public:
    * Cast this JSON value to a value when the document is an object or an array.
    *
    * You must not have begun iterating through the object or array. When
-   * SIMDJSON_DEVELOPMENT_CHECKS is defined, and you have already begun iterating,
-   * you will get an OUT_OF_ORDER_ITERATION error.
+   * SIMDJSON_DEVELOPMENT_CHECKS is set to 1 (which is the case when building in Debug mode
+   * by default), and you have already begun iterating,
+   * you will get an OUT_OF_ORDER_ITERATION error. If you have begun iterating, you can use
+   * rewind() to reset the document to its initial state before calling this method.
    *
    * @returns A value if a JSON array or object cannot be found.
    * @returns SCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
@@ -81899,10 +81960,11 @@ public:
    *
    * You must not have begun iterating through the object or array. When
    * SIMDJSON_DEVELOPMENT_CHECKS is defined, and you have already begun iterating,
-   * you will get an OUT_OF_ORDER_ITERATION error.
+   * you will get an OUT_OF_ORDER_ITERATION error. If you have begun iterating, you can use
+   * rewind() to reset the document to its initial state before calling this method.
    *
    * @returns A value value if a JSON array or object cannot be found.
-   * @exception iSCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
+   * @exception SCALAR_DOCUMENT_AS_VALUE error is the document is a scalar (see is_scalar() function).
    */
   simdjson_inline operator value() noexcept(false);
 #endif
@@ -83705,9 +83767,16 @@ simdjson_inline simdjson_result<object> document::start_or_resume_object() noexc
 simdjson_inline simdjson_result<value> document::get_value() noexcept {
   // Make sure we start any arrays or objects before returning, so that start_root_<object/array>()
   // gets called.
+
+  // It is the convention throughout the code that  the macro `SIMDJSON_DEVELOPMENT_CHECKS` determines whether
+  // we check for OUT_OF_ORDER_ITERATION. Proper on::demand code should never trigger this error.
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.at_root()) { return OUT_OF_ORDER_ITERATION; }
 #endif
+  // assert_at_root() serves two purposes: in Debug mode, whether or not
+  // SIMDJSON_DEVELOPMENT_CHECKS is set or not, it checks that we are at the root of
+  // the document (this will typically be redundant). In release mode, it generates
+  // SIMDJSON_ASSUME statements to allow the compiler to make assumptions.
   iter.assert_at_root();
   switch (*iter.peek()) {
     case '[': {
