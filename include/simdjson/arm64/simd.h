@@ -152,7 +152,7 @@ namespace {
     // Splat constructor
     simdjson_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
     // Member-by-member initialization
-/*#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
     simdjson_inline simd8(
       uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
       uint8_t v8,  uint8_t v9,  uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15
@@ -168,7 +168,7 @@ namespace {
       v0, v1, v2, v3, v4, v5, v6, v7,
       v8, v9, v10,v11,v12,v13,v14,v15
     }) {}
-#endif*/
+#endif
 
     // Repeat 16 values as many times as necessary (usually for lookup tables)
     simdjson_inline static simd8<uint8_t> repeat_16(
