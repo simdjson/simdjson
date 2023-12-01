@@ -21,7 +21,7 @@ namespace {
 #define simdjson_make_uint8x16_t(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, \
                              x13, x14, x15, x16)                                   \
    ([=]() {                                                                        \
-     static uint8_t array[16] = {x1, x2,  x3,  x4,  x5,  x6,  x7,  x8,             \
+     uint8_t array[16] = {x1, x2,  x3,  x4,  x5,  x6,  x7,  x8,             \
                                  x9, x10, x11, x12, x13, x14, x15, x16};           \
      return vld1q_u8(array);                                                       \
    }())
@@ -30,7 +30,7 @@ namespace {
 #define simdjson_make_int8x16_t(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, \
                              x13, x14, x15, x16)                                  \
    ([=]() {                                                                       \
-     static int8_t array[16] = {x1, x2,  x3,  x4,  x5,  x6,  x7,  x8,             \
+     int8_t array[16] = {x1, x2,  x3,  x4,  x5,  x6,  x7,  x8,             \
                                  x9, x10, x11, x12, x13, x14, x15, x16};          \
      return vld1q_s8(array);                                                      \
    }())
@@ -39,28 +39,28 @@ namespace {
 #ifndef simdjson_make_uint8x8_t
 #define simdjson_make_uint8x8_t(x1, x2, x3, x4, x5, x6, x7, x8)                \
    ([=]() {                                                                   \
-     static uint8_t array[8] = {x1, x2,  x3,  x4,  x5,  x6,  x7,  x8};        \
+     uint8_t array[8] = {x1, x2,  x3,  x4,  x5,  x6,  x7,  x8};        \
      return vld1_u8(array);                                                   \
    }())
 #endif
 #ifndef simdjson_make_int8x8_t
 #define simdjson_make_int8x8_t(x1, x2, x3, x4, x5, x6, x7, x8)                 \
    ([=]() {                                                                   \
-     static int8_t array[8] = {x1, x2,  x3,  x4,  x5,  x6,  x7,  x8};         \
+     int8_t array[8] = {x1, x2,  x3,  x4,  x5,  x6,  x7,  x8};         \
      return vld1_s8(array);                                                   \
    }())
 #endif
 #ifndef simdjson_make_uint16x8_t
 #define simdjson_make_uint16x8_t(x1, x2, x3, x4, x5, x6, x7, x8)                \
    ([=]() {                                                                    \
-     static uint16_t array[8] = {x1, x2,  x3,  x4,  x5,  x6,  x7,  x8};        \
+     uint16_t array[8] = {x1, x2,  x3,  x4,  x5,  x6,  x7,  x8};        \
      return vld1q_u16(array);                                                  \
    }())
 #endif
 #ifndef simdjson_make_int16x8_t
 #define simdjson_make_int16x8_t(x1, x2, x3, x4, x5, x6, x7, x8)                 \
    ([=]() {                                                                    \
-     static int16_t array[8] = {x1, x2,  x3,  x4,  x5,  x6,  x7,  x8};         \
+     int16_t array[8] = {x1, x2,  x3,  x4,  x5,  x6,  x7,  x8};         \
      return vld1q_s16(array);                                                  \
    }())
 #endif
@@ -152,7 +152,7 @@ namespace {
     // Splat constructor
     simdjson_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
     // Member-by-member initialization
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+/*#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
     simdjson_inline simd8(
       uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
       uint8_t v8,  uint8_t v9,  uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15
@@ -168,7 +168,7 @@ namespace {
       v0, v1, v2, v3, v4, v5, v6, v7,
       v8, v9, v10,v11,v12,v13,v14,v15
     }) {}
-#endif
+#endif*/
 
     // Repeat 16 values as many times as necessary (usually for lookup tables)
     simdjson_inline static simd8<uint8_t> repeat_16(
