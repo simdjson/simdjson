@@ -415,8 +415,22 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+
+  bool issue2093() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    padded_string docdata = R"(0.95000000000000000000)"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    double d;
+    ASSERT_SUCCESS(doc.get_double().get(d));
+    ASSERT_EQUAL(d, 0.95);
+    TEST_SUCCEED();
+  }
+
   bool run() {
-    return issue2045() &&
+    return issue2093() &&
+           issue2045() &&
            issue2017() &&
            issue_1898() &&
            issue1878() &&
