@@ -1092,7 +1092,7 @@ $(document).ready(function(){initNavTree('numberparsing_8h_source.html',''); ini
 <div class="line"><a name="l01004"></a><span class="lineno"> 1004</span>&#160;      <span class="comment">// Skip leading 0.00000 and see if it still overflows</span></div>
 <div class="line"><a name="l01005"></a><span class="lineno"> 1005</span>&#160;      <span class="keyword">const</span> uint8_t *start_digits = src + 2;</div>
 <div class="line"><a name="l01006"></a><span class="lineno"> 1006</span>&#160;      <span class="keywordflow">while</span> (*start_digits == <span class="charliteral">&#39;0&#39;</span>) { start_digits++; }</div>
-<div class="line"><a name="l01007"></a><span class="lineno"> 1007</span>&#160;      overflow = start_digits-src &gt; 19;</div>
+<div class="line"><a name="l01007"></a><span class="lineno"> 1007</span>&#160;      overflow = p-start_digits &gt; 19;</div>
 <div class="line"><a name="l01008"></a><span class="lineno"> 1008</span>&#160;    }</div>
 <div class="line"><a name="l01009"></a><span class="lineno"> 1009</span>&#160;  } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l01010"></a><span class="lineno"> 1010</span>&#160;    overflow = p-src &gt; 19;</div>
@@ -1291,7 +1291,7 @@ $(document).ready(function(){initNavTree('numberparsing_8h_source.html',''); ini
 <div class="line"><a name="l01203"></a><span class="lineno"> 1203</span>&#160;      <span class="comment">// Skip leading 0.00000 and see if it still overflows</span></div>
 <div class="line"><a name="l01204"></a><span class="lineno"> 1204</span>&#160;      <span class="keyword">const</span> uint8_t *start_digits = src + 2;</div>
 <div class="line"><a name="l01205"></a><span class="lineno"> 1205</span>&#160;      <span class="keywordflow">while</span> (*start_digits == <span class="charliteral">&#39;0&#39;</span>) { start_digits++; }</div>
-<div class="line"><a name="l01206"></a><span class="lineno"> 1206</span>&#160;      overflow = start_digits-src &gt; 19;</div>
+<div class="line"><a name="l01206"></a><span class="lineno"> 1206</span>&#160;      overflow = p-start_digits &gt; 19;</div>
 <div class="line"><a name="l01207"></a><span class="lineno"> 1207</span>&#160;    }</div>
 <div class="line"><a name="l01208"></a><span class="lineno"> 1208</span>&#160;  } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l01209"></a><span class="lineno"> 1209</span>&#160;    overflow = p-src &gt; 19;</div>
