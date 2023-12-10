@@ -19,7 +19,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Doxygen
         run: sudo apt-get install doxygen graphviz -y
       - run: mkdir docs

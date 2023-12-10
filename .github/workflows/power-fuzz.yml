@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-20.04
     name: Build on ubuntu-20.04 ppc64le
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: uraimo/run-on-arch-action@v2.0.5
         name: Run commands
         id: runcmd
