@@ -1656,8 +1656,8 @@ JSON string to a user-provided buffer:
 General Direct Access to the Raw JSON String
 --------------------------------
 If your value is a string, the `raw_json_string` you with `get_raw_json_string()` gives you direct access to the unprocessed
-string. The simdjson library allows you to have access to the raw underlying JSON
-more generally.
+string. But the simdjson library allows you to have access to the raw underlying JSON
+more generally, not just for strings.
 
 The simdjson library makes explicit assumptions about types. For examples, numbers
 must be integers (up to 64-bit integers) or binary64 floating-point numbers. Some users
