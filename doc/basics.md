@@ -771,12 +771,12 @@ type:
   ondemand::parser parser;
   ondemand::document doc = parser.iterate(json);
   for (auto val : doc) {
-    Car c = (Car)val;
+    Car c(val);
     std::cout << c.make << std::endl;
   }
 ```
 
-We may do so by providing additional template definition for the `ondemand::value` type.
+We may do so by providing additional template definitions to the `ondemand::value` type.
 We may start by providing a definition for `std::vector<double>` as follows:
 
 ```c++
@@ -797,7 +797,7 @@ simdjson::ondemand::value::get() noexcept {
 }
 ```
 
-We may tend provide support for our Car struct:
+We may then provide support for our `Car`` struct:
 
 ```C++
 template <>
@@ -830,7 +830,7 @@ simdjson_inline simdjson_result<Car> simdjson::ondemand::value::get() noexcept {
 }
 ```
 
-And that is all that is needed! Here is a complete example:
+And that is all that is needed! The following code is a complete example:
 
 ```c++
 #include "simdjson.h"
@@ -906,7 +906,7 @@ int main(void) {
   ondemand::parser parser;
   ondemand::document doc = parser.iterate(json);
   for (auto val : doc) {
-    Car c = (Car)val;
+    Car c(val);
     std::cout << c.make << std::endl;
   }
   direct();
@@ -914,7 +914,7 @@ int main(void) {
 }
 ```
 
-Observe that we require an explicit cast (`Car c = (Car)val`): it is by design.
+Observe that we require an explicit cast (`Car c(val)` instead of `for (Car c : doc) {`): it is by design.
 
 If you prefer to avoid exceptions, you may modify the `main` function as follows:
 
@@ -1016,7 +1016,7 @@ int main(void) {
        "tire_pressure": [ 40.1, 39.9 ] } )"_padded;
   ondemand::parser parser;
   ondemand::document doc = parser.iterate(json);
-  Car c = (Car)doc;
+  Car c(doc);
   std::cout << c.make << std::endl;
   return EXIT_SUCCESS;
 }

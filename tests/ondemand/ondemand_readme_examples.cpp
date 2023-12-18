@@ -40,6 +40,7 @@ bool to_string_example_no_except() {
 
 
 struct Car {
+  Car() = default;
   std::string make;
   std::string model;
   int64_t year;
@@ -156,7 +157,7 @@ int custom_type_on_document() {
        "tire_pressure": [ 40.1, 39.9 ] } )"_padded;
   ondemand::parser parser;
   ondemand::document doc = parser.iterate(json);
-  Car c = (Car)doc;
+  Car c(doc);
   std::cout << c.make << std::endl;
   return 0;
 }
@@ -172,7 +173,7 @@ int custom_type_with_exceptions() {
   ondemand::parser parser;
   ondemand::document doc = parser.iterate(json);
   for (auto val : doc) {
-    Car c = (Car)val;
+    Car c(val);
     std::cout << c.make << std::endl;
   }
   return 0;
