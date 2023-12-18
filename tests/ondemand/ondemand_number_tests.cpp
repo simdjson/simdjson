@@ -283,7 +283,8 @@ namespace number_tests {
     ondemand::parser parser;
     auto json = "1000000000.000000001"_padded;
     ondemand::document doc = parser.iterate(json);
-    ondemand::number number = doc.get_number();
+    ondemand::number number;
+    ASSERT_SUCCESS(doc.get_number().get(number));
     ASSERT_EQUAL(number.get_number_type(), ondemand::number_type::floating_point_number);
     ASSERT_EQUAL(number.get_double(), 1e9);
     TEST_SUCCEED();
