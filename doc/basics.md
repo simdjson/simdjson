@@ -15,6 +15,7 @@ An overview of what you need to know to use simdjson, with examples.
   - [string_view](#string_view)
   - [Using the Parsed JSON](#using-the-parsed-json)
     - [Using the Parsed JSON: Additional examples](#using-the-parsed-json-additional-examples)
+  - [Adding support for custom types](#adding-support-for-custom-types)
   - [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
   - [UTF-8 validation (alone)](#utf-8-validation-alone)
   - [JSON Pointer](#json-pointer)
@@ -424,8 +425,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 
   If you know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`.
 
-  You may also use explicit iterators: `for(auto i = array.begin(); i != array.end(); i++) {}`. You can check that an array is empty with the condition `auto i = array.begin(); if(i == array.end()) {...}`.
-* **Object Iteration:** You can iterate through an object's fields, as well: `for (auto field : object) { ... }`. You may also use explicit iterators : `for(auto i = object.begin(); i != object.end(); i++) { auto field = *i; .... }`. You can check that an object is empty with the condition `auto i = object.begin(); if(i == object.end()) {...}`.
+  You may also use explicit iterators: `for(auto i = array.begin(); i != array.end(); i++) {}`. You can check that an array is empty with the condition `auto i = array.begin(); if (i == array.end()) {...}`.
+* **Object Iteration:** You can iterate through an object's fields, as well: `for (auto field : object) { ... }`. You may also use explicit iterators : `for(auto i = object.begin(); i != object.end(); i++) { auto field = *i; .... }`. You can check that an object is empty with the condition `auto i = object.begin(); if (i == object.end()) {...}`.
   - `field.unescaped_key()` will get you the unescaped key string. E.g., the JSON string `"\u00e1"` becomes the Unicode string `á`. Optionally,  you pass `true` as a parameter to the `unescaped_key` method if you want invalid escape sequences to be replaced by a default replacement character (e.g., `\ud800\ud801\ud811`): otherwise bad escape sequences lead to an immediate error.
   - `field.value()` will get you the value, which you can then use all these other methods on.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index by index. Instead,
@@ -738,6 +739,289 @@ for (ondemand::object points : parser.iterate(points_json)) {
   }
 }
 ```
+
+
+Adding support for custom types
+----------------------
+
+Suppose you have your own types, such as a `Car` struct:
+
+```C++
+struct Car {
+  std::string make;
+  std::string model;
+  int64_t year;
+  std::vector<double> tire_pressure;
+};
+```
+
+You might want to write code that automatically parses the JSON content to your custom
+type:
+
+```C++
+  padded_string json = R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012,
+       "tire_pressure": [ 30.1, 31.0 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999,
+       "tire_pressure": [ 29.8, 30.0 ] }
+])"_padded;
+
+
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  for (auto val : doc) {
+    Car c = (Car)val;
+    std::cout << c.make << std::endl;
+  }
+```
+
+We may do so by providing additional template definition for the `ondemand::value` type.
+We may start by providing a definition for `std::vector<double>` as follows:
+
+```c++
+template <>
+simdjson_inline simdjson_result<std::vector<double>>
+simdjson::ondemand::value::get() noexcept {
+  ondemand::array array;
+  auto error = get_array().get(array);
+  if (error) { return error; }
+  std::vector<double> vec;
+  for (auto v : array) {
+    double val;
+    error = v.get_double().get(val);
+    if (error) { return error; }
+    vec.push_back(val);
+  }
+  return vec;
+}
+```
+
+We may tend provide support for our Car struct:
+
+```C++
+template <>
+simdjson_inline simdjson_result<Car> simdjson::ondemand::value::get() noexcept {
+  ondemand::object obj;
+  auto error = get_object().get(obj);
+  if (error) { return error; }
+  Car car;
+  // Instead of repeatedly obj["something"], we iterate through the object which
+  // we expect to be faster.
+  for (auto field : obj) {
+    raw_json_string key;
+    error = field.key().get(key);
+    if (error) { return error; }
+    if (key == "make") {
+      error = field.value().get_string(car.make);
+      if (error) { return error; }
+    } else if (key == "model") {
+      error = field.value().get_string(car.model);
+      if (error) { return error; }
+    } else if (key == "year") {
+      error = field.value().get_int64().get(car.year);
+      if (error) { return error; }
+    } else if (key == "tire_pressure") {
+      error = field.value().get<std::vector<double>>().get(car.tire_pressure);
+      if (auto  error) { return error; }
+    }
+  }
+  return car;
+}
+```
+
+And that is all that is needed! Here is a complete example:
+
+```c++
+#include "simdjson.h"
+#include <iostream>
+#include <vector>
+
+using namespace simdjson;
+
+/**
+ * A custom type that we want to parse.
+ */
+struct Car {
+  std::string make;
+  std::string model;
+  int64_t year;
+  std::vector<double> tire_pressure;
+};
+
+template <>
+simdjson_inline simdjson_result<std::vector<double>>
+simdjson::ondemand::value::get() noexcept {
+  ondemand::array array;
+  auto error = get_array().get(array);
+  if (error) { return error; }
+  std::vector<double> vec;
+  for (auto v : array) {
+    double val;
+    error = v.get_double().get(val);
+    if (error) { return error; }
+    vec.push_back(val);
+  }
+  return vec;
+}
+
+
+template <>
+simdjson_inline simdjson_result<Car> simdjson::ondemand::value::get() noexcept {
+  ondemand::object obj;
+  auto error = get_object().get(obj);
+  if (error) { return error; }
+  Car car;
+  // Instead of repeatedly obj["something"], we iterate through the object which
+  // we expect to be faster.
+  for (auto field : obj) {
+    raw_json_string key;
+    error = field.key().get(key);
+    if (error) { return error; }
+    if (key == "make") {
+      error = field.value().get_string(car.make);
+      if (error) { return error; }
+    } else if (key == "model") {
+      error = field.value().get_string(car.model);
+      if (error) { return error; }
+    } else if (key == "year") {
+      error = field.value().get_int64().get(car.year);
+      if (error) { return error; }
+    } else if (key == "tire_pressure") {
+      error = field.value().get<std::vector<double>>().get(car.tire_pressure);
+      if (error) { return error; }
+    }
+  }
+  return car;
+}
+
+int main(void) {
+  padded_string json = R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012,
+       "tire_pressure": [ 30.1, 31.0 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999,
+       "tire_pressure": [ 29.8, 30.0 ] }
+])"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  for (auto val : doc) {
+    Car c = (Car)val;
+    std::cout << c.make << std::endl;
+  }
+  direct();
+  return EXIT_SUCCESS;
+}
+```
+
+Observe that we require an explicit cast (`Car c = (Car)val`): it is by design.
+
+If you prefer to avoid exceptions, you may modify the `main` function as follows:
+
+```c++
+int main(void) {
+  padded_string json = R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012,
+       "tire_pressure": [ 30.1, 31.0 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999,
+       "tire_pressure": [ 29.8, 30.0 ] }
+])"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  auto error = parser.iterate(json).get(doc);
+  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  for (auto val : doc) {
+    Car c;
+    error = val.get<Car>().get(c);
+    if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+    std::cout << c.make << std::endl;
+  }
+  return EXIT_SUCCESS;
+}
+```
+
+Our example is limited to `ondemand::value` instances. If you wish to also be able to map
+directly the document instance itself to a custom type, you need to provide the definitions to
+the `ondemand::document` type. In this instance, we must replace the function with signature
+`simdjson_result<Car> simdjson::ondemand::value::get()` with a function having signature
+`simdjson_result<Car> simdjson::ondemand::document::get() &`. The following is a complete
+example:
+
+```C++
+#include "simdjson.h"
+#include <iostream>
+#include <vector>
+
+using namespace simdjson;
+
+/**
+ * A custom type that we want to parse.
+ */
+struct Car {
+  std::string make;
+  std::string model;
+  int64_t year;
+  std::vector<double> tire_pressure;
+};
+
+template <>
+simdjson_inline simdjson_result<std::vector<double>>
+simdjson::ondemand::value::get() noexcept {
+  ondemand::array array;
+  if (auto error = get_array().get(array); error) { return error; }
+  std::vector<double> vec;
+  for (auto v : array) {
+    double val;
+    if (auto error = v.get_double().get(val); error) { return error; }
+    vec.push_back(val);
+  }
+  return vec;
+}
+
+
+template <>
+simdjson_inline simdjson_result<Car> simdjson::ondemand::document::get() & noexcept {
+  ondemand::object obj;
+  auto error = get_object().get(obj);
+  if (error) {
+    return error;
+  }
+  Car car;
+  // Instead of repeatedly obj["something"], we iterate through the object which
+  // we expect to be faster.
+  for (auto field : obj) {
+    raw_json_string key;
+    error = field.key().get(key);
+    if (error) { return error; }
+    if (key == "make") {
+      error = field.value().get_string(car.make);
+      if (error) { return error; }
+    } else if (key == "model") {
+      error = field.value().get_string(car.model);
+      if (error) { return error; }
+    } else if (key == "year") {
+      error = field.value().get_int64().get(car.year);
+      if (error) { return error; }
+    } else if (key == "tire_pressure") {
+      error = field.value().get<std::vector<double>>().get(car.tire_pressure);
+      if (error) { return error; }
+    }
+  }
+  return car;
+}
+
+int main(void) {
+  padded_string json = R"( { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] } )"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  Car c = (Car)doc;
+  std::cout << c.make << std::endl;
+  return EXIT_SUCCESS;
+}
+```
+
 
 Minifying JSON strings without parsing
 ----------------------
@@ -1779,7 +2063,7 @@ The same routine can be written without exceptions handling:
 ```C++
   std::string name;
   auto err = doc["name"].get_string(name);
-  if(err) { /* handle error */ }
+  if (err) { /* handle error */ }
 ```
 
 The `std::string` instance, once created, is independent. Unlike our `std::string_view` instances,
@@ -1794,7 +2078,7 @@ can use it with features such as `std::optional`:
   ondemand::parser parser;
   ondemand::document doc = parser.iterate(json);
   std::optional<std::string> value;
-  if(doc["foo1"].get_string(value)) { /* error */ }
+  if (doc["foo1"].get_string(value)) { /* error */ }
   // value was populated with "3.1416"
 ```
 

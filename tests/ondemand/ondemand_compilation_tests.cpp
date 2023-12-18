@@ -7,9 +7,9 @@ using namespace simdjson;
 #if SIMDJSON_EXCEPTIONS
 
 // bogus functions for compilation tests
-void process1(int ) {}
-void process2(int ) {}
-void process3(int ) {}
+void process1(int64_t ) {}
+void process2(int64_t ) {}
+void process3(int64_t ) {}
 
 // Do not run this, it is only meant to compile
 void compilation_test_1() {

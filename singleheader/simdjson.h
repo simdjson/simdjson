@@ -27434,6 +27434,14 @@ public:
 
 #if SIMDJSON_EXCEPTIONS
   /**
+   * Cast this JSON value to an instance of type T. The programmer is responsible for
+   * providing an implementation of get<T> for the type T.
+   *
+   * @returns An instance of type T
+   */
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
+  /**
    * Cast this JSON value to an array.
    *
    * @returns An object that can be used to iterate the array.
@@ -27883,6 +27891,8 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) noexcept;
 
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator arm64::ondemand::array() noexcept(false);
   simdjson_inline operator arm64::ondemand::object() noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -29774,6 +29784,8 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
 
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   /**
    * Cast this JSON value to an array.
    *
@@ -30220,10 +30232,12 @@ public:
   simdjson_inline simdjson_result<value> get_value() noexcept;
 
   simdjson_inline simdjson_result<bool> is_null() noexcept;
+  template<typename T> simdjson_inline simdjson_result<T> get() & noexcept;
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
   simdjson_inline operator document&() const noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator array() & noexcept(false);
   simdjson_inline operator object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -30296,8 +30310,9 @@ public:
 
   template<typename T> simdjson_inline error_code get(T &out) & noexcept;
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator arm64::ondemand::array() & noexcept(false);
   simdjson_inline operator arm64::ondemand::object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -30364,8 +30379,9 @@ public:
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<arm64::ondemand::value> get_value() noexcept;
   simdjson_inline simdjson_result<bool> is_null() noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator arm64::ondemand::array() & noexcept(false);
   simdjson_inline operator arm64::ondemand::object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -31760,6 +31776,8 @@ template<typename T> simdjson_inline error_code document::get(T &out) && noexcep
 }
 
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline document::operator T() noexcept(false) { return get<T>(); }
 simdjson_inline document::operator array() & noexcept(false) { return get_array(); }
 simdjson_inline document::operator object() & noexcept(false) { return get_object(); }
 simdjson_inline document::operator uint64_t() noexcept(false) { return get_uint64(); }
@@ -32188,8 +32206,18 @@ simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_jso
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
 simdjson_inline simdjson_result<value> document_reference::get_value() noexcept { return doc->get_value(); }
 simdjson_inline simdjson_result<bool> document_reference::is_null() noexcept { return doc->get_root_value_iterator().is_root_null(false); }
-
+template<> simdjson_inline simdjson_result<array> document_reference::get() & noexcept { return get_array(); }
+template<> simdjson_inline simdjson_result<object> document_reference::get() & noexcept { return get_object(); }
+template<> simdjson_inline simdjson_result<raw_json_string> document_reference::get() & noexcept { return get_raw_json_string(); }
+template<> simdjson_inline simdjson_result<std::string_view> document_reference::get() & noexcept { return get_string(false); }
+template<> simdjson_inline simdjson_result<double> document_reference::get() & noexcept { return get_double(); }
+template<> simdjson_inline simdjson_result<uint64_t> document_reference::get() & noexcept { return get_uint64(); }
+template<> simdjson_inline simdjson_result<int64_t> document_reference::get() & noexcept { return get_int64(); }
+template<> simdjson_inline simdjson_result<bool> document_reference::get() & noexcept { return get_bool(); }
+template<> simdjson_inline simdjson_result<value> document_reference::get() & noexcept { return get_value(); }
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline document_reference::operator T() noexcept(false) { return get<T>(); }
 simdjson_inline document_reference::operator array() & noexcept(false) { return array(*doc); }
 simdjson_inline document_reference::operator object() & noexcept(false) { return object(*doc); }
 simdjson_inline document_reference::operator uint64_t() noexcept(false) { return get_uint64(); }
@@ -34925,6 +34953,10 @@ template<typename T> simdjson_inline error_code value::get(T &out) noexcept {
 }
 
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline value::operator T() noexcept(false) {
+  return get<T>();
+}
 simdjson_inline value::operator array() noexcept(false) {
   return get_array();
 }
@@ -35241,6 +35273,11 @@ simdjson_inline simdjson_result<arm64::ondemand::number> simdjson_result<arm64::
   return first.get_number();
 }
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline simdjson_result<arm64::ondemand::value>::operator T() noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first;
+}
 simdjson_inline simdjson_result<arm64::ondemand::value>::operator arm64::ondemand::array() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
@@ -37353,6 +37390,14 @@ public:
 
 #if SIMDJSON_EXCEPTIONS
   /**
+   * Cast this JSON value to an instance of type T. The programmer is responsible for
+   * providing an implementation of get<T> for the type T.
+   *
+   * @returns An instance of type T
+   */
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
+  /**
    * Cast this JSON value to an array.
    *
    * @returns An object that can be used to iterate the array.
@@ -37802,6 +37847,8 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) noexcept;
 
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator fallback::ondemand::array() noexcept(false);
   simdjson_inline operator fallback::ondemand::object() noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -39693,6 +39740,8 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
 
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   /**
    * Cast this JSON value to an array.
    *
@@ -40139,10 +40188,12 @@ public:
   simdjson_inline simdjson_result<value> get_value() noexcept;
 
   simdjson_inline simdjson_result<bool> is_null() noexcept;
+  template<typename T> simdjson_inline simdjson_result<T> get() & noexcept;
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
   simdjson_inline operator document&() const noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator array() & noexcept(false);
   simdjson_inline operator object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -40215,8 +40266,9 @@ public:
 
   template<typename T> simdjson_inline error_code get(T &out) & noexcept;
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator fallback::ondemand::array() & noexcept(false);
   simdjson_inline operator fallback::ondemand::object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -40283,8 +40335,9 @@ public:
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<fallback::ondemand::value> get_value() noexcept;
   simdjson_inline simdjson_result<bool> is_null() noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator fallback::ondemand::array() & noexcept(false);
   simdjson_inline operator fallback::ondemand::object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -41679,6 +41732,8 @@ template<typename T> simdjson_inline error_code document::get(T &out) && noexcep
 }
 
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline document::operator T() noexcept(false) { return get<T>(); }
 simdjson_inline document::operator array() & noexcept(false) { return get_array(); }
 simdjson_inline document::operator object() & noexcept(false) { return get_object(); }
 simdjson_inline document::operator uint64_t() noexcept(false) { return get_uint64(); }
@@ -42107,8 +42162,18 @@ simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_jso
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
 simdjson_inline simdjson_result<value> document_reference::get_value() noexcept { return doc->get_value(); }
 simdjson_inline simdjson_result<bool> document_reference::is_null() noexcept { return doc->get_root_value_iterator().is_root_null(false); }
-
+template<> simdjson_inline simdjson_result<array> document_reference::get() & noexcept { return get_array(); }
+template<> simdjson_inline simdjson_result<object> document_reference::get() & noexcept { return get_object(); }
+template<> simdjson_inline simdjson_result<raw_json_string> document_reference::get() & noexcept { return get_raw_json_string(); }
+template<> simdjson_inline simdjson_result<std::string_view> document_reference::get() & noexcept { return get_string(false); }
+template<> simdjson_inline simdjson_result<double> document_reference::get() & noexcept { return get_double(); }
+template<> simdjson_inline simdjson_result<uint64_t> document_reference::get() & noexcept { return get_uint64(); }
+template<> simdjson_inline simdjson_result<int64_t> document_reference::get() & noexcept { return get_int64(); }
+template<> simdjson_inline simdjson_result<bool> document_reference::get() & noexcept { return get_bool(); }
+template<> simdjson_inline simdjson_result<value> document_reference::get() & noexcept { return get_value(); }
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline document_reference::operator T() noexcept(false) { return get<T>(); }
 simdjson_inline document_reference::operator array() & noexcept(false) { return array(*doc); }
 simdjson_inline document_reference::operator object() & noexcept(false) { return object(*doc); }
 simdjson_inline document_reference::operator uint64_t() noexcept(false) { return get_uint64(); }
@@ -44844,6 +44909,10 @@ template<typename T> simdjson_inline error_code value::get(T &out) noexcept {
 }
 
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline value::operator T() noexcept(false) {
+  return get<T>();
+}
 simdjson_inline value::operator array() noexcept(false) {
   return get_array();
 }
@@ -45160,6 +45229,11 @@ simdjson_inline simdjson_result<fallback::ondemand::number> simdjson_result<fall
   return first.get_number();
 }
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline simdjson_result<fallback::ondemand::value>::operator T() noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first;
+}
 simdjson_inline simdjson_result<fallback::ondemand::value>::operator fallback::ondemand::array() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
@@ -47764,6 +47838,14 @@ public:
 
 #if SIMDJSON_EXCEPTIONS
   /**
+   * Cast this JSON value to an instance of type T. The programmer is responsible for
+   * providing an implementation of get<T> for the type T.
+   *
+   * @returns An instance of type T
+   */
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
+  /**
    * Cast this JSON value to an array.
    *
    * @returns An object that can be used to iterate the array.
@@ -48213,6 +48295,8 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) noexcept;
 
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator haswell::ondemand::array() noexcept(false);
   simdjson_inline operator haswell::ondemand::object() noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -50104,6 +50188,8 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
 
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   /**
    * Cast this JSON value to an array.
    *
@@ -50550,10 +50636,12 @@ public:
   simdjson_inline simdjson_result<value> get_value() noexcept;
 
   simdjson_inline simdjson_result<bool> is_null() noexcept;
+  template<typename T> simdjson_inline simdjson_result<T> get() & noexcept;
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
   simdjson_inline operator document&() const noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator array() & noexcept(false);
   simdjson_inline operator object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -50626,8 +50714,9 @@ public:
 
   template<typename T> simdjson_inline error_code get(T &out) & noexcept;
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator haswell::ondemand::array() & noexcept(false);
   simdjson_inline operator haswell::ondemand::object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -50694,8 +50783,9 @@ public:
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<haswell::ondemand::value> get_value() noexcept;
   simdjson_inline simdjson_result<bool> is_null() noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator haswell::ondemand::array() & noexcept(false);
   simdjson_inline operator haswell::ondemand::object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -52090,6 +52180,8 @@ template<typename T> simdjson_inline error_code document::get(T &out) && noexcep
 }
 
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline document::operator T() noexcept(false) { return get<T>(); }
 simdjson_inline document::operator array() & noexcept(false) { return get_array(); }
 simdjson_inline document::operator object() & noexcept(false) { return get_object(); }
 simdjson_inline document::operator uint64_t() noexcept(false) { return get_uint64(); }
@@ -52518,8 +52610,18 @@ simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_jso
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
 simdjson_inline simdjson_result<value> document_reference::get_value() noexcept { return doc->get_value(); }
 simdjson_inline simdjson_result<bool> document_reference::is_null() noexcept { return doc->get_root_value_iterator().is_root_null(false); }
-
+template<> simdjson_inline simdjson_result<array> document_reference::get() & noexcept { return get_array(); }
+template<> simdjson_inline simdjson_result<object> document_reference::get() & noexcept { return get_object(); }
+template<> simdjson_inline simdjson_result<raw_json_string> document_reference::get() & noexcept { return get_raw_json_string(); }
+template<> simdjson_inline simdjson_result<std::string_view> document_reference::get() & noexcept { return get_string(false); }
+template<> simdjson_inline simdjson_result<double> document_reference::get() & noexcept { return get_double(); }
+template<> simdjson_inline simdjson_result<uint64_t> document_reference::get() & noexcept { return get_uint64(); }
+template<> simdjson_inline simdjson_result<int64_t> document_reference::get() & noexcept { return get_int64(); }
+template<> simdjson_inline simdjson_result<bool> document_reference::get() & noexcept { return get_bool(); }
+template<> simdjson_inline simdjson_result<value> document_reference::get() & noexcept { return get_value(); }
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline document_reference::operator T() noexcept(false) { return get<T>(); }
 simdjson_inline document_reference::operator array() & noexcept(false) { return array(*doc); }
 simdjson_inline document_reference::operator object() & noexcept(false) { return object(*doc); }
 simdjson_inline document_reference::operator uint64_t() noexcept(false) { return get_uint64(); }
@@ -55255,6 +55357,10 @@ template<typename T> simdjson_inline error_code value::get(T &out) noexcept {
 }
 
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline value::operator T() noexcept(false) {
+  return get<T>();
+}
 simdjson_inline value::operator array() noexcept(false) {
   return get_array();
 }
@@ -55571,6 +55677,11 @@ simdjson_inline simdjson_result<haswell::ondemand::number> simdjson_result<haswe
   return first.get_number();
 }
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline simdjson_result<haswell::ondemand::value>::operator T() noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first;
+}
 simdjson_inline simdjson_result<haswell::ondemand::value>::operator haswell::ondemand::array() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
@@ -58174,6 +58285,14 @@ public:
 
 #if SIMDJSON_EXCEPTIONS
   /**
+   * Cast this JSON value to an instance of type T. The programmer is responsible for
+   * providing an implementation of get<T> for the type T.
+   *
+   * @returns An instance of type T
+   */
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
+  /**
    * Cast this JSON value to an array.
    *
    * @returns An object that can be used to iterate the array.
@@ -58623,6 +58742,8 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) noexcept;
 
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator icelake::ondemand::array() noexcept(false);
   simdjson_inline operator icelake::ondemand::object() noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -60514,6 +60635,8 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
 
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   /**
    * Cast this JSON value to an array.
    *
@@ -60960,10 +61083,12 @@ public:
   simdjson_inline simdjson_result<value> get_value() noexcept;
 
   simdjson_inline simdjson_result<bool> is_null() noexcept;
+  template<typename T> simdjson_inline simdjson_result<T> get() & noexcept;
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
   simdjson_inline operator document&() const noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator array() & noexcept(false);
   simdjson_inline operator object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -61036,8 +61161,9 @@ public:
 
   template<typename T> simdjson_inline error_code get(T &out) & noexcept;
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator icelake::ondemand::array() & noexcept(false);
   simdjson_inline operator icelake::ondemand::object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -61104,8 +61230,9 @@ public:
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<icelake::ondemand::value> get_value() noexcept;
   simdjson_inline simdjson_result<bool> is_null() noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator icelake::ondemand::array() & noexcept(false);
   simdjson_inline operator icelake::ondemand::object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -62500,6 +62627,8 @@ template<typename T> simdjson_inline error_code document::get(T &out) && noexcep
 }
 
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline document::operator T() noexcept(false) { return get<T>(); }
 simdjson_inline document::operator array() & noexcept(false) { return get_array(); }
 simdjson_inline document::operator object() & noexcept(false) { return get_object(); }
 simdjson_inline document::operator uint64_t() noexcept(false) { return get_uint64(); }
@@ -62928,8 +63057,18 @@ simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_jso
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
 simdjson_inline simdjson_result<value> document_reference::get_value() noexcept { return doc->get_value(); }
 simdjson_inline simdjson_result<bool> document_reference::is_null() noexcept { return doc->get_root_value_iterator().is_root_null(false); }
-
+template<> simdjson_inline simdjson_result<array> document_reference::get() & noexcept { return get_array(); }
+template<> simdjson_inline simdjson_result<object> document_reference::get() & noexcept { return get_object(); }
+template<> simdjson_inline simdjson_result<raw_json_string> document_reference::get() & noexcept { return get_raw_json_string(); }
+template<> simdjson_inline simdjson_result<std::string_view> document_reference::get() & noexcept { return get_string(false); }
+template<> simdjson_inline simdjson_result<double> document_reference::get() & noexcept { return get_double(); }
+template<> simdjson_inline simdjson_result<uint64_t> document_reference::get() & noexcept { return get_uint64(); }
+template<> simdjson_inline simdjson_result<int64_t> document_reference::get() & noexcept { return get_int64(); }
+template<> simdjson_inline simdjson_result<bool> document_reference::get() & noexcept { return get_bool(); }
+template<> simdjson_inline simdjson_result<value> document_reference::get() & noexcept { return get_value(); }
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline document_reference::operator T() noexcept(false) { return get<T>(); }
 simdjson_inline document_reference::operator array() & noexcept(false) { return array(*doc); }
 simdjson_inline document_reference::operator object() & noexcept(false) { return object(*doc); }
 simdjson_inline document_reference::operator uint64_t() noexcept(false) { return get_uint64(); }
@@ -65665,6 +65804,10 @@ template<typename T> simdjson_inline error_code value::get(T &out) noexcept {
 }
 
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline value::operator T() noexcept(false) {
+  return get<T>();
+}
 simdjson_inline value::operator array() noexcept(false) {
   return get_array();
 }
@@ -65981,6 +66124,11 @@ simdjson_inline simdjson_result<icelake::ondemand::number> simdjson_result<icela
   return first.get_number();
 }
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline simdjson_result<icelake::ondemand::value>::operator T() noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first;
+}
 simdjson_inline simdjson_result<icelake::ondemand::value>::operator icelake::ondemand::array() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
@@ -68699,6 +68847,14 @@ public:
 
 #if SIMDJSON_EXCEPTIONS
   /**
+   * Cast this JSON value to an instance of type T. The programmer is responsible for
+   * providing an implementation of get<T> for the type T.
+   *
+   * @returns An instance of type T
+   */
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
+  /**
    * Cast this JSON value to an array.
    *
    * @returns An object that can be used to iterate the array.
@@ -69148,6 +69304,8 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) noexcept;
 
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator ppc64::ondemand::array() noexcept(false);
   simdjson_inline operator ppc64::ondemand::object() noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -71039,6 +71197,8 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
 
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   /**
    * Cast this JSON value to an array.
    *
@@ -71485,10 +71645,12 @@ public:
   simdjson_inline simdjson_result<value> get_value() noexcept;
 
   simdjson_inline simdjson_result<bool> is_null() noexcept;
+  template<typename T> simdjson_inline simdjson_result<T> get() & noexcept;
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
   simdjson_inline operator document&() const noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator array() & noexcept(false);
   simdjson_inline operator object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -71561,8 +71723,9 @@ public:
 
   template<typename T> simdjson_inline error_code get(T &out) & noexcept;
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator ppc64::ondemand::array() & noexcept(false);
   simdjson_inline operator ppc64::ondemand::object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -71629,8 +71792,9 @@ public:
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<ppc64::ondemand::value> get_value() noexcept;
   simdjson_inline simdjson_result<bool> is_null() noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator ppc64::ondemand::array() & noexcept(false);
   simdjson_inline operator ppc64::ondemand::object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -73025,6 +73189,8 @@ template<typename T> simdjson_inline error_code document::get(T &out) && noexcep
 }
 
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline document::operator T() noexcept(false) { return get<T>(); }
 simdjson_inline document::operator array() & noexcept(false) { return get_array(); }
 simdjson_inline document::operator object() & noexcept(false) { return get_object(); }
 simdjson_inline document::operator uint64_t() noexcept(false) { return get_uint64(); }
@@ -73453,8 +73619,18 @@ simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_jso
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
 simdjson_inline simdjson_result<value> document_reference::get_value() noexcept { return doc->get_value(); }
 simdjson_inline simdjson_result<bool> document_reference::is_null() noexcept { return doc->get_root_value_iterator().is_root_null(false); }
-
+template<> simdjson_inline simdjson_result<array> document_reference::get() & noexcept { return get_array(); }
+template<> simdjson_inline simdjson_result<object> document_reference::get() & noexcept { return get_object(); }
+template<> simdjson_inline simdjson_result<raw_json_string> document_reference::get() & noexcept { return get_raw_json_string(); }
+template<> simdjson_inline simdjson_result<std::string_view> document_reference::get() & noexcept { return get_string(false); }
+template<> simdjson_inline simdjson_result<double> document_reference::get() & noexcept { return get_double(); }
+template<> simdjson_inline simdjson_result<uint64_t> document_reference::get() & noexcept { return get_uint64(); }
+template<> simdjson_inline simdjson_result<int64_t> document_reference::get() & noexcept { return get_int64(); }
+template<> simdjson_inline simdjson_result<bool> document_reference::get() & noexcept { return get_bool(); }
+template<> simdjson_inline simdjson_result<value> document_reference::get() & noexcept { return get_value(); }
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline document_reference::operator T() noexcept(false) { return get<T>(); }
 simdjson_inline document_reference::operator array() & noexcept(false) { return array(*doc); }
 simdjson_inline document_reference::operator object() & noexcept(false) { return object(*doc); }
 simdjson_inline document_reference::operator uint64_t() noexcept(false) { return get_uint64(); }
@@ -76190,6 +76366,10 @@ template<typename T> simdjson_inline error_code value::get(T &out) noexcept {
 }
 
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline value::operator T() noexcept(false) {
+  return get<T>();
+}
 simdjson_inline value::operator array() noexcept(false) {
   return get_array();
 }
@@ -76506,6 +76686,11 @@ simdjson_inline simdjson_result<ppc64::ondemand::number> simdjson_result<ppc64::
   return first.get_number();
 }
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline simdjson_result<ppc64::ondemand::value>::operator T() noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first;
+}
 simdjson_inline simdjson_result<ppc64::ondemand::value>::operator ppc64::ondemand::array() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
@@ -79547,6 +79732,14 @@ public:
 
 #if SIMDJSON_EXCEPTIONS
   /**
+   * Cast this JSON value to an instance of type T. The programmer is responsible for
+   * providing an implementation of get<T> for the type T.
+   *
+   * @returns An instance of type T
+   */
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
+  /**
    * Cast this JSON value to an array.
    *
    * @returns An object that can be used to iterate the array.
@@ -79996,6 +80189,8 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) noexcept;
 
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator westmere::ondemand::array() noexcept(false);
   simdjson_inline operator westmere::ondemand::object() noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -81887,6 +82082,8 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
 
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   /**
    * Cast this JSON value to an array.
    *
@@ -82333,10 +82530,12 @@ public:
   simdjson_inline simdjson_result<value> get_value() noexcept;
 
   simdjson_inline simdjson_result<bool> is_null() noexcept;
+  template<typename T> simdjson_inline simdjson_result<T> get() & noexcept;
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
   simdjson_inline operator document&() const noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator array() & noexcept(false);
   simdjson_inline operator object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -82409,8 +82608,9 @@ public:
 
   template<typename T> simdjson_inline error_code get(T &out) & noexcept;
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator westmere::ondemand::array() & noexcept(false);
   simdjson_inline operator westmere::ondemand::object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -82477,8 +82677,9 @@ public:
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<westmere::ondemand::value> get_value() noexcept;
   simdjson_inline simdjson_result<bool> is_null() noexcept;
-
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  simdjson_inline operator T() noexcept(false);
   simdjson_inline operator westmere::ondemand::array() & noexcept(false);
   simdjson_inline operator westmere::ondemand::object() & noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);
@@ -83873,6 +84074,8 @@ template<typename T> simdjson_inline error_code document::get(T &out) && noexcep
 }
 
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline document::operator T() noexcept(false) { return get<T>(); }
 simdjson_inline document::operator array() & noexcept(false) { return get_array(); }
 simdjson_inline document::operator object() & noexcept(false) { return get_object(); }
 simdjson_inline document::operator uint64_t() noexcept(false) { return get_uint64(); }
@@ -84301,8 +84504,18 @@ simdjson_inline simdjson_result<raw_json_string> document_reference::get_raw_jso
 simdjson_inline simdjson_result<bool> document_reference::get_bool() noexcept { return doc->get_root_value_iterator().get_root_bool(false); }
 simdjson_inline simdjson_result<value> document_reference::get_value() noexcept { return doc->get_value(); }
 simdjson_inline simdjson_result<bool> document_reference::is_null() noexcept { return doc->get_root_value_iterator().is_root_null(false); }
-
+template<> simdjson_inline simdjson_result<array> document_reference::get() & noexcept { return get_array(); }
+template<> simdjson_inline simdjson_result<object> document_reference::get() & noexcept { return get_object(); }
+template<> simdjson_inline simdjson_result<raw_json_string> document_reference::get() & noexcept { return get_raw_json_string(); }
+template<> simdjson_inline simdjson_result<std::string_view> document_reference::get() & noexcept { return get_string(false); }
+template<> simdjson_inline simdjson_result<double> document_reference::get() & noexcept { return get_double(); }
+template<> simdjson_inline simdjson_result<uint64_t> document_reference::get() & noexcept { return get_uint64(); }
+template<> simdjson_inline simdjson_result<int64_t> document_reference::get() & noexcept { return get_int64(); }
+template<> simdjson_inline simdjson_result<bool> document_reference::get() & noexcept { return get_bool(); }
+template<> simdjson_inline simdjson_result<value> document_reference::get() & noexcept { return get_value(); }
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline document_reference::operator T() noexcept(false) { return get<T>(); }
 simdjson_inline document_reference::operator array() & noexcept(false) { return array(*doc); }
 simdjson_inline document_reference::operator object() & noexcept(false) { return object(*doc); }
 simdjson_inline document_reference::operator uint64_t() noexcept(false) { return get_uint64(); }
@@ -87038,6 +87251,10 @@ template<typename T> simdjson_inline error_code value::get(T &out) noexcept {
 }
 
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline value::operator T() noexcept(false) {
+  return get<T>();
+}
 simdjson_inline value::operator array() noexcept(false) {
   return get_array();
 }
@@ -87354,6 +87571,11 @@ simdjson_inline simdjson_result<westmere::ondemand::number> simdjson_result<west
   return first.get_number();
 }
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline simdjson_result<westmere::ondemand::value>::operator T() noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first;
+}
 simdjson_inline simdjson_result<westmere::ondemand::value>::operator westmere::ondemand::array() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
