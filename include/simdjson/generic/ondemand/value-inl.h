@@ -416,7 +416,7 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> simdj
 template <class T>
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator T() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
-  return (T)first;
+  return static_cast<T>(first);
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
