@@ -9,7 +9,6 @@ var namespacesimdjson =
     [ "SIMDJSON_IMPLEMENTATION", null, [
       [ "numberparsing", null, [
         [ "parse_number", "numberparsing_8h.html#abfab4a11a66cf3429d4b584165a0d47e", null ],
-        [ "slow_float_parsing", "numberparsing_8h.html#a8a19d7f5fc0e7495a136073daee8df78", null ],
         [ "write_float", "numberparsing_8h.html#a4c645a86ea19178e55e6ceaa96ad29ae", null ]
       ] ],
       [ "ondemand", "namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html", "namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand" ],
