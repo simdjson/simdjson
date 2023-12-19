@@ -629,7 +629,7 @@ simdjson_inline document_reference::operator uint64_t() noexcept(false) { return
 simdjson_inline document_reference::operator int64_t() noexcept(false) { return get_int64(); }
 simdjson_inline document_reference::operator double() noexcept(false) { return get_double(); }
 simdjson_inline document_reference::operator std::string_view() noexcept(false) { return std::string_view(*doc); }
-simdjson_inline document_reference::operator raw_json_string() noexcept(false) { return raw_json_string(*doc); }
+simdjson_inline document_reference::operator raw_json_string() noexcept(false) { return get_raw_json_string(); }
 simdjson_inline document_reference::operator bool() noexcept(false) { return get_bool(); }
 simdjson_inline document_reference::operator value() noexcept(false) { return value(*doc); }
 #endif
