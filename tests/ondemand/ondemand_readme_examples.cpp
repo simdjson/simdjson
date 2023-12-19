@@ -40,7 +40,7 @@ bool to_string_example_no_except() {
 
 
 struct Car {
-  Car() = default;
+  Car() : make(), model(), year(), tire_pressure() {}
   std::string make;
   std::string model;
   int64_t year;
