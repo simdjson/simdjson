@@ -446,11 +446,8 @@ simdjson_inline size_t significant_digits(const uint8_t * start_digits, size_t d
 } // unnamed namespace
 
 /** @private */
-template<typename W>
-error_code slow_float_parsing(simdjson_unused const uint8_t * src, W writer) {
-  double d;
-  if (parse_float_fallback(src, &d)) {
-    writer.append_double(d);
+static error_code slow_float_parsing(simdjson_unused const uint8_t * src, double* answer) {
+  if (parse_float_fallback(src, answer)) {
     return SUCCESS;
   }
   return INVALID_NUMBER(src);
@@ -474,13 +471,13 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
     // 10000000000000000000000000000000000000000000e+308
     // 3.1415926535897932384626433832795028841971693993751
     //
-    // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
-    // because slow_float_parsing is a non-inlined function. If we passed our writer reference to
-    // it, it would force it to be stored in memory, preventing the compiler from picking it apart
-    // and putting into registers. i.e. if we pass it as reference, it gets slow.
-    // This is what forces the skip_double, as well.
-    error_code error = slow_float_parsing(src, writer);
-    writer.skip_double();
+    // NOTE: We do not pass a reference to the to slow_float_parsing. If we passed our writer
+    // reference to it, it would force it to be stored in memory, preventing the compiler from
+    // picking it apart and putting into registers. i.e. if we pass it as reference,
+    // it gets slow.
+    double d;
+    error_code error = slow_float_parsing(src, &d);
+    writer.append_double(d);
     return error;
   }
   // NOTE: it's weird that the simdjson_unlikely() only wraps half the if, but it seems to get slower any other

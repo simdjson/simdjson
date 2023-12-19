@@ -278,6 +278,19 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  bool issue2099() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = "1000000000.000000001"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::number number;
+    ASSERT_SUCCESS(doc.get_number().get(number));
+    ASSERT_EQUAL(number.get_number_type(), ondemand::number_type::floating_point_number);
+    ASSERT_EQUAL(number.get_double(), 1e9);
+    TEST_SUCCEED();
+}
+
   bool issue1878() {
     TEST_START();
     ondemand::parser parser;
@@ -429,7 +442,8 @@ namespace number_tests {
   }
 
   bool run() {
-    return issue2093() &&
+    return issue2099() &&
+           issue2093() &&
            issue2045() &&
            issue2017() &&
            issue_1898() &&
