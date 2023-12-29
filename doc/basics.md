@@ -36,6 +36,7 @@ An overview of what you need to know to use simdjson, with examples.
   - [Backwards Compatibility](#backwards-compatibility)
   - [Examples](#examples)
   - [Performance Tips](#performance-tips)
+  - [Further Reading](#further-reading)
 
 
 Requirements
@@ -2127,3 +2128,9 @@ Performance Tips
 	std::string_view rating = data["rating"];
   ```
 - To better understand the operation of your On Demand parser, and whether it is performing as well as you think it should be, there is a  logger feature built in to simdjson! To use it, define the pre-processor directive `SIMDJSON_VERBOSE_LOGGING` prior to including the `simdjson.h` header, which enables logging in simdjson. Run your code. It may generate a lot of logging output; adding printouts from your application that show each section may be helpful. The log's output will show step-by-step information on state, buffer pointer position, depth, and key retrieval status. Importantly, unless `SIMDJSON_VERBOSE_LOGGING` is defined, logging is entirely disabled and thus carries no overhead.
+
+Further reading
+--------
+
+
+- John Keiser, Daniel Lemire, [On-Demand JSON: A Better Way to Parse Documents?](http://arxiv.org/abs/2312.17149), Software: Practice and Experience (to appear) 
