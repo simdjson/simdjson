@@ -132,6 +132,7 @@ $(document).ready(function(){initNavTree('md_doc_basics.html',''); initResizable
 <li><a href="#backwards-compatibility">Backwards Compatibility</a></li>
 <li><a href="#examples">Examples</a></li>
 <li><a href="#performance-tips">Performance Tips</a></li>
+<li><a href="#further-reading">Further Reading</a></li>
 </ul>
 </li>
 </ul>
@@ -1567,7 +1568,12 @@ Performance Tips</h1>
 <div class="line">  std::string_view year = data[&quot;year&quot;];</div>
 <div class="line">  std::string_view rating = data[&quot;rating&quot;];</div>
 </div><!-- fragment --></li>
-<li>To better understand the operation of your On Demand parser, and whether it is performing as well as you think it should be, there is a logger feature built in to simdjson! To use it, define the pre-processor directive <code>SIMDJSON_VERBOSE_LOGGING</code> prior to including the <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code> header, which enables logging in simdjson. Run your code. It may generate a lot of logging output; adding printouts from your application that show each section may be helpful. The log's output will show step-by-step information on state, buffer pointer position, depth, and key retrieval status. Importantly, unless <code>SIMDJSON_VERBOSE_LOGGING</code> is defined, logging is entirely disabled and thus carries no overhead. </li>
+<li>To better understand the operation of your On Demand parser, and whether it is performing as well as you think it should be, there is a logger feature built in to simdjson! To use it, define the pre-processor directive <code>SIMDJSON_VERBOSE_LOGGING</code> prior to including the <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code> header, which enables logging in simdjson. Run your code. It may generate a lot of logging output; adding printouts from your application that show each section may be helpful. The log's output will show step-by-step information on state, buffer pointer position, depth, and key retrieval status. Importantly, unless <code>SIMDJSON_VERBOSE_LOGGING</code> is defined, logging is entirely disabled and thus carries no overhead.</li>
+</ul>
+<h1><a class="anchor" id="autotoc_md32"></a>
+Further reading</h1>
+<ul>
+<li>John Keiser, Daniel Lemire, <a href="http://arxiv.org/abs/2312.17149">On-Demand JSON: A Better Way to Parse Documents?</a>, Software: Practice and Experience (to appear) </li>
 </ul>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
