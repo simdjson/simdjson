@@ -174,7 +174,11 @@ The simdjson library takes advantage of modern microarchitectures, parallelizing
 instructions, reducing branch misprediction, and reducing data dependency to take advantage of each
 CPU's multiple execution cores.
 
-Some people [enjoy reading our paper](https://arxiv.org/abs/1902.08318): A description of the design
+Our default front-end is called On Demand, and we wrote a paper about it:
+
+- John Keiser, Daniel Lemire, [On-Demand JSON: A Better Way to Parse Documents?](http://arxiv.org/abs/2312.17149), Software: Practice and Experience (to appear) 
+
+Some people [enjoy reading the first (2019) simdjson paper](https://arxiv.org/abs/1902.08318): A description of the design
 and implementation of simdjson is in our research article:
 - Geoff Langdale, Daniel Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal 28 (6), 2019.
 
