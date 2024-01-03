@@ -176,7 +176,7 @@ CPU's multiple execution cores.
 
 Our default front-end is called On Demand, and we wrote a paper about it:
 
-- John Keiser, Daniel Lemire, [On-Demand JSON: A Better Way to Parse Documents?](http://arxiv.org/abs/2312.17149), Software: Practice and Experience (to appear) 
+- John Keiser, Daniel Lemire, [On-Demand JSON: A Better Way to Parse Documents?](http://arxiv.org/abs/2312.17149), Software: Practice and Experience (to appear)
 
 Some people [enjoy reading the first (2019) simdjson paper](https://arxiv.org/abs/1902.08318): A description of the design
 and implementation of simdjson is in our research article:
