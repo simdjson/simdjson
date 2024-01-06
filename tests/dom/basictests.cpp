@@ -452,14 +452,18 @@ namespace parse_api_tests {
     element doc_root1 = parser.parse_into_document(doc, input);
     if(simdjson::to_string(doc_root1) != "[1,2,3]") { return false; }
     //... doc_root1 is a pointer inside doc
-    element doc_root2 = parser.parse_into_document(doc, input);
+    element doc_root2 = parser.load_into_document(doc, TWITTER_JSON);
     //... doc_root2 is a pointer inside doc
-    if(simdjson::to_string(doc_root2) != "[1,2,3]") { return false; }
+    if(uint64_t(doc_root2["search_metadata"]["count"]) != 100) { return false; }
+    if(uint64_t(doc.root()["search_metadata"]["count"]) != 100) { return false; }
+    element doc_root3 = parser.parse_into_document(doc, input);
+    //... doc_root3 is a pointer inside doc
+    if(simdjson::to_string(doc_root3) != "[1,2,3]") { return false; }
 
     // Here let us take moving the document:
     dom::document docm = std::move(doc);
-    element doc_root3 = docm.root();
-    if(simdjson::to_string(doc_root3) != "[1,2,3]") { return false; }
+    element doc_root4 = docm.root();
+    if(simdjson::to_string(doc_root4) != "[1,2,3]") { return false; }
     return true;
   }
 
