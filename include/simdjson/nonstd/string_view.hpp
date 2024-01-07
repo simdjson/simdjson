@@ -6,7 +6,7 @@
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#pragma once
+// #pragma once // We remove #pragma once here as it generates a warning in some cases. We rely on the include guard.
 
 #ifndef NONSTD_SV_LITE_H_INCLUDED
 #define NONSTD_SV_LITE_H_INCLUDED
@@ -67,6 +67,10 @@
 
 #ifndef  nssv_CONFIG_NO_STREAM_INSERTION
 # define nssv_CONFIG_NO_STREAM_INSERTION  0
+#endif
+
+#ifndef  nssv_CONFIG_CONSTEXPR11_STD_SEARCH
+# define nssv_CONFIG_CONSTEXPR11_STD_SEARCH  1
 #endif
 
 // Control presence of exception handling (try and auto discover):
@@ -267,7 +271,7 @@ using std::operator<<;
 # define nssv_HAS_CPP0X  0
 #endif
 
-// Unless defined otherwise below, consider VC14 as C++11 for variant-lite:
+// Unless defined otherwise below, consider VC14 as C++11 for string-view-lite:
 
 #if nssv_COMPILER_MSVC_VER >= 1900
 # undef  nssv_CPP11_OR_GREATER
@@ -434,9 +438,9 @@ using std::operator<<;
 # pragma clang diagnostic ignored "-Wreserved-user-defined-literal"
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wuser-defined-literals"
-#elif defined(__GNUC__)
-# pragma  GCC  diagnostic push
-# pragma  GCC  diagnostic ignored "-Wliteral-suffix"
+#elif nssv_COMPILER_GNUC_VERSION >= 480
+#  pragma  GCC  diagnostic push
+#  pragma  GCC  diagnostic ignored "-Wliteral-suffix"
 #endif // __clang__
 
 #if nssv_COMPILER_MSVC_VERSION >= 140
@@ -451,8 +455,8 @@ using std::operator<<;
 
 #if defined(__clang__)
 # define nssv_RESTORE_WARNINGS()  _Pragma("clang diagnostic pop")
-#elif defined(__GNUC__)
-# define nssv_RESTORE_WARNINGS()  _Pragma("GCC diagnostic pop")
+#elif nssv_COMPILER_GNUC_VERSION >= 480
+#  define nssv_RESTORE_WARNINGS()  _Pragma("GCC diagnostic pop")
 #elif nssv_COMPILER_MSVC_VERSION >= 140
 # define nssv_RESTORE_WARNINGS()  __pragma(warning(pop ))
 #else
@@ -567,11 +571,30 @@ constexpr const CharT* search( basic_string_view<CharT, Traits> haystack, basic_
 
 // non-recursive:
 
+#if nssv_CONFIG_CONSTEXPR11_STD_SEARCH
+
 template< class CharT, class Traits = std::char_traits<CharT> >
 constexpr const CharT* search( basic_string_view<CharT, Traits> haystack, basic_string_view<CharT, Traits> needle )
 {
     return std::search( haystack.begin(), haystack.end(), needle.begin(), needle.end() );
 }
+
+#else // nssv_CONFIG_CONSTEXPR11_STD_SEARCH
+
+template< class CharT, class Traits = std::char_traits<CharT> >
+nssv_constexpr14 const CharT* search( basic_string_view<CharT, Traits> haystack, basic_string_view<CharT, Traits> needle )
+{
+    while ( needle.size() <= haystack.size() )
+    {
+        if  ( haystack.starts_with(needle) )
+        {
+            return haystack.cbegin();
+        }
+        haystack = basic_string_view<CharT, Traits>{ haystack.begin() + 1, haystack.size() - 1U };
+    }
+    return haystack.cend();
+}
+#endif // nssv_CONFIG_CONSTEXPR11_STD_SEARCH
 
 #endif // OPTIMIZE
 #endif // nssv_CPP11_OR_GREATER && ! nssv_CPP17_OR_GREATER
@@ -845,7 +868,7 @@ public:
 
     // find(), 4x:
 
-    nssv_constexpr size_type find( basic_string_view v, size_type pos = 0 ) const nssv_noexcept  // (1)
+    nssv_constexpr14 size_type find( basic_string_view v, size_type pos = 0 ) const nssv_noexcept  // (1)
     {
         return assert( v.size() == 0 || v.data() != nssv_nullptr )
             , pos >= size()
