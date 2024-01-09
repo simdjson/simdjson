@@ -92,10 +92,14 @@ inline simdjson_result<size_t> parser::read_file(const std::string &path) noexce
 }
 
 inline simdjson_result<element> parser::load(const std::string &path) & noexcept {
+  return load_into_document(doc, path);
+}
+
+inline simdjson_result<element> parser::load_into_document(document& provided_doc, const std::string &path) & noexcept {
   size_t len;
   auto _error = read_file(path).get(len);
   if (_error) { return _error; }
-  return parse(loaded_bytes.get(), len, false);
+  return parse_into_document(provided_doc, loaded_bytes.get(), len, false);
 }
 
 inline simdjson_result<document_stream> parser::load_many(const std::string &path, size_t batch_size) noexcept {
