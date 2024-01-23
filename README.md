@@ -29,6 +29,7 @@ Table of Contents
 * [Real-world usage](#real-world-usage)
 * [Quick Start](#quick-start)
 * [Documentation](#documentation)
+* [Godbolt](#godbolt)
 * [Performance results](#performance-results)
 * [Bindings and Ports of simdjson](#bindings-and-ports-of-simdjson)
 * [About simdjson](#about-simdjson)
@@ -107,11 +108,12 @@ Usage documentation is available:
   how you can work with it.
 * [API](https://simdjson.github.io/simdjson/) contains the automatically generated API documentation.
 
+Godbolt
+-------------
 
 Some users may want to browse code along with the compiled assembly. You want to check out the following lists of examples:
-
-* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/98Kx9Kqjn)
-* [simdjson examples with errors without exceptions](https://godbolt.org/z/PKG7GdbPo)
+* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/7G5qE4sr9)
+* [simdjson examples with errors without exceptions](https://godbolt.org/z/e9dWb9E4v)
 
 Performance results
 -------------------
