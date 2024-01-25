@@ -16,10 +16,6 @@ set(SINGLEHEADER_REPO_FILES
 )
 set_source_files_properties(${SINGLEHEADER_FILES} PROPERTIES GENERATED TRUE)
 
-find_program(BASH bash)
-
-# Under Windows, exectuting a bash script works, except that you cannot generally
-# do bash C:/path to my script. You need a  "mounted" path: /mnt/c/path
 find_package(Python3 COMPONENTS Interpreter)
 
 if (Python3_Interpreter_FOUND AND (NOT WIN32))
