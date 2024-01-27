@@ -107,7 +107,7 @@ using namespace simd;
       const simd8<uint8_t> prev_input, const simd8<uint8_t> sc) {
     simd8<uint8_t> prev2 = input.prev<2>(prev_input);
     simd8<uint8_t> prev3 = input.prev<3>(prev_input);
-    simd8<uint8_t> must23 = simd8<uint8_t>(must_be_2_3_continuation(prev2, prev3));
+    simd8<uint8_t> must23 = must_be_2_3_continuation(prev2, prev3);
     simd8<uint8_t> must23_80 = must23 & uint8_t(0x80);
     return must23_80 ^ sc;
   }

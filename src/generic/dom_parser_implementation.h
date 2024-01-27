@@ -11,7 +11,7 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 
-simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3);
+simdjson_inline simd8<uint8_t> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3);
 simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 
 } // unnamed namespace

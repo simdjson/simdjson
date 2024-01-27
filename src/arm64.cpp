@@ -108,10 +108,10 @@ simdjson_unused simdjson_inline simd8<bool> must_be_continuation(const simd8<uin
     return is_second_byte ^ is_third_byte ^ is_fourth_byte;
 }
 
-simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
-    simd8<bool> is_third_byte  = prev2 >= uint8_t(0xe0u);
-    simd8<bool> is_fourth_byte = prev3 >= uint8_t(0xf0u);
-    return is_third_byte ^ is_fourth_byte;
+simdjson_inline simd8<uint8_t> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+    simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0xe0u-0x80); // Only 111_____ will be > 0x80
+    simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0xf0u-0x80); // Only 1111____ will be > 0x80
+    return is_third_byte | is_fourth_byte;
 }
 
 } // unnamed namespace
