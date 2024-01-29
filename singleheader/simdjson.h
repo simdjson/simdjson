@@ -1,4 +1,4 @@
-/* auto-generated on . Do not edit! */
+/* auto-generated on 2024-01-28 12:42:59 -0500. Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -2344,7 +2344,7 @@ namespace std {
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "3.6.3"
+#define SIMDJSON_VERSION "3.6.4"
 
 namespace simdjson {
 enum {
@@ -2359,7 +2359,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 3
+  SIMDJSON_VERSION_REVISION = 4
 };
 } // namespace simdjson
 
@@ -4472,6 +4472,53 @@ public:
    */
   inline simdjson_result<element> load(const std::string &path) & noexcept;
   inline simdjson_result<element> load(const std::string &path) &&  = delete ;
+
+  /**
+   * Load a JSON document from a file into a provide document instance and return a temporary reference to it.
+   * It is similar to the function `load` except that instead of parsing into the internal
+   * `document` instance associated with the parser, it allows the user to provide a document
+   * instance.
+   *
+   *   dom::parser parser;
+   *   dom::document doc;
+   *   element doc_root = parser.load_into_document(doc, "jsonexamples/twitter.json");
+   *
+   * The function is eager: the file's content is loaded in memory inside the parser instance
+   * and immediately parsed. The file can be deleted after the `parser.load_into_document` call.
+   *
+   * ### IMPORTANT: Document Lifetime
+   *
+   * After the call to load_into_document, the parser is no longer needed.
+   *
+   * The JSON document lives in the document instance: you must keep the document
+   * instance alive while you navigate through it (i.e., used the returned value from
+   * load_into_document). You are encourage to reuse the document instance
+   * many times with new data to avoid reallocations:
+   *
+   *   dom::document doc;
+   *   element doc_root1 = parser.load_into_document(doc, "jsonexamples/twitter.json");
+   *   //... doc_root1 is a pointer inside doc
+   *   element doc_root2 = parser.load_into_document(doc, "jsonexamples/twitter.json");
+   *   //... doc_root2 is a pointer inside doc
+   *   // at this point doc_root1 is no longer safe
+   *
+   * Moving the document instance is safe, but it invalidates the element instances. After
+   * moving a document, you can recover safe access to the document root with its `root()` method.
+   *
+   * @param doc The document instance where the parsed data will be stored (on success).
+   * @param path The path to load.
+   * @return The document, or an error:
+   *         - IO_ERROR if there was an error opening or reading the file.
+   *           Be mindful that on some 32-bit systems,
+   *           the file size might be limited to 2 GB.
+   *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails.
+   *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
+   *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
+   *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
+   */
+  inline simdjson_result<element> load_into_document(document& doc, const std::string &path) & noexcept;
+  inline simdjson_result<element> load_into_document(document& doc, const std::string &path) && =delete;
+
   /**
    * Parse a JSON document and return a temporary reference to it.
    *
@@ -7579,10 +7626,14 @@ inline simdjson_result<size_t> parser::read_file(const std::string &path) noexce
 }
 
 inline simdjson_result<element> parser::load(const std::string &path) & noexcept {
+  return load_into_document(doc, path);
+}
+
+inline simdjson_result<element> parser::load_into_document(document& provided_doc, const std::string &path) & noexcept {
   size_t len;
   auto _error = read_file(path).get(len);
   if (_error) { return _error; }
-  return parse(loaded_bytes.get(), len, false);
+  return parse_into_document(provided_doc, loaded_bytes.get(), len, false);
 }
 
 inline simdjson_result<document_stream> parser::load_many(const std::string &path, size_t batch_size) noexcept {

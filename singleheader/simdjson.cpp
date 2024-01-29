@@ -1,4 +1,4 @@
-/* auto-generated on . Do not edit! */
+/* auto-generated on 2024-01-28 12:42:59 -0500. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -10872,7 +10872,7 @@ namespace simdjson {
 namespace arm64 {
 namespace {
 
-simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3);
+simdjson_inline simd8<uint8_t> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3);
 simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 
 } // unnamed namespace
@@ -11439,7 +11439,7 @@ using namespace simd;
       const simd8<uint8_t> prev_input, const simd8<uint8_t> sc) {
     simd8<uint8_t> prev2 = input.prev<2>(prev_input);
     simd8<uint8_t> prev3 = input.prev<3>(prev_input);
-    simd8<uint8_t> must23 = simd8<uint8_t>(must_be_2_3_continuation(prev2, prev3));
+    simd8<uint8_t> must23 = must_be_2_3_continuation(prev2, prev3);
     simd8<uint8_t> must23_80 = must23 & uint8_t(0x80);
     return must23_80 ^ sc;
   }
@@ -13634,10 +13634,10 @@ simdjson_unused simdjson_inline simd8<bool> must_be_continuation(const simd8<uin
     return is_second_byte ^ is_third_byte ^ is_fourth_byte;
 }
 
-simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
-    simd8<bool> is_third_byte  = prev2 >= uint8_t(0xe0u);
-    simd8<bool> is_fourth_byte = prev3 >= uint8_t(0xf0u);
-    return is_third_byte ^ is_fourth_byte;
+simdjson_inline simd8<uint8_t> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+    simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0xe0u-0x80); // Only 111_____ will be >= 0x80
+    simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0xf0u-0x80); // Only 1111____ will be >= 0x80
+    return is_third_byte | is_fourth_byte;
 }
 
 } // unnamed namespace
@@ -20944,7 +20944,7 @@ namespace simdjson {
 namespace haswell {
 namespace {
 
-simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3);
+simdjson_inline simd8<uint8_t> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3);
 simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 
 } // unnamed namespace
@@ -21511,7 +21511,7 @@ using namespace simd;
       const simd8<uint8_t> prev_input, const simd8<uint8_t> sc) {
     simd8<uint8_t> prev2 = input.prev<2>(prev_input);
     simd8<uint8_t> prev3 = input.prev<3>(prev_input);
-    simd8<uint8_t> must23 = simd8<uint8_t>(must_be_2_3_continuation(prev2, prev3));
+    simd8<uint8_t> must23 = must_be_2_3_continuation(prev2, prev3);
     simd8<uint8_t> must23_80 = must23 & uint8_t(0x80);
     return must23_80 ^ sc;
   }
@@ -23703,11 +23703,10 @@ simdjson_unused simdjson_inline simd8<bool> must_be_continuation(const simd8<uin
   return simd8<int8_t>(is_second_byte | is_third_byte | is_fourth_byte) > int8_t(0);
 }
 
-simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
-  simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0xe0u-1); // Only 111_____ will be > 0
-  simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0xf0u-1); // Only 1111____ will be > 0
-  // Caller requires a bool (all 1's). All values resulting from the subtraction will be <= 64, so signed comparison is fine.
-  return simd8<int8_t>(is_third_byte | is_fourth_byte) > int8_t(0);
+simdjson_inline simd8<uint8_t> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+  simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0xe0u-0x80); // Only 111_____ will be >= 0x80
+  simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0xf0u-0x80); // Only 1111____ will be >= 0x80
+  return is_third_byte | is_fourth_byte;
 }
 
 } // unnamed namespace
@@ -27103,7 +27102,7 @@ namespace simdjson {
 namespace icelake {
 namespace {
 
-simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3);
+simdjson_inline simd8<uint8_t> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3);
 simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 
 } // unnamed namespace
@@ -27670,7 +27669,7 @@ using namespace simd;
       const simd8<uint8_t> prev_input, const simd8<uint8_t> sc) {
     simd8<uint8_t> prev2 = input.prev<2>(prev_input);
     simd8<uint8_t> prev3 = input.prev<3>(prev_input);
-    simd8<uint8_t> must23 = simd8<uint8_t>(must_be_2_3_continuation(prev2, prev3));
+    simd8<uint8_t> must23 = must_be_2_3_continuation(prev2, prev3);
     simd8<uint8_t> must23_80 = must23 & uint8_t(0x80);
     return must23_80 ^ sc;
   }
@@ -29861,11 +29860,10 @@ simdjson_unused simdjson_inline simd8<bool> must_be_continuation(const simd8<uin
   return simd8<int8_t>(is_second_byte | is_third_byte | is_fourth_byte) > int8_t(0);
 }
 
-simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
-  simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0xe0u-1); // Only 111_____ will be > 0
-  simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0xf0u-1); // Only 1111____ will be > 0
-  // Caller requires a bool (all 1's). All values resulting from the subtraction will be <= 64, so signed comparison is fine.
-  return simd8<int8_t>(is_third_byte | is_fourth_byte) > int8_t(0);
+simdjson_inline simd8<uint8_t> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+  simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0xe0u-0x80); // Only 111_____ will be >= 0x80
+  simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0xf0u-0x80); // Only 1111____ will be >= 0x80
+  return is_third_byte | is_fourth_byte;
 }
 
 } // unnamed namespace
@@ -33533,7 +33531,7 @@ namespace simdjson {
 namespace ppc64 {
 namespace {
 
-simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3);
+simdjson_inline simd8<uint8_t> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3);
 simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 
 } // unnamed namespace
@@ -34100,7 +34098,7 @@ using namespace simd;
       const simd8<uint8_t> prev_input, const simd8<uint8_t> sc) {
     simd8<uint8_t> prev2 = input.prev<2>(prev_input);
     simd8<uint8_t> prev3 = input.prev<3>(prev_input);
-    simd8<uint8_t> must23 = simd8<uint8_t>(must_be_2_3_continuation(prev2, prev3));
+    simd8<uint8_t> must23 = must_be_2_3_continuation(prev2, prev3);
     simd8<uint8_t> must23_80 = must23 & uint8_t(0x80);
     return must23_80 ^ sc;
   }
@@ -36265,11 +36263,10 @@ simdjson_unused simdjson_inline simd8<bool> must_be_continuation(const simd8<uin
   return simd8<int8_t>(is_second_byte | is_third_byte | is_fourth_byte) > int8_t(0);
 }
 
-simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
-  simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0xe0u-1); // Only 111_____ will be > 0
-  simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0xf0u-1); // Only 1111____ will be > 0
-  // Caller requires a bool (all 1's). All values resulting from the subtraction will be <= 64, so signed comparison is fine.
-  return simd8<int8_t>(is_third_byte | is_fourth_byte) > int8_t(0);
+simdjson_inline simd8<uint8_t> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+  simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0xe0u-0x80); // Only 111_____ will be >= 0x80
+  simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0xf0u-0x80); // Only 1111____ will be >= 0x80
+  return is_third_byte | is_fourth_byte;
 }
 
 } // unnamed namespace
@@ -40537,7 +40534,7 @@ namespace simdjson {
 namespace westmere {
 namespace {
 
-simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3);
+simdjson_inline simd8<uint8_t> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3);
 simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input);
 
 } // unnamed namespace
@@ -41104,7 +41101,7 @@ using namespace simd;
       const simd8<uint8_t> prev_input, const simd8<uint8_t> sc) {
     simd8<uint8_t> prev2 = input.prev<2>(prev_input);
     simd8<uint8_t> prev3 = input.prev<3>(prev_input);
-    simd8<uint8_t> must23 = simd8<uint8_t>(must_be_2_3_continuation(prev2, prev3));
+    simd8<uint8_t> must23 = must_be_2_3_continuation(prev2, prev3);
     simd8<uint8_t> must23_80 = must23 & uint8_t(0x80);
     return must23_80 ^ sc;
   }
@@ -43300,11 +43297,10 @@ simdjson_unused simdjson_inline simd8<bool> must_be_continuation(const simd8<uin
   return simd8<int8_t>(is_second_byte | is_third_byte | is_fourth_byte) > int8_t(0);
 }
 
-simdjson_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
-  simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0xe0u-1); // Only 111_____ will be > 0
-  simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0xf0u-1); // Only 1111____ will be > 0
-  // Caller requires a bool (all 1's). All values resulting from the subtraction will be <= 64, so signed comparison is fine.
-  return simd8<int8_t>(is_third_byte | is_fourth_byte) > int8_t(0);
+simdjson_inline simd8<uint8_t> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+  simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0xe0u-0x80); // Only 111_____ will be >= 0x80
+  simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0xf0u-0x80); // Only 1111____ will be >= 0x80
+  return is_third_byte | is_fourth_byte;
 }
 
 } // unnamed namespace
