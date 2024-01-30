@@ -440,10 +440,12 @@ public:
    * get_number().get_number_type().
    *
    * get_number_type() is number_type::unsigned_integer if we have
-   * an integer greater or equal to 9223372036854775808
+   * an integer greater or equal to 9223372036854775808.
    * get_number_type() is number_type::signed_integer if we have an
-   * integer that is less than 9223372036854775808
-   * Otherwise, get_number_type() has value number_type::floating_point_number
+   * integer that is less than 9223372036854775808.
+   * get_number_type() is number_type::big_integer for integers that do not fit in 64 bits,
+   * in which case the digit_count is set to the length of the big integer string.
+   * Otherwise, get_number_type() has value number_type::floating_point_number.
    *
    * This function requires processing the number string, but it is expected
    * to be faster than get_number().get_number_type() because it is does not
@@ -470,6 +472,8 @@ public:
    * You can recover the value by calling number.get_uint64() and you
    * have that number.is_uint64() is true.
    *
+   * For integers that do not fit in 64 bits, the function returns BIGINT_ERROR error code.
+   *
    * Otherwise, number.get_number_type() has value number_type::floating_point_number
    * and we have a binary64 number.
    * You can recover the value by calling number.get_double() and you
@@ -484,7 +488,6 @@ public:
    * efficiently the type and storing it in an efficient manner.
    */
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
-
 
   /**
    * Get the raw JSON for this token.

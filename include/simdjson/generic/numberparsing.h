@@ -20,11 +20,13 @@ namespace numberparsing {
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
+#define BIGINT_NUMBER(SRC) (found_invalid_number((SRC)), BIGINT_ERROR)
 #else
 #define INVALID_NUMBER(SRC) (NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
+#define BIGINT_NUMBER(SRC) (BIGINT_ERROR)
 #endif
 
 namespace {
@@ -508,6 +510,18 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
   return SUCCESS;
 }
 
+// parse the number at src
+// define JSON_TEST_NUMBERS for unit testing
+//
+// It is assumed that the number is followed by a structural ({,},],[) character
+// or a white space character. If that is not the case (e.g., when the JSON
+// document is made of a single number), then it is necessary to copy the
+// content and append a space before calling this function.
+//
+// Our objective is accurate parsing (ULP of 0) at high speed.
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
@@ -586,11 +600,11 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
   size_t longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
+  if (digit_count > longest_digit_count) { return BIGINT_NUMBER(src); }
   if (digit_count == longest_digit_count) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
+      if (i > uint64_t(INT64_MAX)+1) { return BIGINT_NUMBER(src);  }
       WRITE_INTEGER(~i+1, src, writer);
       if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
@@ -1060,19 +1074,24 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
   src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  size_t digit_count = size_t(p - src);
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    static const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
     // We have an integer.
+    if(simdjson_unlikely(digit_count > 20)) {
+      return number_type::big_integer;
+    }
     // If the number is negative and valid, it must be a signed integer.
-    if(negative) { return number_type::signed_integer; }
+    if(negative) {
+      if (simdjson_unlikely(digit_count > 19)) return number_type::big_integer;
+      if (simdjson_unlikely(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)) return number_type::big_integer;
+      return number_type::signed_integer;
+    }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
-    int digit_count = int(p - src);
-    if(digit_count >= 19) {
-      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
-      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
-        return number_type::unsigned_integer;
-      }
+    if((digit_count == 20) || (digit_count >= 19 && memcmp(src, smaller_big_integer, 19) >= 0)) {
+      return number_type::unsigned_integer;
     }
     return number_type::signed_integer;
   }
@@ -1250,6 +1269,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
         case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
         case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        case number_type::big_integer: out << "big integer"; break;
         default: SIMDJSON_UNREACHABLE();
     }
     return out;
