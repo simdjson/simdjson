@@ -7166,6 +7166,38 @@ namespace internal {
 }
 #endif
 
+// When there is a single implementation, we should not pay a price
+// for dispatching to the best implementation. We should just use the
+// one we have. This is a compile-time check.
+#define SIMDJSON_SINGLE_IMPLEMENTATION (SIMDJSON_IMPLEMENTATION_ICELAKE \
+             + SIMDJSON_IMPLEMENTATION_HASWELL + SIMDJSON_IMPLEMENTATION_WESTMERE \
+             + SIMDJSON_IMPLEMENTATION_ARM64 + SIMDJSON_IMPLEMENTATION_PPC64 \
+             + SIMDJSON_IMPLEMENTATION_FALLBACK == 1)
+
+#if SIMDJSON_SINGLE_IMPLEMENTATION
+  static const implementation* get_single_implementation() {
+    return
+#if SIMDJSON_IMPLEMENTATION_ICELAKE
+    get_icelake_singleton();
+#endif
+#if SIMDJSON_IMPLEMENTATION_HASWELL
+    get_haswell_singleton();
+#endif
+#if SIMDJSON_IMPLEMENTATION_WESTMERE
+    get_westmere_singleton();
+#endif
+#if SIMDJSON_IMPLEMENTATION_ARM64
+    get_arm64_singleton();
+#endif
+#if SIMDJSON_IMPLEMENTATION_PPC64
+    get_ppc64_singleton();
+#endif
+#if SIMDJSON_IMPLEMENTATION_FALLBACK
+    get_fallback_singleton();
+#endif
+}
+#endif
+
 // Static array of known implementations. We're hoping these get baked into the executable
 // without requiring a static initializer.
 
@@ -7295,6 +7327,16 @@ SIMDJSON_DLLIMPORTEXPORT const internal::available_implementation_list& get_avai
 }
 
 SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation>& get_active_implementation() {
+#if SIMDJSON_SINGLE_IMPLEMENTATION
+  // We immediately select the only implementation we have, skipping the
+  // detect_best_supported_implementation_on_first_use_singleton.
+  static internal::atomic_ptr<const implementation> active_implementation{internal::get_single_implementation()};
+  return active_implementation;
+#else
+  static const internal::detect_best_supported_implementation_on_first_use detect_best_supported_implementation_on_first_use_singleton;
+  static internal::atomic_ptr<const implementation> active_implementation{&detect_best_supported_implementation_on_first_use_singleton};
+  return active_implementation;
+#endif
 #if SIMDJSON_SINGLE_IMPLEMENTATION
   // We immediately select the only implementation we have, skipping the
   // detect_best_supported_implementation_on_first_use_singleton.
