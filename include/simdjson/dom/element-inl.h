@@ -72,6 +72,10 @@ simdjson_inline simdjson_result<uint64_t> simdjson_result<dom::element>::get_uin
   if (error()) { return error(); }
   return first.get_uint64();
 }
+simdjson_inline simdjson_result<bigint_t> simdjson_result<dom::element>::get_bigint() const noexcept {
+  if (error()) { return error(); }
+  return first.get_bigint();
+}
 simdjson_inline simdjson_result<double> simdjson_result<dom::element>::get_double() const noexcept {
   if (error()) { return error(); }
   return first.get_double();
@@ -264,6 +268,16 @@ inline simdjson_result<int64_t> element::get_int64() const noexcept {
   }
   return tape.next_tape_value<int64_t>();
 }
+inline simdjson_result<bigint_t> element::get_bigint() const noexcept {
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
+  switch (tape.tape_ref_type()) {
+    case internal::tape_type::BIGINT: {
+      return tape.get_bigint();
+    }
+    default:
+      return INCORRECT_TYPE;
+  }
+}
 inline simdjson_result<double> element::get_double() const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
   // Performance considerations:
@@ -332,6 +346,7 @@ template<> inline simdjson_result<const char *> element::get<const char *>() con
 template<> inline simdjson_result<std::string_view> element::get<std::string_view>() const noexcept { return get_string(); }
 template<> inline simdjson_result<int64_t> element::get<int64_t>() const noexcept { return get_int64(); }
 template<> inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept { return get_uint64(); }
+template<> inline simdjson_result<bigint_t> element::get<bigint_t>() const noexcept { return get_bigint(); }
 template<> inline simdjson_result<double> element::get<double>() const noexcept { return get_double(); }
 template<> inline simdjson_result<bool> element::get<bool>() const noexcept { return get_bool(); }
 
@@ -340,9 +355,10 @@ inline bool element::is_object() const noexcept { return is<object>(); }
 inline bool element::is_string() const noexcept { return is<std::string_view>(); }
 inline bool element::is_int64() const noexcept { return is<int64_t>(); }
 inline bool element::is_uint64() const noexcept { return is<uint64_t>(); }
+inline bool element::is_bigint() const noexcept { return is<bigint_t>(); }
 inline bool element::is_double() const noexcept { return is<double>(); }
 inline bool element::is_bool() const noexcept { return is<bool>(); }
-inline bool element::is_number() const noexcept { return is_int64() || is_uint64() || is_double(); }
+inline bool element::is_number() const noexcept { return is_int64() || is_uint64() || is_double() || is_bigint(); }
 
 inline bool element::is_null() const noexcept {
   return tape.is_null_on_tape();
@@ -355,6 +371,7 @@ inline element::operator const char*() const noexcept(false) { return get<const 
 inline element::operator std::string_view() const noexcept(false) { return get<std::string_view>(); }
 inline element::operator uint64_t() const noexcept(false) { return get<uint64_t>(); }
 inline element::operator int64_t() const noexcept(false) { return get<int64_t>(); }
+inline element::operator bigint_t() const noexcept(false) { return get<bigint_t>(); }
 inline element::operator double() const noexcept(false) { return get<double>(); }
 inline element::operator array() const noexcept(false) { return get<array>(); }
 inline element::operator object() const noexcept(false) { return get<object>(); }
@@ -433,6 +450,8 @@ inline std::ostream& operator<<(std::ostream& out, element_type type) {
       return out << "int64_t";
     case element_type::UINT64:
       return out << "uint64_t";
+    case element_type::BIGINT:
+      return out << "bigint_t";
     case element_type::DOUBLE:
       return out << "double";
     case element_type::STRING:

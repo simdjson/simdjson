@@ -309,7 +309,11 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<bool> is_null() noexcept;
   simdjson_warn_unused simdjson_inline bool is_negative() noexcept;
+  /** Returns true if the number is an integer that fits in 64 bits */
   simdjson_warn_unused simdjson_inline simdjson_result<bool> is_integer() noexcept;
+  /** Returns true if the number is an integer that fits in 64 bits or a big integer */
+  simdjson_warn_unused simdjson_inline simdjson_result<bool> is_bigint() noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<bool> is_integer(bool check_bigint) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<number_type> get_number_type() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
 
@@ -327,6 +331,7 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<bool> get_root_bool(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline bool is_root_negative() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<bool> is_root_integer(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<bool> is_root_integer(bool check_trailing, bool check_bigint) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<number_type> get_root_number_type(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_root_number(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<bool> is_root_null(bool check_trailing) noexcept;

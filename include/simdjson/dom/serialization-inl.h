@@ -439,6 +439,9 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
       iter.json_index++; // numbers take up 2 spots, so we need to increment
                          // extra
       break;
+    case tape_type::BIGINT:
+      format.string(iter.get_bigint());
+      break;
     case tape_type::DOUBLE:
       format.number(iter.next_tape_value<double>());
       iter.json_index++; // numbers take up 2 spots, so we need to increment

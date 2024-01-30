@@ -19,6 +19,7 @@ void found_invalid_number(const uint8_t *buf);
 void found_float(double result, const uint8_t *buf);
 void found_integer(int64_t result, const uint8_t *buf);
 void found_unsigned_integer(uint64_t result, const uint8_t *buf);
+void found_bigint(const uint8_t *buf, const uint8_t *end);
 
 #include "simdjson.h"
 
@@ -125,7 +126,17 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf) {
 #else // mingw is busted since we include #include <inttypes.h>
     fprintf(stderr, "Error: parsed %llu out of %.32s, ", (unsigned long long)result, buf);
 #endif
-    fprintf(stderr, " while parsing %s \n", fullpath);
+    fprintf(stderr, " while parsing %s\n", fullpath);
+    parse_error |= PARSE_ERROR;
+  }
+}
+
+void found_bigint(const uint8_t *buf, const uint8_t *end) {
+  if (end - buf < 20) {
+    fprintf(stderr, "Error: while parsing ");
+    while(buf != end)
+      fputc(*buf++, stderr);
+    fprintf(stderr, " in %s\n", fullpath);
     parse_error |= PARSE_ERROR;
   }
 }

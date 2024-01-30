@@ -16,6 +16,7 @@ enum class element_type {
   OBJECT = '{',    ///< dom::object
   INT64 = 'l',     ///< int64_t
   UINT64 = 'u',    ///< uint64_t: any integer that fits in uint64_t but *not* int64_t
+  BIGINT = 'L',    ///< big integer that doesn't fit in 64 bits
   DOUBLE = 'd',    ///< double: Any number with a "." or "e" that fits in double.
   STRING = '"',    ///< std::string_view
   BOOL = 't',      ///< bool
@@ -104,6 +105,13 @@ public:
    */
   inline simdjson_result<uint64_t> get_uint64() const noexcept;
   /**
+   * Cast this element to a string containing big integer that doesn't fit in 64 bits.
+   *
+   * @returns A string containing the digits of a big integer.
+   *          Returns INCORRECT_TYPE if the JSON element is not a big integer.
+   */
+  inline simdjson_result<bigint_t> get_bigint() const noexcept;
+  /**
    * Cast this element to a double floating-point.
    *
    * @returns A double value.
@@ -149,6 +157,10 @@ public:
    */
   inline bool is_uint64() const noexcept;
   /**
+   * Whether this element is a json integer that doesn't fits in 64-bits.
+   */
+  inline bool is_bigint() const noexcept;
+  /**
    * Whether this element is a json number that fits in a double.
    *
    * Equivalent to is<double>().
@@ -158,7 +170,7 @@ public:
   /**
    * Whether this element is a json number.
    *
-   * Both integers and floating points will return true.
+   * Both integers (inluding 64bit and big integers) and floating points will return true.
    */
   inline bool is_number() const noexcept;
 
@@ -212,9 +224,9 @@ public:
     // Unless the simdjson library provides an inline implementation, calling this method should
     // immediately fail.
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
-      "The supported types are Boolean (bool), numbers (double, uint64_t, int64_t), "
+      "The supported types are Boolean (bool), numbers (double, uint64_t, int64_t, bigint_t), "
       "strings (std::string_view, const char *), arrays (dom::array) and objects (dom::object). "
-      "We recommend you use get_double(), get_bool(), get_uint64(), get_int64(), "
+      "We recommend you use get_double(), get_bool(), get_uint64(), get_int64(), get_bigint(), "
       "get_object(), get_array() or get_string() instead of the get template.");
   }
 
@@ -304,6 +316,13 @@ public:
    * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer does not fit in 64 bits
    */
   inline operator int64_t() const noexcept(false);
+  /**
+   * Read this element as an big integer.
+   *
+   * @return The big integer value.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not an integer
+   */
+  inline operator bigint_t() const noexcept(false);
   /**
    * Read this element as an double.
    *
@@ -510,6 +529,7 @@ public:
   simdjson_inline simdjson_result<std::string_view> get_string() const noexcept;
   simdjson_inline simdjson_result<int64_t> get_int64() const noexcept;
   simdjson_inline simdjson_result<uint64_t> get_uint64() const noexcept;
+  simdjson_inline simdjson_result<bigint_t> get_bigint() const noexcept;
   simdjson_inline simdjson_result<double> get_double() const noexcept;
   simdjson_inline simdjson_result<bool> get_bool() const noexcept;
 

@@ -580,6 +580,9 @@ simdjson_inline bool value_iterator::is_root_negative() noexcept {
 simdjson_inline simdjson_result<bool> value_iterator::is_integer() noexcept {
   return numberparsing::is_integer(peek_non_root_scalar("integer"));
 }
+simdjson_inline simdjson_result<bool> value_iterator::is_integer(bool check_bigint) noexcept {
+  return numberparsing::is_integer(peek_non_root_scalar("any_integer"), check_bigint);
+}
 simdjson_inline simdjson_result<number_type> value_iterator::get_number_type() noexcept {
   return numberparsing::get_number_type(peek_non_root_scalar("integer"));
 }
@@ -606,6 +609,17 @@ simdjson_inline simdjson_result<bool> value_iterator::is_root_integer(bool check
   return answer;
 }
 
+simdjson_inline simdjson_result<bool> value_iterator::is_root_integer(bool check_trailing, bool check_bigint) noexcept {
+  auto max_len = peek_start_length();
+  auto json = peek_root_scalar("is_root_integer");
+  auto answer = numberparsing::is_integer(json, json + max_len, check_bigint);
+  // If the parsing was a success, we must still check that it is
+  // a single scalar. Note that we parse first because of cases like '[]' where
+  // getting TRAILING_CONTENT is wrong.
+  if(check_trailing && (answer.error() == SUCCESS) && (!_json_iter->is_single_token())) { return TRAILING_CONTENT; }
+  return answer;
+}
+
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> value_iterator::get_root_number_type(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("number");
@@ -625,17 +639,9 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> value_iter
 simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool check_trailing) noexcept {
   auto max_len = peek_start_length();
   auto json = peek_root_scalar("number");
-  // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
-  // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
-  // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1+1];
-  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
-    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
-    return NUMBER_ERROR;
-  }
   number num;
-  error_code error =  numberparsing::parse_number(tmpbuf, num);
+  size_t digit_count;
+  error_code error = numberparsing::parse_number(json, json+max_len, num, digit_count);
   if(error) { return error; }
   if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   advance_root_scalar("number");

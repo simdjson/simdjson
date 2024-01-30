@@ -42,6 +42,7 @@ cmake-build-release/
 
 # C/C++ build outputs
 .build/
+_build/
 bins
 gens
 libs

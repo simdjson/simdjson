@@ -42,6 +42,9 @@ simdjson_inline bool tape_ref::is_uint64() const noexcept {
   constexpr uint64_t tape_uint64 = uint64_t(tape_type::UINT64)<<56;
   return doc->tape[json_index] == tape_uint64;
 }
+simdjson_inline bool tape_ref::is_bigint() const noexcept {
+  return tape_ref_type() == tape_type::BIGINT;
+}
 simdjson_inline bool tape_ref::is_false() const noexcept {
   constexpr uint64_t tape_false = uint64_t(tape_type::FALSE_VALUE)<<56;
   return doc->tape[json_index] == tape_false;
@@ -103,6 +106,10 @@ simdjson_inline uint32_t internal::tape_ref::get_string_length() const noexcept 
 simdjson_inline const char * internal::tape_ref::get_c_str() const noexcept {
   size_t string_buf_index = size_t(tape_value());
   return reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]);
+}
+
+simdjson_inline bigint_t internal::tape_ref::get_bigint() const noexcept {
+  return bigint_t{get_c_str(), get_string_length()};
 }
 
 inline std::string_view internal::tape_ref::get_string_view() const noexcept {

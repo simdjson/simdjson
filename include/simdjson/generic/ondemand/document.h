@@ -184,7 +184,7 @@ public:
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
       "The supported types are ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
       "int64_t, double, and bool. We recommend you use get_double(), get_bool(), get_uint64(), get_int64(), "
-      " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template.");
+      "get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template.");
   }
   /** @overload template<typename T> simdjson_result<T> get() & noexcept */
   template<typename T> simdjson_inline simdjson_result<T> get() && noexcept {
@@ -193,7 +193,7 @@ public:
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
       "The supported types are ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
       "int64_t, double, and bool. We recommend you use get_double(), get_bool(), get_uint64(), get_int64(), "
-      " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template.");
+      "get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template.");
   }
 
   /**
@@ -470,6 +470,8 @@ public:
    * an integer greater or equal to 9223372036854775808
    * get_number_type() is number_type::signed_integer if we have an
    * integer that is less than 9223372036854775808
+   * get_number_type() is number_type::big_integer if we have an integer larger
+   * than those ranges above
    * Otherwise, get_number_type() has value number_type::floating_point_number
    *
    * This function requires processing the number string, but it is expected

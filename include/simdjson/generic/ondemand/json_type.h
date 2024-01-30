@@ -40,6 +40,7 @@ struct number {
    *        floating_point_number=1, /// a binary64 number
    *        signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
    *        unsigned_integer         /// a positive integer larger or equal to 1<<63
+   *        big_integer              /// a big integer that doesn't fit in a 64-bit word
    *    };
    */
   simdjson_inline ondemand::number_type get_number_type() const noexcept;
@@ -65,6 +66,17 @@ struct number {
   simdjson_inline int64_t get_int64() const noexcept;
   simdjson_inline operator int64_t() const noexcept;
 
+  /**
+   * return true if the automatically determined type of
+   * the number is number_type::big_integer.
+   */
+  simdjson_inline bool is_bigint() const noexcept;
+  simdjson_inline operator bigint_t() const noexcept;
+
+  /**
+   * return the value as a string_view, only valid if is_bigint() is true.
+   */
+  simdjson_inline std::string_view get_bigint() const noexcept;
 
   /**
    * return true if the automatically determined type of
@@ -79,7 +91,8 @@ struct number {
 
   /**
    * Convert the number to a double. Though it always succeed, the conversion
-   * may be lossy if the number cannot be represented exactly.
+   * may be lossy if the number cannot be represented exactly. If the number is
+   * big integer, NAN is returned.
    */
   simdjson_inline double as_double() const noexcept;
 
@@ -95,10 +108,14 @@ protected:
   friend error_code numberparsing::write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer);
   template<typename W>
   friend error_code numberparsing::parse_number(const uint8_t *const src, W &writer);
+  template<typename W>
+  friend error_code numberparsing::parse_number(const uint8_t *const src, const uint8_t *const end, W &writer, size_t &digit_count);
   /** Store a signed 64-bit value to the number. */
   simdjson_inline void append_s64(int64_t value) noexcept;
   /** Store an unsigned 64-bit value to the number. */
   simdjson_inline void append_u64(uint64_t value) noexcept;
+  /** Store a big integer value to the number. */
+  simdjson_inline void append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept;
   /** Store a double value to the number. */
   simdjson_inline void append_double(double value) noexcept;
   /** Specifies that the value is a double, but leave it undefined. */
@@ -115,6 +132,7 @@ protected:
     double floating_point_number;
     int64_t signed_integer;
     uint64_t unsigned_integer;
+    bigint_t big_integer;
   } payload{0};
   number_type type{number_type::signed_integer};
 };

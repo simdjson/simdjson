@@ -200,6 +200,9 @@ simdjson_inline bool value::is_negative() noexcept {
 simdjson_inline simdjson_result<bool> value::is_integer() noexcept {
   return iter.is_integer();
 }
+simdjson_inline simdjson_result<bool> value::is_integer(bool check_bigint) noexcept {
+  return iter.is_integer(check_bigint);
+}
 simdjson_warn_unused simdjson_inline simdjson_result<number_type> value::get_number_type() noexcept {
   return iter.get_number_type();
 }

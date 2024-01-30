@@ -48,6 +48,13 @@ simdjson_inline number::operator uint64_t() const noexcept {
   return get_uint64();
 }
 
+simdjson_inline bool number::is_bigint() const noexcept {
+  return get_number_type() == number_type::big_integer;
+}
+
+simdjson_inline number::operator bigint_t() const noexcept {
+  return payload.big_integer;
+}
 
 simdjson_inline bool number::is_int64() const noexcept {
   return get_number_type() == number_type::signed_integer;
@@ -59,6 +66,10 @@ simdjson_inline int64_t number::get_int64() const noexcept {
 
 simdjson_inline number::operator int64_t() const noexcept {
   return get_int64();
+}
+
+simdjson_inline std::string_view number::get_bigint() const noexcept {
+  return payload.big_integer;
 }
 
 simdjson_inline bool number::is_double() const noexcept {
@@ -80,6 +91,9 @@ simdjson_inline double number::as_double() const noexcept {
   if(is_int64()) {
     return double(payload.signed_integer);
   }
+  if(is_bigint()) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
   return double(payload.unsigned_integer);
 }
 
@@ -91,6 +105,11 @@ simdjson_inline void number::append_s64(int64_t value) noexcept {
 simdjson_inline void number::append_u64(uint64_t value) noexcept {
   payload.unsigned_integer = value;
   type = number_type::unsigned_integer;
+}
+
+simdjson_inline void number::append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept {
+  payload.big_integer = bigint_t(src, end - src);
+  type = number_type::big_integer;
 }
 
 simdjson_inline void number::append_double(double value) noexcept {

@@ -202,6 +202,9 @@ namespace treewalk_1 {
       case dom::element_type::UINT64:
         cout << uint64_t(element) << endl;
         break;
+      case dom::element_type::BIGINT:
+        cout << bigint_t(element) << endl;
+        break;
       case dom::element_type::DOUBLE:
         cout << double(element) << endl;
         break;

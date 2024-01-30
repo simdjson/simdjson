@@ -416,8 +416,8 @@ public:
    */
   simdjson_inline bool is_negative() noexcept;
   /**
-   * Checks whether the value is an integer number. Note that
-   * this requires to partially parse the number string. If
+   * Checks whether the value is an integer number that fits in 64 bits.
+   * Note that this requires to partially parse the number string. If
    * the value is determined to be an integer, it may still
    * not parse properly as an integer in subsequent steps
    * (e.g., it might overflow).
@@ -426,9 +426,16 @@ public:
    * before parsing a number, you may have fallen for a performance
    * anti-pattern.
    *
-   * @returns true if the number if negative.
+   * @returns true if the number if an integer that fits in 64 bits.
    */
   simdjson_inline simdjson_result<bool> is_integer() noexcept;
+
+  /**
+   * Same as is_integer() but if check_bigint is true, also returns true if the number
+   * is big integer
+   */
+  simdjson_inline simdjson_result<bool> is_integer(bool check_bigint) noexcept;
+
   /**
    * Determine the number type (integer or floating-point number) as quickly
    * as possible. This function does not fully validate the input. It is
@@ -443,6 +450,8 @@ public:
    * an integer greater or equal to 9223372036854775808
    * get_number_type() is number_type::signed_integer if we have an
    * integer that is less than 9223372036854775808
+   * get_number_type() is number_type::big_integer if the integer doesn't fit
+   * in 64 bits.
    * Otherwise, get_number_type() has value number_type::floating_point_number
    *
    * This function requires processing the number string, but it is expected

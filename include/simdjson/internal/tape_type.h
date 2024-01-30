@@ -16,6 +16,7 @@ enum class tape_type {
   STRING = '"',
   INT64 = 'l',
   UINT64 = 'u',
+  BIGINT = 'L',
   DOUBLE = 'd',
   TRUE_VALUE = 't',
   FALSE_VALUE = 'f',

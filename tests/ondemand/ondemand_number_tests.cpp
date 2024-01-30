@@ -211,18 +211,22 @@ namespace number_tests {
   bool get_number_tests() {
     TEST_START();
     ondemand::parser parser;
-    padded_string docdata = R"([1.0, 3, 1, 3.1415,-13231232,9999999999999999999,-9223372036854775807,-9223372036854775808])"_padded;
-    ondemand::number_type expectedtypes[] = {ondemand::number_type::floating_point_number,
+    padded_string docdata =
+      R"([1.0, 3, 1, 3.1415,-13231232,9999999999999999999,-9223372036854775807,-9223372036854775808,1234567890123456789012345])"_padded;
+    ondemand::number_type expectedtypes[] = {
+                                 ondemand::number_type::floating_point_number,
                                  ondemand::number_type::signed_integer,
                                  ondemand::number_type::signed_integer,
                                  ondemand::number_type::floating_point_number,
                                  ondemand::number_type::signed_integer,
                                  ondemand::number_type::unsigned_integer,
                                  ondemand::number_type::signed_integer,
-                                 ondemand::number_type::signed_integer
+                                 ondemand::number_type::signed_integer,
+                                 ondemand::number_type::big_integer
                                  };
-    bool is_negative[] = {false, false, false, false, true, false, true, true};
-    bool is_integer[] = {false, true, true, false, true, true, true, true};
+    bool is_negative[] = {false, false, false, false, true, false, true, true, false};
+    bool is_integer[] = {false, true, true, false, true, true, true, true, false};
+    bool is_big_integer[] = {false, true, true, false, true, true, true, true, true};
 
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
@@ -241,6 +245,9 @@ namespace number_tests {
       bool intvalue{};
       ASSERT_SUCCESS(val.is_integer().get(intvalue));
       ASSERT_EQUAL(is_integer[counter], intvalue);
+      if (!intvalue)
+        ASSERT_SUCCESS(val.is_integer(true).get(intvalue));
+      ASSERT_EQUAL(is_big_integer[counter], intvalue);
       ondemand::number_type t = num.get_number_type();
       ASSERT_EQUAL(expectedtypes[counter], t);
       switch(t) {
@@ -252,6 +259,9 @@ namespace number_tests {
           break;
         case ondemand::number_type::floating_point_number:
           ASSERT_TRUE(num.is_double());
+          break;
+        case ondemand::number_type::big_integer:
+          ASSERT_TRUE(num.is_bigint());
           break;
       }
       if(counter == 0) {
@@ -272,6 +282,9 @@ namespace number_tests {
       } else if(counter == 5) {
         ASSERT_EQUAL(num.get_uint64(), UINT64_C(9999999999999999999));
         ASSERT_EQUAL((uint64_t)num, UINT64_C(9999999999999999999));
+      } else if(counter == 8) {
+        ASSERT_EQUAL(num.get_number_type(), ondemand::number_type::big_integer);
+        ASSERT_TRUE((bigint_t)num == std::string_view("1234567890123456789012345"));
       }
       counter++;
     }

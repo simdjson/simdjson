@@ -44,6 +44,22 @@ struct padded_string;
 class padded_string_view;
 enum class stage1_mode;
 
+/**
+ * The string wrapping type used to represent an integer that doesn't fit in 64 bits.
+ *
+ * The value is not '\0' terminated.
+ */
+struct bigint_t : public std::string_view {
+  bigint_t() {}
+  bigint_t(const uint8_t *src, size_t len) : std::string_view(reinterpret_cast<const char*>(src), len) {}
+  bigint_t(const char    *src, size_t len) : std::string_view(src, len) {}
+
+  bool operator==(const std::string_view& rhs) const { return rhs == *reinterpret_cast<const std::string_view*>(this); }
+  bool operator==(const bigint_t& rhs) const {
+    return reinterpret_cast<const std::string_view&>(rhs) == *reinterpret_cast<const std::string_view*>(this);
+  }
+};
+
 namespace internal {
 
 template<typename T>

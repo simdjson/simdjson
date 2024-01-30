@@ -23,6 +23,7 @@ public:
   simdjson_inline bool is_double() const noexcept;
   simdjson_inline bool is_int64() const noexcept;
   simdjson_inline bool is_uint64() const noexcept;
+  simdjson_inline bool is_bigint() const noexcept;
   simdjson_inline bool is_false() const noexcept;
   simdjson_inline bool is_true() const noexcept;
   simdjson_inline bool is_null_on_tape() const noexcept;// different name to avoid clash with is_null.
@@ -32,7 +33,8 @@ public:
   simdjson_inline T next_tape_value() const noexcept;
   simdjson_inline uint32_t get_string_length() const noexcept;
   simdjson_inline const char * get_c_str() const noexcept;
-  inline std::string_view get_string_view() const noexcept;
+  simdjson_inline bigint_t get_bigint() const noexcept;
+  simdjson_inline std::string_view get_string_view() const noexcept;
   simdjson_inline bool is_document_root() const noexcept;
   simdjson_inline bool usable() const noexcept;
 

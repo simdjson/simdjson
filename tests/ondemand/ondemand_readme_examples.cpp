@@ -410,6 +410,10 @@ bool number_tests() {
         std::cout  << "float: " << double(num) << " ";
         std::cout << "float: " << num.get_double() << std::endl;
         break;
+      case ondemand::number_type::big_integer:
+        std::cout  << "big integer: " << val.get_raw_json_string() << " ";
+        std::cout << "float: " << num.get_double() << std::endl;
+        break;
     }
   }
   TEST_SUCCEED();

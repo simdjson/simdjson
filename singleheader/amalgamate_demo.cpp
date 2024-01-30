@@ -1,3 +1,4 @@
+#include "simdjson.cpp"
 #include "simdjson.h"
 #include <iostream>
 
