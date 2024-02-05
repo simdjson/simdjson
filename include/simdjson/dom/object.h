@@ -18,13 +18,16 @@ public:
 
   class iterator {
   public:
-    using value_type = key_value_pair;
+    using value_type = const key_value_pair;
     using difference_type = std::ptrdiff_t;
+    using pointer = void;
+    using reference = value_type;
+    using iterator_category = std::forward_iterator_tag;
 
     /**
      * Get the actual key/value pair
      */
-    inline const value_type operator*() const noexcept;
+    inline reference operator*() const noexcept;
     /**
      * Get the next key/value pair.
      *
