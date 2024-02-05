@@ -187,8 +187,6 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a9245ff68919610377256bb9b21070e2a"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a9245ff68919610377256bb9b21070e2a">ParsedJson</a> = <a class="el" href="classsimdjson_1_1dom_1_1parser.html">dom::parser</a></td></tr>
-<tr class="separator:a9245ff68919610377256bb9b21070e2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a63b494af834917af13120dcd57719bdb"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a63b494af834917af13120dcd57719bdb">ErrorValues</a> = <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a></td></tr>
 <tr class="separator:a63b494af834917af13120dcd57719bdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -255,30 +253,6 @@ Functions</h2></td></tr>
 <tr class="memitem:af63210cc51d5c99ad84958daf9812e63"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classsimdjson_1_1implementation.html">implementation</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#af63210cc51d5c99ad84958daf9812e63">builtin_implementation</a> ()</td></tr>
 <tr class="memdesc:af63210cc51d5c99ad84958daf9812e63"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function which returns a pointer to an implementation matching the "builtin" implementation.  <a href="namespacesimdjson.html#af63210cc51d5c99ad84958daf9812e63">More...</a><br /></td></tr>
 <tr class="separator:af63210cc51d5c99ad84958daf9812e63"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a913aabdb29fe97e1b8246f1e210f1c40"><td class="memItemLeft" align="right" valign="top"><a id="a913aabdb29fe97e1b8246f1e210f1c40"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>json_parse</b> (const uint8_t *buf, size_t len, <a class="el" href="classsimdjson_1_1dom_1_1parser.html">dom::parser</a> &amp;parser, bool realloc_if_needed=true) noexcept</td></tr>
-<tr class="separator:a913aabdb29fe97e1b8246f1e210f1c40"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a630111c8201eafec9b4c44fe0456a475"><td class="memItemLeft" align="right" valign="top"><a id="a630111c8201eafec9b4c44fe0456a475"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>json_parse</b> (const char *buf, size_t len, <a class="el" href="classsimdjson_1_1dom_1_1parser.html">dom::parser</a> &amp;parser, bool realloc_if_needed=true) noexcept</td></tr>
-<tr class="separator:a630111c8201eafec9b4c44fe0456a475"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a688157fcec0f7a073ebcbaa277df1647"><td class="memItemLeft" align="right" valign="top"><a id="a688157fcec0f7a073ebcbaa277df1647"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>json_parse</b> (const std::string &amp;s, <a class="el" href="classsimdjson_1_1dom_1_1parser.html">dom::parser</a> &amp;parser, bool realloc_if_needed=true) noexcept</td></tr>
-<tr class="separator:a688157fcec0f7a073ebcbaa277df1647"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2ec7825eb81d38a4a101dd89031ad86c"><td class="memItemLeft" align="right" valign="top"><a id="a2ec7825eb81d38a4a101dd89031ad86c"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>json_parse</b> (const <a class="el" href="structsimdjson_1_1padded__string.html">padded_string</a> &amp;s, <a class="el" href="classsimdjson_1_1dom_1_1parser.html">dom::parser</a> &amp;parser) noexcept</td></tr>
-<tr class="separator:a2ec7825eb81d38a4a101dd89031ad86c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a055b1230968101c76d7379da72cf3be1"><td class="memItemLeft" align="right" valign="top"><a id="a055b1230968101c76d7379da72cf3be1"></a>
-simdjson_warn_unused <a class="el" href="classsimdjson_1_1dom_1_1parser.html">dom::parser</a>&#160;</td><td class="memItemRight" valign="bottom"><b>build_parsed_json</b> (const uint8_t *buf, size_t len, bool realloc_if_needed=true) noexcept</td></tr>
-<tr class="separator:a055b1230968101c76d7379da72cf3be1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ace2a91673313643def02966826e3920b"><td class="memItemLeft" align="right" valign="top"><a id="ace2a91673313643def02966826e3920b"></a>
-simdjson_warn_unused <a class="el" href="classsimdjson_1_1dom_1_1parser.html">dom::parser</a>&#160;</td><td class="memItemRight" valign="bottom"><b>build_parsed_json</b> (const char *buf, size_t len, bool realloc_if_needed=true) noexcept</td></tr>
-<tr class="separator:ace2a91673313643def02966826e3920b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8acc50c61e4e3ea1aaa7aa8afd42c2b3"><td class="memItemLeft" align="right" valign="top"><a id="a8acc50c61e4e3ea1aaa7aa8afd42c2b3"></a>
-simdjson_warn_unused <a class="el" href="classsimdjson_1_1dom_1_1parser.html">dom::parser</a>&#160;</td><td class="memItemRight" valign="bottom"><b>build_parsed_json</b> (const std::string &amp;s, bool realloc_if_needed=true) noexcept</td></tr>
-<tr class="separator:a8acc50c61e4e3ea1aaa7aa8afd42c2b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa17af188e477e08db53a67ab6ceeacf4"><td class="memItemLeft" align="right" valign="top"><a id="aa17af188e477e08db53a67ab6ceeacf4"></a>
-simdjson_warn_unused <a class="el" href="classsimdjson_1_1dom_1_1parser.html">dom::parser</a>&#160;</td><td class="memItemRight" valign="bottom"><b>build_parsed_json</b> (const <a class="el" href="structsimdjson_1_1padded__string.html">padded_string</a> &amp;s) noexcept</td></tr>
-<tr class="separator:aa17af188e477e08db53a67ab6ceeacf4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ade4516933f53705eacfaed65ed14962d"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
 <tr class="memitem:ade4516933f53705eacfaed65ed14962d"><td class="memTemplItemLeft" align="right" valign="top">std::string&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">to_string</a> (T x)</td></tr>
 <tr class="memdesc:ade4516933f53705eacfaed65ed14962d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts JSON to a string.  <a href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">More...</a><br /></td></tr>
@@ -414,26 +388,9 @@ constexpr SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS size_t&#160;</td><td class="memI
         </tr>
       </table>
 </div><div class="memdoc">
-<dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000002">Deprecated:</a></b></dt><dd>This is an alias and will be removed, use error_code instead </dd></dl>
+<dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000001">Deprecated:</a></b></dt><dd>This is an alias and will be removed, use error_code instead </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="error_8h_source.html#l00307">307</a> of file <a class="el" href="error_8h_source.html">error.h</a>.</p>
-
-</div>
-</div>
-<a id="a9245ff68919610377256bb9b21070e2a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9245ff68919610377256bb9b21070e2a">&#9670;&nbsp;</a></span>ParsedJson</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">using <a class="el" href="namespacesimdjson.html#a9245ff68919610377256bb9b21070e2a">simdjson::ParsedJson</a> = typedef <a class="el" href="classsimdjson_1_1dom_1_1parser.html">dom::parser</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000001">Deprecated:</a></b></dt><dd>Use <code><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a></code> instead.</dd></dl>
-
-<p class="definition">Definition at line <a class="el" href="parsedjson_8h_source.html#l00013">13</a> of file <a class="el" href="parsedjson_8h_source.html">parsedjson.h</a>.</p>
 
 </div>
 </div>
@@ -650,7 +607,7 @@ constexpr SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS size_t&#160;</td><td class="memI
   </tr>
 </table>
 </div><div class="memdoc">
-<dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000003">Deprecated:</a></b></dt><dd>Error codes should be stored and returned as <code>error_code</code>, use <code><a class="el" href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa" title="It is the convention throughout the code that the macro SIMDJSON_DEVELOPMENT_CHECKS determines whethe...">error_message()</a></code> instead.</dd></dl>
+<dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000002">Deprecated:</a></b></dt><dd>Error codes should be stored and returned as <code>error_code</code>, use <code><a class="el" href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa" title="It is the convention throughout the code that the macro SIMDJSON_DEVELOPMENT_CHECKS determines whethe...">error_message()</a></code> instead.</dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="error-inl_8h_source.html#l00027">27</a> of file <a class="el" href="error-inl_8h_source.html">error-inl.h</a>.</p>
 
