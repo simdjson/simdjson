@@ -1,6 +1,9 @@
 var classsimdjson_1_1dom_1_1array_1_1iterator =
 [
     [ "difference_type", "classsimdjson_1_1dom_1_1array_1_1iterator.html#ac80e4259b16f3a4e2b2ab64dbd15eb2f", null ],
+    [ "iterator_category", "classsimdjson_1_1dom_1_1array_1_1iterator.html#a88d04fcc84be039d1d1028042f94e35a", null ],
+    [ "pointer", "classsimdjson_1_1dom_1_1array_1_1iterator.html#a1cfa9cab7cfee47406097162b928c7a3", null ],
+    [ "reference", "classsimdjson_1_1dom_1_1array_1_1iterator.html#ac4410dc014e7bfb3f192baa4ae86adb1", null ],
     [ "value_type", "classsimdjson_1_1dom_1_1array_1_1iterator.html#a86b8e629aeed9d34a3580ab3906d71fc", null ],
     [ "iterator", "classsimdjson_1_1dom_1_1array_1_1iterator.html#a49f4f063fe5f652eb286e6db5f0c7985", null ],
     [ "iterator", "classsimdjson_1_1dom_1_1array_1_1iterator.html#afede12d9a07418ca9f4ffd98ad033674", null ],
