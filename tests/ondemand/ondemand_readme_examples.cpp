@@ -38,11 +38,149 @@ bool to_string_example_no_except() {
   TEST_SUCCEED();
 }
 
+
+struct Car {
+  Car() : make(), model(), year(), tire_pressure() {}
+  std::string make;
+  std::string model;
+  int64_t year;
+  std::vector<double> tire_pressure;
+};
+
+template <>
+simdjson_inline simdjson_result<std::vector<double>>
+simdjson::ondemand::value::get() noexcept {
+  // This works on a value, if the std::vector<double> is the document, we need to also implement
+  // simdjson::ondemand::document::get<std::vector<double>>.
+  ondemand::array array;
+  auto error = get_array().get(array);
+  if(error) { return error; }
+  std::vector<double> vec;
+  for (auto v : array) {
+    double val;
+    error = v.get_double().get(val);
+    if(error) { return error; }
+    vec.push_back(val);
+  }
+  return vec;
+}
+
+
+
+template <>
+simdjson_inline simdjson_result<Car> simdjson::ondemand::value::get() noexcept {
+  ondemand::object obj;
+  auto error = get_object().get(obj);
+  if (error) { return error; }
+  Car car;
+  // Instead of repeatedly obj["something"], we iterate through the object which
+  // we expect to be faster.
+  for (auto field : obj) {
+    raw_json_string key;
+    if (error = field.key().get(key); error) { return error; }
+    if (key == "make") {
+      error = field.value().get_string(car.make);
+      if(error) { return error; }
+    } else if (key == "model") {
+      error = field.value().get_string(car.model);
+      if(error) { return error; }
+    } else if (key == "year") {
+      error = field.value().get_int64().get(car.year);
+      if(error) { return error; }
+    } else if (key == "tire_pressure") {
+      error = field.value().get<std::vector<double>>().get(car.tire_pressure);
+      if (error) { return error; }
+    }
+  }
+  return car;
+}
+
+
+int custom_type_without_exceptions() {
+  padded_string json = R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012,
+       "tire_pressure": [ 30.1, 31.0 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999,
+       "tire_pressure": [ 29.8, 30.0 ] }
+])"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  auto error = parser.iterate(json).get(doc);
+  if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  for (auto val : doc) {
+    Car c;
+    error = val.get<Car>().get(c);
+    if(error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+    std::cout << c.make << std::endl;
+  }
+  return 0;
+}
+
+
+template <>
+simdjson_inline simdjson_result<Car> simdjson::ondemand::document::get() & noexcept {
+  ondemand::object obj;
+  auto error = get_object().get(obj);
+  if (error) {
+    return error;
+  }
+  Car car;
+  // Instead of repeatedly obj["something"], we iterate through the object which
+  // we expect to be faster.
+  for (auto field : obj) {
+    raw_json_string key;
+    error = field.key().get(key);
+    if (error) { return error; }
+    if (key == "make") {
+      error = field.value().get_string(car.make);
+      if (error) { return error; }
+    } else if (key == "model") {
+      error = field.value().get_string(car.model);
+      if (error) { return error; }
+    } else if (key == "year") {
+      error = field.value().get_int64().get(car.year);
+      if (error) { return error; }
+    } else if (key == "tire_pressure") {
+      error = field.value().get<std::vector<double>>().get(car.tire_pressure);
+      if (error) { return error; }
+    }
+  }
+  return car;
+}
+
 #if SIMDJSON_EXCEPTIONS
 
 
+int custom_type_on_document() {
+  padded_string json = R"( { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] } )"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  Car c(doc);
+  std::cout << c.make << std::endl;
+  return 0;
+}
+
+int custom_type_with_exceptions() {
+  padded_string json = R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012,
+       "tire_pressure": [ 30.1, 31.0 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999,
+       "tire_pressure": [ 29.8, 30.0 ] }
+])"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  for (auto val : doc) {
+    Car c(val);
+    std::cout << c.make << std::endl;
+  }
+  return 0;
+}
+
 bool to_string_example() {
-    TEST_START();
+  TEST_START();
   auto json = R"({
   "name": "Daniel",
   "age": 42
