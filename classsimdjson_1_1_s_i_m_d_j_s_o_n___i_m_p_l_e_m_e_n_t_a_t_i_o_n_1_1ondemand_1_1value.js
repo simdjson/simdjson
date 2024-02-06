@@ -43,6 +43,7 @@ var classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_
     [ "operator object", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a89519c599fd938a6a750262111fc5757", null ],
     [ "operator raw_json_string", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a85d69a32b4b95f353abe6214ecc98619", null ],
     [ "operator std::string_view", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a8e5f2ff46639e6c1cffb73d4e071e491", null ],
+    [ "operator T", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a4d381cbad85e6b5498328f2c9bacb8ab", null ],
     [ "operator uint64_t", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#afb7be23d4f1006d5eae234d8c8c8d286", null ],
     [ "operator[]", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a930e15defdcb082793fb22fe5b161de5", null ],
     [ "operator[]", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a8af215f249821f44ee33eb3cf2dac53b", null ],

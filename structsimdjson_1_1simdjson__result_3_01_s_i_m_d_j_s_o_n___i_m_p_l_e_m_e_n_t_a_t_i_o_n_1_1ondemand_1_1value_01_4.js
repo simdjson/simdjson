@@ -43,6 +43,7 @@ var structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_
     [ "operator SIMDJSON_IMPLEMENTATION::ondemand::object", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value_01_4.html#a06233595fa9a434aff2fb3a3bdc76a11", null ],
     [ "operator SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value_01_4.html#a3a5998868865b8d9767c462281631d5e", null ],
     [ "operator std::string_view", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value_01_4.html#aadd184bbf226ca3cedbeaec4bc96cb81", null ],
+    [ "operator T", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value_01_4.html#ad2795c7084e1cb4f5c3119703fc807a2", null ],
     [ "operator uint64_t", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value_01_4.html#adb031e554665e5dd97ae88a58fb4cd99", null ],
     [ "operator[]", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value_01_4.html#ad176b26e845d13c778eb9b8cb94260ba", null ],
     [ "operator[]", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value_01_4.html#a899707b51050635713fd4aa697a5067b", null ],

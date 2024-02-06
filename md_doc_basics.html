@@ -109,6 +109,7 @@ $(document).ready(function(){initNavTree('md_doc_basics.html',''); initResizable
 <li><a href="#using-the-parsed-json-additional-examples">Using the Parsed JSON: Additional examples</a></li>
 </ul>
 </li>
+<li><a href="#adding-support-for-custom-types">Adding support for custom types</a></li>
 <li><a href="#minifying-json-strings-without-parsing">Minifying JSON strings without parsing</a></li>
 <li><a href="#utf-8-validation-alone">UTF-8 validation (alone)</a></li>
 <li><a href="#json-pointer">JSON Pointer</a></li>
@@ -298,8 +299,8 @@ Using the Parsed JSON</h1>
 </div><!-- fragment --> </blockquote>
 <p>* <b>Array Iteration:</b> To iterate through an array, use <code>for (auto value : array) { ... }</code>. This will step through each value in the JSON array.</p>
 <p>If you know the type of the value, you can cast it right there, too! <code>for (double value : array) { ... }</code>.</p>
-<p>You may also use explicit iterators: <code>for(auto i = array.begin(); i != array.end(); i++) {}</code>. You can check that an array is empty with the condition <code>auto i = array.begin(); if(i == array.end()) {...}</code>.</p><ul>
-<li><b>Object Iteration:</b> You can iterate through an object's fields, as well: <code>for (auto field : object) { ... }</code>. You may also use explicit iterators : <code>for(auto i = object.begin(); i != object.end(); i++) { auto field = *i; .... }</code>. You can check that an object is empty with the condition <code>auto i = object.begin(); if(i == object.end()) {...}</code>.<ul>
+<p>You may also use explicit iterators: <code>for(auto i = array.begin(); i != array.end(); i++) {}</code>. You can check that an array is empty with the condition <code>auto i = array.begin(); if (i == array.end()) {...}</code>.</p><ul>
+<li><b>Object Iteration:</b> You can iterate through an object's fields, as well: <code>for (auto field : object) { ... }</code>. You may also use explicit iterators : <code>for(auto i = object.begin(); i != object.end(); i++) { auto field = *i; .... }</code>. You can check that an object is empty with the condition <code>auto i = object.begin(); if (i == object.end()) {...}</code>.<ul>
 <li><code>field.unescaped_key()</code> will get you the unescaped key string. E.g., the JSON string <code>"\u00e1"</code> becomes the Unicode string <code>á</code>. Optionally, you pass <code>true</code> as a parameter to the <code>unescaped_key</code> method if you want invalid escape sequences to be replaced by a default replacement character (e.g., <code>\ud800\ud801\ud811</code>): otherwise bad escape sequences lead to an immediate error.</li>
 <li><code>field.value()</code> will get you the value, which you can then use all these other methods on.</li>
 </ul>
@@ -531,6 +532,257 @@ Using the Parsed JSON: Additional examples</h2>
 <div class="line">  }</div>
 <div class="line">}</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md11"></a>
+Adding support for custom types</h1>
+<p>Suppose you have your own types, such as a <code>Car</code> struct:</p>
+<div class="fragment"><div class="line"> {C++}</div>
+<div class="line">struct Car {</div>
+<div class="line">  std::string make;</div>
+<div class="line">  std::string model;</div>
+<div class="line">  int64_t year;</div>
+<div class="line">  std::vector&lt;double&gt; tire_pressure;</div>
+<div class="line">};</div>
+</div><!-- fragment --><p>You might want to write code that automatically parses the JSON content to your custom type:</p>
+<div class="fragment"><div class="line"> {C++}</div>
+<div class="line">  padded_string json = R&quot;( [ { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018,</div>
+<div class="line">       &quot;tire_pressure&quot;: [ 40.1, 39.9 ] },</div>
+<div class="line">  { &quot;make&quot;: &quot;Kia&quot;,    &quot;model&quot;: &quot;Soul&quot;,   &quot;year&quot;: 2012,</div>
+<div class="line">       &quot;tire_pressure&quot;: [ 30.1, 31.0 ] },</div>
+<div class="line">  { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Tercel&quot;, &quot;year&quot;: 1999,</div>
+<div class="line">       &quot;tire_pressure&quot;: [ 29.8, 30.0 ] }</div>
+<div class="line">])&quot;_padded;</div>
+<div class="line"> </div>
+<div class="line"> </div>
+<div class="line">  ondemand::parser parser;</div>
+<div class="line">  ondemand::document doc = parser.iterate(json);</div>
+<div class="line">  for (auto val : doc) {</div>
+<div class="line">    Car c(val);</div>
+<div class="line">    std::cout &lt;&lt; c.make &lt;&lt; std::endl;</div>
+<div class="line">  }</div>
+</div><!-- fragment --><p>We may do so by providing additional template definitions to the <code>ondemand::value</code> type. We may start by providing a definition for <code>std::vector&lt;double&gt;</code> as follows:</p>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">template &lt;&gt;</div>
+<div class="line">simdjson_inline simdjson_result&lt;std::vector&lt;double&gt;&gt;</div>
+<div class="line">simdjson::ondemand::value::get() noexcept {</div>
+<div class="line">  ondemand::array array;</div>
+<div class="line">  auto error = get_array().get(array);</div>
+<div class="line">  if (error) { return error; }</div>
+<div class="line">  std::vector&lt;double&gt; vec;</div>
+<div class="line">  for (auto v : array) {</div>
+<div class="line">    double val;</div>
+<div class="line">    error = v.get_double().get(val);</div>
+<div class="line">    if (error) { return error; }</div>
+<div class="line">    vec.push_back(val);</div>
+<div class="line">  }</div>
+<div class="line">  return vec;</div>
+<div class="line">}</div>
+</div><!-- fragment --><p>We may then provide support for our <code>Car</code>` struct:</p>
+<div class="fragment"><div class="line"> {C++}</div>
+<div class="line">template &lt;&gt;</div>
+<div class="line">simdjson_inline simdjson_result&lt;Car&gt; simdjson::ondemand::value::get() noexcept {</div>
+<div class="line">  ondemand::object obj;</div>
+<div class="line">  auto error = get_object().get(obj);</div>
+<div class="line">  if (error) { return error; }</div>
+<div class="line">  Car car;</div>
+<div class="line">  // Instead of repeatedly obj[&quot;something&quot;], we iterate through the object which</div>
+<div class="line">  // we expect to be faster.</div>
+<div class="line">  for (auto field : obj) {</div>
+<div class="line">    raw_json_string key;</div>
+<div class="line">    error = field.key().get(key);</div>
+<div class="line">    if (error) { return error; }</div>
+<div class="line">    if (key == &quot;make&quot;) {</div>
+<div class="line">      error = field.value().get_string(car.make);</div>
+<div class="line">      if (error) { return error; }</div>
+<div class="line">    } else if (key == &quot;model&quot;) {</div>
+<div class="line">      error = field.value().get_string(car.model);</div>
+<div class="line">      if (error) { return error; }</div>
+<div class="line">    } else if (key == &quot;year&quot;) {</div>
+<div class="line">      error = field.value().get_int64().get(car.year);</div>
+<div class="line">      if (error) { return error; }</div>
+<div class="line">    } else if (key == &quot;tire_pressure&quot;) {</div>
+<div class="line">      error = field.value().get&lt;std::vector&lt;double&gt;&gt;().get(car.tire_pressure);</div>
+<div class="line">      if (auto  error) { return error; }</div>
+<div class="line">    }</div>
+<div class="line">  }</div>
+<div class="line">  return car;</div>
+<div class="line">}</div>
+</div><!-- fragment --><p>And that is all that is needed! The following code is a complete example:</p>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">#include &quot;simdjson.h&quot;</div>
+<div class="line">#include &lt;iostream&gt;</div>
+<div class="line">#include &lt;vector&gt;</div>
+<div class="line"> </div>
+<div class="line">using namespace simdjson;</div>
+<div class="line"> </div>
+<div class="line">/**</div>
+<div class="line"> * A custom type that we want to parse.</div>
+<div class="line"> */</div>
+<div class="line">struct Car {</div>
+<div class="line">  std::string make;</div>
+<div class="line">  std::string model;</div>
+<div class="line">  int64_t year;</div>
+<div class="line">  std::vector&lt;double&gt; tire_pressure;</div>
+<div class="line">};</div>
+<div class="line"> </div>
+<div class="line">template &lt;&gt;</div>
+<div class="line">simdjson_inline simdjson_result&lt;std::vector&lt;double&gt;&gt;</div>
+<div class="line">simdjson::ondemand::value::get() noexcept {</div>
+<div class="line">  ondemand::array array;</div>
+<div class="line">  auto error = get_array().get(array);</div>
+<div class="line">  if (error) { return error; }</div>
+<div class="line">  std::vector&lt;double&gt; vec;</div>
+<div class="line">  for (auto v : array) {</div>
+<div class="line">    double val;</div>
+<div class="line">    error = v.get_double().get(val);</div>
+<div class="line">    if (error) { return error; }</div>
+<div class="line">    vec.push_back(val);</div>
+<div class="line">  }</div>
+<div class="line">  return vec;</div>
+<div class="line">}</div>
+<div class="line"> </div>
+<div class="line"> </div>
+<div class="line">template &lt;&gt;</div>
+<div class="line">simdjson_inline simdjson_result&lt;Car&gt; simdjson::ondemand::value::get() noexcept {</div>
+<div class="line">  ondemand::object obj;</div>
+<div class="line">  auto error = get_object().get(obj);</div>
+<div class="line">  if (error) { return error; }</div>
+<div class="line">  Car car;</div>
+<div class="line">  // Instead of repeatedly obj[&quot;something&quot;], we iterate through the object which</div>
+<div class="line">  // we expect to be faster.</div>
+<div class="line">  for (auto field : obj) {</div>
+<div class="line">    raw_json_string key;</div>
+<div class="line">    error = field.key().get(key);</div>
+<div class="line">    if (error) { return error; }</div>
+<div class="line">    if (key == &quot;make&quot;) {</div>
+<div class="line">      error = field.value().get_string(car.make);</div>
+<div class="line">      if (error) { return error; }</div>
+<div class="line">    } else if (key == &quot;model&quot;) {</div>
+<div class="line">      error = field.value().get_string(car.model);</div>
+<div class="line">      if (error) { return error; }</div>
+<div class="line">    } else if (key == &quot;year&quot;) {</div>
+<div class="line">      error = field.value().get_int64().get(car.year);</div>
+<div class="line">      if (error) { return error; }</div>
+<div class="line">    } else if (key == &quot;tire_pressure&quot;) {</div>
+<div class="line">      error = field.value().get&lt;std::vector&lt;double&gt;&gt;().get(car.tire_pressure);</div>
+<div class="line">      if (error) { return error; }</div>
+<div class="line">    }</div>
+<div class="line">  }</div>
+<div class="line">  return car;</div>
+<div class="line">}</div>
+<div class="line"> </div>
+<div class="line">int main(void) {</div>
+<div class="line">  padded_string json = R&quot;( [ { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018,</div>
+<div class="line">       &quot;tire_pressure&quot;: [ 40.1, 39.9 ] },</div>
+<div class="line">  { &quot;make&quot;: &quot;Kia&quot;,    &quot;model&quot;: &quot;Soul&quot;,   &quot;year&quot;: 2012,</div>
+<div class="line">       &quot;tire_pressure&quot;: [ 30.1, 31.0 ] },</div>
+<div class="line">  { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Tercel&quot;, &quot;year&quot;: 1999,</div>
+<div class="line">       &quot;tire_pressure&quot;: [ 29.8, 30.0 ] }</div>
+<div class="line">])&quot;_padded;</div>
+<div class="line">  ondemand::parser parser;</div>
+<div class="line">  ondemand::document doc = parser.iterate(json);</div>
+<div class="line">  for (auto val : doc) {</div>
+<div class="line">    Car c(val);</div>
+<div class="line">    std::cout &lt;&lt; c.make &lt;&lt; std::endl;</div>
+<div class="line">  }</div>
+<div class="line">  direct();</div>
+<div class="line">  return EXIT_SUCCESS;</div>
+<div class="line">}</div>
+</div><!-- fragment --><p>Observe that we require an explicit cast (<code>Car c(val)</code> instead of <code>for (Car c : doc) {</code>): it is by design.</p>
+<p>If you prefer to avoid exceptions, you may modify the <code>main</code> function as follows:</p>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">int main(void) {</div>
+<div class="line">  padded_string json = R&quot;( [ { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018,</div>
+<div class="line">       &quot;tire_pressure&quot;: [ 40.1, 39.9 ] },</div>
+<div class="line">  { &quot;make&quot;: &quot;Kia&quot;,    &quot;model&quot;: &quot;Soul&quot;,   &quot;year&quot;: 2012,</div>
+<div class="line">       &quot;tire_pressure&quot;: [ 30.1, 31.0 ] },</div>
+<div class="line">  { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Tercel&quot;, &quot;year&quot;: 1999,</div>
+<div class="line">       &quot;tire_pressure&quot;: [ 29.8, 30.0 ] }</div>
+<div class="line">])&quot;_padded;</div>
+<div class="line">  ondemand::parser parser;</div>
+<div class="line">  ondemand::document doc;</div>
+<div class="line">  auto error = parser.iterate(json).get(doc);</div>
+<div class="line">  if (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; return EXIT_FAILURE; }</div>
+<div class="line">  for (auto val : doc) {</div>
+<div class="line">    Car c;</div>
+<div class="line">    error = val.get&lt;Car&gt;().get(c);</div>
+<div class="line">    if (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; return EXIT_FAILURE; }</div>
+<div class="line">    std::cout &lt;&lt; c.make &lt;&lt; std::endl;</div>
+<div class="line">  }</div>
+<div class="line">  return EXIT_SUCCESS;</div>
+<div class="line">}</div>
+</div><!-- fragment --><p>Our example is limited to <code>ondemand::value</code> instances. If you wish to also be able to map directly the document instance itself to a custom type, you need to provide the definitions to the <code>ondemand::document</code> type. In this instance, we must replace the function with signature <code>simdjson_result&lt;Car&gt; simdjson::ondemand::value::get()</code> with a function having signature <code>simdjson_result&lt;Car&gt; simdjson::ondemand::document::get() &amp;</code>. The following is a complete example:</p>
+<div class="fragment"><div class="line"> {C++}</div>
+<div class="line">#include &quot;simdjson.h&quot;</div>
+<div class="line">#include &lt;iostream&gt;</div>
+<div class="line">#include &lt;vector&gt;</div>
+<div class="line"> </div>
+<div class="line">using namespace simdjson;</div>
+<div class="line"> </div>
+<div class="line">/**</div>
+<div class="line"> * A custom type that we want to parse.</div>
+<div class="line"> */</div>
+<div class="line">struct Car {</div>
+<div class="line">  std::string make;</div>
+<div class="line">  std::string model;</div>
+<div class="line">  int64_t year;</div>
+<div class="line">  std::vector&lt;double&gt; tire_pressure;</div>
+<div class="line">};</div>
+<div class="line"> </div>
+<div class="line">template &lt;&gt;</div>
+<div class="line">simdjson_inline simdjson_result&lt;std::vector&lt;double&gt;&gt;</div>
+<div class="line">simdjson::ondemand::value::get() noexcept {</div>
+<div class="line">  ondemand::array array;</div>
+<div class="line">  if (auto error = get_array().get(array); error) { return error; }</div>
+<div class="line">  std::vector&lt;double&gt; vec;</div>
+<div class="line">  for (auto v : array) {</div>
+<div class="line">    double val;</div>
+<div class="line">    if (auto error = v.get_double().get(val); error) { return error; }</div>
+<div class="line">    vec.push_back(val);</div>
+<div class="line">  }</div>
+<div class="line">  return vec;</div>
+<div class="line">}</div>
+<div class="line"> </div>
+<div class="line"> </div>
+<div class="line">template &lt;&gt;</div>
+<div class="line">simdjson_inline simdjson_result&lt;Car&gt; simdjson::ondemand::document::get() &amp; noexcept {</div>
+<div class="line">  ondemand::object obj;</div>
+<div class="line">  auto error = get_object().get(obj);</div>
+<div class="line">  if (error) {</div>
+<div class="line">    return error;</div>
+<div class="line">  }</div>
+<div class="line">  Car car;</div>
+<div class="line">  // Instead of repeatedly obj[&quot;something&quot;], we iterate through the object which</div>
+<div class="line">  // we expect to be faster.</div>
+<div class="line">  for (auto field : obj) {</div>
+<div class="line">    raw_json_string key;</div>
+<div class="line">    error = field.key().get(key);</div>
+<div class="line">    if (error) { return error; }</div>
+<div class="line">    if (key == &quot;make&quot;) {</div>
+<div class="line">      error = field.value().get_string(car.make);</div>
+<div class="line">      if (error) { return error; }</div>
+<div class="line">    } else if (key == &quot;model&quot;) {</div>
+<div class="line">      error = field.value().get_string(car.model);</div>
+<div class="line">      if (error) { return error; }</div>
+<div class="line">    } else if (key == &quot;year&quot;) {</div>
+<div class="line">      error = field.value().get_int64().get(car.year);</div>
+<div class="line">      if (error) { return error; }</div>
+<div class="line">    } else if (key == &quot;tire_pressure&quot;) {</div>
+<div class="line">      error = field.value().get&lt;std::vector&lt;double&gt;&gt;().get(car.tire_pressure);</div>
+<div class="line">      if (error) { return error; }</div>
+<div class="line">    }</div>
+<div class="line">  }</div>
+<div class="line">  return car;</div>
+<div class="line">}</div>
+<div class="line"> </div>
+<div class="line">int main(void) {</div>
+<div class="line">  padded_string json = R&quot;( { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018,</div>
+<div class="line">       &quot;tire_pressure&quot;: [ 40.1, 39.9 ] } )&quot;_padded;</div>
+<div class="line">  ondemand::parser parser;</div>
+<div class="line">  ondemand::document doc = parser.iterate(json);</div>
+<div class="line">  Car c(doc);</div>
+<div class="line">  std::cout &lt;&lt; c.make &lt;&lt; std::endl;</div>
+<div class="line">  return EXIT_SUCCESS;</div>
+<div class="line">}</div>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md12"></a>
 Minifying JSON strings without parsing</h1>
 <p>In some cases, you may have valid JSON strings that you do not wish to parse but that you wish to minify. That is, you wish to remove all unnecessary spaces. We have a fast function for this purpose (<code>simdjson::minify(const char * input, size_t length, const char * output, size_t&amp; new_length)</code>). This function does not validate your content, and it does not parse it. It is much faster than parsing the string and re-serializing it in minified form (<code><a class="el" href="namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c" title="Minifies a JSON element or document, printing the smallest possible valid JSON.">simdjson::minify</a>(parser.parse())</code>). Usage is relatively simple. You must pass an input pointer with a length parameter, as well as an output pointer and an output length parameter (by reference). The output length parameter is not read, but written to. The output pointer should point to a valid memory region that is as large as the original string length. The input pointer and input length are read, but not written to.</p>
 <div class="fragment"><div class="line">{C++}</div>
@@ -544,7 +796,7 @@ Minifying JSON strings without parsing</h1>
 <div class="line"> auto error = simdjson::minify(some_string, length, buffer.get(), new_length);</div>
 <div class="line"> // The buffer variable now has &quot;[1,2,3,4]&quot; and new_length has value 9.</div>
 </div><!-- fragment --><p>Though it does not validate the JSON input, it will detect when the document ends with an unterminated string. E.g., it would refuse to minify the string <code>"this string is not terminated</code> because of the missing final quote.</p>
-<h1><a class="anchor" id="autotoc_md12"></a>
+<h1><a class="anchor" id="autotoc_md13"></a>
 UTF-8 validation (alone)</h1>
 <p>The simdjson library has fast functions to validate UTF-8 strings. They are many times faster than most functions commonly found in libraries. You can use our fast functions, even if you do not care about JSON.</p>
 <div class="fragment"><div class="line">{C++}</div>
@@ -554,7 +806,7 @@ UTF-8 validation (alone)</h1>
 </div><!-- fragment --><p>The UTF-8 validation function merely checks that the input is valid UTF-8: it works with strings in general, not just JSON strings.</p>
 <p>Your input string does not need any padding. Any string will do. The <code>validate_utf8</code> function does not do any memory allocation on the heap, and it does not throw exceptions.</p>
 <p>If you find yourself needing only fast Unicode functions, consider using the simdutf library instead: <a href="https://github.com/simdutf/simdutf">https://github.com/simdutf/simdutf</a></p>
-<h1><a class="anchor" id="autotoc_md13"></a>
+<h1><a class="anchor" id="autotoc_md14"></a>
 JSON Pointer</h1>
 <p>The simdjson library also supports <a href="https://tools.ietf.org/html/rfc6901">JSON pointer</a> through the <code>at_pointer()</code> method, letting you reach further down into the document in a single call. JSON pointer is supported by both the <a href="https://github.com/simdjson/simdjson/blob/master/doc/dom.md#json-pointer">DOM approach</a> as well as the On Demand approach.</p>
 <p><b>Note:</b> The On Demand implementation of JSON pointer relies on <code>find_field</code> which implies that it does not unescape keys when matching.</p>
@@ -639,7 +891,7 @@ JSON Pointer</h1>
 <div class="line">doc.rewind();   // Need to manually rewind to be able to use find_field properly from start of document</div>
 <div class="line">std::cout &lt;&lt; doc.find_field(&quot;k0&quot;) &lt;&lt; std::endl; // Prints 27</div>
 </div><!-- fragment --><p>When the JSON path is the empty string (<code>""</code>) applied to a scalar document (lone string, number, Boolean or null), a SCALAR_DOCUMENT_AS_VALUE error is returned because scalar document cannot be represented as <code>value</code> instances. You can check that a document is a scalar with the method <code>scalar()</code>.</p>
-<h1><a class="anchor" id="autotoc_md14"></a>
+<h1><a class="anchor" id="autotoc_md15"></a>
 Error Handling</h1>
 <p>Error handing with exception and a single try/catch clause makes the code simple, but it gives you little control over errors. For easier debugging or more robust error handling, you may want to consider our exception-free approach.</p>
 <p>The entire simdjson API is usable with and without exceptions. All simdjson APIs that can fail return <code>simdjson_result&lt;T&gt;</code>, which is a &lt;value, error_code&gt; pair. You can retrieve the value with .get() without generating an exception, like so:</p>
@@ -750,7 +1002,7 @@ Error Handling</h1>
 <div class="line">  std::cout &lt;&lt; identifier &lt;&lt; std::endl;</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>The <code>at</code> method can only be called once on an array. It cannot be used to iterate through the values of an array.</p>
-<h2><a class="anchor" id="autotoc_md15"></a>
+<h2><a class="anchor" id="autotoc_md16"></a>
 Error Handling Examples without Exceptions</h2>
 <p>This is how the example in "Using the Parsed JSON" could be written using only error code checking (without exceptions):</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -837,11 +1089,11 @@ Error Handling Examples without Exceptions</h2>
 <div class="line">     std::cout &lt;&lt; intvalue;</div>
 <div class="line">   }</div>
 <div class="line"> }</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md16"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md17"></a>
 Disabling Exceptions</h2>
 <p>The simdjson can be build with exceptions entirely disabled. It checks the <code>__cpp_exceptions</code> macro at compile time. Even if exceptions are enabled in your compiler, you may still disable exceptions specifically for simdjson, by setting <code>SIMDJSON_EXCEPTIONS</code> to <code>0</code> (false) at compile-time when building the simdjson library. If you are building with CMake, to ensure you don't write any code that uses exceptions, you compile with <code>SIMDJSON_EXCEPTIONS=OFF</code>. For example, if including the project via cmake:</p>
 <div class="fragment"><div class="line">target_compile_definitions(simdjson PUBLIC SIMDJSON_EXCEPTIONS=OFF)</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md17"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md18"></a>
 Exceptions</h2>
 <p>Users more comfortable with an exception flow may choose to directly cast the <code>simdjson_result&lt;T&gt;</code> to the desired type:</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -878,7 +1130,7 @@ Exceptions</h2>
 <div class="line">              &lt;&lt; doc.current_location() &lt;&lt; &quot; in &quot; &lt;&lt; json_string &lt;&lt; std::endl;</div>
 <div class="line">  }</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md18"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md19"></a>
 Current location in document</h2>
 <p>Sometimes, it might be helpful to know the current location in the document during iteration. This is especially useful when encountering errors. The <code>current_location()</code> method on a <code>document</code> instances makes it easy to identify common JSON errors. Users can call the <code>current_location()</code> method on a valid document instance to retrieve a <code>const char *</code> pointer to the current location in the document. This method also works even after an error has invalidated the document and the parser (e.g. <code>TAPE_ERROR</code>, <code>INCOMPLETE_ARRAY_OR_OBJECT</code>). When the input was a <code>padding_string</code> or another null-terminated source, then you may use the <code>const char *</code> pointer as a C string. As an example, consider the following example where we used the exception-free simdjson interface:</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -942,7 +1194,7 @@ Current location in document</h2>
 <div class="line">  }</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>The <code>current_location()</code> method requires a valid <code>document</code> instance. If the <code>iterate</code> function fails to return a valid document, then you cannot use <code>current_location()</code> to identify the location of an error in the input string. The errors reported by <code>iterate</code> function include EMPTY if no JSON document is detected, UTF8_ERROR if the string is not a valid UTF-8 string, UNESCAPED_CHARS if a string contains control characters that must be escaped and UNCLOSED_STRING if there is an unclosed string in the document. We do not provide location information for these errors.</p>
-<h2><a class="anchor" id="autotoc_md19"></a>
+<h2><a class="anchor" id="autotoc_md20"></a>
 Checking for trailing content</h2>
 <p>The parser validates all parsed content, but your code may exhaust the content while not having processed the entire document. Thus, as a final optional step, you may call <code>at_end()</code> on the document instance. If it returns <code>false</code>, then you may conclude that you have trailing content and that your document is not valid JSON. You may then use <code>doc.current_location()</code> to obtain a pointer to the start of the trailing content.</p>
 <div class="fragment"><div class="line">{C++}</div>
@@ -958,7 +1210,7 @@ Checking for trailing content</h2>
 <div class="line">   std::cerr &lt;&lt; &quot;trailing content at byte index &quot; &lt;&lt; doc.current_location() - json.data() &lt;&lt; std::endl;</div>
 <div class="line"> }</div>
 </div><!-- fragment --><p>The <code>at_end()</code> method is equivalent to <code>doc.current_location().error() == <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa4ffc800804829a88c5b52ac3c4c6681" title="No error.">simdjson::SUCCESS</a></code> but more convenient.</p>
-<h1><a class="anchor" id="autotoc_md20"></a>
+<h1><a class="anchor" id="autotoc_md21"></a>
 Rewinding</h1>
 <p>In some instances, you may need to go through a document more than once. For that purpose, you may call the <code>rewind()</code> method on the document instance. It allows you to restart processing from the beginning without rescanning all of the input data again. It invalidates all values, objects and arrays that you have created so far (including unescaped strings).</p>
 <p>In the following example, we print on the screen the number of cars in the JSON input file before printout the data.</p>
@@ -981,7 +1233,7 @@ Rewinding</h1>
 <div class="line"> }</div>
 </div><!-- fragment --><p>Performance note: the On Demand front-end does not materialize the parsed numbers and other values. If you are accessing everything twice, you may need to parse them twice. Thus the rewind functionality is best suited for cases where the first pass only scans the structure of the document.</p>
 <p>Both arrays and objects have a similar method <code>reset()</code>. It is similar to the document <code>rewind()</code> method, except that it does not rewind the internal string buffer. Thus you should consume values only once even if you can iterate through the array or object more than once. If you unescape a string within an array more than once, you have unsafe code.</p>
-<h1><a class="anchor" id="autotoc_md21"></a>
+<h1><a class="anchor" id="autotoc_md22"></a>
 Newline-Delimited JSON (ndjson) and JSON lines</h1>
 <p>When processing large inputs (e.g., in the context of data engineering), engineers commonly serialize data into streams of multiple JSON documents. That is, instead of one large (e.g., 2 GB) JSON document containing multiple records, it is often preferable to write out multiple records as independent JSON documents, to be read one-by-one.</p>
 <p>The simdjson library also supports multithreaded JSON streaming through a large file containing many smaller JSON documents in either <a href="http://ndjson.org">ndjson</a> or <a href="http://jsonlines.org">JSON lines</a> format. If your JSON documents all contain arrays or objects, we even support direct file concatenation without whitespace. However, if there is content between your JSON documents, it should be exclusively ASCII white-space characters.</p>
@@ -1039,7 +1291,7 @@ Newline-Delimited JSON (ndjson) and JSON lines</h1>
 <div class="line"> unprocessed bytes at the end: 293</div>
 </div><!-- fragment --><p>If your documents are large (e.g., larger than a megabyte), then the <code>iterate_many</code> function is maybe ill-suited. It is really meant to support reading efficiently streams of relatively small documents (e.g., a few kilobytes each). If you have larger documents, you should use other functions like <code>iterate</code>.</p>
 <p>We also provide some support for comma-separated documents and other advanced features. See <a class="el" href="md_doc_iterate_many.html">iterate_many.md</a> for detailed information and design.</p>
-<h1><a class="anchor" id="autotoc_md22"></a>
+<h1><a class="anchor" id="autotoc_md23"></a>
 Parsing Numbers Inside Strings</h1>
 <p>Though the JSON specification allows for numbers and string values, many engineers choose to integrate the numbers inside strings, e.g., they prefer <code>{"a":"1.9"}</code> to<code>{"a":1.9}</code>. The simdjson library supports parsing valid numbers inside strings which makes it more convenient for people working with those types of documents. This feature is supported through three methods: <code>get_double_in_string</code>, <code>get_int64_in_string</code> and <code>get_uint64_in_string</code>. However, it is important to note that these methods are not substitute to the regular <code>get_double</code>, <code>get_int64</code> and <code>get_uint64</code>. The usage of the <code>get_*_in_string</code> methods is solely to parse valid JSON numbers inside strings, and so we expect users to call these methods appropriately. In particular, a valid JSON number has no leading and no trailing whitespaces, and the strings <code>"nan"</code>, <code>"1e"</code> and <code>"infinity"</code> will not be accepted as valid numbers. As an example, suppose we have the following JSON text:</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -1117,7 +1369,7 @@ Parsing Numbers Inside Strings</h1>
 <div class="line">}</div>
 </div><!-- fragment --><p> It is also important to note that when dealing an invalid number inside a string, simdjson will report a <code>NUMBER_ERROR</code> error if the string begins with a number whereas simdjson will report a <code>INCORRECT_TYPE</code> error otherwise.</p>
 <p>The <code>*_in_string</code> methods can also be called on a single document instance: e.g., when your document consist solely of a quoted number.</p>
-<h1><a class="anchor" id="autotoc_md23"></a>
+<h1><a class="anchor" id="autotoc_md24"></a>
 Dynamic Number Types</h1>
 <p>The JSON standard does not offer strongly typed numbers. It suggests that using the binary64 type (<code>double</code> in C++) is a safe choice, but little else. Given the JSON array <code>[1.0,1]</code>, it is not specified whether it is an array of two floating-point numbers, two integers, or one floating-point number followed by an integer.</p>
 <p>Given an <code>ondemand::value</code> instance, you may ask whether it is a negative value with the <code>is_negative()</code> method. The function is inexpensive.</p>
@@ -1164,7 +1416,7 @@ Dynamic Number Types</h1>
 <div class="line">3.1415 negative: 0 is_integer: 0 float: 3.1415 float: 3.1415</div>
 <div class="line">-13231232 negative: 1 is_integer: 1 integer: -13231232 integer: -13231232</div>
 <div class="line">9999999999999999999 negative: 0 is_integer: 1 large 64-bit integer: 9999999999999999999 large 64-bit integer: 9999999999999999999</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md24"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md25"></a>
 Raw Strings</h1>
 <p>It is sometimes useful to have access to a raw (unescaped) string: we make available a minimalist <code>raw_json_string</code> data type which contains a pointer inside the string in the original document, right after the quote. It is accessible via <code>get_raw_json_string()</code> on a string instance and returned by the <code>key()</code> method on an object's field instance. It is always optional: replacing <code>get_raw_json_string()</code> with <code>get_string()</code> and <code>key()</code> by <code>unescaped_key()</code> returns an <code>string_view</code> instance of the unescaped string.</p>
 <p>You can quickly compare a <code>raw_json_string</code> instance with a target string. You may also unescape the <code>raw_json_string</code> on your own string buffer: <code>parser.unescape(mystr, ptr)</code> advances the provided pointer <code>ptr</code> and returns a string_view instance on the newly serialized string upon success, otherwise it returns an error. When unescaping to your own string buffer, you should ensure that you have sufficient memory space: the total size of the strings plus <code><a class="el" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf" title="The amount of padding needed in a buffer to parse JSON.">simdjson::SIMDJSON_PADDING</a></code> bytes. The following example illustrates how we can unescape JSON string to a user-provided buffer:</p>
@@ -1184,7 +1436,7 @@ Raw Strings</h1>
 <div class="line">     // writes &#39;Jack The Ripper 3&#39;, escaping the \u0033</div>
 <div class="line">     mystrings.push_back(valuesv);</div>
 <div class="line">   }</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md25"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md26"></a>
 General Direct Access to the Raw JSON String</h1>
 <p>If your value is a string, the <code>raw_json_string</code> you with <code>get_raw_json_string()</code> gives you direct access to the unprocessed string. But the simdjson library allows you to have access to the raw underlying JSON more generally, not just for strings.</p>
 <p>The simdjson library makes explicit assumptions about types. For examples, numbers must be integers (up to 64-bit integers) or binary64 floating-point numbers. Some users have different needs. For example, some users might want to support big integers. The library makes this possible by providing a <code>raw_json_token</code> method which returns a <code>std::string_view</code> instance containing the value as a string which you may then parse as you see fit.</p>
@@ -1245,7 +1497,7 @@ General Direct Access to the Raw JSON String</h1>
 <div class="line">   std::string_view raw = key_value.value().raw_json();</div>
 <div class="line">   // will capture &quot;1&quot;, &quot;2&quot;, &quot;\&quot;fds\&quot;&quot;, &quot;{\&quot;a\&quot;:1}&quot;, &quot;[1,344]&quot;</div>
 <div class="line"> }</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md26"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md27"></a>
 Storing Directly into an Existing String Instance</h1>
 <p>The simdjson library favours the use of <code>std::string_view</code> instances because it tends to lead to better performance due to causing fewer memory allocations. However, they are cases where you need to store a string result in an <code>std::string</code><code> instance. You can do so with a templated version of the</code>to_string()<code>method which takes as a parameter a reference to an</code>std::string`.</p>
 <div class="fragment"><div class="line"> {C++}</div>
@@ -1261,7 +1513,7 @@ Storing Directly into an Existing String Instance</h1>
 <div class="fragment"><div class="line">{C++}</div>
 <div class="line"> std::string name;</div>
 <div class="line"> auto err = doc[&quot;name&quot;].get_string(name);</div>
-<div class="line"> if(err) { /* handle error */ }</div>
+<div class="line"> if (err) { /* handle error */ }</div>
 </div><!-- fragment --><p>The <code>std::string</code> instance, once created, is independent. Unlike our <code>std::string_view</code> instances, it does not point at data that is within our <code>parser</code> instance. The same caveat applies: you should only consume a JSON string once.</p>
 <p>Because <code>get_string()</code> is a template that requires a type that can be assigned an <code>std::string</code>, you can use it with features such as <code>std::optional</code>:</p>
 <div class="fragment"><div class="line">{C++}</div>
@@ -1269,17 +1521,17 @@ Storing Directly into an Existing String Instance</h1>
 <div class="line"> ondemand::parser parser;</div>
 <div class="line"> ondemand::document doc = parser.iterate(json);</div>
 <div class="line"> std::optional&lt;std::string&gt; value;</div>
-<div class="line"> if(doc[&quot;foo1&quot;].get_string(value)) { /* error */ }</div>
+<div class="line"> if (doc[&quot;foo1&quot;].get_string(value)) { /* error */ }</div>
 <div class="line"> // value was populated with &quot;3.1416&quot;</div>
 </div><!-- fragment --><p>You should be mindful of the trade-off: allocating multiple <code>std::string</code> instances can become expensive.</p>
-<h1><a class="anchor" id="autotoc_md27"></a>
+<h1><a class="anchor" id="autotoc_md28"></a>
 Thread Safety</h1>
 <p>We built simdjson with thread safety in mind.</p>
 <p>The simdjson library is single-threaded except for <a class="el" href="md_doc_iterate_many.html">`iterate_many`</a> and <a class="el" href="md_doc_parse_many.html">`parse_many`</a> which may use secondary threads under their control when the library is compiled with thread support.</p>
 <p>We recommend using one <code>parser</code> object per thread. When using the On Demand front-end (our default), you should access the <code>document</code> instances in a single-threaded manner since it acts as an iterator (and is therefore not thread safe).</p>
 <p>The CPU detection, which runs the first time parsing is attempted and switches to the fastest parser for your CPU, is transparent and thread-safe.</p>
 <p>In a threaded environment, stack space is often limited. Running code like simdjson in debug mode may require hundreds of kilobytes of stack memory. Thus stack overflows are a possibility. We recommend you turn on optimization when working in an environment where stack space is limited. If you must run your code in debug mode, we recommend you configure your system to have more stack space. We discourage you from running production code based on a debug build.</p>
-<h1><a class="anchor" id="autotoc_md28"></a>
+<h1><a class="anchor" id="autotoc_md29"></a>
 Standard Compliance</h1>
 <p>The simdjson library is fully compliant with the <a href="https://www.tbray.org/ongoing/When/201x/2017/12/14/rfc8259.html">RFC 8259</a> JSON specification.</p>
 <ul>
@@ -1297,10 +1549,10 @@ Standard Compliance</h1>
 <li>The specification states that an implementation may set limits on the size of texts that it accepts. The simdjson library limits single JSON documents to 4 GiB. It will refuse to parse a JSON document larger than 4294967295 bytes. (This limitation does not apply to streams of JSON documents, only to single JSON documents.)</li>
 <li>The specification states that an implementation may set limits on the maximum depth of nesting. By default, the simdjson will refuse to parse documents with a depth exceeding 1024.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md29"></a>
+<h1><a class="anchor" id="autotoc_md30"></a>
 Backwards Compatibility</h1>
 <p>The only header file supported by simdjson is <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code>. Older versions of simdjson published a number of other include files such as <code>document.h</code> or <code>ParsedJson.h</code> alongside <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code>; these headers may be moved or removed in future versions.</p>
-<h1><a class="anchor" id="autotoc_md30"></a>
+<h1><a class="anchor" id="autotoc_md31"></a>
 Examples</h1>
 <p>Some users like to have example. The following code samples illustrate how to process specific JSON inputs. For simplicity, we do not include full error support: this code would throw exceptions on error.</p>
 <ul>
@@ -1551,7 +1803,7 @@ Examples</h1>
 <div class="line">  }</div>
 <div class="line">  return true;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md31"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md32"></a>
 Performance Tips</h1>
 <ul>
 <li>The On Demand front-end works best when doing a single pass over the input: avoid calling <code>count_elements</code>, <code>rewind</code> and similar methods.</li>
@@ -1570,7 +1822,7 @@ Performance Tips</h1>
 </div><!-- fragment --></li>
 <li>To better understand the operation of your On Demand parser, and whether it is performing as well as you think it should be, there is a logger feature built in to simdjson! To use it, define the pre-processor directive <code>SIMDJSON_VERBOSE_LOGGING</code> prior to including the <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code> header, which enables logging in simdjson. Run your code. It may generate a lot of logging output; adding printouts from your application that show each section may be helpful. The log's output will show step-by-step information on state, buffer pointer position, depth, and key retrieval status. Importantly, unless <code>SIMDJSON_VERBOSE_LOGGING</code> is defined, logging is entirely disabled and thus carries no overhead.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md32"></a>
+<h1><a class="anchor" id="autotoc_md33"></a>
 Further reading</h1>
 <ul>
 <li>John Keiser, Daniel Lemire, <a href="http://arxiv.org/abs/2312.17149">On-Demand JSON: A Better Way to Parse Documents?</a>, Software: Practice and Experience (to appear) </li>

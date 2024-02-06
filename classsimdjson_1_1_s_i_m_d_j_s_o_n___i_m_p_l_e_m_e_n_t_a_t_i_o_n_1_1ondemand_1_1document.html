@@ -181,6 +181,10 @@ template&lt;typename T &gt; </td></tr>
 template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a2bbfe68b06975a98c12f46bcfbe7189d"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> (T &amp;out) &amp;&amp;noexcept</td></tr>
 <tr class="separator:a2bbfe68b06975a98c12f46bcfbe7189d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a82f15e975b32e02fc98d4583a46ae0c6"><td class="memTemplParams" colspan="2"><a id="a82f15e975b32e02fc98d4583a46ae0c6"></a>
+template&lt;class T &gt; </td></tr>
+<tr class="memitem:a82f15e975b32e02fc98d4583a46ae0c6"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline&#160;</td><td class="memTemplItemRight" valign="bottom"><b>operator T</b> () noexcept(false)</td></tr>
+<tr class="separator:a82f15e975b32e02fc98d4583a46ae0c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a08307c0a5552cf8cb06613ed1de48eac"><td class="memItemLeft" align="right" valign="top">simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a08307c0a5552cf8cb06613ed1de48eac">operator array</a> () &amp;noexcept(false)</td></tr>
 <tr class="memdesc:a08307c0a5552cf8cb06613ed1de48eac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cast this JSON value to an array.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a08307c0a5552cf8cb06613ed1de48eac">More...</a><br /></td></tr>
 <tr class="separator:a08307c0a5552cf8cb06613ed1de48eac"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -415,7 +419,7 @@ static constexpr <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00209">209</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00211">211</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -489,7 +493,7 @@ static constexpr <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00290">290</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00292">292</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -519,7 +523,7 @@ static constexpr <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m
 <p>Begin array iteration. </p>
 <p>Part of the std::iterable interface. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00213">213</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00215">215</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -549,7 +553,7 @@ static constexpr <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m
 <p>This method scans the array and counts the number of elements. </p>
 <p>The count_elements method should always be called before you have begun iterating through the array: it is expected that you are pointing at the beginning of the array. The runtime complexity is linear in the size of the array. After calling this function, if successful, the array is 'rewinded' at its beginning as if it had never been accessed. If the JSON is malformed (e.g., there is a missing comma), then an error is returned and it is no longer safe to continue. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00195">195</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00197">197</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -580,7 +584,7 @@ static constexpr <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m
 <p>The count_fields method should always be called before you have begun iterating through the object: it is expected that you are pointing at the beginning of the object. The runtime complexity is linear in the size of the object. After calling this function, if successful, the object is 'rewinded' at its beginning as if it had never been accessed. If the JSON is malformed (e.g., there is a missing comma), then an error is returned and it is no longer safe to continue.</p>
 <p>To check that an object is empty, it is more performant to use the is_empty() method. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00202">202</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00204">204</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -640,7 +644,7 @@ static constexpr <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m
 <p>Sentinel representing the end of the array. </p>
 <p>Part of the std::iterable interface. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00216">216</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00218">218</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -687,7 +691,7 @@ static constexpr <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The value of the field, or NO_SUCH_FIELD if the field is not in the object. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00220">220</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00222">222</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -729,7 +733,7 @@ static constexpr <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The value of the field, or NO_SUCH_FIELD if the field is not in the object. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00226">226</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00228">228</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1032,7 +1036,7 @@ INCORRECT_TYPE If the JSON value is not a 64-bit integer. </dd></dl>
 <p>Otherwise, <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#a8c8d29d831635c958e87de0cc2dab8b4" title="return the automatically determined type of the number: number_type::floating_point_number,...">number.get_number_type()</a> has value number_type::floating_point_number and we have a binary64 number. You can recover the value by calling <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#ab261642a30f5e26b0769ce701cd5b9f8" title="return the value as a double, only valid if is_double() is true.">number.get_double()</a> and you have that <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#a48f9e54ebd40e1c060be0a4b1d4ff823" title="return true if the automatically determined type of the number is number_type::floating_point_number.">number.is_double()</a> is true.</p>
 <p>You must check the type before accessing the value: it is an error to call "get_int64()" when <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#a8c8d29d831635c958e87de0cc2dab8b4" title="return the automatically determined type of the number: number_type::floating_point_number,...">number.get_number_type()</a> is not number_type::signed_integer and when <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#a38d6b4b4e91f30c8def71997d23454c2" title="return true if the automatically determined type of the number is number_type::signed_integer.">number.is_int64()</a> is false. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00280">280</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00282">282</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1066,7 +1070,7 @@ INCORRECT_TYPE If the JSON value is not a 64-bit integer. </dd></dl>
 <p>This function requires processing the number string, but it is expected to be faster than <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a2b04a9cd8c4ff9b591dc3f2db95c69cf" title="Attempt to parse an ondemand::number.">get_number()</a>.<a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#abb3a7cc6f2391d26f27a28c16ca38c9c" title="Determine the number type (integer or floating-point number) as quickly as possible.">get_number_type()</a> because it is does not parse the number value.</p>
 <dl class="section return"><dt>Returns</dt><dd>the type of the number </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00276">276</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00278">278</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1413,7 +1417,7 @@ INCORRECT_TYPE if the JSON value is not a string. </dd></dl>
 <p>Note that this requires to partially parse the number string. If the value is determined to be an integer, it may still not parse properly as an integer in subsequent steps (e.g., it might overflow).</p>
 <dl class="section return"><dt>Returns</dt><dd>true if the number if negative. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00272">272</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00274">274</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1443,7 +1447,7 @@ INCORRECT_TYPE if the JSON value is not a string. </dd></dl>
 <p>Checks whether the document is a negative number. </p>
 <dl class="section return"><dt>Returns</dt><dd>true if the number if negative. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00268">268</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00270">270</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1507,7 +1511,7 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
 <p>Returns false when there it is an array or object.</p>
 <dl class="section return"><dt>Returns</dt><dd>true if the type is string, number, null, Boolean @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse". </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00261">261</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00263">263</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1543,7 +1547,7 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00184">184</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00186">186</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1579,7 +1583,7 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00191">191</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00193">193</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1615,7 +1619,7 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00188">188</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00190">190</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1651,7 +1655,7 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00187">187</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00189">189</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1687,7 +1691,7 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00185">185</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00187">187</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1725,7 +1729,7 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00190">190</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00192">192</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1762,7 +1766,7 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00189">189</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00191">191</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1798,7 +1802,7 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00186">186</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00188">188</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1835,7 +1839,7 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00192">192</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00194">194</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1865,7 +1869,7 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
 <p>Consumes the document and returns a string_view instance corresponding to the document as represented in JSON. </p>
 <p>It points inside the original byte array containing the JSON document. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00245">245</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00247">247</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1906,7 +1910,7 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
 <li>null </li>
 </ul>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00285">285</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00287">287</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1968,7 +1972,7 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
 <p>NOTE: If you're only expecting a value to be one type (a typical case), it's generally better to just call .get_double, .get_string, etc. and check for INCORRECT_TYPE (or just let it throw an exception).</p>
 <p>@error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse". </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00257">257</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00259">259</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>

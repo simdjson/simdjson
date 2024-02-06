@@ -1,5 +1,10 @@
 var NAVTREEINDEX2 =
 {
+"classsimdjson_1_1dom_1_1object.html#a4fb3e04e0ea591132da90341bf9ed819":[11,0,0,0,4,2],
+"classsimdjson_1_1dom_1_1object.html#a5db654c4e603254bd308a7c068d79c43":[11,0,0,0,4,11],
+"classsimdjson_1_1dom_1_1object.html#a79cf291477bcaa1bf2328411b411587d":[11,0,0,0,4,6],
+"classsimdjson_1_1dom_1_1object.html#a93ec5c36aae913f266f533b2e02bc873":[11,0,0,0,4,9],
+"classsimdjson_1_1dom_1_1object.html#ab075da9eb7678f6321cecf4cbd196039":[11,0,0,0,4,3],
 "classsimdjson_1_1dom_1_1object.html#acc66a2f2eb74fbe359d4064531764f50":[11,0,0,0,4,8],
 "classsimdjson_1_1dom_1_1object.html#ace84581be0fee46d5128c49710522aba":[11,0,0,0,4,4],
 "classsimdjson_1_1dom_1_1object.html#ae2e1a8cbaab9d352495d1dc993407be3":[11,0,0,0,4,1],
@@ -141,8 +146,8 @@ var NAVTREEINDEX2 =
 "functions_d.html":[11,3,0,3],
 "functions_e.html":[11,3,0,4],
 "functions_f.html":[11,3,0,5],
-"functions_func.html":[11,3,1],
 "functions_func.html":[11,3,1,0],
+"functions_func.html":[11,3,1],
 "functions_func_b.html":[11,3,1,1],
 "functions_func_c.html":[11,3,1,2],
 "functions_func_d.html":[11,3,1,3],
@@ -244,10 +249,5 @@ var NAVTREEINDEX2 =
 "icelake_2simd_8h_source.html":[12,0,0,0,6,9],
 "icelake_2stringparsing__defs_8h_source.html":[12,0,0,0,6,10],
 "icelake_8h_source.html":[12,0,0,0,21],
-"implementation_8h_source.html":[12,0,0,0,22],
-"implementation__detection_8h_source.html":[12,0,0,0,23],
-"implementation__simdjson__result__base-inl_8h_source.html":[12,0,0,0,4,6],
-"implementation__simdjson__result__base_8h_source.html":[12,0,0,0,4,7],
-"index.html":[],
-"instruction__set_8h_source.html":[12,0,0,0,7,2]
+"implementation_8h_source.html":[12,0,0,0,22]
 };

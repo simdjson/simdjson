@@ -158,12 +158,20 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <tr class="memitem:af737df31cc6466027676bdf70b60542d"><td class="memItemLeft" align="right" valign="top"><a id="af737df31cc6466027676bdf70b60542d"></a>
 simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>is_null</b> () noexcept</td></tr>
 <tr class="separator:af737df31cc6466027676bdf70b60542d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4113ad7b0069a49619bec9d243d2216e"><td class="memTemplParams" colspan="2"><a id="a4113ad7b0069a49619bec9d243d2216e"></a>
+template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a4113ad7b0069a49619bec9d243d2216e"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; T &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> () &amp;noexcept</td></tr>
+<tr class="separator:a4113ad7b0069a49619bec9d243d2216e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adec459feebebf8af6c5b999b9489b420"><td class="memItemLeft" align="right" valign="top"><a id="adec459feebebf8af6c5b999b9489b420"></a>
 simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::string_view &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>raw_json</b> () noexcept</td></tr>
 <tr class="separator:adec459feebebf8af6c5b999b9489b420"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a40d89015165021b282f1dced6ac4fef2"><td class="memItemLeft" align="right" valign="top"><a id="a40d89015165021b282f1dced6ac4fef2"></a>
 simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><b>operator document &amp;</b> () const noexcept</td></tr>
 <tr class="separator:a40d89015165021b282f1dced6ac4fef2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab682ca591c3b6a7e4311d7d3d704d7cc"><td class="memTemplParams" colspan="2"><a id="ab682ca591c3b6a7e4311d7d3d704d7cc"></a>
+template&lt;class T &gt; </td></tr>
+<tr class="memitem:ab682ca591c3b6a7e4311d7d3d704d7cc"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline&#160;</td><td class="memTemplItemRight" valign="bottom"><b>operator T</b> () noexcept(false)</td></tr>
+<tr class="separator:ab682ca591c3b6a7e4311d7d3d704d7cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa5a025095c9d89e777fe00b003ec09d2"><td class="memItemLeft" align="right" valign="top"><a id="aa5a025095c9d89e777fe00b003ec09d2"></a>
 simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><b>operator array</b> () &amp;noexcept(false)</td></tr>
 <tr class="separator:aa5a025095c9d89e777fe00b003ec09d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -254,11 +262,15 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <tr class="memitem:a8645c724ff217f11d09a69a3eb32355b"><td class="memItemLeft" align="right" valign="top"><a id="a8645c724ff217f11d09a69a3eb32355b"></a>
 simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>at_pointer</b> (std::string_view json_pointer) noexcept</td></tr>
 <tr class="separator:a8645c724ff217f11d09a69a3eb32355b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a876cf6f9cffe607c7361a68cf8ef8112"><td class="memItemLeft" align="right" valign="top"><a id="a876cf6f9cffe607c7361a68cf8ef8112"></a>
+template&lt;&gt; </td></tr>
+<tr class="memitem:a876cf6f9cffe607c7361a68cf8ef8112"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array.html">array</a> &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> () &amp;noexcept</td></tr>
+<tr class="separator:a876cf6f9cffe607c7361a68cf8ef8112"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html" title="A document_reference is a thin wrapper around a document reference instance.">document_reference</a> is a thin wrapper around a document reference instance. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00637">637</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00639">639</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a47b30548f71aca4317bdc4c6955cd719"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a47b30548f71aca4317bdc4c6955cd719">&#9670;&nbsp;</a></span>get_uint64()</h2>
@@ -288,7 +300,7 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <p>However, for streams of JSON documents, we want to be able to start from "321" "321" "321" and parse it successfully as a stream of JSON documents, calling get_uint64_in_string() successfully each time.</p>
 <p>To achieve this result, we pass a 'false' to a get_root_value_iterator() method: this indicates that we allow trailing content. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00598">598</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00600">600</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
