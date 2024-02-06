@@ -1,4 +1,4 @@
-/* auto-generated on 2024-01-08 14:56:09 -0500. Do not edit! */
+/* auto-generated on 2024-02-04 22:03:23 -0500. Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -4119,11 +4119,14 @@ public:
   public:
     using value_type = element;
     using difference_type = std::ptrdiff_t;
+    using pointer = void;
+    using reference = value_type;
+    using iterator_category = std::forward_iterator_tag;
 
     /**
      * Get the actual value
      */
-    inline value_type operator*() const noexcept;
+    inline reference operator*() const noexcept;
     /**
      * Get the next value.
      *
@@ -5914,13 +5917,16 @@ public:
 
   class iterator {
   public:
-    using value_type = key_value_pair;
+    using value_type = const key_value_pair;
     using difference_type = std::ptrdiff_t;
+    using pointer = void;
+    using reference = value_type;
+    using iterator_category = std::forward_iterator_tag;
 
     /**
      * Get the actual key/value pair
      */
-    inline const value_type operator*() const noexcept;
+    inline reference operator*() const noexcept;
     /**
      * Get the next key/value pair.
      *
@@ -29671,10 +29677,9 @@ public:
   class iterator {
   public:
     using value_type = simdjson_result<document>;
-    using reference  = value_type;
-
+    using reference  = simdjson_result<ondemand::document_reference>;
+    using pointer    = void;
     using difference_type   = std::ptrdiff_t;
-
     using iterator_category = std::input_iterator_tag;
 
     /**
@@ -29684,7 +29689,7 @@ public:
     /**
      * Get the current document (or error).
      */
-    simdjson_inline simdjson_result<ondemand::document_reference> operator*() noexcept;
+    simdjson_inline reference operator*() noexcept;
     /**
      * Advance to the next document (prefix).
      */
@@ -39627,10 +39632,9 @@ public:
   class iterator {
   public:
     using value_type = simdjson_result<document>;
-    using reference  = value_type;
-
+    using reference  = simdjson_result<ondemand::document_reference>;
+    using pointer    = void;
     using difference_type   = std::ptrdiff_t;
-
     using iterator_category = std::input_iterator_tag;
 
     /**
@@ -39640,7 +39644,7 @@ public:
     /**
      * Get the current document (or error).
      */
-    simdjson_inline simdjson_result<ondemand::document_reference> operator*() noexcept;
+    simdjson_inline reference operator*() noexcept;
     /**
      * Advance to the next document (prefix).
      */
@@ -50075,10 +50079,9 @@ public:
   class iterator {
   public:
     using value_type = simdjson_result<document>;
-    using reference  = value_type;
-
+    using reference  = simdjson_result<ondemand::document_reference>;
+    using pointer    = void;
     using difference_type   = std::ptrdiff_t;
-
     using iterator_category = std::input_iterator_tag;
 
     /**
@@ -50088,7 +50091,7 @@ public:
     /**
      * Get the current document (or error).
      */
-    simdjson_inline simdjson_result<ondemand::document_reference> operator*() noexcept;
+    simdjson_inline reference operator*() noexcept;
     /**
      * Advance to the next document (prefix).
      */
@@ -60522,10 +60525,9 @@ public:
   class iterator {
   public:
     using value_type = simdjson_result<document>;
-    using reference  = value_type;
-
+    using reference  = simdjson_result<ondemand::document_reference>;
+    using pointer    = void;
     using difference_type   = std::ptrdiff_t;
-
     using iterator_category = std::input_iterator_tag;
 
     /**
@@ -60535,7 +60537,7 @@ public:
     /**
      * Get the current document (or error).
      */
-    simdjson_inline simdjson_result<ondemand::document_reference> operator*() noexcept;
+    simdjson_inline reference operator*() noexcept;
     /**
      * Advance to the next document (prefix).
      */
@@ -71084,10 +71086,9 @@ public:
   class iterator {
   public:
     using value_type = simdjson_result<document>;
-    using reference  = value_type;
-
+    using reference  = simdjson_result<ondemand::document_reference>;
+    using pointer    = void;
     using difference_type   = std::ptrdiff_t;
-
     using iterator_category = std::input_iterator_tag;
 
     /**
@@ -71097,7 +71098,7 @@ public:
     /**
      * Get the current document (or error).
      */
-    simdjson_inline simdjson_result<ondemand::document_reference> operator*() noexcept;
+    simdjson_inline reference operator*() noexcept;
     /**
      * Advance to the next document (prefix).
      */
@@ -81969,10 +81970,9 @@ public:
   class iterator {
   public:
     using value_type = simdjson_result<document>;
-    using reference  = value_type;
-
+    using reference  = simdjson_result<ondemand::document_reference>;
+    using pointer    = void;
     using difference_type   = std::ptrdiff_t;
-
     using iterator_category = std::input_iterator_tag;
 
     /**
@@ -81982,7 +81982,7 @@ public:
     /**
      * Get the current document (or error).
      */
-    simdjson_inline simdjson_result<ondemand::document_reference> operator*() noexcept;
+    simdjson_inline reference operator*() noexcept;
     /**
      * Advance to the next document (prefix).
      */

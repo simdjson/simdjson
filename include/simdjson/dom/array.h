@@ -19,11 +19,14 @@ public:
   public:
     using value_type = element;
     using difference_type = std::ptrdiff_t;
+    using pointer = void;
+    using reference = value_type;
+    using iterator_category = std::forward_iterator_tag;
 
     /**
      * Get the actual value
      */
-    inline value_type operator*() const noexcept;
+    inline reference operator*() const noexcept;
     /**
      * Get the next value.
      *

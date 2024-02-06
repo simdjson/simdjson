@@ -912,6 +912,43 @@ namespace dom_api_tests {
     return true;
   }
 
+  bool object_iterator_advance() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"({ "a": 1, "b": 2, "c": 3 })");
+    const char* expected_key[] = { "a", "b", "c" };
+    uint64_t expected_value[] = { 1, 2, 3 };
+
+    dom::parser parser;
+    dom::object object;
+    ASSERT_SUCCESS( parser.parse(json).get(object) );
+    auto iter = object.begin();
+    for (auto i = 0; i * sizeof(expected_value[0]) < sizeof(expected_value); i++) {
+      auto [key, value] = *iter;
+      ASSERT_EQUAL( key, expected_key[i] );
+      ASSERT_EQUAL( value.get_uint64().value_unsafe(), expected_value[i] );
+      std::advance( iter, 1 );
+    }
+    return true;
+  }
+
+  bool array_iterator_advance() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"([ 1, 10, 100 ])");
+    uint64_t expected_value[] = { 1, 10, 100 };
+
+    dom::parser parser;
+    dom::array array;
+    ASSERT_SUCCESS( parser.parse(json).get(array) );
+    auto iter = array.begin();
+    for (auto i = 0; i * sizeof(expected_value[0]) < sizeof(expected_value); i++) {
+      uint64_t v;
+      ASSERT_SUCCESS( (*iter).get(v) );
+      ASSERT_EQUAL( v, expected_value[i] );
+      std::advance( iter, 1 );
+    }
+    return true;
+  }
+
   bool string_value() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"([ "hi", "has backslash\\" ])");
@@ -1291,6 +1328,8 @@ namespace dom_api_tests {
            array_iterator() &&
            object_iterator_empty() &&
            array_iterator_empty() &&
+           object_iterator_advance() &&
+           array_iterator_advance() &&
            string_value() &&
            numeric_values() &&
            boolean_values() &&

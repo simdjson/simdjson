@@ -322,6 +322,24 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool simple_document_iteration_advance() {
+        TEST_START();
+        auto json = R"([1,[1,2]] {"a":1,"b":2} {"o":{"1":1,"2":2}} [1,2,3])"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+        std::string_view expected[4] = {"[1,[1,2]]", "{\"a\":1,\"b\":2}", "{\"o\":{\"1\":1,\"2\":2}}", "[1,2,3]"};
+        auto iter = stream.begin();
+        for (auto i = 0; i < 4; i++) {
+            auto doc = *iter;
+            std::string_view view;
+            ASSERT_SUCCESS(to_json_string(doc).get(view));
+            ASSERT_EQUAL(view, expected[i]);
+            std::advance(iter, 1);
+        }
+        TEST_SUCCEED();
+    }
+
     bool skipbom() {
         TEST_START();
         auto json = "\xEF\xBB\xBF[1,[1,2]] {\"a\":1,\"b\":2} {\"o\":{\"1\":1,\"2\":2}} [1,2,3]"_padded;
@@ -856,6 +874,7 @@ namespace document_stream_tests {
             simple_document_iteration() &&
             simple_document_iteration_multiple_batches() &&
             simple_document_iteration_with_parsing() &&
+            simple_document_iteration_advance() &&
             atoms_json() &&
             doc_index() &&
             doc_index_multiple_batches() &&
