@@ -1,5 +1,9 @@
 var NAVTREEINDEX3 =
 {
+"implementation__simdjson__result__base-inl_8h_source.html":[12,0,0,0,4,6],
+"implementation__simdjson__result__base_8h_source.html":[12,0,0,0,4,7],
+"index.html":[],
+"instruction__set_8h_source.html":[12,0,0,0,7,2],
 "internal_2dom__parser__implementation_8h_source.html":[12,0,0,0,7,1],
 "json__iterator-inl_8h_source.html":[12,0,0,0,4,0,13],
 "json__iterator_8h_source.html":[12,0,0,0,4,0,14],
@@ -245,9 +249,5 @@ var NAVTREEINDEX3 =
 "namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a8dcb00bbb408a0f4ed45601b6de755a6":[10,0,0,6,1,17],
 "namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a997747305f387c28e46394c0955d2937":[10,0,0,6,1,28],
 "namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#aa3354f8230db6df962b47633591fa232":[10,0,0,6,1,23],
-"namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#aab771b17058b0c93bdd0a8679c2c4d84":[10,0,0,6,1,32],
-"namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ab10943c6107de5337f376a6939f817af":[10,0,0,6,1,20],
-"namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac3a4f6af474f2b5f6d749f7452bb5477":[10,0,0,6,1,25],
-"namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330":[10,0,0,6,1,16],
-"namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330a37a6259cc0c1dae299a7866489dff0bd":[10,0,0,6,1,16,5]
+"namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#aab771b17058b0c93bdd0a8679c2c4d84":[10,0,0,6,1,32]
 };
