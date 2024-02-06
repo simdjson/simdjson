@@ -80,7 +80,7 @@ simdjson's source structure, from the top level, looks like this:
     * simdjson/internal/*.h: the `simdjson::internal` namespace. Private classes and functions used by the rest of simdjson.
   * simdjson/dom.h: the `simdjson::dom` namespace. Includes all public DOM classes.
     * simdjson/dom/*.h: Declarations/definitions for individual DOM classes.
-  * simdjson/arm64|fallback|haswell|icelake|ppc64|westmere.h: `simdjson::<implementation>` namesapce. Common implementation-specific tools like number and string parsing, as well as minification.
+  * simdjson/arm64|fallback|haswell|icelake|ppc64|westmere.h: `simdjson::<implementation>` namespace. Common implementation-specific tools like number and string parsing, as well as minification.
     * simdjson/arm64|fallback|haswell|icelake|ppc64|westmere/*.h: implementation-specific functions such as , etc.
     * simdjson/generic/*.h: the bulk of the actual code, written generically and compiled for each implementation, using functions defined in the implementation's .h files.
       * simdjson/generic/dependencies.h: dependencies on common, non-implementation-specific simdjson classes. This will be included before including amalgamated.h.
