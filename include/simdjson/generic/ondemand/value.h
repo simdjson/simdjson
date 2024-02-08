@@ -568,6 +568,22 @@ public:
    */
   simdjson_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
 
+  /**
+   * Get the value associated with the given JSON path. Right now we are only
+   * supporting a subset of json path that is easily convertible to json
+   * pointer.
+   *
+   * @return The value associated with the given JSON path, or:
+   *         - INVALID_JSON_POINTER if the json path to json pointer conversion
+   * fails
+   *         - NO_SUCH_FIELD if a field does not exist in an object
+   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array
+   * length
+   *         - INCORRECT_TYPE if a non-integer is used to access an array
+   */
+  simdjson_inline simdjson_result<value> at_path(std::string_view at_path) noexcept;
+
+
 protected:
   /**
    * Create a value.
@@ -733,6 +749,7 @@ public:
   /** @copydoc simdjson_inline int32_t current_depth() const noexcept */
   simdjson_inline simdjson_result<int32_t> current_depth() const noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;
 };
 
 } // namespace simdjson

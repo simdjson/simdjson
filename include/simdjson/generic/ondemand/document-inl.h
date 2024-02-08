@@ -305,6 +305,13 @@ simdjson_inline simdjson_result<value> document::at_pointer(std::string_view jso
   }
 }
 
+simdjson_inline simdjson_result<value> document::at_path(std::string_view json_path) noexcept {
+  // Skipping rewind call since that is already handled by the at_pointer call
+  std::string_view json_pointer = json_path_to_pointer_conversion(json_path);
+  return at_pointer(json_path);
+}
+
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
@@ -568,6 +575,11 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
   return first.at_pointer(json_pointer);
 }
 
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::at_path(std::string_view json_path) noexcept {
+  if (error()) { return error(); }
+  return first.at_path(json_path);
+}
+
 
 } // namespace simdjson
 
@@ -642,6 +654,7 @@ simdjson_inline simdjson_result<number_type> document_reference::get_number_type
 simdjson_inline simdjson_result<number> document_reference::get_number() noexcept { return doc->get_root_value_iterator().get_root_number(false); }
 simdjson_inline simdjson_result<std::string_view> document_reference::raw_json_token() noexcept { return doc->raw_json_token(); }
 simdjson_inline simdjson_result<value> document_reference::at_pointer(std::string_view json_pointer) noexcept { return doc->at_pointer(json_pointer); }
+simdjson_inline simdjson_result<value> document_reference::at_path(std::string_view json_path) noexcept { return doc->at_path(json_path); }
 simdjson_inline simdjson_result<std::string_view> document_reference::raw_json() noexcept { return doc->raw_json();}
 simdjson_inline document_reference::operator document&() const noexcept { return *doc; }
 
@@ -843,6 +856,10 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
   return first.at_pointer(json_pointer);
 }
 
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::at_path(std::string_view json_path) noexcept {
+  if (error()) { return error(); }
+  return first.at_path(json_path);
+}
 
 } // namespace simdjson
 

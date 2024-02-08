@@ -239,6 +239,21 @@ simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_p
   }
 }
 
+simdjson_inline simdjson_result<value> value::at_path(std::string_view json_path) noexcept {
+  json_type t;
+  SIMDJSON_TRY(type().get(t));
+  std::string_view json_pointer = json_path_to_pointer_conversion(json_path);
+
+  switch (t) {
+  case json_type::array:
+      return (*this).get_array().at_pointer(json_pointer);
+  case json_type::object:
+      return (*this).get_object().at_pointer(json_pointer);
+  default:
+      return INVALID_JSON_POINTER;
+  }
+}
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
@@ -466,6 +481,13 @@ simdjson_inline simdjson_result<int32_t> simdjson_result<SIMDJSON_IMPLEMENTATION
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::at_pointer(std::string_view json_pointer) noexcept {
   if (error()) { return error(); }
   return first.at_pointer(json_pointer);
+}
+
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::at_path(std::string_view json_path) noexcept {
+  if (error()) {
+      return error();
+  }
+  return first.at_path(json_path);
 }
 
 } // namespace simdjson

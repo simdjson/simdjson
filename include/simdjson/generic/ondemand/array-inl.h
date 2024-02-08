@@ -164,9 +164,7 @@ inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) n
   return child;
 }
 
-inline simdjson_result<value>
-array::at_path(std::string_view json_path) noexcept {
-
+inline simdjson_result<value> array::at_path(std::string_view json_path) noexcept {
   // not sure if conversion makes sense in-place here (probably has better performance than creating another object?)
   std::string_view json_pointer = json_path_to_pointer_conversion(json_path);
 

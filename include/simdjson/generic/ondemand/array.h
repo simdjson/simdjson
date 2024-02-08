@@ -102,7 +102,7 @@ public:
   inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
 
   /**
-   *Get the value associated with the given JSON path. Right now we are only supporting a subset of
+   * Get the value associated with the given JSON path. Right now we are only supporting a subset of
    * json path that is easily convertible to json pointer.
    *
    * @return The value associated with the given JSON path, or:
