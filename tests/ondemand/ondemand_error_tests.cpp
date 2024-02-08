@@ -6,6 +6,15 @@ using namespace simdjson;
 namespace error_tests {
   using namespace std;
 
+  bool issue2120() {
+    TEST_START();
+    ondemand::parser parser;
+    size_t bad_capacity = 0;
+    ondemand::document doc;
+    ASSERT_ERROR( parser.iterate("{\"a\": 0 }", bad_capacity).get(doc), INSUFFICIENT_PADDING);
+    TEST_SUCCEED();
+  }
+
   bool badbadjson() {
     TEST_START();
     ondemand::parser parser;
@@ -366,6 +375,7 @@ namespace error_tests {
 
   bool run() {
     return
+           issue2120() &&
            badbadjson() &&
            badbadjson2() &&
            issue1834() &&

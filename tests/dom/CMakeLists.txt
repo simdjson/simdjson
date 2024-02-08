@@ -78,14 +78,16 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
         $<TARGET_FILE:checkimplementation>
     )
   endif()
-  add_test(
-    NAME simdjson_force_implementation_error
-    COMMAND
-      ${CMAKE_COMMAND} -E env
-      SIMDJSON_FORCE_IMPLEMENTATION=doesnotexist
-      $<TARGET_FILE:json2json> ${EXAMPLE_JSON}
-  )
-  set_tests_properties(simdjson_force_implementation_error PROPERTIES WILL_FAIL TRUE)
+  if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL x86_64 OR CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL amd64)
+    add_test(
+      NAME simdjson_force_implementation_error
+      COMMAND
+        ${CMAKE_COMMAND} -E env
+        SIMDJSON_FORCE_IMPLEMENTATION=doesnotexist
+        $<TARGET_FILE:json2json> ${EXAMPLE_JSON}
+    )
+    set_tests_properties(simdjson_force_implementation_error PROPERTIES WILL_FAIL TRUE)
+  endif()
 endif()
 
 #
