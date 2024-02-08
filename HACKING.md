@@ -304,7 +304,7 @@ Though having Visual Studio installed is necessary, one can build simdjson using
 - `mkdir build`
 - `cd build`
 - `cmake ..`
-- `cmake --build . -config Release`
+- `cmake --build . --config Release`
 
 
 Furthermore, if you have installed LLVM clang on Windows, for example as a component of Visual Studio 2019, you can configure and build simdjson using LLVM clang on Windows using cmake:
@@ -313,7 +313,7 @@ Furthermore, if you have installed LLVM clang on Windows, for example as a compo
 - `mkdir build`
 - `cd build`
 - `cmake -T ClangCL ..`
-- `cmake --build . -config Release`
+- `cmake --build . --config Release`
 
 
 ## Various References
