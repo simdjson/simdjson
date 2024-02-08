@@ -100,6 +100,19 @@ public:
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
   inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
+
+  /**
+   *Get the value associated with the given JSON path. Right now we are only supporting a subset of
+   * json path that is easily convertible to json pointer.
+   *
+   * @return The value associated with the given JSON path, or:
+   *         - INVALID_JSON_POINTER if the json path to json pointer conversion fails
+   *         - NO_SUCH_FIELD if a field does not exist in an object
+   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
+   *         - INCORRECT_TYPE if a non-integer is used to access an array
+  */
+  inline simdjson_result<value> at_path(std::string_view json_path) noexcept;
+
   /**
    * Consumes the array and returns a string_view instance corresponding to the
    * array as represented in JSON. It points inside the original document.
@@ -190,6 +203,7 @@ public:
   inline simdjson_result<bool> reset() & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at(size_t index) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
 };

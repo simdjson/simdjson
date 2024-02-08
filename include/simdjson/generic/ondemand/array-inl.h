@@ -6,6 +6,7 @@
 #include "simdjson/generic/ondemand/array.h"
 #include "simdjson/generic/ondemand/array_iterator-inl.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
+#include "simdjson/generic/ondemand/json_path_to_pointer_conversion-inl.h"
 #include "simdjson/generic/ondemand/value.h"
 #include "simdjson/generic/ondemand/value_iterator-inl.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
@@ -163,6 +164,15 @@ inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) n
   return child;
 }
 
+inline simdjson_result<value>
+array::at_path(std::string_view json_path) noexcept {
+
+  // not sure if conversion makes sense in-place here (probably has better performance than creating another object?)
+  std::string_view json_pointer = json_path_to_pointer_conversion(json_path);
+
+  return at_pointer(json_pointer);
+}
+
 simdjson_inline simdjson_result<value> array::at(size_t index) noexcept {
   size_t i = 0;
   for (auto value : *this) {
@@ -215,6 +225,12 @@ simdjson_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdj
 }
 simdjson_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at_pointer(std::string_view json_pointer) noexcept {
   if (error()) { return error(); }
+  return first.at_pointer(json_pointer);
+}
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at_path(std::string_view json_pointer) noexcept {
+  if (error()) {
+    return error();
+  }
   return first.at_pointer(json_pointer);
 }
 simdjson_inline  simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::raw_json() noexcept {
