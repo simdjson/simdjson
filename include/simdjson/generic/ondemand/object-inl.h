@@ -164,6 +164,11 @@ inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) 
   return child;
 }
 
+inline simdjson_result<value> object::at_path(std::string_view json_path) noexcept {
+  std::string_view json_pointer = json_path_to_pointer_conversion(json_path);
+  return at_pointer(json_pointer);
+}
+
 simdjson_inline simdjson_result<size_t> object::count_fields() & noexcept {
   size_t count{0};
   // Important: we do not consume any of the values.
@@ -234,6 +239,11 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::at_pointer(std::string_view json_pointer) noexcept {
   if (error()) { return error(); }
   return first.at_pointer(json_pointer);
+}
+
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::at_path(std::string_view json_path) noexcept {
+  if (error()) { return error(); }
+  return first.at_path(json_path);
 }
 
 inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::reset() noexcept {

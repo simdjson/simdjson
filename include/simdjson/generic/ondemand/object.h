@@ -141,6 +141,21 @@ public:
   inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
 
   /**
+   * Get the value associated with the given JSON path. Right now we are only
+   * supporting a subset of json path that is easily convertible to json
+   * pointer.
+   *
+   * @return The value associated with the given JSON path, or:
+   *         - INVALID_JSON_POINTER if the json path to json pointer conversion
+   * fails
+   *         - NO_SUCH_FIELD if a field does not exist in an object
+   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array
+   * length
+   *         - INCORRECT_TYPE if a non-integer is used to access an array
+   */
+  inline simdjson_result<value> at_path(std::string_view json_path) noexcept;
+
+  /**
    * Reset the iterator so that we are pointing back at the
    * beginning of the object. You should still consume values only once even if you
    * can iterate through the object more than once. If you unescape a string within
@@ -227,6 +242,8 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) && noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;
+
   inline simdjson_result<bool> reset() noexcept;
   inline simdjson_result<bool> is_empty() noexcept;
   inline simdjson_result<size_t> count_fields() & noexcept;
