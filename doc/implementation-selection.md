@@ -20,7 +20,7 @@ algorithms to take better advantage of a given CPU!
 
 The current implementations are:
 * icelake: AVX-512F, AVX-512_VBMI, AVX-512_VBMI2, AVX-512_DQ, AVX-512512_CD, AVX-512_BW, AVX-512_VL (2019 Intel Ice Lake, Intel Rocket Lake, Intel Sapphire Rapids, AMD Zen 4)
-* haswell: AVX2 (2013 Intel Haswell or later)
+* haswell: AVX2 (2013 Intel Haswell or later, all AMD Zen processors)
 * westmere: SSE4.2 (2010 Westmere or later).
 * arm64: 64-bit ARMv8-A NEON
 * ppc64: 64-bit POWER8 and POWER9 with VSX and ALTIVEC extensions. Both big endian and little endian are implemented, depending on the compiler you are using. The library is tested on recent, little-endian, POWER systems.
