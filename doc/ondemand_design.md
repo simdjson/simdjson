@@ -779,4 +779,4 @@ Instead of specifying a specific microarchitecture, you can let your compiler do
 
 Passing `-march=native` to the compiler may make On Demand faster by allowing it to use optimizations specific to your machine. You cannot do this, however, if you are compiling code	that might be run on less advanced machines. That is, be mindful that when compiling with the `-march=native` flag, the resulting binary will run on the current system but may not run on other systems (e.g., on an old processor).
 
-If you are compiling on an ARM or POWER system, you do not need to be concerned with CPU selection during compilation. The `-march=native` flag useful for best performance on x64 (e.g., Intel) systems but it is generally unsupported on some platforms such as ARM (aarch64) or POWER.
+If you are compiling on an ARM or POWER system, you do not need to be concerned with CPU selection during compilation. The `-march=native` flag is useful for best performance on x64 (e.g., Intel) systems but it is generally unsupported on some platforms such as ARM (aarch64) or POWER.
