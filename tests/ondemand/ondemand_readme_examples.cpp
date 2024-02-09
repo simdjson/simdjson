@@ -931,6 +931,17 @@ bool json_pointer_simple() {
     TEST_SUCCEED();
 }
 
+bool json_path_simple() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document cars;
+    double x;
+    ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
+    ASSERT_SUCCESS(cars.at_path("[0].tire_pressure[1]").get(x));
+    ASSERT_EQUAL(x,39.9);
+    TEST_SUCCEED();
+}
+
 bool json_pointer_multiple() {
 	TEST_START();
 	ondemand::parser parser;
@@ -1561,6 +1572,7 @@ bool run() {
 #endif
     && using_the_parsed_json_6()
     && json_pointer_simple()
+    && json_path_simple()
     && json_pointer_multiple()
     && json_pointer_rewind()
     && iterate_many_example()
