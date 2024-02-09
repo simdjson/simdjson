@@ -155,7 +155,7 @@ Including simdjson</h1>
 <div class="fragment"><div class="line">c++ myproject.cpp simdjson.cpp</div>
 </div><!-- fragment --><p>Note:</p><ul>
 <li>Users on macOS and other platforms where default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., <code>c++ -std=c++11 myproject.cpp simdjson.cpp</code>).</li>
-<li>The library relies on <a class="el" href="md_doc_implementation_selection.html">runtime CPU detection</a>: avoid specifying an architecture at compile time (e.g., <code>-march-native</code>).</li>
+<li>The library relies on <a class="el" href="md_doc_implementation_selection.html">runtime CPU detection</a>: avoid specifying an architecture at compile time (e.g., <code>-march-native</code>) if you want your binaries to run everywhere.</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md2"></a>
 Using simdjson with package managers</h1>
