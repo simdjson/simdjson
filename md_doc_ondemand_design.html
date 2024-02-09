@@ -584,7 +584,7 @@ Checking Your CPU Selection (x64 systems)</h1>
 </div><!-- fragment --><p>In these examples, the <code>-march=haswell</code> flags targets a haswell processor and the resulting binary will run on processors that support all features of the haswell processors.</p>
 <p>Instead of specifying a specific microarchitecture, you can let your compiler do the work. The <code>-march=native</code> flags says "target the current computer," which is a reasonable default for many applications which both compile and run on the same processor.</p>
 <p>Passing <code>-march=native</code> to the compiler may make On Demand faster by allowing it to use optimizations specific to your machine. You cannot do this, however, if you are compiling code that might be run on less advanced machines. That is, be mindful that when compiling with the <code>-march=native</code> flag, the resulting binary will run on the current system but may not run on other systems (e.g., on an old processor).</p>
-<p>If you are compiling on an ARM or POWER system, you do not need to be concerned with CPU selection during compilation. The <code>-march=native</code> flag useful for best performance on x64 (e.g., Intel) systems but it is generally unsupported on some platforms such as ARM (aarch64) or POWER. </p>
+<p>If you are compiling on an ARM or POWER system, you do not need to be concerned with CPU selection during compilation. The <code>-march=native</code> flag is useful for best performance on x64 (e.g., Intel) systems but it is generally unsupported on some platforms such as ARM (aarch64) or POWER. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
