@@ -103,11 +103,11 @@ $(document).ready(function(){initNavTree('md_doc_implementation_selection.html',
 Overview</h1>
 <p>The simdjson library takes advantage of SIMD instruction sets such as NEON, SSE and AVX to achieve much of its speed. Because these instruction sets work differently, simdjson has to compile a different version of the JSON parser for different CPU architectures, often with different algorithms to take better advantage of a given CPU!</p>
 <p>The current implementations are:</p><ul>
-<li>icelake: AVX-512F, AVX-512VBMI, etc.</li>
+<li>icelake: AVX-512F, AVX-512_VBMI, AVX-512_VBMI2, AVX-512_DQ, AVX-512512_CD, AVX-512_BW, AVX-512_VL (Intel Ice Lake, Intel Rocket Lake, Intel Sapphire Rapids, AMD Zen 4)</li>
 <li>haswell: AVX2 (2013 Intel Haswell or later)</li>
 <li>westmere: SSE4.2 (2010 Westmere or later).</li>
 <li>arm64: 64-bit ARMv8-A NEON</li>
-<li>ppc64: 64-bit POWER8 and POWER9 with VSX and ALTIVEC extensions. Both big endian and little endian are implemented, depends on the compiler you are using. The library is tested on recent, little-endian, POWER systems.</li>
+<li>ppc64: 64-bit POWER8 and POWER9 with VSX and ALTIVEC extensions. Both big endian and little endian are implemented, depending on the compiler you are using. The library is tested on recent, little-endian, POWER systems.</li>
 <li>fallback: A generic implementation that runs on any 64-bit processor.</li>
 </ul>
 <p>In many cases, you don't know where your compiled binary is going to run, so simdjson automatically compiles <em>all</em> the implementations into the executable. On Intel, it will include 4 implementations (icelake, haswell, westmere and fallback), on 64-bit ARM it will include just one since running dispatching is unnecessary, and on PPC it will include 2 (ppc64 and fallback).</p>
