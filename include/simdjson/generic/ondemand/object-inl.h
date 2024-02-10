@@ -8,8 +8,6 @@
 #include "simdjson/generic/ondemand/object_iterator.h"
 #include "simdjson/generic/ondemand/raw_json_string.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
-#include "simdjson/generic/ondemand/json_path_to_pointer_conversion-inl.h"
-#include "simdjson/generic/ondemand/json_path_to_pointer_conversion.h"
 #include "simdjson/generic/ondemand/value-inl.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
@@ -166,6 +164,7 @@ inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) 
   return child;
 }
 
+/*
 inline simdjson_result<std::string> json_path_to_pointer_conversion(std::string_view json_path) {
   if (json_path.empty() || json_path.front() != '.') {
     return INVALID_JSON_POINTER; // We can create a new error for that, but that
@@ -219,14 +218,13 @@ inline simdjson_result<std::string> json_path_to_pointer_conversion(std::string_
   }
 
   return result;
-}
+}*/
 
 inline simdjson_result<value> object::at_path(std::string_view json_path) noexcept {
   auto json_pointer = json_path_to_pointer_conversion(json_path);
   if(json_pointer.error()) { return json_pointer.error(); }
   return at_pointer(json_pointer.value());
 }
-
 
 simdjson_inline simdjson_result<size_t> object::count_fields() & noexcept {
   size_t count{0};
