@@ -21,7 +21,6 @@ bool string2() {
   return true;
 }
 
-
 bool to_string_example_no_except() {
     TEST_START();
   auto json = R"({
