@@ -959,6 +959,23 @@ bool json_pointer_multiple() {
 	TEST_SUCCEED();
 }
 
+bool json_path_multiple() {
+	TEST_START();
+	ondemand::parser parser;
+	ondemand::document cars;
+	size_t size;
+	ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
+	ASSERT_SUCCESS(cars.count_elements().get(size));
+	double expected[] = {39.9, 31, 30};
+	for (size_t i = 0; i < size; i++) {
+		std::string json_path = std::string("[") + std::to_string(i) + std::string("].tire_pressure[1]");
+		double x;
+		ASSERT_SUCCESS(cars.at_path(json_path).get(x));
+		ASSERT_EQUAL(x,expected[i]);
+	}
+	TEST_SUCCEED();
+}
+
 bool json_pointer_rewind() {
   TEST_START();
   auto json = R"( {
@@ -1574,6 +1591,7 @@ bool run() {
     && json_pointer_simple()
     && json_path_simple()
     && json_pointer_multiple()
+    && json_path_multiple()
     && json_pointer_rewind()
     && iterate_many_example()
     && iterate_many_truncated_example()
