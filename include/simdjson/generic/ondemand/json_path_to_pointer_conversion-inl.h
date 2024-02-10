@@ -1,8 +1,10 @@
+#pragma once
+
 #ifndef SIMDJSON_ONDEMAND_GENERIC_JSON_PATH_TO_POINTER_CONVERSION_INL_H
 #define SIMDJSON_ONDEMAND_GENERIC_JSON_PATH_TO_POINTER_CONVERSION_INL_H
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
-#define SIMDJSON_GENERIC_ONDEMAND_JSON_ITERATOR_INL_H
+#define SIMDJSON_GENERIC_ONDEMAND_JSON_PATH_TO_POINTER_CONVERSION_INL_H
 #include "simdjson/generic/ondemand/json_path_to_pointer_conversion.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
@@ -10,7 +12,7 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {}
 namespace ondemand {
 
-simdjson_inline simdjson_result<std::string> json_path_to_pointer_conversion(const std::string_view& json_path) {
+simdjson_inline simdjson_result<std::string> json_path_to_pointer_conversion(std::string_view json_path) {
   if (json_path.empty() || json_path.front() != '.') {
     return INVALID_JSON_POINTER; // We can create a new error for that, but that may introduce some overhead since there seems to be exactly 32 error codes in error.h
   }

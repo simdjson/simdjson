@@ -7,6 +7,8 @@
 #include "simdjson/generic/ondemand/array_iterator.h"
 #include "simdjson/generic/ondemand/document.h"
 #include "simdjson/generic/ondemand/json_iterator-inl.h"
+#include "simdjson/generic/ondemand/json_path_to_pointer_conversion.h"
+#include "simdjson/generic/ondemand/json_path_to_pointer_conversion-inl.h"
 #include "simdjson/generic/ondemand/json_type.h"
 #include "simdjson/generic/ondemand/object-inl.h"
 #include "simdjson/generic/ondemand/raw_json_string.h"
@@ -306,11 +308,21 @@ simdjson_inline simdjson_result<value> document::at_pointer(std::string_view jso
 }
 
 simdjson_inline simdjson_result<value> document::at_path(std::string_view json_path) noexcept {
-  // Skipping rewind call since that is already handled by the at_pointer call
-  std::string_view json_pointer = json_path_to_pointer_conversion(json_path);
-  return at_pointer(json_path);
+  rewind(); // Rewind the document each time at_pointer is called
+  if (json_path.empty()) {
+      return this->get_value();
+  }
+  json_type t;
+  SIMDJSON_TRY(type().get(t));
+  switch (t) {
+  case json_type::array:
+      return (*this).get_array().at_path(json_path);
+  case json_type::object:
+      return (*this).get_object().at_path(json_path);
+  default:
+      return INVALID_JSON_POINTER;
+  }
 }
-
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
@@ -579,7 +591,6 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
   if (error()) { return error(); }
   return first.at_path(json_path);
 }
-
 
 } // namespace simdjson
 
@@ -857,7 +868,9 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
 }
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::at_path(std::string_view json_path) noexcept {
-  if (error()) { return error(); }
+  if (error()) {
+      return error();
+  }
   return first.at_path(json_path);
 }
 
