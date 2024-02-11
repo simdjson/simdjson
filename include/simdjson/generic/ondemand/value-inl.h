@@ -503,8 +503,6 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
   return first.at_path(json_path);
 }
 
-
-
 } // namespace simdjson
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_INL_H

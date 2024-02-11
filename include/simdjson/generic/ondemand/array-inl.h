@@ -5,6 +5,7 @@
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/array.h"
 #include "simdjson/generic/ondemand/array_iterator-inl.h"
+#include "simdjson/generic/ondemand/json_iterator.h"
 #include "simdjson/generic/ondemand/value.h"
 #include "simdjson/generic/ondemand/value_iterator-inl.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
@@ -177,7 +178,7 @@ inline simdjson_result<std::string> json_path_to_pointer_conversion(std::string_
   result.reserve(json_path.size() * 2);
 
   size_t i = 0;
-  
+
   while (i < json_path.length()) {
     if (json_path[i] == '.') {
       result += '/';
