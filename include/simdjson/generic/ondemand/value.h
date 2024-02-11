@@ -195,6 +195,14 @@ public:
 
 #if SIMDJSON_EXCEPTIONS
   /**
+   * Cast this JSON value to an instance of type T. The programmer is responsible for
+   * providing an implementation of get<T> for the type T.
+   *
+   * @returns An instance of type T
+   */
+  template <class T>
+  explicit simdjson_inline operator T() noexcept(false);
+  /**
    * Cast this JSON value to an array.
    *
    * @returns An object that can be used to iterate the array.
@@ -660,6 +668,8 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) noexcept;
 
 #if SIMDJSON_EXCEPTIONS
+  template <class T>
+  explicit simdjson_inline operator T() noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::array() noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::object() noexcept(false);
   simdjson_inline operator uint64_t() noexcept(false);

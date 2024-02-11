@@ -39,7 +39,7 @@ else:
 RelativeRoot = str # Literal['src','include'] # Literal not supported in Python 3.7 (CI)
 RELATIVE_ROOTS: List[RelativeRoot] = ['src', 'include' ]
 Implementation = str # Literal['arm64', 'fallback', 'haswell', 'icelake', 'ppc64', 'westmere'] # Literal not supported in Python 3.7 (CI)
-IMPLEMENTATIONS: List[Implementation] = [ 'arm64', 'fallback', 'haswell', 'icelake', 'ppc64', 'westmere' ]
+IMPLEMENTATIONS: List[Implementation] = [ 'arm64', 'haswell', 'icelake', 'ppc64', 'westmere', 'fallback' ]
 GENERIC_INCLUDE = "simdjson/generic"
 GENERIC_SRC = "generic"
 BUILTIN = "simdjson/builtin"

@@ -95,6 +95,10 @@ template<typename T> simdjson_inline error_code value::get(T &out) noexcept {
 }
 
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline value::operator T() noexcept(false) {
+  return get<T>();
+}
 simdjson_inline value::operator array() noexcept(false) {
   return get_array();
 }
@@ -424,6 +428,11 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> simdj
   return first.get_number();
 }
 #if SIMDJSON_EXCEPTIONS
+template <class T>
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator T() noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return static_cast<T>(first);
+}
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;

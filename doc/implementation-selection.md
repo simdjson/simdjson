@@ -11,22 +11,24 @@ CPU Architecture-Specific Implementations
 Overview
 --------
 
+
+
 The simdjson library takes advantage of SIMD instruction sets such as NEON, SSE and AVX to achieve
 much of its speed. Because these instruction sets work differently, simdjson has to compile a
 different version of the JSON parser for different CPU architectures, often with different
 algorithms to take better advantage of a given CPU!
 
 The current implementations are:
-* icelake: AVX-512F, AVX-512VBMI, etc.
-* haswell: AVX2 (2013 Intel Haswell or later)
+* icelake: AVX-512F, AVX-512_VBMI, AVX-512_VBMI2, AVX-512_DQ, AVX-512512_CD, AVX-512_BW, AVX-512_VL (2019 Intel Ice Lake, Intel Rocket Lake, Intel Sapphire Rapids, AMD Zen 4)
+* haswell: AVX2 (2013 Intel Haswell or later, all AMD Zen processors)
 * westmere: SSE4.2 (2010 Westmere or later).
 * arm64: 64-bit ARMv8-A NEON
-* ppc64: 64-bit POWER8 and POWER9 with VSX and ALTIVEC extensions. Both big endian and little endian are implemented, depends on the compiler you are using. The library is tested on recent, little-endian, POWER systems.
+* ppc64: 64-bit POWER8 and POWER9 with VSX and ALTIVEC extensions. Both big endian and little endian are implemented, depending on the compiler you are using. The library is tested on recent, little-endian, POWER systems.
 * fallback: A generic implementation that runs on any 64-bit processor.
 
 In many cases, you don't know where your compiled binary is going to run, so simdjson automatically
 compiles *all* the implementations into the executable. On Intel, it will include 4 implementations
-(icelake, haswell, westmere and fallback), on ARM it will include 2 (arm64 and fallback), and on PPC
+(icelake, haswell, westmere and fallback), on 64-bit ARM it will include just one since running dispatching is  unnecessary, and on PPC
 it will include 2 (ppc64 and fallback).
 
 If you know more about where you're going to run and want to save the space, you can disable any of
@@ -75,8 +77,7 @@ And look them up by name:
 ```c++
 cout << simdjson::get_available_implementations()["fallback"]->description() << endl;
 ```
-Though the fallback implementation should always be available, others might be missing. When
-an implementation is not available, the bracket call `simdjson::get_available_implementations()[name]`
+When an implementation is not available, the bracket call `simdjson::get_available_implementations()[name]`
 will return the null pointer.
 
 The available implementations have been compiled but may not necessarily be run safely on your system

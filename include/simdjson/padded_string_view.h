@@ -28,7 +28,8 @@ public:
    *
    * @param s The string.
    * @param len The length of the string (not including padding).
-   * @param capacity The allocated length of the string, including padding.
+   * @param capacity The allocated length of the string, including padding. If the capacity is less
+   *       than the length, the capacity will be set to the length.
    */
   explicit inline padded_string_view(const char* s, size_t len, size_t capacity) noexcept;
   /** overload explicit inline padded_string_view(const char* s, size_t len) noexcept */
@@ -47,7 +48,8 @@ public:
    * Promise the given string_view has at least SIMDJSON_PADDING extra bytes allocated to it.
    *
    * @param s The string.
-   * @param capacity The allocated length of the string, including padding.
+   * @param capacity The allocated length of the string, including padding. If the capacity is less
+   *      than the length, the capacity will be set to the length.
    */
   explicit inline padded_string_view(std::string_view s, size_t capacity) noexcept;
 

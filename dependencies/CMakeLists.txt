@@ -104,7 +104,11 @@ int main() {}
   target_compile_definitions(rapidjson INTERFACE RAPIDJSON_HAS_STDSTRING)
   target_include_directories(rapidjson SYSTEM INTERFACE
           "${rapidjson_SOURCE_DIR}/include")
-  target_compile_definitions(rapidjson INTERFACE SIMDJSON_COMPETITION_RAPIDJSON)
+  if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14)
+    message(STATUS "Disabling rapidjson")
+  else()
+    target_compile_definitions(rapidjson INTERFACE SIMDJSON_COMPETITION_RAPIDJSON)
+  endif()
 
   import_dependency(sajson chadaustin/sajson 2dcfd35)
   add_library(sajson INTERFACE)
