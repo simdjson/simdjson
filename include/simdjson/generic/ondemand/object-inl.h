@@ -166,8 +166,10 @@ inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) 
 
 inline simdjson_result<value> object::at_path(std::string_view json_path) noexcept {
   auto json_pointer = json_path_to_pointer_conversion(json_path);
-  if(json_pointer.error()) { return json_pointer.error(); }
-  return at_pointer(json_pointer.value());
+  if (json_pointer == "-1") {
+    return INVALID_JSON_POINTER;
+  }
+  return at_pointer(json_pointer);
 }
 
 simdjson_inline simdjson_result<size_t> object::count_fields() & noexcept {

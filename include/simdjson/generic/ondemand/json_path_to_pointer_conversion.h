@@ -13,7 +13,7 @@ namespace internal {
  * @return A string containing the equivalent JSON Pointer.
  * @throws simdjson_error If the conversion fails.
  */
-simdjson_inline simdjson_result<std::string> json_path_to_pointer_conversion(std::string_view json_path);
+simdjson_inline std::string json_path_to_pointer_conversion(std::string_view json_path);
 
 } // namespace internal
 } // namespace SIMDJSON_IMPLEMENTATION

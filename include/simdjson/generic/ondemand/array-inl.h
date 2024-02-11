@@ -163,13 +163,10 @@ inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) n
   return child;
 }
 
-inline simdjson_result<std::string> json_path_to_pointer_conversion(std::string_view json_path) {
+inline std::string json_path_to_pointer_conversion(std::string_view json_path) {
   if (json_path.empty() || (json_path.front() != '.' &&
       json_path.front() != '[')) {
-    return INVALID_JSON_POINTER; // We can create a new error for that, but that
-                                 // may introduce some overhead since there
-                                 // seems to be exactly 32 error codes in
-                                 // error.h
+    return "-1"; // This is just a sentinel value, he caller should check for this and return an error.
   }
 
   std::string result;
@@ -196,9 +193,7 @@ inline simdjson_result<std::string> json_path_to_pointer_conversion(std::string_
           ++i;
       }
       if (i == json_path.length() || json_path[i] != ']') {
-          return INVALID_JSON_POINTER; // reutilizing the error from
-                                       // json_pointer to avoid introducing the
-                                       // 33rd error code in error.h
+          return "-1"; // Using sentinel value that will be handled as an error by the caller.
       }
     } else {
       if (json_path[i] == '~') {
@@ -217,8 +212,8 @@ inline simdjson_result<std::string> json_path_to_pointer_conversion(std::string_
 
 inline simdjson_result<value> array::at_path(std::string_view json_path) noexcept {
   auto json_pointer = json_path_to_pointer_conversion(json_path);
-  if(json_pointer.error()) { return json_pointer.error(); }
-  return at_pointer(json_pointer.value());
+  if (json_pointer == "-1") { return INVALID_JSON_POINTER; }
+  return at_pointer(json_pointer);
 }
 
 simdjson_inline simdjson_result<value> array::at(size_t index) noexcept {

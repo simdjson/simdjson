@@ -12,9 +12,9 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {}
 namespace ondemand {
 
-simdjson_inline simdjson_result<std::string> json_path_to_pointer_conversion(std::string_view json_path) {
+simdjson_inline std::string json_path_to_pointer_conversion(std::string_view json_path) {
   if (json_path.empty() || (json_path.front() != '.' && json_path.front() != '[') {
-    return INVALID_JSON_POINTER; // We can create a new error for that, but that may introduce some overhead since there seems to be exactly 32 error codes in error.h
+    return "-1"; // Sentinel value to be handled as an error by the caller.
   }
 
   std::string result;
@@ -42,7 +42,7 @@ simdjson_inline simdjson_result<std::string> json_path_to_pointer_conversion(std
         ++i;
       }
       if (i == json_path.length() || json_path[i] != ']') {
-        return INVALID_JSON_POINTER; // reutilizing the error from json_pointer to avoid introducing the 33rd error code in error.h
+        return "-1"; // Returning sentinel value that will be handled as an error by the caller
       }
     } else {
       if (json_path[i] == '~') {
