@@ -218,7 +218,7 @@ namespace json_path_tests {
         auto missing_bracket_before = R"( {"hello": [0,1,2,3, "test": "foo", "bool": true, "num":1234, "success":"yes"} )"_padded;
         auto missing_bracket_after = R"( {"test": "foo", "bool": true, "num":1234, "success":"yes", "hello":[0,1,2,3} )"_padded;
 
-        std::string json_path = "/success";
+        std::string json_path = ".success";
         std::cout << "\t- invalid_escape_key" << std::endl;
         ASSERT_SUCCESS(parser.iterate(invalid_escape_key).get(doc));
         ASSERT_SUCCESS(doc.at_path(json_path).get(val));
@@ -434,7 +434,7 @@ namespace json_path_tests {
         "": "empty ok",
         "arr": []
     })") &&
-                run_success_test(TEST_JSON, R"(/~1~001abc)", R"([
+                run_success_test(TEST_JSON, R"(./~01abc)", R"([
         0,
         {
             "\\\" 0": [
@@ -443,21 +443,21 @@ namespace json_path_tests {
             ]
         }
         ])") &&
-                run_success_test(TEST_JSON, R"(/~1~001abc/1)", R"({
+                run_success_test(TEST_JSON, R"(./~01abc[1])", R"({
             "\\\" 0": [
             "value0",
             "value1"
             ]
         })") &&
-                run_success_test(TEST_JSON, R"(/~1~001abc/1/\\\" 0)", R"([
+                run_success_test(TEST_JSON, R"(./~01abc[1].\\\" 0)", R"([
             "value0",
             "value1"
             ])") &&
-                run_success_test(TEST_JSON, R"(/~1~001abc/1/\\\" 0/0)", "\"value0\"") &&
-                run_success_test(TEST_JSON, R"(/~1~001abc/1/\\\" 0/1)", "\"value1\"") &&
-                run_success_test(TEST_JSON, "/arr", R"([])") &&
-                run_success_test(TEST_JSON, "/0", "\"0 ok\"") &&
-                run_success_test(TEST_JSON, "/01", "\"01 ok\"") &&
+                run_success_test(TEST_JSON, R"(./~01abc[1].\\\" 0[0])", "\"value0\"") &&
+                run_success_test(TEST_JSON, R"(./~01abc[1].\\\" 0[1])", "\"value1\"") &&
+                run_success_test(TEST_JSON, ".arr", R"([])") &&
+                run_success_test(TEST_JSON, ".0", "\"0 ok\"") &&
+                run_success_test(TEST_JSON, ".01", "\"01 ok\"") &&
                 run_success_test(TEST_JSON, "", R"({
         "/~01abc": [
         0,
@@ -473,13 +473,13 @@ namespace json_path_tests {
         "": "empty ok",
         "arr": []
     })") &&
-                run_failure_test(TEST_JSON, R"(/~1~001abc/1/\\\" 0/2)", INDEX_OUT_OF_BOUNDS) &&
-                run_failure_test(TEST_JSON, "/arr/0", INDEX_OUT_OF_BOUNDS) &&
-                run_failure_test(TEST_JSON, "~1~001abc", INVALID_JSON_POINTER) &&
-                run_failure_test(TEST_JSON, "/~01abc", NO_SUCH_FIELD) &&
-                run_failure_test(TEST_JSON, "/~1~001abc/01", INVALID_JSON_POINTER) &&
-                run_failure_test(TEST_JSON, "/~1~001abc/", INVALID_JSON_POINTER) &&
-                run_failure_test(TEST_JSON, "/~1~001abc/-", INDEX_OUT_OF_BOUNDS) &&
+                run_failure_test(TEST_JSON, R"(./~01abc[1].\\\" 0[2])", INDEX_OUT_OF_BOUNDS) &&
+                run_failure_test(TEST_JSON, ".arr[0]", INDEX_OUT_OF_BOUNDS) &&
+                run_failure_test(TEST_JSON, "/~01abc", INVALID_JSON_POINTER) &&
+                run_failure_test(TEST_JSON, ".~1abc", NO_SUCH_FIELD) &&
+                run_failure_test(TEST_JSON, "./~01abc.01", INVALID_JSON_POINTER) &&
+                run_failure_test(TEST_JSON, "./~01abc.", INVALID_JSON_POINTER) &&
+                run_failure_test(TEST_JSON, "./~01abc.-", INDEX_OUT_OF_BOUNDS) &&
                 many_json_paths() &&
                 document_as_scalar() &&
                 true;
