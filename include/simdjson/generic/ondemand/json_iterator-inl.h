@@ -213,13 +213,14 @@ simdjson_inline token_position json_iterator::end_position() const noexcept {
 }
 
 inline std::string json_iterator::to_string() const noexcept {
+  using namespace std::string_literals;
   if( !is_alive() ) { return "dead json_iterator instance"; }
   const char * current_structural = reinterpret_cast<const char *>(token.peek());
-  return std::string("json_iterator [ depth : ") + std::to_string(_depth)
-          + std::string(", structural : '") + std::string(current_structural,1)
-          + std::string("', offset : ") + std::to_string(token.current_offset())
-          + std::string("', error : ") + error_message(error)
-          + std::string(" ]");
+  return "json_iterator [ depth : "s + std::to_string(_depth)
+          + ", structural : '"s + std::string(current_structural,1)
+          + "', offset : "s + std::to_string(token.current_offset())
+          + "', error : "s + error_message(error)
+          + " ]"s;
 }
 
 inline simdjson_result<const char *> json_iterator::current_location() const noexcept {

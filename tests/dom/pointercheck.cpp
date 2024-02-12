@@ -5,6 +5,8 @@
  */
 
 #include <iostream>
+#include <string>
+using namespace std::string_literals;
 
 #include "simdjson.h"
 #include "test_macros.h"
@@ -162,7 +164,7 @@ bool issue1142() {
   dom::parser parser;
   dom::element example = parser.parse(example_json);
   auto e0 = dom::array(example).at(0).at_pointer("");
-  ASSERT_EQUAL(std::string("1"), simdjson::minify(e0))
+  ASSERT_EQUAL("1"s, simdjson::minify(e0))
   auto o = dom::array(example).at(2).at_pointer("");
   ASSERT_EQUAL(std::string(R"({"1":"bla"})"), simdjson::minify(o))
   std::string_view s0 = dom::array(example).at(2).at_pointer("/1").at_pointer("");

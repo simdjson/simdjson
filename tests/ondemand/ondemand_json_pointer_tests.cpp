@@ -1,6 +1,7 @@
 #include "simdjson.h"
 #include "test_ondemand.h"
 #include <string>
+using namespace std::string_literals;
 
 using namespace simdjson;
 
@@ -195,7 +196,7 @@ namespace json_pointer_tests {
         ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
         for (int i = 0; i < 3; i++) {
             double x;
-            std::string json_pointer = std::string("/") + std::to_string(i) + std::string("/tire_pressure/1");
+            std::string json_pointer = "/"s + std::to_string(i) + "/tire_pressure/1"s;
             ASSERT_SUCCESS(cars.at_pointer(json_pointer).get(x));
             measured.push_back(x);
         }
@@ -315,7 +316,7 @@ namespace json_pointer_tests {
         std::vector<car_type> content;
         for (int i = 0; i < 3; i++) {
             ondemand::object obj;
-            std::string json_pointer = std::string("/") + std::to_string(i);
+            std::string json_pointer = "/"s + std::to_string(i);
             // Each successive at_pointer call invalidates
             // previously parsed values, strings, objects and array.
             ASSERT_SUCCESS(cars.at_pointer(json_pointer).get(obj));
@@ -360,7 +361,7 @@ namespace json_pointer_tests {
         ondemand::document cars = parser.iterate(cars_json);
         std::vector<car_type> content;
         for (int i = 0; i < 3; i++) {
-            std::string json_pointer = std::string("/") + std::to_string(i);
+            std::string json_pointer = "/"s + std::to_string(i);
             // Each successive at_pointer call invalidates
             // previously parsed values, strings, objects and array.
             ondemand::object obj(cars.at_pointer(json_pointer).get_object());

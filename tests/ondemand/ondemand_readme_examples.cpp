@@ -1071,6 +1071,7 @@ bool json_pointer_simple() {
 
 bool json_pointer_multiple() {
 	TEST_START();
+	using namespace std::string_literals;
 	ondemand::parser parser;
 	ondemand::document cars;
 	size_t size;
@@ -1078,7 +1079,7 @@ bool json_pointer_multiple() {
 	ASSERT_SUCCESS(cars.count_elements().get(size));
 	double expected[] = {39.9, 31, 30};
 	for (size_t i = 0; i < size; i++) {
-		std::string json_pointer = std::string("/") + std::to_string(i) + std::string("/tire_pressure/1");
+		std::string json_pointer = "/"s + std::to_string(i) + "/tire_pressure/1"s;
 		double x;
 		ASSERT_SUCCESS(cars.at_pointer(json_pointer).get(x));
 		ASSERT_EQUAL(x,expected[i]);
