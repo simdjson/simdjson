@@ -166,7 +166,7 @@ inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) n
 inline std::string json_path_to_pointer_conversion(std::string_view json_path) {
   if (json_path.empty() || (json_path.front() != '.' &&
       json_path.front() != '[')) {
-    return "-1"; // This is just a sentinel value, he caller should check for this and return an error.
+    return "-1"; // This is just a sentinel value, the caller should check for this and return an error.
   }
 
   std::string result;
