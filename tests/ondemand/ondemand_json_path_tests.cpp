@@ -315,7 +315,7 @@ namespace json_path_tests {
         std::vector<car_type> content;
         for (int i = 0; i < 3; i++) {
             ondemand::object obj;
-            std::string json_path = "[" + std::to_string(i) + "]";
+            std::string json_path = std::string("[") + std::to_string(i) + std::string("]");
             // Each successive at_path call invalidates
             // previously parsed values, strings, objects and array.
             ASSERT_SUCCESS(cars.at_path(json_path).get(obj));
@@ -360,7 +360,7 @@ namespace json_path_tests {
         ondemand::document cars = parser.iterate(cars_json);
         std::vector<car_type> content;
         for (int i = 0; i < 3; i++) {
-            std::string json_path = "[" + std::to_string(i) + "]";
+            std::string json_path = std::string("[") + std::to_string(i) + std::string("]");
             // Each successive at_path call invalidates
             // previously parsed values, strings, objects and array.
             ondemand::object obj(cars.at_path(json_path).get_object());
