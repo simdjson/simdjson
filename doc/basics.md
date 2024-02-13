@@ -1170,7 +1170,9 @@ be represented as `value` instances. You can check that a document is a scalar w
 JSON Path
 ------------
 
-The simdjson library now supports a subset of [JSON Path](https://goessner.net/articles/JsonPath/) through the `at_path()` method, allowing you to reach further into the document in a single call. For now this is only supported for the On Demand approach. The subset of JSON path that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index.
+The simdjson library now supports a subset of [JSON Path](https://goessner.net/articles/JsonPath/) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSON path that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index.
+
+This implementation relies on `at_path()` converting its argument to JSON Pointer and then calling `at_pointer`, which makes use of [`rewind`](#rewind) to reset the parser at the beginning of the document. Hence, it invalidates all previously parser values, objects and arrays: make sure to consume the values between each call to `at_path`.
 
 Consider the following example:
 
@@ -1185,7 +1187,7 @@ auto cars = parser.iterate(cars_json);
 cout << cars.at_path("[0].tire_pressure[1]") << endl; // Prints 39.9
 ```
 
-For multiple JSON pointer queries on a document, one can call `at_path` multiple times.
+A call to `at_path(json_path)` can result in any of the errors that are returned by the `at_pointer` method and if the conversion of `json_path` to json pointer fails, it will lead to an `simdjson::INVALID_JSON_POINTER`error.
 
 ```c++
 auto cars_json = R"( [
@@ -1195,17 +1197,9 @@ auto cars_json = R"( [
 ] )"_padded;
 ondemand::parser parser;
 auto cars = parser.iterate(cars_json);
-size_t size = cars.count_elements();
-
-for (size_t i = 0; i < size; i++) {
-    std::string json_path = "[" + std::to_string(i) + "].tire_pressure[1]";
-    double x = cars.at_ppath(json_path);
-    std::cout << x << std::endl; // Prints 39.9, 31 and 30
-}
+ASSERT_ERROR(cars.at_path("[0].tire_presure[1").get(x), INVALID_JSON_POINTER); // Fails on conversion to json pointer
+ASSERT_ERROR(cars.at_path("[0].incorrect_field[1]").get(x), NO_SUCH_FIELD); // Fails on at_pointer()
 ```
-
-**Note:** The On Demand implementation of JSON path relies on `at_pointer`.
-Note that `at_path` calls `at_pointer` that calls [`rewind`](#rewind) to reset the parser at the beginning of the document. Hence, it invalidates all previously parsed values, objects and arrays: make sure to consume the values between each call to  `at_path`.
 
 Error Handling
 --------------

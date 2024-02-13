@@ -1069,14 +1069,25 @@ bool json_pointer_simple() {
 }
 
 bool json_path_simple() {
-    TEST_START();
-    ondemand::parser parser;
-    ondemand::document cars;
-    double x;
-    ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
-    ASSERT_SUCCESS(cars.at_path("[0].tire_pressure[1]").get(x));
-    ASSERT_EQUAL(x,39.9);
-    TEST_SUCCEED();
+  TEST_START();
+  ondemand::parser parser;
+  ondemand::document cars;
+  double x;
+  ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
+  ASSERT_SUCCESS(cars.at_path("[0].tire_pressure[1]").get(x));
+  ASSERT_EQUAL(x,39.9);
+  TEST_SUCCEED();
+}
+
+bool invalid_json_path() {
+  TEST_START();
+  ondemand::parser parser;
+  ondemand::document cars;
+  double x;
+  ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
+  ASSERT_ERROR(cars.at_path("[0].tire_presure[1").get(x), INVALID_JSON_POINTER); // Fails on conversion to json pointer
+  ASSERT_ERROR(cars.at_path("[0].incorrect_field[1]").get(x), NO_SUCH_FIELD); // Fails on at_pointer()
+  TEST_SUCCEED();
 }
 
 bool json_pointer_multiple() {
@@ -1105,7 +1116,7 @@ bool json_path_multiple() {
 	ASSERT_SUCCESS(cars.count_elements().get(size));
 	double expected[] = {39.9, 31, 30};
 	for (size_t i = 0; i < size; i++) {
-		std::string json_path = std::string("[") + std::to_string(i) + std::string("].tire_pressure[1]");
+		std::string json_path = "["s + std::to_string(i) + "].tire_pressure[1]"s;
 		double x;
 		ASSERT_SUCCESS(cars.at_path(json_path).get(x));
 		ASSERT_EQUAL(x,expected[i]);
@@ -1727,6 +1738,7 @@ bool run() {
     && using_the_parsed_json_6()
     && json_pointer_simple()
     && json_path_simple()
+    && invalid_json_path()
     && json_pointer_multiple()
     && json_path_multiple()
     && json_pointer_rewind()
