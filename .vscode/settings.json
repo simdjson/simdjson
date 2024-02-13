@@ -98,6 +98,8 @@
         "queue": "cpp",
         "shared_mutex": "cpp",
         "ranges": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "__verbose_abort": "cpp",
+        "charconv": "cpp"
     }
 }

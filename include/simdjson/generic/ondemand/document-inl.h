@@ -267,6 +267,13 @@ simdjson_inline simdjson_result<bool> document::is_scalar() noexcept {
   return ! ((this_type == json_type::array) || (this_type == json_type::object));
 }
 
+simdjson_inline simdjson_result<bool> document::is_string() noexcept {
+  json_type this_type;
+  auto error = type().get(this_type);
+  if(error) { return error; }
+  return (this_type == json_type::string);
+}
+
 simdjson_inline bool document::is_negative() noexcept {
   return get_root_value_iterator().is_root_negative();
 }
@@ -482,6 +489,10 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::o
   return first.is_scalar();
 }
 
+simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::is_string() noexcept {
+  if (error()) { return error(); }
+  return first.is_string();
+}
 
 simdjson_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::is_negative() noexcept {
   if (error()) { return error(); }
@@ -646,6 +657,7 @@ simdjson_inline simdjson_result<value> document_reference::find_field_unordered(
 simdjson_inline simdjson_result<value> document_reference::find_field_unordered(const char *key) & noexcept { return doc->find_field_unordered(key); }
 simdjson_inline simdjson_result<json_type> document_reference::type() noexcept { return doc->type(); }
 simdjson_inline simdjson_result<bool> document_reference::is_scalar() noexcept { return doc->is_scalar(); }
+simdjson_inline simdjson_result<bool> document_reference::is_string() noexcept { return doc->is_string(); }
 simdjson_inline simdjson_result<const char *> document_reference::current_location() noexcept { return doc->current_location(); }
 simdjson_inline int32_t document_reference::current_depth() const noexcept { return doc->current_depth(); }
 simdjson_inline bool document_reference::is_negative() noexcept { return doc->is_negative(); }
@@ -784,6 +796,10 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> si
 simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::is_scalar() noexcept {
   if (error()) { return error(); }
   return first.is_scalar();
+}
+simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::is_string() noexcept {
+  if (error()) { return error(); }
+  return first.is_string();
 }
 simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::is_negative() noexcept {
   if (error()) { return error(); }
