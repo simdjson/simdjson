@@ -1081,7 +1081,7 @@ auto cars = parser.iterate(cars_json);
 cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
 ```
 
-A JSON Pointer path is a sequence of segments each starting with the '/' character. Within arrays, an integer
+A JSON Pointer path is a sequence of segments each starting with the '/' character. Within arrays, a zero-based integer
 index allows you to select the indexed node. Within objects, the string value of the key allows you to
 select the value. If your keys contain the characters '/' or '~', they must be escaped as '~1' and
 '~0' respectively. An empty JSON Pointer Path refers to the whole document.
@@ -1164,7 +1164,7 @@ doc.rewind();	// Need to manually rewind to be able to use find_field properly f
 std::cout << doc.find_field("k0") << std::endl; // Prints 27
 ```
 
-When the JSON path is the empty string (`""`) applied to a scalar document (lone string, number, Boolean or null), a SCALAR_DOCUMENT_AS_VALUE error is returned because scalar document cannot
+When the JSON Pointer Path is the empty string (`""`) applied to a scalar document (lone string, number, Boolean or null), a SCALAR_DOCUMENT_AS_VALUE error is returned because scalar document cannot
 be represented as `value` instances. You can check that a document is a scalar with the method `scalar()`.
 
 JSON Path
@@ -1172,7 +1172,7 @@ JSON Path
 
 The simdjson library now supports a subset of [JSON Path](https://goessner.net/articles/JsonPath/) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSON path that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index.
 
-This implementation relies on `at_path()` converting its argument to JSON Pointer and then calling `at_pointer`, which makes use of [`rewind`](#rewind) to reset the parser at the beginning of the document. Hence, it invalidates all previously parser values, objects and arrays: make sure to consume the values between each call to `at_path`.
+This implementation relies on `at_path()` converting its argument to JSON Pointer and then calling `at_pointer`, which makes use of [`rewind`](#rewind) to reset the parser at the beginning of the document. Hence, it invalidates all previously parsed values, objects and arrays: make sure to consume the values between each call to `at_path`.
 
 Consider the following example:
 
@@ -1197,8 +1197,8 @@ auto cars_json = R"( [
 ] )"_padded;
 ondemand::parser parser;
 auto cars = parser.iterate(cars_json);
-ASSERT_ERROR(cars.at_path("[0].tire_presure[1").get(x), INVALID_JSON_POINTER); // Fails on conversion to json pointer
-ASSERT_ERROR(cars.at_path("[0].incorrect_field[1]").get(x), NO_SUCH_FIELD); // Fails on at_pointer()
+ASSERT_ERROR(cars.at_path("[0].tire_presure[1").get(x), INVALID_JSON_POINTER); // Fails on conversion to json pointer, since last square bracket was not properly closed.
+ASSERT_ERROR(cars.at_path("[0].incorrect_field[1]").get(x), NO_SUCH_FIELD); // Conversion to json pointer succeeds, but fails on at_pointer() since the path is invalid.
 ```
 
 Error Handling
