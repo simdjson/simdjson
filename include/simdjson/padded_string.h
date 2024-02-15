@@ -39,6 +39,9 @@ struct padded_string final {
    * @param length the number of bytes to copy
    */
   explicit inline padded_string(const char *data, size_t length) noexcept;
+#ifdef __cpp_char8_t
+  explicit inline padded_string(const char8_t *data, size_t length) noexcept;
+#endif
   /**
    * Create a new padded string by copying the given input.
    *
@@ -150,6 +153,9 @@ inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string
 
 // This is deliberately outside of simdjson so that people get it without having to use the namespace
 inline simdjson::padded_string operator "" _padded(const char *str, size_t len);
+#ifdef __cpp_char8_t
+inline simdjson::padded_string operator "" _padded(const char8_t *str, size_t len);
+#endif
 
 namespace simdjson {
 namespace internal {
