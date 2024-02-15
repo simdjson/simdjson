@@ -1070,18 +1070,18 @@ bool json_pointer_simple() {
 
 bool json_pointer_unicode() {
     TEST_START();
-    const padded_string json = "{\"\u00E9\":123}"_padded;
+    const padded_string json = u8"{\"\u00E9\":123}"_padded;
     ondemand::parser parser;
     ondemand::document doc;
     int64_t x;
     ASSERT_SUCCESS(parser.iterate(json).get(doc));
-    ASSERT_SUCCESS(doc.at_pointer("/\u00E9").get(x));
+    ASSERT_SUCCESS(doc.at_pointer(u8"/\u00E9").get(x));
     ASSERT_EQUAL(x,123);
 
     const padded_string json2 = "{\"\\u00E9\":123}"_padded;
     ASSERT_SUCCESS(parser.iterate(json2).get(doc));
     ASSERT_SUCCESS(doc.at_pointer("/\\u00E9").get(x));
-    ASSERT_ERROR(doc.at_pointer("/\u00E9"), NO_SUCH_FIELD);
+    ASSERT_ERROR(doc.at_pointer(u8"/\u00E9"), NO_SUCH_FIELD);
     ASSERT_EQUAL(x,123);
     TEST_SUCCEED();
 }
@@ -1101,16 +1101,16 @@ bool json_path_unicode() {
   TEST_START();
   ondemand::parser parser;
   ondemand::document doc;
-  const padded_string json = "{\"\u00E9\":123}"_padded;
+  const padded_string json = u8"{\"\u00E9\":123}"_padded;
   int64_t x;
   ASSERT_SUCCESS(parser.iterate(json).get(doc));
-  ASSERT_SUCCESS(doc.at_path(".\u00E9").get(x));
+  ASSERT_SUCCESS(doc.at_path(u8".\u00E9").get(x));
   ASSERT_EQUAL(x,123);
 
   const padded_string json2 = "{\"\\u00E9\":123}"_padded;
   ASSERT_SUCCESS(parser.iterate(json2).get(doc));
   ASSERT_SUCCESS(doc.at_path(".\\u00E9").get(x));
-  ASSERT_ERROR(doc.at_path(".\u00E9"), NO_SUCH_FIELD);
+  ASSERT_ERROR(doc.at_path(u8".\u00E9"), NO_SUCH_FIELD);
   ASSERT_EQUAL(x,123);
   TEST_SUCCEED();
 }
