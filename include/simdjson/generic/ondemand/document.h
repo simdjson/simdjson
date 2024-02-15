@@ -613,9 +613,11 @@ public:
   simdjson_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
 
   /**
-   * Get the value associated with the given JSON path. We only support
-   * JSON Path queries that trivially convertible to JSON Pointer queries: key
+   * Get the value associated with the given JSONPath expression. We only support
+   * JSONPath queries that trivially convertible to JSON Pointer queries: key
    * names and array indices.
+   *
+   * https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00
    *
    * Key values are matched exactly, without unescaping or Unicode normalization.
    * We do a byte-by-byte comparison. E.g.
@@ -625,8 +627,8 @@ public:
    *   doc.at_path(".\\u00E9") == 123
    *   doc.at_path(".\u00E9") returns an error (NO_SUCH_FIELD)
    *
-   * @return The value associated with the given JSON path, or:
-   *         - INVALID_JSON_POINTER if the json path to json pointer conversion fails
+   * @return The value associated with the given JSONPath expression, or:
+   *         - INVALID_JSON_POINTER if the JSONPath to JSON Pointer conversion fails
    *         - NO_SUCH_FIELD if a field does not exist in an object
    *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
    *         - INCORRECT_TYPE if a non-integer is used to access an array

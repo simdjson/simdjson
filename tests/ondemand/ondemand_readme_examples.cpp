@@ -1121,7 +1121,7 @@ bool invalid_json_path() {
   ondemand::document cars;
   double x;
   ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
-  ASSERT_ERROR(cars.at_path("[0].tire_presure[1").get(x), INVALID_JSON_POINTER); // Fails on conversion to json pointer
+  ASSERT_ERROR(cars.at_path("[0].tire_presure[1").get(x), INVALID_JSON_POINTER); // Fails on conversion to JSON Pointer
   ASSERT_ERROR(cars.at_path("[0].incorrect_field[1]").get(x), NO_SUCH_FIELD); // Fails on at_pointer()
   TEST_SUCCEED();
 }
