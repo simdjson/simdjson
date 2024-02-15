@@ -93,7 +93,7 @@ $(document).ready(function(){initNavTree('md_doc_tape.html',''); initResizable()
 <div class="contents">
 <div class="textblock"><p>We parse a JSON document to a tape. A tape is an array of 64-bit values. Each node encountered in the JSON document is written to the tape using one or more 64-bit tape elements; the layout of the tape is in "document order": elements are stored as they are encountered in the JSON document.</p>
 <p>Throughout, little endian encoding is assumed. The tape is indexed starting at 0 (the first element is at index 0).</p>
-<h1><a class="anchor" id="autotoc_md101"></a>
+<h1><a class="anchor" id="autotoc_md102"></a>
 Example</h1>
 <p>It is sometimes useful to start with an example. Consider the following JSON document:</p>
 <div class="fragment"><div class="line">{</div>
@@ -111,7 +111,7 @@ Example</h1>
 <div class="line">    }</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>The following is a dump of the content of the tape, with the first number of each line representing the index of a tape element.</p>
-<h2><a class="anchor" id="autotoc_md102"></a>
+<h2><a class="anchor" id="autotoc_md103"></a>
 The Tape</h2>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -179,11 +179,11 @@ The Tape</h2>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">38   </td><td class="markdownTableBodyNone">r // pointing to 0 (start root)   </td></tr>
 </table>
-<h1><a class="anchor" id="autotoc_md103"></a>
+<h1><a class="anchor" id="autotoc_md104"></a>
 General formal of the tape elements</h1>
 <p>Most tape elements are written as &lsquo;('c&rsquo; &lt;&lt; 56) + x<code>where</code>'c'&lsquo; is some ASCII character determining the type of the element (out of 't&rsquo;, 'f', 'n', 'l', 'u', 'd', '"', '{', '}', '[', ']' ,'r') and where <code>x</code> is a 56-bit value called the payload. The payload is normally interpreted as an unsigned 56-bit integer. Note that 56-bit integers can be quite large.</p>
 <p>Performance consideration: We believe that accessing the tape in regular units of 64 bits is more important for performance than saving memory.</p>
-<h1><a class="anchor" id="autotoc_md104"></a>
+<h1><a class="anchor" id="autotoc_md105"></a>
 Simple JSON values</h1>
 <p>Simple JSON nodes are represented with one tape element:</p>
 <ul>
@@ -191,7 +191,7 @@ Simple JSON values</h1>
 <li><code>true is represented as the 64-bit value</code>('t' &lt;&lt; 56)<code>.</code></li>
 <li><code>false is represented as the 64-bit value</code>('f' &lt;&lt; 56)`.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md105"></a>
+<h1><a class="anchor" id="autotoc_md106"></a>
 Integer and Double values</h1>
 <p>Integer values are represented as two 64-bit tape elements:</p><ul>
 <li>The 64-bit value &lsquo;('l&rsquo; &lt;&lt; 56)<code>followed by the 64-bit integer value literally. Integer values are assumed to be signed 64-bit values, using two's complement notation.</code></li>
@@ -201,7 +201,7 @@ Integer and Double values</h1>
 <li>The 64-bit value &lsquo;('d&rsquo; &lt;&lt; 56)` followed by the 64-bit double value literally in standard IEEE 754 notation.</li>
 </ul>
 <p>Performance consideration: We store numbers of the main tape because we believe that locality of reference is helpful for performance.</p>
-<h1><a class="anchor" id="autotoc_md106"></a>
+<h1><a class="anchor" id="autotoc_md107"></a>
 Root node</h1>
 <p>Each JSON document will have two special 64-bit tape elements representing a root node, one at the beginning and one at the end.</p>
 <ul>
@@ -210,11 +210,11 @@ Root node</h1>
 </ul>
 <p>All of the parsed document is located between these two 64-bit tape elements.</p>
 <p>Hint: We can read the first tape element to determine the length of the tape.</p>
-<h1><a class="anchor" id="autotoc_md107"></a>
+<h1><a class="anchor" id="autotoc_md108"></a>
 Strings</h1>
 <p>We prefix the string data itself by a 32-bit header to be interpreted as a 32-bit integer. It indicates the length of the string. The actual string data starts at an offset of 4 bytes.</p>
 <p>We store string values using UTF-8 encoding with null termination on a separate tape. A string value is represented on the main tape as the 64-bit tape element &lsquo;(&rsquo;"' &lt;&lt; 56) + x<code>where the payload</code>x` is the location on the string tape of the null-terminated string.</p>
-<h1><a class="anchor" id="autotoc_md108"></a>
+<h1><a class="anchor" id="autotoc_md109"></a>
 Arrays</h1>
 <p>JSON arrays are represented using two 64-bit tape elements.</p>
 <ul>
@@ -223,7 +223,7 @@ Arrays</h1>
 </ul>
 <p>All the content of the array is located between these two tape elements, including arrays and objects.</p>
 <p>Performance consideration: We can skip the content of an array entirely by accessing the first 64-bit tape element, reading the payload and moving to the corresponding index on the tape.</p>
-<h1><a class="anchor" id="autotoc_md109"></a>
+<h1><a class="anchor" id="autotoc_md110"></a>
 Objects</h1>
 <p>JSON objects are represented using two 64-bit tape elements.</p>
 <ul>

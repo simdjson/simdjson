@@ -96,7 +96,7 @@ $(document).ready(function(){initNavTree('md_doc_parse_many.html',''); initResiz
 <div class="line">{&quot;text&quot;:&quot;c&quot;}</div>
 <div class="line">...</div>
 </div><!-- fragment --><p> ... you want to read the entries (individual JSON documents) as quickly and as conveniently as possible. Importantly, the input might span several gigabytes, but you want to use a small (fixed) amount of memory. Ideally, you'd also like the parallelize the processing (using more than one core) to speed up the process.</p>
-<h1><a class="anchor" id="autotoc_md80"></a>
+<h1><a class="anchor" id="autotoc_md81"></a>
 Contents</h1>
 <ul>
 <li><a href="#motivations">Motivations</a></li>
@@ -108,22 +108,22 @@ Contents</h1>
 <li><a href="#tracking-your-position">Tracking your position</a></li>
 <li><a href="#incomplete-streams">Incomplete streams</a></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md81"></a>
+<h1><a class="anchor" id="autotoc_md82"></a>
 Motivation</h1>
 <p>The main motivation for this piece of software is to achieve maximum speed and offer a better quality of life in parsing files containing multiple small JSON documents.</p>
 <p>The JavaScript Object Notation (JSON) <a href="https://tools.ietf.org/html/rfc7159">RFC7159</a> is a handy serialization format. However, when serializing a large sequence of values as an array, or a possibly indeterminate-length or never- ending sequence of values, JSON may be inconvenient.</p>
 <p>Consider a sequence of one million values, each possibly one kilobyte when encoded &ndash; roughly one gigabyte. It is often desirable to process such a dataset incrementally without having to first read all of it before beginning to produce results.</p>
-<h1><a class="anchor" id="autotoc_md82"></a>
+<h1><a class="anchor" id="autotoc_md83"></a>
 Performance</h1>
 <p>The following is a chart comparing the speed of the different alternatives to parse a multiline JSON. The simdjson library provides a threaded and non-threaded <code>parse_many()</code> implementation. As the figure below shows, if you can, use threads, but if you cannot, the unthreaded mode is still fast! <a href="/doc/Multiline_JSON_Parse_Competition.png"><img src="/doc/Multiline_JSON_Parse_Competition.png" alt="Chart.png" class="inline"/></a></p>
-<h1><a class="anchor" id="autotoc_md83"></a>
+<h1><a class="anchor" id="autotoc_md84"></a>
 How it works</h1>
-<h2><a class="anchor" id="autotoc_md84"></a>
+<h2><a class="anchor" id="autotoc_md85"></a>
 Context</h2>
 <p>The parsing in simdjson is divided into 2 stages. First, in stage 1, we parse the document and find all the structural indexes (<code>{</code>, <code>}</code>, <code>]</code>, <code>[</code>, <code>,</code>, <code>"</code>, ...) and validate UTF8. Then, in stage 2, we go through the document again and build the tape using structural indexes found during stage 1. Although stage 1 finds the structural indexes, it has no knowledge of the structure of the document nor does it know whether it parsed a valid document, multiple documents, or even if the document is complete.</p>
 <p>Prior to parse_many, most people who had to parse a multiline JSON file would proceed by reading the file line by line, using a utility function like <code>std::getline</code> or equivalent, and would then use the <code>parse</code> on each of those lines. From a performance point of view, this process is highly inefficient, in that it requires a lot of unnecessary memory allocation and makes use of the <code>getline</code> function, which is fundamentally slow, slower than the act of parsing with simdjson <a href="https://lemire.me/blog/2019/06/18/how-fast-is-getline-in-c/">(more on this here)</a>.</p>
 <p>Unlike the popular parser RapidJson, our DOM does not require the buffer once the parsing job is completed, the DOM and the buffer are completely independent. The drawback of this architecture is that we need to allocate some additional memory to store our ParsedJson data, for every document inside a given file. Memory allocation can be slow and become a bottleneck, therefore, we want to minimize it as much as possible.</p>
-<h2><a class="anchor" id="autotoc_md85"></a>
+<h2><a class="anchor" id="autotoc_md86"></a>
 Design</h2>
 <p>To achieve a minimum amount of allocations, we opted for a design where we create only one parser object and therefore allocate its memory once, and then recycle it for every document in a given file. But, knowing that they often have largely varying size, we need to make sure that we allocate enough memory so that all the documents can fit. This value is what we call the batch size. As of right now, we need to manually specify a value for this batch size, it has to be at least as big as the biggest document in your file, but not too big so that it submerges the cached memory. The bigger the batch size, the fewer we need to make allocations. We found that 1MB is somewhat a sweet spot.</p>
 <ol type="1">
@@ -133,12 +133,12 @@ Design</h2>
 <li>Each time the user calls <code>++</code> to read the next document, we call stage 2 to parse the next document where we left off.</li>
 <li>When we reach the end of the batch, we call stage 1 on the next batch, starting from the end of the last document, and go to step 3.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md86"></a>
+<h2><a class="anchor" id="autotoc_md87"></a>
 Threads</h2>
 <p>But how can we make use of threads if they are available? We found a pretty cool algorithm that allows us to quickly identify the position of the last JSON document in a given batch. Knowing exactly where the end of the batch is, we no longer need for stage 2 to finish in order to load a new batch. We already know where to start the next batch. Therefore, we can run stage 1 on the next batch concurrently while the main thread is going through stage 2. Running stage 1 in a different thread can, in best cases, remove almost entirely its cost and replaces it by the overhead of a thread, which is orders of magnitude cheaper. Ain't that awesome!</p>
 <p>Thread support is only active if thread supported is detected in which case the macro SIMDJSON_THREADS_ENABLED is set. Otherwise the library runs in single-thread mode.</p>
 <p>A <code>document_stream</code> instance uses at most two threads: there is a main thread and a worker thread. You should expect the main thread to be fully occupied while the worker thread is partially busy (e.g., 80% of the time).</p>
-<h1><a class="anchor" id="autotoc_md87"></a>
+<h1><a class="anchor" id="autotoc_md88"></a>
 Support</h1>
 <p>Since we want to offer flexibility and not restrict ourselves to a specific file format, we support any file that contains any amount of valid JSON document, <b>separated by one or more character that is considered whitespace</b> by the JSON spec. Anything that is not whitespace will be parsed as a JSON document and could lead to failure.</p>
 <p>Whitespace Characters:</p><ul>
@@ -154,10 +154,10 @@ Support</h1>
 <li><a href="https://tools.ietf.org/html/rfc7464">Record separator-delimited JSON (RFC 7464)</a> &lt;- Not supported by JsonStream!</li>
 <li><a href="https://en.wikipedia.org/wiki/JSON_streaming">More on Wikipedia...</a></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md88"></a>
+<h1><a class="anchor" id="autotoc_md89"></a>
 API</h1>
 <p>See <a href="basics.md#newline-delimited-json-ndjson-and-json-lines">basics.md</a> for an overview of the API.</p>
-<h1><a class="anchor" id="autotoc_md89"></a>
+<h1><a class="anchor" id="autotoc_md90"></a>
 Use cases</h1>
 <p>From <a href="http://jsonlines.org/examples/">jsonlines.org</a>:</p>
 <ul>
@@ -167,7 +167,7 @@ Use cases</h1>
 </li>
 <li><b>Easy Nested Data</b> ```json {"name": "Gilbert", "wins": [["straight", "7♣"], ["one pair", "10♥"]]} {"name": "Alexa", "wins": [["two pair", "4♠"], ["two pair", "9♠"]]} {"name": "May", "wins": []} {"name": "Deloise", "wins": [["three of a kind", "5♣"]]} ``&lsquo; JSON Lines&rsquo; biggest strength is in handling lots of similar nested data structures. One .jsonl file is easier to work with than a directory full of XML files.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md90"></a>
+<h1><a class="anchor" id="autotoc_md91"></a>
 Tracking your position</h1>
 <p>Some users would like to know where the document they parsed is in the input array of bytes. It is possible to do so by accessing directly the iterator and calling its <code>current_index()</code> method which reports the location (in bytes) of the current document in the input stream. You may also call the <code>source()</code> method to get a <code>std::string_view</code> instance on the document.</p>
 <p>Let us illustrate the idea with code:</p>
@@ -196,7 +196,7 @@ Tracking your position</h1>
 <div class="line">{&quot;1&quot;:1,&quot;2&quot;:3,&quot;4&quot;:4}</div>
 <div class="line">got full document at 29</div>
 <div class="line">[1,2,3]</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md91"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md92"></a>
 Incomplete streams</h1>
 <p>Some users may need to work with truncated streams. The simdjson may truncate documents at the very end of the stream that cannot possibly be valid JSON (e.g., they contain unclosed strings, unmatched brackets, unmatched braces). After iterating through the stream, you may query the <code>truncated_bytes()</code> method which tells you how many bytes were truncated. If the stream is made of full (whole) documents, then you should expect <code>truncated_bytes()</code> to return zero.</p>
 <p>Consider the following example where a truncated document (<code>{"key":"intentionally unclosed string</code>) containing 39 bytes has been left within the stream. In such cases, the first two whole documents are parsed and returned, and the <code>truncated_bytes()</code> method returns 39.</p>
