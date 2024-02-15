@@ -163,6 +163,59 @@ inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) n
   return child;
 }
 
+inline std::string json_path_to_pointer_conversion(std::string_view json_path) {
+  if (json_path.empty() || (json_path.front() != '.' &&
+      json_path.front() != '[')) {
+    return "-1"; // This is just a sentinel value, the caller should check for this and return an error.
+  }
+
+  std::string result;
+  // Reserve space to reduce allocations, adjusting for potential increases due
+  // to escaping.
+  result.reserve(json_path.size() * 2);
+
+  size_t i = 0;
+
+  while (i < json_path.length()) {
+    if (json_path[i] == '.') {
+      result += '/';
+    } else if (json_path[i] == '[') {
+      result += '/';
+      ++i; // Move past the '['
+      while (i < json_path.length() && json_path[i] != ']') {
+          if (json_path[i] == '~') {
+            result += "~0";
+          } else if (json_path[i] == '/') {
+            result += "~1";
+          } else {
+            result += json_path[i];
+          }
+          ++i;
+      }
+      if (i == json_path.length() || json_path[i] != ']') {
+          return "-1"; // Using sentinel value that will be handled as an error by the caller.
+      }
+    } else {
+      if (json_path[i] == '~') {
+          result += "~0";
+      } else if (json_path[i] == '/') {
+          result += "~1";
+      } else {
+          result += json_path[i];
+      }
+    }
+    ++i;
+  }
+
+  return result;
+}
+
+inline simdjson_result<value> array::at_path(std::string_view json_path) noexcept {
+  auto json_pointer = json_path_to_pointer_conversion(json_path);
+  if (json_pointer == "-1") { return INVALID_JSON_POINTER; }
+  return at_pointer(json_pointer);
+}
+
 simdjson_inline simdjson_result<value> array::at(size_t index) noexcept {
   size_t i = 0;
   for (auto value : *this) {
@@ -216,6 +269,10 @@ simdjson_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdj
 simdjson_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at_pointer(std::string_view json_pointer) noexcept {
   if (error()) { return error(); }
   return first.at_pointer(json_pointer);
+}
+simdjson_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at_path(std::string_view json_path) noexcept {
+  if (error()) { return error(); }
+  return first.at_path(json_path);
 }
 simdjson_inline  simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::raw_json() noexcept {
   if (error()) { return error(); }

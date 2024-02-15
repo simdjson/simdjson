@@ -13,6 +13,7 @@ add_cpp_test(ondemand_document_stream_tests  LABELS ondemand acceptance per_impl
 add_cpp_test(ondemand_error_tests            LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_error_location_tests   LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_json_pointer_tests     LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_json_path_tests        LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_key_string_tests       LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_misc_tests             LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_number_tests           LABELS ondemand acceptance per_implementation)

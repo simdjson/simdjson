@@ -19,6 +19,7 @@ An overview of what you need to know to use simdjson, with examples.
   - [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
   - [UTF-8 validation (alone)](#utf-8-validation-alone)
   - [JSON Pointer](#json-pointer)
+  - [JSON Path (subset)](#json-path)
   - [Error Handling](#error-handling)
     - [Error Handling Examples without Exceptions](#error-handling-examples-without-exceptions)
     - [Disabling Exceptions](#disabling-exceptions)
@@ -1080,10 +1081,10 @@ auto cars = parser.iterate(cars_json);
 cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
 ```
 
-A JSON Path is a sequence of segments each starting with the '/' character. Within arrays, an integer
+A JSON Pointer path is a sequence of segments each starting with the '/' character. Within arrays, a zero-based integer
 index allows you to select the indexed node. Within objects, the string value of the key allows you to
 select the value. If your keys contain the characters '/' or '~', they must be escaped as '~1' and
-'~0' respectively. An empty JSON Path refers to the whole document.
+'~0' respectively. An empty JSON Pointer Path refers to the whole document.
 
 For multiple JSON pointer queries on a document, one can call `at_pointer` multiple times.
 
@@ -1163,8 +1164,42 @@ doc.rewind();	// Need to manually rewind to be able to use find_field properly f
 std::cout << doc.find_field("k0") << std::endl; // Prints 27
 ```
 
-When the JSON path is the empty string (`""`) applied to a scalar document (lone string, number, Boolean or null), a SCALAR_DOCUMENT_AS_VALUE error is returned because scalar document cannot
+When the JSON Pointer Path is the empty string (`""`) applied to a scalar document (lone string, number, Boolean or null), a SCALAR_DOCUMENT_AS_VALUE error is returned because scalar document cannot
 be represented as `value` instances. You can check that a document is a scalar with the method `scalar()`.
+
+JSON Path
+------------
+
+The simdjson library now supports a subset of [JSON Path](https://goessner.net/articles/JsonPath/) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSON path that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index.
+
+This implementation relies on `at_path()` converting its argument to JSON Pointer and then calling `at_pointer`, which makes use of [`rewind`](#rewind) to reset the parser at the beginning of the document. Hence, it invalidates all previously parsed values, objects and arrays: make sure to consume the values between each call to `at_path`.
+
+Consider the following example:
+
+```c++
+auto cars_json = R"( [
+  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+] )"_padded;
+ondemand::parser parser;
+auto cars = parser.iterate(cars_json);
+cout << cars.at_path("[0].tire_pressure[1]") << endl; // Prints 39.9
+```
+
+A call to `at_path(json_path)` can result in any of the errors that are returned by the `at_pointer` method and if the conversion of `json_path` to json pointer fails, it will lead to an `simdjson::INVALID_JSON_POINTER`error.
+
+```c++
+auto cars_json = R"( [
+  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+] )"_padded;
+ondemand::parser parser;
+auto cars = parser.iterate(cars_json);
+ASSERT_ERROR(cars.at_path("[0].tire_presure[1").get(x), INVALID_JSON_POINTER); // Fails on conversion to json pointer, since last square bracket was not properly closed.
+ASSERT_ERROR(cars.at_path("[0].incorrect_field[1]").get(x), NO_SUCH_FIELD); // Conversion to json pointer succeeds, but fails on at_pointer() since the path is invalid.
+```
 
 Error Handling
 --------------
