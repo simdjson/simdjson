@@ -1,3 +1,6 @@
+#include <string>
+using namespace std::string_literals;
+
 #include "simdjson.h"
 #include "test_ondemand.h"
 
@@ -234,7 +237,7 @@ namespace document_stream_tests {
                 ASSERT_EQUAL(odstream.truncated_bytes(), 305);
                 break;
             } else if (err) {
-               TEST_FAIL(std::string("ondemand: error accessing jsonpointer: ") + simdjson::error_message(err));
+               TEST_FAIL("ondemand: error accessing jsonpointer: "s + simdjson::error_message(err));
             }
         }
         ASSERT_EQUAL(odstream.truncated_bytes(), 305);

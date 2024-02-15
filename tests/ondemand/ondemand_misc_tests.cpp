@@ -550,7 +550,7 @@ namespace misc_tests {
   simdjson_warn_unused bool test_raw_json_token(string_view json, string_view expected_token, int expected_start_index = 0) {
     string title("'");
     title.append(json.data(), json.length());
-    title += std::string("'");
+    title += "'"s;
     padded_string json_padded = json;
     SUBTEST(title, test_ondemand_doc(json_padded, [&](auto doc) {
       string_view token;
@@ -564,11 +564,11 @@ namespace misc_tests {
     // Test values
     auto json_in_hash = string(R"({"a":)");
     json_in_hash.append(json.data(), json.length());
-    json_in_hash += std::string("}");
+    json_in_hash += "}"s;
     json_padded = json_in_hash;
-    title = std::string("'");
+    title = "'"s;
     title.append(json_in_hash.data(), json_in_hash.length());
-    title += std::string("'");
+    title += "'"s;
     SUBTEST(title, test_ondemand_doc(json_padded, [&](auto doc) {
       string_view token;
       ASSERT_SUCCESS( doc["a"].raw_json_token().get(token) );

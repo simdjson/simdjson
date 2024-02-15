@@ -1,8 +1,9 @@
-#include <string>
-#include <vector>
 #include <cctype>
-#include <unistd.h>
 #include <random>
+#include <string>
+#include <unistd.h>
+#include <vector>
+using namespace std::string_literals;
 
 #include "simdjson.h"
 #include "test_macros.h"
@@ -879,7 +880,7 @@ namespace document_stream_tests {
   bool issue1649() {
     std::cout << "Running " << __func__ << std::endl;
     std::size_t batch_size = 637;
-    const auto json=simdjson::padded_string(std::string("\xd7"));
+    const auto json=simdjson::padded_string("\xd7"s);
     simdjson::dom::parser parser;
     simdjson::dom::document_stream docs;
     if(parser.parse_many(json,batch_size).get(docs)) {

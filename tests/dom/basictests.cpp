@@ -10,6 +10,7 @@
 #include <sstream>
 #include <utility>
 #include <unistd.h>
+using namespace std::string_literals;
 
 #include "simdjson.h"
 #include "cast_tester.h"
@@ -2279,14 +2280,14 @@ bool simple_overflows() {
   std::cout << "Running " << __func__ << std::endl;
   simdjson::dom::parser parser;
   simdjson::dom::element doc;
-  ASSERT_ERROR( parser.parse(std::string("[f]")).get(doc), simdjson::F_ATOM_ERROR);
-  ASSERT_ERROR( parser.parse(std::string("[t]")).get(doc), simdjson::T_ATOM_ERROR);
-  ASSERT_ERROR( parser.parse(std::string("[n]")).get(doc), simdjson::N_ATOM_ERROR);
-  ASSERT_ERROR( parser.parse(std::string("[-]")).get(doc), simdjson::NUMBER_ERROR);
-  ASSERT_ERROR( parser.parse(std::string("{\"a\":f}")).get(doc), simdjson::F_ATOM_ERROR);
-  ASSERT_ERROR( parser.parse(std::string("{\"a\":t}")).get(doc), simdjson::T_ATOM_ERROR);
-  ASSERT_ERROR( parser.parse(std::string("{\"a\":n}")).get(doc), simdjson::N_ATOM_ERROR);
-  ASSERT_ERROR( parser.parse(std::string("{\"a\":-}")).get(doc), simdjson::NUMBER_ERROR);
+  ASSERT_ERROR( parser.parse("[f]"s).get(doc), simdjson::F_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse("[t]"s).get(doc), simdjson::T_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse("[n]"s).get(doc), simdjson::N_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse("[-]"s).get(doc), simdjson::NUMBER_ERROR);
+  ASSERT_ERROR( parser.parse("{\"a\":f}"s).get(doc), simdjson::F_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse("{\"a\":t}"s).get(doc), simdjson::T_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse("{\"a\":n}"s).get(doc), simdjson::N_ATOM_ERROR);
+  ASSERT_ERROR( parser.parse("{\"a\":-}"s).get(doc), simdjson::NUMBER_ERROR);
   return true;
 }
 

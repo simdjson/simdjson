@@ -1,6 +1,7 @@
 #include <string>
 #include <vector>
 #include <unistd.h>
+using namespace std::string_literals;
 
 #include "simdjson.h"
 #include "test_macros.h"
@@ -138,10 +139,10 @@ namespace document_tests {
       if (n >= buf.size()) { abort(); }
       data.emplace_back(std::string(buf.data(), n));
     }
-    data.emplace_back(std::string("true"));
-    data.emplace_back(std::string("false"));
-    data.emplace_back(std::string("null"));
-    data.emplace_back(std::string("0.1"));
+    data.emplace_back("true"s);
+    data.emplace_back("false"s);
+    data.emplace_back("null"s);
+    data.emplace_back("0.1"s);
     size_t maxsize = 0;
     for (auto &s : data) {
       if (maxsize < s.size())
