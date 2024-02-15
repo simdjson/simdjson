@@ -251,6 +251,9 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <tr class="memitem:ac2ea8f4340d02d9062f81419da47500b"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#ac2ea8f4340d02d9062f81419da47500b">is_scalar</a> () noexcept</td></tr>
 <tr class="memdesc:ac2ea8f4340d02d9062f81419da47500b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks whether the document is a scalar (string, number, null, Boolean).  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#ac2ea8f4340d02d9062f81419da47500b">More...</a><br /></td></tr>
 <tr class="separator:ac2ea8f4340d02d9062f81419da47500b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4af5ddd8fc929969a4bb1e2a6e1c4ba7"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a4af5ddd8fc929969a4bb1e2a6e1c4ba7">is_string</a> () noexcept</td></tr>
+<tr class="memdesc:a4af5ddd8fc929969a4bb1e2a6e1c4ba7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks whether the document is a string.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a4af5ddd8fc929969a4bb1e2a6e1c4ba7">More...</a><br /></td></tr>
+<tr class="separator:a4af5ddd8fc929969a4bb1e2a6e1c4ba7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5083f65b71d7540ea785ec2b52604267"><td class="memItemLeft" align="right" valign="top">simdjson_inline bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a5083f65b71d7540ea785ec2b52604267">is_negative</a> () noexcept</td></tr>
 <tr class="memdesc:a5083f65b71d7540ea785ec2b52604267"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks whether the document is a negative number.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a5083f65b71d7540ea785ec2b52604267">More...</a><br /></td></tr>
 <tr class="separator:a5083f65b71d7540ea785ec2b52604267"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -490,7 +493,7 @@ static constexpr <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00312">312</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00319">319</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -534,7 +537,7 @@ static constexpr <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00294">294</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00301">301</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1077,7 +1080,7 @@ INCORRECT_TYPE If the JSON value is not a 64-bit integer. </dd></dl>
 <p>Otherwise, <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#a8c8d29d831635c958e87de0cc2dab8b4" title="return the automatically determined type of the number: number_type::floating_point_number,...">number.get_number_type()</a> has value number_type::floating_point_number and we have a binary64 number. You can recover the value by calling <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#ab261642a30f5e26b0769ce701cd5b9f8" title="return the value as a double, only valid if is_double() is true.">number.get_double()</a> and you have that <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#a48f9e54ebd40e1c060be0a4b1d4ff823" title="return true if the automatically determined type of the number is number_type::floating_point_number.">number.is_double()</a> is true.</p>
 <p>You must check the type before accessing the value: it is an error to call "get_int64()" when <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#a8c8d29d831635c958e87de0cc2dab8b4" title="return the automatically determined type of the number: number_type::floating_point_number,...">number.get_number_type()</a> is not number_type::signed_integer and when <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#a38d6b4b4e91f30c8def71997d23454c2" title="return true if the automatically determined type of the number is number_type::signed_integer.">number.is_int64()</a> is false. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00284">284</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00291">291</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1111,7 +1114,7 @@ INCORRECT_TYPE If the JSON value is not a 64-bit integer. </dd></dl>
 <p>This function requires processing the number string, but it is expected to be faster than <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a2b04a9cd8c4ff9b591dc3f2db95c69cf" title="Attempt to parse an ondemand::number.">get_number()</a>.<a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#abb3a7cc6f2391d26f27a28c16ca38c9c" title="Determine the number type (integer or floating-point number) as quickly as possible.">get_number_type()</a> because it is does not parse the number value.</p>
 <dl class="section return"><dt>Returns</dt><dd>the type of the number </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00280">280</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00287">287</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1458,7 +1461,7 @@ INCORRECT_TYPE if the JSON value is not a string. </dd></dl>
 <p>Note that this requires to partially parse the number string. If the value is determined to be an integer, it may still not parse properly as an integer in subsequent steps (e.g., it might overflow).</p>
 <dl class="section return"><dt>Returns</dt><dd>true if the number if negative. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00276">276</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00283">283</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1488,7 +1491,7 @@ INCORRECT_TYPE if the JSON value is not a string. </dd></dl>
 <p>Checks whether the document is a negative number. </p>
 <dl class="section return"><dt>Returns</dt><dd>true if the number if negative. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00272">272</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00279">279</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1553,6 +1556,36 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the type is string, number, null, Boolean @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse". </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00265">265</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a4af5ddd8fc929969a4bb1e2a6e1c4ba7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4af5ddd8fc929969a4bb1e2a6e1c4ba7">&#9670;&nbsp;</a></span>is_string()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt; simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document::is_string </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Checks whether the document is a string. </p>
+<dl class="section return"><dt>Returns</dt><dd>true if the type is string @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse". </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00272">272</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1951,7 +1984,7 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
 <li>null </li>
 </ul>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00289">289</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00296">296</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>

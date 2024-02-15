@@ -55,7 +55,7 @@ var NAVTREE =
       [ "Newline-Delimited JSON (ndjson) and JSON lines", "md_doc_basics.html#autotoc_md23", null ],
       [ "Parsing Numbers Inside Strings", "md_doc_basics.html#autotoc_md24", null ],
       [ "Dynamic Number Types", "md_doc_basics.html#autotoc_md25", null ],
-      [ "Raw Strings", "md_doc_basics.html#autotoc_md26", null ],
+      [ "Raw Strings From Keys", "md_doc_basics.html#autotoc_md26", null ],
       [ "General Direct Access to the Raw JSON String", "md_doc_basics.html#autotoc_md27", null ],
       [ "Storing Directly into an Existing String Instance", "md_doc_basics.html#autotoc_md28", null ],
       [ "Thread Safety", "md_doc_basics.html#autotoc_md29", null ],
@@ -193,11 +193,11 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "amalgamated_8h_source.html",
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#a60ad1270b86c6a0c27c03b685aec9666",
-"classsimdjson_1_1dom_1_1key__value__pair.html#a58c41d937401cfe88ceb6e71d7dbeb45",
-"icelake_2ondemand_8h_source.html",
-"namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a3301f2ab5be71180e3ed68934d26c029",
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference_01_4.html#a50ae30ff13deb16a82ca945f536624eb"
+"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html",
+"classsimdjson_1_1dom_1_1element.html#afbe1c01508f1cc39b41b79596cb5717b",
+"icelake_2end_8h_source.html",
+"namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html",
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference_01_4.html#a20982b10f89ac3ec1f07acf11e5a9d5a"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

@@ -224,6 +224,9 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <tr class="memitem:a0f74a50a24a204f69f00ffb7915f576f"><td class="memItemLeft" align="right" valign="top"><a id="a0f74a50a24a204f69f00ffb7915f576f"></a>
 simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>is_scalar</b> () noexcept</td></tr>
 <tr class="separator:a0f74a50a24a204f69f00ffb7915f576f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a63beaffe2cf58175048509a723131b86"><td class="memItemLeft" align="right" valign="top"><a id="a63beaffe2cf58175048509a723131b86"></a>
+simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>is_string</b> () noexcept</td></tr>
+<tr class="separator:a63beaffe2cf58175048509a723131b86"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a07c7e0c3076b3882e4b146a008955772"><td class="memItemLeft" align="right" valign="top"><a id="a07c7e0c3076b3882e4b146a008955772"></a>
 simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>is_negative</b> () noexcept</td></tr>
 <tr class="separator:a07c7e0c3076b3882e4b146a008955772"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -325,7 +328,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="value_8h_source.html#l00641">641</a> of file <a class="el" href="value_8h_source.html">value.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value_8h_source.html#l00649">649</a> of file <a class="el" href="value_8h_source.html">value.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a3bfd36dafc82c212f165b434ab5378b3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3bfd36dafc82c212f165b434ab5378b3">&#9670;&nbsp;</a></span>current_depth()</h2>
@@ -353,7 +356,7 @@ Additional Inherited Members</h2></td></tr>
 <p>int32_t <a class="el" href="structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value_01_4.html#a3bfd36dafc82c212f165b434ab5378b3" title="int32_t current_depth() const noexcept">current_depth() const </a>noexcept </p>
 <p>int32_t <a class="el" href="structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value_01_4.html#a3bfd36dafc82c212f165b434ab5378b3" title="int32_t current_depth() const noexcept">current_depth() const </a>noexcept </p>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00485">485</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00497">497</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -383,7 +386,7 @@ Additional Inherited Members</h2></td></tr>
 <p>simdjson_result&lt;const char *&gt; <a class="el" href="structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value_01_4.html#a78b9e4e22a89050c9f911f1878165e88" title="simdjson_result&lt;const char *&gt; current_location() noexcept">current_location()</a> noexcept </p>
 <p>simdjson_result&lt;const char *&gt; <a class="el" href="structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value_01_4.html#a78b9e4e22a89050c9f911f1878165e88" title="simdjson_result&lt;const char *&gt; current_location() noexcept">current_location()</a> noexcept </p>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00480">480</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00492">492</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -429,7 +432,7 @@ Additional Inherited Members</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>The value of the field, or NO_SUCH_FIELD if the field is not in the object.</dd></dl>
 <p>This is an overloaded member function, provided for convenience. It differs from the above function only in what argument(s) it accepts. </p>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00302">302</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00310">310</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -470,7 +473,7 @@ Additional Inherited Members</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>The value of the field, or NO_SUCH_FIELD if the field is not in the object.</dd></dl>
 <p>This is an overloaded member function, provided for convenience. It differs from the above function only in what argument(s) it accepts. </p>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00311">311</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00319">319</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -500,7 +503,7 @@ Additional Inherited Members</h2></td></tr>
 <p>std::string_view value::raw_json_token() const noexcept </p>
 <p>std::string_view value::raw_json_token() const noexcept </p>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00470">470</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00482">482</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -530,7 +533,7 @@ Additional Inherited Members</h2></td></tr>
 <p>Get the type of this JSON value. </p>
 <p>NOTE: If you're only expecting a value to be one type (a typical case), it's generally better to just call .get_double, .get_string, etc. and check for INCORRECT_TYPE (or just let it throw an exception). </p>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00406">406</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00414">414</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>

@@ -49,6 +49,7 @@ var classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_
     [ "is_negative", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a5083f65b71d7540ea785ec2b52604267", null ],
     [ "is_null", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a5ed59f01a0d4ad253f0e1c1f995ed0a7", null ],
     [ "is_scalar", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#ac2ea8f4340d02d9062f81419da47500b", null ],
+    [ "is_string", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a4af5ddd8fc929969a4bb1e2a6e1c4ba7", null ],
     [ "operator array", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a08307c0a5552cf8cb06613ed1de48eac", null ],
     [ "operator bool", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a7df7ba140c9d6398fef2c6963da82230", null ],
     [ "operator double", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#ae052e098bfbfde398845060a8d4f572f", null ],

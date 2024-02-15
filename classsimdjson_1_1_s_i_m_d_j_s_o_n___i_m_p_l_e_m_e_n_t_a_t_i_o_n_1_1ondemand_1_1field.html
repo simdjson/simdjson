@@ -117,6 +117,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a4f49d8e89feb3ca69cf85ce2aea80c0f"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html">raw_json_string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#a4f49d8e89feb3ca69cf85ce2aea80c0f">key</a> () const noexcept</td></tr>
 <tr class="memdesc:a4f49d8e89feb3ca69cf85ce2aea80c0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the key as a <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html" title="A string escaped per JSON rules, terminated with quote (&quot;).">raw_json_string</a>.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#a4f49d8e89feb3ca69cf85ce2aea80c0f">More...</a><br /></td></tr>
 <tr class="separator:a4f49d8e89feb3ca69cf85ce2aea80c0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a248d65ae4cf327f277a5a48ba7480386"><td class="memItemLeft" align="right" valign="top">simdjson_inline std::string_view&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#a248d65ae4cf327f277a5a48ba7480386">key_raw_json_token</a> () const noexcept</td></tr>
+<tr class="memdesc:a248d65ae4cf327f277a5a48ba7480386"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the unprocessed key as a string_view.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#a248d65ae4cf327f277a5a48ba7480386">More...</a><br /></td></tr>
+<tr class="separator:a248d65ae4cf327f277a5a48ba7480386"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5f688629f86f80dff49cab2270b1967"><td class="memItemLeft" align="right" valign="top"><a id="ad5f688629f86f80dff49cab2270b1967"></a>
 simdjson_inline ondemand::value &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#ad5f688629f86f80dff49cab2270b1967">value</a> () &amp;noexcept</td></tr>
 <tr class="memdesc:ad5f688629f86f80dff49cab2270b1967"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the field value. <br /></td></tr>
@@ -205,6 +208,36 @@ static simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.ht
 <p>Can be used for direct comparison with an unescaped C string: e.g., <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#a4f49d8e89feb3ca69cf85ce2aea80c0f" title="Get the key as a raw_json_string.">key()</a> == "test". </p>
 
 <p class="definition">Definition at line <a class="el" href="field-inl_8h_source.html#l00041">41</a> of file <a class="el" href="field-inl_8h_source.html">field-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a248d65ae4cf327f277a5a48ba7480386"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a248d65ae4cf327f277a5a48ba7480386">&#9670;&nbsp;</a></span>key_raw_json_token()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline std::string_view simdjson::SIMDJSON_IMPLEMENTATION::ondemand::field::key_raw_json_token </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get the unprocessed key as a string_view. </p>
+<p>This includes the quotes and may include some spaces after the last quote. </p>
+
+<p class="definition">Definition at line <a class="el" href="field-inl_8h_source.html#l00047">47</a> of file <a class="el" href="field-inl_8h_source.html">field-inl.h</a>.</p>
 
 </div>
 </div>

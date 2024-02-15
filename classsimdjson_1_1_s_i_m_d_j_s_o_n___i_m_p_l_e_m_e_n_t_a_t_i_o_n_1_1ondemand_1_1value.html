@@ -224,6 +224,9 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <tr class="memitem:a8c2618e57ec26501dd93ff8fd5cc2191"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a8c2618e57ec26501dd93ff8fd5cc2191">is_scalar</a> () noexcept</td></tr>
 <tr class="memdesc:a8c2618e57ec26501dd93ff8fd5cc2191"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks whether the value is a scalar (string, number, null, Boolean).  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a8c2618e57ec26501dd93ff8fd5cc2191">More...</a><br /></td></tr>
 <tr class="separator:a8c2618e57ec26501dd93ff8fd5cc2191"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afd4052d4ebe0a500a051f5048206a9c8"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#afd4052d4ebe0a500a051f5048206a9c8">is_string</a> () noexcept</td></tr>
+<tr class="memdesc:afd4052d4ebe0a500a051f5048206a9c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks whether the value is a string.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#afd4052d4ebe0a500a051f5048206a9c8">More...</a><br /></td></tr>
+<tr class="separator:afd4052d4ebe0a500a051f5048206a9c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2701c283de019e56624e930e936e0df0"><td class="memItemLeft" align="right" valign="top">simdjson_inline bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a2701c283de019e56624e930e936e0df0">is_negative</a> () noexcept</td></tr>
 <tr class="memdesc:a2701c283de019e56624e930e936e0df0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks whether the value is a negative number.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a2701c283de019e56624e930e936e0df0">More...</a><br /></td></tr>
 <tr class="separator:a2701c283de019e56624e930e936e0df0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -395,7 +398,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00248">248</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00256">256</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -441,7 +444,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00234">234</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00242">242</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -565,7 +568,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 <p>Returns the current depth in the document if in bounds. </p>
 <p>E.g., 0 = finished with document 1 = document root value (could be [ or {, not yet known) 2 = , or } inside root array/object 3 = key or value inside root array/object. </p>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00230">230</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00238">238</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -989,7 +992,7 @@ INCORRECT_TYPE If the JSON value is not a 64-bit integer. </dd></dl>
 <p>You must check the type before accessing the value: it is an error to call "get_int64()" when <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#a8c8d29d831635c958e87de0cc2dab8b4" title="return the automatically determined type of the number: number_type::floating_point_number,...">number.get_number_type()</a> is not number_type::signed_integer and when <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#a38d6b4b4e91f30c8def71997d23454c2" title="return true if the automatically determined type of the number is number_type::signed_integer.">number.is_int64()</a> is false.</p>
 <p>Performance note: this is designed with performance in mind. When calling '<a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#aa89c4aceb7e052a1f7ff7e4058b651f1" title="Attempt to parse an ondemand::number.">get_number()</a>', you scan the number string only once, determining efficiently the type and storing it in an efficient manner. </p>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00198">198</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00206">206</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1023,7 +1026,7 @@ INCORRECT_TYPE If the JSON value is not a 64-bit integer. </dd></dl>
 <p>This function requires processing the number string, but it is expected to be faster than <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#aa89c4aceb7e052a1f7ff7e4058b651f1" title="Attempt to parse an ondemand::number.">get_number()</a>.<a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a2f46079741d1ba316de32bb9765c5082" title="Determine the number type (integer or floating-point number) as quickly as possible.">get_number_type()</a> because it is does not parse the number value.</p>
 <dl class="section return"><dt>Returns</dt><dd>the type of the number </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00195">195</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00203">203</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1301,7 +1304,7 @@ INCORRECT_TYPE if the JSON value is not a string. </dd></dl>
 <p>Performance note: if you call this function systematically before parsing a number, you may have fallen for a performance anti-pattern.</p>
 <dl class="section return"><dt>Returns</dt><dd>true if the number if negative. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00192">192</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00200">200</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1331,7 +1334,7 @@ INCORRECT_TYPE if the JSON value is not a string. </dd></dl>
 <p>Checks whether the value is a negative number. </p>
 <dl class="section return"><dt>Returns</dt><dd>true if the number if negative. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00188">188</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00196">196</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1396,6 +1399,36 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the type is string, number, null, Boolean @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse". </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00181">181</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="afd4052d4ebe0a500a051f5048206a9c8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afd4052d4ebe0a500a051f5048206a9c8">&#9670;&nbsp;</a></span>is_string()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt; simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value::is_string </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Checks whether the value is a string. </p>
+<dl class="section return"><dt>Returns</dt><dd>true if the type is string @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse". </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00188">188</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1747,7 +1780,7 @@ template&lt;class T &gt; </div>
 <p>Get a string_view pointing at this value in the JSON document. </p>
 <p>If this element is an array or an object, it consumes the array or the object and returns a string_view instance corresponding to the array as represented in JSON. It points inside the original document. If this element is a scalar (string, number, Boolean, null), it returns what <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a37427e768435aafef5af097b8cc3cfec" title="Get the raw JSON for this token.">raw_json_token()</a> would return. </p>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00206">206</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00214">214</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1789,7 +1822,7 @@ template&lt;class T &gt; </div>
 </ul>
 <p>See also <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a9271a0be9a741a34c3a63f77363963a6" title="Get a string_view pointing at this value in the JSON document.">value::raw_json()</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00202">202</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00210">210</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>

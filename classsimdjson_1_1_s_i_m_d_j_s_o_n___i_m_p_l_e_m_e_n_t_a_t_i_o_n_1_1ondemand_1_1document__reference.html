@@ -238,6 +238,9 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <tr class="memitem:ae2f02ac7a3753b5ec51af17d3f0a7ba6"><td class="memItemLeft" align="right" valign="top"><a id="ae2f02ac7a3753b5ec51af17d3f0a7ba6"></a>
 simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>is_scalar</b> () noexcept</td></tr>
 <tr class="separator:ae2f02ac7a3753b5ec51af17d3f0a7ba6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1207a965b9b8334bc4cf8b3d929397fd"><td class="memItemLeft" align="right" valign="top"><a id="a1207a965b9b8334bc4cf8b3d929397fd"></a>
+simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>is_string</b> () noexcept</td></tr>
+<tr class="separator:a1207a965b9b8334bc4cf8b3d929397fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a20ff7e15fb47ebcddb22caa4d95e8bee"><td class="memItemLeft" align="right" valign="top"><a id="a20ff7e15fb47ebcddb22caa4d95e8bee"></a>
 simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; const char * &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>current_location</b> () noexcept</td></tr>
 <tr class="separator:a20ff7e15fb47ebcddb22caa4d95e8bee"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -273,7 +276,7 @@ template&lt;&gt; </td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html" title="A document_reference is a thin wrapper around a document reference instance.">document_reference</a> is a thin wrapper around a document reference instance. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00653">653</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00661">661</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a47b30548f71aca4317bdc4c6955cd719"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a47b30548f71aca4317bdc4c6955cd719">&#9670;&nbsp;</a></span>get_uint64()</h2>
@@ -303,7 +306,7 @@ template&lt;&gt; </td></tr>
 <p>However, for streams of JSON documents, we want to be able to start from "321" "321" "321" and parse it successfully as a stream of JSON documents, calling get_uint64_in_string() successfully each time.</p>
 <p>To achieve this result, we pass a 'false' to a get_root_value_iterator() method: this indicates that we allow trailing content. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00623">623</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00634">634</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
