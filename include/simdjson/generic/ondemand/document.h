@@ -593,7 +593,7 @@ public:
    *   const padded_string json = "{\"\\u00E9\":123}"_padded;
    *   auto doc = parser.iterate(json);
    *   doc.at_pointer("/\\u00E9") == 123
-   *   doc.at_pointer(u8"/\u00E9") returns an error (NO_SUCH_FIELD)
+   *   doc.at_pointer((const char*)u8"/\u00E9") returns an error (NO_SUCH_FIELD)
    *
    * Note that at_pointer() automatically calls rewind between each call. Thus
    * all values, objects and arrays that you have created so far (including unescaped strings)
@@ -625,7 +625,7 @@ public:
    *   const padded_string json = "{\"\\u00E9\":123}"_padded;
    *   auto doc = parser.iterate(json);
    *   doc.at_path(".\\u00E9") == 123
-   *   doc.at_path(u8".\u00E9") returns an error (NO_SUCH_FIELD)
+   *   doc.at_path((const char*)u8".\u00E9") returns an error (NO_SUCH_FIELD)
    *
    * @return The value associated with the given JSONPath expression, or:
    *         - INVALID_JSON_POINTER if the JSONPath to JSON Pointer conversion fails

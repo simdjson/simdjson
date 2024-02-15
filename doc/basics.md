@@ -1113,7 +1113,7 @@ considered distinct from its escaped version `\u00E9`. E.g.,
 const padded_string json = "{\"\\u00E9\":123}"_padded;
 auto doc = parser.iterate(json);
 doc.at_pointer("/\\u00E9") == 123; // true
-doc.at_pointer(u8"/\u00E9") // returns an error (NO_SUCH_FIELD)
+doc.at_pointer((const char*)u8"/\u00E9") // returns an error (NO_SUCH_FIELD)
 ```
 
 Note that `at_pointer` calls [`rewind`](#rewind) to reset the parser at the beginning of the document. Hence, it invalidates all previously parsed values, objects and arrays: make sure to consume the values between each call to  `at_pointer`. Consider the following example where one wants to store each object from the JSON into a vector of `struct car_type`:
@@ -1221,7 +1221,7 @@ The e acute character is considered distinct from its escaped version `\u00E9`. 
 const padded_string json = "{\"\\u00E9\":123}"_padded;
 auto doc = parser.iterate(json);
 doc.at_path(".\\u00E9") == 123; // true
-doc.at_path(u8".\u00E9") // returns an error (NO_SUCH_FIELD)
+doc.at_path((const char*)u8".\u00E9") // returns an error (NO_SUCH_FIELD)
 ```
 
 Error Handling
