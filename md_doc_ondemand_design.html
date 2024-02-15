@@ -512,8 +512,8 @@ Iteration Safety</h2>
 <div class="line">   ondemand::object c2 = parent[&quot;child2&quot;];</div>
 <div class="line">   // c2 is now in an unsafe state and the following line would be unsafe</div>
 <div class="line">   // if (std::string_view(c2[&quot;name&quot;]) != &quot;Daniel&quot;) { return false; }</div>
-</div><!-- fragment --> <pre class="fragment">A correct usage is given by the following example:
-</pre> <div class="fragment"><div class="line">{C++}</div>
+</div><!-- fragment --><p>A correct usage is given by the following example:</p>
+<div class="fragment"><div class="line">{C++}</div>
 <div class="line">   ondemand::parser parser;</div>
 <div class="line">   const padded_string json = R&quot;({ &quot;parent&quot;: {&quot;child1&quot;: {&quot;name&quot;: &quot;John&quot;} , &quot;child2&quot;: {&quot;name&quot;: &quot;Daniel&quot;}} })&quot;_padded;</div>
 <div class="line">   auto doc = parser.iterate(json);</div>
