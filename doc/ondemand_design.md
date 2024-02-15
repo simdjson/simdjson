@@ -686,7 +686,7 @@ in production systems:
     // if (std::string_view(c2["name"]) != "Daniel") { return false; }
 ```
 
-    A correct usage is given by the following example:
+A correct usage is given by the following example:
 
 ```C++
     ondemand::parser parser;
