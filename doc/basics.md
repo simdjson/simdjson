@@ -2010,6 +2010,13 @@ string_view token = obj["value"].raw_json_token();
 
 The `raw_json_token()` should be fast and free of allocation.
 
+Given a quote-deliminated string, you find the string sequence inside the quote with a
+single line of code:
+
+```C++
+std::string_view noquote(std::string_view v) { return {v.data()+1, v.find_last_of('"')-1}; }
+```
+
 If your value is an array or an object, `raw_json_token()` returns effectively a single
 character (`[`) or (`}`) which is not very useful. For arrays and objects, we have another
 method called `raw_json()` which consumes (traverses) the array or the object.
