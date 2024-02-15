@@ -1,11 +1,5 @@
 var NAVTREEINDEX3 =
 {
-"icelake_2bitmanipulation_8h_source.html":[12,0,0,0,6,2],
-"icelake_2bitmask_8h_source.html":[12,0,0,0,6,3],
-"icelake_2end_8h_source.html":[12,0,0,0,6,4],
-"icelake_2implementation_8h_source.html":[12,0,0,0,6,5],
-"icelake_2intrinsics_8h_source.html":[12,0,0,0,6,6],
-"icelake_2numberparsing__defs_8h_source.html":[12,0,0,0,6,7],
 "icelake_2ondemand_8h_source.html":[12,0,0,0,6,8],
 "icelake_2simd_8h_source.html":[12,0,0,0,6,9],
 "icelake_2stringparsing__defs_8h_source.html":[12,0,0,0,6,10],
@@ -249,5 +243,11 @@ var NAVTREEINDEX3 =
 "namespacesimdjson.html#ae6ec9f0ce23fc51d87116b64fdbeb811ac059cc555f4992b3eb481f03b70df100":[10,0,0,35,2],
 "namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c":[10,0,0,45],
 "namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf":[10,0,0,71],
-"namespacesimdjson.html#aed443864cc94c09c3f88eea39f8ce645":[10,0,0,52]
+"namespacesimdjson.html#aed443864cc94c09c3f88eea39f8ce645":[10,0,0,52],
+"namespacesimdjson.html#af63210cc51d5c99ad84958daf9812e63":[10,0,0,36],
+"namespacesimdjson.html#afc529e3bcacb5b3c747b525fb443771f":[10,0,0,56],
+"namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html":[10,0,0,7,2],
+"namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a11766eb5c6314cae0fec704440e288dd":[10,0,0,7,2,19],
+"namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a14f218243d548a5e5410e6fadc3a53dd":[10,0,0,7,2,15],
+"namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a24f9bbfe8b5a3017b4dd4b72dbccec4d":[10,0,0,7,2,22]
 };

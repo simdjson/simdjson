@@ -1,11 +1,5 @@
 var NAVTREEINDEX1 =
 {
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#a9415aecf3526ad6081be495c9be61b43":[11,0,0,1,0,5,0],
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#ac91f0ec4a1944cba079924b366424f89":[11,0,0,1,0,5,7],
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#ad5f688629f86f80dff49cab2270b1967":[11,0,0,1,0,5,5],
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html":[11,0,0,1,0,7],
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#a034b27d7ff75832a574c2069af267111":[11,0,0,1,0,7,0],
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#a55d8bd31e2f5e6b10986af2f48a544fc":[11,0,0,1,0,7,12],
 "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#a60ad1270b86c6a0c27c03b685aec9666":[11,0,0,1,0,7,14],
 "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#a62b96abab9d1338d5f5e513f90f8d7d0":[11,0,0,1,0,7,21],
 "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#a6724eb440d3fb40018a9a47c715352ed":[11,0,0,1,0,7,1],
@@ -249,5 +243,11 @@ var NAVTREEINDEX1 =
 "classsimdjson_1_1dom_1_1element.html#ae3c0226046e29cfb0e868c5251a87e53":[11,0,0,0,3,44],
 "classsimdjson_1_1dom_1_1element.html#ae5ce6ad2e6036b4bb7a78261858bb337":[11,0,0,0,3,12],
 "classsimdjson_1_1dom_1_1element.html#ae83652b5016ce4d4ff71f8f9bc05913e":[11,0,0,0,3,24],
-"classsimdjson_1_1dom_1_1element.html#aeb155c47ef7bebcad79e1b7449734030":[11,0,0,0,3,2]
+"classsimdjson_1_1dom_1_1element.html#aeb155c47ef7bebcad79e1b7449734030":[11,0,0,0,3,2],
+"classsimdjson_1_1dom_1_1element.html#afaaac6e2f58128a01a25b0a5f5abb856":[11,0,0,0,3,28],
+"classsimdjson_1_1dom_1_1element.html#afb98fdfcb6ddf19071cd2300613218d3":[11,0,0,0,3,41],
+"classsimdjson_1_1dom_1_1element.html#afbe1c01508f1cc39b41b79596cb5717b":[11,0,0,0,3,46],
+"classsimdjson_1_1dom_1_1element.html#afde562c5aae1b85a03ab6d4b040e7d13":[11,0,0,0,3,29],
+"classsimdjson_1_1dom_1_1key__value__pair.html":[11,0,0,0,5],
+"classsimdjson_1_1dom_1_1key__value__pair.html#a3d4dcacb8171b99f783396bb6a337c65":[11,0,0,0,5,0]
 };
