@@ -185,6 +185,14 @@ simdjson_inline simdjson_result<bool> value::is_scalar() noexcept {
   return ! ((this_type == json_type::array) || (this_type == json_type::object));
 }
 
+simdjson_inline simdjson_result<bool> value::is_string() noexcept {
+  json_type this_type;
+  auto error = type().get(this_type);
+  if(error) { return error; }
+  return (this_type == json_type::string);
+}
+
+
 simdjson_inline bool value::is_negative() noexcept {
   return iter.is_negative();
 }
@@ -410,6 +418,10 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> si
 simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::is_scalar() noexcept {
   if (error()) { return error(); }
   return first.is_scalar();
+}
+simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::is_string() noexcept {
+  if (error()) { return error(); }
+  return first.is_string();
 }
 simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::is_negative() noexcept {
   if (error()) { return error(); }

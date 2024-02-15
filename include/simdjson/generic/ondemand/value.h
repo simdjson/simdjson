@@ -401,6 +401,13 @@ public:
    * @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse".
    */
   simdjson_inline simdjson_result<bool> is_scalar() noexcept;
+  /**
+   * Checks whether the value is a string.
+   *
+   * @returns true if the type is string
+   * @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse".
+   */
+  simdjson_inline simdjson_result<bool> is_string() noexcept;
 
   /**
    * Checks whether the value is a negative number.
@@ -629,6 +636,7 @@ protected:
   friend class object;
   friend struct simdjson_result<value>;
   friend struct simdjson_result<field>;
+  friend class field;
 };
 
 } // namespace ondemand
@@ -743,6 +751,7 @@ public:
    */
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_inline simdjson_result<bool> is_scalar() noexcept;
+  simdjson_inline simdjson_result<bool> is_string() noexcept;
   simdjson_inline simdjson_result<bool> is_negative() noexcept;
   simdjson_inline simdjson_result<bool> is_integer() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> get_number_type() noexcept;

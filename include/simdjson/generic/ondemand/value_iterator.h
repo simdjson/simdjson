@@ -469,6 +469,7 @@ protected:
   friend class object;
   friend class array;
   friend class value;
+  friend class field;
 }; // value_iterator
 
 } // namespace ondemand

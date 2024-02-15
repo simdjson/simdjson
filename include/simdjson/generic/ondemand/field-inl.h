@@ -43,6 +43,12 @@ simdjson_inline raw_json_string field::key() const noexcept {
   return first;
 }
 
+
+simdjson_inline std::string_view field::key_raw_json_token() const noexcept {
+  SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
+  return std::string_view(reinterpret_cast<const char*>(first.buf-1), second.iter._json_iter->token.peek(-1) - first.buf + 1);
+}
+
 simdjson_inline value &field::value() & noexcept {
   return second;
 }
@@ -76,10 +82,17 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_stri
   if (error()) { return error(); }
   return first.key();
 }
+
+simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::key_raw_json_token() noexcept {
+  if (error()) { return error(); }
+  return first.key_raw_json_token();
+}
+
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::unescaped_key(bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.unescaped_key(allow_replacement);
 }
+
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::value() noexcept {
   if (error()) { return error(); }
   return std::move(first.value());

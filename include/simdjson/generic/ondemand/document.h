@@ -433,6 +433,14 @@ public:
   simdjson_inline simdjson_result<bool> is_scalar() noexcept;
 
   /**
+   * Checks whether the document is a string.
+   *
+   * @returns true if the type is string
+   * @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse".
+   */
+  simdjson_inline simdjson_result<bool> is_string() noexcept;
+
+  /**
    * Checks whether the document is a negative number.
    *
    * @returns true if the number if negative.
@@ -704,6 +712,7 @@ public:
 
   simdjson_inline simdjson_result<json_type> type() noexcept;
   simdjson_inline simdjson_result<bool> is_scalar() noexcept;
+  simdjson_inline simdjson_result<bool> is_string() noexcept;
 
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
   simdjson_inline int32_t current_depth() const noexcept;
@@ -780,6 +789,7 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(const char *key) & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_inline simdjson_result<bool> is_scalar() noexcept;
+  simdjson_inline simdjson_result<bool> is_string() noexcept;
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
   simdjson_inline int32_t current_depth() const noexcept;
   simdjson_inline bool at_end() const noexcept;
@@ -850,6 +860,7 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(const char *key) & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> type() noexcept;
   simdjson_inline simdjson_result<bool> is_scalar() noexcept;
+  simdjson_inline simdjson_result<bool> is_string() noexcept;
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
   simdjson_inline simdjson_result<int32_t> current_depth() const noexcept;
   simdjson_inline simdjson_result<bool> is_negative() noexcept;

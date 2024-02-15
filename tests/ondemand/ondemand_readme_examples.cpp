@@ -1254,6 +1254,38 @@ bool simple_error_example() {
 
 
 #if SIMDJSON_EXCEPTIONS
+
+#include "simdjson.h"
+#include <iostream>
+
+  // prints the content of the array as hexadecimal 64-bit integers
+  void f(simdjson::ondemand::array v) {
+    for(uint64_t val : v) {
+      std::cout << "0x" << std::hex << val << std::endl;
+    }
+  }
+
+
+  int callf(void) {
+    simdjson::padded_string json = R"( [ 897314173811950000, 3122321 ])"_padded;
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc = parser.iterate(json);
+    f(doc.get_array());
+    return EXIT_SUCCESS;
+  }
+
+  bool key_raw_json_token() {
+    TEST_START();
+    auto json = R"( {"name"   : "Jack The Ripper \u0033"} )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc = parser.iterate(json);
+    for (auto key_value : doc.get_object()) {
+      std::string_view keysv = key_value.key_raw_json_token();
+      ASSERT_EQUAL(keysv,"\"name\"   ");
+    }
+    TEST_SUCCEED();
+  }
+
   bool raw_string() {
     TEST_START();
     auto json = R"( {"name": "Jack The Ripper \u0033"} )"_padded;
@@ -1709,6 +1741,7 @@ bool value_raw_json_object() {
 bool run() {
   return true
 #if SIMDJSON_EXCEPTIONS
+    && key_raw_json_token()
     && to_optional()
     && value_raw_json_array() && value_raw_json_object()
     && gen_raw1() && gen_raw2() && gen_raw3()

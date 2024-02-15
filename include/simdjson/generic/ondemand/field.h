@@ -43,6 +43,11 @@ public:
    */
   simdjson_inline raw_json_string key() const noexcept;
   /**
+   * Get the unprocessed key as a string_view. This includes the quotes and may include
+   * some spaces after the last quote.
+   */
+  simdjson_inline std::string_view key_raw_json_token() const noexcept;
+  /**
    * Get the field value.
    */
   simdjson_inline ondemand::value &value() & noexcept;
@@ -74,6 +79,7 @@ public:
 
   simdjson_inline simdjson_result<std::string_view> unescaped_key(bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> key() noexcept;
+  simdjson_inline simdjson_result<std::string_view> key_raw_json_token() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> value() noexcept;
 };
 
