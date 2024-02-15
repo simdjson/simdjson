@@ -1105,6 +1105,17 @@ for (size_t i = 0; i < size; i++) {
 }
 ```
 
+In most instances, a JSON Path is an ASCII string and the keys in a JSON document
+are ASCII strings. We support UTF-8 in JSON Pointer, but key values are matched exactly, without unescaping or Unicode normalization. We do a byte-by-byte comparison. The e acute character is
+considered distinct from its escaped version `\u00E9`. E.g.,
+
+```c++
+const padded_string json = "{\"\\u00E9\":123}"_padded;
+auto doc = parser.iterate(json);
+doc.at_pointer("/\\u00E9") == 123; // true
+doc.at_pointer("/\u00E9") // returns an error (NO_SUCH_FIELD)
+```
+
 Note that `at_pointer` calls [`rewind`](#rewind) to reset the parser at the beginning of the document. Hence, it invalidates all previously parsed values, objects and arrays: make sure to consume the values between each call to  `at_pointer`. Consider the following example where one wants to store each object from the JSON into a vector of `struct car_type`:
 
 ```c++
@@ -1199,6 +1210,17 @@ ondemand::parser parser;
 auto cars = parser.iterate(cars_json);
 ASSERT_ERROR(cars.at_path("[0].tire_presure[1").get(x), INVALID_JSON_POINTER); // Fails on conversion to json pointer, since last square bracket was not properly closed.
 ASSERT_ERROR(cars.at_path("[0].incorrect_field[1]").get(x), NO_SUCH_FIELD); // Conversion to json pointer succeeds, but fails on at_pointer() since the path is invalid.
+```
+
+In most instances, a JSON Path is an ASCII string and the keys in a JSON document
+are ASCII strings. We support UTF-8, but key values are matched exactly, without unescaping or Unicode normalization. We do a byte-by-byte comparison. The e acute character is
+considered distinct from its escaped version `\u00E9`. E.g.,
+
+```c++
+const padded_string json = "{\"\\u00E9\":123}"_padded;
+auto doc = parser.iterate(json);
+doc.at_pointer(".\\u00E9") == 123; // true
+doc.at_pointer(".\u00E9") // returns an error (NO_SUCH_FIELD)
 ```
 
 Error Handling

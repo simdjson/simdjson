@@ -1068,6 +1068,24 @@ bool json_pointer_simple() {
     TEST_SUCCEED();
 }
 
+bool json_pointer_unicode() {
+    TEST_START();
+    const padded_string json = "{\"\u00E9\":123}"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    int64_t x;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.at_pointer("/\u00E9").get(x));
+    ASSERT_EQUAL(x,123);
+
+    const padded_string json2 = "{\"\\u00E9\":123}"_padded;
+    ASSERT_SUCCESS(parser.iterate(json2).get(doc));
+    ASSERT_SUCCESS(doc.at_pointer("/\\u00E9").get(x));
+    ASSERT_ERROR(doc.at_pointer("/\u00E9"), NO_SUCH_FIELD);
+    ASSERT_EQUAL(x,123);
+    TEST_SUCCEED();
+}
+
 bool json_path_simple() {
   TEST_START();
   ondemand::parser parser;
@@ -1076,6 +1094,24 @@ bool json_path_simple() {
   ASSERT_SUCCESS(parser.iterate(cars_json).get(cars));
   ASSERT_SUCCESS(cars.at_path("[0].tire_pressure[1]").get(x));
   ASSERT_EQUAL(x,39.9);
+  TEST_SUCCEED();
+}
+
+bool json_path_unicode() {
+  TEST_START();
+  ondemand::parser parser;
+  ondemand::document doc;
+  const padded_string json = "{\"\u00E9\":123}"_padded;
+  int64_t x;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
+  ASSERT_SUCCESS(doc.at_path(".\u00E9").get(x));
+  ASSERT_EQUAL(x,123);
+
+  const padded_string json2 = "{\"\\u00E9\":123}"_padded;
+  ASSERT_SUCCESS(parser.iterate(json2).get(doc));
+  ASSERT_SUCCESS(doc.at_path(".\\u00E9").get(x));
+  ASSERT_ERROR(doc.at_path(".\u00E9"), NO_SUCH_FIELD);
+  ASSERT_EQUAL(x,123);
   TEST_SUCCEED();
 }
 
@@ -1771,7 +1807,9 @@ bool run() {
 #endif
     && using_the_parsed_json_6()
     && json_pointer_simple()
+    && json_pointer_unicode()
     && json_path_simple()
+    && json_path_unicode()
     && invalid_json_path()
     && json_pointer_multiple()
     && json_path_multiple()
