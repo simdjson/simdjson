@@ -252,8 +252,8 @@ JSON Pointer</h1>
 <div class="line">dom::parser parser;</div>
 <div class="line">dom::element cars = parser.parse(cars_json);</div>
 <div class="line">cout &lt;&lt; cars.at_pointer(&quot;/0/tire_pressure/1&quot;) &lt;&lt; endl; // Prints 39.9</div>
-</div><!-- fragment --><p>A JSON Path is a sequence of segments each starting with the '/' character. Within arrays, an integer index allows you to select the indexed node. Within objects, the string value of the key allows you to select the value. If your keys contain the characters '/' or '~', they must be escaped as '~1' and '~0' respectively. An empty JSON Path refers to the whole document.</p>
-<p>We also extend the JSON Pointer support to include <em>relative</em> paths. You can apply a JSON path to any node and the path gets interpreted relatively, as if the current node were a whole JSON document.</p>
+</div><!-- fragment --><p>A JSON Pointer expression is a sequence of segments each starting with the '/' character. Within arrays, an integer index allows you to select the indexed node. Within objects, the string value of the key allows you to select the value. If your keys contain the characters '/' or '~', they must be escaped as '~1' and '~0' respectively. An empty JSON Pointer expression refers to the whole document.</p>
+<p>We also extend the JSON Pointer support to include <em>relative</em> paths. You can apply a JSON Pointer expression to any node and the path gets interpreted relatively, as if the current node were a whole JSON document.</p>
 <p>Consider the following example:</p>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">auto cars_json = R&quot;( [</div>

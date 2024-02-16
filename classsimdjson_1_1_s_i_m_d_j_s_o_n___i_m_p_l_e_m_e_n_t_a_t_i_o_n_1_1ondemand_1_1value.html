@@ -256,7 +256,7 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <tr class="memdesc:aadd2f646a3231d407948bf5f3da46528"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSON pointer.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#aadd2f646a3231d407948bf5f3da46528">More...</a><br /></td></tr>
 <tr class="separator:aadd2f646a3231d407948bf5f3da46528"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f6c6d98a3605c8e04cad16fce05c16c"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a6f6c6d98a3605c8e04cad16fce05c16c">at_path</a> (std::string_view at_path) noexcept</td></tr>
-<tr class="memdesc:a6f6c6d98a3605c8e04cad16fce05c16c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSON path.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a6f6c6d98a3605c8e04cad16fce05c16c">More...</a><br /></td></tr>
+<tr class="memdesc:a6f6c6d98a3605c8e04cad16fce05c16c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSONPath expression.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a6f6c6d98a3605c8e04cad16fce05c16c">More...</a><br /></td></tr>
 <tr class="separator:a6f6c6d98a3605c8e04cad16fce05c16c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac96ed29f08a2c948c1f02d99b88546c4"><td class="memItemLeft" align="right" valign="top"><a id="ac96ed29f08a2c948c1f02d99b88546c4"></a>
 template&lt;&gt; </td></tr>
@@ -388,10 +388,10 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 </table>
 </div><div class="memdoc">
 
-<p>Get the value associated with the given JSON path. </p>
-<p>Right now we are only supporting a subset of json path that is easily convertible to json pointer.</p>
-<dl class="section return"><dt>Returns</dt><dd>The value associated with the given JSON path, or:<ul>
-<li>INVALID_JSON_POINTER if the json path to json pointer conversion fails</li>
+<p>Get the value associated with the given JSONPath expression. </p>
+<p>We only support JSONPath queries that trivially convertible to JSON Pointer queries: key names and array indices.</p>
+<dl class="section return"><dt>Returns</dt><dd>The value associated with the given JSONPath expression, or:<ul>
+<li>INVALID_JSON_POINTER if the JSONPath to JSON Pointer conversion fails</li>
 <li>NO_SUCH_FIELD if a field does not exist in an object</li>
 <li>INDEX_OUT_OF_BOUNDS if an array index is larger than an array length</li>
 <li>INCORRECT_TYPE if a non-integer is used to access an array </li>

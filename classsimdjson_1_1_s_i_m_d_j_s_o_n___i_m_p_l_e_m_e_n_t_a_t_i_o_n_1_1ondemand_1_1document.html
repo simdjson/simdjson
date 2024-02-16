@@ -293,7 +293,7 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hre
 <tr class="memdesc:a74484485f4a3d8dce5943b0cb60ac815"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSON pointer.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a74484485f4a3d8dce5943b0cb60ac815">More...</a><br /></td></tr>
 <tr class="separator:a74484485f4a3d8dce5943b0cb60ac815"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a87b1fb46555fdf69761966e49ffaa9d7"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a87b1fb46555fdf69761966e49ffaa9d7">at_path</a> (std::string_view json_path) noexcept</td></tr>
-<tr class="memdesc:a87b1fb46555fdf69761966e49ffaa9d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSON path.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a87b1fb46555fdf69761966e49ffaa9d7">More...</a><br /></td></tr>
+<tr class="memdesc:a87b1fb46555fdf69761966e49ffaa9d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSONPath expression.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a87b1fb46555fdf69761966e49ffaa9d7">More...</a><br /></td></tr>
 <tr class="separator:a87b1fb46555fdf69761966e49ffaa9d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa3a27654a19c386ad0c775cff258cf0c"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::string_view &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#aa3a27654a19c386ad0c775cff258cf0c">raw_json</a> () noexcept</td></tr>
 <tr class="memdesc:aa3a27654a19c386ad0c775cff258cf0c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Consumes the document and returns a string_view instance corresponding to the document as represented in JSON.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#aa3a27654a19c386ad0c775cff258cf0c">More...</a><br /></td></tr>
@@ -483,10 +483,13 @@ static constexpr <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m
 </table>
 </div><div class="memdoc">
 
-<p>Get the value associated with the given JSON path. </p>
-<p>Right now we are only supporting a subset of json path that is easily convertible to json pointer.</p>
-<dl class="section return"><dt>Returns</dt><dd>The value associated with the given JSON path, or:<ul>
-<li>INVALID_JSON_POINTER if the json path to json pointer conversion fails</li>
+<p>Get the value associated with the given JSONPath expression. </p>
+<p>We only support JSONPath queries that trivially convertible to JSON Pointer queries: key names and array indices.</p>
+<p><a href="https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00">https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00</a></p>
+<p>Key values are matched exactly, without unescaping or Unicode normalization. We do a byte-by-byte comparison. E.g.</p>
+<p>const <a class="el" href="structsimdjson_1_1padded__string.html" title="String with extra allocation for ease of use with parser::parse()">padded_string</a> json = "{\"\u00E9":123}"_padded; auto doc = parser.iterate(json); doc.at_path(".\\u00E9") == 123 doc.at_path((const char*)u8".\u00E9") returns an error (NO_SUCH_FIELD)</p>
+<dl class="section return"><dt>Returns</dt><dd>The value associated with the given JSONPath expression, or:<ul>
+<li>INVALID_JSON_POINTER if the JSONPath to JSON Pointer conversion fails</li>
 <li>NO_SUCH_FIELD if a field does not exist in an object</li>
 <li>INDEX_OUT_OF_BOUNDS if an array index is larger than an array length</li>
 <li>INCORRECT_TYPE if a non-integer is used to access an array </li>
@@ -526,6 +529,8 @@ static constexpr <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m
 <p><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html" title="A JSON fragment iterator.">ondemand::parser</a> parser; auto json = R"({ "foo": { "a": [ 10, 20, 30 ] }})"_padded; auto doc = parser.iterate(json); doc.at_pointer("/foo/a/1") == 20</p>
 <p>It is allowed for a key to be the empty string:</p>
 <p><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html" title="A JSON fragment iterator.">ondemand::parser</a> parser; auto json = R"({ "": { "a": [ 10, 20, 30 ] }})"_padded; auto doc = parser.iterate(json); doc.at_pointer("//a/1") == 20</p>
+<p>Key values are matched exactly, without unescaping or Unicode normalization. We do a byte-by-byte comparison. E.g.</p>
+<p>const <a class="el" href="structsimdjson_1_1padded__string.html" title="String with extra allocation for ease of use with parser::parse()">padded_string</a> json = "{\"\u00E9":123}"_padded; auto doc = parser.iterate(json); doc.at_pointer("/\\u00E9") == 123 doc.at_pointer((const char*)u8"/\u00E9") returns an error (NO_SUCH_FIELD)</p>
 <p>Note that <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a74484485f4a3d8dce5943b0cb60ac815" title="Get the value associated with the given JSON pointer.">at_pointer()</a> automatically calls rewind between each call. Thus all values, objects and arrays that you have created so far (including unescaped strings) are invalidated. After calling at_pointer, you need to consume the result: string values should be stored in your own variables, arrays should be decoded and stored in your own array-like structures and so forth.</p>
 <p>Also note that <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a74484485f4a3d8dce5943b0cb60ac815" title="Get the value associated with the given JSON pointer.">at_pointer()</a> relies on <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#ab919032e611f7f4a1e8cc9eb47ad4dea" title="Look up a field by name on an object (order-sensitive).">find_field()</a> which implies that we do not unescape keys when matching</p>
 <dl class="section return"><dt>Returns</dt><dd>The value associated with the given JSON pointer, or:<ul>

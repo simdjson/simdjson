@@ -43,7 +43,7 @@ var NAVTREE =
       [ "Minifying JSON strings without parsing", "md_doc_basics.html#autotoc_md12", null ],
       [ "UTF-8 validation (alone)", "md_doc_basics.html#autotoc_md13", null ],
       [ "JSON Pointer", "md_doc_basics.html#autotoc_md14", null ],
-      [ "JSON Path", "md_doc_basics.html#autotoc_md15", null ],
+      [ "JSONPath", "md_doc_basics.html#autotoc_md15", null ],
       [ "Error Handling", "md_doc_basics.html#autotoc_md16", [
         [ "Error Handling Examples without Exceptions", "md_doc_basics.html#autotoc_md17", null ],
         [ "Disabling Exceptions", "md_doc_basics.html#autotoc_md18", null ],

@@ -113,7 +113,7 @@ $(document).ready(function(){initNavTree('md_doc_basics.html',''); initResizable
 <li><a href="#minifying-json-strings-without-parsing">Minifying JSON strings without parsing</a></li>
 <li><a href="#utf-8-validation-alone">UTF-8 validation (alone)</a></li>
 <li><a href="#json-pointer">JSON Pointer</a></li>
-<li><a href="#json-path">JSON Path (subset)</a></li>
+<li><a href="#json-path">JSONPath</a></li>
 <li><a href="#error-handling">Error Handling</a><ul>
 <li><a href="#error-handling-examples-without-exceptions">Error Handling Examples without Exceptions</a></li>
 <li><a href="#disabling-exceptions">Disabling Exceptions</a></li>
@@ -838,6 +838,12 @@ JSON Pointer</h1>
 <div class="line">    double x = cars.at_pointer(json_pointer);</div>
 <div class="line">    std::cout &lt;&lt; x &lt;&lt; std::endl; // Prints 39.9, 31 and 30</div>
 <div class="line">}</div>
+</div><!-- fragment --><p>In most instances, a JSON Pointer is an ASCII string and the keys in a JSON document are ASCII strings. We support UTF-8 in JSON Pointer, but key values are matched exactly, without unescaping or Unicode normalization. We do a byte-by-byte comparison. The e acute character is considered distinct from its escaped version <code>\u00E9</code>. E.g.,</p>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">const padded_string json = &quot;{\&quot;\\u00E9\&quot;:123}&quot;_padded;</div>
+<div class="line">auto doc = parser.iterate(json);</div>
+<div class="line">doc.at_pointer(&quot;/\\u00E9&quot;) == 123; // true</div>
+<div class="line">doc.at_pointer((const char*)u8&quot;/\u00E9&quot;) // returns an error (NO_SUCH_FIELD)</div>
 </div><!-- fragment --><p>Note that <code>at_pointer</code> calls <a href="#rewind"><code>rewind</code></a> to reset the parser at the beginning of the document. Hence, it invalidates all previously parsed values, objects and arrays: make sure to consume the values between each call to <code>at_pointer</code>. Consider the following example where one wants to store each object from the JSON into a vector of <code>struct car_type</code>:</p>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">struct car_type {</div>
@@ -893,8 +899,8 @@ JSON Pointer</h1>
 <div class="line">std::cout &lt;&lt; doc.find_field(&quot;k0&quot;) &lt;&lt; std::endl; // Prints 27</div>
 </div><!-- fragment --><p>When the JSON Pointer Path is the empty string (<code>""</code>) applied to a scalar document (lone string, number, Boolean or null), a SCALAR_DOCUMENT_AS_VALUE error is returned because scalar document cannot be represented as <code>value</code> instances. You can check that a document is a scalar with the method <code>scalar()</code>.</p>
 <h1><a class="anchor" id="autotoc_md15"></a>
-JSON Path</h1>
-<p>The simdjson library now supports a subset of <a href="https://goessner.net/articles/JsonPath/">JSON Path</a> through the <code>at_path()</code> method, allowing you to reach further into the document in a single call. The subset of JSON path that is implemented is the subset that is trivially convertible into the JSON Pointer format, using <code>.</code> to access a field and <code>[]</code> to access a specific index.</p>
+JSONPath</h1>
+<p>The simdjson library now supports a subset of <a href="https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00">JSONPath</a> through the <code>at_path()</code> method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using <code>.</code> to access a field and <code>[]</code> to access a specific index.</p>
 <p>This implementation relies on <code>at_path()</code> converting its argument to JSON Pointer and then calling <code>at_pointer</code>, which makes use of <a href="#rewind"><code>rewind</code></a> to reset the parser at the beginning of the document. Hence, it invalidates all previously parsed values, objects and arrays: make sure to consume the values between each call to <code>at_path</code>.</p>
 <p>Consider the following example:</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -906,7 +912,7 @@ JSON Path</h1>
 <div class="line">ondemand::parser parser;</div>
 <div class="line">auto cars = parser.iterate(cars_json);</div>
 <div class="line">cout &lt;&lt; cars.at_path(&quot;[0].tire_pressure[1]&quot;) &lt;&lt; endl; // Prints 39.9</div>
-</div><!-- fragment --><p>A call to <code>at_path(json_path)</code> can result in any of the errors that are returned by the <code>at_pointer</code> method and if the conversion of <code>json_path</code> to json pointer fails, it will lead to an <code><a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aeeaf930969566f76840224d64ee3a9a1" title="Invalid JSON pointer reference.">simdjson::INVALID_JSON_POINTER</a></code>error.</p>
+</div><!-- fragment --><p>A call to <code>at_path(json_path)</code> can result in any of the errors that are returned by the <code>at_pointer</code> method and if the conversion of <code>json_path</code> to JSON Pointer fails, it will lead to an <code><a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aeeaf930969566f76840224d64ee3a9a1" title="Invalid JSON pointer reference.">simdjson::INVALID_JSON_POINTER</a></code>error.</p>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">auto cars_json = R&quot;( [</div>
 <div class="line">  { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018, &quot;tire_pressure&quot;: [ 40.1, 39.9, 37.7, 40.4 ] },</div>
@@ -915,8 +921,14 @@ JSON Path</h1>
 <div class="line">] )&quot;_padded;</div>
 <div class="line">ondemand::parser parser;</div>
 <div class="line">auto cars = parser.iterate(cars_json);</div>
-<div class="line">ASSERT_ERROR(cars.at_path(&quot;[0].tire_presure[1&quot;).get(x), INVALID_JSON_POINTER); // Fails on conversion to json pointer, since last square bracket was not properly closed.</div>
-<div class="line">ASSERT_ERROR(cars.at_path(&quot;[0].incorrect_field[1]&quot;).get(x), NO_SUCH_FIELD); // Conversion to json pointer succeeds, but fails on at_pointer() since the path is invalid.</div>
+<div class="line">ASSERT_ERROR(cars.at_path(&quot;[0].tire_presure[1&quot;).get(x), INVALID_JSON_POINTER); // Fails on conversion to JSON Pointer, since last square bracket was not properly closed.</div>
+<div class="line">ASSERT_ERROR(cars.at_path(&quot;[0].incorrect_field[1]&quot;).get(x), NO_SUCH_FIELD); // Conversion to JSON Pointer succeeds, but fails on at_pointer() since the path is invalid.</div>
+</div><!-- fragment --><p>In most instances, a JSONPath is an ASCII string and the keys in a JSON document are ASCII strings. We support UTF-8 within a JSONPath expression, but key values are matched exactly, without unescaping or Unicode normalization. We do a byte-by-byte comparison. The e acute character is considered distinct from its escaped version <code>\u00E9</code>. E.g.,</p>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">const padded_string json = &quot;{\&quot;\\u00E9\&quot;:123}&quot;_padded;</div>
+<div class="line">auto doc = parser.iterate(json);</div>
+<div class="line">doc.at_path(&quot;.\\u00E9&quot;) == 123; // true</div>
+<div class="line">doc.at_path((const char*)u8&quot;.\u00E9&quot;) // returns an error (NO_SUCH_FIELD)</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md16"></a>
 Error Handling</h1>
 <p>Error handing with exception and a single try/catch clause makes the code simple, but it gives you little control over errors. For easier debugging or more robust error handling, you may want to consider our exception-free approach.</p>
