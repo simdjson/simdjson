@@ -19,7 +19,7 @@ An overview of what you need to know to use simdjson, with examples.
   - [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
   - [UTF-8 validation (alone)](#utf-8-validation-alone)
   - [JSON Pointer](#json-pointer)
-  - [JSON Path (subset)](#json-path)
+  - [JSONPath](#json-path)
   - [Error Handling](#error-handling)
     - [Error Handling Examples without Exceptions](#error-handling-examples-without-exceptions)
     - [Disabling Exceptions](#disabling-exceptions)
@@ -1105,6 +1105,17 @@ for (size_t i = 0; i < size; i++) {
 }
 ```
 
+In most instances, a JSON Pointer is an ASCII string and the keys in a JSON document
+are ASCII strings. We support UTF-8 in JSON Pointer, but key values are matched exactly, without unescaping or Unicode normalization. We do a byte-by-byte comparison. The e acute character is
+considered distinct from its escaped version `\u00E9`. E.g.,
+
+```c++
+const padded_string json = "{\"\\u00E9\":123}"_padded;
+auto doc = parser.iterate(json);
+doc.at_pointer("/\\u00E9") == 123; // true
+doc.at_pointer((const char*)u8"/\u00E9") // returns an error (NO_SUCH_FIELD)
+```
+
 Note that `at_pointer` calls [`rewind`](#rewind) to reset the parser at the beginning of the document. Hence, it invalidates all previously parsed values, objects and arrays: make sure to consume the values between each call to  `at_pointer`. Consider the following example where one wants to store each object from the JSON into a vector of `struct car_type`:
 
 ```c++
@@ -1167,10 +1178,10 @@ std::cout << doc.find_field("k0") << std::endl; // Prints 27
 When the JSON Pointer Path is the empty string (`""`) applied to a scalar document (lone string, number, Boolean or null), a SCALAR_DOCUMENT_AS_VALUE error is returned because scalar document cannot
 be represented as `value` instances. You can check that a document is a scalar with the method `scalar()`.
 
-JSON Path
+JSONPath
 ------------
 
-The simdjson library now supports a subset of [JSON Path](https://goessner.net/articles/JsonPath/) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSON path that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index.
+The simdjson library now supports a subset of [JSONPath](https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index.
 
 This implementation relies on `at_path()` converting its argument to JSON Pointer and then calling `at_pointer`, which makes use of [`rewind`](#rewind) to reset the parser at the beginning of the document. Hence, it invalidates all previously parsed values, objects and arrays: make sure to consume the values between each call to `at_path`.
 
@@ -1187,7 +1198,7 @@ auto cars = parser.iterate(cars_json);
 cout << cars.at_path("[0].tire_pressure[1]") << endl; // Prints 39.9
 ```
 
-A call to `at_path(json_path)` can result in any of the errors that are returned by the `at_pointer` method and if the conversion of `json_path` to json pointer fails, it will lead to an `simdjson::INVALID_JSON_POINTER`error.
+A call to `at_path(json_path)` can result in any of the errors that are returned by the `at_pointer` method and if the conversion of `json_path` to JSON Pointer fails, it will lead to an `simdjson::INVALID_JSON_POINTER`error.
 
 ```c++
 auto cars_json = R"( [
@@ -1197,8 +1208,20 @@ auto cars_json = R"( [
 ] )"_padded;
 ondemand::parser parser;
 auto cars = parser.iterate(cars_json);
-ASSERT_ERROR(cars.at_path("[0].tire_presure[1").get(x), INVALID_JSON_POINTER); // Fails on conversion to json pointer, since last square bracket was not properly closed.
-ASSERT_ERROR(cars.at_path("[0].incorrect_field[1]").get(x), NO_SUCH_FIELD); // Conversion to json pointer succeeds, but fails on at_pointer() since the path is invalid.
+ASSERT_ERROR(cars.at_path("[0].tire_presure[1").get(x), INVALID_JSON_POINTER); // Fails on conversion to JSON Pointer, since last square bracket was not properly closed.
+ASSERT_ERROR(cars.at_path("[0].incorrect_field[1]").get(x), NO_SUCH_FIELD); // Conversion to JSON Pointer succeeds, but fails on at_pointer() since the path is invalid.
+```
+
+In most instances, a JSONPath is an ASCII string and the keys in a JSON document
+are ASCII strings. We support UTF-8 within a JSONPath expression, but key values are
+matched exactly, without unescaping or Unicode normalization. We do a byte-by-byte comparison.
+The e acute character is considered distinct from its escaped version `\u00E9`. E.g.,
+
+```c++
+const padded_string json = "{\"\\u00E9\":123}"_padded;
+auto doc = parser.iterate(json);
+doc.at_path(".\\u00E9") == 123; // true
+doc.at_path((const char*)u8".\u00E9") // returns an error (NO_SUCH_FIELD)
 ```
 
 Error Handling

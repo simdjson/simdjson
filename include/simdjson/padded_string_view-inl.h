@@ -18,7 +18,12 @@ inline padded_string_view::padded_string_view(const uint8_t* s, size_t len, size
   : padded_string_view(reinterpret_cast<const char*>(s), len, capacity)
 {
 }
-
+#ifdef __cpp_char8_t
+inline padded_string_view::padded_string_view(const char8_t* s, size_t len, size_t capacity) noexcept
+  : padded_string_view(reinterpret_cast<const char*>(s), len, capacity)
+{
+}
+#endif
 inline padded_string_view::padded_string_view(const std::string &s) noexcept
   : std::string_view(s), _capacity(s.capacity())
 {

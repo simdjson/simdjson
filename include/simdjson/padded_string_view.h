@@ -34,7 +34,9 @@ public:
   explicit inline padded_string_view(const char* s, size_t len, size_t capacity) noexcept;
   /** overload explicit inline padded_string_view(const char* s, size_t len) noexcept */
   explicit inline padded_string_view(const uint8_t* s, size_t len, size_t capacity) noexcept;
-
+#ifdef __cpp_char8_t
+  explicit inline padded_string_view(const char8_t* s, size_t len, size_t capacity) noexcept;
+#endif
   /**
    * Promise the given string has at least SIMDJSON_PADDING extra bytes allocated to it.
    *

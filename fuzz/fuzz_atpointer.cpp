@@ -7,11 +7,11 @@
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
-  // Split data into two strings, json pointer and the document string.
+  // Split data into two strings, JSON Pointer and the document string.
   // Might end up with none, either or both being empty, important for
   // covering edge cases such as
   // https://github.com/simdjson/simdjson/issues/1142 Inputs missing the
-  // separator line will get an empty json pointer but the all the input put in
+  // separator line will get an empty JSON Pointer but the all the input put in
   // the document string. This means test data from other fuzzers that take json
   // input works for this fuzzer as well.
   FuzzData fd(Data, Size);

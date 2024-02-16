@@ -102,11 +102,14 @@ public:
   inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
 
   /**
-   * Get the value associated with the given JSON path. Right now we are only supporting a subset of
-   * json path that is easily convertible to json pointer.
+   * Get the value associated with the given JSONPath expression. We only support
+   * JSONPath queries that trivially convertible to JSON Pointer queries: key
+   * names and array indices.
    *
-   * @return The value associated with the given JSON path, or:
-   *         - INVALID_JSON_POINTER if the json path to json pointer conversion fails
+   * https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00
+   *
+   * @return The value associated with the given JSONPath expression, or:
+   *         - INVALID_JSON_POINTER if the JSONPath to JSON Pointer conversion fails
    *         - NO_SUCH_FIELD if a field does not exist in an object
    *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
    *         - INCORRECT_TYPE if a non-integer is used to access an array

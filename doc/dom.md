@@ -223,13 +223,13 @@ dom::element cars = parser.parse(cars_json);
 cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
 ```
 
-A JSON Path is a sequence of segments each starting with the '/' character. Within arrays, an integer
+A JSON Pointer expression is a sequence of segments each starting with the '/' character. Within arrays, an integer
 index allows you to select the indexed node. Within objects, the string value of the key allows you to
 select the value. If your keys contain the characters '/' or '~', they must be escaped as '~1' and
-'~0' respectively. An empty JSON Path refers to the whole document.
+'~0' respectively. An empty JSON Pointer expression refers to the whole document.
 
 We also extend the JSON Pointer support to include *relative* paths.
-You can apply a JSON path to any node and the path gets interpreted relatively, as if the current node were a whole JSON document.
+You can apply a JSON Pointer expression to any node and the path gets interpreted relatively, as if the current node were a whole JSON document.
 
 Consider the following example:
 
