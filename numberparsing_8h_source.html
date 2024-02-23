@@ -30,7 +30,7 @@
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">simdjson
-   &#160;<span id="projectnumber">3.6.4</span>
+   &#160;<span id="projectnumber">3.7.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -502,7 +502,7 @@ $(document).ready(function(){initNavTree('numberparsing_8h_source.html',''); ini
 <div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;  <span class="comment">// If there were more than 18 digits, we may have overflowed the integer. We have to do</span></div>
 <div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;  <span class="comment">// something!!!!</span></div>
 <div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;  <span class="keywordflow">if</span> (simdjson_unlikely(p &gt; start_exp+18)) {</div>
-<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;    <span class="comment">// Skip leading zeroes: 1e000000000000000000001 is technically valid and doesn&#39;t overflow</span></div>
+<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;    <span class="comment">// Skip leading zeroes: 1e000000000000000000001 is technically valid and does not overflow</span></div>
 <div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;    <span class="keywordflow">while</span> (*start_exp == <span class="charliteral">&#39;0&#39;</span>) { start_exp++; }</div>
 <div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;    <span class="comment">// 19 digits could overflow int64_t and is kind of absurd anyway. We don&#39;t</span></div>
 <div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;    <span class="comment">// support exponents smaller than -999,999,999,999,999,999 and bigger</span></div>
@@ -697,7 +697,7 @@ $(document).ready(function(){initNavTree('numberparsing_8h_source.html',''); ini
 <div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;    }  <span class="keywordflow">else</span> <span class="keywordflow">if</span> (src[0] != uint8_t(<span class="charliteral">&#39;1&#39;</span>) || i &lt;= uint64_t(INT64_MAX)) { <span class="keywordflow">return</span> INVALID_NUMBER(src); }</div>
 <div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;  }</div>
 <div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160; </div>
-<div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;  <span class="comment">// Write unsigned if it doesn&#39;t fit in a signed integer.</span></div>
+<div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;  <span class="comment">// Write unsigned if it does not fit in a signed integer.</span></div>
 <div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160;  <span class="keywordflow">if</span> (i &gt; uint64_t(INT64_MAX)) {</div>
 <div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;    WRITE_UNSIGNED(i, src, writer);</div>
 <div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;  } <span class="keywordflow">else</span> {</div>

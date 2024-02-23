@@ -30,7 +30,7 @@
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">simdjson
-   &#160;<span id="projectnumber">3.6.4</span>
+   &#160;<span id="projectnumber">3.7.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -1331,7 +1331,6 @@ template&lt;typename T &gt; </div>
 <dl class="exception"><dt>Exceptions</dt><dd>
   <table class="exception">
     <tr><td class="paramname">simdjson_error(INCORRECT_TYPE)</td><td>if the JSON element is not a number </td></tr>
-    <tr><td class="paramname">simdjson_error(NUMBER_OUT_OF_RANGE)</td><td>if the integer doesn't fit in 64 bits or is negative </td></tr>
   </table>
   </dd>
 </dl>
@@ -1368,7 +1367,7 @@ template&lt;typename T &gt; </div>
 <dl class="exception"><dt>Exceptions</dt><dd>
   <table class="exception">
     <tr><td class="paramname">simdjson_error(INCORRECT_TYPE)</td><td>if the JSON element is not an integer </td></tr>
-    <tr><td class="paramname">simdjson_error(NUMBER_OUT_OF_RANGE)</td><td>if the integer doesn't fit in 64 bits </td></tr>
+    <tr><td class="paramname">simdjson_error(NUMBER_OUT_OF_RANGE)</td><td>if the integer does not fit in 64 bits </td></tr>
   </table>
   </dd>
 </dl>
@@ -1478,7 +1477,7 @@ template&lt;typename T &gt; </div>
 <dl class="exception"><dt>Exceptions</dt><dd>
   <table class="exception">
     <tr><td class="paramname">simdjson_error(INCORRECT_TYPE)</td><td>if the JSON element is not an integer </td></tr>
-    <tr><td class="paramname">simdjson_error(NUMBER_OUT_OF_RANGE)</td><td>if the integer doesn't fit in 64 bits or is negative </td></tr>
+    <tr><td class="paramname">simdjson_error(NUMBER_OUT_OF_RANGE)</td><td>if the integer does not fit in 64 bits or is negative </td></tr>
   </table>
   </dd>
 </dl>
