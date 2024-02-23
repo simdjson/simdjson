@@ -52,10 +52,11 @@ General Guidelines
 Contributors are encouraged to :
 
 - Document their changes. Though we do not enforce a rule regarding code comments, we prefer that non-trivial algorithms and techniques be somewhat documented in the code.
-- Follow as much as possible the existing code style. We do not enforce a specific code style, but we prefer consistency.
+- Follow as much as possible the existing code style. We do not enforce a specific code style, but we prefer consistency. We avoid contractions (isn't, aren't) in the comments.
 - Modify as few lines of code as possible when working on an issue. The more lines you modify, the harder it is for your fellow human beings to understand what is going on.
 - Tools may report "problems" with the code, but we never delegate programming to tools: if there is a problem with the code, we need to understand it. Thus we will not "fix" code merely to please a static analyzer.
 - Provide tests for any new feature. We will not merge a new feature without tests.
+- Run before/after benchmarks so that we can appreciate the effect of the changes on the performance.
 
 Pull Requests
 --------------

@@ -29,7 +29,7 @@ It is sometimes useful to start with an example. Consider the following JSON doc
 The following is a dump of the content of the tape, with the first number of each line representing the index of a tape element.
 
 ### The Tape
-| index | element (64 bit word)                                               |
+| index | element (64-bit word)                                               |
 | ----- | ------------------------------------------------------------------- |
 | 0     | r	// pointing to 39 (right after last node)                         |
 | 1     | {	// pointing to next tape location 38 (first node after the scope) |

@@ -47,7 +47,7 @@ public:
    *              1 = next token, -1 = prev token.
    *
    * TODO consider a string_view, assuming the length will get stripped out by the optimizer when
-   * it isn't used ...
+   * it is not used...
    */
   simdjson_inline const uint8_t *peek(int32_t delta=0) const noexcept;
   /**

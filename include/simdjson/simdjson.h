@@ -1,6 +1,6 @@
 /**
  * @file
- * @deprecated We'll be removing this file so it isn't confused with the top level simdjson.h
+ * @deprecated We will be removing this file so it is not confused with the top level simdjson.h
  */
 #ifndef SIMDJSON_SIMDJSON_H
 #define SIMDJSON_SIMDJSON_H

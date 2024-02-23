@@ -100,6 +100,9 @@
         "ranges": "cpp",
         "span": "cpp",
         "__verbose_abort": "cpp",
-        "charconv": "cpp"
+        "charconv": "cpp",
+        "source_location": "cpp",
+        "strstream": "cpp",
+        "typeindex": "cpp"
     }
 }
