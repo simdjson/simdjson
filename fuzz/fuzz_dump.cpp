@@ -43,7 +43,10 @@ static void print_json(std::ostream& os, simdjson::dom::element element) noexcep
     os << element.get_uint64().value_unsafe() << endl;
     break;
   case simdjson::dom::element_type::BIGINT:
-    os << element.get_bigint().value_unsafe() << endl;
+    {
+      auto val = element.get_bigint().value();
+      os.write(val.data(), val.size()) << endl;
+    }
     break;
   case simdjson::dom::element_type::DOUBLE:
     os << element.get_double().value_unsafe() << endl;
