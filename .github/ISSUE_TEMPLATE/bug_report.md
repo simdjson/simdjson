@@ -45,11 +45,15 @@ It is fine to report bugs against our main branch, but if that is what you are d
 
 **Configuration (please complete the following information if relevant)**
  - OS: [e.g. Ubuntu 16.04.6 LTS]
- - Compiler [e.g. Apple clang version 11.0.3 (clang-1103.0.32.59) x86_64-apple-darwin19.4.0]
+ - Compiler* [e.g. Apple clang version 11.0.3 (clang-1103.0.32.59) x86_64-apple-darwin19.4.0]
  - Version [e.g. 22]
  - Optimization setting (e.g., -O3)
 
 We support up-to-date 64-bit ARM and x64 FreeBSD, macOS, Windows and Linux systems. Please ensure that your configuration is supported before labelling the issue as a bug.
+
+* We do not support unreleased or experimental compilers. If you encounter an issue with a
+pre-release version of a compiler, do not report it as a bug to simdjson. However, we always
+invite contributions either in the form an analysis or of a code contribution.
 
 **Indicate whether you are willing or able to provide a bug fix as a pull request**
 
