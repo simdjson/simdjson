@@ -1119,8 +1119,6 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
       if(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)
         return number_type::big_integer;
       return number_type::signed_integer;
-      //return (digit_count > 19 || (digit_count == 19 && memcmp(src, smaller_big_integer, 19)) > 0)
-      //  ? number_type::big_integer : number_type::signed_integer;
     }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
