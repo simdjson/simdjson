@@ -412,7 +412,7 @@ simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const s
   // If there were more than 18 digits, we may have overflowed the integer. We have to do
   // something!!!!
   if (simdjson_unlikely(p > start_exp+18)) {
-    // Skip leading zeroes: 1e000000000000000000001 is technically valid and doesn't overflow
+    // Skip leading zeroes: 1e000000000000000000001 is technically valid and does not overflow
     while (*start_exp == '0') { start_exp++; }
     // 19 digits could overflow int64_t and is kind of absurd anyway. We don't
     // support exponents smaller than -999,999,999,999,999,999 and bigger
@@ -609,7 +609,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
     }  else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INVALID_NUMBER(src); }
   }
 
-  // Write unsigned if it doesn't fit in a signed integer.
+  // Write unsigned if it does not fit in a signed integer.
   if (i > uint64_t(INT64_MAX)) {
     WRITE_UNSIGNED(i, src, writer);
   } else {

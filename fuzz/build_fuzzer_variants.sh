@@ -78,7 +78,7 @@ fi
 # Different levels may uncover different types of bugs, see this interesting
 # thread: https://github.com/google/oss-fuzz/issues/2295#issuecomment-481493392
 # Oss-fuzz uses -O1 so it may be relevant to use something else than that,
-# to do something oss-fuzz doesn't.
+# to do something oss-fuzz does not do.
 variant=sanitizers-O3
 
     if [ ! -d build-$variant ] ; then

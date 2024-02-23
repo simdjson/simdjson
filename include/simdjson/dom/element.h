@@ -293,7 +293,7 @@ public:
    *
    * @return The integer value.
    * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not an integer
-   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
+   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer does not fit in 64 bits or is negative
    */
   inline operator uint64_t() const noexcept(false);
   /**
@@ -301,7 +301,7 @@ public:
    *
    * @return The integer value.
    * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not an integer
-   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits
+   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer does not fit in 64 bits
    */
   inline operator int64_t() const noexcept(false);
   /**
@@ -309,7 +309,6 @@ public:
    *
    * @return The double value.
    * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not a number
-   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
    */
   inline operator double() const noexcept(false);
   /**
