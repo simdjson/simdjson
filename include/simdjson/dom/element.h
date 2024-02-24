@@ -157,7 +157,7 @@ public:
    */
   inline bool is_uint64() const noexcept;
   /**
-   * Whether this element is a json integer that doesn't fits in 64-bits.
+   * Whether this element is a json integer that does not fit in 64 bits.
    */
   inline bool is_bigint() const noexcept;
   /**
