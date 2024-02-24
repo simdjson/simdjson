@@ -1,11 +1,5 @@
 var NAVTREEINDEX3 =
 {
-"haswell_8h_source.html":[12,0,0,0,20],
-"hierarchy.html":[11,2],
-"icelake_2base_8h_source.html":[12,0,0,0,6,0],
-"icelake_2begin_8h_source.html":[12,0,0,0,6,1],
-"icelake_2bitmanipulation_8h_source.html":[12,0,0,0,6,2],
-"icelake_2bitmask_8h_source.html":[12,0,0,0,6,3],
 "icelake_2end_8h_source.html":[12,0,0,0,6,4],
 "icelake_2implementation_8h_source.html":[12,0,0,0,6,5],
 "icelake_2intrinsics_8h_source.html":[12,0,0,0,6,6],
@@ -249,5 +243,11 @@ var NAVTREEINDEX3 =
 "namespacesimdjson.html#adf3293e0e757f2db0f279347c3b57914":[10,0,0,51],
 "namespacesimdjson.html#ae6ec9f0ce23fc51d87116b64fdbeb811":[10,0,0,35],
 "namespacesimdjson.html#ae6ec9f0ce23fc51d87116b64fdbeb811a929eb14f376ff68fc0ddd3d682e00d4c":[10,0,0,35,1],
-"namespacesimdjson.html#ae6ec9f0ce23fc51d87116b64fdbeb811aaf37d08ae228a87dc6b265fd1019c97d":[10,0,0,35,0]
+"namespacesimdjson.html#ae6ec9f0ce23fc51d87116b64fdbeb811aaf37d08ae228a87dc6b265fd1019c97d":[10,0,0,35,0],
+"namespacesimdjson.html#ae6ec9f0ce23fc51d87116b64fdbeb811ac059cc555f4992b3eb481f03b70df100":[10,0,0,35,2],
+"namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c":[10,0,0,45],
+"namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf":[10,0,0,71],
+"namespacesimdjson.html#aed443864cc94c09c3f88eea39f8ce645":[10,0,0,52],
+"namespacesimdjson.html#af63210cc51d5c99ad84958daf9812e63":[10,0,0,36],
+"namespacesimdjson.html#afc529e3bcacb5b3c747b525fb443771f":[10,0,0,56]
 };
