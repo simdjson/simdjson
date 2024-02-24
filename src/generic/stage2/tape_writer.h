@@ -23,7 +23,7 @@ struct tape_writer {
   /** Write an unsigned 64-bit value to tape. */
   simdjson_inline void append_u64(uint64_t value) noexcept;
 
-  /** Write an unsigned 64-bit value to tape. */
+  /** Write a bigint value to tape. */
   simdjson_inline void append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept;
 
   /** Write a double value to tape. */
