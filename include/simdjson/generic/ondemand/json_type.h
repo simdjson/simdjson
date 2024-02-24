@@ -40,7 +40,7 @@ struct number {
    *        floating_point_number=1, /// a binary64 number
    *        signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
    *        unsigned_integer         /// a positive integer larger or equal to 1<<63
-   *        big_integer              /// a big integer that doesn't fit in a 64-bit word
+   *        big_integer              /// a big integer that does not fit in a 64-bit word
    *    };
    */
   simdjson_inline ondemand::number_type get_number_type() const noexcept;
