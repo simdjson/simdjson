@@ -283,8 +283,6 @@ If your compiler does not default on C++11 support or better you may get failing
 
 Note that the name of directory (`build`) is arbitrary, you can name it as you want (e.g., `buildgcc`) and you can have as many different such directories as you would like (one per configuration).
 
-
-
 ## Usage (CMake on 64-bit Windows using Visual Studio 2019 or better)
 
 Recent versions of Visual Studio support CMake natively, [please refer to the Visual Studio documentation](https://learn.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio?view=msvc-170).
@@ -309,12 +307,10 @@ Though having Visual Studio installed is necessary, one can build simdjson using
 
 Furthermore, if you have installed LLVM clang on Windows, for example as a component of Visual Studio 2019, you can configure and build simdjson using LLVM clang on Windows using cmake:
 
-
 - `mkdir build`
 - `cd build`
 - `cmake -T ClangCL ..`
 - `cmake --build . --config Release`
-
 
 ## Various References
 
