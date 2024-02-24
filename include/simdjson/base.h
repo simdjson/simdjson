@@ -45,7 +45,7 @@ class padded_string_view;
 enum class stage1_mode;
 
 /**
- * The string wrapping type used to represent an integer that doesn't fit in 64 bits.
+ * The string wrapping type used to represent an integer that does not fit in 64 bits.
  *
  * The value is not '\0' terminated.
  */
