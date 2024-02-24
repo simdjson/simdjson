@@ -317,7 +317,7 @@ public:
    */
   inline operator int64_t() const noexcept(false);
   /**
-   * Read this element as an big integer.
+   * Read this element as a big integer.
    *
    * @return The big integer value.
    * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not an integer
