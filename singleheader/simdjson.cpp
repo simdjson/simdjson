@@ -1,4 +1,4 @@
-/* auto-generated on 2024-02-18 11:50:12 -0500. Do not edit! */
+/* auto-generated on 2024-02-23 21:46:37 -0500. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -2669,6 +2669,22 @@ class implementation;
 struct padded_string;
 class padded_string_view;
 enum class stage1_mode;
+
+/**
+ * The string wrapping type used to represent an integer that does not fit in 64 bits.
+ *
+ * The value is not '\0' terminated.
+ */
+struct bigint_t : public std::string_view {
+  bigint_t() {}
+  bigint_t(const uint8_t *src, size_t len) : std::string_view(reinterpret_cast<const char*>(src), len) {}
+  bigint_t(const char    *src, size_t len) : std::string_view(src, len) {}
+
+  bool operator==(const std::string_view& rhs) const { return rhs == *reinterpret_cast<const std::string_view*>(this); }
+  bool operator==(const bigint_t& rhs) const {
+    return reinterpret_cast<const std::string_view&>(rhs) == *reinterpret_cast<const std::string_view*>(this);
+  }
+};
 
 namespace internal {
 
@@ -6558,6 +6574,7 @@ enum class tape_type {
   STRING = '"',
   INT64 = 'l',
   UINT64 = 'u',
+  BIGINT = 'L',
   DOUBLE = 'd',
   TRUE_VALUE = 't',
   FALSE_VALUE = 'f',
@@ -8213,7 +8230,8 @@ class dom_parser_implementation;
 enum class number_type {
     floating_point_number=1, /// a binary64 number
     signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
+    unsigned_integer,        /// a positive integer larger or equal to 1<<63
+    big_integer              /// a big integer that does not fit in a 64-bit word
 };
 
 } // namespace arm64
@@ -8660,11 +8678,13 @@ namespace numberparsing {
 #define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
+#define WRITE_BIGINT(SRC, END, WRITER) (found_bigint((SRC), (END)), (WRITER).append_bigint((SRC), (END)))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
 #else
 #define INVALID_NUMBER(SRC) (NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
+#define WRITE_BIGINT(SRC, END, WRITER) (WRITER).append_bigint((SRC), (END))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
 #endif
 
@@ -9149,11 +9169,31 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
   return SUCCESS;
 }
 
+// parse the number at src
+// define JSON_TEST_NUMBERS for unit testing
+//
+// It is assumed that the number is followed by a structural ({,},],[) character
+// or a white space character. If that is not the case (e.g., when the JSON
+// document is made of a single number), then it is necessary to copy the
+// content and append a space before calling this function.
+//
+// Our objective is accurate parsing (ULP of 0) at high speed.
+// In case of big_integer, digit_count returns the number of digits in that number
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, const uint8_t *const end, W &writer, size_t &digit_count);
+
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+  size_t digit_count;
+  return parse_number(src, nullptr, writer, digit_count);
+}
+
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_inline error_code parse_number(const uint8_t *const, const uint8_t *const end, W &writer, size_t &digit_count) {
+  digit_count = 0;
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -9166,20 +9206,13 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string
 simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
 simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, bool check_bigint) noexcept  { return false; }
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, const uint8_t * end, bool check_bigint) noexcept { return false; }
 simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept { return number_type::signed_integer; }
 #else
 
-// parse the number at src
-// define JSON_TEST_NUMBERS for unit testing
-//
-// It is assumed that the number is followed by a structural ({,},],[) character
-// or a white space character. If that is not the case (e.g., when the JSON
-// document is made of a single number), then it is necessary to copy the
-// content and append a space before calling this function.
-//
-// Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_inline error_code parse_number(const uint8_t *const src, const uint8_t *const end, W &writer, size_t &digit_count) {
 
   //
   // Check for minus sign
@@ -9193,11 +9226,14 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const uint8_t *const start_digits = p;
   uint64_t i = 0;
-  while (parse_digit(*p, i)) { p++; }
+  if (end)
+    while (parse_digit(*p, i)) { p++; }
+  else
+    while (p != end && parse_digit(*p, i)) { p++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
-  size_t digit_count = size_t(p - start_digits);
+  digit_count = size_t(p - start_digits);
   if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return INVALID_NUMBER(src); }
 
   //
@@ -9217,7 +9253,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
     SIMDJSON_TRY( parse_exponent(src, p, exponent) );
   }
   if (is_float) {
-    const bool dirty_end = jsoncharutils::is_not_structural_or_whitespace(*p);
+    const bool dirty_end = jsoncharutils::is_not_structural_or_whitespace(*p) && p != end;
     SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
     if (dirty_end) { return INVALID_NUMBER(src); }
     return SUCCESS;
@@ -9227,11 +9263,17 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
   size_t longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
+  if (digit_count > longest_digit_count) {
+    WRITE_BIGINT(start_digits, p, writer);
+    return SUCCESS;
+  }
   if (digit_count == longest_digit_count) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
+      if (i > uint64_t(INT64_MAX)+1) {
+        WRITE_BIGINT(start_digits, p, writer);
+        return SUCCESS;
+      }
       WRITE_INTEGER(~i+1, src, writer);
       if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
@@ -9256,7 +9298,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
   }
-  if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+  if (jsoncharutils::is_not_structural_or_whitespace(*p) && p != end) { return INVALID_NUMBER(src); }
   return SUCCESS;
 }
 
@@ -9686,39 +9728,71 @@ simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept {
   return (*src == '-');
 }
 
-simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
-  bool negative = (*src == '-');
-  src += uint8_t(negative);
-  const uint8_t *p = src;
-  while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
-  if ( p == src ) { return NUMBER_ERROR; }
-  if (jsoncharutils::is_structural_or_whitespace(*p)) { return true; }
-  return false;
+
+namespace {
+  simdjson_unused simdjson_inline simdjson_result<bool> is_gen_integer(const uint8_t * src, const uint8_t * end, bool bigint) noexcept {
+    bool negative = (*src == '-');
+    src += uint8_t(negative);
+    const uint8_t *p = src;
+    if (end)
+      while(p != end && static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+    else
+      while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+    auto digit_count = int(p - src);
+    if (!digit_count) { return NUMBER_ERROR; }
+    if (digit_count > 20) return bigint;
+    return jsoncharutils::is_structural_or_whitespace(*p);
+  }
 }
 
-simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept {
+/// Returns true if the number is an integer that fits in 64 bits
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
+  return is_gen_integer(src, nullptr, false);
+}
+
+/// Returns true if the number is an integer that fits in 64 bits or a big integer
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, bool check_bigint) noexcept {
+  return is_gen_integer(src, nullptr, check_bigint);
+}
+
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, const uint8_t * end, bool check_bigint) noexcept {
+  return is_gen_integer(src, end, check_bigint);
+}
+
+simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src, size_t &digit_count) noexcept {
   bool negative = (*src == '-');
   src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  digit_count = int(p - src);
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    static const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
     // We have an integer.
+    if(digit_count > 20) {
+      return number_type::big_integer;
+    }
     // If the number is negative and valid, it must be a signed integer.
-    if(negative) { return number_type::signed_integer; }
+    if(negative) {
+      if(digit_count > 19) return number_type::big_integer;
+      if(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)
+        return number_type::big_integer;
+      return number_type::signed_integer;
+    }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
-    int digit_count = int(p - src);
-    if(digit_count >= 19) {
-      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
-      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
-        return number_type::unsigned_integer;
-      }
+    if((digit_count == 20) || (digit_count >= 19 && memcmp(src, smaller_big_integer, 19) >= 0)) {
+      return number_type::unsigned_integer;
     }
     return number_type::signed_integer;
   }
   // Hopefully, we have 'e' or 'E' or '.'.
   return number_type::floating_point_number;
+}
+
+simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept {
+  size_t digit_count;
+  return get_number_type(src, digit_count);
 }
 
 // Never read at src_end or beyond
@@ -9891,6 +9965,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
         case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
         case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        case number_type::big_integer: out << "big integer"; break;
         default: SIMDJSON_UNREACHABLE();
     }
     return out;
@@ -12433,6 +12508,9 @@ struct tape_writer {
   /** Write an unsigned 64-bit value to tape. */
   simdjson_inline void append_u64(uint64_t value) noexcept;
 
+  /** Write a bigint value to tape. */
+  simdjson_inline void append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept;
+
   /** Write a double value to tape. */
   simdjson_inline void append_double(double value) noexcept;
 
@@ -12483,6 +12561,10 @@ simdjson_inline void tape_writer::append_u64(uint64_t value) noexcept {
   append(0, internal::tape_type::UINT64);
   *next_tape_loc = value;
   next_tape_loc++;
+}
+
+simdjson_inline void tape_writer::append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept {
+  append(end - src, internal::tape_type::BIGINT);
 }
 
 /** Write a double value to tape. */
@@ -13451,8 +13533,9 @@ simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_string(
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
+  size_t digit_count;
   iter.log_value("number");
-  return numberparsing::parse_number(value, tape);
+  return numberparsing::parse_number(value, nullptr, tape, digit_count);
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
@@ -14501,7 +14584,8 @@ class dom_parser_implementation;
 enum class number_type {
     floating_point_number=1, /// a binary64 number
     signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
+    unsigned_integer,        /// a positive integer larger or equal to 1<<63
+    big_integer              /// a big integer that does not fit in a 64-bit word
 };
 
 } // namespace haswell
@@ -14948,11 +15032,13 @@ namespace numberparsing {
 #define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
+#define WRITE_BIGINT(SRC, END, WRITER) (found_bigint((SRC), (END)), (WRITER).append_bigint((SRC), (END)))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
 #else
 #define INVALID_NUMBER(SRC) (NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
+#define WRITE_BIGINT(SRC, END, WRITER) (WRITER).append_bigint((SRC), (END))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
 #endif
 
@@ -15437,11 +15523,31 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
   return SUCCESS;
 }
 
+// parse the number at src
+// define JSON_TEST_NUMBERS for unit testing
+//
+// It is assumed that the number is followed by a structural ({,},],[) character
+// or a white space character. If that is not the case (e.g., when the JSON
+// document is made of a single number), then it is necessary to copy the
+// content and append a space before calling this function.
+//
+// Our objective is accurate parsing (ULP of 0) at high speed.
+// In case of big_integer, digit_count returns the number of digits in that number
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, const uint8_t *const end, W &writer, size_t &digit_count);
+
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+  size_t digit_count;
+  return parse_number(src, nullptr, writer, digit_count);
+}
+
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_inline error_code parse_number(const uint8_t *const, const uint8_t *const end, W &writer, size_t &digit_count) {
+  digit_count = 0;
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -15454,20 +15560,13 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string
 simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
 simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, bool check_bigint) noexcept  { return false; }
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, const uint8_t * end, bool check_bigint) noexcept { return false; }
 simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept { return number_type::signed_integer; }
 #else
 
-// parse the number at src
-// define JSON_TEST_NUMBERS for unit testing
-//
-// It is assumed that the number is followed by a structural ({,},],[) character
-// or a white space character. If that is not the case (e.g., when the JSON
-// document is made of a single number), then it is necessary to copy the
-// content and append a space before calling this function.
-//
-// Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_inline error_code parse_number(const uint8_t *const src, const uint8_t *const end, W &writer, size_t &digit_count) {
 
   //
   // Check for minus sign
@@ -15481,11 +15580,14 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const uint8_t *const start_digits = p;
   uint64_t i = 0;
-  while (parse_digit(*p, i)) { p++; }
+  if (end)
+    while (parse_digit(*p, i)) { p++; }
+  else
+    while (p != end && parse_digit(*p, i)) { p++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
-  size_t digit_count = size_t(p - start_digits);
+  digit_count = size_t(p - start_digits);
   if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return INVALID_NUMBER(src); }
 
   //
@@ -15505,7 +15607,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
     SIMDJSON_TRY( parse_exponent(src, p, exponent) );
   }
   if (is_float) {
-    const bool dirty_end = jsoncharutils::is_not_structural_or_whitespace(*p);
+    const bool dirty_end = jsoncharutils::is_not_structural_or_whitespace(*p) && p != end;
     SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
     if (dirty_end) { return INVALID_NUMBER(src); }
     return SUCCESS;
@@ -15515,11 +15617,17 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
   size_t longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
+  if (digit_count > longest_digit_count) {
+    WRITE_BIGINT(start_digits, p, writer);
+    return SUCCESS;
+  }
   if (digit_count == longest_digit_count) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
+      if (i > uint64_t(INT64_MAX)+1) {
+        WRITE_BIGINT(start_digits, p, writer);
+        return SUCCESS;
+      }
       WRITE_INTEGER(~i+1, src, writer);
       if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
@@ -15544,7 +15652,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
   }
-  if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+  if (jsoncharutils::is_not_structural_or_whitespace(*p) && p != end) { return INVALID_NUMBER(src); }
   return SUCCESS;
 }
 
@@ -15974,39 +16082,71 @@ simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept {
   return (*src == '-');
 }
 
-simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
-  bool negative = (*src == '-');
-  src += uint8_t(negative);
-  const uint8_t *p = src;
-  while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
-  if ( p == src ) { return NUMBER_ERROR; }
-  if (jsoncharutils::is_structural_or_whitespace(*p)) { return true; }
-  return false;
+
+namespace {
+  simdjson_unused simdjson_inline simdjson_result<bool> is_gen_integer(const uint8_t * src, const uint8_t * end, bool bigint) noexcept {
+    bool negative = (*src == '-');
+    src += uint8_t(negative);
+    const uint8_t *p = src;
+    if (end)
+      while(p != end && static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+    else
+      while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+    auto digit_count = int(p - src);
+    if (!digit_count) { return NUMBER_ERROR; }
+    if (digit_count > 20) return bigint;
+    return jsoncharutils::is_structural_or_whitespace(*p);
+  }
 }
 
-simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept {
+/// Returns true if the number is an integer that fits in 64 bits
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
+  return is_gen_integer(src, nullptr, false);
+}
+
+/// Returns true if the number is an integer that fits in 64 bits or a big integer
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, bool check_bigint) noexcept {
+  return is_gen_integer(src, nullptr, check_bigint);
+}
+
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, const uint8_t * end, bool check_bigint) noexcept {
+  return is_gen_integer(src, end, check_bigint);
+}
+
+simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src, size_t &digit_count) noexcept {
   bool negative = (*src == '-');
   src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  digit_count = int(p - src);
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    static const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
     // We have an integer.
+    if(digit_count > 20) {
+      return number_type::big_integer;
+    }
     // If the number is negative and valid, it must be a signed integer.
-    if(negative) { return number_type::signed_integer; }
+    if(negative) {
+      if(digit_count > 19) return number_type::big_integer;
+      if(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)
+        return number_type::big_integer;
+      return number_type::signed_integer;
+    }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
-    int digit_count = int(p - src);
-    if(digit_count >= 19) {
-      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
-      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
-        return number_type::unsigned_integer;
-      }
+    if((digit_count == 20) || (digit_count >= 19 && memcmp(src, smaller_big_integer, 19) >= 0)) {
+      return number_type::unsigned_integer;
     }
     return number_type::signed_integer;
   }
   // Hopefully, we have 'e' or 'E' or '.'.
   return number_type::floating_point_number;
+}
+
+simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept {
+  size_t digit_count;
+  return get_number_type(src, digit_count);
 }
 
 // Never read at src_end or beyond
@@ -16179,6 +16319,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
         case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
         case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        case number_type::big_integer: out << "big integer"; break;
         default: SIMDJSON_UNREACHABLE();
     }
     return out;
@@ -18598,6 +18739,9 @@ struct tape_writer {
   /** Write an unsigned 64-bit value to tape. */
   simdjson_inline void append_u64(uint64_t value) noexcept;
 
+  /** Write a bigint value to tape. */
+  simdjson_inline void append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept;
+
   /** Write a double value to tape. */
   simdjson_inline void append_double(double value) noexcept;
 
@@ -18648,6 +18792,10 @@ simdjson_inline void tape_writer::append_u64(uint64_t value) noexcept {
   append(0, internal::tape_type::UINT64);
   *next_tape_loc = value;
   next_tape_loc++;
+}
+
+simdjson_inline void tape_writer::append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept {
+  append(end - src, internal::tape_type::BIGINT);
 }
 
 /** Write a double value to tape. */
@@ -19616,8 +19764,9 @@ simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_string(
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
+  size_t digit_count;
   iter.log_value("number");
-  return numberparsing::parse_number(value, tape);
+  return numberparsing::parse_number(value, nullptr, tape, digit_count);
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
@@ -20661,7 +20810,8 @@ class dom_parser_implementation;
 enum class number_type {
     floating_point_number=1, /// a binary64 number
     signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
+    unsigned_integer,        /// a positive integer larger or equal to 1<<63
+    big_integer              /// a big integer that does not fit in a 64-bit word
 };
 
 } // namespace icelake
@@ -21108,11 +21258,13 @@ namespace numberparsing {
 #define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
+#define WRITE_BIGINT(SRC, END, WRITER) (found_bigint((SRC), (END)), (WRITER).append_bigint((SRC), (END)))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
 #else
 #define INVALID_NUMBER(SRC) (NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
+#define WRITE_BIGINT(SRC, END, WRITER) (WRITER).append_bigint((SRC), (END))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
 #endif
 
@@ -21597,11 +21749,31 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
   return SUCCESS;
 }
 
+// parse the number at src
+// define JSON_TEST_NUMBERS for unit testing
+//
+// It is assumed that the number is followed by a structural ({,},],[) character
+// or a white space character. If that is not the case (e.g., when the JSON
+// document is made of a single number), then it is necessary to copy the
+// content and append a space before calling this function.
+//
+// Our objective is accurate parsing (ULP of 0) at high speed.
+// In case of big_integer, digit_count returns the number of digits in that number
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, const uint8_t *const end, W &writer, size_t &digit_count);
+
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+  size_t digit_count;
+  return parse_number(src, nullptr, writer, digit_count);
+}
+
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_inline error_code parse_number(const uint8_t *const, const uint8_t *const end, W &writer, size_t &digit_count) {
+  digit_count = 0;
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -21614,20 +21786,13 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string
 simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
 simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, bool check_bigint) noexcept  { return false; }
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, const uint8_t * end, bool check_bigint) noexcept { return false; }
 simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept { return number_type::signed_integer; }
 #else
 
-// parse the number at src
-// define JSON_TEST_NUMBERS for unit testing
-//
-// It is assumed that the number is followed by a structural ({,},],[) character
-// or a white space character. If that is not the case (e.g., when the JSON
-// document is made of a single number), then it is necessary to copy the
-// content and append a space before calling this function.
-//
-// Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_inline error_code parse_number(const uint8_t *const src, const uint8_t *const end, W &writer, size_t &digit_count) {
 
   //
   // Check for minus sign
@@ -21641,11 +21806,14 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const uint8_t *const start_digits = p;
   uint64_t i = 0;
-  while (parse_digit(*p, i)) { p++; }
+  if (end)
+    while (parse_digit(*p, i)) { p++; }
+  else
+    while (p != end && parse_digit(*p, i)) { p++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
-  size_t digit_count = size_t(p - start_digits);
+  digit_count = size_t(p - start_digits);
   if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return INVALID_NUMBER(src); }
 
   //
@@ -21665,7 +21833,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
     SIMDJSON_TRY( parse_exponent(src, p, exponent) );
   }
   if (is_float) {
-    const bool dirty_end = jsoncharutils::is_not_structural_or_whitespace(*p);
+    const bool dirty_end = jsoncharutils::is_not_structural_or_whitespace(*p) && p != end;
     SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
     if (dirty_end) { return INVALID_NUMBER(src); }
     return SUCCESS;
@@ -21675,11 +21843,17 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
   size_t longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
+  if (digit_count > longest_digit_count) {
+    WRITE_BIGINT(start_digits, p, writer);
+    return SUCCESS;
+  }
   if (digit_count == longest_digit_count) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
+      if (i > uint64_t(INT64_MAX)+1) {
+        WRITE_BIGINT(start_digits, p, writer);
+        return SUCCESS;
+      }
       WRITE_INTEGER(~i+1, src, writer);
       if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
@@ -21704,7 +21878,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
   }
-  if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+  if (jsoncharutils::is_not_structural_or_whitespace(*p) && p != end) { return INVALID_NUMBER(src); }
   return SUCCESS;
 }
 
@@ -22134,39 +22308,71 @@ simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept {
   return (*src == '-');
 }
 
-simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
-  bool negative = (*src == '-');
-  src += uint8_t(negative);
-  const uint8_t *p = src;
-  while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
-  if ( p == src ) { return NUMBER_ERROR; }
-  if (jsoncharutils::is_structural_or_whitespace(*p)) { return true; }
-  return false;
+
+namespace {
+  simdjson_unused simdjson_inline simdjson_result<bool> is_gen_integer(const uint8_t * src, const uint8_t * end, bool bigint) noexcept {
+    bool negative = (*src == '-');
+    src += uint8_t(negative);
+    const uint8_t *p = src;
+    if (end)
+      while(p != end && static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+    else
+      while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+    auto digit_count = int(p - src);
+    if (!digit_count) { return NUMBER_ERROR; }
+    if (digit_count > 20) return bigint;
+    return jsoncharutils::is_structural_or_whitespace(*p);
+  }
 }
 
-simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept {
+/// Returns true if the number is an integer that fits in 64 bits
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
+  return is_gen_integer(src, nullptr, false);
+}
+
+/// Returns true if the number is an integer that fits in 64 bits or a big integer
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, bool check_bigint) noexcept {
+  return is_gen_integer(src, nullptr, check_bigint);
+}
+
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, const uint8_t * end, bool check_bigint) noexcept {
+  return is_gen_integer(src, end, check_bigint);
+}
+
+simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src, size_t &digit_count) noexcept {
   bool negative = (*src == '-');
   src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  digit_count = int(p - src);
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    static const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
     // We have an integer.
+    if(digit_count > 20) {
+      return number_type::big_integer;
+    }
     // If the number is negative and valid, it must be a signed integer.
-    if(negative) { return number_type::signed_integer; }
+    if(negative) {
+      if(digit_count > 19) return number_type::big_integer;
+      if(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)
+        return number_type::big_integer;
+      return number_type::signed_integer;
+    }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
-    int digit_count = int(p - src);
-    if(digit_count >= 19) {
-      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
-      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
-        return number_type::unsigned_integer;
-      }
+    if((digit_count == 20) || (digit_count >= 19 && memcmp(src, smaller_big_integer, 19) >= 0)) {
+      return number_type::unsigned_integer;
     }
     return number_type::signed_integer;
   }
   // Hopefully, we have 'e' or 'E' or '.'.
   return number_type::floating_point_number;
+}
+
+simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept {
+  size_t digit_count;
+  return get_number_type(src, digit_count);
 }
 
 // Never read at src_end or beyond
@@ -22339,6 +22545,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
         case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
         case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        case number_type::big_integer: out << "big integer"; break;
         default: SIMDJSON_UNREACHABLE();
     }
     return out;
@@ -24756,6 +24963,9 @@ struct tape_writer {
   /** Write an unsigned 64-bit value to tape. */
   simdjson_inline void append_u64(uint64_t value) noexcept;
 
+  /** Write a bigint value to tape. */
+  simdjson_inline void append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept;
+
   /** Write a double value to tape. */
   simdjson_inline void append_double(double value) noexcept;
 
@@ -24806,6 +25016,10 @@ simdjson_inline void tape_writer::append_u64(uint64_t value) noexcept {
   append(0, internal::tape_type::UINT64);
   *next_tape_loc = value;
   next_tape_loc++;
+}
+
+simdjson_inline void tape_writer::append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept {
+  append(end - src, internal::tape_type::BIGINT);
 }
 
 /** Write a double value to tape. */
@@ -25774,8 +25988,9 @@ simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_string(
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
+  size_t digit_count;
   iter.log_value("number");
-  return numberparsing::parse_number(value, tape);
+  return numberparsing::parse_number(value, nullptr, tape, digit_count);
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
@@ -26977,7 +27192,8 @@ class dom_parser_implementation;
 enum class number_type {
     floating_point_number=1, /// a binary64 number
     signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
+    unsigned_integer,        /// a positive integer larger or equal to 1<<63
+    big_integer              /// a big integer that does not fit in a 64-bit word
 };
 
 } // namespace ppc64
@@ -27424,11 +27640,13 @@ namespace numberparsing {
 #define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
+#define WRITE_BIGINT(SRC, END, WRITER) (found_bigint((SRC), (END)), (WRITER).append_bigint((SRC), (END)))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
 #else
 #define INVALID_NUMBER(SRC) (NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
+#define WRITE_BIGINT(SRC, END, WRITER) (WRITER).append_bigint((SRC), (END))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
 #endif
 
@@ -27913,11 +28131,31 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
   return SUCCESS;
 }
 
+// parse the number at src
+// define JSON_TEST_NUMBERS for unit testing
+//
+// It is assumed that the number is followed by a structural ({,},],[) character
+// or a white space character. If that is not the case (e.g., when the JSON
+// document is made of a single number), then it is necessary to copy the
+// content and append a space before calling this function.
+//
+// Our objective is accurate parsing (ULP of 0) at high speed.
+// In case of big_integer, digit_count returns the number of digits in that number
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, const uint8_t *const end, W &writer, size_t &digit_count);
+
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+  size_t digit_count;
+  return parse_number(src, nullptr, writer, digit_count);
+}
+
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_inline error_code parse_number(const uint8_t *const, const uint8_t *const end, W &writer, size_t &digit_count) {
+  digit_count = 0;
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -27930,20 +28168,13 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string
 simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
 simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, bool check_bigint) noexcept  { return false; }
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, const uint8_t * end, bool check_bigint) noexcept { return false; }
 simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept { return number_type::signed_integer; }
 #else
 
-// parse the number at src
-// define JSON_TEST_NUMBERS for unit testing
-//
-// It is assumed that the number is followed by a structural ({,},],[) character
-// or a white space character. If that is not the case (e.g., when the JSON
-// document is made of a single number), then it is necessary to copy the
-// content and append a space before calling this function.
-//
-// Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_inline error_code parse_number(const uint8_t *const src, const uint8_t *const end, W &writer, size_t &digit_count) {
 
   //
   // Check for minus sign
@@ -27957,11 +28188,14 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const uint8_t *const start_digits = p;
   uint64_t i = 0;
-  while (parse_digit(*p, i)) { p++; }
+  if (end)
+    while (parse_digit(*p, i)) { p++; }
+  else
+    while (p != end && parse_digit(*p, i)) { p++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
-  size_t digit_count = size_t(p - start_digits);
+  digit_count = size_t(p - start_digits);
   if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return INVALID_NUMBER(src); }
 
   //
@@ -27981,7 +28215,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
     SIMDJSON_TRY( parse_exponent(src, p, exponent) );
   }
   if (is_float) {
-    const bool dirty_end = jsoncharutils::is_not_structural_or_whitespace(*p);
+    const bool dirty_end = jsoncharutils::is_not_structural_or_whitespace(*p) && p != end;
     SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
     if (dirty_end) { return INVALID_NUMBER(src); }
     return SUCCESS;
@@ -27991,11 +28225,17 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
   size_t longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
+  if (digit_count > longest_digit_count) {
+    WRITE_BIGINT(start_digits, p, writer);
+    return SUCCESS;
+  }
   if (digit_count == longest_digit_count) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
+      if (i > uint64_t(INT64_MAX)+1) {
+        WRITE_BIGINT(start_digits, p, writer);
+        return SUCCESS;
+      }
       WRITE_INTEGER(~i+1, src, writer);
       if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
@@ -28020,7 +28260,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
   }
-  if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+  if (jsoncharutils::is_not_structural_or_whitespace(*p) && p != end) { return INVALID_NUMBER(src); }
   return SUCCESS;
 }
 
@@ -28450,39 +28690,71 @@ simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept {
   return (*src == '-');
 }
 
-simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
-  bool negative = (*src == '-');
-  src += uint8_t(negative);
-  const uint8_t *p = src;
-  while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
-  if ( p == src ) { return NUMBER_ERROR; }
-  if (jsoncharutils::is_structural_or_whitespace(*p)) { return true; }
-  return false;
+
+namespace {
+  simdjson_unused simdjson_inline simdjson_result<bool> is_gen_integer(const uint8_t * src, const uint8_t * end, bool bigint) noexcept {
+    bool negative = (*src == '-');
+    src += uint8_t(negative);
+    const uint8_t *p = src;
+    if (end)
+      while(p != end && static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+    else
+      while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+    auto digit_count = int(p - src);
+    if (!digit_count) { return NUMBER_ERROR; }
+    if (digit_count > 20) return bigint;
+    return jsoncharutils::is_structural_or_whitespace(*p);
+  }
 }
 
-simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept {
+/// Returns true if the number is an integer that fits in 64 bits
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
+  return is_gen_integer(src, nullptr, false);
+}
+
+/// Returns true if the number is an integer that fits in 64 bits or a big integer
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, bool check_bigint) noexcept {
+  return is_gen_integer(src, nullptr, check_bigint);
+}
+
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, const uint8_t * end, bool check_bigint) noexcept {
+  return is_gen_integer(src, end, check_bigint);
+}
+
+simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src, size_t &digit_count) noexcept {
   bool negative = (*src == '-');
   src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  digit_count = int(p - src);
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    static const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
     // We have an integer.
+    if(digit_count > 20) {
+      return number_type::big_integer;
+    }
     // If the number is negative and valid, it must be a signed integer.
-    if(negative) { return number_type::signed_integer; }
+    if(negative) {
+      if(digit_count > 19) return number_type::big_integer;
+      if(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)
+        return number_type::big_integer;
+      return number_type::signed_integer;
+    }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
-    int digit_count = int(p - src);
-    if(digit_count >= 19) {
-      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
-      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
-        return number_type::unsigned_integer;
-      }
+    if((digit_count == 20) || (digit_count >= 19 && memcmp(src, smaller_big_integer, 19) >= 0)) {
+      return number_type::unsigned_integer;
     }
     return number_type::signed_integer;
   }
   // Hopefully, we have 'e' or 'E' or '.'.
   return number_type::floating_point_number;
+}
+
+simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept {
+  size_t digit_count;
+  return get_number_type(src, digit_count);
 }
 
 // Never read at src_end or beyond
@@ -28655,6 +28927,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
         case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
         case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        case number_type::big_integer: out << "big integer"; break;
         default: SIMDJSON_UNREACHABLE();
     }
     return out;
@@ -31185,6 +31458,9 @@ struct tape_writer {
   /** Write an unsigned 64-bit value to tape. */
   simdjson_inline void append_u64(uint64_t value) noexcept;
 
+  /** Write a bigint value to tape. */
+  simdjson_inline void append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept;
+
   /** Write a double value to tape. */
   simdjson_inline void append_double(double value) noexcept;
 
@@ -31235,6 +31511,10 @@ simdjson_inline void tape_writer::append_u64(uint64_t value) noexcept {
   append(0, internal::tape_type::UINT64);
   *next_tape_loc = value;
   next_tape_loc++;
+}
+
+simdjson_inline void tape_writer::append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept {
+  append(end - src, internal::tape_type::BIGINT);
 }
 
 /** Write a double value to tape. */
@@ -32203,8 +32483,9 @@ simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_string(
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
+  size_t digit_count;
   iter.log_value("number");
-  return numberparsing::parse_number(value, tape);
+  return numberparsing::parse_number(value, nullptr, tape, digit_count);
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
@@ -33659,7 +33940,8 @@ class dom_parser_implementation;
 enum class number_type {
     floating_point_number=1, /// a binary64 number
     signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
+    unsigned_integer,        /// a positive integer larger or equal to 1<<63
+    big_integer              /// a big integer that does not fit in a 64-bit word
 };
 
 } // namespace westmere
@@ -34106,11 +34388,13 @@ namespace numberparsing {
 #define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
+#define WRITE_BIGINT(SRC, END, WRITER) (found_bigint((SRC), (END)), (WRITER).append_bigint((SRC), (END)))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
 #else
 #define INVALID_NUMBER(SRC) (NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
+#define WRITE_BIGINT(SRC, END, WRITER) (WRITER).append_bigint((SRC), (END))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
 #endif
 
@@ -34595,11 +34879,31 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
   return SUCCESS;
 }
 
+// parse the number at src
+// define JSON_TEST_NUMBERS for unit testing
+//
+// It is assumed that the number is followed by a structural ({,},],[) character
+// or a white space character. If that is not the case (e.g., when the JSON
+// document is made of a single number), then it is necessary to copy the
+// content and append a space before calling this function.
+//
+// Our objective is accurate parsing (ULP of 0) at high speed.
+// In case of big_integer, digit_count returns the number of digits in that number
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, const uint8_t *const end, W &writer, size_t &digit_count);
+
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+  size_t digit_count;
+  return parse_number(src, nullptr, writer, digit_count);
+}
+
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_inline error_code parse_number(const uint8_t *const, const uint8_t *const end, W &writer, size_t &digit_count) {
+  digit_count = 0;
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -34612,20 +34916,13 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string
 simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
 simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, bool check_bigint) noexcept  { return false; }
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, const uint8_t * end, bool check_bigint) noexcept { return false; }
 simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept { return number_type::signed_integer; }
 #else
 
-// parse the number at src
-// define JSON_TEST_NUMBERS for unit testing
-//
-// It is assumed that the number is followed by a structural ({,},],[) character
-// or a white space character. If that is not the case (e.g., when the JSON
-// document is made of a single number), then it is necessary to copy the
-// content and append a space before calling this function.
-//
-// Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_inline error_code parse_number(const uint8_t *const src, const uint8_t *const end, W &writer, size_t &digit_count) {
 
   //
   // Check for minus sign
@@ -34639,11 +34936,14 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const uint8_t *const start_digits = p;
   uint64_t i = 0;
-  while (parse_digit(*p, i)) { p++; }
+  if (end)
+    while (parse_digit(*p, i)) { p++; }
+  else
+    while (p != end && parse_digit(*p, i)) { p++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
-  size_t digit_count = size_t(p - start_digits);
+  digit_count = size_t(p - start_digits);
   if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return INVALID_NUMBER(src); }
 
   //
@@ -34663,7 +34963,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
     SIMDJSON_TRY( parse_exponent(src, p, exponent) );
   }
   if (is_float) {
-    const bool dirty_end = jsoncharutils::is_not_structural_or_whitespace(*p);
+    const bool dirty_end = jsoncharutils::is_not_structural_or_whitespace(*p) && p != end;
     SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
     if (dirty_end) { return INVALID_NUMBER(src); }
     return SUCCESS;
@@ -34673,11 +34973,17 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
   size_t longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
+  if (digit_count > longest_digit_count) {
+    WRITE_BIGINT(start_digits, p, writer);
+    return SUCCESS;
+  }
   if (digit_count == longest_digit_count) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
+      if (i > uint64_t(INT64_MAX)+1) {
+        WRITE_BIGINT(start_digits, p, writer);
+        return SUCCESS;
+      }
       WRITE_INTEGER(~i+1, src, writer);
       if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
@@ -34702,7 +35008,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
   }
-  if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+  if (jsoncharutils::is_not_structural_or_whitespace(*p) && p != end) { return INVALID_NUMBER(src); }
   return SUCCESS;
 }
 
@@ -35132,39 +35438,71 @@ simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept {
   return (*src == '-');
 }
 
-simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
-  bool negative = (*src == '-');
-  src += uint8_t(negative);
-  const uint8_t *p = src;
-  while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
-  if ( p == src ) { return NUMBER_ERROR; }
-  if (jsoncharutils::is_structural_or_whitespace(*p)) { return true; }
-  return false;
+
+namespace {
+  simdjson_unused simdjson_inline simdjson_result<bool> is_gen_integer(const uint8_t * src, const uint8_t * end, bool bigint) noexcept {
+    bool negative = (*src == '-');
+    src += uint8_t(negative);
+    const uint8_t *p = src;
+    if (end)
+      while(p != end && static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+    else
+      while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+    auto digit_count = int(p - src);
+    if (!digit_count) { return NUMBER_ERROR; }
+    if (digit_count > 20) return bigint;
+    return jsoncharutils::is_structural_or_whitespace(*p);
+  }
 }
 
-simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept {
+/// Returns true if the number is an integer that fits in 64 bits
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
+  return is_gen_integer(src, nullptr, false);
+}
+
+/// Returns true if the number is an integer that fits in 64 bits or a big integer
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, bool check_bigint) noexcept {
+  return is_gen_integer(src, nullptr, check_bigint);
+}
+
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, const uint8_t * end, bool check_bigint) noexcept {
+  return is_gen_integer(src, end, check_bigint);
+}
+
+simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src, size_t &digit_count) noexcept {
   bool negative = (*src == '-');
   src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  digit_count = int(p - src);
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    static const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
     // We have an integer.
+    if(digit_count > 20) {
+      return number_type::big_integer;
+    }
     // If the number is negative and valid, it must be a signed integer.
-    if(negative) { return number_type::signed_integer; }
+    if(negative) {
+      if(digit_count > 19) return number_type::big_integer;
+      if(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)
+        return number_type::big_integer;
+      return number_type::signed_integer;
+    }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
-    int digit_count = int(p - src);
-    if(digit_count >= 19) {
-      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
-      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
-        return number_type::unsigned_integer;
-      }
+    if((digit_count == 20) || (digit_count >= 19 && memcmp(src, smaller_big_integer, 19) >= 0)) {
+      return number_type::unsigned_integer;
     }
     return number_type::signed_integer;
   }
   // Hopefully, we have 'e' or 'E' or '.'.
   return number_type::floating_point_number;
+}
+
+simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept {
+  size_t digit_count;
+  return get_number_type(src, digit_count);
 }
 
 // Never read at src_end or beyond
@@ -35337,6 +35675,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
         case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
         case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        case number_type::big_integer: out << "big integer"; break;
         default: SIMDJSON_UNREACHABLE();
     }
     return out;
@@ -38188,6 +38527,9 @@ struct tape_writer {
   /** Write an unsigned 64-bit value to tape. */
   simdjson_inline void append_u64(uint64_t value) noexcept;
 
+  /** Write a bigint value to tape. */
+  simdjson_inline void append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept;
+
   /** Write a double value to tape. */
   simdjson_inline void append_double(double value) noexcept;
 
@@ -38238,6 +38580,10 @@ simdjson_inline void tape_writer::append_u64(uint64_t value) noexcept {
   append(0, internal::tape_type::UINT64);
   *next_tape_loc = value;
   next_tape_loc++;
+}
+
+simdjson_inline void tape_writer::append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept {
+  append(end - src, internal::tape_type::BIGINT);
 }
 
 /** Write a double value to tape. */
@@ -39206,8 +39552,9 @@ simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_string(
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
+  size_t digit_count;
   iter.log_value("number");
-  return numberparsing::parse_number(value, tape);
+  return numberparsing::parse_number(value, nullptr, tape, digit_count);
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
@@ -39768,7 +40115,8 @@ class dom_parser_implementation;
 enum class number_type {
     floating_point_number=1, /// a binary64 number
     signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
+    unsigned_integer,        /// a positive integer larger or equal to 1<<63
+    big_integer              /// a big integer that does not fit in a 64-bit word
 };
 
 } // namespace fallback
@@ -40215,11 +40563,13 @@ namespace numberparsing {
 #define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
+#define WRITE_BIGINT(SRC, END, WRITER) (found_bigint((SRC), (END)), (WRITER).append_bigint((SRC), (END)))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
 #else
 #define INVALID_NUMBER(SRC) (NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
+#define WRITE_BIGINT(SRC, END, WRITER) (WRITER).append_bigint((SRC), (END))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
 #endif
 
@@ -40704,11 +41054,31 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
   return SUCCESS;
 }
 
+// parse the number at src
+// define JSON_TEST_NUMBERS for unit testing
+//
+// It is assumed that the number is followed by a structural ({,},],[) character
+// or a white space character. If that is not the case (e.g., when the JSON
+// document is made of a single number), then it is necessary to copy the
+// content and append a space before calling this function.
+//
+// Our objective is accurate parsing (ULP of 0) at high speed.
+// In case of big_integer, digit_count returns the number of digits in that number
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, const uint8_t *const end, W &writer, size_t &digit_count);
+
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+  size_t digit_count;
+  return parse_number(src, nullptr, writer, digit_count);
+}
+
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_inline error_code parse_number(const uint8_t *const, const uint8_t *const end, W &writer, size_t &digit_count) {
+  digit_count = 0;
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -40721,20 +41091,13 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string
 simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(const uint8_t * const src) noexcept { return 0; }
 simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept  { return false; }
 simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, bool check_bigint) noexcept  { return false; }
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, const uint8_t * end, bool check_bigint) noexcept { return false; }
 simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept { return number_type::signed_integer; }
 #else
 
-// parse the number at src
-// define JSON_TEST_NUMBERS for unit testing
-//
-// It is assumed that the number is followed by a structural ({,},],[) character
-// or a white space character. If that is not the case (e.g., when the JSON
-// document is made of a single number), then it is necessary to copy the
-// content and append a space before calling this function.
-//
-// Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_inline error_code parse_number(const uint8_t *const src, const uint8_t *const end, W &writer, size_t &digit_count) {
 
   //
   // Check for minus sign
@@ -40748,11 +41111,14 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const uint8_t *const start_digits = p;
   uint64_t i = 0;
-  while (parse_digit(*p, i)) { p++; }
+  if (end)
+    while (parse_digit(*p, i)) { p++; }
+  else
+    while (p != end && parse_digit(*p, i)) { p++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
-  size_t digit_count = size_t(p - start_digits);
+  digit_count = size_t(p - start_digits);
   if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return INVALID_NUMBER(src); }
 
   //
@@ -40772,7 +41138,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
     SIMDJSON_TRY( parse_exponent(src, p, exponent) );
   }
   if (is_float) {
-    const bool dirty_end = jsoncharutils::is_not_structural_or_whitespace(*p);
+    const bool dirty_end = jsoncharutils::is_not_structural_or_whitespace(*p) && p != end;
     SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
     if (dirty_end) { return INVALID_NUMBER(src); }
     return SUCCESS;
@@ -40782,11 +41148,17 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
   size_t longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
+  if (digit_count > longest_digit_count) {
+    WRITE_BIGINT(start_digits, p, writer);
+    return SUCCESS;
+  }
   if (digit_count == longest_digit_count) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
+      if (i > uint64_t(INT64_MAX)+1) {
+        WRITE_BIGINT(start_digits, p, writer);
+        return SUCCESS;
+      }
       WRITE_INTEGER(~i+1, src, writer);
       if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
@@ -40811,7 +41183,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
   }
-  if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+  if (jsoncharutils::is_not_structural_or_whitespace(*p) && p != end) { return INVALID_NUMBER(src); }
   return SUCCESS;
 }
 
@@ -41241,39 +41613,71 @@ simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept {
   return (*src == '-');
 }
 
-simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
-  bool negative = (*src == '-');
-  src += uint8_t(negative);
-  const uint8_t *p = src;
-  while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
-  if ( p == src ) { return NUMBER_ERROR; }
-  if (jsoncharutils::is_structural_or_whitespace(*p)) { return true; }
-  return false;
+
+namespace {
+  simdjson_unused simdjson_inline simdjson_result<bool> is_gen_integer(const uint8_t * src, const uint8_t * end, bool bigint) noexcept {
+    bool negative = (*src == '-');
+    src += uint8_t(negative);
+    const uint8_t *p = src;
+    if (end)
+      while(p != end && static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+    else
+      while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+    auto digit_count = int(p - src);
+    if (!digit_count) { return NUMBER_ERROR; }
+    if (digit_count > 20) return bigint;
+    return jsoncharutils::is_structural_or_whitespace(*p);
+  }
 }
 
-simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept {
+/// Returns true if the number is an integer that fits in 64 bits
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept {
+  return is_gen_integer(src, nullptr, false);
+}
+
+/// Returns true if the number is an integer that fits in 64 bits or a big integer
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, bool check_bigint) noexcept {
+  return is_gen_integer(src, nullptr, check_bigint);
+}
+
+simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src, const uint8_t * end, bool check_bigint) noexcept {
+  return is_gen_integer(src, end, check_bigint);
+}
+
+simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src, size_t &digit_count) noexcept {
   bool negative = (*src == '-');
   src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  digit_count = int(p - src);
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    static const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
     // We have an integer.
+    if(digit_count > 20) {
+      return number_type::big_integer;
+    }
     // If the number is negative and valid, it must be a signed integer.
-    if(negative) { return number_type::signed_integer; }
+    if(negative) {
+      if(digit_count > 19) return number_type::big_integer;
+      if(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)
+        return number_type::big_integer;
+      return number_type::signed_integer;
+    }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
-    int digit_count = int(p - src);
-    if(digit_count >= 19) {
-      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
-      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
-        return number_type::unsigned_integer;
-      }
+    if((digit_count == 20) || (digit_count >= 19 && memcmp(src, smaller_big_integer, 19) >= 0)) {
+      return number_type::unsigned_integer;
     }
     return number_type::signed_integer;
   }
   // Hopefully, we have 'e' or 'E' or '.'.
   return number_type::floating_point_number;
+}
+
+simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept {
+  size_t digit_count;
+  return get_number_type(src, digit_count);
 }
 
 // Never read at src_end or beyond
@@ -41446,6 +41850,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
         case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
         case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        case number_type::big_integer: out << "big integer"; break;
         default: SIMDJSON_UNREACHABLE();
     }
     return out;
@@ -42617,6 +43022,9 @@ struct tape_writer {
   /** Write an unsigned 64-bit value to tape. */
   simdjson_inline void append_u64(uint64_t value) noexcept;
 
+  /** Write a bigint value to tape. */
+  simdjson_inline void append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept;
+
   /** Write a double value to tape. */
   simdjson_inline void append_double(double value) noexcept;
 
@@ -42667,6 +43075,10 @@ simdjson_inline void tape_writer::append_u64(uint64_t value) noexcept {
   append(0, internal::tape_type::UINT64);
   *next_tape_loc = value;
   next_tape_loc++;
+}
+
+simdjson_inline void tape_writer::append_bigint(const uint8_t *const src, const uint8_t *const end) noexcept {
+  append(end - src, internal::tape_type::BIGINT);
 }
 
 /** Write a double value to tape. */
@@ -42885,8 +43297,9 @@ simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_string(
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
+  size_t digit_count;
   iter.log_value("number");
-  return numberparsing::parse_number(value, tape);
+  return numberparsing::parse_number(value, nullptr, tape, digit_count);
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
