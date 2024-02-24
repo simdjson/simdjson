@@ -1,4 +1,4 @@
-/* auto-generated on 2024-02-18 11:50:12 -0500. Do not edit! */
+/* auto-generated on 2024-02-04 22:03:23 -0500. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -7134,38 +7134,6 @@ static const simdjson::westmere::implementation* get_westmere_singleton() {
 namespace simdjson {
 namespace internal {
 
-// When there is a single implementation, we should not pay a price
-// for dispatching to the best implementation. We should just use the
-// one we have. This is a compile-time check.
-#define SIMDJSON_SINGLE_IMPLEMENTATION (SIMDJSON_IMPLEMENTATION_ICELAKE \
-             + SIMDJSON_IMPLEMENTATION_HASWELL + SIMDJSON_IMPLEMENTATION_WESTMERE \
-             + SIMDJSON_IMPLEMENTATION_ARM64 + SIMDJSON_IMPLEMENTATION_PPC64 \
-             + SIMDJSON_IMPLEMENTATION_FALLBACK == 1)
-
-#if SIMDJSON_SINGLE_IMPLEMENTATION
-  static const implementation* get_single_implementation() {
-    return
-#if SIMDJSON_IMPLEMENTATION_ICELAKE
-    get_icelake_singleton();
-#endif
-#if SIMDJSON_IMPLEMENTATION_HASWELL
-    get_haswell_singleton();
-#endif
-#if SIMDJSON_IMPLEMENTATION_WESTMERE
-    get_westmere_singleton();
-#endif
-#if SIMDJSON_IMPLEMENTATION_ARM64
-    get_arm64_singleton();
-#endif
-#if SIMDJSON_IMPLEMENTATION_PPC64
-    get_ppc64_singleton();
-#endif
-#if SIMDJSON_IMPLEMENTATION_FALLBACK
-    get_fallback_singleton();
-#endif
-}
-#endif
-
 // Static array of known implementations. We're hoping these get baked into the executable
 // without requiring a static initializer.
 
@@ -7295,16 +7263,9 @@ SIMDJSON_DLLIMPORTEXPORT const internal::available_implementation_list& get_avai
 }
 
 SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation>& get_active_implementation() {
-#if SIMDJSON_SINGLE_IMPLEMENTATION
-  // We immediately select the only implementation we have, skipping the
-  // detect_best_supported_implementation_on_first_use_singleton.
-  static internal::atomic_ptr<const implementation> active_implementation{internal::get_single_implementation()};
-  return active_implementation;
-#else
-  static const internal::detect_best_supported_implementation_on_first_use detect_best_supported_implementation_on_first_use_singleton;
-  static internal::atomic_ptr<const implementation> active_implementation{&detect_best_supported_implementation_on_first_use_singleton};
-  return active_implementation;
-#endif
+    static const internal::detect_best_supported_implementation_on_first_use detect_best_supported_implementation_on_first_use_singleton;
+    static internal::atomic_ptr<const implementation> active_implementation{&detect_best_supported_implementation_on_first_use_singleton};
+    return active_implementation;
 }
 
 simdjson_warn_unused error_code minify(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept {
@@ -9053,7 +9014,7 @@ simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const s
   // If there were more than 18 digits, we may have overflowed the integer. We have to do
   // something!!!!
   if (simdjson_unlikely(p > start_exp+18)) {
-    // Skip leading zeroes: 1e000000000000000000001 is technically valid and does not overflow
+    // Skip leading zeroes: 1e000000000000000000001 is technically valid and doesn't overflow
     while (*start_exp == '0') { start_exp++; }
     // 19 digits could overflow int64_t and is kind of absurd anyway. We don't
     // support exponents smaller than -999,999,999,999,999,999 and bigger
@@ -9250,7 +9211,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
     }  else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INVALID_NUMBER(src); }
   }
 
-  // Write unsigned if it does not fit in a signed integer.
+  // Write unsigned if it doesn't fit in a signed integer.
   if (i > uint64_t(INT64_MAX)) {
     WRITE_UNSIGNED(i, src, writer);
   } else {
@@ -12154,7 +12115,7 @@ simdjson_inline size_t trim_partial_utf8(const uint8_t *buf, size_t len) {
 //    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
 //    at a time. The second input's scans has some dependency on the first ones finishing it, but
 //    they can make a lot of progress before they need that information.
-// 3. Step 1 does not use enough capacity, so we run some extra stuff while we're waiting for that
+// 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
 //    to finish: utf-8 checks and generating the output from the last iteration.
 //
 // The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
@@ -15341,7 +15302,7 @@ simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const s
   // If there were more than 18 digits, we may have overflowed the integer. We have to do
   // something!!!!
   if (simdjson_unlikely(p > start_exp+18)) {
-    // Skip leading zeroes: 1e000000000000000000001 is technically valid and does not overflow
+    // Skip leading zeroes: 1e000000000000000000001 is technically valid and doesn't overflow
     while (*start_exp == '0') { start_exp++; }
     // 19 digits could overflow int64_t and is kind of absurd anyway. We don't
     // support exponents smaller than -999,999,999,999,999,999 and bigger
@@ -15538,7 +15499,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
     }  else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INVALID_NUMBER(src); }
   }
 
-  // Write unsigned if it does not fit in a signed integer.
+  // Write unsigned if it doesn't fit in a signed integer.
   if (i > uint64_t(INT64_MAX)) {
     WRITE_UNSIGNED(i, src, writer);
   } else {
@@ -18319,7 +18280,7 @@ simdjson_inline size_t trim_partial_utf8(const uint8_t *buf, size_t len) {
 //    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
 //    at a time. The second input's scans has some dependency on the first ones finishing it, but
 //    they can make a lot of progress before they need that information.
-// 3. Step 1 does not use enough capacity, so we run some extra stuff while we're waiting for that
+// 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
 //    to finish: utf-8 checks and generating the output from the last iteration.
 //
 // The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
@@ -21501,7 +21462,7 @@ simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const s
   // If there were more than 18 digits, we may have overflowed the integer. We have to do
   // something!!!!
   if (simdjson_unlikely(p > start_exp+18)) {
-    // Skip leading zeroes: 1e000000000000000000001 is technically valid and does not overflow
+    // Skip leading zeroes: 1e000000000000000000001 is technically valid and doesn't overflow
     while (*start_exp == '0') { start_exp++; }
     // 19 digits could overflow int64_t and is kind of absurd anyway. We don't
     // support exponents smaller than -999,999,999,999,999,999 and bigger
@@ -21698,7 +21659,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
     }  else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INVALID_NUMBER(src); }
   }
 
-  // Write unsigned if it does not fit in a signed integer.
+  // Write unsigned if it doesn't fit in a signed integer.
   if (i > uint64_t(INT64_MAX)) {
     WRITE_UNSIGNED(i, src, writer);
   } else {
@@ -24477,7 +24438,7 @@ simdjson_inline size_t trim_partial_utf8(const uint8_t *buf, size_t len) {
 //    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
 //    at a time. The second input's scans has some dependency on the first ones finishing it, but
 //    they can make a lot of progress before they need that information.
-// 3. Step 1 does not use enough capacity, so we run some extra stuff while we're waiting for that
+// 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
 //    to finish: utf-8 checks and generating the output from the last iteration.
 //
 // The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
@@ -27817,7 +27778,7 @@ simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const s
   // If there were more than 18 digits, we may have overflowed the integer. We have to do
   // something!!!!
   if (simdjson_unlikely(p > start_exp+18)) {
-    // Skip leading zeroes: 1e000000000000000000001 is technically valid and does not overflow
+    // Skip leading zeroes: 1e000000000000000000001 is technically valid and doesn't overflow
     while (*start_exp == '0') { start_exp++; }
     // 19 digits could overflow int64_t and is kind of absurd anyway. We don't
     // support exponents smaller than -999,999,999,999,999,999 and bigger
@@ -28014,7 +27975,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
     }  else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INVALID_NUMBER(src); }
   }
 
-  // Write unsigned if it does not fit in a signed integer.
+  // Write unsigned if it doesn't fit in a signed integer.
   if (i > uint64_t(INT64_MAX)) {
     WRITE_UNSIGNED(i, src, writer);
   } else {
@@ -30906,7 +30867,7 @@ simdjson_inline size_t trim_partial_utf8(const uint8_t *buf, size_t len) {
 //    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
 //    at a time. The second input's scans has some dependency on the first ones finishing it, but
 //    they can make a lot of progress before they need that information.
-// 3. Step 1 does not use enough capacity, so we run some extra stuff while we're waiting for that
+// 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
 //    to finish: utf-8 checks and generating the output from the last iteration.
 //
 // The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
@@ -34499,7 +34460,7 @@ simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const s
   // If there were more than 18 digits, we may have overflowed the integer. We have to do
   // something!!!!
   if (simdjson_unlikely(p > start_exp+18)) {
-    // Skip leading zeroes: 1e000000000000000000001 is technically valid and does not overflow
+    // Skip leading zeroes: 1e000000000000000000001 is technically valid and doesn't overflow
     while (*start_exp == '0') { start_exp++; }
     // 19 digits could overflow int64_t and is kind of absurd anyway. We don't
     // support exponents smaller than -999,999,999,999,999,999 and bigger
@@ -34696,7 +34657,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
     }  else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INVALID_NUMBER(src); }
   }
 
-  // Write unsigned if it does not fit in a signed integer.
+  // Write unsigned if it doesn't fit in a signed integer.
   if (i > uint64_t(INT64_MAX)) {
     WRITE_UNSIGNED(i, src, writer);
   } else {
@@ -37909,7 +37870,7 @@ simdjson_inline size_t trim_partial_utf8(const uint8_t *buf, size_t len) {
 //    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
 //    at a time. The second input's scans has some dependency on the first ones finishing it, but
 //    they can make a lot of progress before they need that information.
-// 3. Step 1 does not use enough capacity, so we run some extra stuff while we're waiting for that
+// 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
 //    to finish: utf-8 checks and generating the output from the last iteration.
 //
 // The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
@@ -40608,7 +40569,7 @@ simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const s
   // If there were more than 18 digits, we may have overflowed the integer. We have to do
   // something!!!!
   if (simdjson_unlikely(p > start_exp+18)) {
-    // Skip leading zeroes: 1e000000000000000000001 is technically valid and does not overflow
+    // Skip leading zeroes: 1e000000000000000000001 is technically valid and doesn't overflow
     while (*start_exp == '0') { start_exp++; }
     // 19 digits could overflow int64_t and is kind of absurd anyway. We don't
     // support exponents smaller than -999,999,999,999,999,999 and bigger
@@ -40805,7 +40766,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
     }  else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INVALID_NUMBER(src); }
   }
 
-  // Write unsigned if it does not fit in a signed integer.
+  // Write unsigned if it doesn't fit in a signed integer.
   if (i > uint64_t(INT64_MAX)) {
     WRITE_UNSIGNED(i, src, writer);
   } else {

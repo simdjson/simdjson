@@ -591,7 +591,7 @@ simdjson_inline simdjson_result<number> value_iterator::get_number() noexcept {
 }
 
 simdjson_inline simdjson_result<bool> value_iterator::is_root_integer(bool check_trailing) noexcept {
-  auto max_len = peek_start_length();
+  auto max_len = peek_root_length();
   auto json = peek_root_scalar("is_root_integer");
   uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
   tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
@@ -607,7 +607,7 @@ simdjson_inline simdjson_result<bool> value_iterator::is_root_integer(bool check
 }
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> value_iterator::get_root_number_type(bool check_trailing) noexcept {
-  auto max_len = peek_start_length();
+  auto max_len = peek_root_length();
   auto json = peek_root_scalar("number");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
@@ -623,7 +623,7 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> value_iter
   return answer;
 }
 simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool check_trailing) noexcept {
-  auto max_len = peek_start_length();
+  auto max_len = peek_root_length();
   auto json = peek_root_scalar("number");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
@@ -663,7 +663,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
   return raw_json_string(json+1);
 }
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64(bool check_trailing) noexcept {
-  auto max_len = peek_start_length();
+  auto max_len = peek_root_length();
   auto json = peek_root_scalar("uint64");
   uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
   tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
@@ -679,7 +679,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64_in_string(bool check_trailing) noexcept {
-  auto max_len = peek_start_length();
+  auto max_len = peek_root_length();
   auto json = peek_root_scalar("uint64");
   uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
   tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
@@ -695,7 +695,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64(bool check_trailing) noexcept {
-  auto max_len = peek_start_length();
+  auto max_len = peek_root_length();
   auto json = peek_root_scalar("int64");
   uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
   tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
@@ -712,7 +712,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64_in_string(bool check_trailing) noexcept {
-  auto max_len = peek_start_length();
+  auto max_len = peek_root_length();
   auto json = peek_root_scalar("int64");
   uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
   tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
@@ -729,7 +729,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get_root_double(bool check_trailing) noexcept {
-  auto max_len = peek_start_length();
+  auto max_len = peek_root_length();
   auto json = peek_root_scalar("double");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
@@ -749,7 +749,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
 }
 
 simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get_root_double_in_string(bool check_trailing) noexcept {
-  auto max_len = peek_start_length();
+  auto max_len = peek_root_length();
   auto json = peek_root_scalar("double");
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
@@ -768,7 +768,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_root_bool(bool check_trailing) noexcept {
-  auto max_len = peek_start_length();
+  auto max_len = peek_root_length();
   auto json = peek_root_scalar("bool");
   uint8_t tmpbuf[5+1+1]; // +1 for null termination
   tmpbuf[5+1] = '\0'; // make sure that buffer is always null terminated.
@@ -781,7 +781,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_r
   return result;
 }
 simdjson_inline simdjson_result<bool> value_iterator::is_root_null(bool check_trailing) noexcept {
-  auto max_len = peek_start_length();
+  auto max_len = peek_root_length();
   auto json = peek_root_scalar("null");
   bool result = (max_len >= 4 && !atomparsing::str4ncmp(json, "null") &&
          (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[4])));
@@ -852,6 +852,9 @@ simdjson_inline const uint8_t *value_iterator::peek_start() const noexcept {
 }
 simdjson_inline uint32_t value_iterator::peek_start_length() const noexcept {
   return _json_iter->peek_length(start_position());
+}
+simdjson_inline uint32_t value_iterator::peek_root_length() const noexcept {
+  return _json_iter->peek_root_length(start_position());
 }
 
 simdjson_inline const uint8_t *value_iterator::peek_scalar(const char *type) noexcept {

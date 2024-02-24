@@ -295,7 +295,7 @@ simdjson_inline simdjson_result<number> document::get_number() noexcept {
 
 simdjson_inline simdjson_result<std::string_view> document::raw_json_token() noexcept {
   auto _iter = get_root_value_iterator();
-  return std::string_view(reinterpret_cast<const char*>(_iter.peek_start()), _iter.peek_start_length());
+  return std::string_view(reinterpret_cast<const char*>(_iter.peek_start()), _iter.peek_root_length());
 }
 
 simdjson_inline simdjson_result<value> document::at_pointer(std::string_view json_pointer) noexcept {

@@ -375,6 +375,7 @@ protected:
   simdjson_inline simdjson_result<bool> parse_bool(const uint8_t *json) const noexcept;
   simdjson_inline const uint8_t *peek_start() const noexcept;
   simdjson_inline uint32_t peek_start_length() const noexcept;
+  simdjson_inline uint32_t peek_root_length() const noexcept;
 
   /**
    * The general idea of the advance_... methods and the peek_* methods
