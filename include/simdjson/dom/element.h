@@ -105,7 +105,7 @@ public:
    */
   inline simdjson_result<uint64_t> get_uint64() const noexcept;
   /**
-   * Cast this element to a string containing big integer that doesn't fit in 64 bits.
+   * Cast this element to a string containing big integer that does not fit in 64 bits.
    *
    * @returns A string containing the digits of a big integer.
    *          Returns INCORRECT_TYPE if the JSON element is not a big integer.
