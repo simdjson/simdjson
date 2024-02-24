@@ -16,7 +16,7 @@ enum class element_type {
   OBJECT = '{',    ///< dom::object
   INT64 = 'l',     ///< int64_t
   UINT64 = 'u',    ///< uint64_t: any integer that fits in uint64_t but *not* int64_t
-  BIGINT = 'L',    ///< big integer that doesn't fit in 64 bits
+  BIGINT = 'L',    ///< big integer that does not fit in 64 bits
   DOUBLE = 'd',    ///< double: Any number with a "." or "e" that fits in double.
   STRING = '"',    ///< std::string_view
   BOOL = 't',      ///< bool
