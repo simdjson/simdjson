@@ -66,7 +66,7 @@ simdjson_inline error_code simdjson_result_base<T>::error() const noexcept {
 
 template<typename T>
 simdjson_inline T& simdjson_result_base<T>::value() & noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
+  if (simdjson_unlikely(error())) { throw simdjson_error(error()); }
   return this->first;
 }
 
@@ -77,7 +77,7 @@ simdjson_inline T&& simdjson_result_base<T>::value() && noexcept(false) {
 
 template<typename T>
 simdjson_inline T&& simdjson_result_base<T>::take_value() && noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
+  if (simdjson_unlikely(error())) { throw simdjson_error(error()); }
   return std::forward<T>(this->first);
 }
 

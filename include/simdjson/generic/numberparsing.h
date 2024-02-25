@@ -447,7 +447,7 @@ simdjson_inline size_t significant_digits(const uint8_t * start_digits, size_t d
 
 /** @private */
 static error_code slow_float_parsing(simdjson_unused const uint8_t * src, double* answer) {
-  if (parse_float_fallback(src, answer)) {
+  if (simdjson_likely(parse_float_fallback(src, answer))) {
     return SUCCESS;
   }
   return INVALID_NUMBER(src);
@@ -502,7 +502,7 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
   double d;
   if (!compute_float_64(exponent, i, negative, d)) {
     // we are almost never going to get here.
-    if (!parse_float_fallback(src, &d)) { return INVALID_NUMBER(src); }
+    if (simdjson_unlikely(!parse_float_fallback(src, &d))) { return INVALID_NUMBER(src); }
   }
   WRITE_DOUBLE(d, src, writer);
   return SUCCESS;
@@ -578,7 +578,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   if (is_float) {
     const bool dirty_end = jsoncharutils::is_not_structural_or_whitespace(*p);
     SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
-    if (dirty_end) { return INVALID_NUMBER(src); }
+    if (simdjson_unlikely(dirty_end)) { return INVALID_NUMBER(src); }
     return SUCCESS;
   }
 
@@ -606,7 +606,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
     // - Therefore, if the number is positive and lower than that, it's overflow.
     // - The value we are looking at is less than or equal to INT64_MAX.
     //
-    }  else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INVALID_NUMBER(src); }
+    }  else if (simdjson_unlikely(src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX))) { return INVALID_NUMBER(src); }
   }
 
   // Write unsigned if it does not fit in a signed integer.
@@ -615,7 +615,7 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
   }
-  if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+  if (simdjson_unlikely(jsoncharutils::is_not_structural_or_whitespace(*p))) { return INVALID_NUMBER(src); }
   return SUCCESS;
 }
 
@@ -706,15 +706,15 @@ simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned(const u
   // Optimization note: the compiler can probably merge
   // ((digit_count == 0) || (digit_count > 20))
   // into a single  branch since digit_count is unsigned.
-  if ((digit_count == 0) || (digit_count > 20)) { return INCORRECT_TYPE; }
+  if (simdjson_unlikely((digit_count == 0) || (digit_count > 20))) { return INCORRECT_TYPE; }
   // Here digit_count > 0.
-  if (('0' == *start_digits) && (digit_count > 1)) { return NUMBER_ERROR; }
+  if (simdjson_unlikely(('0' == *start_digits) && (digit_count > 1))) { return NUMBER_ERROR; }
   // We can do the following...
   // if (!jsoncharutils::is_structural_or_whitespace(*p)) {
   //  return (*p == '.' || *p == 'e' || *p == 'E') ? INCORRECT_TYPE : NUMBER_ERROR;
   // }
   // as a single table lookup:
-  if (integer_string_finisher[*p] != SUCCESS) { return error_code(integer_string_finisher[*p]); }
+  if (simdjson_unlikely(integer_string_finisher[*p] != SUCCESS)) { return error_code(integer_string_finisher[*p]); }
 
   if (digit_count == 20) {
     // Positive overflow check:
@@ -756,15 +756,15 @@ simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned(const u
   // Optimization note: the compiler can probably merge
   // ((digit_count == 0) || (digit_count > 20))
   // into a single  branch since digit_count is unsigned.
-  if ((digit_count == 0) || (digit_count > 20)) { return INCORRECT_TYPE; }
+  if (simdjson_unlikely((digit_count == 0) || (digit_count > 20))) { return INCORRECT_TYPE; }
   // Here digit_count > 0.
-  if (('0' == *start_digits) && (digit_count > 1)) { return NUMBER_ERROR; }
+  if (simdjson_unlikely(('0' == *start_digits) && (digit_count > 1))) { return NUMBER_ERROR; }
   // We can do the following...
   // if (!jsoncharutils::is_structural_or_whitespace(*p)) {
   //  return (*p == '.' || *p == 'e' || *p == 'E') ? INCORRECT_TYPE : NUMBER_ERROR;
   // }
   // as a single table lookup:
-  if ((p != src_end) && integer_string_finisher[*p] != SUCCESS) { return error_code(integer_string_finisher[*p]); }
+  if (simdjson_unlikely((p != src_end) && integer_string_finisher[*p] != SUCCESS)) { return error_code(integer_string_finisher[*p]); }
 
   if (digit_count == 20) {
     // Positive overflow check:
@@ -804,15 +804,15 @@ simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned_in_stri
   // Optimization note: the compiler can probably merge
   // ((digit_count == 0) || (digit_count > 20))
   // into a single  branch since digit_count is unsigned.
-  if ((digit_count == 0) || (digit_count > 20)) { return INCORRECT_TYPE; }
+  if (simdjson_unlikely((digit_count == 0) || (digit_count > 20))) { return INCORRECT_TYPE; }
   // Here digit_count > 0.
-  if (('0' == *start_digits) && (digit_count > 1)) { return NUMBER_ERROR; }
+  if (simdjson_unlikely(('0' == *start_digits) && (digit_count > 1))) { return NUMBER_ERROR; }
   // We can do the following...
   // if (!jsoncharutils::is_structural_or_whitespace(*p)) {
   //  return (*p == '.' || *p == 'e' || *p == 'E') ? INCORRECT_TYPE : NUMBER_ERROR;
   // }
   // as a single table lookup:
-  if (*p != '"') { return NUMBER_ERROR; }
+  if (simdjson_unlikely(*p != '"')) { return NUMBER_ERROR; }
 
   if (digit_count == 20) {
     // Positive overflow check:
@@ -861,19 +861,19 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer(const uin
   // Optimization note: the compiler can probably merge
   // ((digit_count == 0) || (digit_count > longest_digit_count))
   // into a single  branch since digit_count is unsigned.
-  if ((digit_count == 0) || (digit_count > longest_digit_count)) { return INCORRECT_TYPE; }
+  if (simdjson_unlikely((digit_count == 0) || (digit_count > longest_digit_count))) { return INCORRECT_TYPE; }
   // Here digit_count > 0.
-  if (('0' == *start_digits) && (digit_count > 1)) { return NUMBER_ERROR; }
+  if (simdjson_unlikely(('0' == *start_digits) && (digit_count > 1))) { return NUMBER_ERROR; }
   // We can do the following...
   // if (!jsoncharutils::is_structural_or_whitespace(*p)) {
   //  return (*p == '.' || *p == 'e' || *p == 'E') ? INCORRECT_TYPE : NUMBER_ERROR;
   // }
   // as a single table lookup:
-  if(integer_string_finisher[*p] != SUCCESS) { return error_code(integer_string_finisher[*p]); }
+  if(simdjson_unlikely(integer_string_finisher[*p] != SUCCESS)) { return error_code(integer_string_finisher[*p]); }
   // Negative numbers have can go down to - INT64_MAX - 1 whereas positive numbers are limited to INT64_MAX.
   // Performance note: This check is only needed when digit_count == longest_digit_count but it is
   // so cheap that we might as well always make it.
-  if(i > uint64_t(INT64_MAX) + uint64_t(negative)) { return INCORRECT_TYPE; }
+  if(simdjson_unlikely(i > uint64_t(INT64_MAX) + uint64_t(negative))) { return INCORRECT_TYPE; }
   return negative ? (~i+1) : i;
 }
 
@@ -905,19 +905,19 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer(const uin
   // Optimization note: the compiler can probably merge
   // ((digit_count == 0) || (digit_count > longest_digit_count))
   // into a single  branch since digit_count is unsigned.
-  if ((digit_count == 0) || (digit_count > longest_digit_count)) { return INCORRECT_TYPE; }
+  if (simdjson_unlikely((digit_count == 0) || (digit_count > longest_digit_count))) { return INCORRECT_TYPE; }
   // Here digit_count > 0.
-  if (('0' == *start_digits) && (digit_count > 1)) { return NUMBER_ERROR; }
+  if (simdjson_unlikely(('0' == *start_digits) && (digit_count > 1))) { return NUMBER_ERROR; }
   // We can do the following...
   // if (!jsoncharutils::is_structural_or_whitespace(*p)) {
   //  return (*p == '.' || *p == 'e' || *p == 'E') ? INCORRECT_TYPE : NUMBER_ERROR;
   // }
   // as a single table lookup:
-  if((p != src_end) && integer_string_finisher[*p] != SUCCESS) { return error_code(integer_string_finisher[*p]); }
+  if(simdjson_unlikely((p != src_end) && integer_string_finisher[*p] != SUCCESS)) { return error_code(integer_string_finisher[*p]); }
   // Negative numbers have can go down to - INT64_MAX - 1 whereas positive numbers are limited to INT64_MAX.
   // Performance note: This check is only needed when digit_count == longest_digit_count but it is
   // so cheap that we might as well always make it.
-  if(i > uint64_t(INT64_MAX) + uint64_t(negative)) { return INCORRECT_TYPE; }
+  if(simdjson_unlikely(i > uint64_t(INT64_MAX) + uint64_t(negative))) { return INCORRECT_TYPE; }
   return negative ? (~i+1) : i;
 }
 
@@ -947,15 +947,15 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string
   // Optimization note: the compiler can probably merge
   // ((digit_count == 0) || (digit_count > longest_digit_count))
   // into a single  branch since digit_count is unsigned.
-  if ((digit_count == 0) || (digit_count > longest_digit_count)) { return INCORRECT_TYPE; }
+  if (simdjson_unlikely((digit_count == 0) || (digit_count > longest_digit_count))) { return INCORRECT_TYPE; }
   // Here digit_count > 0.
-  if (('0' == *start_digits) && (digit_count > 1)) { return NUMBER_ERROR; }
+  if (simdjson_unlikely(('0' == *start_digits) && (digit_count > 1))) { return NUMBER_ERROR; }
   // We can do the following...
   // if (!jsoncharutils::is_structural_or_whitespace(*src)) {
   //  return (*src == '.' || *src == 'e' || *src == 'E') ? INCORRECT_TYPE : NUMBER_ERROR;
   // }
   // as a single table lookup:
-  if(*src != '"') { return NUMBER_ERROR; }
+  if(simdjson_unlikely(*src != '"')) { return NUMBER_ERROR; }
   // Negative numbers have can go down to - INT64_MAX - 1 whereas positive numbers are limited to INT64_MAX.
   // Performance note: This check is only needed when digit_count == longest_digit_count but it is
   // so cheap that we might as well always make it.
@@ -979,8 +979,8 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
   bool leading_zero = (i == 0);
   while (parse_digit(*p, i)) { p++; }
   // no integer digits, or 0123 (zero must be solo)
-  if ( p == src ) { return INCORRECT_TYPE; }
-  if ( (leading_zero && p != src+1)) { return NUMBER_ERROR; }
+  if (simdjson_unlikely(p == src)) { return INCORRECT_TYPE; }
+  if (simdjson_unlikely((leading_zero && p != src+1))) { return NUMBER_ERROR; }
 
   //
   // Parse the decimal part.
@@ -990,7 +990,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
   if (simdjson_likely(*p == '.')) {
     p++;
     const uint8_t *start_decimal_digits = p;
-    if (!parse_digit(*p, i)) { return NUMBER_ERROR; } // no decimal digits
+    if (simdjson_unlikely(!parse_digit(*p, i))) { return NUMBER_ERROR; } // no decimal digits
     p++;
     while (parse_digit(*p, i)) { p++; }
     exponent = -(p - start_decimal_digits);
@@ -1024,7 +1024,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     exponent += exp_neg ? 0-exp : exp;
   }
 
-  if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+  if (simdjson_unlikely(jsoncharutils::is_not_structural_or_whitespace(*p))) { return NUMBER_ERROR; }
 
   overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
 
@@ -1035,7 +1035,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
   if (simdjson_likely(!overflow)) {
     if (compute_float_64(exponent, i, negative, d)) { return d; }
   }
-  if (!parse_float_fallback(src - uint8_t(negative), &d)) {
+  if (simdjson_unlikely(!parse_float_fallback(src - uint8_t(negative), &d))) {
     return NUMBER_ERROR;
   }
   return d;
@@ -1050,7 +1050,7 @@ simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t *
   src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
-  if ( p == src ) { return NUMBER_ERROR; }
+  if (simdjson_unlikely(p == src)) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) { return true; }
   return false;
 }
@@ -1082,7 +1082,7 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 
 // Never read at src_end or beyond
 simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8_t * src, const uint8_t * const src_end) noexcept {
-  if(src == src_end) { return NUMBER_ERROR; }
+  if(simdjson_unlikely(src == src_end)) { return NUMBER_ERROR; }
   //
   // Check for minus sign
   //
@@ -1094,13 +1094,13 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
   //
   uint64_t i = 0;
   const uint8_t *p = src;
-  if(p == src_end) { return NUMBER_ERROR; }
+  if(simdjson_unlikely(p == src_end)) { return NUMBER_ERROR; }
   p += parse_digit(*p, i);
   bool leading_zero = (i == 0);
   while ((p != src_end) && parse_digit(*p, i)) { p++; }
   // no integer digits, or 0123 (zero must be solo)
-  if ( p == src ) { return INCORRECT_TYPE; }
-  if ( (leading_zero && p != src+1)) { return NUMBER_ERROR; }
+  if (simdjson_unlikely( p == src )) { return INCORRECT_TYPE; }
+  if (simdjson_unlikely(leading_zero && p != src+1)) { return NUMBER_ERROR; }
 
   //
   // Parse the decimal part.
@@ -1110,7 +1110,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
   if (simdjson_likely((p != src_end) && (*p == '.'))) {
     p++;
     const uint8_t *start_decimal_digits = p;
-    if ((p == src_end) || !parse_digit(*p, i)) { return NUMBER_ERROR; } // no decimal digits
+    if (simdjson_unlikely((p == src_end) || !parse_digit(*p, i))) { return NUMBER_ERROR; } // no decimal digits
     p++;
     while ((p != src_end) && parse_digit(*p, i)) { p++; }
     exponent = -(p - start_decimal_digits);
@@ -1132,7 +1132,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
   //
   if ((p != src_end) && (*p == 'e' || *p == 'E')) {
     p++;
-    if(p == src_end) { return NUMBER_ERROR; }
+    if(simdjson_unlikely(p == src_end)) { return NUMBER_ERROR; }
     bool exp_neg = *p == '-';
     p += exp_neg || *p == '+';
 
@@ -1145,7 +1145,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     exponent += exp_neg ? 0-exp : exp;
   }
 
-  if ((p != src_end) && jsoncharutils::is_not_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+  if (simdjson_unlikely((p != src_end) && jsoncharutils::is_not_structural_or_whitespace(*p))) { return NUMBER_ERROR; }
 
   overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
 
@@ -1156,7 +1156,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
   if (simdjson_likely(!overflow)) {
     if (compute_float_64(exponent, i, negative, d)) { return d; }
   }
-  if (!parse_float_fallback(src - uint8_t(negative), src_end, &d)) {
+  if (simdjson_unlikely(!parse_float_fallback(src - uint8_t(negative), src_end, &d))) {
     return NUMBER_ERROR;
   }
   return d;
@@ -1178,8 +1178,8 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
   bool leading_zero = (i == 0);
   while (parse_digit(*p, i)) { p++; }
   // no integer digits, or 0123 (zero must be solo)
-  if ( p == src ) { return INCORRECT_TYPE; }
-  if ( (leading_zero && p != src+1)) { return NUMBER_ERROR; }
+  if (simdjson_unlikely(p == src)) { return INCORRECT_TYPE; }
+  if (simdjson_unlikely(leading_zero && p != src+1)) { return NUMBER_ERROR; }
 
   //
   // Parse the decimal part.
@@ -1234,7 +1234,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
   if (simdjson_likely(!overflow)) {
     if (compute_float_64(exponent, i, negative, d)) { return d; }
   }
-  if (!parse_float_fallback(src - uint8_t(negative), &d)) {
+  if (simdjson_unlikely(!parse_float_fallback(src - uint8_t(negative), &d))) {
     return NUMBER_ERROR;
   }
   return d;

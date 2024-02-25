@@ -79,22 +79,22 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::simdj
 }
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::key() noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.key();
 }
 
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::key_raw_json_token() noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.key_raw_json_token();
 }
 
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::unescaped_key(bool allow_replacement) noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.unescaped_key(allow_replacement);
 }
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::value() noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return std::move(first.value());
 }
 

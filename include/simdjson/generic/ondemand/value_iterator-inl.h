@@ -79,7 +79,7 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::check_root_objec
 
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::started_root_object() noexcept {
   auto error = check_root_object();
-  if(error) { return error; }
+  if(simdjson_unlikely(error)) { return error; }
   return started_object();
 }
 
@@ -270,7 +270,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
   //    ```
   //
   } else {
-    // If someone queried a key but they not did access the value, then we are left pointing
+    // If someone queried a key but they did not access the value, then we are left pointing
     // at the ':' and we need to move forward through the value... If the value was
     // processed then skip_child() does not move the iterator (but may adjust the depth).
     if ((error = skip_child() )) { abandon(); return error; }
@@ -517,7 +517,7 @@ template <typename string_type>
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(string_type& receiver, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_string(allow_replacement).get(content);
-  if (err) { return err; }
+  if (simdjson_unlikely(err)) { return err; }
   receiver = content;
   return SUCCESS;
 }
@@ -532,37 +532,37 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
 }
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_uint64() noexcept {
   auto result = numberparsing::parse_unsigned(peek_non_root_scalar("uint64"));
-  if(result.error() == SUCCESS) { advance_non_root_scalar("uint64"); }
+  if(simdjson_likely(result.error() == SUCCESS)) { advance_non_root_scalar("uint64"); }
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_uint64_in_string() noexcept {
   auto result = numberparsing::parse_unsigned_in_string(peek_non_root_scalar("uint64"));
-  if(result.error() == SUCCESS) { advance_non_root_scalar("uint64"); }
+  if(simdjson_likely(result.error() == SUCCESS)) { advance_non_root_scalar("uint64"); }
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_int64() noexcept {
   auto result = numberparsing::parse_integer(peek_non_root_scalar("int64"));
-  if(result.error() == SUCCESS) { advance_non_root_scalar("int64"); }
+  if(simdjson_likely(result.error() == SUCCESS)) { advance_non_root_scalar("int64"); }
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_int64_in_string() noexcept {
   auto result = numberparsing::parse_integer_in_string(peek_non_root_scalar("int64"));
-  if(result.error() == SUCCESS) { advance_non_root_scalar("int64"); }
+  if(simdjson_likely(result.error() == SUCCESS)) { advance_non_root_scalar("int64"); }
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get_double() noexcept {
   auto result = numberparsing::parse_double(peek_non_root_scalar("double"));
-  if(result.error() == SUCCESS) { advance_non_root_scalar("double"); }
+  if(simdjson_likely(result.error() == SUCCESS)) { advance_non_root_scalar("double"); }
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get_double_in_string() noexcept {
   auto result = numberparsing::parse_double_in_string(peek_non_root_scalar("double"));
-  if(result.error() == SUCCESS) { advance_non_root_scalar("double"); }
+  if(simdjson_likely(result.error() == SUCCESS)) { advance_non_root_scalar("double"); }
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_bool() noexcept {
   auto result = parse_bool(peek_non_root_scalar("bool"));
-  if(result.error() == SUCCESS) { advance_non_root_scalar("bool"); }
+  if(simdjson_likely(result.error() == SUCCESS)) { advance_non_root_scalar("bool"); }
   return result;
 }
 simdjson_inline simdjson_result<bool> value_iterator::is_null() noexcept {
@@ -586,7 +586,7 @@ simdjson_inline simdjson_result<number_type> value_iterator::get_number_type() n
 simdjson_inline simdjson_result<number> value_iterator::get_number() noexcept {
   number num;
   error_code error =  numberparsing::parse_number(peek_non_root_scalar("number"), num);
-  if(error) { return error; }
+  if(simdjson_unlikely(error)) { return error; }
   return num;
 }
 
@@ -636,7 +636,7 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   }
   number num;
   error_code error =  numberparsing::parse_number(tmpbuf, num);
-  if(error) { return error; }
+  if(simdjson_unlikely(error)) { return error; }
   if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   advance_root_scalar("number");
   return num;
@@ -648,7 +648,7 @@ template <typename string_type>
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept {
   std::string_view content;
   auto err = get_root_string(check_trailing, allow_replacement).get(content);
-  if (err) { return err; }
+  if (simdjson_unlikely(err)) { return err; }
   receiver = content;
   return SUCCESS;
 }
@@ -657,7 +657,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
 }
 simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iterator::get_root_raw_json_string(bool check_trailing) noexcept {
   auto json = peek_scalar("string");
-  if (*json != '"') { return incorrect_type_error("Not a string"); }
+  if (simdjson_unlikely(*json != '"')) { return incorrect_type_error("Not a string"); }
   if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
   advance_scalar("string");
   return raw_json_string(json+1);
@@ -672,7 +672,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
     return NUMBER_ERROR;
   }
   auto result = numberparsing::parse_unsigned(tmpbuf);
-  if(result.error() == SUCCESS) {
+  if(simdjson_likely(result.error() == SUCCESS)) {
     if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("uint64");
   }
@@ -688,7 +688,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
     return NUMBER_ERROR;
   }
   auto result = numberparsing::parse_unsigned_in_string(tmpbuf);
-  if(result.error() == SUCCESS) {
+  if(simdjson_likely(result.error() == SUCCESS)) {
     if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("uint64");
   }
@@ -705,7 +705,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
   }
 
   auto result = numberparsing::parse_integer(tmpbuf);
-  if(result.error() == SUCCESS) {
+  if(simdjson_likely(result.error() == SUCCESS)) {
     if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("int64");
   }
@@ -722,7 +722,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
   }
 
   auto result = numberparsing::parse_integer_in_string(tmpbuf);
-  if(result.error() == SUCCESS) {
+  if(simdjson_likely(result.error() == SUCCESS)) {
     if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("int64");
   }
@@ -741,7 +741,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
     return NUMBER_ERROR;
   }
   auto result = numberparsing::parse_double(tmpbuf);
-  if(result.error() == SUCCESS) {
+  if(simdjson_likely(result.error() == SUCCESS)) {
     if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("double");
   }
@@ -761,7 +761,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
     return NUMBER_ERROR;
   }
   auto result = numberparsing::parse_double_in_string(tmpbuf);
-  if(result.error() == SUCCESS) {
+  if(simdjson_likely(result.error() == SUCCESS)) {
     if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("double");
   }
@@ -774,7 +774,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_r
   tmpbuf[5+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 5+1)) { return incorrect_type_error("Not a boolean"); }
   auto result = parse_bool(tmpbuf);
-  if(result.error() == SUCCESS) {
+  if(simdjson_likely(result.error() == SUCCESS)) {
     if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("bool");
   }
@@ -985,13 +985,13 @@ simdjson_inline void value_iterator::move_at_container_start() noexcept {
 }
 
 simdjson_inline simdjson_result<bool> value_iterator::reset_array() noexcept {
-  if(error()) { return error(); }
+  if(simdjson_unlikely(error())) { return error(); }
   move_at_container_start();
   return started_array();
 }
 
 simdjson_inline simdjson_result<bool> value_iterator::reset_object() noexcept {
-  if(error()) { return error(); }
+  if(simdjson_unlikely(error())) { return error(); }
   move_at_container_start();
   return started_object();
 }

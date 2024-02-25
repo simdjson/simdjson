@@ -237,11 +237,11 @@ simdjson_warn_unused
 inline error_code dom_parser_implementation::allocate(size_t capacity, size_t max_depth) noexcept {
   if (this->max_depth() != max_depth) {
     error_code err = set_max_depth(max_depth);
-    if (err) { return err; }
+    if (simdjson_unlikely(err)) { return err; }
   }
   if (_capacity != capacity) {
     error_code err = set_capacity(capacity);
-    if (err) { return err; }
+    if (simdjson_unlikely(err)) { return err; }
   }
   return SUCCESS;
 }

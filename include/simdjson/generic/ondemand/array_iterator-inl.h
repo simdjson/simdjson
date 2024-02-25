@@ -55,7 +55,7 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterato
 }
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::operator*() noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return *first;
 }
 simdjson_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &other) const noexcept {
@@ -68,7 +68,7 @@ simdjson_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_it
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::operator++() noexcept {
   // Clear the error if there is one, so we don't yield it twice
-  if (error()) { second = SUCCESS; return *this; }
+  if (simdjson_unlikely(error())) { second = SUCCESS; return *this; }
   ++(first);
   return *this;
 }

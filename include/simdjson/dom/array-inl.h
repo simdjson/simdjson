@@ -26,26 +26,26 @@ simdjson_inline simdjson_result<dom::array>::simdjson_result(error_code error) n
 #if SIMDJSON_EXCEPTIONS
 
 inline dom::array::iterator simdjson_result<dom::array>::begin() const noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
+  if (simdjson_unlikely(error())) { throw simdjson_error(error()); }
   return first.begin();
 }
 inline dom::array::iterator simdjson_result<dom::array>::end() const noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
+  if (simdjson_unlikely(error())) { throw simdjson_error(error()); }
   return first.end();
 }
 inline size_t simdjson_result<dom::array>::size() const noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
+  if (simdjson_unlikely(error())) { throw simdjson_error(error()); }
   return first.size();
 }
 
 #endif // SIMDJSON_EXCEPTIONS
 
 inline simdjson_result<dom::element> simdjson_result<dom::array>::at_pointer(std::string_view json_pointer) const noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.at_pointer(json_pointer);
 }
 inline simdjson_result<dom::element> simdjson_result<dom::array>::at(size_t index) const noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.at(index);
 }
 
