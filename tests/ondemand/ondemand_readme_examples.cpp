@@ -412,12 +412,6 @@ bool big_int_array() {
       std::cerr << "unexpected token: " << token << " expected: " << expected_token << std::endl;
       return false;
     }
-    double d;
-    auto r = std::from_chars(token.begin(), token.begin() + token.size(), d);
-    if(r.ec != std::errc() || dexpected[i] != d) {
-      std::cerr << "could not parse " << token << std::endl;
-      return false;
-    }
     i++;
   }
   if(i != 3) {

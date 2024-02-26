@@ -1983,7 +1983,6 @@ precision in the process (as illustrated in the example).
   }
 ```
 This program might print:
-
 ```
 -9.22337e+18
 1.84467e+19
@@ -1991,8 +1990,7 @@ This program might print:
 ```
 
 You may get access to the underlying string representing the big integer with
-`raw_json_token()` and you may parse the resulting number strings using your own parser. The
-following example relies on `std::from_chars` to parse the string as a floating-point number.
+`raw_json_token()` and you may parse the resulting number strings using your own parser.
 
 ```c++
   ondemand::parser parser;
@@ -2001,16 +1999,19 @@ following example relies on `std::from_chars` to parse the string as a floating-
   ondemand::array arr = doc.get_array();
   for(ondemand::value val : arr) {
     // val.get_number_type() == ondemand::number_type::big_integer
-    std::string_view token = val.raw_json_token();
-    // token = "-9223372036854775809", "18446744073709551617", "99999999999999999999999 "
-    double d;
-    // We use std::from_chars from C++17.
-    auto r = std::from_chars(token.begin(), token.begin() + token.size(), d);
-    // r == std::errc()
-    // d = -9223372036854775808.0, 18446744073709551616.0, 1e23
+    if(val.get_number_type() == ondemand::number_type::big_integer) {
+      std::string_view token = val.raw_json_token();
+      // token = "-9223372036854775809", "18446744073709551617", "99999999999999999999999 "
+      std::cout << "'" << token << "'" << std::endl;
+    }
   }
 ```
-
+This code prints the following:
+```
+'-9223372036854775809'
+'18446744073709551617'
+'99999999999999999999999 '
+```
 
 Raw Strings From Keys
 -----------
