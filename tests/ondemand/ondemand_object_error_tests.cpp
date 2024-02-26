@@ -119,7 +119,7 @@ namespace object_error_tests {
   bool object_lookup_miss_unclosed_error() {
     TEST_START();
     ONDEMAND_SUBTEST("unclosed", R"({ "a": 1,         )",    assert_error(doc["b"], INCOMPLETE_ARRAY_OR_OBJECT));
-    // TODO These next two pass the user a value that may run past the end of the buffer if they aren't careful.
+    // TODO These next two pass the user a value that may run past the end of the buffer if they are not careful.
     // In particular, if the padding is decorated with the wrong values, we could cause overrun!
     ONDEMAND_SUBTEST("unclosed", R"({ "a": 1          )",    assert_error(doc["b"], INCOMPLETE_ARRAY_OR_OBJECT));
     ONDEMAND_SUBTEST("unclosed", R"({ "a":            )",    assert_error(doc["b"], INCOMPLETE_ARRAY_OR_OBJECT));

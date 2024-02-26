@@ -102,7 +102,7 @@ namespace array_error_tests {
     ONDEMAND_SUBTEST("unclosed extra comma", R"({ "a": [,)",  assert_iterate(doc["a"],                 { INCOMPLETE_ARRAY_OR_OBJECT }));
     ONDEMAND_SUBTEST("unclosed extra comma", R"({ "a": [,,)", assert_iterate(doc["a"],                 { INCOMPLETE_ARRAY_OR_OBJECT }));
     ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [1 )",        assert_iterate(doc["a"],                 { INCOMPLETE_ARRAY_OR_OBJECT }));
-    // TODO These pass the user values that may run past the end of the buffer if they aren't careful
+    // TODO These pass the user values that may run past the end of the buffer if they are not careful
     // In particular, if the padding is decorated with the wrong values, we could cause overrun!
     ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [1,)",        assert_iterate(doc["a"],                 { INCOMPLETE_ARRAY_OR_OBJECT }));
     ONDEMAND_SUBTEST("unclosed     ", R"({ "a": [1)",         assert_iterate(doc["a"],                 { INCOMPLETE_ARRAY_OR_OBJECT }));
