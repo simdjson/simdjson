@@ -77,7 +77,7 @@ public:
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field was not there when they are not in order).
    *
    * If you have multiple fields with a matching key ({"x": 1,  "x": 1}) be mindful
    * that only one field is returned.

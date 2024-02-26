@@ -3,6 +3,9 @@
 #if __cpp_lib_optional >= 201606L
 #include <optional>
 #endif
+#if SIMDJSON_CPLUSPLUS17
+#include <charconv>
+#endif
 using namespace std;
 using namespace simdjson;
 using error_code=simdjson::error_code;
@@ -378,6 +381,74 @@ bool examplecrt_realloc() {
       // You can break here if you only want just the first element.
       // break;
     }
+  }
+  TEST_SUCCEED();
+}
+
+#if SIMDJSON_CPLUSPLUS17
+bool big_int_array() {
+  TEST_START();
+  ondemand::parser parser;
+  padded_string docdata = R"([-9223372036854775809, 18446744073709551617, 99999999999999999999999 ])"_padded;
+  std::string expected[] = {"-9223372036854775809", "18446744073709551617", "99999999999999999999999 "};
+  double dexpected[] = {-9223372036854775808.0, 18446744073709551616.0, 1e23};
+  ondemand::document doc = parser.iterate(docdata);
+  ondemand::array arr = doc.get_array();
+  size_t i = 0;
+  for(ondemand::value val : arr) {
+    if(i > 3) {
+      std::cerr << "unexpected number of elements" << std::endl;
+      return false;
+    }
+    if(val.get_number_type() != ondemand::number_type::big_integer) {
+      std::cerr << "unexpected number type" << std::endl;
+      std::cout << val.get_number_type() << std::endl;
+      std::cout << val.raw_json_token() << std::endl;
+      return false;
+    }
+    std::string_view token = val.raw_json_token();
+    std::string_view expected_token = expected[i];
+    if(token != expected_token) {
+      std::cerr << "unexpected token: " << token << " expected: " << expected_token << std::endl;
+      return false;
+    }
+    double d;
+    auto r = std::from_chars(token.begin(), token.begin() + token.size(), d);
+    if(r.ec != std::errc() || dexpected[i] != d) {
+      std::cerr << "could not parse " << token << std::endl;
+      return false;
+    }
+    i++;
+  }
+  if(i != 3) {
+    std::cerr << "unexpected number of elements" << std::endl;
+    return false;
+  }
+  TEST_SUCCEED();
+}
+#endif
+
+bool big_int_array_as_double() {
+  TEST_START();
+  ondemand::parser parser;
+  padded_string docdata = R"([-9223372036854775809, 18446744073709551617, 99999999999999999999999 ])"_padded;
+  double dexpected[] = {-9223372036854775808.0, 18446744073709551616.0, 1e23};
+  ondemand::document doc = parser.iterate(docdata);
+  ondemand::array arr = doc.get_array();
+  size_t i = 0;
+  for(ondemand::value val : arr) {
+    if(i > 3) {
+      std::cerr << "unexpected number of elements" << std::endl;
+      return false;
+    }
+    if((val.get_number_type() != ondemand::number_type::big_integer) || (dexpected[i] != val.get_double())) {
+      return false;
+    }
+    i++;
+  }
+  if(i != 3) {
+    std::cerr << "unexpected number of elements" << std::endl;
+    return false;
   }
   TEST_SUCCEED();
 }
@@ -1782,6 +1853,10 @@ bool value_raw_json_object() {
 bool run() {
   return true
 #if SIMDJSON_EXCEPTIONS
+#if SIMDJSON_CPLUSPLUS17
+    && big_int_array()
+#endif // SIMDJSON_CPLUSPLUS17
+    && big_int_array_as_double()
     && key_raw_json_token()
     && to_optional()
     && value_raw_json_array() && value_raw_json_object()
@@ -1789,7 +1864,7 @@ bool run() {
     && at_end()
     && example1956() && example1958()
     && allow_comma_separated_example()
-//    && basics_1() // Fails because twitter.json isn't in current directory. Compile test only.
+//    && basics_1() // Fails because twitter.json is not in current directory. Compile test only.
     &&  basics_treewalk()
     &&  basics_treewalk_breakline()
     && json_value_with_array_count()

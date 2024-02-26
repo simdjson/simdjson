@@ -137,7 +137,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
   } else if (!is_open()) {
 #if SIMDJSON_DEVELOPMENT_CHECKS
     // If we're past the end of the object, we're being iterated out of order.
-    // Note: this isn't perfect detection. It's possible the user is inside some other object; if so,
+    // Note: this is not perfect detection. It's possible the user is inside some other object; if so,
     // this object iterator will blithely scan that object for fields.
     if (_json_iter->depth() < depth() - 1) { return OUT_OF_ORDER_ITERATION; }
 #endif
@@ -249,7 +249,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
 
 #if SIMDJSON_DEVELOPMENT_CHECKS
     // If we're past the end of the object, we're being iterated out of order.
-    // Note: this isn't perfect detection. It's possible the user is inside some other object; if so,
+    // Note: this is not perfect detection. It's possible the user is inside some other object; if so,
     // this object iterator will blithely scan that object for fields.
     if (_json_iter->depth() < depth() - 1) { return OUT_OF_ORDER_ITERATION; }
 #endif
@@ -615,7 +615,12 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> value_iter
   uint8_t tmpbuf[1074+8+1+1];
   tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
-    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
+    if(numberparsing::check_if_integer(json, max_len)) {
+      if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+      logger::log_error(*_json_iter, start_position(), depth(), "Found big integer");
+      return number_type::big_integer;
+    }
+    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters and not a big integer");
     return NUMBER_ERROR;
   }
   auto answer = numberparsing::get_number_type(tmpbuf);
@@ -632,7 +637,12 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   uint8_t tmpbuf[1074+8+1+1];
   tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
-    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
+    if(numberparsing::check_if_integer(json, max_len)) {
+      if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+      logger::log_error(*_json_iter, start_position(), depth(), "Found big integer");
+      return BIGINT_ERROR;
+    }
+    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters and not a big integer");
     return NUMBER_ERROR;
   }
   number num;
