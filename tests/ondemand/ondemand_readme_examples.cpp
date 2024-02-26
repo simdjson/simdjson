@@ -391,7 +391,6 @@ bool big_int_array() {
   ondemand::parser parser;
   padded_string docdata = R"([-9223372036854775809, 18446744073709551617, 99999999999999999999999 ])"_padded;
   std::string expected[] = {"-9223372036854775809", "18446744073709551617", "99999999999999999999999 "};
-  double dexpected[] = {-9223372036854775808.0, 18446744073709551616.0, 1e23};
   ondemand::document doc = parser.iterate(docdata);
   ondemand::array arr = doc.get_array();
   size_t i = 0;
