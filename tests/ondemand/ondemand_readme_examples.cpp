@@ -385,19 +385,20 @@ bool examplecrt_realloc() {
 bool number_tests() {
   TEST_START();
   ondemand::parser parser;
-  padded_string docdata = R"([1.0, 3, 1, 3.1415,-13231232,9999999999999999999])"_padded;
+  padded_string docdata = R"([1.0, 3, 1, 3.1415,-13231232,9999999999999999999,12345678901234567890123])"_padded;
   ondemand::document doc = parser.iterate(docdata);
   ondemand::array arr = doc.get_array();
   for(ondemand::value val : arr) {
     std::cout << val << " ";
     std::cout << "negative: " << val.is_negative() << " ";
     std::cout << "is_integer: " << val.is_integer() << " ";
-    ondemand::number num = val.get_number();
-    ondemand::number_type t = num.get_number_type();
     // direct computation without materializing the number:
     ondemand::number_type dt = val.get_number_type();
-    if(t != dt) { throw std::runtime_error("bug"); }
-    switch(t) {
+    ondemand::number num;
+    auto res = val.get_number().get(num);
+    ondemand::number_type t = num.get_number_type();
+    if(t != dt && res != BIGINT_ERROR) { throw std::runtime_error("bug"); }
+    switch(dt) {
       case ondemand::number_type::signed_integer:
         std::cout  << "integer: " << int64_t(num) << " ";
         std::cout  << "integer: " << num.get_int64() << std::endl;
@@ -409,6 +410,9 @@ bool number_tests() {
       case ondemand::number_type::floating_point_number:
         std::cout  << "float: " << double(num) << " ";
         std::cout << "float: " << num.get_double() << std::endl;
+        break;
+      case ondemand::number_type::big_integer:
+        std::cout  << "big-integer: " << val.raw_json_token() << std::endl;
         break;
     }
   }

@@ -53,8 +53,8 @@ simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
   constexpr uint32_t substitution_code_point = 0xfffd;
   // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion isn't valid; we defer the check for this to inside the
-  // multilingual plane check
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
   uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
   *src_ptr += 6;
 
@@ -111,8 +111,8 @@ simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
   // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
   //
   // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion isn't valid; we defer the check for this to inside the
-  // multilingual plane check
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
   uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
   *src_ptr += 6;
   // If we found a high surrogate, we must

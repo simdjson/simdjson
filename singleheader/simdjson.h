@@ -1,4 +1,4 @@
-/* auto-generated on 2024-02-05 19:35:57 -0500. Do not edit! */
+/* auto-generated on 2024-02-23 22:52:56 -0500. Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -131,6 +131,8 @@
 #define SIMDJSON_IS_ARM64 1
 #elif defined(__riscv) && __riscv_xlen == 64
 #define SIMDJSON_IS_RISCV64 1
+#elif defined(__loongarch_lp64)
+#define SIMDJSON_IS_LOONGARCH64 1
 #elif defined(__PPC64__) || defined(_M_PPC64)
 #if defined(__ALTIVEC__)
 #define SIMDJSON_IS_PPC64_VMX 1
@@ -2408,6 +2410,7 @@ enum error_code {
   F_ATOM_ERROR,               ///< Problem while parsing an atom starting with the letter 'f'
   N_ATOM_ERROR,               ///< Problem while parsing an atom starting with the letter 'n'
   NUMBER_ERROR,               ///< Problem while parsing a number
+  BIGINT_ERROR,               ///< The integer value exceeds 64 bits
   UTF8_ERROR,                 ///< the input is not valid UTF-8
   UNINITIALIZED,              ///< unknown error, or uninitialized document
   EMPTY,                      ///< no structural element found
@@ -10415,7 +10418,8 @@ class dom_parser_implementation;
 enum class number_type {
     floating_point_number=1, /// a binary64 number
     signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
+    unsigned_integer,        /// a positive integer larger or equal to 1<<63
+    big_integer              /// a big integer that does not fit in a 64-bit word
 };
 
 } // namespace arm64
@@ -10863,11 +10867,13 @@ namespace numberparsing {
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
+#define BIGINT_NUMBER(SRC) (found_invalid_number((SRC)), BIGINT_ERROR)
 #else
 #define INVALID_NUMBER(SRC) (NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
+#define BIGINT_NUMBER(SRC) (BIGINT_ERROR)
 #endif
 
 namespace {
@@ -11351,6 +11357,18 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
   return SUCCESS;
 }
 
+// parse the number at src
+// define JSON_TEST_NUMBERS for unit testing
+//
+// It is assumed that the number is followed by a structural ({,},],[) character
+// or a white space character. If that is not the case (e.g., when the JSON
+// document is made of a single number), then it is necessary to copy the
+// content and append a space before calling this function.
+//
+// Our objective is accurate parsing (ULP of 0) at high speed.
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
@@ -11429,11 +11447,11 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
   size_t longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
+  if (digit_count > longest_digit_count) { return BIGINT_NUMBER(src); }
   if (digit_count == longest_digit_count) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
+      if (i > uint64_t(INT64_MAX)+1) { return BIGINT_NUMBER(src);  }
       WRITE_INTEGER(~i+1, src, writer);
       if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
@@ -11903,19 +11921,24 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
   src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  size_t digit_count = size_t(p - src);
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    static const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
     // We have an integer.
+    if(simdjson_unlikely(digit_count > 20)) {
+      return number_type::big_integer;
+    }
     // If the number is negative and valid, it must be a signed integer.
-    if(negative) { return number_type::signed_integer; }
+    if(negative) {
+      if (simdjson_unlikely(digit_count > 19)) return number_type::big_integer;
+      if (simdjson_unlikely(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)) return number_type::big_integer;
+      return number_type::signed_integer;
+    }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
-    int digit_count = int(p - src);
-    if(digit_count >= 19) {
-      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
-      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
-        return number_type::unsigned_integer;
-      }
+    if((digit_count == 20) || (digit_count >= 19 && memcmp(src, smaller_big_integer, 19) >= 0)) {
+      return number_type::unsigned_integer;
     }
     return number_type::signed_integer;
   }
@@ -12093,6 +12116,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
         case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
         case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        case number_type::big_integer: out << "big integer"; break;
         default: SIMDJSON_UNREACHABLE();
     }
     return out;
@@ -12464,7 +12488,8 @@ class dom_parser_implementation;
 enum class number_type {
     floating_point_number=1, /// a binary64 number
     signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
+    unsigned_integer,        /// a positive integer larger or equal to 1<<63
+    big_integer              /// a big integer that does not fit in a 64-bit word
 };
 
 } // namespace fallback
@@ -12912,11 +12937,13 @@ namespace numberparsing {
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
+#define BIGINT_NUMBER(SRC) (found_invalid_number((SRC)), BIGINT_ERROR)
 #else
 #define INVALID_NUMBER(SRC) (NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
+#define BIGINT_NUMBER(SRC) (BIGINT_ERROR)
 #endif
 
 namespace {
@@ -13400,6 +13427,18 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
   return SUCCESS;
 }
 
+// parse the number at src
+// define JSON_TEST_NUMBERS for unit testing
+//
+// It is assumed that the number is followed by a structural ({,},],[) character
+// or a white space character. If that is not the case (e.g., when the JSON
+// document is made of a single number), then it is necessary to copy the
+// content and append a space before calling this function.
+//
+// Our objective is accurate parsing (ULP of 0) at high speed.
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
@@ -13478,11 +13517,11 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
   size_t longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
+  if (digit_count > longest_digit_count) { return BIGINT_NUMBER(src); }
   if (digit_count == longest_digit_count) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
+      if (i > uint64_t(INT64_MAX)+1) { return BIGINT_NUMBER(src);  }
       WRITE_INTEGER(~i+1, src, writer);
       if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
@@ -13952,19 +13991,24 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
   src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  size_t digit_count = size_t(p - src);
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    static const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
     // We have an integer.
+    if(simdjson_unlikely(digit_count > 20)) {
+      return number_type::big_integer;
+    }
     // If the number is negative and valid, it must be a signed integer.
-    if(negative) { return number_type::signed_integer; }
+    if(negative) {
+      if (simdjson_unlikely(digit_count > 19)) return number_type::big_integer;
+      if (simdjson_unlikely(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)) return number_type::big_integer;
+      return number_type::signed_integer;
+    }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
-    int digit_count = int(p - src);
-    if(digit_count >= 19) {
-      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
-      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
-        return number_type::unsigned_integer;
-      }
+    if((digit_count == 20) || (digit_count >= 19 && memcmp(src, smaller_big_integer, 19) >= 0)) {
+      return number_type::unsigned_integer;
     }
     return number_type::signed_integer;
   }
@@ -14142,6 +14186,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
         case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
         case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        case number_type::big_integer: out << "big integer"; break;
         default: SIMDJSON_UNREACHABLE();
     }
     return out;
@@ -15005,7 +15050,8 @@ class dom_parser_implementation;
 enum class number_type {
     floating_point_number=1, /// a binary64 number
     signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
+    unsigned_integer,        /// a positive integer larger or equal to 1<<63
+    big_integer              /// a big integer that does not fit in a 64-bit word
 };
 
 } // namespace haswell
@@ -15453,11 +15499,13 @@ namespace numberparsing {
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
+#define BIGINT_NUMBER(SRC) (found_invalid_number((SRC)), BIGINT_ERROR)
 #else
 #define INVALID_NUMBER(SRC) (NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
+#define BIGINT_NUMBER(SRC) (BIGINT_ERROR)
 #endif
 
 namespace {
@@ -15941,6 +15989,18 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
   return SUCCESS;
 }
 
+// parse the number at src
+// define JSON_TEST_NUMBERS for unit testing
+//
+// It is assumed that the number is followed by a structural ({,},],[) character
+// or a white space character. If that is not the case (e.g., when the JSON
+// document is made of a single number), then it is necessary to copy the
+// content and append a space before calling this function.
+//
+// Our objective is accurate parsing (ULP of 0) at high speed.
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
@@ -16019,11 +16079,11 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
   size_t longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
+  if (digit_count > longest_digit_count) { return BIGINT_NUMBER(src); }
   if (digit_count == longest_digit_count) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
+      if (i > uint64_t(INT64_MAX)+1) { return BIGINT_NUMBER(src);  }
       WRITE_INTEGER(~i+1, src, writer);
       if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
@@ -16493,19 +16553,24 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
   src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  size_t digit_count = size_t(p - src);
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    static const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
     // We have an integer.
+    if(simdjson_unlikely(digit_count > 20)) {
+      return number_type::big_integer;
+    }
     // If the number is negative and valid, it must be a signed integer.
-    if(negative) { return number_type::signed_integer; }
+    if(negative) {
+      if (simdjson_unlikely(digit_count > 19)) return number_type::big_integer;
+      if (simdjson_unlikely(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)) return number_type::big_integer;
+      return number_type::signed_integer;
+    }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
-    int digit_count = int(p - src);
-    if(digit_count >= 19) {
-      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
-      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
-        return number_type::unsigned_integer;
-      }
+    if((digit_count == 20) || (digit_count >= 19 && memcmp(src, smaller_big_integer, 19) >= 0)) {
+      return number_type::unsigned_integer;
     }
     return number_type::signed_integer;
   }
@@ -16683,6 +16748,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
         case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
         case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        case number_type::big_integer: out << "big integer"; break;
         default: SIMDJSON_UNREACHABLE();
     }
     return out;
@@ -17545,7 +17611,8 @@ class dom_parser_implementation;
 enum class number_type {
     floating_point_number=1, /// a binary64 number
     signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
+    unsigned_integer,        /// a positive integer larger or equal to 1<<63
+    big_integer              /// a big integer that does not fit in a 64-bit word
 };
 
 } // namespace icelake
@@ -17993,11 +18060,13 @@ namespace numberparsing {
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
+#define BIGINT_NUMBER(SRC) (found_invalid_number((SRC)), BIGINT_ERROR)
 #else
 #define INVALID_NUMBER(SRC) (NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
+#define BIGINT_NUMBER(SRC) (BIGINT_ERROR)
 #endif
 
 namespace {
@@ -18481,6 +18550,18 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
   return SUCCESS;
 }
 
+// parse the number at src
+// define JSON_TEST_NUMBERS for unit testing
+//
+// It is assumed that the number is followed by a structural ({,},],[) character
+// or a white space character. If that is not the case (e.g., when the JSON
+// document is made of a single number), then it is necessary to copy the
+// content and append a space before calling this function.
+//
+// Our objective is accurate parsing (ULP of 0) at high speed.
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
@@ -18559,11 +18640,11 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
   size_t longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
+  if (digit_count > longest_digit_count) { return BIGINT_NUMBER(src); }
   if (digit_count == longest_digit_count) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
+      if (i > uint64_t(INT64_MAX)+1) { return BIGINT_NUMBER(src);  }
       WRITE_INTEGER(~i+1, src, writer);
       if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
@@ -19033,19 +19114,24 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
   src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  size_t digit_count = size_t(p - src);
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    static const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
     // We have an integer.
+    if(simdjson_unlikely(digit_count > 20)) {
+      return number_type::big_integer;
+    }
     // If the number is negative and valid, it must be a signed integer.
-    if(negative) { return number_type::signed_integer; }
+    if(negative) {
+      if (simdjson_unlikely(digit_count > 19)) return number_type::big_integer;
+      if (simdjson_unlikely(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)) return number_type::big_integer;
+      return number_type::signed_integer;
+    }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
-    int digit_count = int(p - src);
-    if(digit_count >= 19) {
-      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
-      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
-        return number_type::unsigned_integer;
-      }
+    if((digit_count == 20) || (digit_count >= 19 && memcmp(src, smaller_big_integer, 19) >= 0)) {
+      return number_type::unsigned_integer;
     }
     return number_type::signed_integer;
   }
@@ -19223,6 +19309,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
         case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
         case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        case number_type::big_integer: out << "big integer"; break;
         default: SIMDJSON_UNREACHABLE();
     }
     return out;
@@ -20200,7 +20287,8 @@ class dom_parser_implementation;
 enum class number_type {
     floating_point_number=1, /// a binary64 number
     signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
+    unsigned_integer,        /// a positive integer larger or equal to 1<<63
+    big_integer              /// a big integer that does not fit in a 64-bit word
 };
 
 } // namespace ppc64
@@ -20648,11 +20736,13 @@ namespace numberparsing {
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
+#define BIGINT_NUMBER(SRC) (found_invalid_number((SRC)), BIGINT_ERROR)
 #else
 #define INVALID_NUMBER(SRC) (NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
+#define BIGINT_NUMBER(SRC) (BIGINT_ERROR)
 #endif
 
 namespace {
@@ -21136,6 +21226,18 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
   return SUCCESS;
 }
 
+// parse the number at src
+// define JSON_TEST_NUMBERS for unit testing
+//
+// It is assumed that the number is followed by a structural ({,},],[) character
+// or a white space character. If that is not the case (e.g., when the JSON
+// document is made of a single number), then it is necessary to copy the
+// content and append a space before calling this function.
+//
+// Our objective is accurate parsing (ULP of 0) at high speed.
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
@@ -21214,11 +21316,11 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
   size_t longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
+  if (digit_count > longest_digit_count) { return BIGINT_NUMBER(src); }
   if (digit_count == longest_digit_count) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
+      if (i > uint64_t(INT64_MAX)+1) { return BIGINT_NUMBER(src);  }
       WRITE_INTEGER(~i+1, src, writer);
       if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
@@ -21688,19 +21790,24 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
   src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  size_t digit_count = size_t(p - src);
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    static const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
     // We have an integer.
+    if(simdjson_unlikely(digit_count > 20)) {
+      return number_type::big_integer;
+    }
     // If the number is negative and valid, it must be a signed integer.
-    if(negative) { return number_type::signed_integer; }
+    if(negative) {
+      if (simdjson_unlikely(digit_count > 19)) return number_type::big_integer;
+      if (simdjson_unlikely(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)) return number_type::big_integer;
+      return number_type::signed_integer;
+    }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
-    int digit_count = int(p - src);
-    if(digit_count >= 19) {
-      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
-      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
-        return number_type::unsigned_integer;
-      }
+    if((digit_count == 20) || (digit_count >= 19 && memcmp(src, smaller_big_integer, 19) >= 0)) {
+      return number_type::unsigned_integer;
     }
     return number_type::signed_integer;
   }
@@ -21878,6 +21985,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
         case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
         case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        case number_type::big_integer: out << "big integer"; break;
         default: SIMDJSON_UNREACHABLE();
     }
     return out;
@@ -23178,7 +23286,8 @@ class dom_parser_implementation;
 enum class number_type {
     floating_point_number=1, /// a binary64 number
     signed_integer,          /// a signed integer that fits in a 64-bit word using two's complement
-    unsigned_integer         /// a positive integer larger or equal to 1<<63
+    unsigned_integer,        /// a positive integer larger or equal to 1<<63
+    big_integer              /// a big integer that does not fit in a 64-bit word
 };
 
 } // namespace westmere
@@ -23626,11 +23735,13 @@ namespace numberparsing {
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), (WRITER).append_s64((VALUE)))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), (WRITER).append_u64((VALUE)))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), (WRITER).append_double((VALUE)))
+#define BIGINT_NUMBER(SRC) (found_invalid_number((SRC)), BIGINT_ERROR)
 #else
 #define INVALID_NUMBER(SRC) (NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (WRITER).append_s64((VALUE))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (WRITER).append_u64((VALUE))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (WRITER).append_double((VALUE))
+#define BIGINT_NUMBER(SRC) (BIGINT_ERROR)
 #endif
 
 namespace {
@@ -24114,6 +24225,18 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
   return SUCCESS;
 }
 
+// parse the number at src
+// define JSON_TEST_NUMBERS for unit testing
+//
+// It is assumed that the number is followed by a structural ({,},],[) character
+// or a white space character. If that is not the case (e.g., when the JSON
+// document is made of a single number), then it is necessary to copy the
+// content and append a space before calling this function.
+//
+// Our objective is accurate parsing (ULP of 0) at high speed.
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
@@ -24192,11 +24315,11 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   // The longest positive 64-bit number is 20 digits.
   // We do it this way so we don't trigger this branch unless we must.
   size_t longest_digit_count = negative ? 19 : 20;
-  if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
+  if (digit_count > longest_digit_count) { return BIGINT_NUMBER(src); }
   if (digit_count == longest_digit_count) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
+      if (i > uint64_t(INT64_MAX)+1) { return BIGINT_NUMBER(src);  }
       WRITE_INTEGER(~i+1, src, writer);
       if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
@@ -24666,19 +24789,24 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
   src += uint8_t(negative);
   const uint8_t *p = src;
   while(static_cast<uint8_t>(*p - '0') <= 9) { p++; }
+  size_t digit_count = size_t(p - src);
   if ( p == src ) { return NUMBER_ERROR; }
   if (jsoncharutils::is_structural_or_whitespace(*p)) {
+    static const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
     // We have an integer.
+    if(simdjson_unlikely(digit_count > 20)) {
+      return number_type::big_integer;
+    }
     // If the number is negative and valid, it must be a signed integer.
-    if(negative) { return number_type::signed_integer; }
+    if(negative) {
+      if (simdjson_unlikely(digit_count > 19)) return number_type::big_integer;
+      if (simdjson_unlikely(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)) return number_type::big_integer;
+      return number_type::signed_integer;
+    }
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
-    int digit_count = int(p - src);
-    if(digit_count >= 19) {
-      const uint8_t * smaller_big_integer = reinterpret_cast<const uint8_t *>("9223372036854775808");
-      if((digit_count >= 20) || (memcmp(src, smaller_big_integer, 19) >= 0)) {
-        return number_type::unsigned_integer;
-      }
+    if((digit_count == 20) || (digit_count >= 19 && memcmp(src, smaller_big_integer, 19) >= 0)) {
+      return number_type::unsigned_integer;
     }
     return number_type::signed_integer;
   }
@@ -24856,6 +24984,7 @@ inline std::ostream& operator<<(std::ostream& out, number_type type) noexcept {
         case number_type::signed_integer: out << "integer in [-9223372036854775808,9223372036854775808)"; break;
         case number_type::unsigned_integer: out << "unsigned integer in [9223372036854775808,18446744073709551616)"; break;
         case number_type::floating_point_number: out << "floating-point number (binary64)"; break;
+        case number_type::big_integer: out << "big integer"; break;
         default: SIMDJSON_UNREACHABLE();
     }
     return out;
@@ -26763,7 +26892,7 @@ public:
    * that only one field is returned.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field as not there when they are not in order).
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -26838,10 +26967,12 @@ public:
    * get_number().get_number_type().
    *
    * get_number_type() is number_type::unsigned_integer if we have
-   * an integer greater or equal to 9223372036854775808
+   * an integer greater or equal to 9223372036854775808.
    * get_number_type() is number_type::signed_integer if we have an
-   * integer that is less than 9223372036854775808
-   * Otherwise, get_number_type() has value number_type::floating_point_number
+   * integer that is less than 9223372036854775808.
+   * get_number_type() is number_type::big_integer for integers that do not fit in 64 bits,
+   * in which case the digit_count is set to the length of the big integer string.
+   * Otherwise, get_number_type() has value number_type::floating_point_number.
    *
    * This function requires processing the number string, but it is expected
    * to be faster than get_number().get_number_type() because it is does not
@@ -26868,6 +26999,8 @@ public:
    * You can recover the value by calling number.get_uint64() and you
    * have that number.is_uint64() is true.
    *
+   * For integers that do not fit in 64 bits, the function returns BIGINT_ERROR error code.
+   *
    * Otherwise, number.get_number_type() has value number_type::floating_point_number
    * and we have a binary64 number.
    * You can recover the value by calling number.get_double() and you
@@ -26882,7 +27015,6 @@ public:
    * efficiently the type and storing it in an efficient manner.
    */
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
-
 
   /**
    * Get the raw JSON for this token.
@@ -27127,7 +27259,7 @@ public:
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field as not there when they are not in order).
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -29174,7 +29306,7 @@ public:
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field was not there when they are not in order).
    *
    * You must consume the fields on an object one at a time. A request for a new key
    * invalidates previous field values: it makes them unsafe. E.g., the array
@@ -29258,6 +29390,8 @@ public:
    * an integer greater or equal to 9223372036854775808
    * get_number_type() is number_type::signed_integer if we have an
    * integer that is less than 9223372036854775808
+   * get_number_type() is number_type::big_integer if we have and integer larger
+   * than those ranges above
    * Otherwise, get_number_type() has value number_type::floating_point_number
    *
    * This function requires processing the number string, but it is expected
@@ -32844,7 +32978,6 @@ simdjson_inline number::operator uint64_t() const noexcept {
   return get_uint64();
 }
 
-
 simdjson_inline bool number::is_int64() const noexcept {
   return get_number_type() == number_type::signed_integer;
 }
@@ -35437,6 +35570,7 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
+  // NOTE: the current approach doesn't work for very big integer numbers containing more than 1074 digits.
   uint8_t tmpbuf[1074+8+1+1];
   tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
@@ -37029,7 +37163,7 @@ public:
    * that only one field is returned.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field as not there when they are not in order).
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -37104,10 +37238,12 @@ public:
    * get_number().get_number_type().
    *
    * get_number_type() is number_type::unsigned_integer if we have
-   * an integer greater or equal to 9223372036854775808
+   * an integer greater or equal to 9223372036854775808.
    * get_number_type() is number_type::signed_integer if we have an
-   * integer that is less than 9223372036854775808
-   * Otherwise, get_number_type() has value number_type::floating_point_number
+   * integer that is less than 9223372036854775808.
+   * get_number_type() is number_type::big_integer for integers that do not fit in 64 bits,
+   * in which case the digit_count is set to the length of the big integer string.
+   * Otherwise, get_number_type() has value number_type::floating_point_number.
    *
    * This function requires processing the number string, but it is expected
    * to be faster than get_number().get_number_type() because it is does not
@@ -37134,6 +37270,8 @@ public:
    * You can recover the value by calling number.get_uint64() and you
    * have that number.is_uint64() is true.
    *
+   * For integers that do not fit in 64 bits, the function returns BIGINT_ERROR error code.
+   *
    * Otherwise, number.get_number_type() has value number_type::floating_point_number
    * and we have a binary64 number.
    * You can recover the value by calling number.get_double() and you
@@ -37148,7 +37286,6 @@ public:
    * efficiently the type and storing it in an efficient manner.
    */
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
-
 
   /**
    * Get the raw JSON for this token.
@@ -37393,7 +37530,7 @@ public:
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field as not there when they are not in order).
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -39440,7 +39577,7 @@ public:
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field was not there when they are not in order).
    *
    * You must consume the fields on an object one at a time. A request for a new key
    * invalidates previous field values: it makes them unsafe. E.g., the array
@@ -39524,6 +39661,8 @@ public:
    * an integer greater or equal to 9223372036854775808
    * get_number_type() is number_type::signed_integer if we have an
    * integer that is less than 9223372036854775808
+   * get_number_type() is number_type::big_integer if we have and integer larger
+   * than those ranges above
    * Otherwise, get_number_type() has value number_type::floating_point_number
    *
    * This function requires processing the number string, but it is expected
@@ -43110,7 +43249,6 @@ simdjson_inline number::operator uint64_t() const noexcept {
   return get_uint64();
 }
 
-
 simdjson_inline bool number::is_int64() const noexcept {
   return get_number_type() == number_type::signed_integer;
 }
@@ -45703,6 +45841,7 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
+  // NOTE: the current approach doesn't work for very big integer numbers containing more than 1074 digits.
   uint8_t tmpbuf[1074+8+1+1];
   tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
@@ -47787,7 +47926,7 @@ public:
    * that only one field is returned.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field as not there when they are not in order).
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -47862,10 +48001,12 @@ public:
    * get_number().get_number_type().
    *
    * get_number_type() is number_type::unsigned_integer if we have
-   * an integer greater or equal to 9223372036854775808
+   * an integer greater or equal to 9223372036854775808.
    * get_number_type() is number_type::signed_integer if we have an
-   * integer that is less than 9223372036854775808
-   * Otherwise, get_number_type() has value number_type::floating_point_number
+   * integer that is less than 9223372036854775808.
+   * get_number_type() is number_type::big_integer for integers that do not fit in 64 bits,
+   * in which case the digit_count is set to the length of the big integer string.
+   * Otherwise, get_number_type() has value number_type::floating_point_number.
    *
    * This function requires processing the number string, but it is expected
    * to be faster than get_number().get_number_type() because it is does not
@@ -47892,6 +48033,8 @@ public:
    * You can recover the value by calling number.get_uint64() and you
    * have that number.is_uint64() is true.
    *
+   * For integers that do not fit in 64 bits, the function returns BIGINT_ERROR error code.
+   *
    * Otherwise, number.get_number_type() has value number_type::floating_point_number
    * and we have a binary64 number.
    * You can recover the value by calling number.get_double() and you
@@ -47906,7 +48049,6 @@ public:
    * efficiently the type and storing it in an efficient manner.
    */
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
-
 
   /**
    * Get the raw JSON for this token.
@@ -48151,7 +48293,7 @@ public:
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field as not there when they are not in order).
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -50198,7 +50340,7 @@ public:
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field was not there when they are not in order).
    *
    * You must consume the fields on an object one at a time. A request for a new key
    * invalidates previous field values: it makes them unsafe. E.g., the array
@@ -50282,6 +50424,8 @@ public:
    * an integer greater or equal to 9223372036854775808
    * get_number_type() is number_type::signed_integer if we have an
    * integer that is less than 9223372036854775808
+   * get_number_type() is number_type::big_integer if we have and integer larger
+   * than those ranges above
    * Otherwise, get_number_type() has value number_type::floating_point_number
    *
    * This function requires processing the number string, but it is expected
@@ -53868,7 +54012,6 @@ simdjson_inline number::operator uint64_t() const noexcept {
   return get_uint64();
 }
 
-
 simdjson_inline bool number::is_int64() const noexcept {
   return get_number_type() == number_type::signed_integer;
 }
@@ -56461,6 +56604,7 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
+  // NOTE: the current approach doesn't work for very big integer numbers containing more than 1074 digits.
   uint8_t tmpbuf[1074+8+1+1];
   tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
@@ -58544,7 +58688,7 @@ public:
    * that only one field is returned.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field as not there when they are not in order).
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -58619,10 +58763,12 @@ public:
    * get_number().get_number_type().
    *
    * get_number_type() is number_type::unsigned_integer if we have
-   * an integer greater or equal to 9223372036854775808
+   * an integer greater or equal to 9223372036854775808.
    * get_number_type() is number_type::signed_integer if we have an
-   * integer that is less than 9223372036854775808
-   * Otherwise, get_number_type() has value number_type::floating_point_number
+   * integer that is less than 9223372036854775808.
+   * get_number_type() is number_type::big_integer for integers that do not fit in 64 bits,
+   * in which case the digit_count is set to the length of the big integer string.
+   * Otherwise, get_number_type() has value number_type::floating_point_number.
    *
    * This function requires processing the number string, but it is expected
    * to be faster than get_number().get_number_type() because it is does not
@@ -58649,6 +58795,8 @@ public:
    * You can recover the value by calling number.get_uint64() and you
    * have that number.is_uint64() is true.
    *
+   * For integers that do not fit in 64 bits, the function returns BIGINT_ERROR error code.
+   *
    * Otherwise, number.get_number_type() has value number_type::floating_point_number
    * and we have a binary64 number.
    * You can recover the value by calling number.get_double() and you
@@ -58663,7 +58811,6 @@ public:
    * efficiently the type and storing it in an efficient manner.
    */
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
-
 
   /**
    * Get the raw JSON for this token.
@@ -58908,7 +59055,7 @@ public:
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field as not there when they are not in order).
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -60955,7 +61102,7 @@ public:
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field was not there when they are not in order).
    *
    * You must consume the fields on an object one at a time. A request for a new key
    * invalidates previous field values: it makes them unsafe. E.g., the array
@@ -61039,6 +61186,8 @@ public:
    * an integer greater or equal to 9223372036854775808
    * get_number_type() is number_type::signed_integer if we have an
    * integer that is less than 9223372036854775808
+   * get_number_type() is number_type::big_integer if we have and integer larger
+   * than those ranges above
    * Otherwise, get_number_type() has value number_type::floating_point_number
    *
    * This function requires processing the number string, but it is expected
@@ -64625,7 +64774,6 @@ simdjson_inline number::operator uint64_t() const noexcept {
   return get_uint64();
 }
 
-
 simdjson_inline bool number::is_int64() const noexcept {
   return get_number_type() == number_type::signed_integer;
 }
@@ -67218,6 +67366,7 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
+  // NOTE: the current approach doesn't work for very big integer numbers containing more than 1074 digits.
   uint8_t tmpbuf[1074+8+1+1];
   tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
@@ -69416,7 +69565,7 @@ public:
    * that only one field is returned.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field as not there when they are not in order).
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -69491,10 +69640,12 @@ public:
    * get_number().get_number_type().
    *
    * get_number_type() is number_type::unsigned_integer if we have
-   * an integer greater or equal to 9223372036854775808
+   * an integer greater or equal to 9223372036854775808.
    * get_number_type() is number_type::signed_integer if we have an
-   * integer that is less than 9223372036854775808
-   * Otherwise, get_number_type() has value number_type::floating_point_number
+   * integer that is less than 9223372036854775808.
+   * get_number_type() is number_type::big_integer for integers that do not fit in 64 bits,
+   * in which case the digit_count is set to the length of the big integer string.
+   * Otherwise, get_number_type() has value number_type::floating_point_number.
    *
    * This function requires processing the number string, but it is expected
    * to be faster than get_number().get_number_type() because it is does not
@@ -69521,6 +69672,8 @@ public:
    * You can recover the value by calling number.get_uint64() and you
    * have that number.is_uint64() is true.
    *
+   * For integers that do not fit in 64 bits, the function returns BIGINT_ERROR error code.
+   *
    * Otherwise, number.get_number_type() has value number_type::floating_point_number
    * and we have a binary64 number.
    * You can recover the value by calling number.get_double() and you
@@ -69535,7 +69688,6 @@ public:
    * efficiently the type and storing it in an efficient manner.
    */
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
-
 
   /**
    * Get the raw JSON for this token.
@@ -69780,7 +69932,7 @@ public:
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field as not there when they are not in order).
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -71827,7 +71979,7 @@ public:
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field was not there when they are not in order).
    *
    * You must consume the fields on an object one at a time. A request for a new key
    * invalidates previous field values: it makes them unsafe. E.g., the array
@@ -71911,6 +72063,8 @@ public:
    * an integer greater or equal to 9223372036854775808
    * get_number_type() is number_type::signed_integer if we have an
    * integer that is less than 9223372036854775808
+   * get_number_type() is number_type::big_integer if we have and integer larger
+   * than those ranges above
    * Otherwise, get_number_type() has value number_type::floating_point_number
    *
    * This function requires processing the number string, but it is expected
@@ -75497,7 +75651,6 @@ simdjson_inline number::operator uint64_t() const noexcept {
   return get_uint64();
 }
 
-
 simdjson_inline bool number::is_int64() const noexcept {
   return get_number_type() == number_type::signed_integer;
 }
@@ -78090,6 +78243,7 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
+  // NOTE: the current approach doesn't work for very big integer numbers containing more than 1074 digits.
   uint8_t tmpbuf[1074+8+1+1];
   tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
@@ -80611,7 +80765,7 @@ public:
    * that only one field is returned.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field as not there when they are not in order).
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -80686,10 +80840,12 @@ public:
    * get_number().get_number_type().
    *
    * get_number_type() is number_type::unsigned_integer if we have
-   * an integer greater or equal to 9223372036854775808
+   * an integer greater or equal to 9223372036854775808.
    * get_number_type() is number_type::signed_integer if we have an
-   * integer that is less than 9223372036854775808
-   * Otherwise, get_number_type() has value number_type::floating_point_number
+   * integer that is less than 9223372036854775808.
+   * get_number_type() is number_type::big_integer for integers that do not fit in 64 bits,
+   * in which case the digit_count is set to the length of the big integer string.
+   * Otherwise, get_number_type() has value number_type::floating_point_number.
    *
    * This function requires processing the number string, but it is expected
    * to be faster than get_number().get_number_type() because it is does not
@@ -80716,6 +80872,8 @@ public:
    * You can recover the value by calling number.get_uint64() and you
    * have that number.is_uint64() is true.
    *
+   * For integers that do not fit in 64 bits, the function returns BIGINT_ERROR error code.
+   *
    * Otherwise, number.get_number_type() has value number_type::floating_point_number
    * and we have a binary64 number.
    * You can recover the value by calling number.get_double() and you
@@ -80730,7 +80888,6 @@ public:
    * efficiently the type and storing it in an efficient manner.
    */
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_number() noexcept;
-
 
   /**
    * Get the raw JSON for this token.
@@ -80975,7 +81132,7 @@ public:
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field as not there when they are not in order).
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
@@ -83022,7 +83179,7 @@ public:
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field was not there when they are not in order).
    *
    * You must consume the fields on an object one at a time. A request for a new key
    * invalidates previous field values: it makes them unsafe. E.g., the array
@@ -83106,6 +83263,8 @@ public:
    * an integer greater or equal to 9223372036854775808
    * get_number_type() is number_type::signed_integer if we have an
    * integer that is less than 9223372036854775808
+   * get_number_type() is number_type::big_integer if we have and integer larger
+   * than those ranges above
    * Otherwise, get_number_type() has value number_type::floating_point_number
    *
    * This function requires processing the number string, but it is expected
@@ -86692,7 +86851,6 @@ simdjson_inline number::operator uint64_t() const noexcept {
   return get_uint64();
 }
 
-
 simdjson_inline bool number::is_int64() const noexcept {
   return get_number_type() == number_type::signed_integer;
 }
@@ -89285,6 +89443,7 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
+  // NOTE: the current approach doesn't work for very big integer numbers containing more than 1074 digits.
   uint8_t tmpbuf[1074+8+1+1];
   tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {

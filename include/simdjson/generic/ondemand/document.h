@@ -386,7 +386,7 @@ public:
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
    * Use find_field() if you are sure fields will be in order (or are willing to treat it as if the
-   * field wasn't there when they aren't).
+   * field was not there when they are not in order).
    *
    * You must consume the fields on an object one at a time. A request for a new key
    * invalidates previous field values: it makes them unsafe. E.g., the array
@@ -470,6 +470,8 @@ public:
    * an integer greater or equal to 9223372036854775808
    * get_number_type() is number_type::signed_integer if we have an
    * integer that is less than 9223372036854775808
+   * get_number_type() is number_type::big_integer if we have and integer larger
+   * than those ranges above
    * Otherwise, get_number_type() has value number_type::floating_point_number
    *
    * This function requires processing the number string, but it is expected
