@@ -18,6 +18,7 @@ namespace internal {
     { F_ATOM_ERROR, "F_ATOM_ERROR: Problem while parsing an atom starting with the letter 'f'" },
     { N_ATOM_ERROR, "N_ATOM_ERROR: Problem while parsing an atom starting with the letter 'n'" },
     { NUMBER_ERROR, "NUMBER_ERROR: Problem while parsing a number" },
+    { BIGINT_ERROR, "BIGINT_ERROR: Big integer value that cannot be represented using 64 bits" },
     { UTF8_ERROR, "UTF8_ERROR: The input is not valid UTF-8" },
     { UNINITIALIZED, "UNINITIALIZED: Uninitialized" },
     { EMPTY, "EMPTY: no JSON found" },
