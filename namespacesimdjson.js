@@ -24,7 +24,8 @@ var namespacesimdjson =
       [ "number_type", "generic_2base_8h.html#a6ce99de87fa73b924822cd28045c97c0", [
         [ "floating_point_number", "generic_2base_8h.html#a6ce99de87fa73b924822cd28045c97c0ac5695c1a5026a1e5bec81b77096c1e9f", null ],
         [ "signed_integer", "generic_2base_8h.html#a6ce99de87fa73b924822cd28045c97c0aa14b6141855cd58c670ca6559c75c941", null ],
-        [ "unsigned_integer", "generic_2base_8h.html#a6ce99de87fa73b924822cd28045c97c0a7383104b83254a99f5991d0ac77a6666", null ]
+        [ "unsigned_integer", "generic_2base_8h.html#a6ce99de87fa73b924822cd28045c97c0a7383104b83254a99f5991d0ac77a6666", null ],
+        [ "big_integer", "generic_2base_8h.html#a6ce99de87fa73b924822cd28045c97c0ae31b13bfd9383fa5b4dce96caa6a3e2c", null ]
       ] ],
       [ "operator<<", "numberparsing_8h.html#ade2dc27fe18a87c9fb48782885fc76a3", null ]
     ] ],
@@ -65,6 +66,7 @@ var namespacesimdjson =
       [ "F_ATOM_ERROR", "namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9ae726a74b8a99e4bf802f3078436a2394", null ],
       [ "N_ATOM_ERROR", "namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a4e161f7bd0b3ca10f41a220a75de8cde", null ],
       [ "NUMBER_ERROR", "namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9adfcabbbd1ddb0843a0f320e062866ae8", null ],
+      [ "BIGINT_ERROR", "namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9ae5acac431888aeadfef98bee7d66957e", null ],
       [ "UTF8_ERROR", "namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a398a5389d6e20c39e8880b0101b66f56", null ],
       [ "UNINITIALIZED", "namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9ac2aef8f0fc33187cc118c95fade925d2", null ],
       [ "EMPTY", "namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7aed571b420dcdfe59742e0df97b415a", null ],

@@ -203,6 +203,7 @@ var NAVTREEINDEX2 =
 "generic_2base_8h.html#a6ce99de87fa73b924822cd28045c97c0a7383104b83254a99f5991d0ac77a6666":[10,0,0,7,6,2],
 "generic_2base_8h.html#a6ce99de87fa73b924822cd28045c97c0aa14b6141855cd58c670ca6559c75c941":[10,0,0,7,6,1],
 "generic_2base_8h.html#a6ce99de87fa73b924822cd28045c97c0ac5695c1a5026a1e5bec81b77096c1e9f":[10,0,0,7,6,0],
+"generic_2base_8h.html#a6ce99de87fa73b924822cd28045c97c0ae31b13bfd9383fa5b4dce96caa6a3e2c":[10,0,0,7,6,3],
 "generic_2base_8h_source.html":[12,0,0,0,4,3],
 "generic_2dom__parser__implementation_8h_source.html":[12,0,0,0,4,5],
 "generic_2ondemand_2array-inl_8h_source.html":[12,0,0,0,4,0,1],
@@ -248,6 +249,5 @@ var NAVTREEINDEX2 =
 "haswell_2intrinsics_8h_source.html":[12,0,0,0,5,6],
 "haswell_2numberparsing__defs_8h_source.html":[12,0,0,0,5,7],
 "haswell_2ondemand_8h_source.html":[12,0,0,0,5,8],
-"haswell_2simd_8h_source.html":[12,0,0,0,5,9],
-"haswell_2stringparsing__defs_8h_source.html":[12,0,0,0,5,10]
+"haswell_2simd_8h_source.html":[12,0,0,0,5,9]
 };

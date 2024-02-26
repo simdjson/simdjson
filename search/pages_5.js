@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['tape_20structure_20in_20simdjson_620',['Tape structure in simdjson',['../md_doc_tape.html',1,'']]],
-  ['the_20basics_621',['The Basics',['../md_doc_basics.html',1,'']]],
-  ['the_20document_2dobject_2dmodel_20_28dom_29_20front_2dend_622',['The Document-Object-Model (DOM) front-end',['../md_doc_dom.html',1,'']]]
+  ['tape_20structure_20in_20simdjson_622',['Tape structure in simdjson',['../md_doc_tape.html',1,'']]],
+  ['the_20basics_623',['The Basics',['../md_doc_basics.html',1,'']]],
+  ['the_20document_2dobject_2dmodel_20_28dom_29_20front_2dend_624',['The Document-Object-Model (DOM) front-end',['../md_doc_dom.html',1,'']]]
 ];
