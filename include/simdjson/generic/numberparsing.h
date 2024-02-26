@@ -440,6 +440,23 @@ simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const s
   return SUCCESS;
 }
 
+simdjson_inline bool check_if_integer(const uint8_t *const src, size_t max_length) {
+  const uint8_t *const srcend = src + max_length;
+  bool negative = (*src == '-'); // we can always read at least one character after the '-'
+  const uint8_t *p = src + uint8_t(negative);
+  if(p == srcend) { return false; }
+  if(*p == '0') {
+    ++p;
+    if(p == srcend) { return true; }
+    if(jsoncharutils::is_not_structural_or_whitespace(*p)) { return false; }
+    return true;
+  }
+  while(p != srcend && is_digit(*p)) { ++p; }
+  if(p == srcend) { return true; }
+  if(jsoncharutils::is_not_structural_or_whitespace(*p)) { return false; }
+  return true;
+}
+
 simdjson_inline size_t significant_digits(const uint8_t * start_digits, size_t digit_count) {
   // It is possible that the integer had an overflow.
   // We have to handle the case where we have 0.0000somenumber.
@@ -545,24 +562,6 @@ simdjson_unused simdjson_inline bool is_negative(const uint8_t * src) noexcept  
 simdjson_unused simdjson_inline simdjson_result<bool> is_integer(const uint8_t * src) noexcept  { return false; }
 simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(const uint8_t * src) noexcept { return number_type::signed_integer; }
 #else
-
-
-simdjson_inline bool check_if_integer(const uint8_t *const src, size_t max_length) {
-  const uint8_t *const srcend = src + max_length;
-  bool negative = (*src == '-'); // we can always read at least one character after the '-'
-  const uint8_t *p = src + uint8_t(negative);
-  if(p == srcend) { return false; }
-  if(*p == '0') {
-    ++p;
-    if(p == srcend) { return true; }
-    if(jsoncharutils::is_not_structural_or_whitespace(*p)) { return false; }
-    return true;
-  }
-  while(p != srcend && is_digit(*p)) { ++p; }
-  if(p == srcend) { return true; }
-  if(jsoncharutils::is_not_structural_or_whitespace(*p)) { return false; }
-  return true;
-}
 
 // parse the number at src
 // define JSON_TEST_NUMBERS for unit testing
