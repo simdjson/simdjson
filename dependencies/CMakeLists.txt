@@ -22,7 +22,7 @@ endif()
 # The bulk of our benchmarking and testing data has been moved simdjson/simdjson-data
 import_dependency(simdjson-data simdjson/simdjson-data a5b13babe65c1bba7186b41b43d4cbdc20a5c470)
 add_dependency(simdjson-data)
-
+option(SIMDJSON_USE_BOOST_JSON "Try to include BOOST_JSON, this may break your binaries under some systems." OFF)
 # This prevents variables declared with set() from unnecessarily escaping and
 # should not be called more than once
 function(competition_scope_)
@@ -36,8 +36,8 @@ function(competition_scope_)
 #endif
 
 int main() {}
-]] USE_BOOST_JSON)
-  if(USE_BOOST_JSON)
+]] SIMDJSON_FOUND_STRING_VIEW)
+  if(SIMDJSON_FOUND_STRING_VIEW AND SIMDJSON_USE_BOOST_JSON)
     import_dependency(boostjson boostorg/json ee8d72d)
     add_library(boostjson STATIC "${boostjson_SOURCE_DIR}/src/src.cpp")
     target_compile_definitions(boostjson PUBLIC BOOST_JSON_STANDALONE)
