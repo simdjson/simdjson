@@ -464,8 +464,50 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  bool big_int_not_zero() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    // This is not a big integer, it is a mistake
+    padded_string docdata = R"(09500000000000000000000000000000000000)"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_ERROR(doc.get_number(), NUMBER_ERROR);
+    TEST_SUCCEED();
+  }
+
+  bool negative_big_int() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    // This is not a big integer, it is a mistake
+    padded_string docdata = R"(-18446744073709551616)"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_ERROR(doc.get_number(), BIGINT_ERROR);
+    std::string_view my_big;
+    ASSERT_SUCCESS(doc.raw_json_token().get(my_big));
+    ASSERT_EQUAL(my_big, "-18446744073709551616");
+    TEST_SUCCEED();
+  }
+
+  bool gigantic_big_int() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    std::string number(2000, '1');
+    // This is not a big integer, it is a mistake
+    ASSERT_SUCCESS(parser.iterate(number).get(doc));
+    ASSERT_ERROR(doc.get_number(), BIGINT_ERROR);
+    std::string_view my_big;
+    ASSERT_SUCCESS(doc.raw_json_token().get(my_big));
+    ASSERT_EQUAL(my_big, number);
+    TEST_SUCCEED();
+  }
+
   bool run() {
-    return issue2099() &&
+    return gigantic_big_int() &&
+           big_int_not_zero() &&
+           negative_big_int() &&
+           issue2099() &&
            issue2093() &&
            issue2045() &&
            issue2017() &&

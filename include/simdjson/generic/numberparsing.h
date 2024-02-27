@@ -357,6 +357,10 @@ simdjson_inline bool parse_digit(const uint8_t c, I &i) {
   return true;
 }
 
+simdjson_inline bool is_digit(const uint8_t c) {
+  return static_cast<uint8_t>(c - '0') <= 9;
+}
+
 simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
@@ -434,6 +438,23 @@ simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const s
   // To sum it up: the next line should never overflow.
   exponent += (neg_exp ? -exp_number : exp_number);
   return SUCCESS;
+}
+
+simdjson_inline bool check_if_integer(const uint8_t *const src, size_t max_length) {
+  const uint8_t *const srcend = src + max_length;
+  bool negative = (*src == '-'); // we can always read at least one character after the '-'
+  const uint8_t *p = src + uint8_t(negative);
+  if(p == srcend) { return false; }
+  if(*p == '0') {
+    ++p;
+    if(p == srcend) { return true; }
+    if(jsoncharutils::is_not_structural_or_whitespace(*p)) { return false; }
+    return true;
+  }
+  while(p != srcend && is_digit(*p)) { ++p; }
+  if(p == srcend) { return true; }
+  if(jsoncharutils::is_not_structural_or_whitespace(*p)) { return false; }
+  return true;
 }
 
 simdjson_inline size_t significant_digits(const uint8_t * start_digits, size_t digit_count) {
@@ -1085,9 +1106,17 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
     // If the number is negative and valid, it must be a signed integer.
     if(negative) {
       if (simdjson_unlikely(digit_count > 19)) return number_type::big_integer;
-      if (simdjson_unlikely(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)) return number_type::big_integer;
+      if (simdjson_unlikely(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)) {
+        return number_type::big_integer;
+      }
       return number_type::signed_integer;
     }
+    // Let us check if we have a big integer (>=2**64).
+    static const uint8_t * two_to_sixtyfour = reinterpret_cast<const uint8_t *>("18446744073709551616");
+    if((digit_count > 20) || (digit_count == 20 && memcmp(src, two_to_sixtyfour, 20) >= 0)) {
+      return number_type::big_integer;
+    }
+    // The number is positive and smaller than 18446744073709551616 (or 2**64).
     // We want values larger or equal to 9223372036854775808 to be unsigned
     // integers, and the other values to be signed integers.
     if((digit_count == 20) || (digit_count >= 19 && memcmp(src, smaller_big_integer, 19) >= 0)) {

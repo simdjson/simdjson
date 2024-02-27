@@ -1910,8 +1910,10 @@ An `ondemand::number` instance may contain an integer value or a floating-point 
 Thus it is a dynamically typed number. Before accessing the value, you must determine the detected type:
 
 * `number.get_number_type()` has value `number_type::signed_integer` if we have a integer in [-9223372036854775808,9223372036854775808). You can recover the value by the `get_int64()` method applied on the `ondemand::number` instance. When `number.get_number_type()` has value `number_type::signed_integer`, you also have that `number.is_int64()` is true. Calling `get_int64()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::signed_integer` is unsafe. You may replace `get_int64()` by a cast to a `int64_t` value.
-* `number.get_number_type()` has value `number_type::unsigned_integer` if we have a integer in [9223372036854775808,18446744073709551616). You can recover the value by the `get_uint64()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::unsigned_integer`, you also have that `number.is_uint64()` is true.  Calling `get_uint64()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::unsigned_integer` is unsafe. You may replace `get_uint64()` by a cast to a `uint64_t` value.
+* `number.get_number_type()` has value `number_type::unsigned_integer` if we have a integer in `[9223372036854775808,18446744073709551616)`. You can recover the value by the `get_uint64()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::unsigned_integer`, you also have that `number.is_uint64()` is true.  Calling `get_uint64()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::unsigned_integer` is unsafe. You may replace `get_uint64()` by a cast to a `uint64_t` value.
 * `number.get_number_type()` has value `number_type::floating_point_number` if we have and we have a floating-point (binary64) number. You can recover the value by the `get_double()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::floating_point_number`, you also have that `number.is_double()` is true.  Calling `get_double()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::floating_point_number` is unsafe. You may replace `get_double()` by a cast to a `double` value.
+* When the value is an integer outside of the valid ranges for a 64-bit integers, e.g., when it is smaller than -9223372036854775808 or larger than 18446744073709551615, then `number.get_number_type()` has value `number_type::big_integer`. If you try to parse
+such a number of `get_number()`, you get the error `BIGINT_ERROR`. You can access the underlying string of digits with the function `raw_json_token()` which returns an `std::string_view` instance starting at the beginning of the digit. You can also call `get_double()` to get a floating-point approximation.
 
 
 You must check the type before accessing the value: it is an error to call `get_int64()` when `number.get_number_type()` is not `number_type::signed_integer` and when `number.is_int64()` is false. You are responsible for this check as the user of the library.
@@ -1944,6 +1946,9 @@ Consider the following example:
           std::cout  << "float: " << double(num) << " ";
           std::cout << "float: " << num.get_double() << std::endl;
           break;
+        case ondemand::number_type::big_integer:
+          std::cout  << "big-integer: " << val.raw_json_token() << std::endl;
+          break;
       }
     }
 ```
@@ -1957,6 +1962,55 @@ It will output:
 3.1415 negative: 0 is_integer: 0 float: 3.1415 float: 3.1415
 -13231232 negative: 1 is_integer: 1 integer: -13231232 integer: -13231232
 9999999999999999999 negative: 0 is_integer: 1 large 64-bit integer: 9999999999999999999 large 64-bit integer: 9999999999999999999
+```
+
+In the following example, we have an array of integers that are outside the valid range of 64-bit signed or
+unsigned integers. Calling `get_number_type()` on the values returns `ondemand::number_type::big_integer`.
+You can try to represent these big integers as 64-bit floating-point numbers, though you typically lose
+precision in the process (as illustrated in the example).
+
+```C++
+  ondemand::parser parser;
+  padded_string docdata = R"([-9223372036854775809, 18446744073709551617, 99999999999999999999999 ])"_padded;
+  double dexpected[] = {-9223372036854775808.0, 18446744073709551616.0, 1e23};
+  ondemand::document doc = parser.iterate(docdata);
+  ondemand::array arr = doc.get_array();
+  for(ondemand::value val : arr) {
+    if(val.get_number_type() == ondemand::number_type::big_integer) {
+      std::cout << val.get_double() << std::endl;
+      // might print -9.22337e+18, 1.84467e+19, 1e+23
+    }
+  }
+```
+This program might print:
+```
+-9.22337e+18
+1.84467e+19
+1e+23
+```
+
+You may get access to the underlying string representing the big integer with
+`raw_json_token()` and you may parse the resulting number strings using your own parser.
+
+```c++
+  ondemand::parser parser;
+  padded_string docdata = R"([-9223372036854775809, 18446744073709551617, 99999999999999999999999 ])"_padded;
+  ondemand::document doc = parser.iterate(docdata);
+  ondemand::array arr = doc.get_array();
+  for(ondemand::value val : arr) {
+    // val.get_number_type() == ondemand::number_type::big_integer
+    if(val.get_number_type() == ondemand::number_type::big_integer) {
+      std::string_view token = val.raw_json_token();
+      // token = "-9223372036854775809", "18446744073709551617", "99999999999999999999999 "
+      std::cout << "'" << token << "'" << std::endl;
+    }
+  }
+```
+This code prints the following:
+```
+'-9223372036854775809'
+'18446744073709551617'
+'99999999999999999999999 '
 ```
 
 Raw Strings From Keys
