@@ -186,6 +186,14 @@ public:
    */
   simdjson_inline uint32_t peek_length(token_position position) const noexcept;
   /**
+   * Get the maximum length of the JSON text for the current root token.
+   *
+   * The length will include any whitespace at the end of the token.
+   *
+   * @param position The position of the token to retrieve.
+   */
+  simdjson_inline uint32_t peek_root_length(token_position position) const noexcept;
+  /**
    * Get the JSON text for the last token in the document.
    *
    * This is not null-terminated; it is a view into the JSON.

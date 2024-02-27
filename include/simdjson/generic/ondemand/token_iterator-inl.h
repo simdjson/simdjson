@@ -37,6 +37,11 @@ simdjson_inline uint32_t token_iterator::peek_length(token_position position) co
   return *(position+1) - *position;
 }
 
+simdjson_inline uint32_t token_iterator::peek_root_length(token_position position) const noexcept {
+  return *(position+2) - *(position) > *(position+1) - *(position) ?
+      *(position+1) - *(position)
+      : *(position+2) - *(position);
+}
 simdjson_inline const uint8_t *token_iterator::peek(int32_t delta) const noexcept {
   return &buf[*(_position+delta)];
 }

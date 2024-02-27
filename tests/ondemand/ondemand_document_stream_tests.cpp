@@ -651,6 +651,26 @@ namespace document_stream_tests {
     }
 
 
+    bool issue2137() {
+        TEST_START();
+        auto json = "true  {  "_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+        for (auto doc: stream) {
+            bool val{};
+            ASSERT_SUCCESS(doc.get_bool().get(val));
+            std::string_view raw_json;
+            ASSERT_SUCCESS(doc.raw_json_token().get(raw_json));
+            ASSERT_EQUAL(val, 1);
+            std::string s(raw_json);
+            ASSERT_EQUAL(s, "true  ");
+        }
+        size_t t = stream.truncated_bytes();
+        ASSERT_EQUAL(3, t);
+        TEST_SUCCEED();
+    }
+
     bool issue1668() {
         TEST_START();
         auto json = R"([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100])"_padded;
@@ -861,6 +881,7 @@ namespace document_stream_tests {
 
     bool run() {
         return
+            issue2137() &&
             skipbom() &&
             issue1977() &&
             string_with_trailing() &&

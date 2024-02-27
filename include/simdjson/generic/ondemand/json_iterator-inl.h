@@ -286,6 +286,12 @@ simdjson_inline uint32_t json_iterator::peek_length(token_position position) con
 #endif // SIMDJSON_CHECK_EOF
   return token.peek_length(position);
 }
+simdjson_inline uint32_t json_iterator::peek_root_length(token_position position) const noexcept {
+#if SIMDJSON_CHECK_EOF
+  assert_valid_position(position);
+#endif // SIMDJSON_CHECK_EOF
+  return token.peek_root_length(position);
+}
 
 simdjson_inline token_position json_iterator::last_position() const noexcept {
   // The following line fails under some compilers...
