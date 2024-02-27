@@ -1416,8 +1416,9 @@ Dynamic Number Types</h1>
 <p>An <code>ondemand::number</code> instance may contain an integer value or a floating-point value. Thus it is a dynamically typed number. Before accessing the value, you must determine the detected type:</p>
 <ul>
 <li><code>number.get_number_type()</code> has value <code>number_type::signed_integer</code> if we have a integer in [-9223372036854775808,9223372036854775808). You can recover the value by the <code>get_int64()</code> method applied on the <code>ondemand::number</code> instance. When <code>number.get_number_type()</code> has value <code>number_type::signed_integer</code>, you also have that <code>number.is_int64()</code> is true. Calling <code>get_int64()</code> on the <code>ondemand::number</code> instance when <code>number.get_number_type()</code> is not <code>number_type::signed_integer</code> is unsafe. You may replace <code>get_int64()</code> by a cast to a <code>int64_t</code> value.</li>
-<li><code>number.get_number_type()</code> has value <code>number_type::unsigned_integer</code> if we have a integer in [9223372036854775808,18446744073709551616). You can recover the value by the <code>get_uint64()</code> method applied on the <code>ondemand::number</code> instance. When <code>number.get_number_type()</code> has value <code>number_type::unsigned_integer</code>, you also have that <code>number.is_uint64()</code> is true. Calling <code>get_uint64()</code> on the <code>ondemand::number</code> instance when <code>number.get_number_type()</code> is not <code>number_type::unsigned_integer</code> is unsafe. You may replace <code>get_uint64()</code> by a cast to a <code>uint64_t</code> value.</li>
+<li><code>number.get_number_type()</code> has value <code>number_type::unsigned_integer</code> if we have a integer in <code>[9223372036854775808,18446744073709551616)</code>. You can recover the value by the <code>get_uint64()</code> method applied on the <code>ondemand::number</code> instance. When <code>number.get_number_type()</code> has value <code>number_type::unsigned_integer</code>, you also have that <code>number.is_uint64()</code> is true. Calling <code>get_uint64()</code> on the <code>ondemand::number</code> instance when <code>number.get_number_type()</code> is not <code>number_type::unsigned_integer</code> is unsafe. You may replace <code>get_uint64()</code> by a cast to a <code>uint64_t</code> value.</li>
 <li><code>number.get_number_type()</code> has value <code>number_type::floating_point_number</code> if we have and we have a floating-point (binary64) number. You can recover the value by the <code>get_double()</code> method applied on the <code>ondemand::number</code> instance. When <code>number.get_number_type()</code> has value <code>number_type::floating_point_number</code>, you also have that <code>number.is_double()</code> is true. Calling <code>get_double()</code> on the <code>ondemand::number</code> instance when <code>number.get_number_type()</code> is not <code>number_type::floating_point_number</code> is unsafe. You may replace <code>get_double()</code> by a cast to a <code>double</code> value.</li>
+<li>When the value is an integer outside of the valid ranges for a 64-bit integers, e.g., when it is smaller than -9223372036854775808 or larger than 18446744073709551615, then <code>number.get_number_type()</code> has value <code>number_type::big_integer</code>. If you try to parse such a number of <code>get_number()</code>, you get the error <code>BIGINT_ERROR</code>. You can access the underlying string of digits with the function <code>raw_json_token()</code> which returns an <code>std::string_view</code> instance starting at the beginning of the digit. You can also call <code>get_double()</code> to get a floating-point approximation.</li>
 </ul>
 <p>You must check the type before accessing the value: it is an error to call <code>get_int64()</code> when <code>number.get_number_type()</code> is not <code>number_type::signed_integer</code> and when <code>number.is_int64()</code> is false. You are responsible for this check as the user of the library.</p>
 <p>The <code>get_number()</code> function is designed with performance in mind. When calling <code>get_number()</code>, you scan the number string only once, determining efficiently the type and storing it in an efficient manner.</p>
@@ -1445,6 +1446,9 @@ Dynamic Number Types</h1>
 <div class="line">         std::cout  &lt;&lt; &quot;float: &quot; &lt;&lt; double(num) &lt;&lt; &quot; &quot;;</div>
 <div class="line">         std::cout &lt;&lt; &quot;float: &quot; &lt;&lt; num.get_double() &lt;&lt; std::endl;</div>
 <div class="line">         break;</div>
+<div class="line">       case ondemand::number_type::big_integer:</div>
+<div class="line">         std::cout  &lt;&lt; &quot;big-integer: &quot; &lt;&lt; val.raw_json_token() &lt;&lt; std::endl;</div>
+<div class="line">         break;</div>
 <div class="line">     }</div>
 <div class="line">   }</div>
 </div><!-- fragment --><p>It will output:</p>
@@ -1454,6 +1458,39 @@ Dynamic Number Types</h1>
 <div class="line">3.1415 negative: 0 is_integer: 0 float: 3.1415 float: 3.1415</div>
 <div class="line">-13231232 negative: 1 is_integer: 1 integer: -13231232 integer: -13231232</div>
 <div class="line">9999999999999999999 negative: 0 is_integer: 1 large 64-bit integer: 9999999999999999999 large 64-bit integer: 9999999999999999999</div>
+</div><!-- fragment --><p>In the following example, we have an array of integers that are outside the valid range of 64-bit signed or unsigned integers. Calling <code>get_number_type()</code> on the values returns <code>ondemand::number_type::big_integer</code>. You can try to represent these big integers as 64-bit floating-point numbers, though you typically lose precision in the process (as illustrated in the example).</p>
+<div class="fragment"><div class="line">{C++}</div>
+<div class="line"> ondemand::parser parser;</div>
+<div class="line"> padded_string docdata = R&quot;([-9223372036854775809, 18446744073709551617, 99999999999999999999999 ])&quot;_padded;</div>
+<div class="line"> double dexpected[] = {-9223372036854775808.0, 18446744073709551616.0, 1e23};</div>
+<div class="line"> ondemand::document doc = parser.iterate(docdata);</div>
+<div class="line"> ondemand::array arr = doc.get_array();</div>
+<div class="line"> for(ondemand::value val : arr) {</div>
+<div class="line">   if(val.get_number_type() == ondemand::number_type::big_integer) {</div>
+<div class="line">     std::cout &lt;&lt; val.get_double() &lt;&lt; std::endl;</div>
+<div class="line">     // might print -9.22337e+18, 1.84467e+19, 1e+23</div>
+<div class="line">   }</div>
+<div class="line"> }</div>
+</div><!-- fragment --><p> This program might print: </p><div class="fragment"><div class="line">-9.22337e+18</div>
+<div class="line">1.84467e+19</div>
+<div class="line">1e+23</div>
+</div><!-- fragment --><p>You may get access to the underlying string representing the big integer with <code>raw_json_token()</code> and you may parse the resulting number strings using your own parser.</p>
+<div class="fragment"><div class="line">{c++}</div>
+<div class="line"> ondemand::parser parser;</div>
+<div class="line"> padded_string docdata = R&quot;([-9223372036854775809, 18446744073709551617, 99999999999999999999999 ])&quot;_padded;</div>
+<div class="line"> ondemand::document doc = parser.iterate(docdata);</div>
+<div class="line"> ondemand::array arr = doc.get_array();</div>
+<div class="line"> for(ondemand::value val : arr) {</div>
+<div class="line">   // val.get_number_type() == ondemand::number_type::big_integer</div>
+<div class="line">   if(val.get_number_type() == ondemand::number_type::big_integer) {</div>
+<div class="line">     std::string_view token = val.raw_json_token();</div>
+<div class="line">     // token = &quot;-9223372036854775809&quot;, &quot;18446744073709551617&quot;, &quot;99999999999999999999999 &quot;</div>
+<div class="line">     std::cout &lt;&lt; &quot;&#39;&quot; &lt;&lt; token &lt;&lt; &quot;&#39;&quot; &lt;&lt; std::endl;</div>
+<div class="line">   }</div>
+<div class="line"> }</div>
+</div><!-- fragment --><p> This code prints the following: </p><div class="fragment"><div class="line">&#39;-9223372036854775809&#39;</div>
+<div class="line">&#39;18446744073709551617&#39;</div>
+<div class="line">&#39;99999999999999999999999 &#39;</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md26"></a>
 Raw Strings From Keys</h1>
 <p>It is sometimes useful to have access to a raw (unescaped) string: we make available a minimalist <code>raw_json_string</code> data type which contains a pointer inside the string in the original document, right after the quote. It is accessible via <code>get_raw_json_string()</code> on a string instance and returned by the <code>key()</code> method on an object's field instance. It is always optional: replacing <code>get_raw_json_string()</code> with <code>get_string()</code> and <code>key()</code> by <code>unescaped_key()</code> returns an <code>string_view</code> instance of the unescaped string.</p>
