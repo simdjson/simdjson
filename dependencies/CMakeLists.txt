@@ -134,7 +134,7 @@ int main() {}
   add_library(competition-core INTERFACE)
   target_link_libraries(competition-core INTERFACE nlohmann_json rapidjson sajson cjson jsmn yyjson)
 
-  if(target boostjson)
+  if(TARGET boostjson)
      target_compile_definitions(boostjson INTERFACE HAS_BOOST_JSON)
      target_link_libraries(competition-core INTERFACE boostjson)
   endif()
