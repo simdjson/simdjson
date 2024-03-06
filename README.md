@@ -169,6 +169,7 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 - [JSON-Simd](https://github.com/rawleyfowler/JSON-simd): Raku bindings.
 - [JSON::SIMD](https://metacpan.org/pod/JSON::SIMD): Perl bindings; fully-featured JSON module that uses simdjson for decoding.
 - [gemmaJSON](https://github.com/sainttttt/gemmaJSON): Nim JSON parser based on simdjson bindings.
+- [simdjson-java](https://github.com/simdjson/simdjson-java): Java port.
 
 About simdjson
 --------------
