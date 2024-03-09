@@ -106,6 +106,17 @@ namespace error_tests {
     TEST_SUCCEED();
   }
 #if SIMDJSON_EXCEPTIONS
+  // This is a compile-only test
+  struct Class {
+      Class(std::string text)
+          : parser()
+          , doc(parser.iterate(text))
+      {
+      }
+      simdjson::ondemand::parser parser;
+      simdjson::ondemand::document doc;
+  };
+
   bool raw_json_string_except() {
     TEST_START();
     ondemand::parser parser;
