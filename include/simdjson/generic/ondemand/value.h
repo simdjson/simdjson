@@ -36,12 +36,13 @@ public:
    * @returns INCORRECT_TYPE If the JSON value is not the given type.
    */
   template<typename T> simdjson_inline simdjson_result<T> get() noexcept {
-    // Unless the simdjson library provides an inline implementation, calling this method should
+    // Unless the simdjson library or the user provides an inline implementation, calling this method should
     // immediately fail.
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
       "The supported types are ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
       "int64_t, double, and bool. We recommend you use get_double(), get_bool(), get_uint64(), get_int64(), "
-      " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template.");
+      " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template."
+      " You may also add support for custom types, see our documentation.");
   }
 
   /**
@@ -196,7 +197,10 @@ public:
 #if SIMDJSON_EXCEPTIONS
   /**
    * Cast this JSON value to an instance of type T. The programmer is responsible for
-   * providing an implementation of get<T> for the type T.
+   * providing an implementation of get<T> for the type T, if T is not one of the types
+   * supported by the library (object, array, raw_json_string, string_view, uint64_t, etc.).
+   *
+   * See https://github.com/simdjson/simdjson/blob/master/doc/basics.md#adding-support-for-custom-types
    *
    * @returns An instance of type T
    */
