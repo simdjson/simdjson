@@ -116,7 +116,19 @@ namespace error_tests {
       simdjson::ondemand::parser parser;
       simdjson::ondemand::document doc;
   };
-
+  bool document_in_class() {
+    TEST_START();
+    std::string text = "{}";
+    Class c(text);
+    TEST_SUCCEED();
+  }
+  bool direct_document() {
+    TEST_START();
+    std::string text = "{}";
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc(parser.iterate(text));
+    TEST_SUCCEED();
+  }
   bool raw_json_string_except() {
     TEST_START();
     ondemand::parser parser;
@@ -392,6 +404,8 @@ namespace error_tests {
            issue1834() &&
            issue1834_2() &&
 #if SIMDJSON_EXCEPTIONS
+           document_in_class() &&
+           direct_document() &&
            raw_json_string_except() &&
            raw_json_string_except_with_io() &&
 #endif
