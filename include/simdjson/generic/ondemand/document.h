@@ -784,7 +784,7 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) & noexcept;
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
 #if SIMDJSON_EXCEPTIONS
-  template <class T, std::enable_if_t<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document>::value == false>>
+  template <class T, typename std::enable_if<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document>::value == false>::type>
   explicit simdjson_inline operator T() noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::object() & noexcept(false);
@@ -855,7 +855,7 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> get_value() noexcept;
   simdjson_inline simdjson_result<bool> is_null() noexcept;
 #if SIMDJSON_EXCEPTIONS
-  template <class T, std::enable_if_t<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::value == false>>
+  template <class T, typename std::enable_if<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::value == false>::type>
   explicit simdjson_inline operator T() noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::object() & noexcept(false);

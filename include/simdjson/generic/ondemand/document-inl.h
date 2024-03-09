@@ -535,7 +535,7 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> simdj
 
 
 #if SIMDJSON_EXCEPTIONS
-template <class T, std::enable_if_t<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document>::value == false>>
+template <class T, typename std::enable_if<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document>::value == false>::type>
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator T() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
@@ -847,7 +847,7 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> simdj
   return first.get_number();
 }
 #if SIMDJSON_EXCEPTIONS
-template <class T, std::enable_if_t<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::value == false>>
+template <class T, typename std::enable_if<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::value == false>::type>
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::operator T() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
