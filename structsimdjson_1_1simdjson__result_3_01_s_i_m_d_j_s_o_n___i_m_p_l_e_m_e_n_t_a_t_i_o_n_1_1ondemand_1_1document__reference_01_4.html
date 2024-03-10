@@ -158,10 +158,10 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <tr class="memitem:a956a0b0a4f8f910c45be61370ae96586"><td class="memItemLeft" align="right" valign="top"><a id="a956a0b0a4f8f910c45be61370ae96586"></a>
 simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>is_null</b> () noexcept</td></tr>
 <tr class="separator:a956a0b0a4f8f910c45be61370ae96586"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1b08a9262a2406b26dae10d44011373e"><td class="memTemplParams" colspan="2"><a id="a1b08a9262a2406b26dae10d44011373e"></a>
-template&lt;class T &gt; </td></tr>
-<tr class="memitem:a1b08a9262a2406b26dae10d44011373e"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline&#160;</td><td class="memTemplItemRight" valign="bottom"><b>operator T</b> () noexcept(false)</td></tr>
-<tr class="separator:a1b08a9262a2406b26dae10d44011373e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa22a52f43e1fa09cfe4645a87879661a"><td class="memTemplParams" colspan="2"><a id="aa22a52f43e1fa09cfe4645a87879661a"></a>
+template&lt;class T , typename std::enable_if&lt; std::is_same&lt; T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference &gt;::value==false &gt;::type &gt; </td></tr>
+<tr class="memitem:aa22a52f43e1fa09cfe4645a87879661a"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline&#160;</td><td class="memTemplItemRight" valign="bottom"><b>operator T</b> () noexcept(false)</td></tr>
+<tr class="separator:aa22a52f43e1fa09cfe4645a87879661a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a096cb746c1e63523c55b0180884e4462"><td class="memItemLeft" align="right" valign="top"><a id="a096cb746c1e63523c55b0180884e4462"></a>
 simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><b>operator SIMDJSON_IMPLEMENTATION::ondemand::array</b> () &amp;noexcept(false)</td></tr>
 <tr class="separator:a096cb746c1e63523c55b0180884e4462"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -349,7 +349,7 @@ Additional Inherited Members</h2></td></tr>
 <p>std::string_view document_reference::raw_json_token() const noexcept </p>
 <p>std::string_view document_reference::raw_json_token() const noexcept </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00888">888</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00898">898</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
