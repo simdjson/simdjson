@@ -1712,7 +1712,8 @@ template&lt;class T &gt; </div>
 </div><div class="memdoc">
 
 <p>Cast this JSON value to an instance of type T. </p>
-<p>The programmer is responsible for providing an implementation of get&lt;T&gt; for the type T.</p>
+<p>The programmer is responsible for providing an implementation of get&lt;T&gt; for the type T, if T is not one of the types supported by the library (object, array, <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html" title="A string escaped per JSON rules, terminated with quote (&quot;).">raw_json_string</a>, string_view, uint64_t, etc.).</p>
+<p>See <a href="https://github.com/simdjson/simdjson/blob/master/doc/basics.md#adding-support-for-custom-types">https://github.com/simdjson/simdjson/blob/master/doc/basics.md#adding-support-for-custom-types</a></p>
 <dl class="section return"><dt>Returns</dt><dd>An instance of type T </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00099">99</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>

@@ -181,9 +181,9 @@ template&lt;typename T &gt; </td></tr>
 template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a2bbfe68b06975a98c12f46bcfbe7189d"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> (T &amp;out) &amp;&amp;noexcept</td></tr>
 <tr class="separator:a2bbfe68b06975a98c12f46bcfbe7189d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a82f15e975b32e02fc98d4583a46ae0c6"><td class="memTemplParams" colspan="2"><a id="a82f15e975b32e02fc98d4583a46ae0c6"></a>
-template&lt;class T &gt; </td></tr>
-<tr class="memitem:a82f15e975b32e02fc98d4583a46ae0c6"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline&#160;</td><td class="memTemplItemRight" valign="bottom"><b>operator T</b> () noexcept(false)</td></tr>
+<tr class="memitem:a82f15e975b32e02fc98d4583a46ae0c6"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
+<tr class="memitem:a82f15e975b32e02fc98d4583a46ae0c6"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a82f15e975b32e02fc98d4583a46ae0c6">operator T</a> () noexcept(false)</td></tr>
+<tr class="memdesc:a82f15e975b32e02fc98d4583a46ae0c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cast this JSON value to an instance of type T.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a82f15e975b32e02fc98d4583a46ae0c6">More...</a><br /></td></tr>
 <tr class="separator:a82f15e975b32e02fc98d4583a46ae0c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a08307c0a5552cf8cb06613ed1de48eac"><td class="memItemLeft" align="right" valign="top">simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a08307c0a5552cf8cb06613ed1de48eac">operator array</a> () &amp;noexcept(false)</td></tr>
 <tr class="memdesc:a08307c0a5552cf8cb06613ed1de48eac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cast this JSON value to an array.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a08307c0a5552cf8cb06613ed1de48eac">More...</a><br /></td></tr>
@@ -1846,6 +1846,37 @@ INCORRECT_TYPE If the JSON value begins with 'n' and is not 'null'. </dd></dl>
 </dl>
 
 <p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00193">193</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a82f15e975b32e02fc98d4583a46ae0c6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a82f15e975b32e02fc98d4583a46ae0c6">&#9670;&nbsp;</a></span>operator T()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document::operator T</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">explicit</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Cast this JSON value to an instance of type T. </p>
+<p>The programmer is responsible for providing an implementation of get&lt;T&gt; for the type T, if T is not one of the types supported by the library (object, array, <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html" title="A string escaped per JSON rules, terminated with quote (&quot;).">raw_json_string</a>, string_view, uint64_t, etc.)</p>
+<p>See <a href="https://github.com/simdjson/simdjson/blob/master/doc/basics.md#adding-support-for-custom-types">https://github.com/simdjson/simdjson/blob/master/doc/basics.md#adding-support-for-custom-types</a></p>
+<dl class="section return"><dt>Returns</dt><dd>An instance of type T </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00187">187</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
