@@ -1,4 +1,4 @@
-name: Ubuntu 22.04 CI (GCC 11) with Thread Sanitizer
+name: Ubuntu 22.04 CI (GCC 12) with Thread Sanitizer
 
 on: [push, pull_request]
 
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: dependencies/.cache
           key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
@@ -18,7 +18,7 @@ jobs:
         run: |
           mkdir build &&
           cd build &&
-          cmake  -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_SANITIZE_THREADS=ON ..  &&
+          CXX=g++-12 cmake  -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_SANITIZE_THREADS=ON ..  &&
           cmake --build . --target document_stream_tests  --target ondemand_document_stream_tests --target parse_many_test  &&
           ctest --output-on-failure  -R parse_many_test  &&
           ctest --output-on-failure  -R document_stream_tests
