@@ -401,6 +401,9 @@ Using the Parsed JSON</h1>
 <div class="line">       // key() returns the key as it appears in the raw</div>
 <div class="line">       // JSON document, if we want the unescaped key,</div>
 <div class="line">       // we should do field.unescaped_key().</div>
+<div class="line">       // We could also use field.escaped_key() if we want</div>
+<div class="line">       // a std::string_view instance, but we do not need</div>
+<div class="line">       // escaping.</div>
 <div class="line">       cout &lt;&lt; &quot;\&quot;&quot; &lt;&lt; field.key() &lt;&lt; &quot;\&quot;: &quot;;</div>
 <div class="line">       recursive_print_json(field.value());</div>
 <div class="line">       add_comma = true;</div>
@@ -491,6 +494,8 @@ Using the Parsed JSON: Additional examples</h2>
 <div class="line">for (ondemand::field key_car : doc.get_object()) {</div>
 <div class="line">  // If I need a string_view and/or, I can use key_car.unescaped_key() instead, but</div>
 <div class="line">  // key_car.key() will be more performant otherwise.</div>
+<div class="line">  // If we want a std::string_view instance but we do not care about escaping, we</div>
+<div class="line">  // can also use key_car.escaped_key().</div>
 <div class="line">  cout &lt;&lt; &quot;identifier : &quot; &lt;&lt; key_car.key() &lt;&lt; std::endl;</div>
 <div class="line">  // I can now access the subobject:</div>
 <div class="line">  ondemand::object car = key_car.value();</div>
