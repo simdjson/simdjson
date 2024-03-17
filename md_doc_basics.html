@@ -259,7 +259,7 @@ Using the Parsed JSON</h1>
 <li>Because On Demand is really just an iterator, you must fully consume the current object or array before accessing a sibling object or array.</li>
 <li>Values can only be consumed once, you should get the values and store them if you plan to need them multiple times. You are expected to access the keys of an object just once. You are expected to go through the values of an array just once.</li>
 </ol>
-<p>The simdjson library makes generous use of <code>std::string_view</code> instances. If you are unfamiliar with <code>std::string_view</code> in C++, make sure to <a href="#string_view">read the section on std::string_view</a>. They behave much like an immutable <code>std::string</code> but they require no memory allocation. You can create a <code>std::string</code> instance from an <code>std::string_view</code> when you need it.</p>
+<p>The simdjson library makes generous use of <code>std::string_view</code> instances. If you are unfamiliar with <code>std::string_view</code> in C++, make sure to <a href="#string_view">read the section on std::string_view</a>. They behave much like an immutable <code>std::string</code> but they require no memory allocation. You can create a <code>std::string</code> instance from a <code>std::string_view</code> when you need it.</p>
 <p>The following specific instructions indicate how to use the JSON when exceptions are enabled, but simdjson has full, idiomatic support for users who avoid exceptions. See <a href="basics.md#error-handling">the simdjson error handling documentation</a> for more.</p>
 <ul>
 <li><b>Validate What You Use:</b> When calling <code>iterate</code>, the document is quickly indexed. If it is not a valid Unicode (UTF-8) string or if there is an unclosed string, an error may be reported right away. However, it is not fully validated. On Demand only fully validates the values you use and the structure leading to it. It means that at every step as you traverse the document, you may encounter an error. You can handle errors either with exceptions or with error codes.</li>
@@ -270,7 +270,7 @@ Using the Parsed JSON</h1>
 </blockquote>
 <p>* <b>Field Access:</b> To get the value of the "foo" field in an object, use <code>object["foo"]</code>. This will scan through the object looking for the field with the matching string, doing a character-by-character comparison. It may generate the error <code><a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a4a2c71f8eca438b3f0553a2811bdab9a" title="JSON field not found in object.">simdjson::NO_SUCH_FIELD</a></code> if there is no such key in the object, it may throw an exception (see <a href="#error-handling">Error Handling</a>). For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do not do <code>object["foo"]</code> followed by <code>object["foo"]</code> with the same <code>object</code> instance. For best performance, you should try to query the keys in the same order they appear in the document. If you need several keys and you cannot predict the order they will appear in, it is recommended to iterate through all keys <code>for(auto field : object) {...}</code>. Keep in mind that On Demand does not buffer or save the result of the parsing: if you repeatedly access <code>object["foo"]</code>, then it must repeatedly seek the key and parse the content. The library does not provide a distinct function to check if a key is present, instead we recommend you attempt to access the key: e.g., by doing <code>ondemand::value val{}; if (!object["foo"].get(val)) {...}</code>, you have that <code>val</code> contains the requested value inside the if clause. It is your responsibility as a user to temporarily keep a reference to the value (<code>auto v = object["foo"]</code>), or to consume the content and store it in your own data structures. If you consume an object twice: <code>std::string_view(object["foo"]</code> followed by <code>std::string_view(object["foo"]</code> then your code is in error. Furthermore, you can only consume one field at a time, on the same object. The value instance you get from <code>content["bids"]</code> becomes invalid when you call <code>content["asks"]</code>. If you have retrieved <code>content["bids"].get_array()</code> and you later call <code>content["asks"].get_array()</code>, then the first array should no longer be accessed: it would be unsafe to do so. You can detect such mistakes by first compiling and running the code in Debug mode: an OUT_OF_ORDER_ITERATION error is generated.</p>
 <blockquote class="doxtable">
-<p>NOTE: JSON allows you to escape characters in keys. E.g., the key <code>"date"</code> may be written as <code>"\u0064\u0061\u0074\u0065"</code>. By default, simdjson does <em>not</em> unescape keys when matching by default. Thus if you search for the key <code>"date"</code> and the JSON document uses <code>"\u0064\u0061\u0074\u0065"</code> as a key, it will not be recognized. This is not generally a problem. Nevertheless, if you do need to support escaped keys, the method <code>unescaped_key()</code> provides the desired unescaped keys by parsing and writing out the unescaped keys to a string buffer and returning a <code>std::string_view</code> instance. The <code>unescaped_key</code> takes an optional Boolean value: passing it true will decode invalid Unicode sequences with replacement, meaning that the decoding always succeeds but bogus Unicode replacement characters are inserted. In general, you should expect a performance penalty when using <code>unescaped_key()</code> compared to <code>key()</code> because of the string processing: the <code>key()</code> function just points inside the source JSON document.</p>
+<p>NOTE: JSON allows you to escape characters in keys. E.g., the key <code>"date"</code> may be written as <code>"\u0064\u0061\u0074\u0065"</code>. By default, simdjson does <em>not</em> unescape keys when matching by default. Thus if you search for the key <code>"date"</code> and the JSON document uses <code>"\u0064\u0061\u0074\u0065"</code> as a key, it will not be recognized. This is not generally a problem. Nevertheless, if you do need to support escaped keys, the method <code>unescaped_key()</code> provides the desired unescaped keys by parsing and writing out the unescaped keys to a string buffer and returning a <code>std::string_view</code> instance. The <code>unescaped_key</code> takes an optional Boolean value: passing it true will decode invalid Unicode sequences with replacement, meaning that the decoding always succeeds but bogus Unicode replacement characters are inserted. In general, you should expect a performance penalty when using <code>unescaped_key()</code> compared to <code>key()</code> because of the string processing: the <code>key()</code> function just points inside the source JSON document. As a compromise, you may use <code>escaped_key()</code><code> which returns a</code>std::string_view&lt;tt&gt;instance pointing directly in the document, likekey()<code>, although, unlike</code>key()`, it has to determine the location of the final quote character.</p>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">auto json = R&quot;({&quot;k\u0065y&quot;: 1})&quot;_padded;</div>
 <div class="line">ondemand::parser parser;</div>
@@ -279,6 +279,9 @@ Using the Parsed JSON</h1>
 <div class="line">for(auto field : object) {</div>
 <div class="line">   // parses and writes out the key, after unescaping it,</div>
 <div class="line">   // to a string buffer. It causes a performance penalty.</div>
+<div class="line">   // If you do not expect that unescaping is useful, you</div>
+<div class="line">   // may replace field.unescaped_key() with</div>
+<div class="line">   // field.escaped_key().</div>
 <div class="line">   std::string_view keyv = field.unescaped_key();</div>
 <div class="line">   if (keyv == &quot;key&quot;) { std::cout &lt;&lt; uint64_t(field.value()); }</div>
 <div class="line"> }</div>
@@ -302,7 +305,8 @@ Using the Parsed JSON</h1>
 <p>If you know the type of the value, you can cast it right there, too! <code>for (double value : array) { ... }</code>.</p>
 <p>You may also use explicit iterators: <code>for(auto i = array.begin(); i != array.end(); i++) {}</code>. You can check that an array is empty with the condition <code>auto i = array.begin(); if (i == array.end()) {...}</code>.</p><ul>
 <li><b>Object Iteration:</b> You can iterate through an object's fields, as well: <code>for (auto field : object) { ... }</code>. You may also use explicit iterators : <code>for(auto i = object.begin(); i != object.end(); i++) { auto field = *i; .... }</code>. You can check that an object is empty with the condition <code>auto i = object.begin(); if (i == object.end()) {...}</code>.<ul>
-<li><code>field.unescaped_key()</code> will get you the unescaped key string. E.g., the JSON string <code>"\u00e1"</code> becomes the Unicode string <code>á</code>. Optionally, you pass <code>true</code> as a parameter to the <code>unescaped_key</code> method if you want invalid escape sequences to be replaced by a default replacement character (e.g., <code>\ud800\ud801\ud811</code>): otherwise bad escape sequences lead to an immediate error.</li>
+<li><code>field.unescaped_key()</code> will get you the unescaped key string as a <code>std::string_view</code> instance. E.g., the JSON string <code>"\u00e1"</code> becomes the Unicode string <code>á</code>. Optionally, you pass <code>true</code> as a parameter to the <code>unescaped_key</code> method if you want invalid escape sequences to be replaced by a default replacement character (e.g., <code>\ud800\ud801\ud811</code>): otherwise bad escape sequences lead to an immediate error.</li>
+<li><code>field.escaped_key()</code> will get you the key string as as a <code>std::string_view</code> instance, but unlike <code>unescaped_key()</code>, the key is not processed, so no unescaping is done. E.g., the JSON string <code>"\u00e1"</code> becomes the Unicode string <code>\u00e1</code>. We expect that <code>escaped_key()</code> is faster than <code>field.unescaped_key()</code>.</li>
 <li><code>field.value()</code> will get you the value, which you can then use all these other methods on.</li>
 </ul>
 </li>
@@ -361,7 +365,7 @@ Using the Parsed JSON</h1>
 <div class="line">size_t count = test_object.count_fields(); // requires simdjson 1.0 or better</div>
 <div class="line">std::cout &lt;&lt; &quot;Number of fields: &quot; &lt;&lt;  count &lt;&lt; std::endl; // Prints &quot;Number of fields: 2&quot;</div>
 </div><!-- fragment --><ul>
-<li><p class="startli"><b>Tree Walking and JSON Element Types:</b> Sometimes you don't necessarily have a document with a known type, and are trying to generically inspect or walk over JSON elements. You can also represent arbitrary JSON values with <code>ondemand::value</code> instances: it can represent anything except a scalar document (lone number, string, null or Boolean). You can check for scalar documents with the method <code>scalar()</code>. You can cast a document that is either an array or an object to an <code>ondemand::value</code> instance immediately after you create the document instance: you cannot create a <code>ondemand::value</code> instance from a document that has already been accessed as it would mean that you would have two instances of the object or array simultaneously (see <a href="#rewinding">rewinding</a>). You can query the type of a document or a value with the <code>type()</code> method. The <code>type()</code> method does not consume or validate documents and values, but it tells you whether they are</p><ul>
+<li><p class="startli"><b>Tree Walking and JSON Element Types:</b> Sometimes you don't necessarily have a document with a known type, and are trying to generically inspect or walk over JSON elements. You can also represent arbitrary JSON values with <code>ondemand::value</code> instances: it can represent anything except a scalar document (lone number, string, null or Boolean). You can check for scalar documents with the method <code>scalar()</code>. You can cast a document that is either an array or an object to an <code>ondemand::value</code> instance immediately after you create the document instance: you cannot create an <code>ondemand::value</code> instance from a document that has already been accessed as it would mean that you would have two instances of the object or array simultaneously (see <a href="#rewinding">rewinding</a>). You can query the type of a document or a value with the <code>type()</code> method. The <code>type()</code> method does not consume or validate documents and values, but it tells you whether they are</p><ul>
 <li>arrays (<code>json_type::array</code>),</li>
 <li>objects (<code>json_type::object</code>)</li>
 <li>numbers (<code>json_type::number</code>),</li>
@@ -1115,7 +1119,7 @@ Error Handling Examples without Exceptions</h2>
 <div class="line"> error = doc.get_object().get(object);</div>
 <div class="line"> if (error) { return false; }</div>
 <div class="line"> for(auto field : object) {</div>
-<div class="line">   // We could replace &#39;field.key() with field.unescaped_key(),</div>
+<div class="line">   // We could replace &#39;field.key() with field.unescaped_key() or field.escaped_key(),</div>
 <div class="line">   // and ondemand::raw_json_string by std::string_view.</div>
 <div class="line">   ondemand::raw_json_string keyv;</div>
 <div class="line">   error = field.key().get(keyv);</div>
@@ -1405,7 +1409,7 @@ Parsing Numbers Inside Strings</h1>
 <div class="line">  }</div>
 <div class="line">  else { /* Handle wrong value */ }</div>
 <div class="line">}</div>
-</div><!-- fragment --><p> It is also important to note that when dealing an invalid number inside a string, simdjson will report a <code>NUMBER_ERROR</code> error if the string begins with a number whereas simdjson will report a <code>INCORRECT_TYPE</code> error otherwise.</p>
+</div><!-- fragment --><p> It is also important to note that when dealing an invalid number inside a string, simdjson will report a <code>NUMBER_ERROR</code> error if the string begins with a number whereas simdjson will report an <code>INCORRECT_TYPE</code> error otherwise.</p>
 <p>The <code>*_in_string</code> methods can also be called on a single document instance: e.g., when your document consist solely of a quoted number.</p>
 <h1><a class="anchor" id="autotoc_md25"></a>
 Dynamic Number Types</h1>
@@ -1418,7 +1422,7 @@ Dynamic Number Types</h1>
 <li><code>number.get_number_type()</code> has value <code>number_type::signed_integer</code> if we have a integer in [-9223372036854775808,9223372036854775808). You can recover the value by the <code>get_int64()</code> method applied on the <code>ondemand::number</code> instance. When <code>number.get_number_type()</code> has value <code>number_type::signed_integer</code>, you also have that <code>number.is_int64()</code> is true. Calling <code>get_int64()</code> on the <code>ondemand::number</code> instance when <code>number.get_number_type()</code> is not <code>number_type::signed_integer</code> is unsafe. You may replace <code>get_int64()</code> by a cast to a <code>int64_t</code> value.</li>
 <li><code>number.get_number_type()</code> has value <code>number_type::unsigned_integer</code> if we have a integer in <code>[9223372036854775808,18446744073709551616)</code>. You can recover the value by the <code>get_uint64()</code> method applied on the <code>ondemand::number</code> instance. When <code>number.get_number_type()</code> has value <code>number_type::unsigned_integer</code>, you also have that <code>number.is_uint64()</code> is true. Calling <code>get_uint64()</code> on the <code>ondemand::number</code> instance when <code>number.get_number_type()</code> is not <code>number_type::unsigned_integer</code> is unsafe. You may replace <code>get_uint64()</code> by a cast to a <code>uint64_t</code> value.</li>
 <li><code>number.get_number_type()</code> has value <code>number_type::floating_point_number</code> if we have and we have a floating-point (binary64) number. You can recover the value by the <code>get_double()</code> method applied on the <code>ondemand::number</code> instance. When <code>number.get_number_type()</code> has value <code>number_type::floating_point_number</code>, you also have that <code>number.is_double()</code> is true. Calling <code>get_double()</code> on the <code>ondemand::number</code> instance when <code>number.get_number_type()</code> is not <code>number_type::floating_point_number</code> is unsafe. You may replace <code>get_double()</code> by a cast to a <code>double</code> value.</li>
-<li>When the value is an integer outside of the valid ranges for a 64-bit integers, e.g., when it is smaller than -9223372036854775808 or larger than 18446744073709551615, then <code>number.get_number_type()</code> has value <code>number_type::big_integer</code>. If you try to parse such a number of <code>get_number()</code>, you get the error <code>BIGINT_ERROR</code>. You can access the underlying string of digits with the function <code>raw_json_token()</code> which returns an <code>std::string_view</code> instance starting at the beginning of the digit. You can also call <code>get_double()</code> to get a floating-point approximation.</li>
+<li>When the value is an integer outside of the valid ranges for a 64-bit integers, e.g., when it is smaller than -9223372036854775808 or larger than 18446744073709551615, then <code>number.get_number_type()</code> has value <code>number_type::big_integer</code>. If you try to parse such a number of <code>get_number()</code>, you get the error <code>BIGINT_ERROR</code>. You can access the underlying string of digits with the function <code>raw_json_token()</code> which returns a <code>std::string_view</code> instance starting at the beginning of the digit. You can also call <code>get_double()</code> to get a floating-point approximation.</li>
 </ul>
 <p>You must check the type before accessing the value: it is an error to call <code>get_int64()</code> when <code>number.get_number_type()</code> is not <code>number_type::signed_integer</code> and when <code>number.is_int64()</code> is false. You are responsible for this check as the user of the library.</p>
 <p>The <code>get_number()</code> function is designed with performance in mind. When calling <code>get_number()</code>, you scan the number string only once, determining efficiently the type and storing it in an efficient manner.</p>
@@ -1493,7 +1497,7 @@ Dynamic Number Types</h1>
 <div class="line">&#39;99999999999999999999999 &#39;</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md26"></a>
 Raw Strings From Keys</h1>
-<p>It is sometimes useful to have access to a raw (unescaped) string: we make available a minimalist <code>raw_json_string</code> data type which contains a pointer inside the string in the original document, right after the quote. It is accessible via <code>get_raw_json_string()</code> on a string instance and returned by the <code>key()</code> method on an object's field instance. It is always optional: replacing <code>get_raw_json_string()</code> with <code>get_string()</code> and <code>key()</code> by <code>unescaped_key()</code> returns an <code>string_view</code> instance of the unescaped string.</p>
+<p>It is sometimes useful to have access to a raw (unescaped) string: we make available a minimalist <code>raw_json_string</code> data type which contains a pointer inside the string in the original document, right after the quote. It is accessible via <code>get_raw_json_string()</code> on a string instance and returned by the <code>key()</code> method on an object's field instance. It is always optional: replacing <code>get_raw_json_string()</code> with <code>get_string()</code> and <code>key()</code> by <code>unescaped_key()</code> or <code>escaped_key()</code> returns an <code>string_view</code> instance of the unescaped/unprocessed string.</p>
 <p>You can quickly compare a <code>raw_json_string</code> instance with a target string. You may also unescape the <code>raw_json_string</code> on your own string buffer: <code>parser.unescape(mystr, ptr)</code> advances the provided pointer <code>ptr</code> and returns a string_view instance on the newly serialized string upon success, otherwise it returns an error. When unescaping to your own string buffer, you should ensure that you have sufficient memory space: the total size of the strings plus <code><a class="el" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf" title="The amount of padding needed in a buffer to parse JSON.">simdjson::SIMDJSON_PADDING</a></code> bytes. The following example illustrates how we can unescape JSON string to a user-provided buffer:</p>
 <div class="fragment"><div class="line">{C++}</div>
 <div class="line">   auto json = R&quot;( {&quot;name&quot;: &quot;Jack The Ripper \u0033&quot;} )&quot;_padded;</div>
@@ -1511,7 +1515,7 @@ Raw Strings From Keys</h1>
 <div class="line">     // writes &#39;Jack The Ripper 3&#39;, escaping the \u0033</div>
 <div class="line">     mystrings.push_back(valuesv);</div>
 <div class="line">   }</div>
-</div><!-- fragment --><p>Some users might prefer to have a direct access to an <code>std::string_view</code> instance pointing inside the source document. The <code>key_raw_json_token()</code> method serves this purpose. It provides a view on the key, including the starting quote character, and everything up to the next <code>:</code> character after the final quote character. E.g., if the key is <code>"name"</code> then <code>key_raw_json_token()</code> returns an <code>std::string_view</code> which begins with <code>"name"</code> and may containing trailing white-space characters. </p><div class="fragment"><div class="line">{C++}</div>
+</div><!-- fragment --><p>Some users might prefer to have a direct access to a <code>std::string_view</code> instance pointing inside the source document. The <code>key_raw_json_token()</code> method serves this purpose. It provides a view on the key, including the starting quote character, and everything up to the next <code>:</code> character after the final quote character. E.g., if the key is <code>"name"</code> then <code>key_raw_json_token()</code> returns a <code>std::string_view</code> which begins with <code>"name"</code> and may containing trailing white-space characters. </p><div class="fragment"><div class="line">{C++}</div>
 <div class="line"> auto json = R&quot;( {&quot;name&quot; : &quot;Jack The Ripper \u0033&quot;} )&quot;_padded;</div>
 <div class="line"> ondemand::parser parser;</div>
 <div class="line"> ondemand::document doc = parser.iterate(json);</div>
@@ -1584,7 +1588,7 @@ General Direct Access to the Raw JSON String</h1>
 <div class="line"> }</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md28"></a>
 Storing Directly into an Existing String Instance</h1>
-<p>The simdjson library favours the use of <code>std::string_view</code> instances because it tends to lead to better performance due to causing fewer memory allocations. However, they are cases where you need to store a string result in an <code>std::string</code><code> instance. You can do so with a templated version of the</code>to_string()<code>method which takes as a parameter a reference to an</code>std::string`.</p>
+<p>The simdjson library favours the use of <code>std::string_view</code> instances because it tends to lead to better performance due to causing fewer memory allocations. However, they are cases where you need to store a string result in a <code>std::string</code><code> instance. You can do so with a templated version of the</code>to_string()<code>method which takes as a parameter a reference to a</code>std::string`.</p>
 <div class="fragment"><div class="line"> {C++}</div>
 <div class="line">  auto json = R&quot;({</div>
 <div class="line">  &quot;name&quot;: &quot;Daniel&quot;,</div>
@@ -1600,7 +1604,7 @@ Storing Directly into an Existing String Instance</h1>
 <div class="line"> auto err = doc[&quot;name&quot;].get_string(name);</div>
 <div class="line"> if (err) { /* handle error */ }</div>
 </div><!-- fragment --><p>The <code>std::string</code> instance, once created, is independent. Unlike our <code>std::string_view</code> instances, it does not point at data that is within our <code>parser</code> instance. The same caveat applies: you should only consume a JSON string once.</p>
-<p>Because <code>get_string()</code> is a template that requires a type that can be assigned an <code>std::string</code>, you can use it with features such as <code>std::optional</code>:</p>
+<p>Because <code>get_string()</code> is a template that requires a type that can be assigned a <code>std::string</code>, you can use it with features such as <code>std::optional</code>:</p>
 <div class="fragment"><div class="line">{C++}</div>
 <div class="line"> auto json = R&quot;({ &quot;foo1&quot;: &quot;3.1416&quot; } )&quot;_padded;</div>
 <div class="line"> ondemand::parser parser;</div>
@@ -1792,7 +1796,7 @@ Examples</h1>
 <div class="line">  ondemand::document doc = parser.iterate(json);</div>
 <div class="line">  ondemand::object root_object = doc.get_object();</div>
 <div class="line">  for(auto key_value : root_object) {</div>
-<div class="line">    // could get std::string_view with &#39;unescaped_key()&#39;:</div>
+<div class="line">    // could get std::string_view with &#39;unescaped_key()&#39; or &#39;escaped_key()&#39;:</div>
 <div class="line">    std::cout &lt;&lt; &quot;key: &quot; &lt;&lt; key_value.key() &lt;&lt; std::endl;</div>
 <div class="line">    ondemand::object obj = key_value.value();</div>
 <div class="line"> </div>
@@ -1864,6 +1868,8 @@ Examples</h1>
 <div class="line">      std::cout &lt;&lt; &quot;\n\ntop level:&quot; &lt;&lt; field.key() &lt;&lt; std::endl;</div>
 <div class="line">      // You can get a proper std::string_view for the key with:</div>
 <div class="line">      // std::string_view key = field.unescaped_key();</div>
+<div class="line">      // or</div>
+<div class="line">      // std::string_view key = field.escaped_key();</div>
 <div class="line">      // and second for-range loop to get child-elements here</div>
 <div class="line">      for (ondemand::object inner_object : field.value()) {</div>
 <div class="line">        auto i = inner_object.begin();</div>
@@ -1877,6 +1883,9 @@ Examples</h1>
 <div class="line">                      &lt;&lt; &quot;\&quot; : &quot; &lt;&lt; inner_field.value() &lt;&lt; &quot;, &quot;;</div>
 <div class="line">            // You can get proper std::string_view for the key and value with:</div>
 <div class="line">            // std::string_view inner_key = field.unescaped_key();</div>
+<div class="line">            // or</div>
+<div class="line">            // std::string_view inner_key = field.escaped_key();</div>
+<div class="line">            // and</div>
 <div class="line">            // std::string_view value_str = field.value();</div>
 <div class="line">          }</div>
 <div class="line">        }</div>
@@ -1916,7 +1925,7 @@ Performance Tips</h1>
 <ul>
 <li>The On Demand front-end works best when doing a single pass over the input: avoid calling <code>count_elements</code>, <code>rewind</code> and similar methods.</li>
 <li>If you are familiar with assembly language, you may use the online tool godbolt to explore the compiled code. The following example may work: <a href="https://godbolt.org/z/xE4GWs573">https://godbolt.org/z/xE4GWs573</a>.</li>
-<li>Given a field <code>field</code> in an object, calling <code>field.key()</code> is often faster than <code>field.unescaped_key()</code> so if you do not need an unescaped <code>std::string_view</code> instance, prefer <code>field.key()</code>.</li>
+<li>Given a field <code>field</code> in an object, calling <code>field.key()</code> is often faster than <code>field.unescaped_key()</code> so if you do not need an unescaped <code>std::string_view</code> instance, prefer <code>field.key()</code>. Similarly, we expect <code>field.escaped_key()</code> to be faster than <code>field.unescaped_key()</code> even though both return a <code>std::string_view</code> instance.</li>
 <li>For release builds, we recommend setting <code>NDEBUG</code> pre-processor directive when compiling the <code>simdjson</code> library. Importantly, using the optimization flags <code>-O2</code> or <code>-O3</code> under GCC and LLVM clang does not set the <code>NDEBUG</code> directive, you must set it manually (e.g., <code>-DNDEBUG</code>).</li>
 <li>For long streams of JSON documents, consider <a class="el" href="md_doc_iterate_many.html">`iterate_many`</a> and <a class="el" href="md_doc_parse_many.html">`parse_many`</a> for better performance.</li>
 <li>Never seek to access a field twice (e.g., o["data"] and later again o["data"]). Instead capture once an ondemand::value and reuse it.</li>

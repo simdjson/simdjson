@@ -208,7 +208,8 @@ static simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.ht
 </div><div class="memdoc">
 
 <p>Get the key as a string_view. </p>
-<p>This does not include the quotes and the string is escaped as a unprocessed key. </p>
+<p>This does not include the quotes and the string is unprocessed key so it may contain escape characters (e.g., \uXXXX or <br  />
+). Use <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#a8e655ba1a0fd26809821f77aac355b7c" title="Get the key as a string_view (for higher speed, consider raw_key).">unescaped_key()</a> to get the unescaped key. </p>
 
 <p class="definition">Definition at line <a class="el" href="field-inl_8h_source.html#l00052">52</a> of file <a class="el" href="field-inl_8h_source.html">field-inl.h</a>.</p>
 
