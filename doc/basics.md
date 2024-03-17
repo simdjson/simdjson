@@ -329,7 +329,7 @@ We invite you to keep the following rules in mind:
 The simdjson library makes generous use of `std::string_view` instances. If you are unfamiliar
 with `std::string_view` in C++, make sure to [read the section on std::string_view](#string_view).
 They behave much like an immutable `std::string` but they require no memory allocation. You can
-create a `std::string` instance from an `std::string_view` when you need it.
+create a `std::string` instance from a `std::string_view` when you need it.
 
 The following specific instructions indicate how to use the JSON when exceptions are enabled, but simdjson has full, idiomatic
 support for users who avoid exceptions. See [the simdjson error handling documentation](basics.md#error-handling) for more.
@@ -381,7 +381,9 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > Unicode sequences with replacement, meaning that the decoding always succeeds but bogus Unicode
   > replacement characters are inserted. In general, you should expect a performance penalty
   > when using `unescaped_key()` compared to `key()` because of the string processing: the `key()`
-  > function just points inside the source JSON document.
+  > function just points inside the source JSON document. As a compromise, you may use `escaped_key()``
+  > which returns a `std::string_view` instance pointing directly in the document, like `key()`, although,
+  > unlike `key()`, it has to determine the location of the final quote character.
   >
   > ```c++
   > auto json = R"({"k\u0065y": 1})"_padded;
@@ -391,6 +393,9 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > for(auto field : object) {
   >    // parses and writes out the key, after unescaping it,
   >    // to a string buffer. It causes a performance penalty.
+  >    // If you do not expect that unescaping is useful, you
+  >    // may replace field.unescaped_key() with
+  >    // field.escaped_key().
   >    std::string_view keyv = field.unescaped_key();
   >    if (keyv == "key") { std::cout << uint64_t(field.value()); }
   >  }
@@ -428,7 +433,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 
   You may also use explicit iterators: `for(auto i = array.begin(); i != array.end(); i++) {}`. You can check that an array is empty with the condition `auto i = array.begin(); if (i == array.end()) {...}`.
 * **Object Iteration:** You can iterate through an object's fields, as well: `for (auto field : object) { ... }`. You may also use explicit iterators : `for(auto i = object.begin(); i != object.end(); i++) { auto field = *i; .... }`. You can check that an object is empty with the condition `auto i = object.begin(); if (i == object.end()) {...}`.
-  - `field.unescaped_key()` will get you the unescaped key string. E.g., the JSON string `"\u00e1"` becomes the Unicode string `á`. Optionally,  you pass `true` as a parameter to the `unescaped_key` method if you want invalid escape sequences to be replaced by a default replacement character (e.g., `\ud800\ud801\ud811`): otherwise bad escape sequences lead to an immediate error.
+  - `field.unescaped_key()` will get you the unescaped key string as a `std::string_view` instance. E.g., the JSON string `"\u00e1"` becomes the Unicode string `á`. Optionally,  you pass `true` as a parameter to the `unescaped_key` method if you want invalid escape sequences to be replaced by a default replacement character (e.g., `\ud800\ud801\ud811`): otherwise bad escape sequences lead to an immediate error.
+  - `field.escaped_key()` will get you the key string as  as a `std::string_view` instance, but unlike `unescaped_key()`, the key is not processed, so no unescaping is done. E.g., the JSON string `"\u00e1"` becomes the Unicode string `\u00e1`. We expect that `escaped_key()` is faster than `field.unescaped_key()`.
   - `field.value()` will get you the value, which you can then use all these other methods on.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index by index. Instead,
   you should iterate through the array and keep an index yourself.
@@ -548,7 +554,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 * **Tree Walking and JSON Element Types:** Sometimes you don't necessarily have a document
   with a known type, and are trying to generically inspect or walk over JSON elements.
   You can also represent arbitrary JSON values with
-  `ondemand::value` instances: it can represent anything except a scalar document (lone number, string, null or Boolean). You can check for scalar documents with the method `scalar()`. You can cast a document that is either an array or an object to an `ondemand::value` instance immediately after you create the document instance: you cannot create a `ondemand::value` instance from a document that has already been accessed as it would mean that you would have two instances of the object or array simultaneously (see [rewinding](#rewinding)). You can query the type of a document or a value with the `type()` method. The `type()` method does not consume or validate documents and values, but it tells you whether they are
+  `ondemand::value` instances: it can represent anything except a scalar document (lone number, string, null or Boolean). You can check for scalar documents with the method `scalar()`. You can cast a document that is either an array or an object to an `ondemand::value` instance immediately after you create the document instance: you cannot create an `ondemand::value` instance from a document that has already been accessed as it would mean that you would have two instances of the object or array simultaneously (see [rewinding](#rewinding)). You can query the type of a document or a value with the `type()` method. The `type()` method does not consume or validate documents and values, but it tells you whether they are
   - arrays (`json_type::array`),
   - objects (`json_type::object`)
   - numbers (`json_type::number`),
@@ -1458,7 +1464,7 @@ having to handle exceptions.
   error = doc.get_object().get(object);
   if (error) { return false; }
   for(auto field : object) {
-    // We could replace 'field.key() with field.unescaped_key(),
+    // We could replace 'field.key() with field.unescaped_key() or field.escaped_key(),
     // and ondemand::raw_json_string by std::string_view.
     ondemand::raw_json_string keyv;
     error = field.key().get(keyv);
@@ -1877,7 +1883,7 @@ if (error) {
 }
 ```
 It is also important to note that when dealing an invalid number inside a string, simdjson will report a `NUMBER_ERROR` error if the string begins with a number whereas simdjson
-will report a `INCORRECT_TYPE` error otherwise.
+will report an `INCORRECT_TYPE` error otherwise.
 
 The `*_in_string` methods can also be called on a single document instance:
 e.g., when your document consist solely of a quoted number.
@@ -1913,7 +1919,7 @@ Thus it is a dynamically typed number. Before accessing the value, you must dete
 * `number.get_number_type()` has value `number_type::unsigned_integer` if we have a integer in `[9223372036854775808,18446744073709551616)`. You can recover the value by the `get_uint64()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::unsigned_integer`, you also have that `number.is_uint64()` is true.  Calling `get_uint64()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::unsigned_integer` is unsafe. You may replace `get_uint64()` by a cast to a `uint64_t` value.
 * `number.get_number_type()` has value `number_type::floating_point_number` if we have and we have a floating-point (binary64) number. You can recover the value by the `get_double()` method applied on the `ondemand::number` instance.  When `number.get_number_type()` has value `number_type::floating_point_number`, you also have that `number.is_double()` is true.  Calling `get_double()` on the `ondemand::number` instance when `number.get_number_type()` is not `number_type::floating_point_number` is unsafe. You may replace `get_double()` by a cast to a `double` value.
 * When the value is an integer outside of the valid ranges for a 64-bit integers, e.g., when it is smaller than -9223372036854775808 or larger than 18446744073709551615, then `number.get_number_type()` has value `number_type::big_integer`. If you try to parse
-such a number of `get_number()`, you get the error `BIGINT_ERROR`. You can access the underlying string of digits with the function `raw_json_token()` which returns an `std::string_view` instance starting at the beginning of the digit. You can also call `get_double()` to get a floating-point approximation.
+such a number of `get_number()`, you get the error `BIGINT_ERROR`. You can access the underlying string of digits with the function `raw_json_token()` which returns a `std::string_view` instance starting at the beginning of the digit. You can also call `get_double()` to get a floating-point approximation.
 
 
 You must check the type before accessing the value: it is an error to call `get_int64()` when `number.get_number_type()` is not `number_type::signed_integer` and when `number.is_int64()` is false. You are responsible for this check as the user of the library.
@@ -2021,7 +2027,7 @@ minimalist `raw_json_string` data type which contains a pointer inside the strin
 original document, right after the quote. It is accessible via `get_raw_json_string()` on a
 string instance and returned by the `key()` method on an object's field instance. It is always
 optional: replacing `get_raw_json_string()` with `get_string()` and `key()` by
-`unescaped_key()` returns an `string_view` instance of the unescaped string.
+`unescaped_key()` or `escaped_key()` returns an `string_view` instance of the unescaped/unprocessed string.
 
 You can quickly compare a `raw_json_string` instance with a target string. You may also
 unescape  the `raw_json_string` on your own string buffer: `parser.unescape(mystr, ptr)`
@@ -2049,11 +2055,11 @@ JSON string to a user-provided buffer:
     }
 ```
 
-Some users might prefer to have a direct access to an `std::string_view` instance
+Some users might prefer to have a direct access to a `std::string_view` instance
 pointing inside the source document. The `key_raw_json_token()` method serves this
 purpose. It provides a view on the key, including the starting quote character,
 and everything up to the next `:` character after the final quote character. E.g.,
-if the key is `"name"` then `key_raw_json_token()` returns an `std::string_view`  which
+if the key is `"name"` then `key_raw_json_token()` returns a `std::string_view`  which
 begins with `"name"` and may containing trailing white-space characters.
 ```C++
   auto json = R"( {"name" : "Jack The Ripper \u0033"} )"_padded;
@@ -2177,9 +2183,9 @@ Storing Directly into an Existing String Instance
 
 The simdjson library favours  the use of `std::string_view` instances because
 it tends to lead to better performance due to causing fewer memory allocations.
-However, they are cases where you need to store a string result in an `std::string``
+However, they are cases where you need to store a string result in a `std::string``
 instance. You can do so with a templated version of the `to_string()` method which takes as
-a parameter a reference to an `std::string`.
+a parameter a reference to a `std::string`.
 
 ```C++
   auto json = R"({
@@ -2204,7 +2210,7 @@ The `std::string` instance, once created, is independent. Unlike our `std::strin
 it does not point at data that is within our `parser` instance. The same caveat applies: you should
 only consume a JSON string once.
 
-Because `get_string()` is a template that requires a type that can be assigned an `std::string`, you
+Because `get_string()` is a template that requires a type that can be assigned a `std::string`, you
 can use it with features such as `std::optional`:
 
 ```C++
@@ -2420,7 +2426,7 @@ bool example() {
   ondemand::document doc = parser.iterate(json);
   ondemand::object root_object = doc.get_object();
   for(auto key_value : root_object) {
-    // could get std::string_view with 'unescaped_key()':
+    // could get std::string_view with 'unescaped_key()' or 'escaped_key()':
     std::cout << "key: " << key_value.key() << std::endl;
     ondemand::object obj = key_value.value();
 
@@ -2493,6 +2499,8 @@ bool example() {
       std::cout << "\n\ntop level:" << field.key() << std::endl;
       // You can get a proper std::string_view for the key with:
       // std::string_view key = field.unescaped_key();
+      // or
+      // std::string_view key = field.escaped_key();
       // and second for-range loop to get child-elements here
       for (ondemand::object inner_object : field.value()) {
         auto i = inner_object.begin();
@@ -2506,6 +2514,9 @@ bool example() {
                       << "\" : " << inner_field.value() << ", ";
             // You can get proper std::string_view for the key and value with:
             // std::string_view inner_key = field.unescaped_key();
+            // or
+            // std::string_view inner_key = field.escaped_key();
+            // and
             // std::string_view value_str = field.value();
           }
         }
@@ -2549,7 +2560,7 @@ Performance Tips
 
 - The On Demand front-end works best when doing a single pass over the input: avoid calling `count_elements`, `rewind` and similar methods.
 - If you are familiar with assembly language, you may use the online tool godbolt to explore the compiled code. The following example may work: [https://godbolt.org/z/xE4GWs573](https://godbolt.org/z/xE4GWs573).
-- Given a field `field` in an object, calling `field.key()` is often faster than `field.unescaped_key()` so if you do not need an unescaped `std::string_view` instance, prefer `field.key()`.
+- Given a field `field` in an object, calling `field.key()` is often faster than `field.unescaped_key()` so if you do not need an unescaped `std::string_view` instance, prefer `field.key()`. Similarly, we expect `field.escaped_key()` to be faster than `field.unescaped_key()` even though both return a `std::string_view` instance.
 - For release builds, we recommend setting `NDEBUG` pre-processor directive when compiling the `simdjson` library. Importantly, using the optimization flags `-O2` or `-O3` under GCC and LLVM clang does not set the `NDEBUG` directive, you must set it manually (e.g., `-DNDEBUG`).
 - For long streams of JSON documents, consider [`iterate_many`](iterate_many.md) and [`parse_many`](parse_many.md) for better performance.
 - Never seek to access a field twice (e.g., o["data"] and later again o["data"]). Instead capture once an ondemand::value and reuse it.
