@@ -17,11 +17,26 @@ namespace key_string_tests {
     }
     return true;
   }
+
+  bool parser_escaped_key() {
+    TEST_START();
+    ondemand::parser parser;
+    const padded_string json = "{ \"1\": \"1\", \"2\"   : \"2\", \"3\" \t : \"3\", \"abc\"\n\t\n: \"abc\", \"\\u0075\": \"\\\\u0075\" }"_padded;
+    auto doc = parser.iterate(json);
+    for(auto field : doc.get_object())  {
+      std::string_view keyv = field.escaped_key();
+      std::string_view valuev = field.value();
+      if(keyv != valuev) { return false; }
+    }
+    return true;
+  }
+
 #endif // SIMDJSON_EXCEPTIONS
   bool run() {
     return
 #if SIMDJSON_EXCEPTIONS
       parser_key_value() &&
+      parser_escaped_key() &&
 #endif // SIMDJSON_EXCEPTIONS
       true;
   }
