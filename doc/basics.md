@@ -593,6 +593,9 @@ support for users who avoid exceptions. See [the simdjson error handling documen
         // key() returns the key as it appears in the raw
         // JSON document, if we want the unescaped key,
         // we should do field.unescaped_key().
+        // We could also use field.escaped_key() if we want
+        // a std::string_view instance, but we do not need
+        // escaping.
         cout << "\"" << field.key() << "\": ";
         recursive_print_json(field.value());
         add_comma = true;
@@ -697,6 +700,8 @@ ondemand::document doc = parser.iterate(cars_json);
 for (ondemand::field key_car : doc.get_object()) {
   // If I need a string_view and/or, I can use key_car.unescaped_key() instead, but
   // key_car.key() will be more performant otherwise.
+  // If we want a std::string_view instance but we do not care about escaping, we
+  // can also use key_car.escaped_key().
   cout << "identifier : " << key_car.key() << std::endl;
   // I can now access the subobject:
   ondemand::object car = key_car.value();
