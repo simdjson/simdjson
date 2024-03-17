@@ -34,18 +34,18 @@ jobs:
         sudo apt update
         sudo apt-get install --quiet ninja-build valgrind zip unzip lsb-release wget software-properties-common gnupg
         wget https://apt.llvm.org/llvm.sh
-        sudo apt-get purge --auto-remove llvm python3-lldb-14 llvm-14
+        sudo apt-get purge --auto-remove llvm python3-lldb-15 llvm-15
         chmod +x llvm.sh
         sudo ./llvm.sh $CLANGVERSION
 
     - uses: actions/checkout@v4
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       with:
         path: dependencies/.cache
         key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       id: cache-corpus
       with:
         path: out/
