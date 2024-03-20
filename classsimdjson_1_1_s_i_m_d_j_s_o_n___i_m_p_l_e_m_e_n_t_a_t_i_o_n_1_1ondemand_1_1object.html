@@ -397,6 +397,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 <p><b>Raw Keys:</b> The lookup will be done against the <em>raw</em> key, and will not unescape keys. e.g. <code>object["a"]</code> will match <code>{ "a": 1 }</code>, but will <em>not</em> match <code>{ "\u0061": 1 }</code>.</p>
 <p>You must consume the fields on an object one at a time. A request for a new key invalidates previous field values: it makes them unsafe. The value instance you get from <code>content["bids"]</code> becomes invalid when you call <code>content["asks"]</code>. The array given by content["bids"].get_array() should not be accessed after you have called content["asks"].get_array(). You can detect such mistakes by first compiling and running the code in Debug mode (or with the macro <code>SIMDJSON_DEVELOPMENT_CHECKS</code> set to 1): an OUT_OF_ORDER_ITERATION error is generated.</p>
 <p>You are expected to access keys only once. You should access the value corresponding to a key a single time. Doing object["mykey"].<a class="el" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d" title="Converts JSON to a string.">to_string()</a> and then again object["mykey"].<a class="el" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d" title="Converts JSON to a string.">to_string()</a> is an error.</p>
+<p>If you expect to have keys with escape characters, please review our documentation.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">key</td><td>The key to look up. </td></tr>
@@ -440,6 +441,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 <p>If you have multiple fields with a matching key ({"x": 1, "x": 1}) be mindful that only one field is returned.</p>
 <p>You must consume the fields on an object one at a time. A request for a new key invalidates previous field values: it makes them unsafe. The value instance you get from <code>content["bids"]</code> becomes invalid when you call <code>content["asks"]</code>. The array given by content["bids"].get_array() should not be accessed after you have called content["asks"].get_array(). You can detect such mistakes by first compiling and running the code in Debug mode (or with the macro <code>SIMDJSON_DEVELOPMENT_CHECKS</code> set to 1): an OUT_OF_ORDER_ITERATION error is generated.</p>
 <p>You are expected to access keys only once. You should access the value corresponding to a key a single time. Doing object["mykey"].<a class="el" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d" title="Converts JSON to a string.">to_string()</a> and then again object["mykey"].<a class="el" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d" title="Converts JSON to a string.">to_string()</a> is an error.</p>
+<p>If you expect to have keys with escape characters, please review our documentation.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">key</td><td>The key to look up. </td></tr>
