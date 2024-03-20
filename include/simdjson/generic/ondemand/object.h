@@ -56,6 +56,8 @@ public:
    * key a single time. Doing object["mykey"].to_string() and then again object["mykey"].to_string()
    * is an error.
    *
+   * If you expect to have keys with escape characters, please review our documentation.
+   *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
    */
@@ -92,6 +94,8 @@ public:
    *
    * You are expected to access keys only once. You should access the value corresponding to a key
    * a single time. Doing object["mykey"].to_string() and then again object["mykey"].to_string() is an error.
+   *
+   * If you expect to have keys with escape characters, please review our documentation.
    *
    * @param key The key to look up.
    * @returns The value of the field, or NO_SUCH_FIELD if the field is not in the object.
