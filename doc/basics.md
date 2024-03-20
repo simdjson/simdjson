@@ -372,7 +372,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   Debug mode: an OUT_OF_ORDER_ITERATION error is generated.
 
   > NOTE: JSON allows you to escape characters in keys. E.g., the key `"date"` may be written as
-  > `"\u0064\u0061\u0074\u0065"`. By default, simdjson does *not* unescape keys when matching by default.
+  > `"\u0064\u0061\u0074\u0065"`. By default, simdjson does *not* unescape keys when matching.
   > Thus if you search for the key `"date"` and the JSON document uses `"\u0064\u0061\u0074\u0065"`
   > as a key, it will not be recognized. This is not generally a problem.  Nevertheless, if you do need
   > to support escaped keys, the method `unescaped_key()` provides the desired unescaped keys by
