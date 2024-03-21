@@ -112,7 +112,7 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterat
 }
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator*() noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return *first;
 }
 // If we're iterating and there is an error, return the error once.
@@ -128,7 +128,7 @@ simdjson_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_i
 // Checks for ']' and ','
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> &simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator>::operator++() noexcept {
   // Clear the error if there is one, so we don't yield it twice
-  if (error()) { second = SUCCESS; return *this; }
+  if (simdjson_unlikely(error())) { second = SUCCESS; return *this; }
   ++first;
   return *this;
 }

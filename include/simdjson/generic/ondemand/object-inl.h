@@ -95,7 +95,7 @@ simdjson_inline error_code object::consume() noexcept {
 simdjson_inline simdjson_result<std::string_view> object::raw_json() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
-  if(error) { return error; }
+  if(simdjson_unlikely(error)) { return error; }
   const uint8_t * final_point{iter._json_iter->peek()};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
@@ -187,7 +187,7 @@ simdjson_inline simdjson_result<size_t> object::count_fields() & noexcept {
 simdjson_inline simdjson_result<bool> object::is_empty() & noexcept {
   bool is_not_empty;
   auto error = iter.reset_object().get(is_not_empty);
-  if(error) { return error; }
+  if(simdjson_unlikely(error)) { return error; }
   return !is_not_empty;
 }
 
@@ -207,68 +207,68 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::simd
     : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::object>(error) {}
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::begin() noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.begin();
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::end() noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.end();
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::find_field_unordered(std::string_view key) & noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.find_field_unordered(key);
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::find_field_unordered(std::string_view key) && noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object>(first).find_field_unordered(key);
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::operator[](std::string_view key) & noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first[key];
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::operator[](std::string_view key) && noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object>(first)[key];
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::find_field(std::string_view key) & noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.find_field(key);
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::find_field(std::string_view key) && noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object>(first).find_field(key);
 }
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::at_pointer(std::string_view json_pointer) noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.at_pointer(json_pointer);
 }
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::at_path(
     std::string_view json_path) noexcept {
-  if (error()) {
+  if (simdjson_unlikely(error())) {
     return error();
   }
   return first.at_path(json_path);
 }
 
 inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::reset() noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.reset();
 }
 
 inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::is_empty() noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.is_empty();
 }
 
 simdjson_inline  simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::count_fields() & noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.count_fields();
 }
 
 simdjson_inline  simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::raw_json() noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.raw_json();
 }
 } // namespace simdjson

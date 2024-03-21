@@ -23,38 +23,38 @@ simdjson_inline simdjson_result<dom::object>::simdjson_result(error_code error) 
     : internal::simdjson_result_base<dom::object>(error) {}
 
 inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](std::string_view key) const noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first[key];
 }
 inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](const char *key) const noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first[key];
 }
 inline simdjson_result<dom::element> simdjson_result<dom::object>::at_pointer(std::string_view json_pointer) const noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.at_pointer(json_pointer);
 }
 inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key(std::string_view key) const noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.at_key(key);
 }
 inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key_case_insensitive(std::string_view key) const noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.at_key_case_insensitive(key);
 }
 
 #if SIMDJSON_EXCEPTIONS
 
 inline dom::object::iterator simdjson_result<dom::object>::begin() const noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
+  if (simdjson_unlikely(error())) { throw simdjson_error(error()); }
   return first.begin();
 }
 inline dom::object::iterator simdjson_result<dom::object>::end() const noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
+  if (simdjson_unlikely(error())) { throw simdjson_error(error()); }
   return first.end();
 }
 inline size_t simdjson_result<dom::object>::size() const noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
+  if (simdjson_unlikely(error())) { throw simdjson_error(error()); }
   return first.size();
 }
 

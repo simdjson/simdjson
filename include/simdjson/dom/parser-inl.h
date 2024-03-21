@@ -206,7 +206,7 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   } else {
     err = simdjson::get_active_implementation()->create_dom_parser_implementation(capacity, max_depth, implementation);
   }
-  if (err) { return err; }
+  if (simdjson_unlikely(err)) { return err; }
   return SUCCESS;
 }
 
@@ -238,8 +238,8 @@ inline error_code parser::ensure_capacity(document& target_document, size_t desi
     }
     error_code err1 = target_document.capacity() < desired_capacity ? target_document.allocate(desired_capacity) : SUCCESS;
     error_code err2 = capacity() < desired_capacity ? allocate(desired_capacity, max_depth()) : SUCCESS;
-    if(err1 != SUCCESS) { return error = err1; }
-    if(err2 != SUCCESS) { return error = err2; }
+    if(simdjson_unlikely(err1 != SUCCESS)) { return error = err1; }
+    if(simdjson_unlikely(err2 != SUCCESS)) { return error = err2; }
   }
   return SUCCESS;
 }

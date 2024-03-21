@@ -263,7 +263,7 @@ namespace std {
 #undef SIMDJSON_HAS_STRING_VIEW // We are not going to need this macro anymore.
 
 /// If EXPR is an error, returns it.
-#define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }
+#define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (simdjson_unlikely(_err)) { return _err; } }
 
 // Unless the programmer has already set SIMDJSON_DEVELOPMENT_CHECKS,
 // we want to set it under debug builds. We detect a debug build

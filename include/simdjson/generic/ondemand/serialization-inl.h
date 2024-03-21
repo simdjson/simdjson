@@ -27,14 +27,14 @@ inline std::string_view trim(const std::string_view str) noexcept {
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::document& x) noexcept {
   std::string_view v;
   auto error = x.raw_json().get(v);
-  if(error) {return error; }
+  if(simdjson_unlikely(error)) {return error; }
   return trim(v);
 }
 
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::document_reference& x) noexcept {
   std::string_view v;
   auto error = x.raw_json().get(v);
-  if(error) {return error; }
+  if(simdjson_unlikely(error)) {return error; }
   return trim(v);
 }
 
@@ -55,14 +55,14 @@ inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION:
     {
       SIMDJSON_IMPLEMENTATION::ondemand::array array;
       error = x.get_array().get(array);
-      if(error) { return error; }
+      if(simdjson_unlikely(error)) { return error; }
       return to_json_string(array);
     }
     case json_type::object:
     {
       SIMDJSON_IMPLEMENTATION::ondemand::object object;
       error = x.get_object().get(object);
-      if(error) { return error; }
+      if(simdjson_unlikely(error)) { return error; }
       return to_json_string(object);
     }
     default:
@@ -73,14 +73,14 @@ inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION:
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::object& x) noexcept {
   std::string_view v;
   auto error = x.raw_json().get(v);
-  if(error) {return error; }
+  if(simdjson_unlikely(error)) {return error; }
   return trim(v);
 }
 
 inline simdjson_result<std::string_view> to_json_string(SIMDJSON_IMPLEMENTATION::ondemand::array& x) noexcept {
   std::string_view v;
   auto error = x.raw_json().get(v);
-  if(error) {return error; }
+  if(simdjson_unlikely(error)) {return error; }
   return trim(v);
 }
 
