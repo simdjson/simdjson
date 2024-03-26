@@ -212,6 +212,12 @@ Some users may want to browse code along with the compiled assembly. You want to
 * [simdjson examples with errors handled through exceptions](https://godbolt.org/z/98Kx9Kqjn)
 * [simdjson examples with errors without exceptions](https://godbolt.org/z/PKG7GdbPo)
 
+*Windows-specific*:  Windows users who need to read files with
+non-ANSI characters in the name should set their code page to
+UTF-8 (65001). This should be the default with Windows 11 and better.
+Further, they may use the AreFileApisANSI function to determine whether
+the filename is interpreted using the ANSI or the system default OEM
+codepage, and they may call SetFileApisToOEM accordingly.
 
 Documents are Iterators
 -----------------------

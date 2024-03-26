@@ -83,6 +83,15 @@ public:
    * If the parser's current capacity is less than the file length, it will allocate enough capacity
    * to handle it (up to max_capacity).
    *
+   * ## Windows and Unicode
+   *
+   * Windows users who need to read files with non-ANSI characters in the
+   * name should set their code page to UTF-8 (65001) before calling this
+   * function. This should be the default with Windows 11 and better.
+   * Further, they may use the AreFileApisANSI function to determine whether
+   * the filename is interpreted using the ANSI or the system default OEM
+   * codepage, and they may call SetFileApisToOEM accordingly.
+   *
    * @param path The path to load.
    * @return The document, or an error:
    *         - IO_ERROR if there was an error opening or reading the file.
