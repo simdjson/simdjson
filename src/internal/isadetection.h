@@ -218,6 +218,13 @@ static inline uint32_t detect_supported_architectures() {
 
   return host_isa;
 }
+
+#elif defined(__loongarch_sx) && !defined(__loongarch_asx)
+
+static inline uint32_t detect_supported_architectures() {
+  return instruction_set::LSX;
+}
+
 #else // fallback
 
 

@@ -17,6 +17,8 @@ namespace simdjson {
   namespace ppc64 {}
 #elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(westmere)
   namespace westmere {}
+#elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(lsx)
+  namespace lsx {}
 #else
 #error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION
 #endif

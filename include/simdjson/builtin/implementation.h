@@ -19,6 +19,8 @@
 #include "simdjson/ppc64/implementation.h"
 #elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(westmere)
 #include "simdjson/westmere/implementation.h"
+#elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(lsx)
+#include "simdjson/lsx/implementation.h"
 #else
 #error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION
 #endif

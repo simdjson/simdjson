@@ -93,6 +93,18 @@ static const simdjson::westmere::implementation* get_westmere_singleton() {
 } // namespace simdjson
 #endif // SIMDJSON_IMPLEMENTATION_WESTMERE
 
+#if SIMDJSON_IMPLEMENTATION_LSX
+#include <simdjson/lsx/implementation.h>
+namespace simdjson {
+namespace internal {
+static const simdjson::lsx::implementation* get_lsx_singleton() {
+  static const simdjson::lsx::implementation lsx_singleton{};
+  return &lsx_singleton;
+}
+} // namespace internal
+} // namespace simdjson
+#endif // SIMDJSON_IMPLEMENTATION_LSX
+
 #undef SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -104,6 +116,7 @@ namespace internal {
 #define SIMDJSON_SINGLE_IMPLEMENTATION (SIMDJSON_IMPLEMENTATION_ICELAKE \
              + SIMDJSON_IMPLEMENTATION_HASWELL + SIMDJSON_IMPLEMENTATION_WESTMERE \
              + SIMDJSON_IMPLEMENTATION_ARM64 + SIMDJSON_IMPLEMENTATION_PPC64 \
+             + SIMDJSON_IMPLEMENTATION_LSX \
              + SIMDJSON_IMPLEMENTATION_FALLBACK == 1)
 
 #if SIMDJSON_SINGLE_IMPLEMENTATION
@@ -123,6 +136,9 @@ namespace internal {
 #endif
 #if SIMDJSON_IMPLEMENTATION_PPC64
     get_ppc64_singleton();
+#endif
+#if SIMDJSON_IMPLEMENTATION_LSX
+    get_lsx_singleton();
 #endif
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
     get_fallback_singleton();
@@ -175,6 +191,9 @@ static const std::initializer_list<const implementation *>& get_available_implem
 #endif
 #if SIMDJSON_IMPLEMENTATION_PPC64
     get_ppc64_singleton(),
+#endif
+#if SIMDJSON_IMPLEMENTATION_LSX
+    get_lsx_singleton(),
 #endif
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
     get_fallback_singleton(),
