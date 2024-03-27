@@ -19,6 +19,8 @@ namespace simdjson {
   namespace westmere {}
 #elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(lsx)
   namespace lsx {}
+#elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(lasx)
+  namespace lasx {}
 #else
 #error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION
 #endif

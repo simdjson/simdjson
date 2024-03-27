@@ -22,6 +22,8 @@
 #include "simdjson/westmere/ondemand.h"
 #elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(lsx)
 #include "simdjson/lsx/ondemand.h"
+#elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(lasx)
+#include "simdjson/lasx/ondemand.h"
 #else
 #error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION
 #endif

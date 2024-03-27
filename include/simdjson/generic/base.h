@@ -19,6 +19,8 @@
 #include "simdjson/ppc64/begin.h"
 #elif SIMDJSON_IMPLEMENTATION_LSX
 #include "simdjson/lsx/begin.h"
+#elif SIMDJSON_IMPLEMENTATION_LASX
+#include "simdjson/lasx/begin.h"
 #elif SIMDJSON_IMPLEMENTATION_FALLBACK
 #include "simdjson/fallback/begin.h"
 #else

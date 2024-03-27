@@ -225,6 +225,12 @@ static inline uint32_t detect_supported_architectures() {
   return instruction_set::LSX;
 }
 
+#elif defined(__loongarch_asx)
+
+static inline uint32_t detect_supported_architectures() {
+  return instruction_set::LASX;
+}
+
 #else // fallback
 
 

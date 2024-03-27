@@ -22,6 +22,8 @@
 #include "simdjson/westmere.h"
 #elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(lsx)
 #include "simdjson/lsx.h"
+#elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(lasx)
+#include "simdjson/lasx.h"
 #else
 #error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION
 #endif

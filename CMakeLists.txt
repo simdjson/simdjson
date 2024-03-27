@@ -107,10 +107,11 @@ if(
 endif()
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(loongarch64)$")
+    option(SIMDJSON_PREFER_LSX "Prefer LoongArch SX" ON)
     include(CheckCXXCompilerFlag)
     check_cxx_compiler_flag(-mlasx COMPILER_SUPPORTS_LASX)
     check_cxx_compiler_flag(-mlsx COMPILER_SUPPORTS_LSX)
-    if(COMPILER_SUPPORTS_LASX)
+    if(COMPILER_SUPPORTS_LASX AND NOT SIMDJSON_PREFER_LSX)
         simdjson_add_props(
             target_compile_options PRIVATE
             -mlasx
