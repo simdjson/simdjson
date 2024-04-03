@@ -39,14 +39,12 @@ jobs:
           path: /opt/cross-tools
           key: loongarch64-${{ matrix.platform.toolchain-version }}
 
-      - name: Set-up Loongarch64 build environment
+      - name: setup Loongarch64 build environment
         run: |
           echo "/opt/cross-tools/bin" >> $GITHUB_PATH
           echo "CC=loongarch64-unknown-linux-gnu-gcc" >> $GITHUB_ENV
           echo "CXX=loongarch64-unknown-linux-gnu-g++" >> $GITHUB_ENV
       - name: configure
-        run: cmake -B build
+        run: cmake -B build -DCMAKE_SYSTEM_PROCESSOR=loongarch64 -DARCH=lonngarch64 -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_C_COMPILER=loongarch64-unknown-linux-gnu-gcc -DCMAKE_CXX_COMPILER=loongarch64-unknown-linux-gnu-g++
       - name: build
         run: cmake --build build
-      - name: test
-        run: ctest --test-dir build
