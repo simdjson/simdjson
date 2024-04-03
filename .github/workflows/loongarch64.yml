@@ -1,0 +1,50 @@
+name: LoongArch64-CI
+
+on: [push, pull_request]
+
+jobs:
+  loongarch64:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { toolchain-version: 2023.08.08 }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build requirements
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends cmake
+
+      - uses: actions/cache/restore@v4
+        id: restore-cache
+        with:
+          path: /opt/cross-tools
+          key: loongarch64-${{ matrix.platform.toolchain-version }}
+
+      - name: Download LoongArch64 gcc+glibc toolchain
+        if: ${{ !steps.restore-cache.outputs.cache-hit }}
+        run: |
+          url="https://github.com/loongson/build-tools/releases/download/${{ matrix.platform.toolchain-version }}/loongarch64-clfs-6.3-cross-tools-gcc-glibc.tar.xz"
+
+          wget "$url" -O /tmp/toolchain.tar.xz
+
+          mkdir -p /opt
+          tar -C /opt -x -f /tmp/toolchain.tar.xz
+
+      - uses: actions/cache/save@v3
+        if: ${{ !steps.restore-cache.outputs.cache-hit }}
+        with:
+          path: /opt/cross-tools
+          key: loongarch64-${{ matrix.platform.toolchain-version }}
+
+      - name: setup Loongarch64 build environment
+        run: |
+          echo "/opt/cross-tools/bin" >> $GITHUB_PATH
+          echo "CC=loongarch64-unknown-linux-gnu-gcc" >> $GITHUB_ENV
+          echo "CXX=loongarch64-unknown-linux-gnu-g++" >> $GITHUB_ENV
+      - name: configure
+        run: cmake -B build -DCMAKE_SYSTEM_PROCESSOR=loongarch64 -DARCH=lonngarch64 -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_C_COMPILER=loongarch64-unknown-linux-gnu-gcc -DCMAKE_CXX_COMPILER=loongarch64-unknown-linux-gnu-g++
+      - name: build
+        run: cmake --build build
