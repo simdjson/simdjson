@@ -9,7 +9,7 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - { toolchain-version: 2022.09.06 }
+          - { toolchain-version: 2023.08.08 }
     steps:
       - uses: actions/checkout@v4
       - name: Install build requirements
