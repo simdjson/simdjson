@@ -195,9 +195,10 @@ var NAVTREEINDEX =
 "",
 "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#a598e64f8fff7f033b2e38057798799d9",
 "classsimdjson_1_1dom_1_1element.html#ae38f84f4272ae3c32b32dd6d5007ffb9",
-"haswell_2simd_8h_source.html",
-"namespacesimdjson.html#ae6ec9f0ce23fc51d87116b64fdbeb811",
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#af382335314631deb5c352ac86cb25b67"
+"haswell_2numberparsing__defs_8h_source.html",
+"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a8c779dcc8fb73a4eb8891af3ef65eebb",
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a89e365ab71c3c1e6c52c2bbc914069ef",
+"westmere_2begin_8h_source.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

@@ -5,6 +5,8 @@ var namespacesimdjson =
     [ "fallback", "namespacesimdjson_1_1fallback.html", null ],
     [ "haswell", "namespacesimdjson_1_1haswell.html", null ],
     [ "icelake", "namespacesimdjson_1_1icelake.html", null ],
+    [ "lasx", "namespacesimdjson_1_1lasx.html", null ],
+    [ "lsx", "namespacesimdjson_1_1lsx.html", null ],
     [ "ondemand", null, [
       [ "json_path_to_pointer_conversion", "json__path__to__pointer__conversion-inl_8h.html#a39425f9221b5a826d35c92337472b23f", null ]
     ] ],
