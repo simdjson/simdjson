@@ -37,20 +37,23 @@ if(ret != 0):
     sys.exit(ret)
 print("Calling git log HEAD.. --oneline")
 pipe = subprocess.Popen(["git", "log", "HEAD..", "--oneline"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-print("the commandline is {}".format(pipe.args))
+print("the commandline is '{}'".format(pipe.args))
 uptodateresult = pipe.communicate()[0].decode().strip()
 
 if(len(uptodateresult) != 0):
     print(uptodateresult)
     sys.exit(-1)
+print("answer: "+uptodateresult)
 
 pipe = subprocess.Popen(["git", "rev-parse", "--show-toplevel"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 maindir = pipe.communicate()[0].decode().strip()
+
 scriptlocation = os.path.dirname(os.path.abspath(__file__))
 
 print("repository: "+maindir)
 
 pipe = subprocess.Popen(["git", "describe", "--abbrev=0", "--tags"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+print("the commandline is '{}'".format(pipe.args))
 versionresult = pipe.communicate()[0].decode().strip()
 
 print("last version: "+versionresult )
