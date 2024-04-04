@@ -24,6 +24,8 @@ The current implementations are:
 * westmere: SSE4.2 (2010 Westmere or later).
 * arm64: 64-bit ARMv8-A NEON
 * ppc64: 64-bit POWER8 and POWER9 with VSX and ALTIVEC extensions. Both big endian and little endian are implemented, depending on the compiler you are using. The library is tested on recent, little-endian, POWER systems.
+* lasx: Loongson Advanced SIMD EXtension (LASX),  a 256-bit vector expansion for the LoongArch architecture.
+* lsx: Loongson SIMD EXtension (LSX),  a 128-bit vector expansion for the LoongArch architecture.
 * fallback: A generic implementation that runs on any 64-bit processor.
 
 In many cases, you don't know where your compiled binary is going to run, so simdjson automatically
@@ -33,7 +35,7 @@ it will include 2 (ppc64 and fallback).
 
 If you know more about where you're going to run and want to save the space, you can disable any of
 these implementations at compile time with `-DSIMDJSON_IMPLEMENTATION_X=0` (where X is ICELAKE, HASWELL,
-WESTMERE, ARM64, PPC64 and FALLBACK).
+WESTMERE, ARM64, PPC64, LSX, LASX and FALLBACK).
 
 The simdjson library automatically sets header flags for each implementation as it compiles; there
 is no need to set architecture-specific flags yourself (e.g., `-mavx2`, `/AVX2`  or
