@@ -26,7 +26,7 @@ jobs:
       - name: Download LoongArch64 gcc+glibc toolchain
         if: ${{ !steps.restore-cache.outputs.cache-hit }}
         run: |
-          url="https://github.com/loongson/build-tools/releases/download/${{ matrix.platform.toolchain-version }}/loongarch64-clfs-6.3-cross-tools-gcc-glibc.tar.xz"
+          url="https://github.com/loongson/build-tools/releases/download/${{ matrix.platform.toolchain-version }}/x86_64-cross-tools-loongarch64-gcc-libc.tar.xz"
 
           wget "$url" -O /tmp/toolchain.tar.xz
 
