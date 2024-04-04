@@ -108,10 +108,12 @@ Overview</h1>
 <li>westmere: SSE4.2 (2010 Westmere or later).</li>
 <li>arm64: 64-bit ARMv8-A NEON</li>
 <li>ppc64: 64-bit POWER8 and POWER9 with VSX and ALTIVEC extensions. Both big endian and little endian are implemented, depending on the compiler you are using. The library is tested on recent, little-endian, POWER systems.</li>
+<li>lasx: Loongson Advanced SIMD EXtension (LASX), a 256-bit vector expansion for the LoongArch architecture.</li>
+<li>lsx: Loongson SIMD EXtension (LSX), a 128-bit vector expansion for the LoongArch architecture.</li>
 <li>fallback: A generic implementation that runs on any 64-bit processor.</li>
 </ul>
 <p>In many cases, you don't know where your compiled binary is going to run, so simdjson automatically compiles <em>all</em> the implementations into the executable. On Intel, it will include 4 implementations (icelake, haswell, westmere and fallback), on 64-bit ARM it will include just one since running dispatching is unnecessary, and on PPC it will include 2 (ppc64 and fallback).</p>
-<p>If you know more about where you're going to run and want to save the space, you can disable any of these implementations at compile time with <code>-DSIMDJSON_IMPLEMENTATION_X=0</code> (where X is ICELAKE, HASWELL, WESTMERE, ARM64, PPC64 and FALLBACK).</p>
+<p>If you know more about where you're going to run and want to save the space, you can disable any of these implementations at compile time with <code>-DSIMDJSON_IMPLEMENTATION_X=0</code> (where X is ICELAKE, HASWELL, WESTMERE, ARM64, PPC64, LSX, LASX and FALLBACK).</p>
 <p>The simdjson library automatically sets header flags for each implementation as it compiles; there is no need to set architecture-specific flags yourself (e.g., <code>-mavx2</code>, <code>/AVX2</code> or <code>-march=haswell</code>), and it may even break runtime dispatch and your binaries will fail to run on older processors. <em>Note:</em> for POWER9 processors make sure you compile it with <code>-mcpu=power9</code> and <code>-mtune=power9</code> to get maximum performance.</p>
 <h1><a class="anchor" id="autotoc_md51"></a>
 Runtime CPU Detection</h1>
