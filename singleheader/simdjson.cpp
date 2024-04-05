@@ -1,4 +1,4 @@
-/* auto-generated on 2024-04-04 12:24:07 -0400. Do not edit! */
+/* auto-generated on 2024-04-05 15:17:57 -0400. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -5505,7 +5505,11 @@ SIMDJSON_DLLIMPORTEXPORT const uint64_t simdjson::internal::power_of_five_128[]=
 #ifndef SIMDJSON_IMPLEMENTATION_ARM64
 #define SIMDJSON_IMPLEMENTATION_ARM64 (SIMDJSON_IS_ARM64)
 #endif
-#define SIMDJSON_CAN_ALWAYS_RUN_ARM64 SIMDJSON_IMPLEMENTATION_ARM64 && SIMDJSON_IS_ARM64
+#if SIMDJSON_IMPLEMENTATION_ARM64 && SIMDJSON_IS_ARM64
+#define SIMDJSON_CAN_ALWAYS_RUN_ARM64 1
+#else
+#define SIMDJSON_CAN_ALWAYS_RUN_ARM64 0
+#endif
 
 // Default Icelake to on if this is x86-64. Even if we're not compiled for it, it could be selected
 // at runtime.
@@ -5516,9 +5520,20 @@ SIMDJSON_DLLIMPORTEXPORT const uint64_t simdjson::internal::power_of_five_128[]=
 #ifdef _MSC_VER
 // To see why  (__BMI__) && (__PCLMUL__) && (__LZCNT__) are not part of this next line, see
 // https://github.com/simdjson/simdjson/issues/1247
-#define SIMDJSON_CAN_ALWAYS_RUN_ICELAKE ((SIMDJSON_IMPLEMENTATION_ICELAKE) && (__AVX2__) && (__AVX512F__) && (__AVX512DQ__) && (__AVX512CD__) && (__AVX512BW__) && (__AVX512VL__) && (__AVX512VBMI2__))
+#if ((SIMDJSON_IMPLEMENTATION_ICELAKE) && (__AVX2__) && (__AVX512F__) && (__AVX512DQ__) && (__AVX512CD__) && (__AVX512BW__) && (__AVX512VL__) && (__AVX512VBMI2__))
+#define SIMDJSON_CAN_ALWAYS_RUN_ICELAKE 1
 #else
-#define SIMDJSON_CAN_ALWAYS_RUN_ICELAKE ((SIMDJSON_IMPLEMENTATION_ICELAKE) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__) && (__AVX512F__) && (__AVX512DQ__) && (__AVX512CD__) && (__AVX512BW__) && (__AVX512VL__) && (__AVX512VBMI2__))
+#define SIMDJSON_CAN_ALWAYS_RUN_ICELAKE 0
+#endif
+
+#else
+
+#if ((SIMDJSON_IMPLEMENTATION_ICELAKE) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__) && (__AVX512F__) && (__AVX512DQ__) && (__AVX512CD__) && (__AVX512BW__) && (__AVX512VL__) && (__AVX512VBMI2__))
+#define SIMDJSON_CAN_ALWAYS_RUN_ICELAKE 1
+#else
+#define SIMDJSON_CAN_ALWAYS_RUN_ICELAKE 0
+#endif
+
 #endif
 
 // Default Haswell to on if this is x86-64. Even if we're not compiled for it, it could be selected
@@ -5534,9 +5549,20 @@ SIMDJSON_DLLIMPORTEXPORT const uint64_t simdjson::internal::power_of_five_128[]=
 #ifdef _MSC_VER
 // To see why  (__BMI__) && (__PCLMUL__) && (__LZCNT__) are not part of this next line, see
 // https://github.com/simdjson/simdjson/issues/1247
-#define SIMDJSON_CAN_ALWAYS_RUN_HASWELL ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__))
+#if ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__))
+#define SIMDJSON_CAN_ALWAYS_RUN_HASWELL 1
 #else
-#define SIMDJSON_CAN_ALWAYS_RUN_HASWELL ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__))
+#define SIMDJSON_CAN_ALWAYS_RUN_HASWELL 0
+#endif
+
+#else
+
+#if ((SIMDJSON_IMPLEMENTATION_HASWELL) && (SIMDJSON_IS_X86_64) && (__AVX2__) && (__BMI__) && (__PCLMUL__) && (__LZCNT__))
+#define SIMDJSON_CAN_ALWAYS_RUN_HASWELL 1
+#else
+#define SIMDJSON_CAN_ALWAYS_RUN_HASWELL 0
+#endif
+
 #endif
 
 // Default Westmere to on if this is x86-64.
@@ -5548,12 +5574,22 @@ SIMDJSON_DLLIMPORTEXPORT const uint64_t simdjson::internal::power_of_five_128[]=
 #define SIMDJSON_IMPLEMENTATION_WESTMERE SIMDJSON_IS_X86_64
 #endif
 #endif
-#define SIMDJSON_CAN_ALWAYS_RUN_WESTMERE (SIMDJSON_IMPLEMENTATION_WESTMERE && SIMDJSON_IS_X86_64 && __SSE4_2__ && __PCLMUL__)
+
+#if (SIMDJSON_IMPLEMENTATION_WESTMERE && SIMDJSON_IS_X86_64 && __SSE4_2__ && __PCLMUL__)
+#define SIMDJSON_CAN_ALWAYS_RUN_WESTMERE 1
+#else
+#define SIMDJSON_CAN_ALWAYS_RUN_WESTMERE 0
+#endif
+
 
 #ifndef SIMDJSON_IMPLEMENTATION_PPC64
 #define SIMDJSON_IMPLEMENTATION_PPC64 (SIMDJSON_IS_PPC64 && SIMDJSON_IS_PPC64_VMX)
 #endif
-#define SIMDJSON_CAN_ALWAYS_RUN_PPC64 SIMDJSON_IMPLEMENTATION_PPC64 && SIMDJSON_IS_PPC64 && SIMDJSON_IS_PPC64_VMX
+#if SIMDJSON_IMPLEMENTATION_PPC64 && SIMDJSON_IS_PPC64 && SIMDJSON_IS_PPC64_VMX
+#define SIMDJSON_CAN_ALWAYS_RUN_PPC64 1
+#else
+#define SIMDJSON_CAN_ALWAYS_RUN_PPC64 0
+#endif
 
 #ifndef SIMDJSON_IMPLEMENTATION_LASX
 #define SIMDJSON_IMPLEMENTATION_LASX (SIMDJSON_IS_LOONGARCH64 && __loongarch_asx)
