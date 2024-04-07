@@ -56,13 +56,13 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
   internal::value128 answer;
 #if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
+#if SIMDJSON_IS_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
   answer.low = value1 * value2;
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
+#endif // SIMDJSON_IS_ARM64
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
