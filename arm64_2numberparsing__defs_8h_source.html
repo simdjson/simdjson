@@ -102,10 +102,10 @@ $(document).ready(function(){initNavTree('arm64_2numberparsing__defs_8h_source.h
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;cstring&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#if _M_ARM64</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#if SIMDJSON_REGULAR_VISUAL_STUDIO &amp;&amp; SIMDJSON_IS_ARM64</span></div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment">// __umulh requires intrin.h</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &lt;intrin.h&gt;</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// _M_ARM64</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_REGULAR_VISUAL_STUDIO &amp;&amp; SIMDJSON_IS_ARM64</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacesimdjson.html">simdjson</a> {</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">namespace </span>arm64 {</div>
@@ -124,13 +124,13 @@ $(document).ready(function(){initNavTree('arm64_2numberparsing__defs_8h_source.h
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  internal::value128 answer;</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#ifdef _M_ARM64</span></div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#if SIMDJSON_IS_ARM64</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="comment">// ARM64 has native support for 64-bit multiplications, no need to emultate</span></div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  answer.high = __umulh(value1, value2);</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  answer.low = value1 * value2;</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  answer.low = _umul128(value1, value2, &amp;answer.high); <span class="comment">// _umul128 not available on ARM64</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// _M_ARM64</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_IS_ARM64</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#else </span><span class="comment">// SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  __uint128_t r = (<span class="keyword">static_cast&lt;</span>__uint128_t<span class="keyword">&gt;</span>(value1)) * value2;</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  answer.low = uint64_t(r);</div>
