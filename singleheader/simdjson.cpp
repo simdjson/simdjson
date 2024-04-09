@@ -105,9 +105,9 @@
 #endif // __clang__
 #endif // _MSC_VER
 
-#if defined(__x86_64__) || defined(_M_AMD64)
+#if (defined(__x86_64__) || defined(_M_AMD64)) && !defined(_M_ARM64EC)
 #define SIMDJSON_IS_X86_64 1
-#elif defined(__aarch64__) || defined(_M_ARM64)
+#elif defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
 #define SIMDJSON_IS_ARM64 1
 #elif defined(__riscv) && __riscv_xlen == 64
 #define SIMDJSON_IS_RISCV64 1
@@ -6712,7 +6712,7 @@ static inline uint32_t detect_supported_architectures() {
   return instruction_set::ALTIVEC;
 }
 
-#elif defined(__aarch64__) || defined(_M_ARM64)
+#elif defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
 
 static inline uint32_t detect_supported_architectures() {
   return instruction_set::NEON;
@@ -7739,10 +7739,10 @@ simdjson_inline uint64_t prefix_xor(uint64_t bitmask) {
 
 #include <cstring>
 
-#if _M_ARM64
+#if SIMDJSON_REGULAR_VISUAL_STUDIO && SIMDJSON_IS_ARM64
 // __umulh requires intrin.h
 #include <intrin.h>
-#endif // _M_ARM64
+#endif // SIMDJSON_REGULAR_VISUAL_STUDIO && SIMDJSON_IS_ARM64
 
 namespace simdjson {
 namespace arm64 {
@@ -7762,13 +7762,13 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
   internal::value128 answer;
 #if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
+#if SIMDJSON_IS_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
   answer.low = value1 * value2;
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
+#endif // SIMDJSON_IS_ARM64
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
@@ -10495,10 +10495,10 @@ simdjson_inline uint64_t prefix_xor(uint64_t bitmask) {
 
 #include <cstring>
 
-#if _M_ARM64
+#if SIMDJSON_REGULAR_VISUAL_STUDIO && SIMDJSON_IS_ARM64
 // __umulh requires intrin.h
 #include <intrin.h>
-#endif // _M_ARM64
+#endif // SIMDJSON_REGULAR_VISUAL_STUDIO && SIMDJSON_IS_ARM64
 
 namespace simdjson {
 namespace arm64 {
@@ -10518,13 +10518,13 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
   internal::value128 answer;
 #if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
+#if SIMDJSON_IS_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
   answer.low = value1 * value2;
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
+#endif // SIMDJSON_IS_ARM64
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
@@ -14236,13 +14236,13 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
   internal::value128 answer;
 #if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
+#if SIMDJSON_IS_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
   answer.low = value1 * value2;
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
+#endif // SIMDJSON_IS_ARM64
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
@@ -16869,13 +16869,13 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
   internal::value128 answer;
 #if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
+#if SIMDJSON_IS_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
   answer.low = value1 * value2;
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
+#endif // SIMDJSON_IS_ARM64
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
@@ -20876,13 +20876,13 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
   internal::value128 answer;
 #if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
+#if SIMDJSON_IS_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
   answer.low = value1 * value2;
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
+#endif // SIMDJSON_IS_ARM64
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
@@ -23507,13 +23507,13 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
   internal::value128 answer;
 #if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
+#if SIMDJSON_IS_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
   answer.low = value1 * value2;
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
+#endif // SIMDJSON_IS_ARM64
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
@@ -26701,13 +26701,13 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
   internal::value128 answer;
 #if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
+#if SIMDJSON_IS_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
   answer.low = value1 * value2;
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
+#endif // SIMDJSON_IS_ARM64
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
@@ -29445,13 +29445,13 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
   internal::value128 answer;
 #if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
+#if SIMDJSON_IS_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
   answer.low = value1 * value2;
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
+#endif // SIMDJSON_IS_ARM64
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
@@ -33170,13 +33170,13 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
   internal::value128 answer;
 #if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
+#if SIMDJSON_IS_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
   answer.low = value1 * value2;
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
+#endif // SIMDJSON_IS_ARM64
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
@@ -36235,13 +36235,13 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars
 simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
   internal::value128 answer;
 #if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
+#if SIMDJSON_IS_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
   answer.low = value1 * value2;
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
+#endif // SIMDJSON_IS_ARM64
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
@@ -52139,13 +52139,13 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
   internal::value128 answer;
 #if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
+#if SIMDJSON_IS_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
   answer.low = value1 * value2;
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
+#endif // SIMDJSON_IS_ARM64
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
@@ -54273,13 +54273,13 @@ static simdjson_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi)
 simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t value2) {
   internal::value128 answer;
 #if SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
-#ifdef _M_ARM64
+#if SIMDJSON_IS_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
   answer.low = value1 * value2;
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
-#endif // _M_ARM64
+#endif // SIMDJSON_IS_ARM64
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO || SIMDJSON_IS_32BITS
   __uint128_t r = (static_cast<__uint128_t>(value1)) * value2;
   answer.low = uint64_t(r);
