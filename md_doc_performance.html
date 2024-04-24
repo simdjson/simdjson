@@ -101,11 +101,11 @@ $(document).ready(function(){initNavTree('md_doc_performance.html',''); initResi
 <li><a href="#visual-studio">Visual Studio</a></li>
 <li><a href="#power-usage-and-downclocking">Power Usage and Downclocking</a></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md93"></a>
+<h1><a class="anchor" id="autotoc_md94"></a>
 NDEBUG directive</h1>
 <p>In C/C++, the <code>NDEBUG</code> pre-processor directive is not set by default. When it is not set, the simdjson library does many additional checks that may impact negatively the performance. We recommend that, once your code is well tested, you define <code>NDEBUG</code> directive in your Release builds. The <code>NDEBUG</code> directive should be defined prior to including the <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code> header.</p>
 <p>The <code>NDEBUG</code> directive is generally independent from optimization flags. For example, setting <code>-O3</code> under GCC does not set the <code>NDEBUG</code> directive.</p>
-<h1><a class="anchor" id="autotoc_md94"></a>
+<h1><a class="anchor" id="autotoc_md95"></a>
 Reusing the parser for maximum efficiency</h1>
 <p>If you're using simdjson to parse multiple documents, or in a loop, you should make a parser once and reuse it. The simdjson library will allocate and retain internal buffers between parses, keeping buffers hot in cache and keeping memory allocation and initialization to a minimum. In this manner, you can parse terabytes of JSON data without doing any new allocation.</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -124,7 +124,7 @@ Reusing the parser for maximum efficiency</h1>
 <div class="line">for(int64_t i : doc.get_array()) {</div>
 <div class="line">  cout &lt;&lt; i &lt;&lt; endl;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md95"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md96"></a>
 Reusing string buffers</h1>
 <p>We recommend against creating many <code>std::string</code> or <code><a class="el" href="structsimdjson_1_1padded__string.html" title="String with extra allocation for ease of use with parser::parse()">simdjson::padded_string</a></code> instances to store the JSON content in your application. <a href="https://lemire.me/blog/2020/08/08/performance-tip-constructing-many-non-trivial-objects-is-slow/">Creating many non-trivial objects is convenient but often surprisingly slow</a>. Instead, as much as possible, you should allocate (once or a few times) reusable memory buffers where you write your JSON content. If you have a buffer <code>json_str</code> (of type <code>char*</code>) allocated for <code>capacity</code> bytes and you store a JSON document spanning <code>length</code> bytes, you can pass it to simdjson as follows:</p>
 <div class="fragment"><div class="line">{c++}</div>
@@ -132,7 +132,7 @@ Reusing string buffers</h1>
 </div><!-- fragment --><p>or simply</p>
 <div class="fragment"><div class="line">{c++}</div>
 <div class="line">auto doc = parser.iterate(json_str, length, capacity);</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md96"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md97"></a>
 Server Loops: Long-Running Processes and Memory Capacity</h1>
 <p>The On Demand approach also automatically expands its memory capacity when larger documents are parsed. However, for longer processes where very large files are processed (such as server loops), this capacity is not resized down. On Demand also lets you adjust the maximal capacity that the parser can process:</p>
 <ul>
@@ -165,7 +165,7 @@ Server Loops: Long-Running Processes and Memory Capacity</h1>
 <div class="line">   }</div>
 </div><!-- fragment --> You can also manually set the maximal capacity using the method <code>set_max_capacity()</code>.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md97"></a>
+<h1><a class="anchor" id="autotoc_md98"></a>
 Large files and huge page support</h1>
 <p>There is a memory allocation performance cost the first time you process a large file (e.g. 100MB). Between the cost of allocation, the fact that the memory is not in cache, and the initial zeroing of memory, <a href="https://lemire.me/blog/2020/01/14/how-fast-can-you-allocate-a-large-block-of-memory-in-c/">on some systems, allocation runs far slower than parsing (e.g., 1.4GB/s)</a>. Reusing the parser mitigates this by paying the cost once, but does not eliminate it.</p>
 <p>In large file use cases, enabling transparent huge page allocation on the OS can help a lot. We haven't found the right way to do this on Windows or OS/X, but on Linux, you can enable transparent huge page allocation with a command like:</p>
@@ -173,7 +173,7 @@ Large files and huge page support</h1>
 </div><!-- fragment --><p>In general, when running benchmarks over large files, we recommend that you report performance numbers with and without huge pages if possible. Furthermore, you should amortize the parsing (e.g., by parsing several large files) to distinguish the time spent parsing from the time spent allocating memory. If you are using the <code>parse</code> benchmarking tool provided with the simdjson library, you can use the <code>-H</code> flag to omit the memory allocation cost from the benchmark results.</p>
 <div class="fragment"><div class="line">./parse largefile # includes memory allocation cost</div>
 <div class="line">./parse -H largefile # without memory allocation</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md98"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md99"></a>
 Number parsing</h1>
 <p>Some JSON files contain many floating-point values. It is the case with many GeoJSON files. Accurately parsing decimal strings into binary floating-point values with proper rounding is challenging. To our knowledge, it is not possible, in general, to parse streams of numbers at gigabytes per second using a single core. While using the simdjson library, it is possible that you might be limited to a few hundred megabytes per second if your JSON documents are densely packed with floating-point values.</p>
 <ul>
@@ -181,13 +181,13 @@ Number parsing</h1>
 <li>When serializing numbers, you should not use more digits than necessary: 17 digits is all that is needed to exactly represent double-precision floating-point numbers. Using many more digits than necessary will make your files larger and slower to parse.</li>
 <li>When benchmarking parsing speeds, always report whether your JSON documents are made mostly of floating-point numbers when it is the case, since number parsing can then dominate the parsing time.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md99"></a>
+<h1><a class="anchor" id="autotoc_md100"></a>
 Visual Studio</h1>
 <p>On Intel and AMD Windows platforms, Microsoft Visual Studio enables programmers to build either 32-bit (x86) or 64-bit (x64 or ARM64) binaries. We urge you to always use 64-bit mode. Visual Studio 2019 should default on 64-bit builds when you have a 64-bit version of Windows, which we recommend.</p>
 <p>When compiling with Visual Studio, we recommend the flags <code>/Ob2 /O2</code> or better. We do not recommend that you compile simdjson with architecture-specific flags such as <code>arch:AVX2</code>. The simdjson library automatically selects the best execution kernel at runtime.</p>
 <p>Recent versions of Microsoft Visual Studio on Windows provides support for the LLVM Clang compiler. You only need to install the "Clang compiler" optional component (ClangCL). You may also get a copy of the 64-bit LLVM CLang compiler for <a href="https://releases.llvm.org/download.html">Windows directly from LLVM</a>. The simdjson library fully supports the LLVM Clang compiler under Windows. In fact, you may get better performance out of simdjson with the LLVM Clang compiler than with the regular Visual Studio compiler. Meanwhile the <a href="https://clang.llvm.org/docs/MSVCCompatibility.html">LLVM CLang compiler is binary compatible with Visual Studio</a> which means that you can combine their binaries (executables and libraries).</p>
 <p>Under Windows, we also support the GNU GCC compiler via MSYS2. The performance of 64-bit MSYS2 under Windows is excellent (on par with Linux).</p>
-<h1><a class="anchor" id="autotoc_md100"></a>
+<h1><a class="anchor" id="autotoc_md101"></a>
 Power Usage and Downclocking</h1>
 <p>The simdjson library relies on SIMD instructions. SIMD instructions are the public transportation of computing. Instead of using 4 distinct instructions to add numbers, you can replace them with a single instruction that does the same work. Though the one instruction is slightly more expensive, the energy used per unit of work is much less with SIMD. If you can increase your speed using SIMD instructions (NEON, SSE, AVX), you should expect to reduce your power usage.</p>
 <p>The SIMD instructions that simdjson relies upon (SSE and AVX under x64, NEON under ARM, ALTIVEC under PPC) are routinely part of runtime libraries (e.g., <a href="https://golang.org/src/runtime/memmove_amd64.s">Go</a>, <a href="https://github.com/ihtsae/glibc/commit/5f3d0b78e011d2a72f9e88b0e9ef5bc081d18f97">Glibc</a>, <a href="https://github.com/llvm/llvm-project/blob/96f3ea0d21b48ca088355db10d4d1a2e9bc9f884/lldb/tools/debugserver/source/MacOSX/i386/DNBArchImplI386.cpp">LLVM</a>, <a href="https://github.com/rust-lang/rust/commit/070fad1701fb36b112853b0a6a9787a7bb7ff34c">Rust</a>, <a href="http://hg.openjdk.java.net/jdk8u/jdk8u/hotspot/file/c1374141598c/src/cpu/x86/vm/stubGenerator_x86_64.cpp#l1297">Java</a>, <a href="https://github.com/php/php-src/blob/e5cb53ec68603d4dbdd780fd3ecfca943b4fd383/ext/standard/string.c">PHP</a>). What distinguishes the simdjson library is that it is built from the ground up to benefit from these instructions.</p>

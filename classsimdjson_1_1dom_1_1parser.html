@@ -404,14 +404,14 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <p>Load a JSON document from a file and return a reference to it. </p>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; const element doc = <a class="el" href="classsimdjson_1_1dom_1_1parser.html#ab3e5bbb1974a1932aead90ad63883a23" title="Load a JSON document from a file and return a reference to it.">parser.load</a>("jsonexamples/twitter.json");</p>
 <p>The function is eager: the file's content is loaded in memory inside the parser instance and immediately parsed. The file can be deleted after the <code><a class="el" href="classsimdjson_1_1dom_1_1parser.html#ab3e5bbb1974a1932aead90ad63883a23" title="Load a JSON document from a file and return a reference to it.">parser.load</a></code> call.</p>
-<h3><a class="anchor" id="autotoc_md111"></a>
+<h3><a class="anchor" id="autotoc_md112"></a>
 IMPORTANT: Document Lifetime</h3>
 <p>The JSON document still lives in the parser: this is the most efficient way to parse JSON documents because it reuses the same buffers, but you <em>must</em> use the document before you destroy the parser or call <a class="el" href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984" title="Parse a JSON document and return a temporary reference to it.">parse()</a> again.</p>
 <p>Moving the parser instance is safe, but it invalidates the element instances. You may store the parser instance without moving it by wrapping it inside an <code>unique_ptr</code> instance like so: <code>std::unique_ptr&lt;<a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a>&gt; parser(new <a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a>{});</code>.</p>
-<h3><a class="anchor" id="autotoc_md112"></a>
+<h3><a class="anchor" id="autotoc_md113"></a>
 Parser Capacity</h3>
 <p>If the parser's current capacity is less than the file length, it will allocate enough capacity to handle it (up to max_capacity).</p>
-<h2><a class="anchor" id="autotoc_md113"></a>
+<h2><a class="anchor" id="autotoc_md114"></a>
 Windows and Unicode</h2>
 <p>Windows users who need to read files with non-ANSI characters in the name should set their code page to UTF-8 (65001) before calling this function. This should be the default with Windows 11 and better. Further, they may use the AreFileApisANSI function to determine whether the filename is interpreted using the ANSI or the system default OEM codepage, and they may call SetFileApisToOEM accordingly.</p>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -470,7 +470,7 @@ Windows and Unicode</h2>
 <p>It is similar to the function <code>load</code> except that instead of parsing into the internal <code>document</code> instance associated with the parser, it allows the user to provide a document instance.</p>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; <a class="el" href="classsimdjson_1_1dom_1_1document.html" title="A parsed JSON document.">dom::document</a> doc; element doc_root = <a class="el" href="classsimdjson_1_1dom_1_1parser.html#ac7913230cb1f559bea4583bb743f9807" title="Load a JSON document from a file into a provide document instance and return a temporary reference to...">parser.load_into_document</a>(doc, "jsonexamples/twitter.json");</p>
 <p>The function is eager: the file's content is loaded in memory inside the parser instance and immediately parsed. The file can be deleted after the <code><a class="el" href="classsimdjson_1_1dom_1_1parser.html#ac7913230cb1f559bea4583bb743f9807" title="Load a JSON document from a file into a provide document instance and return a temporary reference to...">parser.load_into_document</a></code> call.</p>
-<h3><a class="anchor" id="autotoc_md114"></a>
+<h3><a class="anchor" id="autotoc_md115"></a>
 IMPORTANT: Document Lifetime</h3>
 <p>After the call to load_into_document, the parser is no longer needed.</p>
 <p>The JSON document lives in the document instance: you must keep the document instance alive while you navigate through it (i.e., used the returned value from load_into_document). You are encourage to reuse the document instance many times with new data to avoid reallocations:</p>
@@ -534,20 +534,20 @@ IMPORTANT: Document Lifetime</h3>
 <p>The file is loaded in memory and can be safely deleted after the <code>parser.load_many(path)</code> function has returned. The memory is held by the <code>parser</code> instance.</p>
 <p>The function is lazy: it may be that no more than one JSON document at a time is parsed. And, possibly, no document many have been parsed when the <code>parser.load_many(path)</code> function returned.</p>
 <p>If there is a UTF-8 BOM, the parser skips it.</p>
-<h3><a class="anchor" id="autotoc_md119"></a>
+<h3><a class="anchor" id="autotoc_md120"></a>
 Format</h3>
 <p>The file must contain a series of one or more JSON documents, concatenated into a single buffer, separated by whitespace. It effectively parses until it has a fully valid document, then starts parsing the next document at that point. (It does this with more parallelism and lookahead than you might think, though.)</p>
 <p>Documents that consist of an object or array may omit the whitespace between them, concatenating with no separator. documents that consist of a single primitive (i.e. documents that are not arrays or objects) MUST be separated with whitespace.</p>
 <p>The documents must not exceed batch_size bytes (by default 1MB) or they will fail to parse. Setting batch_size to excessively large or excesively small values may impact negatively the performance.</p>
-<h3><a class="anchor" id="autotoc_md120"></a>
+<h3><a class="anchor" id="autotoc_md121"></a>
 Error Handling</h3>
 <p>All errors are returned during iteration: if there is a global error such as memory allocation, it will be yielded as the first result. Iteration always stops after the first error.</p>
 <p>As with all other simdjson methods, non-exception error handling is readily available through the same interface, requiring you to check the error before using the document:</p>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; <a class="el" href="classsimdjson_1_1dom_1_1document__stream.html" title="A forward-only stream of documents.">dom::document_stream</a> docs; auto error = parser.load_many(path).get(docs); if (error) { cerr &lt;&lt; error &lt;&lt; endl; exit(1); } for (auto doc : docs) { std::string_view title; if ((error = doc["title"].get(title)) { cerr &lt;&lt; error &lt;&lt; endl; exit(1); } cout &lt;&lt; title &lt;&lt; endl; }</p>
-<h3><a class="anchor" id="autotoc_md121"></a>
+<h3><a class="anchor" id="autotoc_md122"></a>
 Threads</h3>
 <p>When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the hood to do some lookahead.</p>
-<h3><a class="anchor" id="autotoc_md122"></a>
+<h3><a class="anchor" id="autotoc_md123"></a>
 Parser Capacity</h3>
 <p>If the parser's current capacity is less than batch_size, it will allocate enough capacity to handle it (up to max_capacity).</p>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -707,11 +707,11 @@ Parser Capacity</h3>
 <p>Parse a JSON document and return a temporary reference to it. </p>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; element doc_root = parser.parse(buf, len);</p>
 <p>The function eagerly parses the input: the input can be modified and discarded after the <code>parser.parse(buf, len)</code> call has completed.</p>
-<h3><a class="anchor" id="autotoc_md115"></a>
+<h3><a class="anchor" id="autotoc_md116"></a>
 IMPORTANT: Document Lifetime</h3>
 <p>The JSON document still lives in the parser: this is the most efficient way to parse JSON documents because it reuses the same buffers, but you <em>must</em> use the document before you destroy the parser or call <a class="el" href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984" title="Parse a JSON document and return a temporary reference to it.">parse()</a> again.</p>
 <p>Moving the parser instance is safe, but it invalidates the element instances. You may store the parser instance without moving it by wrapping it inside an <code>unique_ptr</code> instance like so: <code>std::unique_ptr&lt;<a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a>&gt; parser(new <a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a>{});</code>.</p>
-<h3><a class="anchor" id="autotoc_md116"></a>
+<h3><a class="anchor" id="autotoc_md117"></a>
 REQUIRED: Buffer Padding</h3>
 <p>The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what those bytes are initialized to, as long as they are allocated. These bytes will be read: if you using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the SIMDJSON_PADDING bytes to avoid runtime warnings.</p>
 <p>If realloc_if_needed is true (the default), it is assumed that the buffer does <em>not</em> have enough padding, and it is copied into an enlarged temporary buffer before parsing. Thus the following is safe:</p>
@@ -719,7 +719,7 @@ REQUIRED: Buffer Padding</h3>
 <p>If you set realloc_if_needed to false (e.g., parser.parse(json, json_len, false)), you must provide a buffer with at least SIMDJSON_PADDING extra bytes at the end. The benefit of setting realloc_if_needed to false is that you avoid a temporary memory allocation and a copy.</p>
 <p>The padded bytes may be read. It is not important how you initialize these bytes though we recommend a sensible default like null character values or spaces. For example, the following low-level code is safe:</p>
 <p>const char *json = R"({"key":"value"})"; const size_t json_len = std::strlen(json); std::unique_ptr&lt;char[]&gt; padded_json_copy{new char[json_len + SIMDJSON_PADDING]}; std::memcpy(padded_json_copy.get(), json, json_len); std::memset(padded_json_copy.get() + json_len, '\0', SIMDJSON_PADDING); <a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">simdjson::dom::parser</a> parser; <a class="el" href="classsimdjson_1_1dom_1_1element.html" title="A JSON element.">simdjson::dom::element</a> element = <a class="el" href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984" title="Parse a JSON document and return a temporary reference to it.">parser.parse</a>(padded_json_copy.get(), json_len, false);</p>
-<h3><a class="anchor" id="autotoc_md117"></a>
+<h3><a class="anchor" id="autotoc_md118"></a>
 Parser Capacity</h3>
 <p>If the parser's current capacity is less than len, it will allocate enough capacity to handle it (up to max_capacity).</p>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -791,7 +791,7 @@ Parser Capacity</h3>
 <p>It is similar to the function <code>parse</code> except that instead of parsing into the internal <code>document</code> instance associated with the parser, it allows the user to provide a document instance.</p>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; <a class="el" href="classsimdjson_1_1dom_1_1document.html" title="A parsed JSON document.">dom::document</a> doc; element doc_root = parser.parse_into_document(doc, buf, len);</p>
 <p>The function eagerly parses the input: the input can be modified and discarded after the <code>parser.parse(buf, len)</code> call has completed.</p>
-<h3><a class="anchor" id="autotoc_md118"></a>
+<h3><a class="anchor" id="autotoc_md119"></a>
 IMPORTANT: Document Lifetime</h3>
 <p>After the call to parse_into_document, the parser is no longer needed.</p>
 <p>The JSON document lives in the document instance: you must keep the document instance alive while you navigate through it (i.e., used the returned value from parse_into_document). You are encourage to reuse the document instance many times with new data to avoid reallocations:</p>
@@ -867,23 +867,23 @@ IMPORTANT: Document Lifetime</h3>
 <p>The following is safe:</p>
 <p>auto json = "[\"temporary data"]"_padded; auto docs = parser.parse_many(json); for (element doc : docs) { cout &lt;&lt; std::string(doc["title"]) &lt;&lt; endl; }</p>
 <p>If there is a UTF-8 BOM, the parser skips it.</p>
-<h3><a class="anchor" id="autotoc_md123"></a>
+<h3><a class="anchor" id="autotoc_md124"></a>
 Format</h3>
 <p>The buffer must contain a series of one or more JSON documents, concatenated into a single buffer, separated by whitespace. It effectively parses until it has a fully valid document, then starts parsing the next document at that point. (It does this with more parallelism and lookahead than you might think, though.)</p>
 <p>documents that consist of an object or array may omit the whitespace between them, concatenating with no separator. documents that consist of a single primitive (i.e. documents that are not arrays or objects) MUST be separated with whitespace.</p>
 <p>The documents must not exceed batch_size bytes (by default 1MB) or they will fail to parse. Setting batch_size to excessively large or excesively small values may impact negatively the performance.</p>
-<h3><a class="anchor" id="autotoc_md124"></a>
+<h3><a class="anchor" id="autotoc_md125"></a>
 Error Handling</h3>
 <p>All errors are returned during iteration: if there is a global error such as memory allocation, it will be yielded as the first result. Iteration always stops after the first error.</p>
 <p>As with all other simdjson methods, non-exception error handling is readily available through the same interface, requiring you to check the error before using the document:</p>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; <a class="el" href="classsimdjson_1_1dom_1_1document__stream.html" title="A forward-only stream of documents.">dom::document_stream</a> docs; auto error = parser.load_many(path).get(docs); if (error) { cerr &lt;&lt; error &lt;&lt; endl; exit(1); } for (auto doc : docs) { std::string_view title; if ((error = doc["title"].get(title)) { cerr &lt;&lt; error &lt;&lt; endl; exit(1); } cout &lt;&lt; title &lt;&lt; endl; }</p>
-<h3><a class="anchor" id="autotoc_md125"></a>
+<h3><a class="anchor" id="autotoc_md126"></a>
 REQUIRED: Buffer Padding</h3>
 <p>The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what those bytes are initialized to, as long as they are allocated. These bytes will be read: if you using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the SIMDJSON_PADDING bytes to avoid runtime warnings.</p>
-<h3><a class="anchor" id="autotoc_md126"></a>
+<h3><a class="anchor" id="autotoc_md127"></a>
 Threads</h3>
 <p>When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the hood to do some lookahead.</p>
-<h3><a class="anchor" id="autotoc_md127"></a>
+<h3><a class="anchor" id="autotoc_md128"></a>
 Parser Capacity</h3>
 <p>If the parser's current capacity is less than batch_size, it will allocate enough capacity to handle it (up to max_capacity).</p>
 <dl class="params"><dt>Parameters</dt><dd>
