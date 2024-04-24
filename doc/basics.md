@@ -2271,8 +2271,13 @@ acts as an iterator (and is therefore not thread safe).
 
 The CPU detection, which runs the first time parsing is attempted and switches to the fastest
 parser for your CPU, is transparent and thread-safe.
+Our runtime dispatching is based on global objects that are instantiated at the beginning of the
+main thread and may be discarded at the end of the main thread. If you have multiple threads running
+and some threads use the library while the main thread is cleaning up ressources, you may encounter
+issues. If you expect such problems, you may consider using [std::quick_exit](https://en.cppreference.com/w/cpp/utility/program/quick_exit).
 
 In a threaded environment, stack space is often limited. Running code like simdjson in debug mode may require hundreds of kilobytes of stack memory. Thus stack overflows are a possibility. We recommend you turn on optimization when working in an environment where stack space is limited. If you must run your code in debug mode, we recommend you configure your system to have more stack space. We discourage you from running production code based on a debug build.
+
 
 Standard compliance
 --------------------

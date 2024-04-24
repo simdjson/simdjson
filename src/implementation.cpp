@@ -169,8 +169,8 @@ namespace internal {
  */
 class detect_best_supported_implementation_on_first_use final : public implementation {
 public:
-  const std::string &name() const noexcept final { return set_best()->name(); }
-  const std::string &description() const noexcept final { return set_best()->description(); }
+  std::string name() const noexcept final { return set_best()->name(); }
+  std::string description() const noexcept final { return set_best()->description(); }
   uint32_t required_instruction_sets() const noexcept final { return set_best()->required_instruction_sets(); }
   simdjson_warn_unused error_code create_dom_parser_implementation(
     size_t capacity,
@@ -189,6 +189,8 @@ public:
 private:
   const implementation *set_best() const noexcept;
 };
+
+static_assert(std::is_trivially_destructible<detect_best_supported_implementation_on_first_use>::value, "detect_best_supported_implementation_on_first_use should be trivially destructible");
 
 static const std::initializer_list<const implementation *>& get_available_implementation_pointers() {
   static const std::initializer_list<const implementation *> available_implementation_pointers {
@@ -245,6 +247,8 @@ public:
   }
   unsupported_implementation() : implementation("unsupported", "Unsupported CPU (no detected SIMD instructions)", 0) {}
 };
+
+static_assert(std::is_trivially_destructible<unsupported_implementation>::value, "unsupported_singleton should be trivially destructible");
 
 const unsupported_implementation* get_unsupported_singleton() {
     static const unsupported_implementation unsupported_singleton{};
