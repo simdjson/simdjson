@@ -196,6 +196,27 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool issue2170() {
+        TEST_START();
+        auto json = R"(1 2 3)"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+        auto i = stream.begin();
+        size_t count{0};
+        std::vector<size_t> indexes = { 0, 2, 4 };
+        std::vector<std::string_view> expected = { "1", "2", "3" };
+
+        for(; i != stream.end(); ++i) {
+            ASSERT_SUCCESS(i.error());
+            ASSERT_TRUE(count < 3);
+            ASSERT_EQUAL(i.current_index(), indexes[count]);
+            ASSERT_EQUAL(i.source(), expected[count]);
+            count++;
+        }
+        TEST_SUCCEED();
+    }
+
     bool issue1977() {
         TEST_START();
         std::string json = R"( 1111 })";
@@ -881,6 +902,7 @@ namespace document_stream_tests {
 
     bool run() {
         return
+            issue2170() &&
             issue2137() &&
             skipbom() &&
             issue1977() &&
