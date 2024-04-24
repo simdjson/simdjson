@@ -53,7 +53,7 @@ public:
    *
    * @return the name of the implementation, e.g. "haswell", "westmere", "arm64".
    */
-  virtual const std::string &name() const { return _name; }
+  virtual std::string name() const { return std::string(_name); }
 
   /**
    * The description of this implementation.
@@ -63,7 +63,7 @@ public:
    *
    * @return the description of the implementation, e.g. "Intel/AMD AVX2", "Intel/AMD SSE4.2", "ARM NEON".
    */
-  virtual const std::string &description() const { return _description; }
+  virtual std::string description() const { return std::string(_description); }
 
   /**
    * The instruction sets this implementation is compiled against
@@ -139,18 +139,19 @@ protected:
     _required_instruction_sets(required_instruction_sets)
   {
   }
-  virtual ~implementation()=default;
+protected:
+  ~implementation() = default;
 
 private:
   /**
    * The name of this implementation.
    */
-  const std::string _name;
+  std::string_view _name;
 
   /**
    * The description of this implementation.
    */
-  const std::string _description;
+  std::string_view _description;
 
   /**
    * Instruction sets required for this implementation.
