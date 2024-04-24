@@ -59,6 +59,7 @@ Real-world usage
 - [vast](https://github.com/tenzir/vast)
 - [ada-url](https://github.com/ada-url/ada)
 - [fastgron](https://github.com/adamritter/fastgron)
+- [WasmEdge](https://wasmedge.org)
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
