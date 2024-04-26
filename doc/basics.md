@@ -20,7 +20,7 @@ An overview of what you need to know to use simdjson, with examples.
   - [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
   - [UTF-8 validation (alone)](#utf-8-validation-alone)
   - [JSON Pointer](#json-pointer)
-  - [JSONPath](#json-path)
+  - [JSONPath](#jsonpath)
   - [Error handling](#error-handling)
     - [Error handling examples without exceptions](#error-handling-examples-without-exceptions)
     - [Disabling exceptions](#disabling-exceptions)
