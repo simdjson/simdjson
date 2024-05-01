@@ -134,7 +134,7 @@ namespace {
       tmp = vpaddq_u8(tmp, tmp);
       return vgetq_lane_u16(vreinterpretq_u16_u8(tmp), 0);
     }
-    simdjson_inline bool any() const { return vmaxvq_u8(*this) != 0; }
+    simdjson_inline bool any() const { return vmaxvq_u32(vreinterpretq_u32_u8(*this)) != 0; }
   };
 
   // Unsigned bytes
