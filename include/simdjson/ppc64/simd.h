@@ -96,11 +96,11 @@ template <> struct simd8<bool> : base8<bool> {
     return (__m128i)vec_splats((unsigned char)(-(!!_value)));
   }
 
-  simdjson_inline simd8<bool>() : base8<bool>() {}
-  simdjson_inline simd8<bool>(const __m128i _value)
+  simdjson_inline simd8() : base8<bool>() {}
+  simdjson_inline simd8(const __m128i _value)
       : base8<bool>(_value) {}
   // Splat constructor
-  simdjson_inline simd8<bool>(bool _value)
+  simdjson_inline simd8(bool _value)
       : base8<bool>(splat(_value)) {}
 
   simdjson_inline int to_bitmask() const {
