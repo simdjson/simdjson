@@ -65,10 +65,10 @@ namespace simd {
   struct simd8<bool>: base8<bool> {
     static simdjson_inline simd8<bool> splat(bool _value) { return _mm256_set1_epi8(uint8_t(-(!!_value))); }
 
-    simdjson_inline simd8<bool>() : base8() {}
-    simdjson_inline simd8<bool>(const __m256i _value) : base8<bool>(_value) {}
+    simdjson_inline simd8() : base8() {}
+    simdjson_inline simd8(const __m256i _value) : base8<bool>(_value) {}
     // Splat constructor
-    simdjson_inline simd8<bool>(bool _value) : base8<bool>(splat(_value)) {}
+    simdjson_inline simd8(bool _value) : base8<bool>(splat(_value)) {}
 
     simdjson_inline int to_bitmask() const { return _mm256_movemask_epi8(*this); }
     simdjson_inline bool any() const { return !_mm256_testz_si256(*this, *this); }

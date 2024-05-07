@@ -67,10 +67,10 @@ namespace simd {
   struct simd8<bool>: base8<bool> {
     static simdjson_inline simd8<bool> splat(bool _value) { return __lasx_xvreplgr2vr_b(uint8_t(-(!!_value))); }
 
-    simdjson_inline simd8<bool>() : base8() {}
-    simdjson_inline simd8<bool>(const __m256i _value) : base8<bool>(_value) {}
+    simdjson_inline simd8() : base8() {}
+    simdjson_inline simd8(const __m256i _value) : base8<bool>(_value) {}
     // Splat constructor
-    simdjson_inline simd8<bool>(bool _value) : base8<bool>(splat(_value)) {}
+    simdjson_inline simd8(bool _value) : base8<bool>(splat(_value)) {}
 
     simdjson_inline int to_bitmask() const {
       __m256i mask = __lasx_xvmskltz_b(*this);
