@@ -160,10 +160,10 @@ $(document).ready(function(){initNavTree('lasx_2simd_8h_source.html',''); initRe
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keyword">struct </span>simd8&lt;bool&gt;: base8&lt;bool&gt; {</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keyword">static</span> simdjson_inline simd8&lt;bool&gt; splat(<span class="keywordtype">bool</span> _value) { <span class="keywordflow">return</span> __lasx_xvreplgr2vr_b(uint8_t(-(!!_value))); }</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    simdjson_inline simd8&lt;bool&gt;() : base8() {}</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    simdjson_inline simd8&lt;bool&gt;(<span class="keyword">const</span> __m256i _value) : base8&lt;bool&gt;(_value) {}</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    simdjson_inline simd8() : base8() {}</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    simdjson_inline simd8(<span class="keyword">const</span> __m256i _value) : base8&lt;bool&gt;(_value) {}</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="comment">// Splat constructor</span></div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    simdjson_inline simd8&lt;bool&gt;(<span class="keywordtype">bool</span> _value) : base8&lt;bool&gt;(splat(_value)) {}</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    simdjson_inline simd8(<span class="keywordtype">bool</span> _value) : base8&lt;bool&gt;(splat(_value)) {}</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    simdjson_inline <span class="keywordtype">int</span> to_bitmask()<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;      __m256i mask = __lasx_xvmskltz_b(*<span class="keyword">this</span>);</div>

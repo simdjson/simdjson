@@ -183,10 +183,10 @@ $(document).ready(function(){initNavTree('icelake_2simd_8h_source.html',''); ini
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;  <span class="keyword">struct </span>simd8&lt;bool&gt;: base8&lt;bool&gt; {</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <span class="keyword">static</span> simdjson_inline simd8&lt;bool&gt; splat(<span class="keywordtype">bool</span> _value) { <span class="keywordflow">return</span> _mm512_set1_epi8(uint8_t(-(!!_value))); }</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    simdjson_inline simd8&lt;bool&gt;() : base8() {}</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    simdjson_inline simd8&lt;bool&gt;(<span class="keyword">const</span> __m512i _value) : base8&lt;bool&gt;(_value) {}</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    simdjson_inline simd8() : base8() {}</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    simdjson_inline simd8(<span class="keyword">const</span> __m512i _value) : base8&lt;bool&gt;(_value) {}</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="comment">// Splat constructor</span></div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    simdjson_inline simd8&lt;bool&gt;(<span class="keywordtype">bool</span> _value) : base8&lt;bool&gt;(splat(_value)) {}</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    simdjson_inline simd8(<span class="keywordtype">bool</span> _value) : base8&lt;bool&gt;(splat(_value)) {}</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    simdjson_inline <span class="keywordtype">bool</span> any()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> !!_mm512_test_epi8_mask (*<span class="keyword">this</span>, *<span class="keyword">this</span>); }</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    simdjson_inline simd8&lt;bool&gt; operator~()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> *<span class="keyword">this</span> ^ <span class="keyword">true</span>; }</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;  };</div>

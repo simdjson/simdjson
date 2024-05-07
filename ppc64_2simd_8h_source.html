@@ -189,11 +189,11 @@ $(document).ready(function(){initNavTree('ppc64_2simd_8h_source.html',''); initR
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keywordflow">return</span> (__m128i)vec_splats((<span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>)(-(!!_value)));</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  }</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  simdjson_inline simd8&lt;bool&gt;() : base8&lt;bool&gt;() {}</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  simdjson_inline simd8&lt;bool&gt;(<span class="keyword">const</span> __m128i _value)</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  simdjson_inline simd8() : base8&lt;bool&gt;() {}</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  simdjson_inline simd8(<span class="keyword">const</span> __m128i _value)</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;      : base8&lt;bool&gt;(_value) {}</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;  <span class="comment">// Splat constructor</span></div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  simdjson_inline simd8&lt;bool&gt;(<span class="keywordtype">bool</span> _value)</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  simdjson_inline simd8(<span class="keywordtype">bool</span> _value)</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;      : base8&lt;bool&gt;(splat(_value)) {}</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160; </div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;  simdjson_inline <span class="keywordtype">int</span> to_bitmask()<span class="keyword"> const </span>{</div>

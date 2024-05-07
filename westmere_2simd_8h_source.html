@@ -152,10 +152,10 @@ $(document).ready(function(){initNavTree('westmere_2simd_8h_source.html',''); in
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keyword">struct </span>simd8&lt;bool&gt;: base8&lt;bool&gt; {</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keyword">static</span> simdjson_inline simd8&lt;bool&gt; splat(<span class="keywordtype">bool</span> _value) { <span class="keywordflow">return</span> _mm_set1_epi8(uint8_t(-(!!_value))); }</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    simdjson_inline simd8&lt;bool&gt;() : base8() {}</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    simdjson_inline simd8&lt;bool&gt;(<span class="keyword">const</span> __m128i _value) : base8&lt;bool&gt;(_value) {}</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    simdjson_inline simd8() : base8() {}</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    simdjson_inline simd8(<span class="keyword">const</span> __m128i _value) : base8&lt;bool&gt;(_value) {}</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="comment">// Splat constructor</span></div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    simdjson_inline simd8&lt;bool&gt;(<span class="keywordtype">bool</span> _value) : base8&lt;bool&gt;(splat(_value)) {}</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    simdjson_inline simd8(<span class="keywordtype">bool</span> _value) : base8&lt;bool&gt;(splat(_value)) {}</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    simdjson_inline <span class="keywordtype">int</span> to_bitmask()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> _mm_movemask_epi8(*<span class="keyword">this</span>); }</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    simdjson_inline <span class="keywordtype">bool</span> any()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> !_mm_testz_si128(*<span class="keyword">this</span>, *<span class="keyword">this</span>); }</div>
