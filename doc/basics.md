@@ -837,7 +837,7 @@ simdjson::ondemand::value::get() noexcept {
 }
 ```
 
-We may then provide support for our `Car`` struct:
+We may then provide support for our `Car` struct:
 
 ```C++
 template <>
