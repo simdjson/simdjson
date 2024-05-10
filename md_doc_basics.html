@@ -935,7 +935,7 @@ JSONPath</h1>
 <div class="line">ondemand::parser parser;</div>
 <div class="line">auto cars = parser.iterate(cars_json);</div>
 <div class="line">cout &lt;&lt; cars.at_path(&quot;[0].tire_pressure[1]&quot;) &lt;&lt; endl; // Prints 39.9</div>
-</div><!-- fragment --><p>A call to <code>at_path(json_path)</code> can result in any of the errors that are returned by the <code>at_pointer</code> method and if the conversion of <code>json_path</code> to JSON Pointer fails, it will lead to an <code><a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aeeaf930969566f76840224d64ee3a9a1" title="Invalid JSON pointer reference.">simdjson::INVALID_JSON_POINTER</a></code>error.</p>
+</div><!-- fragment --><p>A call to <code>at_path(json_path)</code> can result in any of the errors that are returned by the <code>at_pointer</code> method and if the conversion of <code>json_path</code> to JSON Pointer fails, it will lead to an <code><a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aeeaf930969566f76840224d64ee3a9a1" title="Invalid JSON pointer syntax.">simdjson::INVALID_JSON_POINTER</a></code>error.</p>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">auto cars_json = R&quot;( [</div>
 <div class="line">  { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018, &quot;tire_pressure&quot;: [ 40.1, 39.9, 37.7, 40.4 ] },</div>

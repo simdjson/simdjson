@@ -18,6 +18,7 @@ var namespacesimdjson_1_1dom =
       [ "NULL_VALUE", "namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aaa9f0aff2067f91437e50e4872b229e6a", null ]
     ] ],
     [ "element::get< std::string_view >", "namespacesimdjson_1_1dom.html#ab61244b704aac73f80987733dae1ff26", null ],
+    [ "is_pointer_well_formed", "namespacesimdjson_1_1dom.html#a60745bbf9d999d29f5348017836c579b", null ],
     [ "operator<<", "namespacesimdjson_1_1dom.html#a2201b306b0efa80269faf05e1ba2879b", null ],
     [ "operator<<", "namespacesimdjson_1_1dom.html#a34e6f2a4920f4dcb683f5730f8d8601b", null ],
     [ "operator<<", "namespacesimdjson_1_1dom.html#abdab607221c423b08344548fa442a45a", null ],
