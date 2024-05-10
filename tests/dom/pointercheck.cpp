@@ -191,10 +191,40 @@ bool issue1142() {
   return true;
 }
 
+bool issue2154() { // mistakenly taking value as path should not raise INVALID_JSON_POINTER
+#if SIMDJSON_EXCEPTIONS
+  std::cout << "issue 2154" << std::endl;
+  auto example_json = R"__(
+      {
+        "obj": {
+          "s": "42",
+          "n": 42,
+          "f": 4.2
+        }
+      }
+    )__"_padded;
+  dom::parser parser;
+  dom::element example = parser.parse(example_json);
+  std::string_view sfield = example.at_pointer("/obj/s");
+  ASSERT_EQUAL(sfield, "42");
+  int64_t nfield = example.at_pointer("/obj/n");
+  ASSERT_EQUAL(nfield, 42);
+  ASSERT_ERROR(example.at_pointer("/obj/X/42").error(), NO_SUCH_FIELD);
+  ASSERT_ERROR(example.at_pointer("/obj/s/42").error(), NO_SUCH_FIELD);
+  ASSERT_ERROR(example.at_pointer("/obj/n/42").error(), NO_SUCH_FIELD);
+  ASSERT_ERROR(example.at_pointer("/obj/f/4.2").error(), NO_SUCH_FIELD);
+  ASSERT_ERROR(example.at_pointer("/obj/f/4~").error(), INVALID_JSON_POINTER);
+  ASSERT_ERROR(example.at_pointer("/obj/f/~").error(), INVALID_JSON_POINTER);
+  ASSERT_ERROR(example.at_pointer("/obj/f/~1").error(), NO_SUCH_FIELD);
+#endif
+  return true;
+}
+
 int main() {
   if (true
     && demo()
     && issue1142()
+    && issue2154()
 #ifdef SIMDJSON_ENABLE_DEPRECATED_API
     && legacy_support()
 #endif
