@@ -249,6 +249,27 @@ namespace document_stream_tests {
       TEST_SUCCEED();
   }
 
+  bool issue2181() {
+      TEST_START();
+      auto json = R"(1 2 34)"_padded;
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS(parser.parse_many(json).get(stream));
+      auto i = stream.begin();
+      size_t count{0};
+      std::vector<size_t> indexes = { 0, 2, 4 };
+      std::vector<std::string_view> expected = { "1", "2", "34" };
+
+      for(; i != stream.end(); ++i) {
+          auto doc = *i;
+          ASSERT_SUCCESS(doc);
+          ASSERT_TRUE(count < 3);
+          ASSERT_EQUAL(i.current_index(), indexes[count]);
+          ASSERT_EQUAL(i.source(), expected[count]);
+          count++;
+      }
+      TEST_SUCCEED();
+  }
   bool issue1310() {
     std::cout << "Running " << __func__ << std::endl;
     // hex  : 20 20 5B 20 33 2C 31 5D 20 22 22 22 22 22 22 22 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20
@@ -963,7 +984,8 @@ namespace document_stream_tests {
   }
 
   bool run() {
-    return issue2170() &&
+    return issue2181() &&
+           issue2170() &&
            skipbom() &&
            fuzzaccess() &&
            baby_fuzzer() &&

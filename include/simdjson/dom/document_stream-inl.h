@@ -224,10 +224,10 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
   } else {
     size_t next_doc_index = stream->batch_start + stream->parser->implementation->structural_indexes[stream->parser->implementation->next_structural_index];
     size_t svlen = next_doc_index - current_index();
-    if(svlen > 1) {
+    while(svlen > 1 && (std::isspace(start[svlen-1]) || start[svlen-1] == '\0')) {
       svlen--;
     }
-    return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), svlen);
+    return std::string_view(start, svlen);
   }
 }
 

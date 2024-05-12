@@ -348,10 +348,11 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
           auto next_index = stream->parser->implementation->structural_indexes[++cur_struct_index];
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
-          if(svlen > 1) {
+          const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
+          while(svlen > 1 && (std::isspace(start[svlen-1]) || start[svlen-1] == '\0')) {
             svlen--;
           }
-          return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), svlen);
+          return std::string_view(start, svlen);
         }
     }
     cur_struct_index++;
