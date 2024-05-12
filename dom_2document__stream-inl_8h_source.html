@@ -317,10 +317,10 @@ $(document).ready(function(){initNavTree('dom_2document__stream-inl_8h_source.ht
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;  } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    <span class="keywordtype">size_t</span> next_doc_index = stream-&gt;batch_start + stream-&gt;parser-&gt;implementation-&gt;structural_indexes[stream-&gt;parser-&gt;implementation-&gt;next_structural_index];</div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;    <span class="keywordtype">size_t</span> svlen = next_doc_index - current_index();</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    <span class="keywordflow">if</span>(svlen &gt; 1) {</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    <span class="keywordflow">while</span>(svlen &gt; 1 &amp;&amp; (std::isspace(start[svlen-1]) || start[svlen-1] == <span class="charliteral">&#39;\0&#39;</span>)) {</div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;      svlen--;</div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;    }</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    <span class="keywordflow">return</span> std::string_view(<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span>*<span class="keyword">&gt;</span>(stream-&gt;buf) + current_index(), svlen);</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    <span class="keywordflow">return</span> std::string_view(start, svlen);</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;  }</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;}</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160; </div>
