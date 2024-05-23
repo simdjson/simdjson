@@ -7,6 +7,7 @@
 #include <internal/isadetection.h>
 
 #include <initializer_list>
+#include <type_traits>
 
 namespace simdjson {
 
