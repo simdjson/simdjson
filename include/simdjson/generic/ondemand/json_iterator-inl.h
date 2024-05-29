@@ -54,6 +54,23 @@ simdjson_inline json_iterator::json_iterator(const uint8_t *buf, ondemand::parse
 #endif
 }
 
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+simdjson_inline json_iterator::json_iterator(const uint8_t *buf, ondemand::parser *_parser, bool streaming) noexcept
+    : token(buf, &_parser->implementation->structural_indexes[0]),
+      parser{_parser},
+      _string_buf_loc{parser->string_buf.get()},
+      _depth{1},
+      _root{parser->implementation->structural_indexes.get()},
+      _streaming{streaming}
+
+{
+  logger::log_headers();
+#if SIMDJSON_CHECK_EOF
+  assert_more_tokens();
+#endif
+}
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+
 inline void json_iterator::rewind() noexcept {
   token.set_position( root_position() );
   logger::log_headers(); // We start again

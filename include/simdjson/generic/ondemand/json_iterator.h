@@ -293,6 +293,9 @@ public:
   inline bool balanced() const noexcept;
 protected:
   simdjson_inline json_iterator(const uint8_t *buf, ondemand::parser *parser) noexcept;
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  simdjson_inline json_iterator(const uint8_t *buf, ondemand::parser *parser, bool streaming) noexcept;
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   /// The last token before the end
   simdjson_inline token_position last_position() const noexcept;
   /// The token *at* the end. This points at gibberish and should only be used for comparison.
