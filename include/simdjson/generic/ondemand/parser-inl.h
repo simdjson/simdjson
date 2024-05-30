@@ -58,6 +58,27 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(p
   return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this });
 }
 
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate_allow_incomplete_json(padded_string_view json) & noexcept {
+  if (json.padding() < SIMDJSON_PADDING) { return INSUFFICIENT_PADDING; }
+
+  json.remove_utf8_bom();
+
+  // Allocate if needed
+  if (capacity() < json.length() || !string_buf) {
+    SIMDJSON_TRY( allocate(json.length(), max_depth()) );
+  }
+
+  // Run stage 1.
+  const simdjson::error_code err = implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), stage1_mode::regular);
+  if (err) {
+    if (err != UNCLOSED_STRING)
+      return err;
+  }
+  return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this, true });
+}
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+
 simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const char *json, size_t len, size_t allocated) & noexcept {
   return iterate(padded_string_view(json, len, allocated));
 }

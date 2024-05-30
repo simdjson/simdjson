@@ -98,6 +98,9 @@ public:
    *         - UNCLOSED_STRING if there is an unclosed string in the document.
    */
   simdjson_warn_unused simdjson_result<document> iterate(padded_string_view json) & noexcept;
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  simdjson_warn_unused simdjson_result<document> iterate_allow_incomplete_json(padded_string_view json) & noexcept;
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const char *json, size_t len, size_t capacity) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
