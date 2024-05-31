@@ -11,6 +11,9 @@
 #include <strings.h>
 #endif
 
+// We are using size_t without namespace std:: throughout the project
+using std::size_t;
+
 #ifdef _MSC_VER
 #define SIMDJSON_VISUAL_STUDIO 1
 /**
