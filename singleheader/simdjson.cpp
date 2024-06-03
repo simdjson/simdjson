@@ -1,4 +1,4 @@
-/* auto-generated on 2024-05-30 10:52:38 -0400. Do not edit! */
+/* auto-generated on 2024-05-31 11:26:07 +0200. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -83,6 +83,9 @@
 // strcasecmp, strncasecmp
 #include <strings.h>
 #endif
+
+// We are using size_t without namespace std:: throughout the project
+using std::size_t;
 
 #ifdef _MSC_VER
 #define SIMDJSON_VISUAL_STUDIO 1
