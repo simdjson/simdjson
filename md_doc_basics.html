@@ -369,7 +369,7 @@ Using the parsed JSON</h1>
 <div class="line"> auto json = R&quot;( { &quot;test&quot;:{ &quot;val1&quot;:1, &quot;val2&quot;:2 } }   )&quot;_padded;</div>
 <div class="line"> auto doc = parser.iterate(json);</div>
 <div class="line"> size_t count = doc.count_fields(); // requires simdjson 1.0 or better</div>
-<div class="line"> std::cout &lt;&lt; &quot;Number of fields: &quot; &lt;&lt;  new_count &lt;&lt; std::endl; // Prints &quot;Number of fields: 1&quot;</div>
+<div class="line"> std::cout &lt;&lt; &quot;Number of fields: &quot; &lt;&lt;  count &lt;&lt; std::endl; // Prints &quot;Number of fields: 1&quot;</div>
 </div><!-- fragment --><p> Similarly to <code>count_elements</code>, you should not let an object instance go out of scope before consuming it after calling the <code>count_fields</code> method. If you access an object inside a document, you can use the <code>count_fields</code> method as follow. </p><div class="fragment"><div class="line">ondemand::parser parser;</div>
 <div class="line">auto json = R&quot;( { &quot;test&quot;:{ &quot;val1&quot;:1, &quot;val2&quot;:2 } }   )&quot;_padded;</div>
 <div class="line">auto doc = parser.iterate(json);</div>
