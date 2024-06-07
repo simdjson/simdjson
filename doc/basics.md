@@ -39,7 +39,6 @@ An overview of what you need to know to use simdjson, with examples.
   - [Backwards compatibility](#backwards-compatibility)
   - [Examples](#examples)
   - [Performance tips](#performance-tips)
-  - [Advanced Topics: Free Padding](#advanced-topics-free-padding)
   - [Further reading](#further-reading)
 
 
@@ -161,7 +160,7 @@ at the end, these bytes may be read but their content does not affect the parsin
 it means that the JSON inputs should be stored in a memory region with `simdjson::SIMDJSON_PADDING`
 extra bytes at the end. You do not have to set these bytes to specific values though you may
 want to if you want to avoid runtime warnings with some sanitizers. Advanced users may want to
-read the section [Advanced Topics: Free Padding](#advanced-topics-free-padding).
+read the section Free Padding in [our performance notes](performance.md).
 
 The simdjson library offers a tree-like [API](https://en.wikipedia.org/wiki/API), which you can
 access by creating a `ondemand::parser` and calling the `iterate()` method. The iterate method
@@ -2601,6 +2600,7 @@ Performance tips
 --------
 
 
+- Read [our performance notes](performance.md) for advanced topics.
 - The On Demand front-end works best when doing a single pass over the input: avoid calling `count_elements`, `rewind` and similar methods.
 - If you are familiar with assembly language, you may use the online tool godbolt to explore the compiled code. The following example may work: [https://godbolt.org/z/xE4GWs573](https://godbolt.org/z/xE4GWs573).
 - Given a field `field` in an object, calling `field.key()` is often faster than `field.unescaped_key()` so if you do not need an unescaped `std::string_view` instance, prefer `field.key()`. Similarly, we expect `field.escaped_key()` to be faster than `field.unescaped_key()` even though both return a `std::string_view` instance.
@@ -2624,116 +2624,6 @@ Performance tips
 - To better understand the operation of your On Demand parser, and whether it is performing as well as you think it should be, there is a  logger feature built in to simdjson! To use it, define the pre-processor directive `SIMDJSON_VERBOSE_LOGGING` prior to including the `simdjson.h` header, which enables logging in simdjson. Run your code. It may generate a lot of logging output; adding printouts from your application that show each section may be helpful. The log's output will show step-by-step information on state, buffer pointer position, depth, and key retrieval status. Importantly, unless `SIMDJSON_VERBOSE_LOGGING` is defined, logging is entirely disabled and thus carries no overhead.
 
 
-Advanced Topics: Free Padding
--------
-
-For performance reasons, the simdjson library requires that the JSON input contain at least
-`simdjson::SIMDJSON_PADDING` bytes at the end of the stream. The value `simdjson::SIMDJSON_PADDING` is
-small (e.g., 64 bytes). On modern systems, you can safely read beyond an allocated buffers,
-as long as you remain within an allocated page. Pages on modern systems span at least 4 kilobytes,
-but can be significantly larger. E.g., Apple systems favour pages spanning 16 kilobytes.
-
-In effect, it means that you can almost always read a few bytes beyond your current buffer.
-Thus, even though you may sometimes need to reallocate the memory to get extra padding, this should be
-uncommon. However, tools such as valgrind or memory sanitizers will flag such behavior as unsafe.
-While the early releases of the simdjson made use of this capability, we removed it due to avoid
-receiving bug reports.
-
-Nevertheless, you can still make sure of this capability in your code. The following code provides
-a portable example.
-
-
-The conditional compilation checks for the `_MSC_VER` macro (indicating Microsoft Visual Studio)
-and includes platform-specific headers accordingly.
-The `page_size()` function determines the default size of a memory page in bytes on the system.
-On Windows (when `_MSC_VER` is defined), it uses `GetSystemInfo()` to retrieve system information and obtain the page size.
-On other platforms (non-Windows), it uses `sysconf(_SC_PAGESIZE)` to get the page size.
-The function returns the page size.
-The `need_allocation()` function checks whether the buffer (given by `buf`) plus the specified length (`len`) is near a page boundary.
-If the buffer extends beyond the current page when padded by `simdjson::SIMDJSON_PADDING`, it returns true, indicating that reallocation is needed.
-Otherwise, it returns false.
-The `get_padded_string_view()`  creates a `padded_string_view` from the input buffer.
-If reallocation is needed (unlikely case), it allocates a new padded_string and assigns it to `jsonbuffer`.
-Otherwise (very likely), it creates a `padded_string_view` directly from the buffer.
-The `simdjson::SIMDJSON_PADDING` ensures that there is additional padding for parsing efficiency.
-The calling code just needs to provide `jsonbuffer` (an instance of `simdjson::padded_string`)
-and pass `get_padded_string_view(buf, len, jsonbuffer)` to  `parser.iterate`. Most of the time,
-this code will not allocate new memory.
-
-
-```cpp
-#include "simdjson.h"
-#include <cstdio>
-
-#ifdef _MSC_VER
-#include <sysinfoapi.h>
-#include <windows.h>
-#else
-#include <unistd.h>
-#endif
-#include "simdjson.h"
-
-// Returns the default size of the page in bytes on this system.
-long page_size() {
-#ifdef _MSC_VER
-  SYSTEM_INFO sysInfo;
-  GetSystemInfo(&sysInfo);
-  long pagesize = sysInfo.dwPageSize;
-#else
-  long pagesize = sysconf(_SC_PAGESIZE);
-#endif
-  return pagesize;
-}
-
-// Returns true if the buffer + len + simdjson::SIMDJSON_PADDING crosses the
-// page boundary.
-bool need_allocation(const char *buf, size_t len) {
-  return ((reinterpret_cast<uintptr_t>(buf + len - 1) % page_size()) <
-          simdjson::SIMDJSON_PADDING);
-}
-
-simdjson::padded_string_view
-get_padded_string_view(const char *buf, size_t len,
-                       simdjson::padded_string &jsonbuffer) {
-  if (need_allocation(buf, len)) { // unlikely case
-    jsonbuffer = simdjson::padded_string(buf, len);
-    return jsonbuffer;
-  } else { // no reallcation needed (very likely)
-    return simdjson::padded_string_view(buf, len,
-                                            len + simdjson::SIMDJSON_PADDING);
-  }
-}
-
-int main() {
-  printf("page_size: %ld\n", page_size());
-  const char *jsonpoiner = R"(
-        {
-            "key": "value"
-        }
-    )";
-  size_t len = strlen(jsonpoiner);
-  simdjson::padded_string jsonbuffer; // only allocate if needed
-  simdjson::ondemand::parser parser;
-  simdjson::ondemand::document doc;
-  simdjson::error_code error =
-      parser.iterate(get_padded_string_view(jsonpoiner, len, jsonbuffer))
-          .get(doc);
-  if (error) {
-    printf("error: %s\n", simdjson::error_message(error));
-    return EXIT_FAILURE;
-  }
-  std::string_view value;
-  error = doc["key"].get_string().get(value);
-  if (error) {
-    return EXIT_FAILURE;
-  }
-  printf("Value: \"%.*s\"\n", (int)value.size(), value.data());
-  if (value != "value") {
-    return EXIT_FAILURE;
-  }
-  return EXIT_SUCCESS;
-}
-```
 
 Further reading
 --------
