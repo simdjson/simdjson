@@ -153,15 +153,16 @@ Including simdjson</h1>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">#include &quot;simdjson.h&quot;</div>
 <div class="line">using namespace simdjson; // optional</div>
-</div><!-- fragment --><p>You can compile with:</p>
+</div><!-- fragment --><p>Under most systems, you can compile with:</p>
 <div class="fragment"><div class="line">c++ myproject.cpp simdjson.cpp</div>
 </div><!-- fragment --><p>Note:</p><ul>
+<li>We recommend that you use simdjson by copying the single-header <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code> file along with the source file <code>simdjson.cpp</code> directly in your project, as they are part of <a href="https://github.com/simdjson/simdjson/releases">every release</a> as assets. In this manner, you only have to compile <code>simdjson.cpp</code> as any other source file: it works well in every development environment. However, you may also use simdjson as a git submodule (<a href="https://github.com/simdjson/cmakedemo">example</a>), using FetchContent (<a href="https://github.com/simdjson/cmake_demo_single_file">example</a>), with ExternalProject_Add (<a href="https://github.com/simdjson/cmakedemo_externalproject">example</a>) or with CPM (<a href="https://github.com/cpm-cmake/CPM.cmake/tree/master/examples/simdjson">example</a>).</li>
 <li>Users on macOS and other platforms where default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., <code>c++ -std=c++11 myproject.cpp simdjson.cpp</code>).</li>
 <li>The library relies on <a class="el" href="md_doc_implementation_selection.html">runtime CPU detection</a>: avoid specifying an architecture at compile time (e.g., <code>-march-native</code>) if you want your binaries to run everywhere.</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md2"></a>
 Using simdjson with package managers</h1>
-<p>You can install the simdjson library on your system or in your project using multiple package managers such as MSYS2, the conan package manager, vcpkg, brew, the apt package manager (debian-based Linux systems), the FreeBSD package manager (FreeBSD), and so on. <a href="https://github.com/simdjson/simdjson/wiki/Installing-simdjson-with-a-package-manager">Visit our wiki for more details</a>.</p>
+<p>You can install the simdjson library on your system or in your project using multiple package managers such as MSYS2, the conan package manager, vcpkg, brew, the apt package manager (debian-based Linux systems), the FreeBSD package manager (FreeBSD), and so on. E.g., <a href="https://github.com/simdjson/simdjson-vcpkg">we provide an complete example with vcpkg</a> that works under Windows. <a href="https://github.com/simdjson/simdjson/wiki/Installing-simdjson-with-a-package-manager">Visit our wiki for more details</a>.</p>
 <p>The following Linux distributions provide simdjson packages: Alpine, RedHat, Rocky Linux, Debian, Fedora, and Ubuntu.</p>
 <h1><a class="anchor" id="autotoc_md3"></a>
 Using simdjson as a CMake dependency</h1>
