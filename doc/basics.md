@@ -64,20 +64,23 @@ into your project. Then include it in your project with:
 using namespace simdjson; // optional
 ```
 
-You can compile with:
+Under most systems, you can compile with:
 
 ```
 c++ myproject.cpp simdjson.cpp
 ```
 
 Note:
+- We recommend that you use simdjson by copying the single-header `simdjson.h` file along with the source file `simdjson.cpp` directly in your project, as they are part of [every release](https://github.com/simdjson/simdjson/releases) as assets. In this manner, you only have to compile `simdjson.cpp` as any other source file: it works well in every development environment. However, you may also use simdjson as a git submodule ([example](https://github.com/simdjson/cmakedemo)), using FetchContent ([example](https://github.com/simdjson/cmake_demo_single_file)), with ExternalProject_Add ([example](https://github.com/simdjson/cmakedemo_externalproject)) or with CPM ([example](https://github.com/cpm-cmake/CPM.cmake/tree/master/examples/simdjson)).
 - Users on macOS and other platforms where default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ -std=c++11 myproject.cpp simdjson.cpp`).
 - The library relies on [runtime CPU detection](implementation-selection.md): avoid specifying an architecture at compile time (e.g., `-march-native`) if you want your binaries to run everywhere.
 
 Using simdjson with package managers
 ------------------
 
-You can install the simdjson library on your system or in your project using multiple package managers such as MSYS2, the conan package manager, vcpkg, brew, the apt package manager (debian-based Linux systems), the FreeBSD package manager (FreeBSD), and so on. [Visit our wiki for more details](https://github.com/simdjson/simdjson/wiki/Installing-simdjson-with-a-package-manager).
+You can install the simdjson library on your system or in your project using multiple package managers such as MSYS2, the conan package manager, vcpkg, brew, the apt package manager (debian-based Linux systems), the FreeBSD package manager (FreeBSD), and so on. E.g., [we provide an complete example with vcpkg](https://github.com/simdjson/simdjson-vcpkg) that works under Windows. [Visit our wiki for more details](https://github.com/simdjson/simdjson/wiki/Installing-simdjson-with-a-package-manager).
+
+
 
 The following Linux distributions provide simdjson packages: Alpine, RedHat, Rocky Linux, Debian, Fedora, and Ubuntu.
 
