@@ -2695,15 +2695,13 @@ bool need_allocation(const char *buf, size_t len) {
 simdjson::padded_string_view
 get_padded_string_view(const char *buf, size_t len,
                        simdjson::padded_string &jsonbuffer) {
-  simdjson::padded_string_view jsonview;
   if (need_allocation(buf, len)) { // unlikely case
     jsonbuffer = simdjson::padded_string(buf, len);
-    jsonview = jsonbuffer;
+    return jsonbuffer;
   } else { // no reallcation needed (very likely)
-    jsonview = simdjson::padded_string_view(buf, len,
+    return simdjson::padded_string_view(buf, len,
                                             len + simdjson::SIMDJSON_PADDING);
   }
-  return jsonview;
 }
 
 int main() {
