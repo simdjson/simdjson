@@ -28,6 +28,7 @@ add_cpp_test(ondemand_to_string              LABELS ondemand acceptance per_impl
 add_cpp_test(ondemand_twitter_tests          LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_wrong_type_error_tests LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_iterate_many_csv       LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_cacheline              LABELS ondemand acceptance per_implementation)
 
 if(HAVE_POSIX_FORK AND HAVE_POSIX_WAIT) # assert tests use fork and wait, which aren't on MSVC
   add_cpp_test(ondemand_assert_out_of_order_values LABELS assert per_implementation explicitonly ondemand)
