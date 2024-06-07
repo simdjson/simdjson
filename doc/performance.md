@@ -201,7 +201,7 @@ a portable example.
 The conditional compilation checks for the `_MSC_VER` macro (indicating Microsoft Visual Studio)
 and includes platform-specific headers accordingly.
 The `page_size()` function determines the default size of a memory page in bytes on the system.
-On Windows (when `_MSC_VER` is defined), it uses `GetSystemInfo()` to retrieve system information and obtain the page size.
+On Windows (when `_WIN32` is defined), it uses `GetSystemInfo()` to retrieve system information and obtain the page size.
 On other platforms (non-Windows), it uses `sysconf(_SC_PAGESIZE)` to get the page size.
 The function returns the page size.
 The `need_allocation()` function checks whether the buffer (given by `buf`) plus the specified length (`len`) is near a page boundary.
@@ -220,7 +220,7 @@ this code will not allocate new memory.
 #include "simdjson.h"
 #include <cstdio>
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #include <sysinfoapi.h>
 #include <windows.h>
 #else
@@ -230,7 +230,7 @@ this code will not allocate new memory.
 
 // Returns the default size of the page in bytes on this system.
 long page_size() {
-#ifdef _MSC_VER
+#ifdef _WIN32
   SYSTEM_INFO sysInfo;
   GetSystemInfo(&sysInfo);
   long pagesize = sysInfo.dwPageSize;

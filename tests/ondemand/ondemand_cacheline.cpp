@@ -1,7 +1,7 @@
 #include "simdjson.h"
 #include <cstdio>
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #include <sysinfoapi.h>
 #include <windows.h>
 #else
@@ -11,7 +11,7 @@
 
 // Returns the default size of the page in bytes on this system.
 long page_size() {
-#ifdef _MSC_VER
+#ifdef _WIN32
   SYSTEM_INFO sysInfo;
   GetSystemInfo(&sysInfo);
   long pagesize = sysInfo.dwPageSize;
