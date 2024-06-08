@@ -1,6 +1,6 @@
 #ifdef _WIN32
-#include <sysinfoapi.h>
 #include <windows.h>
+#include <sysinfoapi.h>
 #else
 #include <unistd.h>
 #endif
