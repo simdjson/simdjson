@@ -159,7 +159,8 @@ For efficiency reasons, simdjson requires a string with a few bytes (`simdjson::
 at the end, these bytes may be read but their content does not affect the parsing. In practice,
 it means that the JSON inputs should be stored in a memory region with `simdjson::SIMDJSON_PADDING`
 extra bytes at the end. You do not have to set these bytes to specific values though you may
-want to if you want to avoid runtime warnings with some sanitizers.
+want to if you want to avoid runtime warnings with some sanitizers. Advanced users may want to
+read the section Free Padding in [our performance notes](performance.md).
 
 The simdjson library offers a tree-like [API](https://en.wikipedia.org/wiki/API), which you can
 access by creating a `ondemand::parser` and calling the `iterate()` method. The iterate method
@@ -2599,6 +2600,7 @@ Performance tips
 --------
 
 
+- Read [our performance notes](performance.md) for advanced topics.
 - The On Demand front-end works best when doing a single pass over the input: avoid calling `count_elements`, `rewind` and similar methods.
 - If you are familiar with assembly language, you may use the online tool godbolt to explore the compiled code. The following example may work: [https://godbolt.org/z/xE4GWs573](https://godbolt.org/z/xE4GWs573).
 - Given a field `field` in an object, calling `field.key()` is often faster than `field.unescaped_key()` so if you do not need an unescaped `std::string_view` instance, prefer `field.key()`. Similarly, we expect `field.escaped_key()` to be faster than `field.unescaped_key()` even though both return a `std::string_view` instance.
@@ -2620,6 +2622,8 @@ Performance tips
 	std::string_view rating = data["rating"];
   ```
 - To better understand the operation of your On Demand parser, and whether it is performing as well as you think it should be, there is a  logger feature built in to simdjson! To use it, define the pre-processor directive `SIMDJSON_VERBOSE_LOGGING` prior to including the `simdjson.h` header, which enables logging in simdjson. Run your code. It may generate a lot of logging output; adding printouts from your application that show each section may be helpful. The log's output will show step-by-step information on state, buffer pointer position, depth, and key retrieval status. Importantly, unless `SIMDJSON_VERBOSE_LOGGING` is defined, logging is entirely disabled and thus carries no overhead.
+
+
 
 Further reading
 --------
