@@ -217,9 +217,6 @@ this code will not allocate new memory.
 
 
 ```cpp
-#include "simdjson.h"
-#include <cstdio>
-
 #ifdef _WIN32
 #include <windows.h>
 #include <sysinfoapi.h>
@@ -227,6 +224,7 @@ this code will not allocate new memory.
 #include <unistd.h>
 #endif
 #include "simdjson.h"
+#include <cstdio>
 
 // Returns the default size of the page in bytes on this system.
 long page_size() {
