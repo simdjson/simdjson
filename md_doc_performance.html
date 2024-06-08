@@ -100,6 +100,7 @@ $(document).ready(function(){initNavTree('md_doc_performance.html',''); initResi
 <li><a href="#number-parsing">Number parsing</a></li>
 <li><a href="#visual-studio">Visual Studio</a></li>
 <li><a href="#power-usage-and-downclocking">Power Usage and Downclocking</a></li>
+<li><a href="#free-padding">Free Padding</a></li>
 </ul>
 <h1><a class="anchor" id="autotoc_md94"></a>
 NDEBUG directive</h1>
@@ -197,8 +198,88 @@ Power Usage and Downclocking</h1>
 <li>Whenever heavy 256-bit or wider instructions are used. Heavy instructions are those involving floating point operations or integer multiplications (since these execute on the floating point unit).</li>
 </ul>
 <p>The simdjson library does not generally make use of heavy 256-bit instructions. On AVX2 kernels, we use vectorized multiplications, but only using 128-bit registers. On recent processors (Ice Lake/Tiger Lake or better, AMD Zen 4 or better) <a href="https://travisdowns.github.io/blog/2020/08/19/icl-avx512-freq.html">no frequency throttling is found</a> due to SIMD instructions: we are thus more aggressive with SIMD on these machines. If you can still concerned, you can easily disable AVX-512 with the CMake option <code>SIMDJSON_AVX512_ALLOWED</code> set to <code>OFF</code> (e.g., <code>cmake -D SIMDJSON_AVX512_ALLOWED=OFF -B build &amp;&amp; cmake --build build</code>) or by setting the macro <code>SIMDJSON_AVX512_ALLOWED</code> to <code>0</code> in C++ prior to importing the headers.</p>
-<p>You may still be worried about which SIMD instruction set is used by simdjson. Thankfully, <a class="el" href="md_doc_implementation_selection.html">you can always determine and change which architecture-specific implementation is used</a> by simdjson. Thus even if your CPU supports AVX2, you do not need to use AVX2. You are in control. </p>
-</div></div><!-- contents -->
+<p>You may still be worried about which SIMD instruction set is used by simdjson. Thankfully, <a class="el" href="md_doc_implementation_selection.html">you can always determine and change which architecture-specific implementation is used</a> by simdjson. Thus even if your CPU supports AVX2, you do not need to use AVX2. You are in control.</p>
+<h1><a class="anchor" id="autotoc_md102"></a>
+Free Padding</h1>
+<p>For performance reasons, the simdjson library requires that the JSON input contain at least <code><a class="el" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf" title="The amount of padding needed in a buffer to parse JSON.">simdjson::SIMDJSON_PADDING</a></code> bytes at the end of the stream. The value <code><a class="el" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf" title="The amount of padding needed in a buffer to parse JSON.">simdjson::SIMDJSON_PADDING</a></code> is small (e.g., 64 bytes). On modern systems, you can safely read beyond an allocated buffers, as long as you remain within an allocated page. Pages on modern systems span at least 4 kilobytes, but can be significantly larger. E.g., Apple systems favour pages spanning 16 kilobytes.</p>
+<p>In effect, it means that you can almost always read a few bytes beyond your current buffer&mdash;without allocating extra memory. However, tools such as valgrind or memory sanitizers will flag such behavior as unsafe. Nevertheless, you can still make sure of this capability in your code if you are an expert programmer and you are willing to silence sanitizer warnings. The following code provides a portable example.</p>
+<p>The conditional compilation checks for the <code>_MSC_VER</code> macro (indicating Microsoft Visual Studio) and includes platform-specific headers accordingly. The <code>page_size()</code> function determines the default size of a memory page in bytes on the system. On Windows (when <code>_WIN32</code> is defined), it uses <code>GetSystemInfo()</code> to retrieve system information and obtain the page size. On other platforms (non-Windows), it uses <code>sysconf(_SC_PAGESIZE)</code> to get the page size. The function returns the page size. The <code>need_allocation()</code> function checks whether the buffer (given by <code>buf</code>) plus the specified length (<code>len</code>) is near a page boundary. If the buffer extends beyond the current page when padded by <code><a class="el" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf" title="The amount of padding needed in a buffer to parse JSON.">simdjson::SIMDJSON_PADDING</a></code>, it returns true, indicating that reallocation is needed. Otherwise, it returns false. The <code>get_padded_string_view()</code> creates a <code>padded_string_view</code> from the input buffer. If reallocation is needed (unlikely case), it allocates a new padded_string and assigns it to <code>jsonbuffer</code>. Otherwise (very likely), it creates a <code>padded_string_view</code> directly from the buffer. The <code><a class="el" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf" title="The amount of padding needed in a buffer to parse JSON.">simdjson::SIMDJSON_PADDING</a></code> ensures that there is additional padding for parsing efficiency. The calling code just needs to provide <code>jsonbuffer</code> (an instance of <code><a class="el" href="structsimdjson_1_1padded__string.html" title="String with extra allocation for ease of use with parser::parse()">simdjson::padded_string</a></code>) and pass <code>get_padded_string_view(buf, len, jsonbuffer)</code> to <code>parser.iterate</code>. Most of the time, this code will not allocate new memory.</p>
+<div class="fragment"><div class="line"><span class="preprocessor">#ifdef _WIN32</span></div>
+<div class="line"><span class="preprocessor">#include &lt;windows.h&gt;</span></div>
+<div class="line"><span class="preprocessor">#include &lt;sysinfoapi.h&gt;</span></div>
+<div class="line"><span class="preprocessor">#else</span></div>
+<div class="line"><span class="preprocessor">#include &lt;unistd.h&gt;</span></div>
+<div class="line"><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="preprocessor">#include &quot;<a class="code" href="simdjson_8h.html">simdjson.h</a>&quot;</span></div>
+<div class="line"><span class="preprocessor">#include &lt;cstdio&gt;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// Returns the default size of the page in bytes on this system.</span></div>
+<div class="line"><span class="keywordtype">long</span> page_size() {</div>
+<div class="line"><span class="preprocessor">#ifdef _WIN32</span></div>
+<div class="line">  SYSTEM_INFO sysInfo;</div>
+<div class="line">  GetSystemInfo(&amp;sysInfo);</div>
+<div class="line">  <span class="keywordtype">long</span> pagesize = sysInfo.dwPageSize;</div>
+<div class="line"><span class="preprocessor">#else</span></div>
+<div class="line">  <span class="keywordtype">long</span> pagesize = sysconf(_SC_PAGESIZE);</div>
+<div class="line"><span class="preprocessor">#endif</span></div>
+<div class="line">  <span class="keywordflow">return</span> pagesize;</div>
+<div class="line">}</div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// Returns true if the buffer + len + simdjson::SIMDJSON_PADDING crosses the</span></div>
+<div class="line"><span class="comment">// page boundary.</span></div>
+<div class="line"><span class="keywordtype">bool</span> need_allocation(<span class="keyword">const</span> <span class="keywordtype">char</span> *buf, <span class="keywordtype">size_t</span> len) {</div>
+<div class="line">  <span class="keywordflow">return</span> ((<span class="keyword">reinterpret_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(buf + len - 1) % page_size()) &lt;</div>
+<div class="line">          <a class="code" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>);</div>
+<div class="line">}</div>
+<div class="line"> </div>
+<div class="line"><a class="code" href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a></div>
+<div class="line">get_padded_string_view(<span class="keyword">const</span> <span class="keywordtype">char</span> *buf, <span class="keywordtype">size_t</span> len,</div>
+<div class="line">                       <a class="code" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> &amp;jsonbuffer) {</div>
+<div class="line">  <span class="keywordflow">if</span> (need_allocation(buf, len)) { <span class="comment">// unlikely case</span></div>
+<div class="line">    jsonbuffer = <a class="code" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a>(buf, len);</div>
+<div class="line">    <span class="keywordflow">return</span> jsonbuffer;</div>
+<div class="line">  } <span class="keywordflow">else</span> { <span class="comment">// no reallcation needed (very likely)</span></div>
+<div class="line">    <span class="keywordflow">return</span> <a class="code" href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a>(buf, len,</div>
+<div class="line">                                            len + <a class="code" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>);</div>
+<div class="line">  }</div>
+<div class="line">}</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">int</span> main() {</div>
+<div class="line">  printf(<span class="stringliteral">&quot;page_size: %ld\n&quot;</span>, page_size());</div>
+<div class="line">  <span class="keyword">const</span> <span class="keywordtype">char</span> *jsonpoiner = R<span class="stringliteral">&quot;(</span></div>
+<div class="line"><span class="stringliteral">        {</span></div>
+<div class="line"><span class="stringliteral">            &quot;key&quot;: &quot;value&quot;</span></div>
+<div class="line"><span class="stringliteral">        }</span></div>
+<div class="line"><span class="stringliteral">    )&quot;;</span></div>
+<div class="line"><span class="stringliteral">  </span><span class="keywordtype">size_t</span> len = strlen(jsonpoiner);</div>
+<div class="line">  <a class="code" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> jsonbuffer; <span class="comment">// only allocate if needed</span></div>
+<div class="line">  simdjson::ondemand::parser parser;</div>
+<div class="line">  simdjson::ondemand::document doc;</div>
+<div class="line">  <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">simdjson::error_code</a> error =</div>
+<div class="line">      parser.iterate(get_padded_string_view(jsonpoiner, len, jsonbuffer))</div>
+<div class="line">          .get(doc);</div>
+<div class="line">  <span class="keywordflow">if</span> (error) {</div>
+<div class="line">    printf(<span class="stringliteral">&quot;error: %s\n&quot;</span>, <a class="code" href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa">simdjson::error_message</a>(error));</div>
+<div class="line">    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line">  }</div>
+<div class="line">  std::string_view value;</div>
+<div class="line">  error = doc[<span class="stringliteral">&quot;key&quot;</span>].get_string().get(value);</div>
+<div class="line">  <span class="keywordflow">if</span> (error) {</div>
+<div class="line">    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line">  }</div>
+<div class="line">  printf(<span class="stringliteral">&quot;Value: \&quot;%.*s\&quot;\n&quot;</span>, (<span class="keywordtype">int</span>)value.size(), value.data());</div>
+<div class="line">  <span class="keywordflow">if</span> (value != <span class="stringliteral">&quot;value&quot;</span>) {</div>
+<div class="line">    <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line">  }</div>
+<div class="line">  <span class="keywordflow">return</span> EXIT_SUCCESS;</div>
+<div class="line">}</div>
+<div class="ttc" id="aclasssimdjson_1_1padded__string__view_html"><div class="ttname"><a href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a></div><div class="ttdoc">User-provided string that promises it has extra padded bytes at the end for use with parser::parse().</div><div class="ttdef"><b>Definition:</b> <a href="padded__string__view_8h_source.html#l00018">padded_string_view.h:18</a></div></div>
+<div class="ttc" id="anamespacesimdjson_html_a65b00a7a7a9c8fafe9eb3b9b413a36fa"><div class="ttname"><a href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa">simdjson::error_message</a></div><div class="ttdeci">const char * error_message(error_code error) noexcept</div><div class="ttdoc">It is the convention throughout the code that the macro SIMDJSON_DEVELOPMENT_CHECKS determines whethe...</div><div class="ttdef"><b>Definition:</b> <a href="error-inl_8h_source.html#l00020">error-inl.h:20</a></div></div>
+<div class="ttc" id="anamespacesimdjson_html_a7b735a3a50ba79e3f7f14df5f77d8da9"><div class="ttname"><a href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">simdjson::error_code</a></div><div class="ttdeci">error_code</div><div class="ttdoc">All possible errors returned by simdjson.</div><div class="ttdef"><b>Definition:</b> <a href="error_8h_source.html#l00019">error.h:19</a></div></div>
+<div class="ttc" id="anamespacesimdjson_html_aecdd750132f0eb123a6d61113b4197bf"><div class="ttname"><a href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a></div><div class="ttdeci">constexpr size_t SIMDJSON_PADDING</div><div class="ttdoc">The amount of padding needed in a buffer to parse JSON.</div><div class="ttdef"><b>Definition:</b> <a href="base_8h_source.html#l00031">base.h:31</a></div></div>
+<div class="ttc" id="asimdjson_8h_html"><div class="ttname"><a href="simdjson_8h.html">simdjson.h</a></div></div>
+<div class="ttc" id="astructsimdjson_1_1padded__string_html"><div class="ttname"><a href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a></div><div class="ttdoc">String with extra allocation for ease of use with parser::parse()</div><div class="ttdef"><b>Definition:</b> <a href="padded__string_8h_source.html#l00023">padded_string.h:23</a></div></div>
+</div><!-- fragment --> </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
 <!-- start footer part -->
