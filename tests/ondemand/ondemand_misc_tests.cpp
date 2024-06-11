@@ -5,6 +5,21 @@ using namespace simdjson;
 
 namespace misc_tests {
   using namespace std;
+#if SIMDJSON_EXCEPTIONS
+  // user reported an asan error:
+  bool issue2199() {
+    TEST_START();
+    static constexpr std::string_view kJsonString = R"( { "name": "name", "version": 100, } )";
+    try {
+      simdjson::padded_string buffer{kJsonString};
+      simdjson::ondemand::parser parser;
+      simdjson::ondemand::document document = parser.iterate(buffer);
+    } catch (simdjson::simdjson_error& /*error*/) {
+      std::cerr << "Caught simdjson_error" << std::endl;
+    }
+    TEST_SUCCEED();
+  }
+#endif
   bool issue1981_success() {
     auto error_phrase = R"(false)"_padded;
     TEST_START();
@@ -532,7 +547,7 @@ namespace misc_tests {
     string_view token;
     ASSERT_SUCCESS(o["value"].raw_json_token().get(token));
     ASSERT_EQUAL(token, "12321323213213213213213213213211223");
-    return true;
+    TEST_SUCCEED();
   }
   simdjson_warn_unused bool big_integer_in_string() {
     TEST_START();
@@ -545,7 +560,7 @@ namespace misc_tests {
     string_view token;
     ASSERT_SUCCESS(o["value"].raw_json_token().get(token));
     ASSERT_EQUAL(token, "\"12321323213213213213213213213211223\"");
-    return true;
+    TEST_SUCCEED();
   }
   simdjson_warn_unused bool test_raw_json_token(string_view json, string_view expected_token, int expected_start_index = 0) {
     string title("'");
@@ -558,7 +573,7 @@ namespace misc_tests {
       ASSERT_EQUAL( token, expected_token );
       // Validate the text is inside the original buffer
       ASSERT_EQUAL( reinterpret_cast<const void*>(token.data()), reinterpret_cast<const void*>(&json_padded.data()[expected_start_index]));
-      return true;
+      TEST_SUCCEED();
     }));
 
     // Test values
@@ -576,10 +591,9 @@ namespace misc_tests {
       // Validate the text is inside the original buffer
       // Adjust for the {"a":
       ASSERT_EQUAL( reinterpret_cast<const void*>(token.data()), reinterpret_cast<const void*>(&json_padded.data()[5+expected_start_index]));
-      return true;
+      TEST_SUCCEED();
     }));
-
-    return true;
+    TEST_SUCCEED();
   }
 
   bool raw_json_token() {
@@ -605,6 +619,9 @@ namespace misc_tests {
 
   bool run() {
     return
+#if SIMDJSON_EXCEPTIONS
+           issue2199() &&
+#endif
            skipbom() &&
            issue1981_success() &&
            issue1981_failure() &&
