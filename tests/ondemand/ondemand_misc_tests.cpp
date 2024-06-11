@@ -14,6 +14,7 @@ namespace misc_tests {
       simdjson::padded_string buffer{kJsonString};
       simdjson::ondemand::parser parser;
       simdjson::ondemand::document document = parser.iterate(buffer);
+      (void)document;
     } catch (simdjson::simdjson_error& /*error*/) {
       std::cerr << "Caught simdjson_error" << std::endl;
     }
