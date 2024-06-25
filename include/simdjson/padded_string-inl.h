@@ -84,6 +84,7 @@ inline padded_string::padded_string(std::string_view sv_) noexcept
 inline padded_string::padded_string(padded_string &&o) noexcept
     : viable_size(o.viable_size), data_ptr(o.data_ptr) {
   o.data_ptr = nullptr; // we take ownership
+  o.viable_size = 0;
 }
 
 inline padded_string &padded_string::operator=(padded_string &&o) noexcept {
