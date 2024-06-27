@@ -2215,6 +2215,33 @@ string representation.
 ```
 
 
+You can use `raw_json()` to capture the content of some JSON values as `std::string_view`
+instances which can be safely used later. The `std::string_view` instances point inside
+the original document and do not depend in any way on simdjson. In the following example,
+we store the `std::string_view` instances inside a `std::vector<std::string_view>` instance
+and print the out after the parsing is concluded:
+
+```cpp
+  padded_string json_padded = "{\"a\":[1,2,3], \"b\": 2, \"c\": \"hello\"}"_padded;
+  std::vector<std::string_view> fields;
+
+  ondemand::parser parser;
+  auto doc = parser.iterate(json_padded);
+  auto object = doc.get_object();
+  for (auto field : object) {
+    fields.push_back(field.value().raw_json());
+  }
+  // Output the fields
+  // Expected output:
+  // [1,2,3]
+  // 2
+  // "hello"
+  for (std::string_view field_ref : fields) {
+    std::cout << field_ref << std::endl;
+  }
+  ```
+
+
 Storing directly into an existing string instance
 -----------------------------------------------------
 
