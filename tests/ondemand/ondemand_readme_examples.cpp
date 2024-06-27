@@ -153,6 +153,25 @@ simdjson_inline simdjson_result<Car> simdjson::ondemand::document::get() & noexc
 
 #if SIMDJSON_EXCEPTIONS
 
+void main_capture() {
+  padded_string json_padded = "{\"a\":[1,2,3], \"b\": 2, \"c\": \"hello\"}"_padded;
+  std::vector<std::string_view> fields;
+
+  ondemand::parser parser;
+  auto doc = parser.iterate(json_padded);
+  auto object = doc.get_object();
+  for (auto field : object) {
+    fields.push_back(field.value().raw_json());
+  }
+  // Output the fields
+  // Expected output:
+  // [1,2,3]
+  // 2
+  // "hello"
+  for (std::string_view field_ref : fields) {
+    std::cout << field_ref << std::endl;
+  }
+}
 
 int custom_type_on_document() {
   padded_string json = R"( { "make": "Toyota", "model": "Camry",  "year": 2018,
