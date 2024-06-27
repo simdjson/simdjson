@@ -1626,7 +1626,7 @@ General direct access to the raw JSON string</h1>
 <div class="line">}</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md29"></a>
 Storing directly into an existing string instance</h1>
-<p>The simdjson library favours the use of <code>std::string_view</code> instances because it tends to lead to better performance due to causing fewer memory allocations. However, they are cases where you need to store a string result in a <code>std::string</code><code> instance. You can do so with a templated version of the</code>to_string()<code>method which takes as a parameter a reference to a</code>std::string`.</p>
+<p>The simdjson library favours the use of <code>std::string_view</code> instances because it tends to lead to better performance due to causing fewer memory allocations. However, they are cases where you need to store a string result in a <code>std::string</code> instance. You can do so with a templated version of the <code>to_string()</code> method which takes as a parameter a reference to a <code>std::string</code>.</p>
 <div class="fragment"><div class="line"> {C++}</div>
 <div class="line">  auto json = R&quot;({</div>
 <div class="line">  &quot;name&quot;: &quot;Daniel&quot;,</div>
