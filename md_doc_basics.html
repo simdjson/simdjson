@@ -1606,6 +1606,24 @@ General direct access to the raw JSON string</h1>
 <div class="line">   std::string_view raw = key_value.value().raw_json();</div>
 <div class="line">   // will capture &quot;1&quot;, &quot;2&quot;, &quot;\&quot;fds\&quot;&quot;, &quot;{\&quot;a\&quot;:1}&quot;, &quot;[1,344]&quot;</div>
 <div class="line"> }</div>
+</div><!-- fragment --><p>You can use <code>raw_json()</code> to capture the content of some JSON values as <code>std::string_view</code> instances which can be safely used later. The <code>std::string_view</code> instances point inside the original document and do not depend in any way on simdjson. In the following example, we store the <code>std::string_view</code> instances inside a <code>std::vector&lt;std::string_view&gt;</code> instance and print the out after the parsing is concluded:</p>
+<div class="fragment"><div class="line">padded_string json_padded = <span class="stringliteral">&quot;{\&quot;a\&quot;:[1,2,3], \&quot;b\&quot;: 2, \&quot;c\&quot;: \&quot;hello\&quot;}&quot;</span>_padded;</div>
+<div class="line">std::vector&lt;std::string_view&gt; fields;</div>
+<div class="line"> </div>
+<div class="line">ondemand::parser parser;</div>
+<div class="line"><span class="keyword">auto</span> doc = parser.iterate(json_padded);</div>
+<div class="line"><span class="keyword">auto</span> <span class="keywordtype">object</span> = doc.get_object();</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> field : <span class="keywordtype">object</span>) {</div>
+<div class="line">  fields.push_back(field.value().raw_json());</div>
+<div class="line">}</div>
+<div class="line"><span class="comment">// Output the fields</span></div>
+<div class="line"><span class="comment">// Expected output:</span></div>
+<div class="line"><span class="comment">// [1,2,3]</span></div>
+<div class="line"><span class="comment">// 2</span></div>
+<div class="line"><span class="comment">// &quot;hello&quot;</span></div>
+<div class="line"><span class="keywordflow">for</span> (std::string_view field_ref : fields) {</div>
+<div class="line">  std::cout &lt;&lt; field_ref &lt;&lt; std::endl;</div>
+<div class="line">}</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md29"></a>
 Storing directly into an existing string instance</h1>
 <p>The simdjson library favours the use of <code>std::string_view</code> instances because it tends to lead to better performance due to causing fewer memory allocations. However, they are cases where you need to store a string result in a <code>std::string</code><code> instance. You can do so with a templated version of the</code>to_string()<code>method which takes as a parameter a reference to a</code>std::string`.</p>
