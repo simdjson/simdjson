@@ -2247,7 +2247,7 @@ Storing directly into an existing string instance
 
 The simdjson library favours  the use of `std::string_view` instances because
 it tends to lead to better performance due to causing fewer memory allocations.
-However, they are cases where you need to store a string result in a `std::string``
+However, they are cases where you need to store a string result in a `std::string`
 instance. You can do so with a templated version of the `to_string()` method which takes as
 a parameter a reference to a `std::string`.
 
