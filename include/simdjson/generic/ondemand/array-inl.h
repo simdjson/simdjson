@@ -86,14 +86,14 @@ simdjson_inline simdjson_result<array_iterator> array::end() noexcept {
 }
 simdjson_inline error_code array::consume() noexcept {
   auto error = iter.json_iter().skip_child(iter.depth()-1);
-  if(error) { iter.abandon(); }
+  if(simdjson_unlikely(error)) { iter.abandon(); }
   return error;
 }
 
 simdjson_inline simdjson_result<std::string_view> array::raw_json() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
-  if(error) { return error; }
+  if(simdjson_unlikely(error)) { return error; }
   // After 'consume()', we could be left pointing just beyond the document, but that
   // is ok because we are not going to dereference the final pointer position, we just
   // use it to compute the length in bytes.
@@ -119,7 +119,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
   bool is_not_empty;
   auto error = iter.reset_array().get(is_not_empty);
-  if(error) { return error; }
+  if(simdjson_unlikely(error)) { return error; }
   return !is_not_empty;
 }
 
@@ -247,35 +247,35 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::simdj
 }
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::begin() noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.begin();
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::end() noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.end();
 }
 simdjson_inline  simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::count_elements() & noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.count_elements();
 }
 simdjson_inline  simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::is_empty() & noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.is_empty();
 }
 simdjson_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at(size_t index) noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.at(index);
 }
 simdjson_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at_pointer(std::string_view json_pointer) noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.at_pointer(json_pointer);
 }
 simdjson_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at_path(std::string_view json_path) noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.at_path(json_path);
 }
 simdjson_inline  simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::raw_json() noexcept {
-  if (error()) { return error(); }
+  if (simdjson_unlikely(error())) { return error(); }
   return first.raw_json();
 }
 } // namespace simdjson
