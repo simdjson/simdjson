@@ -151,6 +151,11 @@ using std::size_t;
 #define SIMDJSON_NO_SANITIZE_UNDEFINED
 #endif
 
+#if defined(__clang__) || defined(__GNUC__)
+#define simdjson_pure [[gnu::pure]]
+#else
+#define simdjson_pure
+#endif
 
 #if defined(__clang__) || defined(__GNUC__)
 #if defined(__has_feature)
