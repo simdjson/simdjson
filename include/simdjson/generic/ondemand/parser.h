@@ -245,7 +245,7 @@ public:
   simdjson_result<document_stream> iterate_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
 
   /** The capacity of this parser (the largest document it can process). */
-  simdjson_inline size_t capacity() const noexcept;
+  [[gnu::pure]] simdjson_inline size_t capacity() const noexcept;
   /** The maximum capacity of this parser (the largest document it is allowed to process). */
   [[gnu::pure]] simdjson_inline size_t max_capacity() const noexcept;
   simdjson_inline void set_max_capacity(size_t max_capacity) noexcept;
