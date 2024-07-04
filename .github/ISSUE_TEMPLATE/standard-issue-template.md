@@ -18,7 +18,7 @@ We do not make changes to simdjson without clearly identifiable benefits, which 
 
 Is your issue:
 
-1. A bug report? If so, please point at a reproducible test. Indicate whether you are willing or able to provide a bug fix as a pull request.
+1. A bug report? If so, please point at a reproducible test. Indicate whether you are willing or able to provide a bug fix as a pull request. As a matter of policy, we do not consider a compiler warning to be a bug.
 
 2. A build issue? If so, provide all possible details regarding your system configuration. If we cannot reproduce your issue, we cannot fix it.
 
