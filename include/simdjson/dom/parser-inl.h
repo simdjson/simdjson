@@ -191,7 +191,7 @@ simdjson_inline size_t parser::capacity() const noexcept {
 simdjson_inline size_t parser::max_capacity() const noexcept {
   return _max_capacity;
 }
-simdjson_inline size_t parser::max_depth() const noexcept {
+[[gnu::pure]] simdjson_inline size_t parser::max_depth() const noexcept {
   return implementation ? implementation->max_depth() : DEFAULT_MAX_DEPTH;
 }
 

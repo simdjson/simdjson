@@ -527,7 +527,7 @@ public:
    *
    * @return Maximum depth, in bytes.
    */
-  simdjson_inline size_t max_depth() const noexcept;
+  [[gnu::pure]] simdjson_inline size_t max_depth() const noexcept;
 
   /**
    * Set max_capacity. This is the largest document this parser can automatically support.
