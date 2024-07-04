@@ -11,7 +11,7 @@ var classsimdjson_1_1dom_1_1parser =
     [ "load_into_document", "classsimdjson_1_1dom_1_1parser.html#ac7913230cb1f559bea4583bb743f9807", null ],
     [ "load_many", "classsimdjson_1_1dom_1_1parser.html#a5300851ba21d0a0273a11510fd1c378a", null ],
     [ "max_capacity", "classsimdjson_1_1dom_1_1parser.html#a8bfde4193783adef9c5f12dfc4da3bc0", null ],
-    [ "max_depth", "classsimdjson_1_1dom_1_1parser.html#a209d15b8f87ad69f5fbaccdd5b6b5441", null ],
+    [ "max_depth", "classsimdjson_1_1dom_1_1parser.html#ab090f596cd0b0c1d34576fd6aae88ee5", null ],
     [ "operator=", "classsimdjson_1_1dom_1_1parser.html#af5b61dda345cef1feba7c4529dfe0259", null ],
     [ "parse", "classsimdjson_1_1dom_1_1parser.html#aec2dcf15817bc41858bae72519562e03", null ],
     [ "parse", "classsimdjson_1_1dom_1_1parser.html#adf358420cd2a1d1b60047cde61c074d5", null ],

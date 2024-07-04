@@ -142,9 +142,9 @@ $(document).ready(function(){initNavTree('internal_2dom__parser__implementation_
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;  std::unique_ptr&lt;uint32_t[]&gt; structural_indexes{};</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;  uint32_t next_structural_index{0};</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160; </div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;  simdjson_inline <span class="keywordtype">size_t</span> capacity() const noexcept;</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;  simdjson_pure simdjson_inline <span class="keywordtype">size_t</span> capacity() const noexcept;</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160; </div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;  simdjson_inline <span class="keywordtype">size_t</span> max_depth() const noexcept;</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;  simdjson_pure simdjson_inline <span class="keywordtype">size_t</span> max_depth() const noexcept;</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160; </div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;  simdjson_warn_unused inline <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> allocate(<span class="keywordtype">size_t</span> capacity, <span class="keywordtype">size_t</span> max_depth) noexcept;</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160; </div>
@@ -167,11 +167,11 @@ $(document).ready(function(){initNavTree('internal_2dom__parser__implementation_
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;simdjson_inline dom_parser_implementation::dom_parser_implementation(dom_parser_implementation &amp;&amp;other) noexcept = default;</div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;simdjson_inline dom_parser_implementation &amp;dom_parser_implementation::operator=(dom_parser_implementation &amp;&amp;other) noexcept = default;</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160; </div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;simdjson_inline <span class="keywordtype">size_t</span> dom_parser_implementation::capacity() const noexcept {</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;simdjson_pure simdjson_inline <span class="keywordtype">size_t</span> dom_parser_implementation::capacity() const noexcept {</div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;  <span class="keywordflow">return</span> _capacity;</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;}</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160; </div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;simdjson_inline <span class="keywordtype">size_t</span> dom_parser_implementation::max_depth() const noexcept {</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;simdjson_pure simdjson_inline <span class="keywordtype">size_t</span> dom_parser_implementation::max_depth() const noexcept {</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;  <span class="keywordflow">return</span> _max_depth;</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;}</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160; </div>

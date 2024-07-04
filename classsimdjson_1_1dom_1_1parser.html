@@ -200,7 +200,7 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <tr class="memitem:a302ded9cfd8c07a095433b0024bd1ce6"><td class="memItemLeft" align="right" valign="top"><a id="a302ded9cfd8c07a095433b0024bd1ce6"></a>
 <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1document__stream.html">document_stream</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>parse_many</b> (const <a class="el" href="structsimdjson_1_1padded__string.html">padded_string</a> &amp;&amp;s, size_t batch_size)=delete</td></tr>
 <tr class="separator:a302ded9cfd8c07a095433b0024bd1ce6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af8f49755a335bc269cb02d24badfcdf9"><td class="memItemLeft" align="right" valign="top">simdjson_warn_unused <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1parser.html#af8f49755a335bc269cb02d24badfcdf9">allocate</a> (size_t <a class="el" href="classsimdjson_1_1dom_1_1parser.html#aedf495a6e090929be23473e8a29f2fe2">capacity</a>, size_t <a class="el" href="classsimdjson_1_1dom_1_1parser.html#a209d15b8f87ad69f5fbaccdd5b6b5441">max_depth</a>=<a class="el" href="namespacesimdjson.html#a6df2598eb1d4e1ea669c41831cc7325d">DEFAULT_MAX_DEPTH</a>) noexcept</td></tr>
+<tr class="memitem:af8f49755a335bc269cb02d24badfcdf9"><td class="memItemLeft" align="right" valign="top">simdjson_warn_unused <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1parser.html#af8f49755a335bc269cb02d24badfcdf9">allocate</a> (size_t <a class="el" href="classsimdjson_1_1dom_1_1parser.html#aedf495a6e090929be23473e8a29f2fe2">capacity</a>, size_t <a class="el" href="classsimdjson_1_1dom_1_1parser.html#ab090f596cd0b0c1d34576fd6aae88ee5">max_depth</a>=<a class="el" href="namespacesimdjson.html#a6df2598eb1d4e1ea669c41831cc7325d">DEFAULT_MAX_DEPTH</a>) noexcept</td></tr>
 <tr class="memdesc:af8f49755a335bc269cb02d24badfcdf9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ensure this parser has enough memory to process JSON documents up to <code>capacity</code> bytes in length and <code>max_depth</code> depth.  <a href="classsimdjson_1_1dom_1_1parser.html#af8f49755a335bc269cb02d24badfcdf9">More...</a><br /></td></tr>
 <tr class="separator:af8f49755a335bc269cb02d24badfcdf9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aedf495a6e090929be23473e8a29f2fe2"><td class="memItemLeft" align="right" valign="top">simdjson_inline size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1parser.html#aedf495a6e090929be23473e8a29f2fe2">capacity</a> () const noexcept</td></tr>
@@ -209,9 +209,9 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <tr class="memitem:a8bfde4193783adef9c5f12dfc4da3bc0"><td class="memItemLeft" align="right" valign="top">simdjson_inline size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1parser.html#a8bfde4193783adef9c5f12dfc4da3bc0">max_capacity</a> () const noexcept</td></tr>
 <tr class="memdesc:a8bfde4193783adef9c5f12dfc4da3bc0"><td class="mdescLeft">&#160;</td><td class="mdescRight">The largest document this parser can automatically support.  <a href="classsimdjson_1_1dom_1_1parser.html#a8bfde4193783adef9c5f12dfc4da3bc0">More...</a><br /></td></tr>
 <tr class="separator:a8bfde4193783adef9c5f12dfc4da3bc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a209d15b8f87ad69f5fbaccdd5b6b5441"><td class="memItemLeft" align="right" valign="top">simdjson_inline size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1parser.html#a209d15b8f87ad69f5fbaccdd5b6b5441">max_depth</a> () const noexcept</td></tr>
-<tr class="memdesc:a209d15b8f87ad69f5fbaccdd5b6b5441"><td class="mdescLeft">&#160;</td><td class="mdescRight">The maximum level of nested object and arrays supported by this parser.  <a href="classsimdjson_1_1dom_1_1parser.html#a209d15b8f87ad69f5fbaccdd5b6b5441">More...</a><br /></td></tr>
-<tr class="separator:a209d15b8f87ad69f5fbaccdd5b6b5441"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab090f596cd0b0c1d34576fd6aae88ee5"><td class="memItemLeft" align="right" valign="top">simdjson_pure simdjson_inline size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1parser.html#ab090f596cd0b0c1d34576fd6aae88ee5">max_depth</a> () const noexcept</td></tr>
+<tr class="memdesc:ab090f596cd0b0c1d34576fd6aae88ee5"><td class="mdescLeft">&#160;</td><td class="mdescRight">The maximum level of nested object and arrays supported by this parser.  <a href="classsimdjson_1_1dom_1_1parser.html#ab090f596cd0b0c1d34576fd6aae88ee5">More...</a><br /></td></tr>
+<tr class="separator:ab090f596cd0b0c1d34576fd6aae88ee5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6977b4586bc601070cf100e2973a4cbc"><td class="memItemLeft" align="right" valign="top">simdjson_inline void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1parser.html#a6977b4586bc601070cf100e2973a4cbc">set_max_capacity</a> (size_t <a class="el" href="classsimdjson_1_1dom_1_1parser.html#a8bfde4193783adef9c5f12dfc4da3bc0">max_capacity</a>) noexcept</td></tr>
 <tr class="memdesc:a6977b4586bc601070cf100e2973a4cbc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set max_capacity.  <a href="classsimdjson_1_1dom_1_1parser.html#a6977b4586bc601070cf100e2973a4cbc">More...</a><br /></td></tr>
 <tr class="separator:a6977b4586bc601070cf100e2973a4cbc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -600,8 +600,8 @@ Parser Capacity</h3>
 
 </div>
 </div>
-<a id="a209d15b8f87ad69f5fbaccdd5b6b5441"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a209d15b8f87ad69f5fbaccdd5b6b5441">&#9670;&nbsp;</a></span>max_depth()</h2>
+<a id="ab090f596cd0b0c1d34576fd6aae88ee5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab090f596cd0b0c1d34576fd6aae88ee5">&#9670;&nbsp;</a></span>max_depth()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -610,7 +610,7 @@ Parser Capacity</h3>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">simdjson_inline size_t simdjson::dom::parser::max_depth </td>
+          <td class="memname">simdjson_pure simdjson_inline size_t simdjson::dom::parser::max_depth </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>

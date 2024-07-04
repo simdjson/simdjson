@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['capacity_388',['capacity',['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#aec2c883af898053ab8e5eca8e9e870ae',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::parser::capacity()'],['../classsimdjson_1_1padded__string__view.html#a9d98e1984b893116d8bb7123d84d75b8',1,'simdjson::padded_string_view::capacity()'],['../classsimdjson_1_1dom_1_1parser.html#aedf495a6e090929be23473e8a29f2fe2',1,'simdjson::dom::parser::capacity()']]],
+  ['capacity_388',['capacity',['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a6c471139dab5371a25021158a7f07d17',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::parser::capacity()'],['../classsimdjson_1_1padded__string__view.html#a9d98e1984b893116d8bb7123d84d75b8',1,'simdjson::padded_string_view::capacity()'],['../classsimdjson_1_1dom_1_1parser.html#aedf495a6e090929be23473e8a29f2fe2',1,'simdjson::dom::parser::capacity()']]],
   ['check_5froot_5farray_389',['check_root_array',['../group__array.html#ga1e023cb72adae168dc7157776976ad75',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value_iterator']]],
   ['check_5froot_5fobject_390',['check_root_object',['../group__object.html#ga262c7a1f9320fefb1711fec7b69ef6b1',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value_iterator']]],
   ['child_391',['child',['../group__array.html#gaba7c4e5787c7295da3a0d73b0db1c890',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value_iterator']]],

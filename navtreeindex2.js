@@ -1,5 +1,11 @@
 var NAVTREEINDEX2 =
 {
+"classsimdjson_1_1dom_1_1element.html#ae38f84f4272ae3c32b32dd6d5007ffb9":[11,0,0,0,3,32],
+"classsimdjson_1_1dom_1_1element.html#ae3c0226046e29cfb0e868c5251a87e53":[11,0,0,0,3,44],
+"classsimdjson_1_1dom_1_1element.html#ae5ce6ad2e6036b4bb7a78261858bb337":[11,0,0,0,3,12],
+"classsimdjson_1_1dom_1_1element.html#ae83652b5016ce4d4ff71f8f9bc05913e":[11,0,0,0,3,24],
+"classsimdjson_1_1dom_1_1element.html#aeb155c47ef7bebcad79e1b7449734030":[11,0,0,0,3,2],
+"classsimdjson_1_1dom_1_1element.html#afaaac6e2f58128a01a25b0a5f5abb856":[11,0,0,0,3,28],
 "classsimdjson_1_1dom_1_1element.html#afb98fdfcb6ddf19071cd2300613218d3":[11,0,0,0,3,41],
 "classsimdjson_1_1dom_1_1element.html#afbe1c01508f1cc39b41b79596cb5717b":[11,0,0,0,3,46],
 "classsimdjson_1_1dom_1_1element.html#afde562c5aae1b85a03ab6d4b040e7d13":[11,0,0,0,3,29],
@@ -51,7 +57,6 @@ var NAVTREEINDEX2 =
 "classsimdjson_1_1dom_1_1parser.html#a0e603cb4119705d5ccbf97774d2116a5":[11,0,0,0,6,25],
 "classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984":[11,0,0,0,6,22],
 "classsimdjson_1_1dom_1_1parser.html#a1afc4d3b429363b503a5605d66081e30":[11,0,0,0,6,30],
-"classsimdjson_1_1dom_1_1parser.html#a209d15b8f87ad69f5fbaccdd5b6b5441":[11,0,0,0,6,11],
 "classsimdjson_1_1dom_1_1parser.html#a29d6a0c6e7538314be6ea73c2be76bb3":[11,0,0,0,6,29],
 "classsimdjson_1_1dom_1_1parser.html#a302ded9cfd8c07a095433b0024bd1ce6":[11,0,0,0,6,32],
 "classsimdjson_1_1dom_1_1parser.html#a3a5a4be2a8660e6f22b99783bb94f690":[11,0,0,0,6,31],
@@ -71,6 +76,7 @@ var NAVTREEINDEX2 =
 "classsimdjson_1_1dom_1_1parser.html#a96ea845b2e155c985df803718369d0b4":[11,0,0,0,6,28],
 "classsimdjson_1_1dom_1_1parser.html#aaace42d42d3c5f5e5d975afcd6c04ff1":[11,0,0,0,6,7],
 "classsimdjson_1_1dom_1_1parser.html#aae4cce43e249d00bd7f3b17a017b5464":[11,0,0,0,6,27],
+"classsimdjson_1_1dom_1_1parser.html#ab090f596cd0b0c1d34576fd6aae88ee5":[11,0,0,0,6,11],
 "classsimdjson_1_1dom_1_1parser.html#ab3e5bbb1974a1932aead90ad63883a23":[11,0,0,0,6,6],
 "classsimdjson_1_1dom_1_1parser.html#ab4b59cec3f7b7c755067c317ed0bfa12":[11,0,0,0,6,26],
 "classsimdjson_1_1dom_1_1parser.html#ac7913230cb1f559bea4583bb743f9807":[11,0,0,0,6,8],
@@ -243,11 +249,5 @@ var NAVTREEINDEX2 =
 "haswell_2bitmask_8h_source.html":[12,0,0,0,5,3],
 "haswell_2end_8h_source.html":[12,0,0,0,5,4],
 "haswell_2implementation_8h_source.html":[12,0,0,0,5,5],
-"haswell_2intrinsics_8h_source.html":[12,0,0,0,5,6],
-"haswell_2numberparsing__defs_8h_source.html":[12,0,0,0,5,7],
-"haswell_2ondemand_8h_source.html":[12,0,0,0,5,8],
-"haswell_2simd_8h_source.html":[12,0,0,0,5,9],
-"haswell_2stringparsing__defs_8h_source.html":[12,0,0,0,5,10],
-"haswell_8h_source.html":[12,0,0,0,22],
-"hierarchy.html":[11,2]
+"haswell_2intrinsics_8h_source.html":[12,0,0,0,5,6]
 };
