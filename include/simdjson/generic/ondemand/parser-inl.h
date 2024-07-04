@@ -153,10 +153,10 @@ inline simdjson_result<document_stream> parser::iterate_many(const padded_string
 simdjson_inline size_t parser::capacity() const noexcept {
   return _capacity;
 }
-simdjson_inline size_t parser::max_capacity() const noexcept {
+[[gnu::pure]] simdjson_inline size_t parser::max_capacity() const noexcept {
   return _max_capacity;
 }
-simdjson_inline size_t parser::max_depth() const noexcept {
+[[gnu::pure]] simdjson_inline size_t parser::max_depth() const noexcept {
   return _max_depth;
 }
 

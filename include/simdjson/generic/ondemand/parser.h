@@ -247,7 +247,7 @@ public:
   /** The capacity of this parser (the largest document it can process). */
   simdjson_inline size_t capacity() const noexcept;
   /** The maximum capacity of this parser (the largest document it is allowed to process). */
-  simdjson_inline size_t max_capacity() const noexcept;
+  [[gnu::pure]] simdjson_inline size_t max_capacity() const noexcept;
   simdjson_inline void set_max_capacity(size_t max_capacity) noexcept;
   /**
    * The maximum depth of this parser (the most deeply nested objects and arrays it can process).
@@ -255,7 +255,7 @@ public:
    * The document's instance current_depth() method should be used to monitor the parsing
    * depth and limit it if desired.
    */
-  simdjson_inline size_t max_depth() const noexcept;
+  [[gnu::pure]] simdjson_inline size_t max_depth() const noexcept;
 
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
