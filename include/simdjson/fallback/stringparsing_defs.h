@@ -13,6 +13,7 @@ namespace {
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 1;
+  // We only copy if dst is non-null.
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return c == '"'; }
@@ -25,7 +26,9 @@ public:
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // store to dest unconditionally - we can overwrite the bits we don't like later
-  dst[0] = src[0];
+  if(dst != nullptr) {
+    dst[0] = src[0];
+  }
   return { src[0] };
 }
 

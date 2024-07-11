@@ -169,11 +169,17 @@ simdjson_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
 }
 
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::unescape(raw_json_string in, uint8_t *&dst, bool allow_replacement) const noexcept {
-  uint8_t *end = implementation->parse_string(in.buf, dst, allow_replacement);
+  std::pair<const uint8_t *, bool> result = implementation->parse_string_if_needed(in.buf, dst, allow_replacement);
+  const uint8_t *end = result.first;
+  bool copied = result.second;
   if (!end) { return STRING_ERROR; }
-  std::string_view result(reinterpret_cast<const char *>(dst), end-dst);
-  dst = end;
-  return result;
+  if(copied) {
+    std::string_view strresult(reinterpret_cast<const char *>(dst), end-dst);
+    dst = const_cast<uint8_t *>(end);
+    return strresult;
+  }
+  // fast path, no copy was made!!!
+  return std::string_view(reinterpret_cast<const char *>(in.buf), end-in.buf);
 }
 
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::unescape_wobbly(raw_json_string in, uint8_t *&dst) const noexcept {

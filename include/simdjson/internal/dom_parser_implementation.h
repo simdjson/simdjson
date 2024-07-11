@@ -4,6 +4,7 @@
 #include "simdjson/base.h"
 #include "simdjson/error.h"
 #include <memory>
+#include <utility>
 
 namespace simdjson {
 
@@ -101,6 +102,24 @@ public:
    * @return The error code, SUCCESS if there was no error, or EMPTY if all documents have been parsed.
    */
   simdjson_warn_unused virtual error_code stage2_next(dom::document &doc) noexcept = 0;
+
+  /**
+   * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
+   * must be an unescaped quote terminating the string. It returns the final output
+   * position as pointer. In case of error (e.g., the string has bad escaped codes),
+   * then null_ptr is returned. If no escaping was required, then no copy is made.
+   * It is assumed that the output buffer is large
+   * enough to store the unescapedstring + SIMDJSON_PADDING bytes.
+   *
+   * Overridden by each implementation.
+   *
+   * @param str pointer to the beginning of a valid UTF-8 JSON string, must end with an unescaped quote.
+   * @param dst pointer to a destination buffer, it must point a region in memory of sufficient size.
+   * @param allow_replacement whether we allow a replacement character when the UTF-8 contains unmatched surrogate pairs.
+   * @return end of the of the written region (exclusive) or nullptr in case of error coupled with a Boolean telling you if a copy was made
+   */
+  simdjson_warn_unused virtual std::pair<const uint8_t *,bool> parse_string_if_needed(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept = 0;
+
 
   /**
    * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
