@@ -194,13 +194,13 @@ var NAVTREE =
 
 var NAVTREEINDEX =
 [
-"amalgamated_8h_source.html",
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#ad5f688629f86f80dff49cab2270b1967",
-"classsimdjson_1_1dom_1_1element.html#afb98fdfcb6ddf19071cd2300613218d3",
-"icelake_2base_8h_source.html",
-"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9ab6e8bfc242f7bea38657eaf61400077f",
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a9a751f7a061bc6e8d3159556466edbf0",
-"westmere_2bitmask_8h_source.html"
+"",
+"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#a598e64f8fff7f033b2e38057798799d9",
+"classsimdjson_1_1dom_1_1element.html#ae38f84f4272ae3c32b32dd6d5007ffb9",
+"haswell_2numberparsing__defs_8h_source.html",
+"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7b0467451dc0cecb41d3ea46c4a0005b",
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a7c2a11edb53792f1a4c6fe2654060380",
+"value_8h_source.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
