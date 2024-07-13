@@ -38,6 +38,25 @@ const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
 
 namespace number_tests {
 
+  bool build(const std::string& json) {
+    simdjson::dom::parser parser;
+    simdjson::dom::element recvdJson;
+    auto error = parser.parse(json.c_str(), json.size()).get(recvdJson);
+    if (error) {
+        return false;
+    }
+    return true;
+  }
+  bool issue2213() {
+    TEST_START();
+    std::string jsonStr = "[1,2,3,\"4\", {\"a\": 5}]";
+    for (int i = 0; i < 15; ++i) {
+        if (!build(jsonStr)) {
+          TEST_FAIL("The JSON is valid");
+        }
+    }
+    TEST_SUCCEED();
+  }
   bool ground_truth() {
     std::cout << __func__ << std::endl;
     std::pair<std::string,double> ground_truth[] = {
@@ -397,7 +416,8 @@ namespace number_tests {
   }
 
   bool run() {
-    return bomskip() &&
+    return issue2213() &&
+           bomskip() &&
            issue2017() &&
            truncated_borderline() &&
            specific_tests() &&
