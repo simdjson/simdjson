@@ -2623,6 +2623,29 @@ int main(void) {
 }
 ```
 
+
+* Example 4: Value capture with `std::string_view` instances
+
+```cpp
+bool example() {
+  ondemand::parser parser;
+  const padded_string json = R"({ "parent": {"child1": {"name": "John"} , "child2": {"name": "Daniel"}} })"_padded;
+  auto doc = parser.iterate(json);
+  ondemand::object parent = doc["parent"];
+  // parent owns the focus
+  ondemand::object c1 = parent["child1"];
+  // c1 owns the focus
+  //
+  std::string_view as1 = c1["name"];
+  // We have that as1 == "John", as long as 'parser' and 'json' live
+  // c2 attempts to grab the focus from parent but fails
+  ondemand::object c2 = parent["child2"];
+  // c2 owns the focus, at this point c1 is invalid
+  std::string_view as2 = c2["name"];
+  // We have that as2 == "Daniel", as long as 'parser' and 'json' live
+  std::cout << as1 << " " << as2 << std::endl; // prints John Daniel
+}
+
 Performance tips
 --------
 
