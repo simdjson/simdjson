@@ -2645,6 +2645,7 @@ bool example() {
   // We have that as2 == "Daniel", as long as 'parser' and 'json' live
   std::cout << as1 << " " << as2 << std::endl; // prints John Daniel
 }
+```
 
 Performance tips
 --------
