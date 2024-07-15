@@ -2627,7 +2627,7 @@ int main(void) {
 * Example 4: Value capture with `std::string_view` instances
 
 ```cpp
-bool example() {
+void example() {
   ondemand::parser parser;
   const padded_string json = R"({ "parent": {"child1": {"name": "John"} , "child2": {"name": "Daniel"}} })"_padded;
   auto doc = parser.iterate(json);
