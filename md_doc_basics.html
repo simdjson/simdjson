@@ -1958,6 +1958,27 @@ Examples</h1>
 <div class="line">  f(doc.get_array());</div>
 <div class="line">  return EXIT_SUCCESS;</div>
 <div class="line">}</div>
+</div><!-- fragment --><ul>
+<li>Example 4: Value capture with <code>std::string_view</code> instances</li>
+</ul>
+<div class="fragment"><div class="line"><span class="keywordtype">void</span> example() {</div>
+<div class="line">  ondemand::parser parser;</div>
+<div class="line">  <span class="keyword">const</span> padded_string json = R<span class="stringliteral">&quot;({ &quot;parent&quot;: {&quot;child1&quot;: {&quot;name&quot;: &quot;John&quot;} , &quot;child2&quot;: {&quot;name&quot;: &quot;Daniel&quot;}} })&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral">  </span><span class="keyword">auto</span> doc = parser.iterate(json);</div>
+<div class="line">  ondemand::object parent = doc[<span class="stringliteral">&quot;parent&quot;</span>];</div>
+<div class="line">  <span class="comment">// parent owns the focus</span></div>
+<div class="line">  ondemand::object c1 = parent[<span class="stringliteral">&quot;child1&quot;</span>];</div>
+<div class="line">  <span class="comment">// c1 owns the focus</span></div>
+<div class="line">  <span class="comment">//</span></div>
+<div class="line">  std::string_view as1 = c1[<span class="stringliteral">&quot;name&quot;</span>];</div>
+<div class="line">  <span class="comment">// We have that as1 == &quot;John&quot;, as long as &#39;parser&#39; and &#39;json&#39; live</span></div>
+<div class="line">  <span class="comment">// c2 attempts to grab the focus from parent but fails</span></div>
+<div class="line">  ondemand::object c2 = parent[<span class="stringliteral">&quot;child2&quot;</span>];</div>
+<div class="line">  <span class="comment">// c2 owns the focus, at this point c1 is invalid</span></div>
+<div class="line">  std::string_view as2 = c2[<span class="stringliteral">&quot;name&quot;</span>];</div>
+<div class="line">  <span class="comment">// We have that as2 == &quot;Daniel&quot;, as long as &#39;parser&#39; and &#39;json&#39; live</span></div>
+<div class="line">  std::cout &lt;&lt; as1 &lt;&lt; <span class="stringliteral">&quot; &quot;</span> &lt;&lt; as2 &lt;&lt; std::endl; <span class="comment">// prints John Daniel</span></div>
+<div class="line">}</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md34"></a>
 Performance tips</h1>
 <ul>
