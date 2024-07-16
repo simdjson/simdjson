@@ -46,6 +46,7 @@ Real-world usage
 - [Meta Velox](https://velox-lib.io)
 - [Google Pax](https://github.com/google/paxml)
 - [milvus](https://github.com/milvus-io/milvus)
+- [QuestDB](https://questdb.io/blog/questdb-release-8-0-3/)
 - [Clang Build Analyzer](https://github.com/aras-p/ClangBuildAnalyzer)
 - [Shopify HeapProfiler](https://github.com/Shopify/heap-profiler)
 - [StarRocks](https://github.com/StarRocks/starrocks)
