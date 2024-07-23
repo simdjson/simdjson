@@ -108,6 +108,10 @@ struct Car {
   }
 };
 
+static_assert(simdjson::tag_invocable<simdjson::deserialize_tag,
+                            std::type_identity<std::unique_ptr<Car>>, simdjson::ondemand::value &>,
+              "It should be invocable");
+
 bool custom_test() {
   TEST_START();
   simdjson::padded_string json =
