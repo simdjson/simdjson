@@ -7,13 +7,14 @@
 #include "simdjson/generic/ondemand/value_iterator.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
-#if __cplusplus >= 201703
+#include <version>
+#ifdef __cpp_concepts
 #include <concepts>
 #endif
 
 namespace simdjson {
 
-#if __cplusplus > 201703
+#ifdef __cpp_concepts
   namespace tag_invoke_fn_ns {
   void tag_invoke() = delete;
 
@@ -103,12 +104,19 @@ public:
    * @returns A value of the given type, parsed from the JSON.
    * @returns INCORRECT_TYPE If the JSON value is not the given type.
    */
-  template<typename T> simdjson_inline simdjson_result<T> get() noexcept {
-#if __cplusplus > 201703
+  template <typename T>
+  simdjson_inline simdjson_result<T> get()
+#ifdef __cpp_concepts
+    noexcept(tag_invocable<deserialize_tag, std::type_identity<T>, value&> ? nothrow_tag_invocable<deserialize_tag, std::type_identity<T>, value&> : true)
+#else
+    noexcept
+#endif
+ {
+#ifdef __cpp_concepts
   if constexpr (tag_invocable<deserialize_tag, std::type_identity<T>, value&>) {
     return deserialize(std::type_identity<T>{}, *this);
   } else {
-#endif // C++20
+#endif // __cpp_concepts
     // Unless the simdjson library or the user provides an inline implementation, calling this method should
     // immediately fail.
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
@@ -116,7 +124,7 @@ public:
       "int64_t, double, and bool. We recommend you use get_double(), get_bool(), get_uint64(), get_int64(), "
       " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template."
       " You may also add support for custom types, see our documentation.");
-#if __cplusplus > 201703L
+#ifdef __cpp_concepts
       }
 #endif
   }

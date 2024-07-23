@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#if __cplusplus > 201703
+#ifdef __cpp_concepts
 
 template <typename T>
 struct is_unique_ptr : std::false_type {
@@ -55,9 +55,11 @@ simdjson::ondemand::value::get() noexcept {
   return vec;
 }
 
-#endif // C++20
-namespace key_string_tests {
-#if SIMDJSON_EXCEPTIONS && __cplusplus > 201703
+#endif // __cpp_concepts
+
+
+namespace custom_types_tests {
+#if SIMDJSON_EXCEPTIONS && defined(__cpp_concepts)
 struct Car {
   std::string make;
   std::string model;
@@ -106,7 +108,7 @@ struct Car {
   }
 };
 
-bool parser_key_value() {
+bool custom_test() {
   TEST_START();
   simdjson::padded_string json =
       R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
@@ -141,8 +143,8 @@ bool parser_key_value() {
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {
   return
-#if SIMDJSON_EXCEPTIONS && __cplusplus > 201703
-      parser_key_value() &&
+#if SIMDJSON_EXCEPTIONS && defined(__cpp_concepts)
+      custom_test() &&
 #endif // SIMDJSON_EXCEPTIONS
       true;
 }
@@ -150,5 +152,5 @@ bool run() {
 } // namespace key_string_tests
 
 int main(int argc, char *argv[]) {
-  return test_main(argc, argv, key_string_tests::run);
+  return test_main(argc, argv, custom_types_tests::run);
 }
