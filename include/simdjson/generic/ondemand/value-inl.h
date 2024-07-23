@@ -467,7 +467,15 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> simdj
 template <class T>
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator T() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
+#if __cplusplus > 201703
+  if constexpr (tag_invocable<deserialize_tag, std::type_identity<T>, SIMDJSON_IMPLEMENTATION::ondemand::value&>) {
+    return deserialize(std::type_identity<T>{}, first);
+  } else {
+#endif // C++20
   return static_cast<T>(first);
+#if __cplusplus > 201703L
+      }
+#endif
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }

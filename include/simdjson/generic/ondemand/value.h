@@ -7,10 +7,78 @@
 #include "simdjson/generic/ondemand/value_iterator.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
+#if __cplusplus >= 201703
+#include <concepts>
+#endif
+
 namespace simdjson {
+
+#if __cplusplus > 201703
+  namespace tag_invoke_fn_ns {
+  void tag_invoke() = delete;
+
+  struct tag_invoke_fn {
+    template <typename Tag, typename... Args>
+        requires requires(Tag tag, Args&&... args) {
+      tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...);
+        }
+    constexpr auto operator()(Tag tag, Args&&... args) const
+      noexcept(noexcept(tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...)))
+        -> decltype(tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...)) {
+          return tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...);
+        }
+  };
+  } // namespace tag_invoke_fn_ns
+
+  inline namespace tag_invoke_ns {
+  inline constexpr tag_invoke_fn_ns::tag_invoke_fn tag_invoke = {};
+  } // namespace tag_invoke_ns
+
+  template <typename Tag, typename... Args>
+  concept tag_invocable =
+    requires(Tag tag, Args... args) { tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...); };
+
+  template <typename Tag, typename... Args>
+  concept nothrow_tag_invocable = tag_invocable<Tag, Args...> && requires(Tag tag, Args... args) {
+    {
+      tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...)
+  } noexcept;
+  };
+
+  template <typename Tag, typename... Args>
+  using tag_invoke_result = std::invoke_result<decltype(tag_invoke), Tag, Args...>;
+
+  template <typename Tag, typename... Args>
+  using tag_invoke_result_t = std::invoke_result_t<decltype(tag_invoke), Tag, Args...>;
+
+  template <auto& Tag>
+  using tag_t = std::decay_t<decltype(Tag)>;
+
+
+
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
+class value;
+}
+}
 
+  /// Deserialize Tag
+  inline constexpr struct deserialize_tag {
+      // Customization Point
+      template <typename T>
+          requires tag_invocable<deserialize_tag, std::type_identity<T>, SIMDJSON_IMPLEMENTATION::ondemand::value&>
+      [[nodiscard]] constexpr simdjson_result<T> operator()(std::type_identity<T>, SIMDJSON_IMPLEMENTATION::ondemand::value& object) const
+        noexcept(nothrow_tag_invocable<deserialize_tag, std::type_identity<T>, SIMDJSON_IMPLEMENTATION::ondemand::value&>) {
+          return tag_invoke(*this, std::type_identity<T>{}, object);
+      }
+
+      // default implementations can also be done here
+  } deserialize{};
+#endif
+
+
+namespace SIMDJSON_IMPLEMENTATION {
+namespace ondemand {
 /**
  * An ephemeral JSON value returned during iteration. It is only valid for as long as you do
  * not access more data in the JSON document.
@@ -36,6 +104,11 @@ public:
    * @returns INCORRECT_TYPE If the JSON value is not the given type.
    */
   template<typename T> simdjson_inline simdjson_result<T> get() noexcept {
+#if __cplusplus > 201703
+  if constexpr (tag_invocable<deserialize_tag, std::type_identity<T>, value&>) {
+    return deserialize(std::type_identity<T>{}, *this);
+  } else {
+#endif // C++20
     // Unless the simdjson library or the user provides an inline implementation, calling this method should
     // immediately fail.
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
@@ -43,6 +116,9 @@ public:
       "int64_t, double, and bool. We recommend you use get_double(), get_bool(), get_uint64(), get_int64(), "
       " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template."
       " You may also add support for custom types, see our documentation.");
+#if __cplusplus > 201703L
+      }
+#endif
   }
 
   /**
