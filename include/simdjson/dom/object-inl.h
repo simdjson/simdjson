@@ -153,6 +153,10 @@ inline simdjson_result<element> object::at_key_case_insensitive(std::string_view
   return NO_SUCH_FIELD;
 }
 
+inline object::operator element() const noexcept {
+	return element(tape);
+}
+
 //
 // object::iterator inline implementation
 //

@@ -200,6 +200,11 @@ public:
    */
   inline simdjson_result<element> at_key_case_insensitive(std::string_view key) const noexcept;
 
+  /**
+   * Implicitly convert object to element
+   */
+  inline operator element() const noexcept;
+
 private:
   simdjson_inline object(const internal::tape_ref &tape) noexcept;
 

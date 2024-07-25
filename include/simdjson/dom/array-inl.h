@@ -123,6 +123,10 @@ inline simdjson_result<element> array::at(size_t index) const noexcept {
   return INDEX_OUT_OF_BOUNDS;
 }
 
+inline array::operator element() const noexcept {
+	return element(tape);
+}
+
 //
 // array::iterator inline implementation
 //

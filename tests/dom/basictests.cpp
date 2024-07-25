@@ -970,6 +970,36 @@ namespace dom_api_tests {
     return true;
   }
 
+  bool convert_object_to_element() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"({ "a": 1, "b": 2, "c": 3 })");
+
+    dom::parser parser;
+    dom::object object;
+    dom::element element;
+    ASSERT_SUCCESS( parser.parse(json).get(object) );
+    element = object;
+    ASSERT_EQUAL( element["a"].get_uint64().value_unsafe(), 1 );
+    ASSERT_EQUAL( element["b"].get_uint64().value_unsafe(), 2 );
+    ASSERT_EQUAL( element["c"].get_uint64().value_unsafe(), 3 );
+    return true;
+  }
+
+  bool convert_array_to_element() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"([ 1, 10, 100 ])");
+
+    dom::parser parser;
+    dom::array array;
+    dom::element element;
+    ASSERT_SUCCESS( parser.parse(json).get(array) );
+    element = array;
+    ASSERT_EQUAL( element.at(0).get_uint64().value_unsafe(), 1 );
+    ASSERT_EQUAL( element.at(1).get_uint64().value_unsafe(), 10 );
+    ASSERT_EQUAL( element.at(2).get_uint64().value_unsafe(), 100 );
+    return true;
+  }
+
   bool string_value() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"([ "hi", "has backslash\\" ])");
@@ -1351,6 +1381,8 @@ namespace dom_api_tests {
            array_iterator_empty() &&
            object_iterator_advance() &&
            array_iterator_advance() &&
+           convert_object_to_element() &&
+           convert_array_to_element() &&
            string_value() &&
            numeric_values() &&
            boolean_values() &&
