@@ -126,6 +126,11 @@ public:
    */
   inline simdjson_result<element> at(size_t index) const noexcept;
 
+  /**
+   * Implicitly convert object to element
+   */
+  inline operator element() const noexcept;
+
 private:
   simdjson_inline array(const internal::tape_ref &tape) noexcept;
   internal::tape_ref tape;
