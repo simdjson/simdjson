@@ -1,5 +1,7 @@
 var NAVTREEINDEX3 =
 {
+"haswell_8h_source.html":[12,0,0,0,22],
+"hierarchy.html":[11,2],
 "icelake_2base_8h_source.html":[12,0,0,0,6,0],
 "icelake_2begin_8h_source.html":[12,0,0,0,6,1],
 "icelake_2bitmanipulation_8h_source.html":[12,0,0,0,6,2],
@@ -247,7 +249,5 @@ var NAVTREEINDEX3 =
 "namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7b0467451dc0cecb41d3ea46c4a0005b":[10,0,0,36,23],
 "namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a80bcf6820da38abe1a2e9abeaa0f0c49":[10,0,0,36,19],
 "namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a8c779dcc8fb73a4eb8891af3ef65eebb":[10,0,0,36,18],
-"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a8ef9cfdd78dd92d2b304249917638d12":[10,0,0,36,5],
-"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa0e71422c8ae80ebaa11d8d74d64737f":[10,0,0,36,2],
-"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa4ffc800804829a88c5b52ac3c4c6681":[10,0,0,36,0]
+"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a8ef9cfdd78dd92d2b304249917638d12":[10,0,0,36,5]
 };

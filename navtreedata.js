@@ -196,11 +196,11 @@ var NAVTREEINDEX =
 [
 "amalgamated_8h_source.html",
 "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#ad5f688629f86f80dff49cab2270b1967",
-"classsimdjson_1_1dom_1_1element.html#afb98fdfcb6ddf19071cd2300613218d3",
-"icelake_2base_8h_source.html",
-"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9ab6e8bfc242f7bea38657eaf61400077f",
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a9a751f7a061bc6e8d3159556466edbf0",
-"westmere_2bitmask_8h_source.html"
+"classsimdjson_1_1dom_1_1element.html#afaaac6e2f58128a01a25b0a5f5abb856",
+"haswell_8h_source.html",
+"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa0e71422c8ae80ebaa11d8d74d64737f",
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a89e365ab71c3c1e6c52c2bbc914069ef",
+"westmere_2begin_8h_source.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

@@ -1,5 +1,7 @@
 var NAVTREEINDEX6 =
 {
+"westmere_2begin_8h_source.html":[12,0,0,0,12,1],
+"westmere_2bitmanipulation_8h_source.html":[12,0,0,0,12,2],
 "westmere_2bitmask_8h_source.html":[12,0,0,0,12,3],
 "westmere_2end_8h_source.html":[12,0,0,0,12,4],
 "westmere_2implementation_8h_source.html":[12,0,0,0,12,5],
@@ -10,9 +12,9 @@ var NAVTREEINDEX6 =
 "westmere_2stringparsing__defs_8h_source.html":[12,0,0,0,12,10],
 "westmere_8h_source.html":[12,0,0,0,39],
 "":[10,0,0,9],
-"":[10,0,0,9,2,0],
-"":[10,0,0,7],
-"":[10,0,0,9,0],
 "":[10,0,0,9,1],
-"":[10,0,1]
+"":[10,0,0,9,2,0],
+"":[10,0,1],
+"":[10,0,0,9,0],
+"":[10,0,0,7]
 };

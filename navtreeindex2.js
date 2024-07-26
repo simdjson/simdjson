@@ -1,5 +1,6 @@
 var NAVTREEINDEX2 =
 {
+"classsimdjson_1_1dom_1_1element.html#afaaac6e2f58128a01a25b0a5f5abb856":[11,0,0,0,3,28],
 "classsimdjson_1_1dom_1_1element.html#afb98fdfcb6ddf19071cd2300613218d3":[11,0,0,0,3,41],
 "classsimdjson_1_1dom_1_1element.html#afbe1c01508f1cc39b41b79596cb5717b":[11,0,0,0,3,46],
 "classsimdjson_1_1dom_1_1element.html#afde562c5aae1b85a03ab6d4b040e7d13":[11,0,0,0,3,29],
@@ -8,15 +9,16 @@ var NAVTREEINDEX2 =
 "classsimdjson_1_1dom_1_1key__value__pair.html#a58c41d937401cfe88ceb6e71d7dbeb45":[11,0,0,0,5,1],
 "classsimdjson_1_1dom_1_1key__value__pair.html#af7e38d9eb63a40256c9f936e45edf703":[11,0,0,0,5,2],
 "classsimdjson_1_1dom_1_1object.html":[11,0,0,0,4],
-"classsimdjson_1_1dom_1_1object.html#a0602f94f596fa800408eeb034b5850ab":[11,0,0,0,4,10],
-"classsimdjson_1_1dom_1_1object.html#a2691ceae488be203aac2d5ef5b67347f":[11,0,0,0,4,7],
+"classsimdjson_1_1dom_1_1object.html#a0602f94f596fa800408eeb034b5850ab":[11,0,0,0,4,11],
+"classsimdjson_1_1dom_1_1object.html#a2691ceae488be203aac2d5ef5b67347f":[11,0,0,0,4,8],
 "classsimdjson_1_1dom_1_1object.html#a4fb3e04e0ea591132da90341bf9ed819":[11,0,0,0,4,2],
-"classsimdjson_1_1dom_1_1object.html#a5db654c4e603254bd308a7c068d79c43":[11,0,0,0,4,11],
+"classsimdjson_1_1dom_1_1object.html#a5db654c4e603254bd308a7c068d79c43":[11,0,0,0,4,12],
 "classsimdjson_1_1dom_1_1object.html#a79cf291477bcaa1bf2328411b411587d":[11,0,0,0,4,6],
-"classsimdjson_1_1dom_1_1object.html#a93ec5c36aae913f266f533b2e02bc873":[11,0,0,0,4,9],
+"classsimdjson_1_1dom_1_1object.html#a93ec5c36aae913f266f533b2e02bc873":[11,0,0,0,4,10],
 "classsimdjson_1_1dom_1_1object.html#ab075da9eb7678f6321cecf4cbd196039":[11,0,0,0,4,3],
-"classsimdjson_1_1dom_1_1object.html#acc66a2f2eb74fbe359d4064531764f50":[11,0,0,0,4,8],
+"classsimdjson_1_1dom_1_1object.html#acc66a2f2eb74fbe359d4064531764f50":[11,0,0,0,4,9],
 "classsimdjson_1_1dom_1_1object.html#ace84581be0fee46d5128c49710522aba":[11,0,0,0,4,4],
+"classsimdjson_1_1dom_1_1object.html#ad4fdfb4c4df15af03f44a11201b0545d":[11,0,0,0,4,7],
 "classsimdjson_1_1dom_1_1object.html#ae2e1a8cbaab9d352495d1dc993407be3":[11,0,0,0,4,1],
 "classsimdjson_1_1dom_1_1object.html#afe127a7e9ec8dab9ec76160525a68a83":[11,0,0,0,4,5],
 "classsimdjson_1_1dom_1_1object_1_1iterator.html":[11,0,0,0,4,0],
@@ -247,7 +249,5 @@ var NAVTREEINDEX2 =
 "haswell_2numberparsing__defs_8h_source.html":[12,0,0,0,5,7],
 "haswell_2ondemand_8h_source.html":[12,0,0,0,5,8],
 "haswell_2simd_8h_source.html":[12,0,0,0,5,9],
-"haswell_2stringparsing__defs_8h_source.html":[12,0,0,0,5,10],
-"haswell_8h_source.html":[12,0,0,0,22],
-"hierarchy.html":[11,2]
+"haswell_2stringparsing__defs_8h_source.html":[12,0,0,0,5,10]
 };
