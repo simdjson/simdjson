@@ -324,11 +324,11 @@ simdjson_inline simdjson_result<dom::document_stream>::simdjson_result(dom::docu
 
 #if SIMDJSON_EXCEPTIONS
 simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
+  if (simdjson_unlikely(error())) { throw simdjson_error(error()); }
   return first.begin();
 }
 simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
+  if (simdjson_unlikely(error())) { throw simdjson_error(error()); }
   return first.end();
 }
 #else // SIMDJSON_EXCEPTIONS
