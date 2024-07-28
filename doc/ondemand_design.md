@@ -9,8 +9,8 @@ Whether we parse JSON or XML, or any other serialized format, there are relative
 - Another popular approach is the schema-based deserialization model.
 
 We propose an approach that is as easy to use and often as flexible as the DOM approach, yet as fast and
-efficient as the schema-based or event-based approaches. We call this new approach "On Demand". The
-simdjson On Demand API offers a familiar, friendly DOM API and
+efficient as the schema-based or event-based approaches. We call this new approach "On-Demand". The
+simdjson On-Demand API offers a familiar, friendly DOM API and
 provides the performance of just-in-time parsing on top of the simdjson superior performance.
 
 To achieve ease of use, we mimicked the *form* of a traditional DOM API: you can iterate over
@@ -18,7 +18,7 @@ arrays, look up fields in objects, and extract native values like `double`, `uin
 
 To achieve performance, we introduced some key limitations that make the DOM API *streaming*:
 array/object iteration cannot be restarted, and string/number values can only be parsed once. If
-these limitations are acceptable to you, the On Demand API could help you write maintainable
+these limitations are acceptable to you, the On-Demand API could help you write maintainable
 applications with a computation efficiency that is difficult to surpass.
 
 A code example illustrates our API from a programmer's point of view:
@@ -72,24 +72,24 @@ This streaming approach means that unused fields and values are not parsed or
 converted, thus saving space and time. In our example, the `"name"`, `"followers_count"`,
 and `"friends_count"` keys and matching values are skipped.
 
-Further, the On Demand API does not parse a value *at all* until you try to convert it (e.g., to `double`,
+Further, the On-Demand API does not parse a value *at all* until you try to convert it (e.g., to `double`,
 `int`, `string`, or `bool`). In our example, when accessing the key-value pair `"retweet_count": 82`, the parser
 may not convert the pair of characters `82` to the binary integer 82. Because the programmer specifies the data
 type, we avoid branch mispredictions related to data type determination and improve the performance.
 
 
-We expect users of an On Demand API to work in terms of a JSON dialect, which is a set of expectations and
+We expect users of an On-Demand API to work in terms of a JSON dialect, which is a set of expectations and
 specifications that come in addition to the [JSON specification](https://www.rfc-editor.org/rfc/rfc8259.txt).
-The On Demand approach is designed around several principles:
+The On-Demand approach is designed around several principles:
 
 * **Streaming (\*):** It avoids preparsing values, keeping the memory usage and the latency down.
 * **Forward-Only:** To prevent reiteration of the same values and to keep the number of variables down (literally), only a single index is maintained and everything uses it (even if you have nested for loops). This means when you are going through an array of arrays, for example, that the inner array loop will advance the index to the next comma, and the array can just pick it up and look at it.
 * **Natural Iteration:** A JSON array or object can be iterated with a normal C++ for loop. Nested arrays and objects are supported by nested for loops.
 * **Use-Specific Parsing:** Parsing is always specific to the type required by the programmer. For example, if the programmer asks for an unsigned integer, we just start parsing digits. If there were no digits, we toss an error. There are even different parsers for `double`, `uint64_t` and `int64_t` values. This use-specific parsing avoids the branchiness of a generic "type switch," and makes the code more inlineable and compact.
-* **Validate What You Use:** On Demand deliberately validates the values you use and the structure leading to it, but nothing else. The goal is a guarantee that the value you asked for is the correct one and is not malformed: there must be no confusion over whether you got the right value.
+* **Validate What You Use:** On-Demand deliberately validates the values you use and the structure leading to it, but nothing else. The goal is a guarantee that the value you asked for is the correct one and is not malformed: there must be no confusion over whether you got the right value.
 
 
-To understand why On Demand is different, it is helpful to review the major
+To understand why On-Demand is different, it is helpful to review the major
 approaches to parsing and parser APIs in use today.
 
 ### DOM Parsers
@@ -106,7 +106,7 @@ DOM tree is often easy enough that many users use the DOM as-is instead of creat
 their own custom data structures.
 
 The DOM approach was the only way to parse JSON documents up to version 0.6 of the simdjson library.
-Our DOM API looks similar to our On Demand example, except
+Our DOM API looks similar to our On-Demand example, except
 it calls `parse` instead of `iterate`:
 
 ```c++
@@ -152,7 +152,7 @@ a tweet right now, or is this from some other place in the document
 entirely? Though an event-based approach may allow superior performance, it is demanding of the programmer
 who must efficiently keep track of its current state within the JSON input.
 
-The following is event-based example of the Twitter problem we have reviewed in the DOM and On Demand
+The following is event-based example of the Twitter problem we have reviewed in the DOM and On-Demand
 examples. To make it short enough to use as an example at all, it has heavily redacted: it only solves
 a part of the problem (does not get user.screen_name), it has bugs (it does not handle sub-objects
 in a tweet at all), and it uses a theoretical, simple event-based API that minimizes ceremony.
@@ -257,7 +257,7 @@ stress the branch prediction. Though branch predictors improve with each new gen
 the cost of branch mispredictions also tends to increase as pipelines expand, and the processors become
 able to schedule longer streams of instructions.
 
-On Demand parsing is tailor-made to solve this problem at the source, parsing values only after the
+On-Demand parsing is tailor-made to solve this problem at the source, parsing values only after the
 user declares their type by asking for a `double`, an `int`, a `string`, etc. It attempts to do so while
 preserving most of the flexibility of DOM parsing.
 
@@ -297,7 +297,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
    Since this is the first time this parser has been used, `iterate()` first allocates internal
    parser buffers if this is the first time through. When reusing an existing parser, allocation
-   only happens if the new document is bigger than internal buffers can handle. The On Demand
+   only happens if the new document is bigger than internal buffers can handle. The On-Demand
    API only ever allocates memory in the `iterate()` function call.
 
    The simdjson library then preprocesses the JSON text at high speed, finding all tokens (i.e. the starting
@@ -492,7 +492,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
    Because of the cast to uint64_t, simdjson knows it's parsing an unsigned integer. This lets
    us use a fast parser which *only* knows how to parse digits. It validates that it is an integer
    by rejecting negative numbers, strings, and other values based on the fact that they are not the
-   digits 0-9. This type specificity is part of why parsing with on demand is so fast: you lose all
+   digits 0-9. This type specificity is part of why parsing with On-Demand is so fast: you lose all
    the code that has to understand those other types.
 
    The iterator is advanced to the `}`, and depth decreased back to 3 (root > statuses > tweet).
@@ -597,7 +597,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
    This means you can very efficiently do things like read a single value from a JSON file, or take
    the top N, for example. It also means the things you don't use won't be fully validated. This is
-   a general principle of On Demand: don't validate what you don't use. We still fully validate
+   a general principle of On-Demand: don't validate what you don't use. We still fully validate
    values you do use, however, as well as the objects and arrays that lead to them, so that you can
    be sure you get the information you need.
 
@@ -654,7 +654,7 @@ for(auto field : doc.get_object())  {
 
 ### Iteration Safety
 
-The On Demand API is powerful. To compensate, we add some safeguards to ensure that it can be used without fear
+The On-Demand API is powerful. To compensate, we add some safeguards to ensure that it can be used without fear
 in production systems:
 
   - If the value fails to be parsed as one type, the program can try to parse it as something else until the program succeeds. Thus
@@ -667,7 +667,7 @@ in production systems:
     if it was `nullptr` but did not care what the actual value was--it will iterate. The destructor automates
     the iteration.
 
-  Some care is needed when using the On Demand API in scenarios where you need to access several sibling arrays or objects because
+  Some care is needed when using the On-Demand API in scenarios where you need to access several sibling arrays or objects because
   only one object or array can be active at any one time. Let us consider the following example:
 
 ```C++
@@ -709,36 +709,36 @@ A correct usage is given by the following example:
     }
 ```
 
-### Benefits of the On Demand Approach
+### Benefits of the On-Demand Approach
 
-We expect that the On Demand approach has many of the performance benefits of the schema-based approach, while providing a flexibility that is similar to that of the DOM-based approach.
+We expect that the On-Demand approach has many of the performance benefits of the schema-based approach, while providing a flexibility that is similar to that of the DOM-based approach.
 
 * Faster than DOM in some cases. Reduced memory usage.
 * Straightforward, programmer-friendly interface (arrays and objects).
 * Highly expressive, beyond deserialization and pointer queries: many tasks can be accomplished with little code.
 
-### Limitations of the On Demand Approach
+### Limitations of the On-Demand Approach
 
-The On Demand approach has some limitations:
+The On-Demand approach has some limitations:
 
 * Because it operates in streaming mode, you only have access to the current element in the JSON document. Furthermore, the document is traversed in order so the code is sensitive to the order of the JSON nodes in the same manner as an event-based approach (e.g., SAX). (The one exception to this is field lookup, which is more *performant* when the order of lookups matches the order of fields in the document, but which will still work with out-of-order fields, with a performance hit.)
-* The On Demand approach is less safe than DOM: we only validate the components of the JSON document that are used and it is possible to begin ingesting an invalid document only to find out later that the document is invalid. Are you fine ingesting a large JSON document that starts with well formed JSON but ends with invalid JSON content?
+* The On-Demand approach is less safe than DOM: we only validate the components of the JSON document that are used and it is possible to begin ingesting an invalid document only to find out later that the document is invalid. Are you fine ingesting a large JSON document that starts with well formed JSON but ends with invalid JSON content?
 
 There are currently additional technical limitations which we expect to resolve in future releases of the simdjson library:
 
-* The simdjson library offers runtime dispatching which allows you to compile one binary and have it run at full speed on different processors, taking advantage of the specific features of the processor. The On Demand API has limited runtime dispatch support. Under x64 systems, to fully benefit from the On Demand API, we recommend that you compile your code for a specific processor. E.g., if your processor supports AVX2 instructions, you should compile your binary executable with AVX2 instruction support (by using your compiler's commands). If you are sufficiently technically proficient, you can implement runtime dispatching within your application, by compiling your On Demand code for different processors.
+* The simdjson library offers runtime dispatching which allows you to compile one binary and have it run at full speed on different processors, taking advantage of the specific features of the processor. The On-Demand API has limited runtime dispatch support. Under x64 systems, to fully benefit from the On-Demand API, we recommend that you compile your code for a specific processor. E.g., if your processor supports AVX2 instructions, you should compile your binary executable with AVX2 instruction support (by using your compiler's commands). If you are sufficiently technically proficient, you can implement runtime dispatching within your application, by compiling your On-Demand code for different processors.
 * There is an initial phase which scans the entire document quickly, irrespective of the size of the document. We plan to break this phase into distinct steps for large files in a future release as we have done with other components of our API (e.g., `parse_many`).
 
-### Applicability of the On Demand Approach
+### Applicability of the On-Demand Approach
 
-At this time we recommend the On Demand API in the following cases:
+At this time we recommend the On-Demand API in the following cases:
 
 1. The 64-bit hardware (CPU) used to run the software is known at compile time. If you need runtime dispatching because you cannot be certain of the hardware used to run your software, you will be better served with the core simdjson API. (This only applies to x64 (AMD/Intel). On 64-bit ARM hardware, runtime dispatching is unnecessary.)
 2. The used parts of JSON files do not need to be validated and the layout of the nodes follows a strict JSON dialect. If you are receiving JSON from other systems, you might be better served with core simdjson API as it fully validates the JSON inputs and allows you to navigate through the document at will.
-3. Speed and efficiency are of the utmost importance. Keep in mind that the core simdjson API is highly efficient so adopting the On Demand API is not necessary for high efficiency.
+3. Speed and efficiency are of the utmost importance. Keep in mind that the core simdjson API is highly efficient so adopting the On-Demand API is not necessary for high efficiency.
 4. As a developer, you value a clean, flexible and maintainable API.
 
-Good applications for the On Demand API might be:
+Good applications for the On-Demand API might be:
 
 * You are working from pre-existing large JSON files that have been vetted. You expect them to be well formed according to a known JSON dialect and to have a consistent layout. For example, you might be doing biomedical research or machine learning on top of static data dumps in JSON.
 * Both the generation and the consumption of JSON data is within your system. Your team controls both the software that produces the JSON and the software the parses it, your team knows and control the hardware. Thus you can fully test your system.
@@ -746,13 +746,13 @@ Good applications for the On Demand API might be:
 
 ## Checking Your CPU Selection (x64 systems)
 
-The On Demand API uses advanced architecture-specific code for many common processors to make JSON preprocessing and string parsing faster. By default, however, most c++ compilers will compile to the	least common denominator (since the program could theoretically be run anywhere). Since On Demand is inlined into your own code, it cannot always use these advanced versions unless the compiler is told to target them.
+The On-Demand API uses advanced architecture-specific code for many common processors to make JSON preprocessing and string parsing faster. By default, however, most c++ compilers will compile to the	least common denominator (since the program could theoretically be run anywhere). Since On-Demand is inlined into your own code, it cannot always use these advanced versions unless the compiler is told to target them.
 
-On relevant systems, the On Demand API provides some support for runtime dispatching: that is, it will attempt to detect, at runtime, the instructions that your processor supports and optimize the code accordingly. However, it cannot always make full use of the features of your processor.
+On relevant systems, the On-Demand API provides some support for runtime dispatching: that is, it will attempt to detect, at runtime, the instructions that your processor supports and optimize the code accordingly. However, it cannot always make full use of the features of your processor.
 
 Some users wish to run at the best possible speed. Under recent Intel and AMD processors, these users should take additional steps to verify that their code is well optimized.
 
-Given that the On Demand API offer limited runtime dispatching, it matters that your code is compiled against a specific CPU target. You should verify that the code is compiled against the target you expect. Thankfully, the simdjson library will tell you exactly what it detects as an implementation: `icelake` (AVX512 x64 processors), `haswell` (AVX2 x64 processors), `westmere` (SSE4 x64 processors), `arm64` (64-bit ARM), `ppc64` (64-bit POWER), `lasx` (LoongArch), `lsx` (LoongArch),  `fallback` (others). Under x64 processors, many programmers will want to target `haswell` whereas under ARM, most programmers will want to target `arm64` (and it should do so automatically). The `fallback` is probably only good for testing purposes, not for deployment.
+Given that the On-Demand API offer limited runtime dispatching, it matters that your code is compiled against a specific CPU target. You should verify that the code is compiled against the target you expect. Thankfully, the simdjson library will tell you exactly what it detects as an implementation: `icelake` (AVX512 x64 processors), `haswell` (AVX2 x64 processors), `westmere` (SSE4 x64 processors), `arm64` (64-bit ARM), `ppc64` (64-bit POWER), `lasx` (LoongArch), `lsx` (LoongArch),  `fallback` (others). Under x64 processors, many programmers will want to target `haswell` whereas under ARM, most programmers will want to target `arm64` (and it should do so automatically). The `fallback` is probably only good for testing purposes, not for deployment.
 
 ```C++
   std::cout << simdjson::builtin_implementation()->name() << std::endl;
@@ -777,6 +777,6 @@ In these examples, the `-march=haswell` flags targets a haswell processor and th
 
 Instead of specifying a specific microarchitecture, you can let your compiler do the work. The `-march=native` flags says "target the current computer," which is a reasonable default for many applications which both compile and run on the same processor.
 
-Passing `-march=native` to the compiler may make On Demand faster by allowing it to use optimizations specific to your machine. You cannot do this, however, if you are compiling code	that might be run on less advanced machines. That is, be mindful that when compiling with the `-march=native` flag, the resulting binary will run on the current system but may not run on other systems (e.g., on an old processor).
+Passing `-march=native` to the compiler may make On-Demand faster by allowing it to use optimizations specific to your machine. You cannot do this, however, if you are compiling code	that might be run on less advanced machines. That is, be mindful that when compiling with the `-march=native` flag, the resulting binary will run on the current system but may not run on other systems (e.g., on an old processor).
 
 If you are compiling on an ARM or POWER system, you do not need to be concerned with CPU selection during compilation. The `-march=native` flag is useful for best performance on x64 (e.g., Intel) systems but it is generally unsupported on some platforms such as ARM (aarch64) or POWER.

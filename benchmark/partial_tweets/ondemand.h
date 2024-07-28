@@ -13,7 +13,7 @@ class OnDemand {
 public:
   OnDemand() {
     if(!displayed_implementation) {
-      std::cout << "On Demand implementation: " << builtin_implementation()->name() << std::endl;
+      std::cout << "On-Demand implementation: " << builtin_implementation()->name() << std::endl;
       displayed_implementation = true;
     }
   }

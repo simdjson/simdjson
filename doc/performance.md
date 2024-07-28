@@ -75,7 +75,7 @@ or simply
 Server Loops: Long-Running Processes and Memory Capacity
 ---------------------------------
 
-The On Demand approach also automatically expands its memory capacity when larger documents are parsed. However, for longer processes where very large files are processed (such as server loops), this capacity is not resized down. On Demand also lets you adjust the maximal capacity that the parser can process:
+The On-Demand approach also automatically expands its memory capacity when larger documents are parsed. However, for longer processes where very large files are processed (such as server loops), this capacity is not resized down. On-Demand also lets you adjust the maximal capacity that the parser can process:
 
 * You can set an upper bound (*max_capacity*) when construction the parser:
 ```C++
