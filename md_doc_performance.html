@@ -135,7 +135,7 @@ Reusing string buffers</h1>
 <div class="line">auto doc = parser.iterate(json_str, length, capacity);</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md97"></a>
 Server Loops: Long-Running Processes and Memory Capacity</h1>
-<p>The On Demand approach also automatically expands its memory capacity when larger documents are parsed. However, for longer processes where very large files are processed (such as server loops), this capacity is not resized down. On Demand also lets you adjust the maximal capacity that the parser can process:</p>
+<p>The On-Demand approach also automatically expands its memory capacity when larger documents are parsed. However, for longer processes where very large files are processed (such as server loops), this capacity is not resized down. On-Demand also lets you adjust the maximal capacity that the parser can process:</p>
 <ul>
 <li>You can set an upper bound (<em>max_capacity</em>) when construction the parser: <div class="fragment"><div class="line">{C++}</div>
 <div class="line">   ondemand::parser parser(1000*1000);  // Never grows past documents &gt; 1 MB</div>

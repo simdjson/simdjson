@@ -67,7 +67,7 @@ var NAVTREE =
       [ "Further reading", "md_doc_basics.html#autotoc_md35", null ]
     ] ],
     [ "The Document-Object-Model (DOM) front-end", "md_doc_dom.html", [
-      [ "DOM vs On Demand", "md_doc_dom.html#autotoc_md36", null ],
+      [ "DOM vs On-Demand", "md_doc_dom.html#autotoc_md36", null ],
       [ "The Basics: Loading and Parsing JSON Documents using the DOM front-end", "md_doc_dom.html#autotoc_md37", null ],
       [ "Using the Parsed JSON", "md_doc_dom.html#autotoc_md38", [
         [ "Examples", "md_doc_dom.html#autotoc_md39", null ]
@@ -119,9 +119,9 @@ var NAVTREE =
       [ "Design Features", "md_doc_ondemand_design.html#autotoc_md75", [
         [ "String Parsing", "md_doc_ondemand_design.html#autotoc_md76", null ],
         [ "Iteration Safety", "md_doc_ondemand_design.html#autotoc_md77", null ],
-        [ "Benefits of the On Demand Approach", "md_doc_ondemand_design.html#autotoc_md78", null ],
-        [ "Limitations of the On Demand Approach", "md_doc_ondemand_design.html#autotoc_md79", null ],
-        [ "Applicability of the On Demand Approach", "md_doc_ondemand_design.html#autotoc_md80", null ]
+        [ "Benefits of the On-Demand Approach", "md_doc_ondemand_design.html#autotoc_md78", null ],
+        [ "Limitations of the On-Demand Approach", "md_doc_ondemand_design.html#autotoc_md79", null ],
+        [ "Applicability of the On-Demand Approach", "md_doc_ondemand_design.html#autotoc_md80", null ]
       ] ],
       [ "Checking Your CPU Selection (x64 systems)", "md_doc_ondemand_design.html#autotoc_md81", null ]
     ] ],
