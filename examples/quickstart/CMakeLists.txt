@@ -25,7 +25,7 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   add_quickstart_test(quickstart2_noexceptions   quickstart2_noexceptions.cpp NO_EXCEPTIONS LABELS acceptance)
   add_quickstart_test(quickstart2_noexceptions11 quickstart2_noexceptions.cpp NO_EXCEPTIONS CXX_STANDARD c++11)
 
-  # On Demand Quick Start
+  # On-Demand Quick Start
   if (SIMDJSON_EXCEPTIONS)
     add_quickstart_test(quickstart_ondemand   quickstart_ondemand.cpp LABELS quickstart_ondemand acceptance)
     add_quickstart_test(quickstart_ondemand11 quickstart_ondemand.cpp CXX_STANDARD c++11 LABELS quickstart_ondemand acceptance)

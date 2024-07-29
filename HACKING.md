@@ -88,8 +88,8 @@ simdjson's source structure, from the top level, looks like this:
   * simdjson/ondemand.h: the `simdjson::ondemand` namespace. Includes all public ondemand classes.
     * simdjson/builtin.h: the `simdjson::builtin` namespace. Aliased to the most universal implementation available.
     * simdjson/builtin/ondemand.h: the `simdjson::builtin::ondemand` namespace.
-    * simdjson/arm64|fallback|haswell|icelake|ppc64|westmere/ondemand.h: the `simdjson::<implementation>::ondemand` namespace. on demand compiled for the specific implementation.
-    * simdjson/generic/ondemand/*.h: individual on demand classes, generically written.
+    * simdjson/arm64|fallback|haswell|icelake|ppc64|westmere/ondemand.h: the `simdjson::<implementation>::ondemand` namespace. On-Demand compiled for the specific implementation.
+    * simdjson/generic/ondemand/*.h: individual On-Demand classes, generically written.
       * simdjson/generic/ondemand/dependencies.h: dependencies on common, non-implementation-specific simdjson classes. This will be included before including amalgamated.h.
       * simdjson/generic/ondemand/amalgamated.h: all generic ondemand classes for an implementation.
 * **src:** The source files for non-inlined functionality (e.g. the architecture-specific parser
@@ -99,7 +99,7 @@ simdjson's source structure, from the top level, looks like this:
   * *.cpp: other misc. implementations, such as `simdjson::implementation` and the minifier.
   * arm64|fallback|haswell|icelake|ppc64|westmere.cpp: Architecture-specific parser implementations.
     * generic/*.h: `simdjson::<implementation>` namespace. Generic implementation of the parser, particularly the `dom_parser_implementation`.
-    * generic/stage1/*.h: `simdjson::<implementation>::stage1` namespace. Generic implementation of the simd-heavy tokenizer/indexer pass of the simdjson parser. Used for the On Demand interface
+    * generic/stage1/*.h: `simdjson::<implementation>::stage1` namespace. Generic implementation of the simd-heavy tokenizer/indexer pass of the simdjson parser. Used for the On-Demand interface
     * generic/stage2/*.h: `simdjson::<implementation>::stage2` namespace. Generic implementation of the tape creator, which consumes the index from stage 1 and actually parses numbers and string and such. Used for the DOM interface.
 
 Other important files and directories:

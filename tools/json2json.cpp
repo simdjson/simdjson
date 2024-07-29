@@ -31,7 +31,7 @@ int main(int argc, const char *argv[]) {
   cxxopts::Options options(progName, progUsage);
 
   options.add_options()
-    ("z,ondemand", "Use On Demand front-end.", cxxopts::value<bool>()->default_value("false"))
+    ("z,ondemand", "Use On-Demand front-end.", cxxopts::value<bool>()->default_value("false"))
   	("d,rawdump", "Dumps the raw content of the tape.", cxxopts::value<bool>()->default_value("false"))
   	("f,file", "File name.", cxxopts::value<std::string>())
   	("h,help", "Print usage.")

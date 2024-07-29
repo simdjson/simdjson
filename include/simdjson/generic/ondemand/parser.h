@@ -13,8 +13,8 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
 /**
- * The default batch size for document_stream instances for this On Demand kernel.
- * Note that different On Demand kernel may use a different DEFAULT_BATCH_SIZE value
+ * The default batch size for document_stream instances for this On-Demand kernel.
+ * Note that different On-Demand kernel may use a different DEFAULT_BATCH_SIZE value
  * in the future.
  */
 static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
