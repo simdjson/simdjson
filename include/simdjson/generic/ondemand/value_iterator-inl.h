@@ -511,7 +511,26 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse
 }
 
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string(bool allow_replacement) noexcept {
-  return get_raw_json_string().unescape(json_iter(), allow_replacement);
+  simdjson_result<raw_json_string> raw_json_string_result = get_raw_json_string();
+  if (raw_json_string_result.error()) {
+    return raw_json_string_result.error();
+  }
+
+  const char* start = raw_json_string_result.value_unsafe().raw();
+  const char* json = start;
+
+  for (; *json != '\0'; ++json) {
+    switch(*json) {
+      case '\\':
+        return raw_json_string_result.unescape(json_iter(), allow_replacement);
+      case '"':
+        return std::string_view(start, json - start);
+      default:
+        break;
+    }
+  }
+
+  return raw_json_string_result.unescape(json_iter(), allow_replacement);
 }
 template <typename string_type>
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(string_type& receiver, bool allow_replacement) noexcept {
