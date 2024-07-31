@@ -305,6 +305,32 @@ public:
   simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, uint8_t *&dst, bool allow_replacement = false) const noexcept;
 
   /**
+   * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a user-provided buffer if
+   * needed. If no escaping is done, the string is returned as is and dst is not not changed.
+   * The result must be valid UTF-8.
+   * The provided pointer is advanced to the end of the string by reference if a copy is needed,
+    * and a string_view instance
+   * is returned. You can ensure that your buffer is large enough by allocating a block of memory at least
+   * as large as the input JSON plus SIMDJSON_PADDING and then unescape all strings to this one buffer.
+   *
+   * This unescape_maybe function is a low-level function. If you want a more user-friendly approach, you should
+   * avoid raw_json_string instances (e.g., by calling unescaped_key() instead of key() or get_string()
+   * instead of get_raw_json_string()).
+   *
+   * ## IMPORTANT: string_view lifetime
+   *
+   * The string_view is only valid as long as the bytes in dst.
+   *
+   * @param raw_json_string input
+   * @param dst A pointer to a buffer at least large enough to write this string as well as
+   *            an additional SIMDJSON_PADDING bytes.
+   * @param allow_replacement Whether we allow a replacement if the input string contains unmatched surrogate pairs.
+   * @return A string_view pointing at the unescaped string in dst
+   * @error STRING_ERROR if escapes are incorrect.
+   */
+  simdjson_inline simdjson_result<std::string_view> unescape_maybe(raw_json_string in, uint8_t *&dst, bool allow_replacement = false) const noexcept;
+
+  /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a user-provided buffer.
    * The result may not be valid UTF-8. See https://simonsapin.github.io/wtf-8/
    * The provided pointer is advanced to the end of the string by reference, and a string_view instance

@@ -1,3 +1,5 @@
+#include <cstdio>
+#include <cstring>
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
@@ -138,6 +140,93 @@ simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
   return offset > 0;
 }
 
+/**
+ * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote.
+ * If there is no need for unescaping, it avoids copying the string.
+ * There
+ * must be an unescaped quote terminating the string. It returns the final output
+ * position as pointer. In case of error (e.g., the string has bad escaped codes),
+ * then null_ptr is returned. It is assumed that the output buffer is large
+ * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
+ * SIMDJSON_PADDING bytes.
+ */
+simdjson_warn_unused simdjson_inline std::pair<const uint8_t *,bool> parse_string_if_needed(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
+  const uint8_t *srcinit = src;
+  while (1) {
+    // Find the backslash and quote in them, we pass null because we do not copy.
+    auto bs_quote = backslash_and_quote::copy_and_find(src, nullptr);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first.
+      return {src + bs_quote.quote_index(), false};
+    }
+    if (bs_quote.has_backslash()) {
+      std::memcpy(dst, srcinit, src - srcinit + backslash_and_quote::BYTES_PROCESSED);
+      dst += src - srcinit;
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      if (escape_char == 'u') {
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
+          return {nullptr, true};
+        }
+      } else {
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return {nullptr, true};
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+      break;
+    } else {
+      src += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return {dst + bs_quote.quote_index(), true};
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
+          return {nullptr, true};
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return {nullptr, true}; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
 
 /**
  * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There

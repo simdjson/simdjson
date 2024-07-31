@@ -17,6 +17,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
+  // We only copy if dst is non-null.
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
@@ -34,8 +35,10 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
   static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "backslash and quote finder must process fewer than SIMDJSON_PADDING bytes");
   simd8<uint8_t> v0(src);
   simd8<uint8_t> v1(src + sizeof(v0));
-  v0.store(dst);
-  v1.store(dst + sizeof(v0));
+  if(dst != nullptr) {
+    v0.store(dst);
+    v1.store(dst + sizeof(v0));
+  }
 
   // Getting a 64-bit bitmask is much cheaper than multiple 16-bit bitmasks on LSX; therefore, we
   // smash them together into a 64-byte mask and get the bitmask from there.

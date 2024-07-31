@@ -354,7 +354,7 @@ simdjson_inline token_position json_iterator::position() const noexcept {
 }
 
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_json_string in, bool allow_replacement) noexcept {
-  return parser->unescape(in, _string_buf_loc, allow_replacement);
+  return parser->unescape_maybe(in, _string_buf_loc, allow_replacement);
 }
 
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_wobbly(raw_json_string in) noexcept {

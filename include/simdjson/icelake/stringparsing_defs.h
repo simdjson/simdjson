@@ -17,6 +17,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 64;
+  // We only copy if dst is non-null.
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
@@ -34,7 +35,9 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
   static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "backslash and quote finder must process fewer than SIMDJSON_PADDING bytes");
   simd8<uint8_t> v(src);
   // store to dest unconditionally - we can overwrite the bits we don't like later
-  v.store(dst);
+  if(dst != nullptr) {
+    v.store(dst);
+  }
   return {
       static_cast<uint64_t>(v == '\\'), // bs_bits
       static_cast<uint64_t>(v == '"'), // quote_bits
