@@ -1,11 +1,5 @@
 var NAVTREEINDEX3 =
 {
-"haswell_2implementation_8h_source.html":[12,0,0,0,5,5],
-"haswell_2intrinsics_8h_source.html":[12,0,0,0,5,6],
-"haswell_2numberparsing__defs_8h_source.html":[12,0,0,0,5,7],
-"haswell_2ondemand_8h_source.html":[12,0,0,0,5,8],
-"haswell_2simd_8h_source.html":[12,0,0,0,5,9],
-"haswell_2stringparsing__defs_8h_source.html":[12,0,0,0,5,10],
 "haswell_8h_source.html":[12,0,0,0,22],
 "hierarchy.html":[11,2],
 "icelake_2base_8h_source.html":[12,0,0,0,6,0],
@@ -249,5 +243,11 @@ var NAVTREEINDEX3 =
 "namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a4005fbda56edc47e077e5cfd4e68cda9":[10,0,0,36,3],
 "namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a4a2c71f8eca438b3f0553a2811bdab9a":[10,0,0,36,20],
 "namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a4d768ac107473bceb91f8a0d1a824bc2":[10,0,0,36,16],
-"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a4e161f7bd0b3ca10f41a220a75de8cde":[10,0,0,36,8]
+"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a4e161f7bd0b3ca10f41a220a75de8cde":[10,0,0,36,8],
+"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a69f1b9e7b9970fbb60416ebce2f894c3":[10,0,0,36,32],
+"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7aed571b420dcdfe59742e0df97b415a":[10,0,0,36,13],
+"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a7b0467451dc0cecb41d3ea46c4a0005b":[10,0,0,36,23],
+"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a80bcf6820da38abe1a2e9abeaa0f0c49":[10,0,0,36,19],
+"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a8c779dcc8fb73a4eb8891af3ef65eebb":[10,0,0,36,18],
+"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a8ef9cfdd78dd92d2b304249917638d12":[10,0,0,36,5]
 };

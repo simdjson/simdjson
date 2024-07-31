@@ -1983,7 +1983,8 @@ Examples</h1>
 Performance tips</h1>
 <ul>
 <li>Read <a class="el" href="md_doc_performance.html">our performance notes</a> for advanced topics.</li>
-<li>The On-Demand front-end works best when doing a single pass over the input: avoid calling <code>count_elements</code>, <code>rewind</code> and similar methods.</li>
+<li>To better understand the operation of your On-Demand parser, and whether it is performing as well as you think it should be, there is a logger feature built in to simdjson! To use it, define the pre-processor directive <code>SIMDJSON_VERBOSE_LOGGING</code> prior to including the <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code> header, which enables logging in simdjson. Run your code. It may generate a lot of logging output; adding printouts from your application that show each section may be helpful. The log's output will show step-by-step information on state, buffer pointer position, depth, and key retrieval status. Importantly, unless <code>SIMDJSON_VERBOSE_LOGGING</code> is defined, logging is entirely disabled and thus carries no overhead.</li>
+<li>The On-Demand front-end works best when doing a single pass over the input: avoid calling <code>count_elements</code>, <code>rewind</code>, <code>reset</code> and similar methods.</li>
 <li>If you are familiar with assembly language, you may use the online tool godbolt to explore the compiled code. The following example may work: <a href="https://godbolt.org/z/xE4GWs573">https://godbolt.org/z/xE4GWs573</a>.</li>
 <li>Given a field <code>field</code> in an object, calling <code>field.key()</code> is often faster than <code>field.unescaped_key()</code> so if you do not need an unescaped <code>std::string_view</code> instance, prefer <code>field.key()</code>. Similarly, we expect <code>field.escaped_key()</code> to be faster than <code>field.unescaped_key()</code> even though both return a <code>std::string_view</code> instance.</li>
 <li>For release builds, we recommend setting <code>NDEBUG</code> pre-processor directive when compiling the <code>simdjson</code> library. Importantly, using the optimization flags <code>-O2</code> or <code>-O3</code> under GCC and LLVM clang does not set the <code>NDEBUG</code> directive, you must set it manually (e.g., <code>-DNDEBUG</code>).</li>
@@ -1997,7 +1998,6 @@ Performance tips</h1>
 <div class="line">  std::string_view year = data[&quot;year&quot;];</div>
 <div class="line">  std::string_view rating = data[&quot;rating&quot;];</div>
 </div><!-- fragment --></li>
-<li>To better understand the operation of your On-Demand parser, and whether it is performing as well as you think it should be, there is a logger feature built in to simdjson! To use it, define the pre-processor directive <code>SIMDJSON_VERBOSE_LOGGING</code> prior to including the <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code> header, which enables logging in simdjson. Run your code. It may generate a lot of logging output; adding printouts from your application that show each section may be helpful. The log's output will show step-by-step information on state, buffer pointer position, depth, and key retrieval status. Importantly, unless <code>SIMDJSON_VERBOSE_LOGGING</code> is defined, logging is entirely disabled and thus carries no overhead.</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md35"></a>
 Further reading</h1>
