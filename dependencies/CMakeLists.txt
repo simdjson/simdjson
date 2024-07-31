@@ -155,6 +155,6 @@ if(SIMDJSON_CXXOPTS)
   set_off(CXXOPTS_BUILD_TESTS)
   set_off(CXXOPTS_ENABLE_INSTALL)
 
-  import_dependency(cxxopts jarro2783/cxxopts 3bf2684)
+  import_dependency(cxxopts jarro2783/cxxopts 5965670)
   add_dependency(cxxopts)
 endif()
