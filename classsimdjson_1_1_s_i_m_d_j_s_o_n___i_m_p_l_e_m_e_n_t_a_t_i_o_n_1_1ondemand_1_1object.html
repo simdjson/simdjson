@@ -538,7 +538,7 @@ value_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>iter</b> {}
 </div><div class="memdoc">
 
 <p>Reset the iterator so that we are pointing back at the beginning of the object. </p>
-<p>You should still consume values only once even if you can iterate through the object more than once. If you unescape a string within the object more than once, you have unsafe code. Note that rewinding an object means that you may need to reparse it anew: it is not a free operation.</p>
+<p>You should still consume values only once even if you can iterate through the object more than once. If you unescape a string or a key within the object more than once, you have unsafe code. Note that rewinding an object means that you may need to reparse it anew: it is not a free operation.</p>
 <dl class="section return"><dt>Returns</dt><dd>true if the object contains some elements (not empty) </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00194">194</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
