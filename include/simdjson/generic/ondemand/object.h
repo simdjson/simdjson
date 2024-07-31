@@ -160,8 +160,8 @@ public:
   /**
    * Reset the iterator so that we are pointing back at the
    * beginning of the object. You should still consume values only once even if you
-   * can iterate through the object more than once. If you unescape a string within
-   * the object more than once, you have unsafe code. Note that rewinding an object
+   * can iterate through the object more than once. If you unescape a string or a key
+   * within the object more than once, you have unsafe code. Note that rewinding an object
    * means that you may need to reparse it anew: it is not a free operation.
    *
    * @returns true if the object contains some elements (not empty)
