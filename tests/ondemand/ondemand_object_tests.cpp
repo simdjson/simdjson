@@ -700,6 +700,22 @@ namespace object_tests {
       }
       return got_key;
     }));
+    SUBTEST("ondemand::unescapedkey(std)", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      bool got_key = false;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      for (auto field : object) {
+        std::string keyv;
+        ASSERT_SUCCESS( field.unescaped_key(keyv) );
+        if(keyv == "key") {
+          int64_t value;
+          ASSERT_SUCCESS( field.value().get(value) );
+          ASSERT_EQUAL( value, 1);
+          got_key = true;
+        }
+      }
+      return got_key;
+    }));
     SUBTEST("ondemand::rawkey", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::object object;
       ASSERT_SUCCESS( doc_result.get(object) );

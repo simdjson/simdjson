@@ -354,11 +354,23 @@ simdjson_inline token_position json_iterator::position() const noexcept {
 }
 
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_json_string in, bool allow_replacement) noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  auto result = parser->unescape(in, _string_buf_loc, allow_replacement);
+  SIMDJSON_ASSUME(!parser->string_buffer_overflow(_string_buf_loc));
+  return result;
+#else
   return parser->unescape(in, _string_buf_loc, allow_replacement);
+#endif
 }
 
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_wobbly(raw_json_string in) noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  auto result = parser->unescape_wobbly(in, _string_buf_loc);
+  SIMDJSON_ASSUME(!parser->string_buffer_overflow(_string_buf_loc));
+  return result;
+#else
   return parser->unescape_wobbly(in, _string_buf_loc);
+#endif
 }
 
 simdjson_inline void json_iterator::reenter_child(token_position position, depth_t child_depth) noexcept {

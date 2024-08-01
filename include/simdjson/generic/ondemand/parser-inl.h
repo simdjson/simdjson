@@ -42,6 +42,11 @@ simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capa
   _max_depth = new_max_depth;
   return SUCCESS;
 }
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline simdjson_warn_unused bool parser::string_buffer_overflow(const uint8_t *string_buf_loc) const noexcept {
+  return (string_buf_loc < string_buf.get()) || (size_t(string_buf_loc - string_buf.get()) >= capacity());
+}
+#endif
 
 simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(padded_string_view json) & noexcept {
   if (json.padding() < SIMDJSON_PADDING) { return INSUFFICIENT_PADDING; }

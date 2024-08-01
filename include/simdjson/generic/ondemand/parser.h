@@ -327,6 +327,17 @@ public:
    */
   simdjson_inline simdjson_result<std::string_view> unescape_wobbly(raw_json_string in, uint8_t *&dst) const noexcept;
 
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  /**
+   * Returns true if string_buf_loc is outside of the allocated range for the
+   * the string buffer. When true, it indicates that the string buffer has overflowed.
+   * This is a development-time check that is not needed in production. It can be
+   * used to detect buffer overflows in the string buffer and usafe usage of the
+   * string buffer.
+   */
+  bool string_buffer_overflow(const uint8_t *string_buf_loc) const noexcept;
+#endif
+
 private:
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<internal::dom_parser_implementation> implementation{};
