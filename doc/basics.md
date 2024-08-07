@@ -788,6 +788,25 @@ for (ondemand::object points : parser.iterate(points_json)) {
 Adding support for custom types
 ----------------------
 
+There are 2 main ways provided by simdjson to deserialize a value into a custom type:
+
+1. Provide a [**template specialization** for member functions](https://en.cppreference.com/w/cpp/language/template_specialization#Members_of_specializations)
+   1. Specialize `simdjson::ondemand::document::get` for the whole document
+   2. Specialize `simdjson::ondemand::value::get` for each value
+2. Using `tag_invoke` *(the recommended way if your system supports C++20 or better)*
+
+##### Differences between the two
+
+1. Your compiler needs to support C++20 for `tag_invoke`.
+2. The first way limits you to know your type fully, but in the `tag_invoke` way, you can use C++20 concepts and template meta programming as well.
+3. Another difference between the two ways is that in `tag_invoke` way you may or may not mark your deserialization function (`tag_invoke` itself) as `noexcept`, but in the 
+   *template specialization* way (the first way) you HAVE TO mark your specialization as `noexcept` which means that you may need to catch exceptions so
+   that your function does not throw any exception all the while it potentially can (for example any type like `std::string`, `std::vector`, etc. that has an allocator can potentially throw exceptions).
+4. Another difference is that the `tag_invoke` way can work on both `document` and `value` but in the first way you have to provide 2 distinct specializations.
+5. If you by mistake use both way with each other, the *specialization way* will be used silently due to backward-compatibility.
+
+### 1. Specialize `simdjson::ondemand::value::get` to get custom types
+
 Suppose you have your own types, such as a `Car` struct:
 
 ```C++
@@ -835,7 +854,7 @@ simdjson::ondemand::value::get() noexcept {
     double val;
     error = v.get_double().get(val);
     if (error) { return error; }
-    vec.push_back(val);
+    try { vec.push_back(val); } catch (...) { return simdjson::UNEXPECTED_ERROR; }
   }
   return vec;
 }
@@ -856,6 +875,7 @@ simdjson_inline simdjson_result<Car> simdjson::ondemand::value::get() noexcept {
     raw_json_string key;
     error = field.key().get(key);
     if (error) { return error; }
+    
     if (key == "make") {
       error = field.value().get_string(car.make);
       if (error) { return error; }
@@ -867,7 +887,7 @@ simdjson_inline simdjson_result<Car> simdjson::ondemand::value::get() noexcept {
       if (error) { return error; }
     } else if (key == "tire_pressure") {
       error = field.value().get<std::vector<double>>().get(car.tire_pressure);
-      if (auto  error) { return error; }
+      if (error) { return error; }
     }
   }
   return car;
@@ -1066,6 +1086,91 @@ int main(void) {
 }
 ```
 
+### 2. Use `tag_invoke` for custom types
+
+Suppose you are writing this type:
+
+```C++
+/**
+ * A custom type that we want to parse.
+ */
+struct Car {
+  std::string make;
+  std::string model;
+
+  // tag_invoke is a friend
+  // the type of val will be a reference to one of these:
+  //     simdjson::ondemand::document
+  //     simdjson::ondemand::value
+  friend simdjson_result<Car>
+  tag_invoke(simdjson::deserialize_tag, std::type_identity<Car>, auto &val) {
+    simdjson::ondemand::object obj;
+    if (auto error = val.get_object().get(obj); error) {
+      return error;
+    }
+    Car car{};
+    // Instead of repeatedly obj["something"], we iterate through the object
+    // which we expect to be faster.
+    for (auto field : obj) {
+      simdjson::ondemand::raw_json_string key;
+      error = field.key().get(key);
+      if (error) {
+        return error;
+      }
+      if (key == "make") {
+        error = field.value().get_string(car.make);
+        if (error) {
+          return error;
+        }
+      } else if (key == "model") {
+        error = field.value().get_string(car.model);
+        if (error) {
+          return error;
+        }
+      }
+    }
+    return car;
+  }
+  
+};
+```
+
+Let us explain each argument of `tag_invoke`:
+
+- `simdjson::deserialize_tag`: it is the tag for Customization Point Object (CPO)
+- `std::type_identity<T>`: We specify the custom type we want here
+- `simdjson::ondemand::value&` or `simdjson::ondemand::document&`: the value or document that we want to deserialize from; you may want to just specify `auto&` to capture both of them.
+
+Suppose your custom types are `std::unique_ptr<any type>`, you could:
+
+```C++
+namespace simdjson {
+
+  // This tag_invoke MUST be inside simdjson namespace since we can't make it a friend of unique_ptr
+  template <typename T>
+  auto tag_invoke(deserialize_tag, std::type_identity<std::unique_ptr<T>>, auto &val) {
+    return simdjson_result{std::make_unique<T>(val.template get<T>())};
+  }
+
+} // namespace simdjson
+```
+
+You can also mark your `tag_invoke` function as `noexcept` and we will obey that, but that's not true for the *template specialization* way.
+
+You'd use it like this:
+```C++
+int main() {
+  auto const json = R"( {
+    "make": "Toyota",
+    "model": "Camry",
+])"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  std::unique_ptr<Car> c(doc);
+  std::cout << c.make << std::endl;
+  return EXIT_SUCCESS;
+}
+```
 
 Minifying JSON strings without parsing
 ----------------------
@@ -1343,7 +1448,7 @@ Notice how we can retrieve the exact error condition (in this instance `simdjson
 from the exception.
 
 We can write a "quick start" example where we attempt to parse the following JSON file and access some data, without triggering exceptions:
-```JavaScript
+```JSON
 {
   "statuses": [
     {
