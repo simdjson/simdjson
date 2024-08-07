@@ -793,15 +793,15 @@ There are 2 main ways provided by simdjson to deserialize a value into a custom 
 1. Provide a [**template specialization** for member functions](https://en.cppreference.com/w/cpp/language/template_specialization#Members_of_specializations)
    1. Specialize `simdjson::ondemand::document::get` for the whole document
    2. Specialize `simdjson::ondemand::value::get` for each value
-2. Using `tag_invoke` *(the recommended way)*
+2. Using `tag_invoke` *(the recommended way if your system supports C++20 or better)*
 
 ##### Differences between the two
 
 1. Your compiler needs to support C++20 for `tag_invoke`.
 2. The first way limits you to know your type fully, but in the `tag_invoke` way, you can use C++20 concepts and template meta programming as well.
-3. Another different between the two ways is that in `tag_invoke` way you may or may not mark your deserialization function (`tag_invoke` itself) as `noexcept`, but in the 
-   *template specialization* way (the first way) you HAVE TO mark your specialization as `noexcept` which means there are a lot of time you would need to simply lie to the compiler
-   that your function does not throw any exception all the while it potentially can (for example any type like `std::stirng`, `std::vector`, etc. that has an allocator can potentially throw exceptions).
+3. Another difference between the two ways is that in `tag_invoke` way you may or may not mark your deserialization function (`tag_invoke` itself) as `noexcept`, but in the 
+   *template specialization* way (the first way) you HAVE TO mark your specialization as `noexcept` which means that you may need to catch exceptions so
+   that your function does not throw any exception all the while it potentially can (for example any type like `std::string`, `std::vector`, etc. that has an allocator can potentially throw exceptions).
 4. Another difference is that the `tag_invoke` way can work on both `document` and `value` but in the first way you have to provide 2 distinct specializations.
 5. If you by mistake use both way with each other, the *specialization way* will be used silently due to backward-compatibility.
 
@@ -854,7 +854,7 @@ simdjson::ondemand::value::get() noexcept {
     double val;
     error = v.get_double().get(val);
     if (error) { return error; }
-    vec.push_back(val); // <----- we're lying to the compiler here, this can throw, but the function is noexcept
+    try { vec.push_back(val); } catch (...) { return simdjson::UNEXPECTED_ERROR; }
   }
   return vec;
 }
@@ -876,7 +876,6 @@ simdjson_inline simdjson_result<Car> simdjson::ondemand::value::get() noexcept {
     error = field.key().get(key);
     if (error) { return error; }
     
-    // as you can see, we're again lying to the compiler, strings and vectors can throw but the function has to be noexcept
     if (key == "make") {
       error = field.value().get_string(car.make);
       if (error) { return error; }
@@ -1138,11 +1137,11 @@ struct Car {
 
 Let's explain each argument of `tag_invoke`:
 
-- `simdjson::deserialize_tag`: it's the tag for Customization Point Object (CPO)
+- `simdjson::deserialize_tag`: it is the tag for Customization Point Object (CPO)
 - `std::type_identity<T>`: We specify the custom type we want here
 - `simdjson::ondemand::value&` or `simdjson::ondemand::document&`: the value or document that we want to deserialize from; you may want to just specify `auto&` to capture both of them.
 
-Suppose your custom types are `unique_ptr<any type>`, you could:
+Suppose your custom types are `std::unique_ptr<any type>`, you could:
 
 ```C++
 namespace simdjson {
