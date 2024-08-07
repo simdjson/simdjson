@@ -7,9 +7,9 @@ using namespace simdjson;
 int main() {
     auto json = "{\"a\":1}"_padded;
     ondemand::parser parser;
-    auto f = [](ondemand::parser& p, simdjson::padded_string& json) -> ondemand::document {
+    auto f = [](ondemand::parser& p, simdjson::padded_string& jsons) -> ondemand::document {
         ondemand::document doc;
-        auto error = p.iterate(json).get(doc);
+        auto error = p.iterate(jsons).get(doc);
         if(error) { std::abort(); }
         return doc;
     };
