@@ -203,14 +203,22 @@ public:
       }
 #endif
   }
-  /** @overload template<typename T> simdjson_result<T> get() & noexcept */
-  template<typename T> simdjson_inline simdjson_result<T> get() &&
+  /**
+   * @overload template<typename T> simdjson_result<T> get() & noexcept
+   *
+   * We disallow the use tag_invoke CPO on a moved document; it may create UB
+   * if user uses `ondemand::array` or `ondemand::object` in their custom type.
+   *
+   * The member function is still remains specialize-able for compatibility
+   * reasons, but we completely disallow its use when a tag_invoke customization
+   * is provided.
+   */
+  template<typename T>
 #ifdef __cpp_concepts
-    noexcept(tag_invocable<deserialize_tag, std::type_identity<T>, document&> ? nothrow_tag_invocable<deserialize_tag, std::type_identity<T>, document&> : true)
-#else
-    noexcept
+    requires (!tag_invocable<deserialize_tag, std::type_identity<T>, document&>)
 #endif
-  {
+  simdjson_inline simdjson_result<T> get() && noexcept {
+      static_assert(!std::is_same_v<T, array> && !std::is_same_v<T, object>, "You should never hold either an ondemand::array or ondemand::object without a corresponding ondemand::document being alive; that would be Undefined Behaviour.");
       return static_cast<document&>(*this).get<T>();
   }
 
