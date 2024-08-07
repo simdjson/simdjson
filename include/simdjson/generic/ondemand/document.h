@@ -224,7 +224,10 @@ public:
    * @returns An instance of type T
    */
   template <class T>
-  explicit simdjson_inline operator T() noexcept(false);
+  explicit simdjson_inline operator T() & noexcept(false);
+  template <class T>
+  explicit simdjson_deprecated simdjson_inline operator T() && noexcept(false);
+
   /**
    * Cast this JSON value to an array.
    *

@@ -184,7 +184,9 @@ template<typename T> simdjson_deprecated simdjson_inline error_code document::ge
 
 #if SIMDJSON_EXCEPTIONS
 template <class T>
-simdjson_deprecated simdjson_inline document::operator T() noexcept(false) { return get<T>(); }
+simdjson_deprecated simdjson_inline document::operator T() && noexcept(false) { return get<T>(); }
+template <class T>
+simdjson_inline document::operator T() & noexcept(false) { return get<T>(); }
 simdjson_inline document::operator array() & noexcept(false) { return get_array(); }
 simdjson_inline document::operator object() & noexcept(false) { return get_object(); }
 simdjson_inline document::operator uint64_t() noexcept(false) { return get_uint64(); }
