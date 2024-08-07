@@ -24,7 +24,7 @@ int main() {
     if(error) {
         std::cout << "Failure" << std::endl;
     }
-    int64_t a;
+    int64_t a = 0;
     error = objv["a"].get_int64().get(a);
     if(error) {
         std::cout << "failure" << std::endl;
