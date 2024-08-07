@@ -80,6 +80,7 @@ simdjson_inline simdjson_result<bool> value::get_bool() noexcept {
 simdjson_inline simdjson_result<bool> value::is_null() noexcept {
   return iter.is_null();
 }
+
 template<> simdjson_inline simdjson_result<array> value::get() noexcept { return get_array(); }
 template<> simdjson_inline simdjson_result<object> value::get() noexcept { return get_object(); }
 template<> simdjson_inline simdjson_result<raw_json_string> value::get() noexcept { return get_raw_json_string(); }
@@ -467,7 +468,7 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> simdj
 template <class T>
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator T() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
-  return static_cast<T>(first);
+  return first.get<T>();
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
