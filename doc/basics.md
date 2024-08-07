@@ -1135,7 +1135,7 @@ struct Car {
 };
 ```
 
-Let's explain each argument of `tag_invoke`:
+Let us explain each argument of `tag_invoke`:
 
 - `simdjson::deserialize_tag`: it is the tag for Customization Point Object (CPO)
 - `std::type_identity<T>`: We specify the custom type we want here
