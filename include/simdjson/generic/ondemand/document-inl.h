@@ -167,19 +167,8 @@ template<> simdjson_inline simdjson_result<int64_t> document::get() & noexcept {
 template<> simdjson_inline simdjson_result<bool> document::get() & noexcept { return get_bool(); }
 template<> simdjson_inline simdjson_result<value> document::get() & noexcept { return get_value(); }
 
-template<> simdjson_inline simdjson_result<raw_json_string> document::get() && noexcept { return get_raw_json_string(); }
-template<> simdjson_inline simdjson_result<std::string_view> document::get() && noexcept { return get_string(false); }
-template<> simdjson_inline simdjson_result<double> document::get() && noexcept { return std::forward<document>(*this).get_double(); }
-template<> simdjson_inline simdjson_result<uint64_t> document::get() && noexcept { return std::forward<document>(*this).get_uint64(); }
-template<> simdjson_inline simdjson_result<int64_t> document::get() && noexcept { return std::forward<document>(*this).get_int64(); }
-template<> simdjson_inline simdjson_result<bool> document::get() && noexcept { return std::forward<document>(*this).get_bool(); }
-template<> simdjson_inline simdjson_result<value> document::get() && noexcept { return get_value(); }
-
 template<typename T> simdjson_inline error_code document::get(T &out) & noexcept {
   return get<T>().get(out);
-}
-template<typename T> simdjson_inline error_code document::get(T &out) && noexcept {
-  return std::forward<document>(*this).get<T>().get(out);
 }
 
 #if SIMDJSON_EXCEPTIONS
