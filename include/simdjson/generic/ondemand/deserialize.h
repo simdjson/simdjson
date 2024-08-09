@@ -1,8 +1,7 @@
 #ifndef SIMDJSON_ONDEMAND_DESERIALIZE_H
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_ONDEMAND_DESERIALIZE_H
-
-#include "simdjson/error.h"
-
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 #ifdef __has_include
 #if __has_include(<version>)
 #include <version>
