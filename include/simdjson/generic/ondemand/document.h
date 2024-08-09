@@ -4,9 +4,9 @@
 #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
+#include "simdjson/generic/ondemand/deserialize.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
-#include "simdjson/deserialize.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -218,7 +218,7 @@ public:
     requires (!tag_invocable<deserialize_tag, std::type_identity<T>, document&>)
 #endif
   simdjson_inline simdjson_result<T> get() && noexcept {
-      static_assert(!std::is_same_v<T, array> && !std::is_same_v<T, object>, "You should never hold either an ondemand::array or ondemand::object without a corresponding ondemand::document being alive; that would be Undefined Behaviour.");
+      static_assert(!std::is_same<T, array>::value && !std::is_same<T, object>::value, "You should never hold either an ondemand::array or ondemand::object without a corresponding ondemand::document being alive; that would be Undefined Behaviour.");
       return static_cast<document&>(*this).get<T>();
   }
 

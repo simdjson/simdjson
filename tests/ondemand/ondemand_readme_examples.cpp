@@ -49,6 +49,7 @@ struct Car {
   std::vector<double> tire_pressure;
 };
 
+#ifndef __cpp_concepts
 template <>
 simdjson_inline simdjson_result<std::vector<double>>
 simdjson::ondemand::value::get() noexcept {
@@ -66,7 +67,7 @@ simdjson::ondemand::value::get() noexcept {
   }
   return vec;
 }
-
+#endif
 
 
 template <>
@@ -193,8 +194,8 @@ int custom_type_with_exceptions() {
 ])"_padded;
   ondemand::parser parser;
   ondemand::document doc = parser.iterate(json);
-  for (auto val : doc) {
-    Car c(val);
+  for (auto value : doc) {
+    Car c(value);
     std::cout << c.make << std::endl;
   }
   return 0;

@@ -14,6 +14,7 @@
 #include "simdjson/generic/ondemand/raw_json_string.h"
 #include "simdjson/generic/ondemand/value.h"
 #include "simdjson/generic/ondemand/value_iterator-inl.h"
+#include "simdjson/generic/ondemand/deserialize.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
