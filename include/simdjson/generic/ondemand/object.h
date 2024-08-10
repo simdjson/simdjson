@@ -11,6 +11,36 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+namespace details {
+
+/// default false:
+template <typename ...>
+struct is_all_string_views : std::false_type { };
+
+/// empty is now allowed:
+template <>
+struct is_all_string_views<> : std::false_type { };
+
+/// yes, all of them are now either string_view or convertible to string_view:
+template <typename T1>
+  requires std::is_convertible_v<T1, std::string_view>
+struct is_all_string_views<T1> : std::true_type { };
+
+/// check the first one:
+/// std::basic_string_view<CharT, TraitsT> is not allowed, only std::string_view is allowed
+/// and that this intentional since this library is designed to work with std::string_views only
+/// and not its derivatives like std::u8string_view
+template <typename T1, typename ...T>
+  requires std::is_convertible_v<T1, std::string_view>
+struct is_all_string_views<T1, T...> {
+ static constexpr bool value = is_all_string_views<T...>::value;
+};
+
+/// check if all are string views or convertible to string views
+template <typename ...T>
+concept all_string_views = is_all_string_views<T...>::value;
+}
+
 /**
  * A forward-only JSON object field iterator.
  */
@@ -107,6 +137,28 @@ public:
   simdjson_inline simdjson_result<value> operator[](std::string_view key) & noexcept;
   /** @overload simdjson_inline simdjson_result<value> find_field_unordered(std::string_view key) & noexcept; */
   simdjson_inline simdjson_result<value> operator[](std::string_view key) && noexcept;
+
+#ifdef __cpp_concepts
+  /**
+   * Find all the fields in one go
+   * The values are in the same orders as the keys
+   *
+   * @tparam StrT std::string_view or convertible to it
+   * @param keys field keys as string views
+   * @return std::array<simdjson_result<ondemand::value>, N>
+   */
+  template <typename ...StrT>
+    requires details::all_string_views<StrT...>
+  [[nodiscard]] simdjson_inline std::array<simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>, sizeof...(StrT)> find_all(StrT... keys) & noexcept;
+
+  /** @overload  template <typename ...StrT> requires
+   * details::all_string_views<StrT...> simdjson_inline
+   * std::array<simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>,
+   * sizeof...(StrT)> find_all(StrT... keys) & noexcept; */
+  template <typename ...StrT>
+    requires details::all_string_views<StrT...>
+  [[nodiscard]] simdjson_inline std::array<simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>, sizeof...(StrT)> find_all(StrT... keys) && noexcept;
+#endif
 
   /**
    * Get the value associated with the given JSON pointer. We use the RFC 6901
@@ -245,6 +297,16 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) && noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;
+
+#ifdef __cpp_concepts
+  template <typename ...StrT>
+    requires SIMDJSON_IMPLEMENTATION::ondemand::details::all_string_views<StrT...>
+  [[nodiscard]] simdjson_inline std::array<simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>, sizeof...(StrT)> find_all(StrT... keys) & noexcept;
+
+  template <typename ...StrT>
+    requires SIMDJSON_IMPLEMENTATION::ondemand::details::all_string_views<StrT...>
+  [[nodiscard]] simdjson_inline std::array<simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>, sizeof...(StrT)> find_all(StrT... keys) && noexcept;
+#endif
 
   inline simdjson_result<bool> reset() noexcept;
   inline simdjson_result<bool> is_empty() noexcept;

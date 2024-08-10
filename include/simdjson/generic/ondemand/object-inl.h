@@ -39,6 +39,37 @@ simdjson_inline simdjson_result<value> object::operator[](const std::string_view
 simdjson_inline simdjson_result<value> object::operator[](const std::string_view key) && noexcept {
   return std::forward<object>(*this).find_field_unordered(key);
 }
+#ifdef __cpp_concepts
+template <typename... StrT>
+    requires details::all_string_views<StrT...>
+[[nodiscard]] simdjson_inline std::array<simdjson_result<value>, sizeof...(StrT)> object::find_all(StrT... keys) & noexcept {
+  using array_type = std::array<simdjson_result<value>, sizeof...(StrT)>;
+  array_type values;
+  struct appender {
+    simdjson_result<field> value;
+    array_type& values;
+    std::size_t index = 0;
+
+    appender& operator|=(std::string_view const key) noexcept {
+      if (value.key() == key) {
+        values[index] = std::move(value).value();
+      }
+      ++index;
+      return *this;
+    }
+  };
+  for(auto value : *this) {
+    (appender{value, values} |= ... |= keys);
+  }
+  return values;
+}
+
+template <typename... StrT>
+    requires details::all_string_views<StrT...>
+[[nodiscard]] simdjson_inline std::array<simdjson_result<value>, sizeof...(StrT)> object::find_all(StrT... keys) && noexcept {
+  return static_cast<object&>(*this).find_all(std::string_view{keys}...);
+}
+#endif
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
@@ -270,6 +301,22 @@ simdjson_inline  simdjson_result<size_t> simdjson_result<SIMDJSON_IMPLEMENTATION
 simdjson_inline  simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::raw_json() noexcept {
   if (error()) { return error(); }
   return first.raw_json();
+}
+
+template <typename ...StrT>
+  requires SIMDJSON_IMPLEMENTATION::ondemand::details::all_string_views<StrT...>
+[[nodiscard]] simdjson_inline std::array<simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>, sizeof...(StrT)> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::find_all(StrT... keys) & noexcept {
+  using array_type = std::array<simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>, sizeof...(StrT)>;
+  if (error()) { return array_type{((std::ignore = keys), error())...}; }
+  return first.find_all(keys...);
+}
+
+template <typename ...StrT>
+  requires SIMDJSON_IMPLEMENTATION::ondemand::details::all_string_views<StrT...>
+[[nodiscard]] simdjson_inline std::array<simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>, sizeof...(StrT)> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::find_all(StrT... keys) && noexcept {
+  using array_type = std::array<simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>, sizeof...(StrT)>;
+  if (error()) { return array_type{((std::ignore = keys), error())...}; }
+  return static_cast<SIMDJSON_IMPLEMENTATION::ondemand::object&>(first).find_all(keys...);
 }
 } // namespace simdjson
 
