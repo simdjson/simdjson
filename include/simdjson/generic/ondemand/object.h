@@ -11,6 +11,7 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+#ifdef __cpp_concepts
 namespace details {
 
 /// default false:
@@ -40,6 +41,7 @@ struct is_all_string_views<T1, T...> {
 template <typename ...T>
 concept all_string_views = is_all_string_views<T...>::value;
 }
+#endif
 
 /**
  * A forward-only JSON object field iterator.
