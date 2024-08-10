@@ -295,6 +295,30 @@ namespace simd {
     simdjson_inline int get_bit() const { return _mm256_movemask_epi8(_mm256_slli_epi16(*this, 7-N)); }
   };
 
+  template <int N = 0>
+  struct simd_bitmask64_builder;
+
+  template<>
+  struct simd_bitmask64_builder<2> {
+    const uint64_t bitmask;
+    operator uint64_t() && { return bitmask; }
+  }; // struct simd_bitmask64_builder<2>
+
+  template<>
+  struct simd_bitmask64_builder<1> {
+    const int bitmask;
+    simdjson_inline simd_bitmask64_builder<2> next(simd8<bool> val) {
+      uint64_t r_lo = uint32_t(bitmask);
+      uint64_t r_hi = val.to_bitmask();
+      return { r_lo | (r_hi << 32) };
+    }
+  }; // struct simd_bitmask64_builder<1>
+
+  template<>
+  struct simd_bitmask64_builder<0> {
+    simdjson_inline simd_bitmask64_builder<1> next(simd8<bool> val) { return { val.to_bitmask() }; }
+  }; // struct simd_bitmask64_builder<0>
+
   template<typename T>
   struct simd8x64 {
     static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
@@ -322,9 +346,9 @@ namespace simd {
     }
 
     simdjson_inline uint64_t to_bitmask() const {
-      uint64_t r_lo = uint32_t(this->chunks[0].to_bitmask());
-      uint64_t r_hi =                       this->chunks[1].to_bitmask();
-      return r_lo | (r_hi << 32);
+      return simd_bitmask64_builder<0>()
+        .next(this->chunks[0])
+        .next(this->chunks[1]);
     }
 
     simdjson_inline simd8<T> reduce_or() const {

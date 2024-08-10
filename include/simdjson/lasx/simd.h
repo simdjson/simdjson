@@ -298,6 +298,35 @@ namespace simd {
     simdjson_inline simd8<uint8_t> shl() const { return simd8<uint8_t>(__lasx_xvslli_b(*this, N)); }
   };
 
+  template <int N = 0>
+  struct simd_bitmask64_builder;
+
+  template<>
+  struct simd_bitmask64_builder<2> {
+    const unsigned long int mask01;
+    operator uint64_t() { return mask01; }
+  }; // struct simd_bitmask64_builder<2>
+
+  template<>
+  struct simd_bitmask64_builder<1> {
+    const __m256i mask0;
+    simdjson_inline simd_bitmask64_builder<2> next(simd8<bool> val1) {
+      __m256i mask1 = __lasx_xvmskltz_b(val1);
+      __m256i mask_tmp = __lasx_xvpickve_w(mask0, 4);
+      __m256i tmp = __lasx_xvpickve_w(mask1, 4);
+      __m256i mask01 = __lasx_xvinsve0_w(mask0, mask1, 1);
+      __m256i mask01_tmp = __lasx_xvinsve0_w(mask_tmp, tmp, 1);
+      return { __lasx_xvpickve2gr_du(__lasx_xvpackev_h(mask01_tmp, mask01), 0) };
+    }
+  }; // struct simd_bitmask64_builder<1>
+
+  template<>
+  struct simd_bitmask64_builder<0> {
+    simdjson_inline simd_bitmask64_builder<1> next(simd8<bool> val) {
+      return { __lasx_xvmskltz_b(val0) };
+    }
+  }; // struct simd_bitmask64_builder<0>
+
   template<typename T>
   struct simd8x64 {
     static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
@@ -331,13 +360,9 @@ namespace simd {
     }
 
     simdjson_inline uint64_t to_bitmask() const {
-      __m256i mask0 = __lasx_xvmskltz_b(this->chunks[0]);
-      __m256i mask1 = __lasx_xvmskltz_b(this->chunks[1]);
-      __m256i mask_tmp = __lasx_xvpickve_w(mask0, 4);
-      __m256i tmp = __lasx_xvpickve_w(mask1, 4);
-      mask0 = __lasx_xvinsve0_w(mask0, mask1, 1);
-      mask_tmp = __lasx_xvinsve0_w(mask_tmp, tmp, 1);
-      return __lasx_xvpickve2gr_du(__lasx_xvpackev_h(mask_tmp, mask0), 0);
+      return simd_bitmask64_builder<0>()
+        .next(this->chunks[0])
+        .next(this->chunks[1]);
     }
 
     simdjson_inline simd8<T> reduce_or() const {

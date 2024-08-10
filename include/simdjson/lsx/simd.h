@@ -255,6 +255,50 @@ namespace simd {
     simdjson_inline simd8<uint8_t> shl() const { return simd8<uint8_t>(__lsx_vslli_b(*this, N)); }
   };
 
+  template <int N = 0>
+  struct simd_bitmask64_builder;
+
+  template<>
+  struct simd_bitmask64_builder<4> {
+    const unsigned long int result;
+    operator uint64_t() { return result; }
+  }; // struct simd_bitmask64_builder<4>
+
+  template<>
+  struct simd_bitmask64_builder<3> {
+    const __m128i mask01;
+    const __m128i mask2;
+    simdjson_inline simd_bitmask64_builder<4> next(simd8<bool> val3) {
+      __m128i mask3 = __lsx_vmskltz_b(val3);
+      __m128i mask23 = __lsx_vilvl_h(mask3, mask2);
+      return { __lsx_vpickve2gr_du(__lsx_vilvl_w(mask23, mask01), 0) };
+    }
+  }; // struct simd_bitmask64_builder<3>
+
+  template<>
+  struct simd_bitmask64_builder<2> {
+    const __m128i mask01;
+    simdjson_inline simd_bitmask64_builder<3> next(simd8<bool> val2) {
+      return { mask01, __lsx_vmskltz_b(val2) };
+    }
+  }; // struct simd_bitmask64_builder<2>
+
+  template<>
+  struct simd_bitmask64_builder<1> {
+    const __m128i mask0;
+    simdjson_inline simd_bitmask64_builder<2> next(simd8<bool> val1) {
+      __m128i mask1 = __lsx_vmskltz_b(val1);
+      return { __lsx_vilvl_h(mask1, mask0) };
+    }
+  }; // struct simd_bitmask64_builder<1>
+
+  template<>
+  struct simd_bitmask64_builder<0> {
+    simdjson_inline simd_bitmask64_builder<1> next(simd8<bool> val0) {
+      return { __lsx_vmskltz_b(val0) };
+    }
+  }; // struct simd_bitmask64_builder<0>
+
   template<typename T>
   struct simd8x64 {
     static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
@@ -303,13 +347,11 @@ namespace simd {
     }
 
     simdjson_inline uint64_t to_bitmask() const {
-      __m128i mask1 = __lsx_vmskltz_b(this->chunks[0]);
-      __m128i mask2 = __lsx_vmskltz_b(this->chunks[1]);
-      __m128i mask3 = __lsx_vmskltz_b(this->chunks[2]);
-      __m128i mask4 = __lsx_vmskltz_b(this->chunks[3]);
-      mask1 = __lsx_vilvl_h(mask2, mask1);
-      mask2 = __lsx_vilvl_h(mask4, mask3);
-      return __lsx_vpickve2gr_du(__lsx_vilvl_w(mask2, mask1), 0);
+      return simd_bitmask64_builder<0>()
+        .next(this->chunks[0])
+        .next(this->chunks[1])
+        .next(this->chunks[2])
+        .next(this->chunks[3]);
     }
 
     simdjson_inline simd8<T> reduce_or() const {
