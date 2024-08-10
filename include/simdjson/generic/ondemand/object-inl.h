@@ -303,6 +303,7 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPL
   return first.raw_json();
 }
 
+#ifdef __cpp_concepts
 template <typename ...StrT>
   requires SIMDJSON_IMPLEMENTATION::ondemand::details::all_string_views<StrT...>
 [[nodiscard]] simdjson_inline std::array<simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>, sizeof...(StrT)> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::find_all(StrT... keys) & noexcept {
@@ -318,6 +319,7 @@ template <typename ...StrT>
   if (error()) { return array_type{((std::ignore = keys), error())...}; }
   return static_cast<SIMDJSON_IMPLEMENTATION::ondemand::object&>(first).find_all(keys...);
 }
+#endif
 } // namespace simdjson
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H
