@@ -24,7 +24,7 @@ template <typename T>
 simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val) noexcept {
   uint64_t x;
   SIMDJSON_TRY(val.get_uint64().get(x));
-  if(x > std::numeric_limits<T>::max() || x < std::numeric_limits<T>::min()) {
+  if(x > (std::numeric_limits<T>::max)() || x < (std::numeric_limits<T>::min)()) {
     return NUMBER_OUT_OF_RANGE;
   }
   return static_cast<T>(x);
@@ -43,7 +43,7 @@ template <typename T>
 simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val) noexcept {
   int64_t x;
   SIMDJSON_TRY(val.get_int64().get(x));
-  if(x > std::numeric_limits<T>::max() || x < std::numeric_limits<T>::min()) {
+  if(x > (std::numeric_limits<T>::max)() || x < (std::numeric_limits<T>::min)()) {
     return NUMBER_OUT_OF_RANGE;
   }
   return static_cast<T>(x);
